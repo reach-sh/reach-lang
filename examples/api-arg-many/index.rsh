@@ -8,6 +8,20 @@ const manyArgFunSig = Fun([UInt, UInt, UInt, UInt,
                           ],
                           UInt)
 
+
+const sum = (v0,v1,v2,v3,
+             v4,v5,v6,v7,
+             v8,v9,v10,v11,
+             v12,v13,v14,v15,
+             v16,v17,v18,v19
+            ) => {
+              return v0 + v1 + v2 + v3
+                + v4 + v5 + v6 + v7
+                + v8 + v9 + v10 + v11
+                + v12 + v13 + v14 + v15
+                + v16 + v17 + v18 + v19
+            }
+
 export const mainServer = Reach.App(() => {
   const Deployer = Participant('Deployer', {
     ready: Fun([], Null),
@@ -15,34 +29,20 @@ export const mainServer = Reach.App(() => {
   const A = API({
     sumMany: manyArgFunSig,
   })
-  const V = View({
-    vSumMany: manyArgFunSig,
-  })
+  //const V = View({
+  //  vSumMany: manyArgFunSig,
+  //})
   setOptions({
     connectors: [
       // With 16 arguments, the Solidity compiler errors saying that the stack is too deep.
-      //ETH,
+      ETH,
       ALGO,
     ]
   })
   init()
 
-  // TODO - when I wrote this as (...args) => ..., I got an error when setting it to a view that expected a certain number of arguments.
-  const sum = (v0,v1,v2,v3,
-               v4,v5,v6,v7,
-               v8,v9,v10,v11,
-               v12,v13,v14,v15,
-               v16,v17,v18,v19
-              ) => {
-                return v0 + v1 + v2 + v3
-                  + v4 + v5 + v6 + v7
-                  + v8 + v9 + v10 + v11
-                  + v12 + v13 + v14 + v15
-                  + v16 + v17 + v18 + v19
-              }
-
   Deployer.publish()
-  V.vSumMany.set(sum)
+  //V.vSumMany.set(sum)
   Deployer.interact.ready()
   commit()
 
@@ -65,10 +65,13 @@ export const mainClient = Reach.App(() => {
   const A = API({
     poke: manyArgFunSig,
   })
+  //const V = View({
+  //  vSumManyClient: manyArgFunSig,
+  //})
   setOptions({
     connectors: [
       // With 16 arguments, the Solidity compiler errors saying that the stack is too deep.
-      //ETH,
+      ETH,
       ALGO,
     ]
   })
@@ -80,6 +83,7 @@ export const mainClient = Reach.App(() => {
 
   Deployer.publish(serverCtcInfo)
   Deployer.interact.ready()
+  //V.vSumManyClient.set(sum)
 
   const sumServer = remote(serverCtcInfo, {
     sumMany: manyArgFunSig,
@@ -89,9 +93,9 @@ export const mainClient = Reach.App(() => {
 
   const [args, pokeRet] = call(A.poke)
 
-  const sum = sumServer.sumMany(...args)
+  const sumRet = sumServer.sumMany(...args)
 
-  pokeRet(sum)
+  pokeRet(sumRet)
 
   commit()
 

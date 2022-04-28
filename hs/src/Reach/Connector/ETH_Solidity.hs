@@ -48,6 +48,9 @@ dontWriteSol = False
 maxDepth :: Int
 maxDepth = 13
 
+apiArgPackCutoff :: Int
+apiArgPackCutoff = 10
+
 maxContractLen :: Int
 maxContractLen = 24576
 
@@ -800,8 +803,17 @@ solCom = \case
     let f = fromMaybe f_ ma
     -- XXX make this not rely on pv
     av' <- solArg av
-    as' <- mapM solArg as
-    dom'mem <- mapM (solType_withArgLoc . argTypeOf) as
+    let apiLongArgSplit = length as > apiArgPackCutoff
+    let (asBare, asToPack) = if apiLongArgSplit
+          then splitAt apiArgPackCutoff as else (as, [])
+    asBare' <- mapM solArg asBare
+    asToPack' <- mapM solArg asToPack
+    let asPackedTy = T_Tuple $ map argTypeOf as
+    asPacked <- if apiLongArgSplit
+      then mapM (\_ -> allocVar) [asPackedTy]
+      else return []
+    dom'mem <- mapM solType_withArgLoc $ (map argTypeOf asBare)
+      <> if apiLongArgSplit then [asPackedTy] else []
     let dv =
           case pv of
             DLV_Eff -> impossible "remote result unbound"
@@ -810,7 +822,13 @@ solCom = \case
     rng_ty' <- solType rng_ty
     let rng_ty'mem = rng_ty' <> withArgLoc rng_ty
     f' <- addInterface (pretty f) dom'mem rng_ty'mem
-    let eargs = f' : as'
+    asPackedTy' <- if apiLongArgSplit then solType asPackedTy else return $ ""
+    let initPackArg = map (\a_ -> asPackedTy' <> " memory " <> a_ <> ";") asPacked
+    let doFillPackArg (a, i :: Int) = case asPacked of
+          [a_] -> solSet (a_ <> ".elem" <> pretty i) a
+          _ -> impossible "remote arg packing"
+    let fillPackArg = map doFillPackArg $ zip asToPack' [0 ..]
+    let eargs = f' : asBare' <> asPacked
     v_succ <- allocVar
     v_return <- allocVar
     v_before <- allocMemVar at T_UInt
@@ -889,8 +907,10 @@ solCom = \case
         nonNetTokApprovals
           <> getDynamicNonNetTokBals
           <> getUnexpectedNonNetTokBals
-          <> [ solSet v_before e_before
-             , solSet ("bytes memory" <+> e_data) e_data_e
+          <> [ solSet v_before e_before ]
+          <> initPackArg
+          <> fillPackArg
+          <> [ solSet ("bytes memory" <+> e_data) e_data_e
              , "(bool " <> v_succ <> ", bytes memory " <> v_return <> ")" <+> "=" <+> av' <> solApply call' [e_data] <> semi
              , solApply "checkFunReturn" [v_succ, v_return, err_msg] <> semi
              ]
@@ -1291,7 +1311,13 @@ apiDef who ApiInfo {..} = do
     Just vs -> return vs
     Nothing -> impossible "apiDef: no which"
   let mkArgDefns ts = do
-        let indexedTypes = zip ts [0 ..]
+        typesToIndex <- case length ts > apiArgPackCutoff of
+              True -> do
+                let (tsBare, tsPacked) = splitAt apiArgPackCutoff ts
+                let packedTy = T_Tuple tsPacked
+                return $ tsBare <> [packedTy]
+              False -> return ts
+        let indexedTypes = zip typesToIndex [0 ..]
         unzip
           <$> mapM
             (\(ty, i :: Int) -> do
@@ -1304,23 +1330,41 @@ apiDef who ApiInfo {..} = do
   -- Creates the tuple needed to call the consensus function
   let makeConsensusArg args = do
         case ai_msg_vs of
-          [] -> return "false"
+          [] -> return ("false", [])
           _ -> do
-            tc_args <-
+            (tc_args, lifts) <-
               case (ai_msg_vs, ai_msg_tys) of
                 ([DLVar _ _ (T_Tuple []) _], _) ->
-                  return $ ["false"]
+                  return $ (["false"], [])
                 -- If the argument to the exported function
                 -- is the same type that the consensus msg's
                 -- type constructor takes, apply it directly
                 ([v], [T_Tuple [t]]) | varType v == t -> do
-                  return $ args
-                ([v], _) -> do
+                  return $ (args, [])
+                ([v], [T_Tuple ts]) -> do
                   tc' <- solType_ $ varType v
-                  return $ [solApply tc' args]
-                _ -> return args
+                  let apiLongArgSplit = length ts > apiArgPackCutoff
+                  let (bareArgs, packedArgs) = if apiLongArgSplit
+                        then splitAt apiArgPackCutoff args else (args, [])
+                  let packedArgLength = length ts - apiArgPackCutoff
+                  let tcDefLift =  pretty $ (show tc') <> " memory _apiArgsPack;"
+                  let fillLift = map (\(arg, i) -> solSet
+                                       ("_apiArgsPack.elem" <> pretty i)
+                                       arg)
+                                 $ zip bareArgs ([0 ..] :: [Int])
+                  let packedArgFillLift = case packedArgs of
+                        [pa] -> map (\i -> solSet
+                                      ("_apiArgsPack.elem"
+                                       <> (pretty $ apiArgPackCutoff + i))
+                                      (pa <> ".elem" <> pretty i))
+                                    [0 .. packedArgLength - 1]
+                        [] -> []
+                        _ -> impossible "Api arg split math bad"
+                  return $ (["_apiArgsPack"],
+                            [tcDefLift] <> fillLift <> packedArgFillLift)
+                _ -> return (args, [])
             tc <- solType_ $ vsToType ai_msg_vs
-            return $ solApply tc tc_args
+            return $ (solApply tc tc_args, lifts)
   let go = \case
         AIC_Case -> do
           let c_id_s = fromMaybe (impossible "Expected case id") ai_mcase_id
@@ -1352,8 +1396,8 @@ apiDef who ApiInfo {..} = do
             case ai_msg_tys of
               [T_Tuple ts] -> mkArgDefns ts
               _ -> impossible "apiDef: Expected one tuple arg"
-          ty <- makeConsensusArg args
-          return $ (ty, argDefns, [], args)
+          (ty, lifts) <- makeConsensusArg args
+          return $ (ty, argDefns, lifts, args)
   (ty, argDefns, tyLifts, args) <- go ai_compile
   let body =
         vsep $
