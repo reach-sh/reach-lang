@@ -2455,9 +2455,9 @@ whoami = command "whoami" $ info f fullDesc
 type DeviceCode = Text
 
 -- https://stackoverflow.com/a/60790430
-newtype SomeValue = SomeValue String
-instance FromJSON SomeValue where
-  parseJSON = withObject "SomeValue" $ \o -> SomeValue <$> o .: "html_url"
+newtype GitHubGistResponse = GitHubGistResponse String
+instance FromJSON GitHubGistResponse where
+  parseJSON = withObject "GitHubGistResponse" $ \o -> GitHubGistResponse <$> o .: "html_url"
 
 support :: Subcommand
 support = command "support" $ info (pure step1) d
@@ -2590,7 +2590,7 @@ support = command "support" $ info (pure step1) d
       response2 <- httpBS req4
       let response2Body = getResponseBody response2
       case decodeStrict response2Body of
-        Just (SomeValue urlToViewGist) -> do
+        Just (GitHubGistResponse urlToViewGist) -> do
           liftIO . T.putStrLn $ pack "Your gist is viewable at"
           liftIO . T.putStrLn $ pack urlToViewGist
         _ -> error "Couldn't decode JSON from GitHub API!"
