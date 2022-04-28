@@ -1,3 +1,7 @@
+export interface ActorSet {
+    [key: number]: string
+}
+
 export interface Actor {
         l_acct: number
         l_ivd: any
@@ -8,6 +12,14 @@ export interface Actor {
         l_who: string
     }
 
+export type Participant = {
+  actorId: number;
+  nodeId: number;
+  actorSet: any;
+  apiSet: any;
+  who: string;
+  phase: string;
+};
     
 export type Locals = {
         l_curr_actor_id: number
