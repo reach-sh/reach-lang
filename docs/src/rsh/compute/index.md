@@ -1591,6 +1591,18 @@ check( claim, [msg] )
 A dynamic assertion that `{!rsh} claim` evaluates to `{!rsh} true`, which expands to either a `{!rsh} require` or `{!rsh} assume` depending on where it is used in a program.
 It accepts an optional bytes argument, which is included in any reported violation.
 
+For example, Alice (A) makes the following `check` with a second (optional) argument on Line 21:
+```reach
+load: /examples/map-sender/index.rsh
+range: 18 - 22
+```
+
+While the `check` in the following example, takes just the first argument on Line 62:
+```reach
+load: /examples/api-overload/index.rsh
+range: 61 - 62
+```
+
 ### `forall`
 
 @{ref("rsh", "forall")}
