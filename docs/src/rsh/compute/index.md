@@ -1641,6 +1641,18 @@ balance(gil);
 The @{defn("balance")} primitive returns the balance of the contract account for the DApp.
 It takes an optional non-network token value, in which case it returns the balance of the given token.
 
+The example below shows the non-network token being passed as an argument to `balance`:
+```reach
+load: /examples/abstract-tok/index.rsh
+range: 24 - 26
+```
+
+While in the following example, `balance` takes no argument:
+```reach
+load: /examples/rps-7-loops/index.rsh
+range: 60 - 60
+```
+
 ### `getContract`
 
 @{ref("rsh", "getContract")}
