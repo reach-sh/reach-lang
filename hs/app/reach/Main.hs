@@ -2468,9 +2468,8 @@ support = command "support" $ info (pure step1) d
     splitByEqualsSigns s = T.splitOn (pack "=") s
 
     process :: BSLC8.ByteString -> [[Text]]
-    process gitHubResponseString = do
-      let stringArray = splitByAmpersands gitHubResponseString
-      map splitByEqualsSigns stringArray
+    process gitHubResponseString = map splitByEqualsSigns
+      $ splitByAmpersands gitHubResponseString
 
     isDeviceCodePair :: [Text] -> Bool
     isDeviceCodePair pair = head pair == pack "device_code"
