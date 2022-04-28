@@ -1,9 +1,9 @@
 import styled from "styled-components";
 import Button from "../atoms/Button";
 import SectionHeaderComponent from "../molecules/SectionHeader";
-import { useState } from "react";
-import DropdownInput from "../atoms/DropdownInput";
+import { useState, useEffect } from "react";
 import ObsPanel from "../molecules/ObsPanel";
+import { ParticipantDropdown } from "../atoms/ParticipantDropdown";
 
 const PanelContainer = styled.div`
   position: static;
@@ -97,29 +97,56 @@ const InitParticipantsButton = styled(Button)`
 `;
 const ParticipantName = styled.p``;
 
+function getIVDfromSelection(selection: number = 0, locals: any): any {
+  return locals.l_locals[selection].l_ivd;
+}
+
 function LeftPanel({
   initParticipant,
   objectViewData,
+  participants,
+  getInitDetails,
 }: {
+  getInitDetails: Function;
   initParticipant: Function;
   objectViewData: any;
+  participants: any;
 }) {
   const [openObjectSection, setOpenObjectSection] = useState(true);
   const [openAccountsSection, setOpenAccountsSection] = useState(true);
   const [openInitSection, setOpenInitSection] = useState(true);
-  const [dropDownSelection, changeDropDownSelection] = useState<number | null>(
-    null
-  );
-  const participantChange = (participant: number) => {
-    changeDropDownSelection(participant);
+  const [dropDownSelection, changeDropDownSelection] = useState<number>();
+  const [initDetails, setInitDetails] = useState<any>();
+  const [initValues, setInitValues] = useState<any>({});
+  const updateEntry = (e: any) => {
+    console.log("placeholder split");
+    console.log(e.target.placeholder.split(" ")[0]);
+    const ph = Object.entries(initDetails).filter(
+      (detail) => detail[0] === e.target.placeholder.split(" ")[0]
+      );
+      console.log(ph);
+      const type = ph[0][1].slice(7)
+      console.log(type === "UInt")
+      const value = type === "UInt" ? parseInt(e.target.value) : `${e.target.value}`
+      console.log(value)
+    setInitValues({ ...initValues, [`${ph[0][0]}`]: value });
+    console.log("init values");
+    console.log(initValues);
   };
+  useEffect(() => {
+    const setDetails = async () => {
+      const details = await getInitDetails(dropDownSelection);
+      setInitDetails(details);
+    };
+    setDetails();
+  }, [dropDownSelection]);
   return (
     <PanelContainer>
       <ObjectSection>
         <SectionHeaderComponent
           sectionOpen={openObjectSection}
           setSectionOpen={setOpenObjectSection}
-          title="Object"
+          title={`Object (Node ${objectViewData.nodeId})`}
         />
         {openObjectSection && Object.entries(objectViewData).length > 0 ? (
           <ObjectContent>
@@ -160,16 +187,36 @@ function LeftPanel({
         />
         {openInitSection ? (
           <InitContent>
-            <DropdownInput
-              value={dropDownSelection ? dropDownSelection.toString() : ""}
-              onChange={participantChange}
-            />
+            {objectViewData && (
+              <ParticipantDropdown
+                participants={participants}
+                setValue={changeDropDownSelection}
+                value={dropDownSelection}
+              />
+            )}
+            <div>
+              {initDetails &&
+                Object.entries(initDetails).map((entry: any) => (
+                  <>
+                    {entry[0]}
+                    <span>{entry[1].slice(7)}</span>
+                    <input
+                      placeholder={`${entry[0]} ${entry[1].slice(7)}`}
+                      value={initValues[`${entry[0]}`]}
+                      onChange={updateEntry}
+                    />
+                  </>
+                ))}
+            </div>
             <InitParticipantsButton
               label="Init Participant"
               icon={<></>}
               onClick={() => {
-                console.log(dropDownSelection);
-                return initParticipant(dropDownSelection);
+                return initParticipant(
+                  dropDownSelection,
+                  objectViewData.nodeId,
+                  initValues
+                );
               }}
             />
           </InitContent>

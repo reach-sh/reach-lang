@@ -1,13 +1,12 @@
 import styled from "styled-components";
-import { ReactElement, useRef, useCallback } from "react";
-import cytoscape from "cytoscape";
-import CytoscapeComponent from "react-cytoscapejs";
-import klay from "cytoscape-klay";
-cytoscape.use(klay);
-cytoscape.use(require('cytoscape-dom-node'));
-
+import { ReactElement, useState, useEffect } from "react";
+import Graphin, { GraphinData, IUserEdge, IUserNode } from "@antv/graphin";
+import { ParticipantDropdown } from "../atoms/ParticipantDropdown";
+import { Participant } from "../../types";
 
 const VisualizerContainer = styled.div`
+  display: grid;
+  grid-template-rows: 28px 1fr;
   grid-row-start: 2;
   margin-top: 16.5vh;
   grid-column-start: 2;
@@ -15,55 +14,96 @@ const VisualizerContainer = styled.div`
   height: 30vh;
   background: var(--dark-bg);
   color: var(--off-white);
-  border: 1px solid ;
+  border: 1px solid;
+  justify-content: flex-start;
 `;
 
-const styles = [
-  {
-    selector: "node",
-    style: {
-      fontSize: "32px",
-      minWidth: "24px",
-      maxWidth: "120px",
-      aspectRatio: "1/1",
-    },
-  },
-];
+const PerspectiveSelector = styled(ParticipantDropdown)``;
+
+function actorToColorString (actor: number): string {
+  switch (actor) {
+    case -1:
+      return "#204EC5";
+    case 0: 
+      return "#6AC6E7";  
+    default:
+      return "#6AC6E7";
+  }
+}
+
+const defaultNode = { 
+  type : 'graphin-circle' , 
+  style : { 
+    keyshape : { 
+      fill : '#6AC6E7' , 
+      stroke : '#FFFFFF' , 
+      fillOpacity : 1 , 
+      size : 30 , 
+    } ,
+    label : { 
+      visible : true , 
+    } ,
+    icon: {},
+    badges: [],
+    halo: {
+      visible: false
+    } 
+  } ,
+} ;
+
 
 export default function VisualizerPanel({
-  elements,
+  data,
+  selectNode,
+  participants,
+  edges,
+  nodes
 }: {
-  elements: Array<cytoscape.ElementDefinition>;
+  data: any;
+  selectNode: Function;
+  participants: Participant[];
+  edges: IUserEdge[]
+  nodes: any
 }): ReactElement {
-  const cy = useRef<cytoscape.Core | null>(null);
-  const setCytoscape = useCallback(
-    (ref: cytoscape.Core) => {
-      cy.current = ref;
-    },
-    [cy]
-  );
-
-  return elements ? (
-    <VisualizerContainer>
-      <CytoscapeComponent
-        elements={elements}
-        layout={{ name: "klay" }}
-        style={{ width: "70vw", height: "37.5vh" }}
-        cy={setCytoscape}
-        stylesheet={[
-          {
-            selector: "node",
-            style: {
-              "border-color": "#FFFFFF",
-              "color": "#101010",
-              "background-color":(ele) => ele.data("color"),
-              "text-valign":"center",
-              "text-halign":"center",
-              // "hover": (ele) => ele.data('label'),
-              content: (ele) => ele.data("id"),
-            },
+  const [perspective, changePerspective] = useState<string>("");
+    if(nodes.length > 0){
+      nodes.forEach((node: any) => {
+        console.log('node');
+        console.log(node)
+        node.style = {
+          keyshape:{
+            fill: actorToColorString(node.actor)
           },
-        ]}
+          label : {
+            value: node.id,
+            position: 'center',
+            fill: 'white',
+            offset: [0, 6]
+          },
+        }
+      })
+    }
+  
+
+  return data ? (
+    <VisualizerContainer>
+      {participants && (
+        <PerspectiveSelector
+          participants={participants}
+          value={perspective}
+          setValue={changePerspective}
+        />
+      )}
+      <Graphin
+        defaultNode={defaultNode}
+        data={{nodes: nodes, edges: edges}}
+        layout={{ type: "dagre", rankdir: "RL" }}
+        theme={{
+          background: "#101010",
+          primaryColor: "#6AC6E7",
+          primaryEdgeColor: "#FFFFFF",
+          edgeSize: 1,
+        }}
       />
     </VisualizerContainer>
   ) : (

@@ -1,6 +1,7 @@
 import Label from "../atoms/Label";
 import styled from "styled-components";
 import RightArrow from "../atoms/RightArrow";
+import { Participant } from "../../types";
 const Status = styled(Label)`
   margin-left: 20px;
   &&p {
@@ -8,14 +9,7 @@ const Status = styled(Label)`
     font-size: 0.75em;
   }
 `;
-type Participant = {
-  actorId: number;
-  nodeId: number;
-  actorSet: any;
-  apiSet: any;
-  who: string;
-  phase: string;
-};
+
 const Who = styled.p`
   color: var(--off-white);
   margin-block-start: 0.5em;
@@ -48,31 +42,35 @@ const Left = styled.div`
 `;
 
 export default function (objectViewData: any) {
-  const translatePhase = (phase: string) => {
-    let phaseAsNumber = parseInt(phase);
-    switch (phaseAsNumber) {
-      case 0:
-        return "Program Running";
-      case 1:
-        return "Initial";
-      case 2:
-        return "Program finished";
-      default:
-        return "Phase unknown";
-    }
-  };
+  const translatePhase = (participant: any) => {
+    let status = ''
+    switch (participant) {
+      case 'PS_Suspend':
+        status = 'Program Running'
+        break;
+      case 'PS_Done':
+        status = 'Program Done'
+        break;
+      case null :
+        status = 'Uninitialized'
+        break;
+    };
+    return status
+  }
   let participants;
   if (objectViewData == {}) {
     participants = <p>Loading participants...</p>;
   }
-  if (Object.entries(objectViewData.objectViewData.obs).length > 0) {
-    participants = objectViewData.objectViewData.obs.map(
-      (participant: Participant) => {
+  if (Object.entries(objectViewData).length > 0) {
+    const locals = objectViewData.objectViewData.locals.l_locals
+    participants = Object.keys(locals).map(
+      (key) => {
+        const participant = locals[key]
         return (
           <ParticipantEntry>
             <Left>
-              <Who key={participant.actorId}>{participant.who}</Who>
-              <Status text={translatePhase(participant.phase)} />
+              <Who key={ key }>{participant.l_who ? participant.l_who : 'Consensus'}</Who>
+              <Status text={participant.l_ks ? translatePhase(participant.l_ks): 'Uninitialized'} />
             </Left>
             <Right>
               <DetailArrow />

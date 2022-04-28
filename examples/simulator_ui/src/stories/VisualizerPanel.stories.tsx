@@ -21,5 +21,5 @@ Demo.parameters = {
   }
 }
 Demo.args = {
-    elements: [{data: {color: "#0f4539", id: "0", label: "TieBreak?"}}]
+  
 };
