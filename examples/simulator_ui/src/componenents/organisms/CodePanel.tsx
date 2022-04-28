@@ -132,7 +132,7 @@ function CodePanel({ code }: { code: string }) {
           <Participant>Alice</Participant>
           <ParticipantLegendSquare
             color={
-              "filter: invert(20%) sepia(25%) saturate(797%) hue-rotate(167deg) brightness(95%) contrast(96%);"
+              "filter: invert(20%) sepia(25%) saturate(797%) hue-rotate(167deg) brightness(95%) contrast(96%)"
             }
           />
         </ParticipantLegend>
