@@ -62,6 +62,8 @@ export const setDEBUG = (b: boolean) => {
   }
 };
 
+export const hideWarnings = (): boolean => truthyEnv(process.env.REACH_NO_WARN);
+
 export const getDEBUG = (): boolean => { return DEBUG; };
 
 export const debug = (...msgs: any) => {
