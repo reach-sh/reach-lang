@@ -155,4 +155,3 @@ export const makeChkExport = (stdlib:any, backend:any): any => {
   };
   return [ rshExports, chkExport ];
 };
-
