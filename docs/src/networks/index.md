@@ -16,7 +16,7 @@ It uses finite on-chain state.
 The DApp consists of one application.
 The contract escrow account is the application account.
 
-It relies on versions of `algod` that support TEAL version 5, such as Algorand 3.0.1 from September 2021.
+It relies on versions of `algod` that support TEAL version 6, such as Algorand 3.5.1.
 It uses the Algorand `indexer` version 2 to lookup and monitor publications; in other words, it does _not_ rely on any communication network other than Algorand itself.
 
 Algorand uses the SHA256 algorithm to perform digests.
@@ -33,6 +33,8 @@ This means they are sensitive to the particular compilation details of the parti
 We hope to work with the Algorand community to define a standard for views.
 Views expand the on-chain state to include the free variables of all values bound to a view.
 
+`{!rsh} Map`s on Algorand only support keys that are of type `{!rsh} Address`.
+
 Linear state is compiled into Application Local State.
 This means that participants must explicitly "opt-in" to storing this state on their account (which increases their minimum balance).
 The Reach standard library will do this automatically when connecting to Reach generated contracts, but other users must be specifically programmed to do this.
@@ -48,7 +50,7 @@ Ensure that you read @{seclink("RW0006")} if you use network seconds.
 
 The connector provides a binding named `{!rsh} ALGO` to backends.
 
-Backends must respect the following environment variables:
+Reach uses the following environment variables:
 
 + `ALGO_TOKEN` is used as the API token for your `algod`.
 + `ALGO_SERVER` is used as the address of your `algod`.
@@ -60,8 +62,12 @@ Backends must respect the following environment variables:
   or just writes.
 + `ALGO_FAUCET_PASSPHRASE` is used as the mnemonic for the faucet of your network.
   This is useful if you are running your own testing network.
-
-`{!rsh} Map`s on Algorand only support keys that are of type `{!rsh} Address`.
++ `ALGO_GENESIS_ID` or `ALGO_GENESIS_HASH` (or both),
+  which allows you to request that the user's [ARC-6 compliant wallet](https://github.com/algorandfoundation/ARCs/blob/main/ARCs/arc-0006.md) connect to a specific network.
+  When left unspecified, it allows the user to select one of their wallet's supported networks.
++ `ALGO_ACCOUNT`,
+  which allows you to request the use of a specific account from the user's ARC-6 compliant wallet by address.
+  This should usually be left unspecified, which allows the user to instead select their preferred account.
 
 ## {#ref-network-cfx} Conflux
 

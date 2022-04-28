@@ -12,7 +12,7 @@ type HasMain = {
 export async function run(file: string, ...args: Array<string>): Promise<void> {
   if (!file) { throw Error('Run requires an argument.'); }
   const m: HasMain = await import(`${mountDir}/${file}`);
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
   m.main(stdlib, ...args);
 }
 

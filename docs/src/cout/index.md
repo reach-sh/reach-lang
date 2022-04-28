@@ -41,7 +41,7 @@ For example, if a Reach program
 exported a variable `x`, i.e. `{!rsh} export const x = 5`, the frontend could access the value in the following manner:
 
 ```js
-const stdlib = await loadStdlib();
+const stdlib = loadStdlib();
 backend.getExports(stdlib).x; // 5
 ```
 
