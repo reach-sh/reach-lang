@@ -195,7 +195,7 @@ install_docker () {
     printf "CentOS: https://docs.docker.com/engine/install/centos/\n"
     printf "Fedora: https://docs.docker.com/engine/install/fedora/\n"
     printf "RedHat: https://docs.docker.com/engine/install/rhel/\n"
-    printf "SLES: https://docs.docker.com/engine/install/SLES/\n"
+    printf "  SLES: https://docs.docker.com/engine/install/SLES/\n"
   fi
   cd $PWD
 }
