@@ -53,6 +53,7 @@ export const main = Reach.App(() => {
   const trueBets = new Map(UInt);
   const falseBets = new Map(UInt);
   const checkValidBet = (better, guess, amt) => {
+    check(better != O);
     check(amt > 0);
     if (guess) {
       check(isNone(falseBets[better]));
@@ -66,8 +67,13 @@ export const main = Reach.App(() => {
     parallelReduce([true, 0, 0, 0, 0])
     .while(keepGoing)
     .invariant(trueBets.sum() + falseBets.sum() == balance()
+               && truePool == trueBets.sum()
+               && falsePool == falseBets.sum()
+               && truePool + falsePool == balance()
                && trueBetters == trueBets.size()
-               && falseBetters == falseBets.size())
+               && falseBetters == falseBets.size()
+               && trueBets.all(x => x > 0)
+               && falseBets.all(x => x > 0))
     .api(B.bet,
       (guess, amt) => checkValidBet(this, guess, amt),
       (_, amt) => amt,
@@ -93,33 +99,57 @@ export const main = Reach.App(() => {
   BP.phase(Phase.AwaitingResult());
   commit();
 
+  assert(truePool + falsePool == balance());
+
   // Await result
-  const result = true;
+  // const result = true;
 
   // Pay winners
-  const numWinners = result ? trueBetters : falseBetters;
-  const winnerBets = result ? trueBets : falseBets;
-  const winnerPool = result ? truePool : falsePool;
-  const loserPool = result ? falsePool : truePool;
+  const numWinners = /* result ? */ trueBetters /* : falseBetters */;
+  const winnerBets = /* result ? */ trueBets /* : falseBets */;
+  const winnerPool = /* result ? */ truePool /* : falsePool */;
+  const loserPool = /* result ? */ falsePool /* : truePool */;
 
   // Do truncation in favor of winners, against bookie
-  const organizerCut = fx2uint(fxmul(bookieCut, uint2fx(loserPool)));
+  const organizerCut = 0; //fx2uint(fxmul(bookieCut, uint2fx(loserPool)));
   const initialPayoutPool = loserPool - organizerCut;
 
-  awaitOrganizer(OA.startPayout);
+  const checkWinner = p => {
+    const bet = winnerBets[p];
+    check(bet != Maybe(UInt).None());
+    check(bet != Maybe(UInt).Some(0));
+  }
+  const unwrap = m => {
+    switch (m) {
+      case Some: return m;
+      case None:
+        assert(false, "unwrap None");
+        return 0;
+    }
+  }
 
+  awaitOrganizer(OA.startPayout);
   const [keepGoing_, unpaidWinners, payoutPool] =
     parallelReduce([true, numWinners, initialPayoutPool])
     .while(keepGoing_ && unpaidWinners > 0)
     .invariant(winnerBets.size() == unpaidWinners
                && balance() == winnerBets.sum() + payoutPool + organizerCut)
     .api(B.collect,
-      () => check(isSome(winnerBets[this])),
+      () => checkWinner(this),
       () => 0,
       (k) => {
-        check(isSome(winnerBets[this]));
+        checkWinner(this);
         k(null);
-        const bet = fromSome(winnerBets[this], 0); // way to mark the 0 as impossible?
+        const mBet = winnerBets[this];
+        assert(mBet != Maybe(UInt).Some(0), "zero bet winner");
+        assert(mBet != Maybe(UInt).None(), "non better winner");
+        assert(isSome(mBet), "non better winner 3");
+        switch (mBet) {
+          case None: assert(false, "non better winner 2");
+          default: ;
+        }
+
+        const bet = unwrap(mBet);
         const share = fxdiv(uint2fx(bet), uint2fx(winnerPool), 100_000);
         const winnings = fx2uint(fxmul(share, uint2fx(initialPayoutPool)));
         delete winnerBets[this];
