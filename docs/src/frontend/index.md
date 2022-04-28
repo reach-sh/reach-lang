@@ -532,6 +532,9 @@ The first publishing participant will attempt to deploy a contract for an applic
 If `{!js} info` was provided, an error will be thrown.
 This deployment can only happen one time, so subsequent attempts will fail with an error.
 
+This function may emit warnings if there is any danger, risk, or subtlety to using this contract on your chosen consensus network.
+You can omit this warning by setting `{!cmd} REACH_NO_WARN`, but we recommend that you do not.
+
 This function does not block.
 
 ---

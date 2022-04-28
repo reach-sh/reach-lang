@@ -65,6 +65,7 @@ import {
   makeSigningMonitor,
   j2sf,
   j2s,
+  hideWarnings,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -595,7 +596,7 @@ function must_be_supported(bin: Backend) {
   const algob = bin._Connectors.ALGO;
   const { unsupported, warnings } = algob;
   const render = (x: string[]) => x.map(s => ` * ${s}`).join('\n');
-  if ( warnings.length > 0 ) {
+  if ( warnings.length > 0 && ! hideWarnings() ) {
     console.error(`This Reach application is dangerous to run on Algorand for the following reasons:\n${render(warnings)}`);
   }
   if ( unsupported.length > 0 ) {
