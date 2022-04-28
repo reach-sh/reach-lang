@@ -1,7 +1,7 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-const stdlib = await loadStdlib();
+const stdlib = loadStdlib();
 const startingBalance = stdlib.parseCurrency(100);
 
 console.log(`Creating test account for Creator`);
