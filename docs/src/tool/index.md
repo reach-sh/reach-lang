@@ -95,6 +95,30 @@ For commands that support it, setting `{!cmd} REACH_DEBUG` to any non-empty valu
 
 See `{!cmd} reach compile`, `{!cmd} reach run`, or `{!cmd} reach react` for examples.
 
+# {#ref-usage-arg-disable-reporting} @{ref("cmd", "reach --disable-reporting")} `reach --disable-reporting`
+The Reach command-line tool collects anonymous usage data by default, but this can be disabled by prepending `--disable-reporting` before any given sub-command, e.g.:
+
+```cmd
+$ reach --disable-reporting compile index.rsh
+```
+
+Out of respect for users' privacy and the security of their intellectual property, Reach takes special care to avoid gathering personally-identifiable information and instead tallies only metrics which cannot easily be correlated back to specific individuals and which doesn't leak sensitive details about their code.
+
+For instance, we discard IP addresses and strip timestamps to just UTC dates.
+
+Only the following are tracked:
+- A random ID that's unique per-user and per-machine (but which doesn't reveal the user's identity);
+- The UTC date on which an event occurred;
+- The type of event, e.g. `{!cmd} reach run` or `{!cmd} reach devnet`;
+- Resultant [error code](##ref-error-codes) or indication of success associated with the event;
+- `{!cmd} REACH_VERSION`;
+- `{!cmd} REACH_CONNECTOR_MODE`;
+- Whether the event was triggered by the [Reach VS Code extension](##guide-install-VSCode);
+- The user's country;
+- The user's state or region.
+
+Invoking a sub-command with `--disable-reporting` instructs `reach` not to send any usage data at all.
+
 # {#ref-usage-compile} @{ref("cmd", "reach compile")} `reach compile`
 
 Compile Reach code by executing
