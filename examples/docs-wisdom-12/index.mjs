@@ -26,6 +26,11 @@ if (role === 'seller') {
   const sellerInteract = { 
     ...commonInteract(role),
     price: toAU(5),
+    wisdom: await ask.ask('Enter a wise phrase, or press Enter for default:', (s) => {
+      let w = !s ? 'Build healthy communities.' : s;
+      if (!s) { console.log(w); }
+      return w;
+    }),
     reportReady: async (price) => {
       console.log(`Your wisdom is for sale at ${toSU(price)} ${suStr}.`);
       console.log(`Contract info: ${JSON.stringify(await ctc.getInfo())}`);
@@ -43,7 +48,9 @@ if (role === 'seller') {
   const buyerInteract = {
     ...commonInteract(role),
     confirmPurchase: async (price) => await ask.ask(`Do you want to purchase wisdom for ${toSU(price)} ${suStr}?`, ask.yesno)
+	reportWisdom: (wisdom) => console.log(`Your new wisdom is "${wisdom}"`)
   };
+  
   const acc = await stdlib.newTestAccount(iBalance);
   const info = await ask.ask('Paste contract info:', (s) => JSON.parse(s));
   const ctc = acc.contract(backend, info);
