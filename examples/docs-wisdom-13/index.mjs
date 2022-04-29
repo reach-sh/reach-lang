@@ -56,8 +56,6 @@ if (role === 'seller') {
   const acc = await stdlib.newTestAccount(iBalance);
   const info = await ask.ask('Paste contract info:', (s) => JSON.parse(s));
   const ctc = acc.contract(backend, info);
-  const price = await ctc.views.Main.price();
-  console.log(`The price of wisdom is ${price[0] == 'None' ? '0' : toSU(price[1])} ${suStr}.`);
   await showBalance(acc);
   await ctc.p.Buyer(buyerInteract);
   await showBalance(acc);
