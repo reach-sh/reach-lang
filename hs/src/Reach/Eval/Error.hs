@@ -162,6 +162,7 @@ data EvalError
   | Err_mod_Types DLType DLType
   | Err_Alias_Type_Clash SLVar
   | Err_Remote_ALGO_extra [SLVar]
+  | Err_ExpectedThunk
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -305,6 +306,7 @@ instance HasErrorCode EvalError where
     Err_mod_Types {} -> 130
     Err_Alias_Type_Clash {} -> 131
     Err_Remote_ALGO_extra {} -> 132
+    Err_ExpectedThunk {} -> 133
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -757,5 +759,7 @@ instance Show EvalError where
       "The alias `" <> alias <> "` is overloaded multiple types for the same parameter types."
     Err_Remote_ALGO_extra ks ->
       "REMOTE_FUN.ALGO received illegal fields: " <> show ks
+    Err_ExpectedThunk ->
+      "Expected a syntactic thunk."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

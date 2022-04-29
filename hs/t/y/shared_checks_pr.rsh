@@ -13,33 +13,44 @@ export const main = Reach.App(() => {
 
   A.publish();
 
+  const S = new Set();
+
   const [ x ] = parallelReduce([ 0 ])
     .while(x < 5)
     .invariant(balance() == 0)
     .case(A,
-      // publish
+      () => {
+        check(!S.member(this), "Not a member");
+        const inc = 1;
+      },
       () => {
         const y = declassify(interact.x);
+        assume(inc == 1, "inc == 1");
         return ({
           when: declassify(interact.when),
           msg : y,
         });
       },
-      // check block
-      () => {
-        check(y > 0, "A checks x > 0");
-      },
-      // pay (optional)
-      // consensus
+      (_) => 0,
       (msg) => {
-        return [ msg + 1 ];
+        S.insert(this);
+        require(inc == 1, "inc == 1");
+        return [ msg + inc ];
       }
     )
     .api(B.go,
-      // assume
-      () => {}
-      // pay (optional)
-      // consensus
+      (xp) => {
+        const r = 3;
+        check(xp > 0, "B.go checks xp > 0");
+      },
+      (_) => {
+        assume(r == 3);
+      },
+      (_) => 0,
+      (xp, k) => {
+        k(null);
+        return [ r ];
+      }
     )
     .timeout(false);
 

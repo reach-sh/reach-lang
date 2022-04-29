@@ -28,7 +28,7 @@ Alice.only(() => {
   const y = x + 1; });
 ```
 
-is a valid program where `{!rsh} Alice`'s local state includes the private values `{!rsh} x` (bound to `{!rsh} 3`) and `{!rsh} y` (bound to `{!rsh} 4`). 
+is a valid program where `{!rsh} Alice`'s local state includes the private values `{!rsh} x` (bound to `{!rsh} 3`) and `{!rsh} y` (bound to `{!rsh} 4`).
 However, such bindings are _not_ consensus state, so they are purely local state.
 For example,
 
@@ -267,10 +267,12 @@ A @{defn("fork statement")} is written:
 fork()
 .paySpec(TOKENS_EXPR)
 .case(PART_EXPR,
+  CHECK_EXPR,
   PUBLISH_EXPR,
   PAY_EXPR | [PAY_EXPR, PAY_REQUIRE_EXPR],
   CONSENSUS_EXPR)
 .api(API_EXPR,
+  API_CHECK_EXPR,
   API_ASSUME_EXPR,
   API_PAY_EXPR | [API_PAY_EXPR, PAY_REQUIRE_EXPR],
   API_CONSENSUS_EXPR)
@@ -283,12 +285,18 @@ where:
 + `{!rsh} TOKENS_EXPR` is a syntactic tuple of `{!rsh} Token` identifiers,
   or a static ternary expression that evaluates to one;
 + `{!rsh} PART_EXPR` is an expression that evaluates to a participant;
++ (optional) `{!rsh} CHECK_EXPR` is a syntactic arrow expression that is evaluated in both the local step and consensus step.
+This block can be used to specify `{!rsh} check`s and declare variable bindings.
+If it is present, then `{!rsh} PAY_EXPR` must be included;
 + `{!rsh} PUBLISH_EXPR` is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a `msg` field, which may be of any type, a `when` field, which must be a boolean, and a `_local` field, which may be of any type;
 + (optional) `{!rsh} PAY_EXPR` is an expression that evaluates to a function parameterized over the `msg` value and returns a pay amount; if this component is left-out, it is synthesized to zero;
 + (optional) `{!rsh} PAY_REQUIRE_EXPR` is a function parameterized over the `msg` value which is evaluated for effect in a consensus step; thus it may be used to add `{!rsh} require` constraints on the value used for payment.
 If this is absent, then it is synthesized to an empty function.
 + `{!rsh} CONSENSUS_EXPR` is a syntactic arrow expression parameterized over the `msg` and `_local` values which is evaluated in a consensus step;
 + `{!rsh} API_EXPR` is an expression that evaluates to an API member function;
++ (optional) `{!rsh} CHECK_EXPR` is a syntactic arrow expression that is evaluated in both the local step and consensus step.
+This block can be used to specify `{!rsh} check`s and declare variable bindings.
+If it is present, then `{!rsh} API_ASSUME_EXPR` must be included;
 + (optional) `{!rsh} API_ASSUME_EXPR` is a function parameterized over the input to the API member function which is evaluated for effect in a local step; thus it may be used to add `{!rsh} assume` constraints on the values given by the API; if this is absent, then it is synthesized to an empty function; if it is present, then `{!rsh} API_PAY_EXPR` must be included;
 + (optional) `{!rsh} API_PAY_EXPR` is a function parameterized over the input to the API member function which is evaluated to determine the pay amount, like `{!rsh} PAY_EXPR`;
 + `{!rsh} API_CONSENSUS_EXPR` is a function parameterized over the input to the API member function and a function that returns a value to the API call; this function must be called;

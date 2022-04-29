@@ -508,7 +508,7 @@ data ToConsensusRec = ToConsensusRec
   , slptc_timeout :: Maybe (SrcLoc, JSExpression, Maybe JSBlock)
   , slptc_fork :: Bool
   , slptc_api :: Bool
-  , slptc_check :: Maybe JSBlock
+  , slptc_check :: Maybe JSExpression
   }
   deriving (Eq, Generic)
 
@@ -517,6 +517,7 @@ data ForkCase = ForkCase
   , fc_who_e :: JSExpression
   , fc_who :: String
   , fc_before :: JSExpression
+  , fc_check :: JSExpression
   , fc_pay :: JSExpression
   , fc_after :: JSExpression
   }
