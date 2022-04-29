@@ -1691,10 +1691,11 @@ evalForm f args = do
       where
         go p' = retV $ public $ SLV_Form $ SLForm_fork_partial $ p' {slf_mode = Nothing}
         doFM_Case_args = \case
-          [w, x, y, z] -> doFM_Case w x (Just y) z
-          [w, x, z] -> doFM_Case w x Nothing z
+          [who, chk, loc, pay, con] -> doFM_Case who (Just chk) loc (Just pay) con
+          [who, loc, pay, con]      -> doFM_Case who Nothing loc (Just pay) con
+          [who, loc, con]           -> doFM_Case who Nothing loc Nothing con
           _ -> illegal_args 4
-        doFM_Case we x my z = do
+        doFM_Case who m_chk loc m_pay con = do
           at <- withAt id
           let a = srcloc2annot at
           let decodePay' = \case
@@ -1719,9 +1720,11 @@ evalForm f args = do
                   Just pp -> decodePay decodePay' pp
                   Nothing -> return $ JSDecimal a "0"
           let default_pay = jsArrowExpr a [JSIdentifier a "_"] def_pay
-          let y = fromMaybe default_pay my
-          w <- slvParticipant_part =<< (snd <$> evalExpr we)
-          let fc = ForkCase at we (bunpack w) x y z
+          let pay = fromMaybe default_pay m_pay
+          let default_chk = jsArrowStmts a [] []
+          let chk = fromMaybe default_chk m_chk
+          w <- slvParticipant_part =<< (snd <$> evalExpr who)
+          let fc = ForkCase at who (bunpack w) loc chk pay con
           go $ p {slf_cases = slf_cases <> [fc]}
     SLForm_parallel_reduce -> do
       slpr_at <- withAt id
@@ -1764,11 +1767,10 @@ evalForm f args = do
         makeTimeoutArgs mode aa = Just (mode, fst aa, snd aa)
         retTimeout prm aa = go $ p {slpr_mtime = makeTimeoutArgs prm aa}
     SLForm_Part_ToConsensus p@(ToConsensusRec {..}) -> do
-      let proc = \case
-            JSExpressionParen _ e _ -> proc e
-            JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s ->
-              return $ jsArrowBodyToBlock dt_s
-            _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
+      let mustBeThunk = \case
+            JSExpressionParen _ e _ -> mustBeThunk e
+            thnk@(JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ _) -> return $ thnk
+            _ -> expect_ $ Err_ExpectedThunk
       case slptc_mode of
         Just TCM_Publish -> do
           at <- withAt id
@@ -1787,10 +1789,15 @@ evalForm f args = do
           zero_args
           go $ p {slptc_api = True}
         Just TCM_Check -> do
-          x <- one_arg >>= proc
+          x <- one_arg >>= mustBeThunk
           go $ p { slptc_check = Just x }
         Just TCM_Timeout -> do
           at <- withAt id
+          let proc = \case
+                JSExpressionParen _ e _ -> proc e
+                JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s ->
+                  return $ jsArrowBodyToBlock dt_s
+                _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
           x <-
             case args of
               [de] -> return $ (at, de, Nothing)
@@ -4652,7 +4659,10 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
   let amt_req = maybe (JSDecimal ann "0") (\f -> jsCall ann f []) slptc_amt_req
   let when_e = fromMaybe (JSLiteral ann "true") slptc_whene
   let mtime = slptc_timeout
-  let check_ss = maybe [] jsBlockToStmts slptc_check
+  let evalChecks = do
+        chk_ss <- jsBlockToStmts . snd <$> deconstructFun (fromMaybe (noop JSNoAnnot 0) slptc_check)
+        sco <- asks e_sco
+        void $ locSco (sco { sco_must_ret = RS_ImplicitNull }) $ evalStmt chk_ss
   at <- withAt id
   st <- readSt id
   ensure_mode SLM_Step "to consensus"
@@ -4674,7 +4684,7 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
           locWho who $
             locSt st_lpure $
               captureLifts $ do
-                _ <- evalStmt check_ss
+                evalChecks
                 let repeat_dv = M.lookup who pdvs
                 ds_isClass <- is_class who
                 ds_msg <- mapM (\v -> snd <$> (compileTypeOf =<< ensure_public =<< evalId "publish msg" v)) msg
@@ -4742,7 +4752,7 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
       setSt st_recv
       sco_recv <- sco_update_and_mod recv_imode recv_env recv_env_mod
       locSco sco_recv $ do
-        _ <- evalStmt check_ss
+        evalChecks
         let req_rator = SLV_Prim $ SLPrim_claim CT_Require
         -- Initialize and distinctize tokens
         bv <- let f = map SLV_DLVar in evalDistinctTokens (f old_toks) (f toks)
@@ -4964,26 +4974,6 @@ doForkAPI2Case args = do
   let dotdom2 = JSSpreadExpression a $ dom2
   let sp = a2sp a
   let e2s = flip JSExpressionStatement sp
-  let mkx xp = jsThunkStmts xpa [jsConst xpa dom (readJsExpr "declassify(interact.in())"), e2s (jsCall xpa xp [dotdom]), JSReturn xpa (Just $ jsObjectLiteral xpa $ M.fromList [("msg", dom)]) sp]
-        where
-          xpa = jsa xp
-  let x = mkx $ jsArrowStmts a [dotdom2] [e2s $ JSUnaryExpression (JSUnaryOpVoid a) dom2]
-  -- Check if tuple
-  let mky y = case y of
-        JSArrayLiteral _ xs _
-          | pay : req : _ <- jsa_flatten xs ->
-            jsArrayLiteral ya [callWithDom pay, callWithDom req]
-        ow ->
-          jsArrayLiteral ya [callWithDom ow, noop ya 1]
-        where
-          ya = jsa y
-          callWithDom f = jsArrowExpr ya [dom] $ jsCall ya f [dotdom]
-  let doLog w = do
-        who_str <- jsString a . bunpack <$> expectParticipant w
-        return $ jsCall a (jid ".emitLog") [jidg "rng", who_str]
-  let mkzOnly w = jsCall wa (JSMemberDot w wa (jid "only")) [jsThunkStmts wa [JSIf wa wa (jsCall wa (jid "didPublish") []) wa $ JSExpressionStatement (jsCall wa (JSMemberDot (jid "interact") wa (jid "out")) [dom, jidg "rngl"]) sp]]
-        where
-          wa = jsa w
   let jsInlineCall f fargs =
         case f of
           JSExpressionParen _ e _ -> jsInlineCall e fargs
@@ -4993,19 +4983,53 @@ doForkAPI2Case args = do
             let ss' = [jsConst a' (jsArrayLiteral a' pargs) (jsArrayLiteral a fargs)]
             return $ ss' <> ss
           _ -> expect_ $ Err_Fork_ConsensusBadArrow f
-  let mkz w z = do
+  let mkx xp mc = do
+        chk_ss <- case mc of
+                    Nothing -> return []
+                    Just c  -> jsInlineCall c [dotdom]
+        return $ jsThunkStmts xpa $
+                    [jsConst xpa dom (readJsExpr "declassify(interact.in())")] <>
+                    chk_ss <>
+                    [ e2s (jsCall xpa xp [dotdom]), JSReturn xpa (Just $ jsObjectLiteral xpa $ M.fromList [("msg", dom)]) sp]
+        where
+          xpa = jsa xp
+  locd <- flip mkx Nothing $ jsArrowStmts a [dotdom2] [e2s $ JSUnaryExpression (JSUnaryOpVoid a) dom2]
+  -- Check if tuple
+  let callWithDom a' f = jsArrowExpr a' [dom] $ jsCall a' f [dotdom]
+  let mky y = case y of
+        JSArrayLiteral _ xs _
+          | pay : req : _ <- jsa_flatten xs ->
+            jsArrayLiteral ya [callWithDom ya pay, callWithDom ya req]
+        ow ->
+          jsArrayLiteral ya [callWithDom ya ow, noop ya 1]
+        where
+          ya = jsa y
+  let doLog w = do
+        who_str <- jsString a . bunpack <$> expectParticipant w
+        return $ jsCall a (jid ".emitLog") [jidg "rng", who_str]
+  let mkzOnly w = jsCall wa (JSMemberDot w wa (jid "only")) [jsThunkStmts wa [JSIf wa wa (jsCall wa (jid "didPublish") []) wa $ JSExpressionStatement (jsCall wa (JSMemberDot (jid "interact") wa (jid "out")) [dom, jidg "rngl"]) sp]]
+        where
+          wa = jsa w
+  let mkz w mc z = do
         log' <- doLog w
         let za = jsa z
-        z' <- locAtf (srcloc_jsa "consensus block" za) $
-                jsInlineCall z [dotdom, jsArrowStmts za [jidg "rng"] [jsConst za (jidg "rngl") log', e2s $ mkzOnly w]]
-        return $ jsArrowStmts za [dom] z'
-  let mkz' w l z = do
-        z' <- mkz w z
+        chks <- case mc of
+                  Nothing -> return []
+                  Just c -> jsInlineCall c [dotdom]
+        z' <- locAtf (srcloc_jsa "consensus block" za) $ jsInlineCall z [dotdom, jsArrowStmts za [jidg "rng"] [jsConst za (jidg "rngl") log', e2s $ mkzOnly w]]
+        return $ jsArrowStmts za [dom] $ chks <> z'
+  let mkz' w l mc z = do
+        z' <- mkz w mc z
         return $ [w] <> l <> [z']
   case args of
-    [w, xp, y, z] -> mkz' w [mkx xp, mky y] z
-    [w, y, z] -> mkz' w [x, mky y] z
-    [w, z] -> mkz' w [x] z
+    [who, chk, locp, pay, con] -> do
+      loc' <- mkx locp (Just chk)
+      mkz' who [loc', mky pay] (Just chk) con
+    [who, locp, pay, con] -> do
+      loc' <- mkx locp Nothing
+      mkz' who [loc', mky pay] Nothing con
+    [who, pay, con] -> mkz' who [locd, mky pay] Nothing con
+    [who, con] -> mkz' who [locd] Nothing con
     --- Delay error to next level
     ow -> return ow
 
@@ -5114,9 +5138,17 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
           _ -> expect_ $ Err_Fork_ConsensusBadArrow after_e
           where
             afterAt = srcloc_jsa "consensus block" (jsa after_e)
+  let augWithChecks chk e = do
+        chk_ss <- jsBlockToStmts . snd <$> deconstructFun chk
+        (e_args, e_bl) <- deconstructFun e
+        let e_ss = jsBlockToStmts e_bl
+        return $ jsArrowStmts (jsa e) e_args $ chk_ss <> e_ss
   let go pcases = do
-        let (ats, whos, who_es, before_es, paytup_es, after_es) =
-              unzip6 $ map (\ForkCase {..} -> (fc_at, fc_who, fc_who_e, fc_before, fc_pay, fc_after)) pcases
+        (ats, whos, who_es, before_es, paytup_es, after_es) <-
+              unzip6 <$> mapM (\ForkCase {..} -> do
+                before_e' <- augWithChecks fc_check fc_before
+                after_e'  <- augWithChecks fc_check fc_after
+                return $ (fc_at, fc_who, fc_who_e, before_e', fc_pay, after_e')) pcases
         let (pay_es, pay_reqs) = unzip $ map (splitPayExpr a) paytup_es
         let who = hdDie whos
         let who_e = hdDie who_es
@@ -5223,7 +5255,9 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   (isFork, before_tc_ss, pay_e, pay_req, tc_head_e, after_tc_ss, local_penvs) <-
     case cases of
       [ForkCase {..}] -> do
-        (_, only_body) <- forkOnlyHelp fc_who_e fc_at fc_before msg_e when_e loc_id
+        before_e' <- augWithChecks fc_check fc_before
+        after_e'  <- augWithChecks fc_check fc_after
+        (_, only_body) <- forkOnlyHelp fc_who_e fc_at before_e' msg_e when_e loc_id
         let tc_head_e = fc_who_e
         let before_tc_ss = [makeOnly fc_who_e only_body]
         let pa = jsa fc_pay
@@ -5231,7 +5265,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let pay_e = JSCallExpression fc_pay_e pa (JSLOne msg_e) pa
         let pay_req = jsArrowExpr pa [] $ jsCall pa fc_pay_req [msg_e]
         isApi <- is_api $ bpack fc_who
-        (_, after_tc_ss) <- getAfter fc_who_e isApi fc_who False (fc_at, fc_after, 0 :: Int, T_Null)
+        (_, after_tc_ss) <- getAfter fc_who_e isApi fc_who False (fc_at, after_e', 0 :: Int, T_Null)
         return $ (False, before_tc_ss, pay_e, pay_req, tc_head_e, after_tc_ss, mempty)
       _ -> do
         casel <- mapM go $ groupBy forkCaseSameParticipant cases
@@ -5427,6 +5461,7 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let api2case (api_at, api_es) = locAt api_at $ do
         (api_at,) <$> doForkAPI2Case api_es
   pr_cases' <- (pr_cases <>) <$> mapM api2case pr_apis
+  liftIO $ putStrLn $ "pr_cases: " <> show (pretty pr_cases')
   let forkcase fork_eN (case_at, case_es) = do
         let ca = ao case_at
         jsCall ca (JSMemberDot fork_eN ca (jid "case"))
