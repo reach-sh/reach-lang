@@ -283,6 +283,7 @@ jsPrimApply = \case
   PEQ t -> jsApply_ui t "stdlib.eq"
   PGE t -> jsApply_ui t "stdlib.ge"
   PGT t -> jsApply_ui t "stdlib.gt"
+  SQRT t -> jsApply_ui t "stdlib.sqrt"
   UCAST x y -> \a -> jsApply "stdlib.cast" $ [ jsUIntTy x, jsUIntTy y ] <> a
   LSH -> jsApply "stdlib.lsh"
   RSH -> jsApply "stdlib.rsh"
@@ -1100,7 +1101,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 14
+reachBackendVersion = 15
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do

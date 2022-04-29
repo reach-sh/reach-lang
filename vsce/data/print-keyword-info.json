@@ -800,6 +800,9 @@
   "fxsqrt": {
     "CompletionItemKind": "Function"
   },
+  "fxsqrtApprox": {
+    "CompletionItemKind": "Function"
+  },
   "fxsub": {
     "CompletionItemKind": "Function"
   },
@@ -1086,6 +1089,9 @@
     "CompletionItemKind": "Function"
   },
   "sqrt": {
+    "CompletionItemKind": "Operator"
+  },
+  "sqrtApprox": {
     "CompletionItemKind": "Function"
   },
   "static": {

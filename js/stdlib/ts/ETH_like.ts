@@ -92,7 +92,7 @@ type Interface = real_ethers.utils.Interface;
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-const reachBackendVersion = 14;
+const reachBackendVersion = 15;
 const reachEthBackendVersion = 7;
 export type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,

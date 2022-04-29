@@ -577,6 +577,7 @@ base_env_slvals =
   , ("polyMod", SLV_Prim $ SLPrim_mod)
   , ("digestEq", SLV_Prim $ SLPrim_op S_DIGEST_EQ)
   , ("addressEq", SLV_Prim $ SLPrim_op S_ADDRESS_EQ)
+  , ("sqrt", SLV_Prim $ SLPrim_op S_SQRT)
   , ("isType", SLV_Prim SLPrim_is_type)
   , ("typeEq", SLV_Prim SLPrim_type_eq)
   , ("typeOf", SLV_Prim SLPrim_typeOf)
@@ -2094,6 +2095,7 @@ evalPrimOp sp sargs = do
                   False -> snd <$> typeOfBytes b
           make_var_ (T_UInt uintWord) [ae]
         _ -> expect_ $ Err_Apply_ArgCount at 1 (length args)
+    S_SQRT -> n2n iSqrt
     S_ADD ->
       case args of
         [SLV_Int _ mt 0, rhs] | mtOkay mt rhs -> static rhs
@@ -2191,6 +2193,14 @@ evalPrimOp sp sargs = do
         _ -> do
           dom <- arg1ty 2
           make_var [dom, dom] T_Bool args
+    n2n op =
+      case args of
+        [SLV_Int _ mt lhs] -> do
+          at <- withAt id
+          static $ SLV_Int at mt $ op lhs
+        _ -> do
+          dom <- arg1ty 1
+          make_var [dom] dom args
     nn2n op =
       case args of
         [SLV_Int _ mt1 lhs, SLV_Int _ mt2 rhs] | mtOkay' mt1 mt2 -> do

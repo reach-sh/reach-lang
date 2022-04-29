@@ -1,23 +1,11 @@
-Verifying knowledge assertions
-Verifying for generic connector
-  Verifying when ALL participants are honest
-Verification failed:
-  when ALL participants are honest
-  of theorem: assert
-  msg: "fxsqrt: Cannot find the square root of a negative number."
-  at reach standard library:316:9:application
-  at ./fxsqrt.rsh:10:30:application call to "fxsqrt" (defined at: reach standard library:315:30:function exp)
-  at ./fxsqrt.rsh:9:13:application call to [unknown function] (defined at: ./fxsqrt.rsh:9:17:function exp)
+reachc: error[RE0000]: Invalid function application. Expected 1 args, got 2 for function defined at reach standard library:315:27:function exp
 
-  assert(false);
+  ./fxsqrt.rsh:10:30:application
 
-  Verifying when NO participants are honest
-Checked 2 theorems; 1 failures :'(
-warning[RW0004]: There are no publications in the application.
+  10|         interact.show( fxsqrt( fx(1)(Neg, 9) , 10 ) );
 
-  ./fxsqrt.rsh:5:12:application
+Trace:
+  in [unknown function] from (./fxsqrt.rsh:9:17:function exp) at (./fxsqrt.rsh:9:13:application)
 
-  5|   Reach.App(
-
-For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0004
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0000
 
