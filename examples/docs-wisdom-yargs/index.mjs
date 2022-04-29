@@ -1,13 +1,24 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 import {ask} from '@reach-sh/stdlib';
+import yargs from 'yargs';
 
-if (process.argv.length < 3 || ['seller', 'buyer'].includes(process.argv[2]) == false) {
-  console.log('Usage: reach run index [seller|buyer]');
-  process.exit(0);
-}
-const role = process.argv[2];
-console.log(`Your role is ${role}`);
+const argv = yargs(process.argv.slice(2))
+  .option('help', {
+    alias: 'h',
+    describe: 'Show help.',
+    type: 'boolean'
+  })
+  .option('role', {
+    alias: 'r',
+    describe: 'Specify role.',
+    type: 'string',
+    choices: ['seller', 'buyer'],
+    default: 'seller'
+  })
+  .argv
+
+const role = argv.r;
 
 const stdlib = loadStdlib(process.env);
 const suStr = stdlib.standardUnit;
