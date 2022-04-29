@@ -2226,7 +2226,7 @@ load: ./examples/api-call/index.rsh
 range: 47 - 49
 ```
 
-:::note 
+:::note
 Since `{!rsh} ParticipantClass` is being deprecated, it is preferable to use `{!rsh} API`.
 :::
 
@@ -2347,6 +2347,29 @@ You can change the domain of a function by altering the type of its parameters o
 ## {#RE0132} RE0132
 
 This error indicates you had extra fields in `{!rsh} REMOTE_FUN.ALGO` that are not supported.
+
+## {#RE0132} RE0133
+
+This error indicates that a thunk, or function with no parameters, was expected but something else was provided.
+
+For example, the code below erroneously provides a function with one parameter to the `{!rsh} .check` function:
+
+```reach
+A.publish(x)
+  .check((x) => {
+    check(x > 0, "x > 0");
+  });
+```
+
+You can fix this error by removing the unnecessary function parameter.
+
+```reach
+A.publish(x)
+  .check(() => {
+    check(x > 0, "x > 0");
+  });
+```
+
 
 ## {#REP0000} REP0000
 

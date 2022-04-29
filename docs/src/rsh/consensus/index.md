@@ -147,7 +147,7 @@ where `{!rsh} LHS` is a valid left-hand side of an identifier definition where t
 if `{!rsh} COND_EXPR` is true, then the block executes,
 and if not, then the loop terminates and control transfers to the continuation of the while statement.
 The identifiers bound by `{!rsh} LHS` are bound within `{!rsh} DEFINE_BLOCK`, `{!rsh} INVARIANT_EXPR`, `{!rsh} COND_EXPR`, `{!rsh} BLOCK`, and the tail of the while statement.
- 
+
 :::note
 Read about finding [loop invariants](##guide-loop-invs) in the Reach guide.
 :::
@@ -252,10 +252,12 @@ const LHS =
   .while(COND_EXPR)
   .paySpec(TOKENS_EXPR)
   .case(PART_EXPR,
+    CHECK_EXPR,
     PUBLISH_EXPR,
     PAY_EXPR,
     CONSENSUS_EXPR)
   .api(API_EXPR,
+    CHECK_EXPR,
     ASSUME_EXPR,
     PAY_EXPR,
     CONSENSUS_EXPR)
@@ -333,6 +335,7 @@ invariant(INVARIANT_EXPR);
 while(COND_EXPR) {
   fork()
   .case(PART_EXPR,
+    CHECK_EXPR,
     PUBLISH_EXPR,
     PAY_EXPR,
     (m) => {
