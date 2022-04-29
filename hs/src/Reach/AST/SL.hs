@@ -634,6 +634,7 @@ data SPrimOp
   | S_PEQ
   | S_PGE
   | S_PGT
+  | S_SQRT
   | S_UCAST UIntTy
   | S_IF_THEN_ELSE
   | S_DIGEST_EQ
@@ -664,6 +665,7 @@ sprimToPrim dom rng = \case
   S_PEQ -> PEQ dom
   S_PGE -> PGE dom
   S_PGT -> PGT dom
+  S_SQRT -> SQRT dom
   S_UCAST _ -> UCAST dom rng
   S_IF_THEN_ELSE -> IF_THEN_ELSE
   S_DIGEST_EQ -> DIGEST_EQ

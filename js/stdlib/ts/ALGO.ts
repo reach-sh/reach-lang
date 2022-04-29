@@ -95,7 +95,7 @@ import { window, process } from './shim';
 import { sha512_256 } from 'js-sha512';
 export const {
   add, sub, mod, mul, div, band, bior, bxor, eq, ge, gt, le, lt,
-  add256, sub256, mod256, mul256, div256, band256, bior256, bxor256, eq256, ge256, gt256, le256, lt256,
+  add256, sub256, mod256, mul256, div256, band256, bior256, bxor256, eq256, ge256, gt256, le256, lt256, sqrt, sqrt256,
   cast, muldiv,
   protect, assert, Array_set,
   bytesEq, digestEq, digest_xor, bytes_xor, btoiLast8
@@ -157,7 +157,7 @@ export type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 14;
+const reachBackendVersion = 15;
 const reachAlgoBackendVersion = 10;
 export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,

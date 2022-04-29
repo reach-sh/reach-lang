@@ -1327,6 +1327,7 @@ cprim = \case
   PEQ t -> bcall t "=="
   PGT t -> bcall t ">"
   PGE t -> bcall t ">="
+  SQRT t -> bcallz t "sqrt"
   UCAST from to -> \case
     [v] -> do
       case (from, to) of
