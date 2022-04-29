@@ -1,6 +1,8 @@
 'reach 0.1';
 
-const commonInteract = {};
+const commonInteract = {  
+  reportCancellation: Fun([], Null)
+};
 const sellerInteract = {
   ...commonInteract,
   price: UInt,
@@ -25,6 +27,8 @@ export const main = Reach.App(() => {
   B.publish(willBuy);
   if (!willBuy) {
     commit();
+    each([S, B], () => interact.reportCancellation());
+    exit();
   } else {
     commit();
   }
