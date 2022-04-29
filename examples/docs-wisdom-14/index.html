@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wisdom for Sale</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" crossorigin="anonymous">
+  <style>
+    textarea {
+      height: 200px;
+    }
+
+    label.form-label {
+      color: #ff6680;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+
+    <div class="row my-3">
+      <div class="col-12 col-md-9 mb-3">
+        <h2>Wisdom for Sale</h2>
+      </div>
+      <div class="col-12 col-md-3 mb-3">
+        <select class="form-select" id="devnets">
+          <option selected>Choose a DevNet</option>
+          <option value="ALGO">Algorand</option>
+          <option value="CFX">Conflux</option>
+          <option value="ETH">Ethereum</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12 col-md-6">
+        <h3 class="mb-3">Seller</h3>
+        <div class="row gx-2">
+          <div class="col-4">
+            <div class="mb-3">
+              <label class="form-label">Balance</label>
+              <input id="seller-balance" type="text" class="form-control" disabled>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="mb-3">
+              <label class="form-label">Price</label>
+              <select class="form-select" id="seller-price">
+                <option value=5 selected>5</option>
+                <option value=10>10</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="mb-3">
+              <label class="form-label">Unit</label>
+              <input type="text" class="form-control unit" disabled>
+            </div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Wisdom</label>
+          <div class="row gx-2">
+            <div class="col">
+              <input id="seller-wisdom" type="text" class="form-control" value="Build healthy community.">
+            </div>
+            <div class="col-auto">
+              <button id="deploy-btn" type="submit" class="btn btn-secondary dar" disabled>Deploy</button>
+            </div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Log</label>
+          <textarea id="seller-log" class="form-control" disabled></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Contract Information</label>
+          <input id="seller-contract-info" type="text" class="form-control" disabled>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <h3 class="mb-3">Buyer</h3>
+        <div class="row gx-2">
+          <div class="col-4">
+            <div class="mb-3">
+              <label class="form-label">Balance</label>
+              <input id="buyer-balance" type="text" class="form-control" disabled>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="mb-3">
+              <label class="form-label">Price</label>
+              <input id="buyer-price" type="text" class="form-control" disabled>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="mb-3">
+              <label class="form-label">Unit</label>
+              <input type="text" class="form-control unit" disabled>
+            </div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Wisdom</label>
+          <div class="row gx-2">
+            <div class="col">
+              <input id="buyer-wisdom" type="text" class="form-control" disabled>
+            </div>
+            <div class="col-auto">
+              <button id="attach-btn" type="submit" class="btn btn-secondary dar" disabled>Attach</button>
+              <button id="reset-btn" type="submit" class="btn btn-secondary dar" disabled>Reset</button>
+            </div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Log</label>
+          <textarea id="buyer-log" class="form-control" disabled></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="confirm-modal" class="modal fade" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Confirm</h5>
+            <button id="close-btn" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">Purchase wisdom for <span></span>?</div>
+          <div class="modal-footer">
+            <button id="yes-btn" type="button" class="btn btn-success" data-bs-dismiss="modal">Yes</button>
+            <button id="no-btn" type="button" class="btn btn-danger" data-bs-dismiss="modal">No</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@reach-sh/stdlib@latest/dist/browser/reachsdk.min.js"></script>
+  <script src="webapp.mjs" type="module"></script>
+
+</body>
+
+</html>
