@@ -59,6 +59,19 @@ contract Stdlib {
   function unsafeMul(uint256 x, uint256 y) internal pure returns (uint256 z) {
     unchecked { z = x * y; } }
 
+  function safeSqrt(uint256 y) internal pure returns (uint256 z) {
+    if (y > 3) {
+      z = y;
+      uint256 x = y / 2 + 1;
+      while (x < z) {
+        z = x;
+        x = (y / x + x) / 2;
+      }
+    } else if (y != 0) {
+      z = 1;
+    }
+  }
+
   function reachRequire(bool succ, uint256 errMsg) internal pure {
     if ( ! succ ) {
       revert ReachError(errMsg);

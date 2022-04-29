@@ -1903,22 +1903,28 @@ When used inside of a local step or export, it will generate an `{!rsh} assume` 
 When used inside of a consensus step, it will generate a `{!rsh} require` claim.
 When used inside of any other step, it will generate an `{!rsh} assert` claim.
 
-
 ### `sqrt`
 
 @{ref("rsh", "sqrt")}
 ```reach
-sqrt(81, 10)
+sqrt(81)
 ```
 
- Calculates an approximate square root of the first argument. This method utilizes
-the [Babylonian Method](https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method) for computing
-the square root. The second argument must be a `{!rsh} UInt` whose value is known at compile time, which represents the number
-of iterations the algorithm should perform.
+`{!rsh} sqrt(x)` returns the largest integer `i` such that `i * i <= x`.
 
-For reference, when performing `{!rsh} 5` iterations, the algorithm can reliably calculate the square root
-up to `32` squared, or `1,024`. When performing `{!rsh} 10` iterations, the algorithm can reliably calculate the
-square root up to `580` squared, or `336,400`.
+### `sqrtApprox`
+
+@{ref("rsh", "sqrtApprox")}
+```reach
+sqrtApprox(81, 10)
+```
+
+Calculates an approximate square root of the first argument.
+This method utilizes the [Babylonian Method](https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method) for computing the square root.
+The second argument must be a `{!rsh} UInt` whose value is known at compile time, which represents the number of iterations the algorithm should perform.
+
+For reference, when performing `{!rsh} 5` iterations, the algorithm can reliably calculate the square root up to `32` squared, or `1,024`.
+When performing `{!rsh} 10` iterations, the algorithm can reliably calculate the square root up to `580` squared, or `336,400`.
 
 ### `pow`
 
@@ -2084,8 +2090,10 @@ will be multiplied by the scale factor to provide a more precise answer. For exa
  `{!rsh} fxfloor(x)` returns the greatest integer not greater than `x`.
 
 @{ref("rsh", "fxsqrt")}
- `{!rsh} fxsqrt(x, k)` approximates the sqrt of the fixed number, `x`, using
-`k` iterations of the `{!rsh} sqrt` algorithm.
+ `{!rsh} fxsqrt(x, k)` returns the square root of the fixed number, `x`.
+
+@{ref("rsh", "fxsqrtApprox")}
+ `{!rsh} fxsqrtApprox(x, k)` approximates the square root of the fixed number, `x`, using `k` iterations of the `{!rsh} sqrtApprox` algorithm.
 
 @{ref("rsh", "fxpow")}
 `{!rsh} const base  = 2.0;

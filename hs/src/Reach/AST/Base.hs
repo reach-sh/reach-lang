@@ -324,6 +324,11 @@ uint256 = True
 uint256_Max :: Integer
 uint256_Max = 2 ^ (256 :: Integer) - 1
 
+iSqrt :: Integer -> Integer
+iSqrt x = floor $ sqrt x'
+  where
+    x' :: Double = fromIntegral x
+
 data PrimOp
   = ADD UIntTy
   | SUB UIntTy
@@ -335,6 +340,7 @@ data PrimOp
   | PEQ UIntTy
   | PGE UIntTy
   | PGT UIntTy
+  | SQRT UIntTy
   | UCAST UIntTy UIntTy
   | IF_THEN_ELSE
   | DIGEST_EQ
@@ -366,6 +372,7 @@ instance Pretty PrimOp where
     PEQ t -> uitp t <> "=="
     PGE t -> uitp t <> ">="
     PGT t -> uitp t <> ">"
+    SQRT t -> uitp t <> "sqrt"
     UCAST x y -> "cast" <> parens (uitp x <> "," <> uitp y)
     IF_THEN_ELSE -> "ite"
     DIGEST_EQ -> "=="

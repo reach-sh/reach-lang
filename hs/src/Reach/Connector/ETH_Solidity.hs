@@ -509,6 +509,7 @@ solPrimApply = \case
   PEQ _ -> binOp "=="
   PGE _ -> binOp ">="
   PGT _ -> binOp ">"
+  SQRT _ -> \args -> return $ solApply "safeSqrt" args
   UCAST _ _ -> \case
     [x] -> return x
     _ -> impossible "ucast"

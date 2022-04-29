@@ -313,6 +313,7 @@ smtPrimOp at p dargs =
     PEQ _ -> app "="
     PGE _ -> bvapp "bvuge" ">="
     PGT _ -> bvapp "bvugt" ">"
+    SQRT _ -> app "UInt_sqrt"
     UCAST _ _ -> \case
       [x] -> return x
       _ -> impossible "ucast"
