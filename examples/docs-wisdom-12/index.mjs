@@ -47,7 +47,7 @@ if (role === 'seller') {
 } else {
   const buyerInteract = {
     ...commonInteract(role),
-    confirmPurchase: async (price) => await ask.ask(`Do you want to purchase wisdom for ${toSU(price)} ${suStr}?`, ask.yesno)
+    confirmPurchase: async (price) => await ask.ask(`Do you want to purchase wisdom for ${toSU(price)} ${suStr}?`, ask.yesno),
 	reportWisdom: (wisdom) => console.log(`Your new wisdom is "${wisdom}"`)
   };
   
