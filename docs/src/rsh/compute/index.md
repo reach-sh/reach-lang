@@ -1665,7 +1665,7 @@ range: 26-29
 ```
 	
 In this example, on line 26, `D` publishes the values for `x` and `tok`, which creates the contract.
-After the `publish`, now `getContract` is called and it returns the value `x` in token `tok` of the contract created in the publication.
+After the `{rsh} publish`, now `{rsh} getContract` is called and it returns the value `x` in token `tok` of the contract created in the publication.
 
 ### `getAddress`
 
