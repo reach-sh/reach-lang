@@ -20,11 +20,13 @@ const buyerInteract = {
 export const main = Reach.App(() => {
   const S = Participant('Seller', sellerInteract);
   const B = Participant('Buyer', buyerInteract);
+  const V = View('Main', { price: UInt });
   init();
   
   S.only(() => { const price = declassify(interact.price); });
   S.publish(price);
   S.interact.reportReady(price);
+  V.price.set(price);
   commit();
 
   B.only(() => { const willBuy = declassify(interact.confirmPurchase(price)); });
