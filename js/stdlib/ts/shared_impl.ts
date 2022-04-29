@@ -686,6 +686,22 @@ export const makeRandom = (width:number) => {
   return { randomUInt, hasRandom };
 };
 
+const bnSqrt = (y:BigNumber) => {
+  let acc = [ y, y.div(2).add(1) ];
+  let ans = undefined;
+  while ( ans === undefined ) {
+    let [ z, x ] = acc;
+    if (x.lt(2)) {
+      ans = x;
+    } else if (x.lt(z)) {
+      acc = [ x, y.div(x).add(x).div(2) ];
+    } else {
+      ans = x;
+    }
+  }
+  return ans;
+};
+
 export type UIntTy = boolean;
 export const UInt256_max =
   ethers.BigNumber.from(2).pow(256).sub(1);
@@ -695,8 +711,8 @@ export const makeArith = (m:BigNumber): Arith => {
   const checkM = (x: BigNumber) =>
     checkedBigNumberify(`internal`, m, x);
 
-  type BNOp = 'add'|'sub'|'mod'|'mul'|'div'|'and'|'or'|'xor';
-  const doBN = (f:BNOp, a:BigNumber, b:BigNumber) => a[f](b);
+  type BNOp2 = 'add'|'sub'|'mod'|'mul'|'div'|'and'|'or'|'xor';
+  const doBN2 = (f:BNOp2, a:BigNumber, b:BigNumber) => a[f](b);
   const getCheck = (w:UIntTy) => w ? checkB : checkM;
   const cast = (from:UIntTy, to:UIntTy, x:num): BigNumber => {
     const checkF = getCheck(from);
@@ -704,9 +720,22 @@ export const makeArith = (m:BigNumber): Arith => {
     return checkT(checkF(bigNumberify(x)));
   };
 
-  const liftX = (check:(x:BigNumber) => BigNumber) => (f:BNOp) => (a:num, b:num): BigNumber => check(doBN(f, bigNumberify(a), bigNumberify(b)));
-  const liftB = liftX(checkB);
-  const liftM = liftX(checkM);
+  const liftX2 = (check:(x:BigNumber) => BigNumber) => (f:BNOp2) => (a:num, b:num): BigNumber => check(doBN2(f, bigNumberify(a), bigNumberify(b)));
+  const liftB = liftX2(checkB);
+  const liftM = liftX2(checkM);
+
+  type BNOp1 = 'sqrt';
+  const doBN1 = (f:BNOp1, a:BigNumber) => {
+    if ( f === 'sqrt' ) {
+      return bnSqrt(a);
+    } else {
+      throw Error('impossible BNOp1');
+    }
+  };
+  const liftX1 = (check:(x:BigNumber) => BigNumber) => (f:BNOp1) => (a:num): BigNumber => check(doBN1(f, bigNumberify(a)));
+  const liftB1 = liftX1(checkB);
+  const liftM1 = liftX1(checkM);
+
   const add = liftM('add');
   const sub = liftM('sub');
   const mod = liftM('mod');
@@ -715,6 +744,7 @@ export const makeArith = (m:BigNumber): Arith => {
   const band = liftM('and');
   const bior = liftM('or');
   const bxor = liftM('xor');
+  const sqrt = liftM1('sqrt');
   const add256 = liftB('add');
   const sub256 = liftB('sub');
   const mod256 = liftB('mod');
@@ -723,13 +753,14 @@ export const makeArith = (m:BigNumber): Arith => {
   const band256 = liftB('and');
   const bior256 = liftB('or');
   const bxor256 = liftB('xor');
+  const sqrt256 = liftB1('sqrt');
   const muldiv = (a: num, b: num, c: num): BigNumber => {
     const prod = bigNumberify(a).mul(bigNumberify(b));
     return checkM( prod.div(bigNumberify(c)) );
   };
   return {
-    add, sub, mod, mul, div, band, bior, bxor,
-    add256, sub256, mod256, mul256, div256, band256, bior256, bxor256,
+    add, sub, mod, mul, div, band, bior, bxor, sqrt,
+    add256, sub256, mod256, mul256, div256, band256, bior256, bxor256, sqrt256,
     cast, muldiv };
 };
 

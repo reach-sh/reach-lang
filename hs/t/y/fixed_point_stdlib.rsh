@@ -36,7 +36,8 @@ export const main = Reach.App(
       assert(fxmul(fx12_345, fx45_42) == fx560_70990);
       assert(fxmul(fx12_345, fxn45_42) == fxn560_70990);
       assert(fxdiv(fx34_56, fx1_234, 10000) == fx28_006);
-      assert(fxeq(fxsqrt(fx34_56, 10), fx5_8));
+      assert(fxeq(fxsqrt(fx34_56), fx5_8));
+      assert(fxeq(fxsqrtApprox(fx34_56, 10), fx5_8));
       assert(fxeq(fxpowui(fx5_8, 3, 10), fx195_112));
       assert(fxfloor(fx1_234) == +1);
       assert(fxfloor(fxn45_42) == -46);

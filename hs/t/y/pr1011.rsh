@@ -3,7 +3,7 @@ const XFixedPoint = Object({ scale: UInt, i: UInt });
 const XmkFixedPoint = (scale) => (i) =>
   ({ scale, i });
 const XfixedPointSqrt = (x, k) => {
-  return { i : sqrt(x.i, k), scale: x.scale / sqrt(x.scale, k) };
+  return { i : sqrtApprox(x.i, k), scale: x.scale / sqrtApprox(x.scale, k) };
 }
 export const main = Reach.App(
   {

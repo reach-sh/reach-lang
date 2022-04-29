@@ -14,6 +14,7 @@
 (declare-fun UInt_band (UInt UInt) UInt)
 (declare-fun UInt_bior (UInt UInt) UInt)
 (declare-fun UInt_bxor (UInt UInt) UInt)
+(declare-fun UInt_sqrt (UInt) UInt)
 
 (declare-sort Bytes 0)
 (declare-fun bytes0 () Bytes)
