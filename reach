@@ -148,7 +148,7 @@ dGlhdG9yIjogInt7SU5JVElBVE9SfX0iIH0="
   -e 's/{{CONNECTOR_MODE}}/none/g' \
   -e 's/{{USING_VSSTUDIO_EXTENTION}}/none/g' \
   -e "s/{{INITIATOR}}/${1}/g")
-  CALL_HOME_ENDPOINT="https://y9fr4e7fyl.execute-api.us-east-2.amazonaws.com/live/submit"
+  CALL_HOME_ENDPOINT="https://log.reach.sh/submit"
 
   curl -X POST "$CALL_HOME_ENDPOINT" -d "$TRANSLATED_TEMPLATE" || exit 1
   
