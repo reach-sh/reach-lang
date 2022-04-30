@@ -185,28 +185,32 @@ restrictGraph g n = do
   let removeDisconnected = M.filterWithKey onlyConnected
   return $ M.map removeDisconnected $ removeDisconnected g
 
-ensureAllPaths :: Ord a => LPGraph a b -> a -> a -> (b -> Integer) -> IO (Maybe [a])
-ensureAllPaths g s e getc = return $ checkFrom 0 mempty s
+ensureAllPaths :: (Show a, Ord a) => String -> LPGraph a b -> a -> a -> (b -> Integer) -> IO (Maybe [a])
+ensureAllPaths rlab g s e getc = checkFrom 0 mempty s
   where
-    checkFrom t p l =
+    checkFrom t p l = do
+      loud $ rlab <> " " <> show l
+      when (elem l p) $ do
+        impossible "loop"
       case l == e of
         True ->
           case t == 1 of
-            True -> Nothing
-            False -> Just p
+            True -> return $ Nothing
+            False -> return $ Just p
         False ->
           checkChildren t (l : p) $ M.toAscList $ fromMaybe mempty $ M.lookup l g
     checkChildren t p = \case
-      [] -> Nothing
+      [] -> return $ Nothing
       (d, x) : xs -> checkEdges t p d (S.toAscList x) `cmb` checkChildren t p xs
     checkEdges t p d = \case
-      [] -> Nothing
+      [] -> return $ Nothing
       x : xs -> checkEdge t p d x `cmb` checkEdges t p d xs
     checkEdge t p d (_cs, r) =
       checkFrom (t + getc r) p d
-    cmb = \case
-      Just x -> const $ Just x
-      Nothing -> \x -> x
+    cmb mx my = do
+      mx >>= \case
+        Just x -> return $ Just x
+        Nothing -> my
 
 aarray :: [Aeson.Value] -> Aeson.Value
 aarray = Aeson.Array . Vector.fromList
@@ -639,8 +643,8 @@ type BudgetCFG = IO (Bool, Integer, Integer)
 type AnalyzeCFG = Resource -> IO Integer
 type ResourceCost = M.Map Resource Integer
 
-buildCFG :: [TEAL] -> IO (DotGraph, RestrictCFG)
-buildCFG ts = do
+buildCFG :: String -> [TEAL] -> IO (DotGraph, RestrictCFG)
+buildCFG rlab ts = do
   res_gr :: IORef (LPGraph String ResourceCost) <- newIORef mempty
   let lTop = "TOP"
   let lBot = "BOT"
@@ -770,7 +774,8 @@ buildCFG ts = do
         let analyzeCFG = longestPathBetween g' lTop lBots . getc
         let budgetCFG = budgetAnalyze g' lTop lBots (flip getc)
         return $ (gs g', analyzeCFG, budgetCFG)
-  ensureAllPaths g lTop lBots (getc R_CheckedCompletion) >>= \case
+  loud $ rlab <> " OnCompletion"
+  ensureAllPaths (rlab <> ".OnC") g lTop lBots (getc R_CheckedCompletion) >>= \case
     Nothing -> return ()
     Just p ->
       impossible $ "found a path where OnCompletion was not checked: " <> show p
@@ -798,18 +803,20 @@ data CompanionRec = CompanionRec
   , cr_del :: Integer
   }
 
-checkCost :: Notify -> Disp -> [LabelRec] -> CompanionInfo -> [TEAL] -> IO (Either String CompanionInfo)
-checkCost notify disp ls ci ts = do
+checkCost :: String -> Notify -> Disp -> [LabelRec] -> CompanionInfo -> [TEAL] -> IO (Either String CompanionInfo)
+checkCost rlab notify disp ls ci ts = do
   msgR <- newIORef mempty
   let addMsg x = modifyIORef msgR $ flip (<>) $ x <> "\n"
   caR <- newIORef (mempty :: S.Set CompanionAdds)
   let rgs lab gs = void $ disp ("." <> lab <> "dot") $ LT.toStrict $ T.render $ dotty gs
-  (gs, restrictCFG) <- buildCFG ts
+  loud $ rlab <> " buildCFG"
+  (gs, restrictCFG) <- buildCFG rlab ts
   rgs "" gs
   addMsg $ "Conservative analysis on Algorand found:"
   forM_ ls $ \LabelRec {..} -> do
     let starts_at = " starts at " <> show lr_at <> "."
     addMsg $ " * " <> lr_what <> ", which" <> starts_at
+    loud $ rlab <> " restrictCFG " <> show lr_lab
     (gs', analyzeCFG, budgetCFG) <- restrictCFG lr_lab
     when True $
       rgs (LT.unpack lr_lab <> ".") gs'
@@ -3321,21 +3328,26 @@ compile_algo env disp pl = do
   let runProg m = do
         let lab = "appApproval"
         let disp' = disp . (lab <>)
-        let rec inclAll ci = do
+        let rec r inclAll ci = do
+              let r' = r + 1
+              let rlab= "ALGO." <> show r
+              loud $ rlab <> " run"
               (ts, notify, finalize) <- run ci m
-              let ts' = optimize $ DL.toList ts
+              loud $ rlab <> " optimize"
+              let !ts' = optimize $ DL.toList ts
               let ls = if inclAll then progLs else apiLs
-              checkCost notify disp' ls ci ts' >>= \case
-                Right ci' -> rec inclAll ci'
+              loud $ rlab <> " check"
+              checkCost rlab notify disp' ls ci ts' >>= \case
+                Right ci' -> rec r' inclAll ci'
                 Left msg ->
                   case inclAll of
-                    False -> rec True ci
+                    False -> rec r' True ci
                     True -> do
                       finalize
                       when showCost $ putStr msg
                       modifyIORef resr $ M.insert "companionInfo" (Aeson.toJSON ci)
                       return ts'
-        ts' <- rec False Nothing
+        ts' <- rec (0::Integer) False Nothing
         void $ addProg lab ts'
   runProg $ do
     ai_sm <- M.fromList <$> concatMapM capis (M.toAscList ai)

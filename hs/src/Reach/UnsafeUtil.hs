@@ -11,9 +11,13 @@ module Reach.UnsafeUtil
   , unsafeReadFile
   , unsafeHashStr
   , unsafeNub
+  , unsafeLoud
+  , loud
   )
 where
 
+import Control.Monad
+import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import Reach.CommandLine (CompilerToolArgs (cta_errorFormatJson), getCompilerArgs)
@@ -56,6 +60,13 @@ unsafeHashStr = unsafePerformIO $ do
           Nothing -> fk
   try "REACHC_HASH" (try "REACH_GIT_HASH" $ return "")
 {-# NOINLINE unsafeHashStr #-}
+
+unsafeLoud :: Bool
+unsafeLoud = unsafePerformIO $ isJust <$> lookupEnv "REACHC_TRACE"
+{-# NOINLINE unsafeLoud #-}
+
+loud :: String -> IO ()
+loud = when unsafeLoud . putStrLn
 
 unsafeNub :: Eq a => [a] -> [a]
 unsafeNub = nub
