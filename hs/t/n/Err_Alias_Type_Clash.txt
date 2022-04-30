@@ -1,8 +1,8 @@
-reachc: error[RE0130]: The alias `c` is overloaded multiple types for the same parameter types.
+reachc: error[RE0131]: The alias `c` is overloaded multiple types for the same parameter types.
 
   ./Err_Alias_Type_Clash.rsh:3:30:compileDApp
 
   3| export const main = Reach.App(() => {
 
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0130
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0131
 

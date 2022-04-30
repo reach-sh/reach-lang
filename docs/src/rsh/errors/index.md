@@ -2321,6 +2321,9 @@ This error indicates that you are attempting to overload a method with multiple 
 You can fix this issue by either removing one of the overloads or changing one of the domains.
 You can change the domain of a function by altering the type of its parameters or adding/removing parameters.
 
+## {#RE0132} RE0132
+
+This error indicates you had extra fields in `{!rsh} REMOTE_FUN.ALGO` that are not supported.
 
 ## {#REP0000} REP0000
 

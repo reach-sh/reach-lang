@@ -178,7 +178,7 @@ instance Pandemic DLWithBill where
   pan (DLWithBill nr b nb) = DLWithBill nr <$> pan b <*> pan nb
 
 instance Pandemic DLRemoteALGO where
-  pan (DLRemoteALGO x) = DLRemoteALGO <$> pan x
+  pan (DLRemoteALGO x y) = DLRemoteALGO <$> pan x <*> pan y
 
 instance Pandemic DLPayAmt where
   pan (DLPayAmt net ks) = do
