@@ -1,8 +1,8 @@
-reachc: error[RE0129]: % expects a first argument of type UInt, UInt256, Digest, or Bytes and a second argument of UInt or UInt256, but received: UInt256 and UInt
+reachc: error[RE0130]: % expects a first argument of type UInt, UInt256, Digest, or Bytes and a second argument of UInt or UInt256, but received: UInt256 and UInt
 
   ./ui256_mod_l.rsh:12:15:application
 
   12|   const y = x % 5;
 
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0129
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0130
 

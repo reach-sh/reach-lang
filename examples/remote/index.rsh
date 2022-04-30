@@ -14,86 +14,81 @@ const CoolThing = {
   bilFn: Fun([Token], Null),
 };
 
-export const main = Reach.App(
-  {},
-  [ Participant('Alice', {
-      getCTX: Fun([], Contract),
-      getCTY: Fun([], Tuple(UInt, Contract)),
-      getGIL: Fun([], Token),
-      getZMD: Fun([], Token),
-    }),
-    Participant('Bob', {
-      getX: Fun([], UInt),
-      see: Fun([UInt, UInt, UInt, UInt, UInt, Posn, PosnT, PosnO],
-               Null),
-    }),
-  ],
-  (A, B) => {
-    A.only(() => {
-      const ctxa = declassify(interact.getCTX());
-      const [amt, ctya] = declassify(interact.getCTY()); });
-    A.publish(ctxa, amt, ctya);
-    commit();
-    A.pay(amt);
-    const ctx = remote(ctxa, CoolThing);
-    const cty = remote(ctya, CoolThing);
-    commit();
+export const main = Reach.App(() => {
+  const A = Participant('Alice', {
+    getCTX: Fun([], Contract),
+    getCTY: Fun([], Tuple(UInt, Contract)),
+    getGIL: Fun([], Token),
+    getZMD: Fun([], Token),
+  });
+  const B = Participant('Bob', {
+    getX: Fun([], UInt),
+    see: Fun([UInt, UInt, UInt, UInt, UInt, Posn, PosnT, PosnO],
+             Null),
+  });
+  init();
 
-    B.only(() => {
-      const bx = declassify(interact.getX());
-      assume(bx > 2); });
-    B.publish(bx);
-    require(bx > 2);
-    ctx.setX(Posn.fromObject({x: bx, y: 0}));
-    cty.setX.pay(amt)(Posn.fromTuple([bx, 1]));
-    commit();
+  A.only(() => {
+    const ctxa = declassify(interact.getCTX());
+    const [amt, ctya] = declassify(interact.getCTY()); });
+  A.publish(ctxa, amt, ctya);
+  commit();
+  A.pay(amt);
+  const ctx = remote(ctxa, CoolThing);
+  const cty = remote(ctya, CoolThing);
+  commit();
 
-    A.publish();
-    const r0 = ctx.getX();
-    const r1 = cty.getX.bill(amt / 2)();
-    const [ amtr, r2 ] = cty.getX.withBill()();
-    transfer(amt / 2).to(B);
-    transfer(amtr).to(A);
-    commit();
+  B.only(() => {
+    const bx = declassify(interact.getX());
+    assume(bx > 2); });
+  B.publish(bx);
+  require(bx > 2);
+  ctx.setX(Posn.fromObject({x: bx, y: 0}));
+  cty.setX.pay(amt)(Posn.fromTuple([bx, 1]));
+  commit();
 
+  A.publish();
+  const r0 = ctx.getX();
+  const r1 = cty.getX.bill(amt / 2)();
+  const [ amtr, r2 ] = cty.getX.withBill()();
+  transfer(amt / 2).to(B);
+  transfer(amtr).to(A);
+  commit();
 
-    // Test transferring non-network tokens to and from a remote ctc
+  // Test transferring non-network tokens to and from a remote ctc
+  A.only(() => {
+    const gil = declassify(interact.getGIL());
+    const zmd = declassify(interact.getZMD());
+    assume(gil != zmd); });
 
-    A.only(() => {
-      const gil = declassify(interact.getGIL());
-      const zmd = declassify(interact.getZMD());
-      assume(gil != zmd); });
+  A.publish(gil, zmd);
+  commit();
+  A.pay([ [amt * 2, gil], [amt, zmd] ]); // CTC has 2x gil, x zmd
+  commit();
 
-    A.publish(gil, zmd);
-    commit();
-    A.pay([ [amt * 2, gil], [amt, zmd] ]); // CTC has 2x gil, x zmd
-    commit();
+  A.publish();
+  ctx.payFn.pay([ [amt, gil] ])(gil);   // CTC has x gil, x zmd
+  commit();
 
-    A.publish();
-    ctx.payFn.pay([ [amt, gil] ])(gil);   // CTC has x gil, x zmd
-    commit();
+  B.publish();
+  ctx.bilFn.bill([ [amt, gil] ])(gil);  // CTC has 2x gil, x zmd
+  transfer(amt, gil).to(B);             // CTC has x gil, x zmd
+  commit();
 
-    B.publish();
-    ctx.bilFn.bill([ [amt, gil] ])(gil);  // CTC has 2x gil, x zmd
-    transfer(amt, gil).to(B);             // CTC has x gil, x zmd
-    commit();
+  A.publish();
+  ctx.payFn.pay([ [amt, gil] ])(gil);   // CTC has 0 gil, x zmd
+  commit();
 
-    A.publish();
-    ctx.payFn.pay([ [amt, gil] ])(gil);   // CTC has 0 gil, x zmd
-    commit();
+  B.publish();
+  const [ netRecv, [ gilRecv ], _ ] = ctx.bilFn.withBill([ gil ])(gil);
+  transfer(netRecv).to(B);      // CTC has x gil, x zmd
+  transfer(gilRecv, gil).to(B); // CTC has 0 gil, x zmd
+  transfer(amt, zmd).to(B);     // CTC has 0 gil, 0 zmd
 
-    B.publish();
-    const [ netRecv, [ gilRecv ], _ ] = ctx.bilFn.withBill([ gil ])(gil);
-    transfer(netRecv).to(B);      // CTC has x gil, x zmd
-    transfer(gilRecv, gil).to(B); // CTC has 0 gil, x zmd
-    transfer(amt, zmd).to(B);     // CTC has 0 gil, 0 zmd
+  commit();
 
-
-    commit();
-
-    B.only(() => {
-      interact.see(r0.x, r0.y, r1[0], r1[1], amtr,
-        r0, Struct.toTuple(r1), Posn.toObject(r2)); });
-    exit();
-  }
-);
+  B.only(() => {
+    interact.see(r0.x, r0.y, r1[0], r1[1], amtr,
+      r0, Struct.toTuple(r1), Posn.toObject(r2)); });
+  exit();
+});

@@ -449,17 +449,17 @@ jsExpr = \case
       JM_Backend -> return "undefined /* Remote */"
       JM_View -> impossible "view Remote"
       JM_Simulate -> do
-        let DLRemoteALGO {..} = malgo
+        let DLRemoteALGO r_fees r_assets = malgo
         -- These are totally made up and could be totally busted
         obj' <- jsArg ro
-        fees' <- jsArg ralgo_fees
+        fees' <- jsArg r_fees
         let notStaticZero = not . staticZero
         let pay_ks_nz = filter (notStaticZero . fst) pay_ks
         let l2n x = jsCon $ DLL_Int at uintWord $ fromIntegral $ length $ x
         pays' <- l2n $ filter notStaticZero $ pay_net : map fst pay_ks_nz
         let nRecvCount = if nRecv then [ro] else []
         bills' <- l2n $ nRecvCount <> nnRecv
-        toks' <- mapM jsArg $ nnRecv <> map snd pay_ks_nz
+        toks' <- mapM jsArg $ nnRecv <> map snd pay_ks_nz <> r_assets
         let isAddress = (==) T_Address . argTypeOf
         accs' <- mapM jsArg $ filter isAddress as
         let res' = parens $ jsSimTxn "remote" $

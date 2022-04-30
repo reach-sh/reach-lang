@@ -1,0 +1,8 @@
+reachc: error[RE0132]: REMOTE_FUN.ALGO received illegal fields: ["foo"]
+
+  ./Err_Remote_ALGO_extra.rsh:10:51:application
+
+  10|   const x = remote(c, { f: Fun([], UInt) }).f.ALGO({ foo: 5 });
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0132
+
