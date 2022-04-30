@@ -62,4 +62,3 @@ if (role === 'seller') {
 };
 
 ask.done();
-
