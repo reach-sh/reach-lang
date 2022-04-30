@@ -55,7 +55,7 @@ instance Sanitize DLWithBill where
   sani (DLWithBill x y z) = DLWithBill x (sani y) (sani z)
 
 instance Sanitize DLRemoteALGO where
-  sani (DLRemoteALGO x) = DLRemoteALGO (sani x)
+  sani (DLRemoteALGO x y) = DLRemoteALGO (sani x) (sani y)
 
 instance Sanitize DLExpr where
   sani = \case

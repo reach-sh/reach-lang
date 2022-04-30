@@ -121,7 +121,7 @@ instance Freshen DLWithBill where
   fu (DLWithBill x y z) = DLWithBill x <$> fu y <*> fu z
 
 instance Freshen DLRemoteALGO where
-  fu (DLRemoteALGO x) = DLRemoteALGO <$> fu x
+  fu (DLRemoteALGO x y) = DLRemoteALGO <$> fu x <*> fu y
 
 instance Freshen DLExpr where
   fu = \case

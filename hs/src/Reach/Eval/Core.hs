@@ -3383,11 +3383,21 @@ evalPrim p sargs =
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote ALGO"
       metam <- mustBeObject =<< one_arg
       metam' <- mapM (ensure_public . sss_sls) metam
+      let actual = M.keysSet metam'
+      let valid = S.fromList $ [ "fees", "assets" ]
+      unless (actual `S.isSubsetOf` valid) $ do
+        expect_ $ Err_Remote_ALGO_extra $ S.toAscList $
+          actual `S.difference` valid
       let metal f k = k (M.lookup f metam')
       at <- withAt id
       ralgo_fees <- metal "fees" $ \case
         Nothing -> return $ DLA_Literal $ DLL_Int at uintWord 0
         Just v -> compileCheckType (T_UInt uintWord) v
+      ralgo_assets <- metal "assets" $ \case
+        Nothing -> return $ mempty
+        Just v -> do
+          vs <- explodeTupleLike "REMOTE_FUN.ALGO.assets" v
+          mapM (compileCheckType T_Token) vs
       let malgo = Just $ DLRemoteALGO {..}
       return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay mbill malgo Nothing ma)
     SLPrim_remotef rat aa m stf mpay mbill malgo Nothing ma -> do
@@ -3420,7 +3430,7 @@ evalPrim p sargs =
       allTokens <- fmap DLA_Var <$> readSt st_toks
       let nnToksNotBilled = allTokens \\ nntbRecv
       let withBill = DLWithBill nBilled nntbRecv nnToksNotBilled
-      let ralgo0 = DLRemoteALGO dzero
+      let ralgo0 = DLRemoteALGO dzero mempty
       let ralgo = fromMaybe ralgo0 malgo
       res' <-
         doInteractiveCall
