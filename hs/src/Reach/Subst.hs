@@ -73,7 +73,7 @@ instance Subst DLWithBill where
     DLWithBill x <$> subst y <*> subst z
 
 instance Subst DLRemoteALGO where
-  subst (DLRemoteALGO x) = DLRemoteALGO <$> subst x
+  subst (DLRemoteALGO x y) = DLRemoteALGO <$> subst x <*> subst y
 
 instance Subst DLExpr where
   subst = \case

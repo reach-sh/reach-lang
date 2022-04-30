@@ -526,9 +526,12 @@ In addition, a remote function may be augmented with one of the following operat
 + @{ref("rsh", "withBill")} `{!rsh} REMOTE_FUN.withBill()` ---
   Returns a remote function that provides some number of network tokens and, possibly, non-network tokens _to_ the caller when it returns.
   The exact amount is returned from the invocation by wrapping the original result in a tuple.
-+ @{ref("rsh", "remote.ALGO")} `{!rsh} REMOTE_FUN.ALGO({fees: FEE_EXPR})` ---
-  Returns a remote function that records the need for an additional `{!rsh} FEE_EXPR` fees on Algorand.
-  If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an insufficient fee error.
++ @{ref("rsh", "remote.ALGO")} `{!rsh} REMOTE_FUN.ALGO(opts)` ---
+  Returns a remote function that records the need for additional resources on Algorand.
+  + `{!rsh} opts.fees` records extra fees.
+    If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an insufficient fee error.
+  + `{!rsh} opts.assets` records extra assets.
+    If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an invalid asset reference.
 
 If the remote contract is not expected to return non-network tokens then a pair is returned, where the amount of network tokens received is the first element, and the original result is the second element.
 

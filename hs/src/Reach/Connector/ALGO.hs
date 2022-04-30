@@ -2045,8 +2045,8 @@ ce = \case
           cMapLoad
           cla $ mdaToMaybeLA mt mva
           cTupleSet at mdt $ fromIntegral i
-  DLE_Remote at fs ro rng_ty rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) _malgo ma -> do
-    --let DLRemoteALGO {..} = malgo
+  DLE_Remote at fs ro rng_ty rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo ma -> do
+    let DLRemoteALGO _fees r_assets = malgo
     warn_lab <- asks eWhich >>= \case
       Just which -> return $ "Step " <> show which
       Nothing -> return $ "This program"
@@ -2113,7 +2113,7 @@ ce = \case
           makeTxn1 "ApplicationArgs"
         -- XXX If we can "inherit" resources, then this needs to be removed and
         -- we need to check that nnZeros actually stay 0
-        forM_ nnRecv $ \a -> do
+        forM_ (r_assets <> nnRecv) $ \a -> do
           incResource R_Asset a
           ca a
           makeTxn1 "Assets"

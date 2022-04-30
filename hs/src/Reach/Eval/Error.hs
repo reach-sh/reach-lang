@@ -161,6 +161,7 @@ data EvalError
   | Err_xor_Types DLType DLType
   | Err_mod_Types DLType DLType
   | Err_Alias_Type_Clash SLVar
+  | Err_Remote_ALGO_extra [SLVar]
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -301,8 +302,9 @@ instance HasErrorCode EvalError where
     Err_InvalidPaySpec {} -> 127
     Err_LoopVariableLength {} -> 128
     Err_xor_Types {} -> 129
-    Err_mod_Types {} -> 129
-    Err_Alias_Type_Clash {} -> 130
+    Err_mod_Types {} -> 130
+    Err_Alias_Type_Clash {} -> 131
+    Err_Remote_ALGO_extra {} -> 132
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -753,5 +755,7 @@ instance Show EvalError where
       "The left hand side of an API call must be a pair consisting of the domain and return function."
     Err_Alias_Type_Clash alias ->
       "The alias `" <> alias <> "` is overloaded multiple types for the same parameter types."
+    Err_Remote_ALGO_extra ks ->
+      "REMOTE_FUN.ALGO received illegal fields: " <> show ks
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
