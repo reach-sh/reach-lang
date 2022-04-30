@@ -19,6 +19,7 @@ const argv = yargs(process.argv.slice(2))
   .argv
 
 const role = argv.r;
+console.log(`Your role is ${role}`);
 
 const stdlib = loadStdlib(process.env);
 const suStr = stdlib.standardUnit;
@@ -75,4 +76,3 @@ if (role === 'seller') {
 };
 
 ask.done();
-
