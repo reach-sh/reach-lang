@@ -12,7 +12,7 @@ An example frontend written using the Reach RPC Server is shown in the [tutorial
 
 The command
 ```cmd
-$ reach rpc-server
+$ ./reach rpc-server
 ```
 starts an instance of the Reach RPC Server.
 
