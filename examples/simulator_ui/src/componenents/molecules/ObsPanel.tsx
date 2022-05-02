@@ -1,7 +1,7 @@
 import Label from "../atoms/Label";
 import styled from "styled-components";
 import RightArrow from "../atoms/RightArrow";
-import { Participant } from "../../types";
+
 const Status = styled(Label)`
   margin-left: 20px;
   &&p {
@@ -42,9 +42,9 @@ const Left = styled.div`
 `;
 
 export default function (objectViewData: any) {
-  const translatePhase = (participant: any) => {
+  const translatePhase = (lks: any) => {
     let status = ''
-    switch (participant) {
+    switch (lks) {
       case 'PS_Suspend':
         status = 'Program Running'
         break;

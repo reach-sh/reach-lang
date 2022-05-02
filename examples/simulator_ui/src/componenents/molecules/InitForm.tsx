@@ -1,52 +1,26 @@
-import React from "react";
-import {Form, Field, ObjectField, FeedbackStrategies} from "formula-one";
+import { ChangeEventHandler } from "react";
+import styled from "styled-components";
 
-type UInt<T extends number> =
-    number extends T 
-        ? never 
-        : `${T}` extends `-${string}` | `${string}.${string}`
-            ? never 
-            : T;
+const FormContainer = styled.div`
+    display: flex ;
+    flex-direction: row;
+`
 
-type FieldDataType = {
-    [key: string]: UInt<number> | string
-}
-
-type ObjectSet = {
-
-}
-export default function SimpleExample(values: any) {
+export default function InitForm({initDetails, updateEntry, initValues}:{initDetails: any, updateEntry: ChangeEventHandler, initValues: any}) {
   return (
-    <div className="App">
-      <Form
-        initialValue={[] as FieldDataType[]}
-        onSubmit={person => console.log("Submitted", person)}
-      >
-        {(link, onSubmit) => (
-            
-          <ObjectField link={link}>
-            {(links) => links.map((link, index) => 
-              <>(
-                <Field link={link}>
-                  {(value, errors, onChange) => (
-                    <label>
-                      <div>Name</div>
-                      <input
-                        type="text"
-                        value={values[index]}
-                        onChange={e => onChange(e.target.value)}
-                      />
-                    </label>
-                  )}
-                </Field>
-                <div>
-                  <button onClick={onSubmit}>Submit</button>
-                </div>
-              </>)
-            }
-          </ObjectField>
-        )}
-      </Form>
-    </div>
+    <FormContainer>
+        {initDetails && initValues &&
+        Object.entries(initDetails).map((entry: any) => (
+            <>
+                {entry[0]}
+                <span>{entry[1].slice(7)}</span>
+                <input
+                    placeholder={`${entry[0]} ${entry[1].slice(7)}`}
+                    value={initValues[`${entry[0]}`]}
+                    onChange={updateEntry}
+                />
+            </>
+        ))}
+    </FormContainer>
   );
 }

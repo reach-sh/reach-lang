@@ -4,6 +4,9 @@ import SectionHeaderComponent from "../molecules/SectionHeader";
 import { useState, useEffect } from "react";
 import ObsPanel from "../molecules/ObsPanel";
 import { ParticipantDropdown } from "../atoms/ParticipantDropdown";
+import InitForm from "../molecules/InitForm";
+import { Participant } from "../../types";
+
 
 const PanelContainer = styled.div`
   position: static;
@@ -80,7 +83,8 @@ const InitContent = styled.div`
   height: 184px;
   position: relative;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  align-items: space-between;
 `;
 
 const SectionDivider = styled.div`
@@ -97,9 +101,7 @@ const InitParticipantsButton = styled(Button)`
 `;
 const ParticipantName = styled.p``;
 
-function getIVDfromSelection(selection: number = 0, locals: any): any {
-  return locals.l_locals[selection].l_ivd;
-}
+
 
 function LeftPanel({
   initParticipant,
@@ -119,20 +121,22 @@ function LeftPanel({
   const [initDetails, setInitDetails] = useState<any>();
   const [initValues, setInitValues] = useState<any>({});
   const updateEntry = (e: any) => {
-    console.log("placeholder split");
-    console.log(e.target.placeholder.split(" ")[0]);
     const ph = Object.entries(initDetails).filter(
       (detail) => detail[0] === e.target.placeholder.split(" ")[0]
-      );
-      console.log(ph);
-      const type = ph[0][1].slice(7)
-      console.log(type === "UInt")
-      const value = type === "UInt" ? parseInt(e.target.value) : `${e.target.value}`
-      console.log(value)
+    );
+    const type = ph[0][1].slice(7);
+    const value =
+      type === "UInt" ? parseInt(e.target.value) : `${e.target.value}`;
     setInitValues({ ...initValues, [`${ph[0][0]}`]: value });
-    console.log("init values");
-    console.log(initValues);
   };
+  const participantHasDetails = async (participant: Participant) => {
+        const details = await getInitDetails(participant.actorId)
+        return Object.entries(details).length > 0
+      }
+  console.log('@ LP');
+  console.log(participants);
+  
+
   useEffect(() => {
     const setDetails = async () => {
       const details = await getInitDetails(dropDownSelection);
@@ -140,6 +144,7 @@ function LeftPanel({
     };
     setDetails();
   }, [dropDownSelection]);
+
   return (
     <PanelContainer>
       <ObjectSection>
@@ -187,38 +192,31 @@ function LeftPanel({
         />
         {openInitSection ? (
           <InitContent>
-            {objectViewData && (
+            {objectViewData &&(
               <ParticipantDropdown
                 participants={participants}
                 setValue={changeDropDownSelection}
                 value={dropDownSelection}
+                predicate={participantHasDetails}
               />
             )}
-            <div>
-              {initDetails &&
-                Object.entries(initDetails).map((entry: any) => (
-                  <>
-                    {entry[0]}
-                    <span>{entry[1].slice(7)}</span>
-                    <input
-                      placeholder={`${entry[0]} ${entry[1].slice(7)}`}
-                      value={initValues[`${entry[0]}`]}
-                      onChange={updateEntry}
-                    />
-                  </>
-                ))}
-            </div>
-            <InitParticipantsButton
+            {initDetails && <InitForm
+              initDetails={initDetails}
+              updateEntry={updateEntry}
+              initValues={initValues}
+            />}
+            {initDetails && <InitParticipantsButton
               label="Init Participant"
               icon={<></>}
               onClick={() => {
-                return initParticipant(
-                  dropDownSelection,
-                  objectViewData.nodeId,
-                  initValues
-                );
+                return initParticipant({
+                  participant: dropDownSelection,
+                  node: objectViewData.nodeId,
+                  values: initValues,
+                  details: initDetails
+              });
               }}
-            />
+            />}
           </InitContent>
         ) : (
           <></>
