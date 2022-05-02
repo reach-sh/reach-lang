@@ -2207,6 +2207,29 @@ no `{!rsh} Participant`s or `{!rsh} ParticipantClass`es declared.
 This issue can arise when you use `{!rsh} Anybody.publish()`. To fix this issue, ensure you declare
 a `{!rsh} Participant` or `{!rsh} ParticipantClass`.
 
+For example, the program below erroneously uses `{!rsh} Anybody.publish()` without declaring any `{!rsh} Participant` or `{!rsh} ParticipantClass`:
+
+```reach
+load: ./hs/t/n/Err_No_Participants.rsh
+range: 3 - 9
+```
+
+However, the correct thing to do is to declare at least one `{!rsh} Participant` or `{!rsh} ParticipantClass` before using `{!rsh} Anybody.publish()` like in the program below:
+
+```reach
+load: ./examples/api-call/index.rsh
+range: 4 - 7
+```
+
+```reach
+load: ./examples/api-call/index.rsh
+range: 47 - 49
+```
+
+:::note 
+Since `{!rsh} ParticipantClass` is being deprecated, it is preferable to use `{!rsh} API`.
+:::
+
 ## {#RE0125} RE0125
 
 This error indicates that an `{!rsh} API` is explicitly attempting to make a publication, e.g. `{!rsh} api.publish()`.
