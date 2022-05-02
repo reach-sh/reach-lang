@@ -8,6 +8,7 @@ ADD docs/dev ./docs/dev
 RUN (cd docs/dev && make installed)
 
 COPY VERSION .
+ADD hs/t ./hs/t
 ADD examples ./examples
 ADD /hs/t ./hs/t
 ADD rpc-client/py ./rpc-client/py
