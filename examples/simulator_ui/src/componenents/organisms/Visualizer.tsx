@@ -1,8 +1,13 @@
 import styled from "styled-components";
-import { ReactElement, useState, useEffect } from "react";
-import Graphin, { GraphinData, IUserEdge, IUserNode } from "@antv/graphin";
+import { ReactElement, useState, createRef, useEffect } from "react";
+import Graphin, { IUserEdge, Graph } from "@antv/graphin";
 import { ParticipantDropdown } from "../atoms/ParticipantDropdown";
 import { Participant } from "../../types";
+
+type GraphinRef = {
+  graph: Graph
+  api: any
+}
 
 const VisualizerContainer = styled.div`
   display: grid;
@@ -57,7 +62,7 @@ export default function VisualizerPanel({
   selectNode,
   participants,
   edges,
-  nodes
+  nodes,
 }: {
   data: any;
   selectNode: Function;
@@ -65,11 +70,14 @@ export default function VisualizerPanel({
   edges: IUserEdge[]
   nodes: any
 }): ReactElement {
+  const graphinRef = createRef<GraphinRef>({});
   const [perspective, changePerspective] = useState<string>("");
+  const isAParticipant = (participant: Participant) => {
+    return (participant === participant)
+  }
+
     if(nodes.length > 0){
       nodes.forEach((node: any) => {
-        console.log('node');
-        console.log(node)
         node.style = {
           keyshape:{
             fill: actorToColorString(node.actor)
@@ -83,8 +91,21 @@ export default function VisualizerPanel({
         }
       })
     }
-  
+    if(edges.length > 0){
+      edges = edges.map((edge: any):IUserEdge => {
+        return {source: edge[0].toString(), target: edge[1].toString()}
+      })
+    }
 
+    useEffect(() => {
+    const {
+      graph, // Graph instance of g6
+      apis, // API interface provided by Graphin
+    } = graphinRef.current;
+    console.log('ref', graphinRef, graph, apis);
+  }, []);
+  
+    console.log(participants)
   return data ? (
     <VisualizerContainer>
       {participants && (
@@ -92,12 +113,14 @@ export default function VisualizerPanel({
           participants={participants}
           value={perspective}
           setValue={changePerspective}
+          predicate={isAParticipant}
         />
       )}
       <Graphin
+        ref={graphinRef}
         defaultNode={defaultNode}
         data={{nodes: nodes, edges: edges}}
-        layout={{ type: "dagre", rankdir: "RL" }}
+        layout={{ type: "dagre", rankdir: "LR" }}
         theme={{
           background: "#101010",
           primaryColor: "#6AC6E7",
