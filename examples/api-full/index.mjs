@@ -1,16 +1,7 @@
 import { loadStdlib } from '@reach-sh/stdlib';
-import Timeout from 'await-timeout';
 import * as backend from './build/index.main.mjs';
-const thread = async (f) => await f();
-
-export class Signal {
-  constructor() {
-    const me = this;
-    this.p = new Promise((resolve) => { me.r = resolve; });
-  }
-  wait() { return this.p; }
-  notify() { this.r(true); }
-};
+import { util } from '@reach-sh/stdlib';
+const { thread, Signal, Timeout } = util;
 
   const stdlib = loadStdlib();
   const amt_ = stdlib.parseCurrency(2);

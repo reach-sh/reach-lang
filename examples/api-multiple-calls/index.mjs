@@ -1,17 +1,9 @@
 import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 import * as clientBackend from './build/index.client.mjs';
+import { util } from '@reach-sh/stdlib';
+const { thread, Signal } = util;
 const stdlib = loadStdlib();
-const thread = async (f) => await f();
-
-export class Signal {
-  constructor() {
-    const me = this;
-    this.p = new Promise((resolve) => { me.r = resolve; });
-  }
-  wait() { return this.p; }
-  notify() { this.r(true); }
-};
 
 const startingBalance = stdlib.parseCurrency(100);
 
