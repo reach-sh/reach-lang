@@ -116,7 +116,13 @@ export const run = async (opts?:RunOpts): Promise<void> => {
   cases.forEach(({id, time, err}) => {
     const mtime = time ? ` time="${time}"` : ``;
     const mfail = err ? `<failure>${err}</failure>` : ``;
-    xml.push(`<testcase name="${id}"${mtime}>${mfail}</testcase>`);
+    const idr =
+      id.replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    xml.push(`<testcase name="${idr}"${mtime}>${mfail}</testcase>`);
   });
   xml.push('</testsuite>');
   const xmlb = Buffer.from(xml.join(''));
