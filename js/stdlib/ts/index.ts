@@ -10,3 +10,5 @@ import ALGO_WalletConnect from './ALGO_WalletConnect';
 export { ALGO_WalletConnect };
 
 export * as test from './test';
+
+export * as util from './util';
