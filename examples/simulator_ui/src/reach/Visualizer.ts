@@ -20,6 +20,7 @@ export const redraw = async (c: any) => {
       }
     )
   }
+  console.log(elements)
   for (const [index, value] of edges.entries()) {
     const from = value[0]
     const to = value[1]
