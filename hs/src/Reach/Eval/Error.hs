@@ -163,6 +163,7 @@ data EvalError
   | Err_Alias_Type_Clash SLVar
   | Err_Remote_ALGO_extra [SLVar]
   | Err_ExpectedThunk
+  | Err_Api_Return_Type
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -307,6 +308,7 @@ instance HasErrorCode EvalError where
     Err_Alias_Type_Clash {} -> 131
     Err_Remote_ALGO_extra {} -> 132
     Err_ExpectedThunk {} -> 133
+    Err_Api_Return_Type {} -> 134
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -761,5 +763,7 @@ instance Show EvalError where
       "REMOTE_FUN.ALGO received illegal fields: " <> show ks
     Err_ExpectedThunk ->
       "Expected a syntactic thunk."
+    Err_Api_Return_Type ->
+      "Expected this function to return `[ PAY_AMT, API_CONSENSUS_EXPR ]` or `[ API_CONSENSUS_EXPR ]`"
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
