@@ -6,14 +6,11 @@ warning[RW0000]: Declaring Participants with a tuple is now deprecated. Please u
 
 For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
-reachc: error[RE0035]: Invalid function application. Cannot apply: Array(UInt, 2)
+reachc: error[RE0056]: Invalid name shadowing. Identifier 'amtIns' is already bound at ./pay_multiple_currency.rsh:28:26:id. It cannot be bound again at ./pay_multiple_currency.rsh:24:21:id
 
-  ./pay_multiple_currency.rsh:19:38:application
+  ./pay_multiple_currency.rsh:32:30:application
 
-  19|         msg: declassify(interact.amts()),
+  32|           .case(A, publishE, payE, consensusE)
 
-Trace:
-  in [unknown function] from (./pay_multiple_currency.rsh:32:20:function exp) at (./pay_multiple_currency.rsh:32:20:application)
-
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0035
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0056
 

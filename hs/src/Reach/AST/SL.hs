@@ -473,6 +473,7 @@ data ToConsensusMode
 data ForkMode
   = FM_Case
   | FM_API
+  | FM_API_
   | FM_Timeout
   | FM_ThrowTimeout
   | FM_PaySpec
@@ -483,6 +484,7 @@ data ParallelReduceMode
   | PRM_While
   | PRM_Case
   | PRM_API
+  | PRM_API_
   | PRM_Timeout
   | PRM_TimeRemaining
   | PRM_ThrowTimeout
@@ -494,6 +496,7 @@ data ApiCallMode
   = AC_Pay
   | AC_ThrowTimeout
   | AC_Assume
+  | AC_Check
   deriving (Eq, Generic, Show)
 
 data ToConsensusRec = ToConsensusRec
@@ -540,6 +543,7 @@ data ParallelReduceRec = ParallelReduceRec
   , slpr_mwhile :: Maybe JSExpression
   , slpr_cases :: [(SrcLoc, [JSExpression])]
   , slpr_apis :: [(SrcLoc, [JSExpression])]
+  , slpr_api_s :: [(SrcLoc, [JSExpression])]
   , slpr_mtime :: Maybe (ParallelReduceMode, SrcLoc, [JSExpression])
   , slpr_mpay :: Maybe JSExpression
   , slpr_mdef :: Maybe JSExpression
@@ -553,6 +557,7 @@ data ApiCallRec = ApiCallRec
   , slac_mpay :: Maybe JSExpression
   , slac_massume :: Maybe JSExpression
   , slac_mtime :: Maybe (JSExpression, JSExpression)
+  , slac_mcheck :: Maybe JSExpression
   }
   deriving (Eq, Generic)
 
