@@ -93,11 +93,11 @@ If you receive the following error:
 
 ![No memory](./terminal-no-memory.png)
 
-Then that is `docker` requesting for more memory space to function properly.
+Then that means `docker` needs more memory to function properly.
 
 Please follow the next steps to fix the problem:
 
-* Open your docker home page
+* Open your Docker home page
 
 ![docker home page](./docker-home-page.png)
 
@@ -115,7 +115,7 @@ Please follow the next steps to fix the problem:
 
 * In the main panel at the middle, adjust the `Memory` to 4GB or more depending on how much RAM you have in your machine.
 
-* Still in the main panel, adjust the `Disk image size` to 200GB or more depending on how much HDD or SSD you have in your machine.
+* Still in the main panel, adjust the `Disk image size` to 200GB or more depending on how much HDD or SSD storage you have in your machine.
 
 ![docker settings main panel](./docker-settings-main-panel.png)
 
@@ -126,7 +126,7 @@ Please follow the next steps to fix the problem:
 This should fix the problem after it is done restarting.
 
 :::note
-Please if this didn't fix the issue, restart your machine
+If this didn't fix the issue, please restart your machine.
 :::
 
 ## Other issues
