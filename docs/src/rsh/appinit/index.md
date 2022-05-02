@@ -33,6 +33,10 @@ load: ./examples/nft-auction/index.rsh
 range: 23 - 30
 ```
 
+:::note
+Since `{!rsh} ParticipantClass` is being deprecated, it is preferable to use `{!rsh} API`.
+:::
+
 ### `setOptions`
 
 @{ref("rsh", "setOptions")}
