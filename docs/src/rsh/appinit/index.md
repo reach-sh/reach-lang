@@ -188,6 +188,19 @@ View({ owner: Address })
 Views are read-only functions that can be called by other contracts, as well as off-chain.
 
 A view is defined with `{!rsh} View(viewName, viewInterface)` or `{!rsh} View(viewInterface)`, where `{!rsh} viewName` is a string that labels the view and `{!rsh} viewInterface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp.
+
+For example, `{!rsh} View` is used the code below without a `{!rsh} viewName`:
+```reach
+load: examples/remote-rsh/index.rsh
+range: 16 - 19
+```
+
+While the `{!rsh} View` in the following code contains a `{!rsh} viewName`:
+```reach
+load: examples/view-steps/index.rsh
+range: 11 - 12
+```
+
 These views are available in frontends via the `{!js} ctc.views` object.
 In the DApp, the result of this application argument is referred to as a view object.
 
