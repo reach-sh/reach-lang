@@ -133,9 +133,7 @@ function LeftPanel({
         const details = await getInitDetails(participant.actorId)
         return Object.entries(details).length > 0
       }
-  console.log('@ LP');
-  console.log(participants);
-  
+
 
   useEffect(() => {
     const setDetails = async () => {

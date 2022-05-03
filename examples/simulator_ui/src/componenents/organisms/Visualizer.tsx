@@ -6,7 +6,7 @@ import { Participant } from "../../types";
 
 type GraphinRef = {
   graph: Graph
-  api: any
+  apis: any
 }
 
 const VisualizerContainer = styled.div`
@@ -70,7 +70,7 @@ export default function VisualizerPanel({
   edges: IUserEdge[]
   nodes: any
 }): ReactElement {
-  const graphinRef = createRef<GraphinRef>({});
+  const graphinRef = createRef<GraphinRef>();
   const [perspective, changePerspective] = useState<string>("");
   const isAParticipant = (participant: Participant) => {
     return (participant === participant)
@@ -101,11 +101,10 @@ export default function VisualizerPanel({
     const {
       graph, // Graph instance of g6
       apis, // API interface provided by Graphin
-    } = graphinRef.current;
+    } = graphinRef.current as GraphinRef;
     console.log('ref', graphinRef, graph, apis);
   }, []);
   
-    console.log(participants)
   return data ? (
     <VisualizerContainer>
       {participants && (
