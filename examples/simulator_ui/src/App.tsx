@@ -194,7 +194,6 @@ function App() {
             participants={
               objectViewData && getParticipants(objectViewData, nodeId)
             }
-            predicate={() => true}
           />
         </InfoContainer>
       </Container>
