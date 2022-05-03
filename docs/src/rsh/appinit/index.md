@@ -25,17 +25,13 @@ changed because that name was misleading.
 Its continuation is a step, which means its content is specified by @{seclink("ref-programs-step")}.
 It represents the body of the DApp to be compiled.
 
-In the example below, see how `{!rsh} init();` is used to finalize the available `{!rsh} Participant` and `{!rsh} ParticipantClass`. 
+In the example below, see how `{!rsh} init();` is used to finalize the available `{!rsh} Participant` and `{!rsh} API`. 
 After which a local step is introduced:
 
 ```reach
-load: ./examples/nft-auction/index.rsh
-range: 23 - 30
+load: ./examples/api-twice/index.rsh
+range: 4 - 15
 ```
-
-:::note
-Since `{!rsh} ParticipantClass` is being deprecated, it is preferable to use `{!rsh} API`.
-:::
 
 ### `setOptions`
 
