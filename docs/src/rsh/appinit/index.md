@@ -189,7 +189,7 @@ Views are read-only functions that can be called by other contracts, as well as 
 
 A view is defined with `{!rsh} View(viewName, viewInterface)` or `{!rsh} View(viewInterface)`, where `{!rsh} viewName` is a string that labels the view and `{!rsh} viewInterface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp.
 
-For example, `{!rsh} View` is used the code below without a `{!rsh} viewName`:
+For example, `{!rsh} View` is used in the code below without a `{!rsh} viewName`:
 ```reach
 load: examples/remote-rsh/index.rsh
 range: 16 - 19
