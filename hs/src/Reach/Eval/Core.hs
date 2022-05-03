@@ -543,10 +543,10 @@ base_env_slvals =
   , ("unknowable", SLV_Form $ SLForm_unknowable)
   , ("balance", SLV_Prim $ SLPrim_balance)
   , ("lastConsensusTime", SLV_Prim $ SLPrim_fluid_read_canWait FV_lastConsensusTime)
-  , ("thisConsensusTime", SLV_Prim $ SLPrim_fluid_read_canWait FV_thisConsensusTime)
+  , ("thisConsensusTime", SLV_Prim $ SLPrim_fluid_read_didPublish FV_thisConsensusTime)
   , ("baseWaitTime", SLV_Prim $ SLPrim_fluid_read_canWait FV_baseWaitTime)
   , ("lastConsensusSecs", SLV_Prim $ SLPrim_fluid_read_canWait FV_lastConsensusSecs)
-  , ("thisConsensusSecs", SLV_Prim $ SLPrim_fluid_read_canWait FV_thisConsensusSecs)
+  , ("thisConsensusSecs", SLV_Prim $ SLPrim_fluid_read_didPublish FV_thisConsensusSecs)
   , ("baseWaitSecs", SLV_Prim $ SLPrim_fluid_read_canWait FV_baseWaitSecs)
   , ("didPublish", SLV_Prim $ SLPrim_didPublish)
   , ("Digest", SLV_Type ST_Digest)
@@ -2668,6 +2668,10 @@ evalPrim p sargs =
     SLPrim_fluid_read fv -> do
       zero_args
       doFluidRef fv
+    SLPrim_fluid_read_didPublish fv -> do
+      ensure_after_first
+      zero_args
+      evalPrim (SLPrim_fluid_read fv) []
     SLPrim_fluid_read_canWait fv -> do
       ensure_can_wait
       zero_args

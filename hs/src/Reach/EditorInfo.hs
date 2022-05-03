@@ -129,7 +129,8 @@ completionKind v =
         SLPrim_PrimDelay _ _ _ _ -> Nothing
         SLPrim_part_set -> Just CK_Method
         SLPrim_part_setted _ _ _ -> Nothing
-        SLPrim_fluid_read _ -> Nothing
+        SLPrim_fluid_read _ -> Just CK_Function
+        SLPrim_fluid_read_didPublish _ -> Just CK_Function
         SLPrim_fluid_read_canWait _ -> Just CK_Function
         SLPrim_race -> Just CK_Function
         SLPrim_Map -> Just CK_TypeParameter
