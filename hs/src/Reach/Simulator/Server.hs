@@ -347,6 +347,19 @@ passTime sid' n = do
       let g' = g {C.e_nwsecs = nwsecs, C.e_nwtime = nwtime}
       processNewMetaState sid' (g',l)
 
+forceTimeout :: StateId -> WebM ()
+forceTimeout sid' = do
+  graph <- gets e_graph
+  let sid = fromIntegral sid'
+  case M.lookup sid graph of
+    Nothing -> do
+      possible "passTime: previous state not found"
+    Just (g,l) -> do
+      let phId = C.l_phase $ saferMaybe "forceTimeout" $ M.lookup C.consensusId $ C.l_locals l
+      let timeouts = M.insert phId True $ C.e_timeouts g
+      let g' = g {C.e_timeouts = timeouts}
+      processNewMetaState sid' (g',l)
+
 unblockProg :: Integer -> Integer -> C.DLVal -> WebM (Bool)
 unblockProg sid' aid' v = do
   let sid = fromIntegral sid'
@@ -393,7 +406,7 @@ unblockProg sid' aid' v = do
                   processNewState (Just sid) ps Consensus
                 _ -> do
                   registerError (Just sid) Nothing "Tiebreak: unexpected value."
-                  return False 
+                  return False
             Just C.A_None -> do
               let ps = k (g, l) v
               processNewState (Just sid) ps Consensus
@@ -758,6 +771,12 @@ app p srcTxt dg = do
     s <- param "s"
     n <- param "n"
     r <- webM $ passTime s n
+    json $ show r
+
+  post "/timeout/:s/" $ do
+    setHeaders
+    s <- param "s"
+    r <- webM $ forceTimeout s
     json $ show r
 
   get "/actions/:s/:a/" $ do

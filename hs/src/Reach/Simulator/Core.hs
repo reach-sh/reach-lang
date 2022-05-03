@@ -835,7 +835,6 @@ instance Interp LLStep where
       phId <- getPhaseId actId
       let msgs' = fromMaybe (NotFixedYet mempty) $ M.lookup phId $ e_messages g
       let sends = M.mapKeys bunpack tc_send
-      incrPhaseId
       checkTimeout tc_mtime phId $ do
         whoAmI >>= \case
           Participant who -> do
@@ -844,16 +843,20 @@ instance Interp LLStep where
                 case msgs' of
                   NotFixedYet _msgs'' -> do
                     void $ suspend $ PS_Suspend (Just at) (A_Receive phId)
+                    incrPhaseId
                     checkTimeout tc_mtime phId $ runWithWinner dlr phId
                   Fixed _ -> do
+                    incrPhaseId
                     runWithWinner dlr phId
               Just dls -> do
                 case msgs' of
                   NotFixedYet msgs'' -> do
                     void $ placeMsg dls dlr phId (fromIntegral actId) msgs'' False
                     void $ suspend $ PS_Suspend (Just at) (A_Receive phId)
+                    incrPhaseId
                     checkTimeout tc_mtime phId $ runWithWinner dlr phId
                   Fixed _ -> do
+                    incrPhaseId
                     runWithWinner dlr phId
           Consensus -> do
             v <- suspend $ PS_Suspend (Just at) (A_TieBreak phId $ M.keys sends)
@@ -899,6 +902,7 @@ instance Interp LLStep where
                       Right winningMsg' -> do
                         void $ fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg') (m_pay winningMsg') apiFlag
                         winner dlr phId
+                        incrPhaseId
                         interp $ dr_k
               _ -> possible "expected V_Data value"
 
