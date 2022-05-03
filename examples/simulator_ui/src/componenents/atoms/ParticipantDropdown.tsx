@@ -18,7 +18,7 @@ export const ParticipantDropdown = ({
 
   const [options, setOptions] = useState([])
   useEffect(() => {
-      const filterParticipants =  async (unfilteredParticipants: Participant[]): any => {
+      const filterParticipants =  async (unfilteredParticipants: Participant[]): Promise<any> => {
        
       return filterAsync(predicate, unfilteredParticipants)
     }

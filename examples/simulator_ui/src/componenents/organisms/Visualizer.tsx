@@ -70,7 +70,7 @@ export default function VisualizerPanel({
   edges: IUserEdge[]
   nodes: any
 }): ReactElement {
-  const graphinRef = createRef<GraphinRef>();
+  const graphinRef = createRef<Graphin>();
   const [perspective, changePerspective] = useState<string>("");
   const isAParticipant = (participant: Participant) => {
     return (participant === participant)
