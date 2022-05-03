@@ -27,3 +27,4 @@ declare module '@reach-sh/simulator-client' {
 }
     
 declare module 'cytoscape-klay'
+declare module 'lodasync'

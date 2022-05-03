@@ -124,7 +124,8 @@ function LeftPanel({
     const ph = Object.entries(initDetails).filter(
       (detail) => detail[0] === e.target.placeholder.split(" ")[0]
     );
-    const type = ph[0][1].slice(7);
+    const placeholder = ph as Array<any>;
+    const type = placeholder[0][1].slice(7);
     const value =
       type === "UInt" ? parseInt(e.target.value) : `${e.target.value}`;
     setInitValues({ ...initValues, [`${ph[0][0]}`]: value });
