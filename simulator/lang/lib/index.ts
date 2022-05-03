@@ -1,4 +1,4 @@
-import c from '@reach-sh/simulator-client';
+import * as c from '@reach-sh/simulator-client';
 import assert from 'assert';
 
 const consensusID = -1
@@ -78,6 +78,8 @@ class Scenario {
       const nv: View = new View(parseInt(k),who,vari,tag,contents,this)
       this.views[who] = nv
     }
+
+    return this;
   }
 
   async pingServer() {
@@ -128,6 +130,7 @@ class FunctionalScenario extends Scenario {
 
   next() {
     const next = Object.assign(new FunctionalScenario(), this);
+    next.state = Object.assign(new State(), this.state);
     next.state.next();
     return next;
   }

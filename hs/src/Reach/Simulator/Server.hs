@@ -356,17 +356,21 @@ unblockProg sid' aid' v = do
   avActions <- gets e_ids_actions
   case M.lookup sid graph of
     Nothing -> do
-      possible "previous state not found"
+      registerError (Just sid) Nothing "Previous state not found."
+      return False
     Just (g, l') -> do
       let locals = C.l_locals l'
       case C.l_ks <$> M.lookup actorId locals of
         Nothing -> do
-          possible "actor not found"
+          registerError (Just sid) Nothing "Actor not found."
+          return False
         Just Nothing -> do
-          possible $ "partstate not found for actor "
-            <> show actorId
-            <> " in: "
-            <> (show $ M.keys locals)
+          let err = "partstate not found for actor "
+                <> show actorId
+                <> " in: "
+                <> (show $ M.keys locals)
+          registerError (Just sid) Nothing err
+          return False
         Just (Just (C.PS_Suspend _ _a (_g,_l) k)) -> do
           let l = l' {C.l_curr_actor_id = actorId}
           case M.lookup aid avActions of
@@ -387,7 +391,9 @@ unblockProg sid' aid' v = do
                 C.V_UInt i -> do
                   let ps = k (g, l) $ C.V_Data "actor" $ C.V_UInt i
                   processNewState (Just sid) ps Consensus
-                _ -> possible "unblockProg (Tiebreak): unexpected value"
+                _ -> do
+                  registerError (Just sid) Nothing "Tiebreak: unexpected value."
+                  return False 
             Just C.A_None -> do
               let ps = k (g, l) v
               processNewState (Just sid) ps Consensus
@@ -407,9 +413,12 @@ unblockProg sid' aid' v = do
                 False -> do
                   let ps = k (g, l) v
                   processNewState (Just sid) ps Consensus
-            Nothing -> possible "action not found"
+            Nothing -> do
+              registerError (Just sid) Nothing "Action not found."
+              return False
         Just (Just _) -> do
-          possible "previous state already terminated"
+          registerError (Just sid) Nothing "Previous state already terminated."
+          return False
 
 
 stActHist :: StateId -> WebM (StateId, (C.ActorId, C.Action))
@@ -561,9 +570,10 @@ formatError :: (Maybe StateId, Maybe SrcLoc, String) -> String
 formatError (msid, mloc, e) = do
   "\n"
     <>
-    "Error in state: " <> (show msid) <>
+    "\nError in state: " <> (show msid) <>
     "\nOn line: " <> (show mloc) <>
-    "\nMessage: " <> show e
+    "\nMessage: " <> show e <>
+    "\n"
 
 caseTypes :: (Integer -> Integer -> C.DLVal -> WebM a) -> Integer -> Integer -> String -> ActionT Text WebM a
 caseTypes f s a = \case

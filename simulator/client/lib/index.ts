@@ -92,7 +92,7 @@ const getStatus = async () => {
 // the structure of each action is different
 async function getActions(s: number,a: number) {
   const r = await interact(`GET`, `${address}/actions/${s}/${a}`)
-  console.log(r)
+  console.log(JSON.stringify(r))
   return r;
 }
 

@@ -49,18 +49,18 @@ const main = async () => {
 
   // test functionally
   const fs = new lang.FunctionalScenario();
-  await fs.init();
+  let s = await fs.init();
   pi = await fs.pingServer();
   console.log(fs);
   alice = fs.participants.Alice;
   bob = fs.participants.Bob;
   consensus = fs.consensus;
   // init Alice
-  await alice.init();
+  s = await s.who(alice).init();
   // init Bob
-  await bob.init();
+  s = await s.who(bob).init();
   // Alice interactively gets her hand (0)
-  let s = await (await alice.getNextAction()).resolve(0);
+  s = await (await s.who(alice).getNextAction()).resolve(0);
   // Alice's hand (0) is published
   s = await (await s.who(consensus).getNextAction()).resolve(0);
   // Alice observes that her hand is published

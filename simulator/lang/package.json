@@ -1,7 +1,7 @@
 {
   "name": "@reach-sh/simulator-lang",
   "description": "language/library for the Reach Simulator",
-  "version": "0.0.19",
+  "version": "0.0.28",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": {
@@ -11,7 +11,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@reach-sh/simulator-client": "0.0.47"
+    "@reach-sh/simulator-client": "0.0.48"
   },
   "author": "reach.sh",
   "license": "Apache-2.0",
