@@ -738,6 +738,7 @@ data SLPrimitive
   | SLPrim_part_set
   | SLPrim_part_setted SrcLoc SLPart DLArg
   | SLPrim_fluid_read FluidVar
+  | SLPrim_fluid_read_didPublish FluidVar
   | SLPrim_fluid_read_canWait FluidVar
   | SLPrim_race
   | SLPrim_Map
