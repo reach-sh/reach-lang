@@ -51,6 +51,12 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
   A mapping is trustworthy if its values are guaranteed to be preserved across interactions.
   When this is `{!rsh} true`, the verifier will enforce that your program does not rely on values being preserved.
 
+  See example below:
+  ```reach
+  load: examples/map-simpl/index.rsh
+  range: 4 - 6
+  ```
+
   Reach cannot provide trustworthy mappings with some connectors; therefore it is dangerous to not set this to `{!rsh} true` on such connectors.
   Reach will emit a warning during compilation if you do such a dangerous thing.
 
@@ -59,6 +65,13 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
   `{!rsh} true` or `{!rsh} false` (default)
 
   Determines whether arithmetic operations automatically introduce static assertions that they do not overflow beyond `{!rsh} UInt.max`.
+
+  See example below:
+  ```reach
+  load: examples/uint256/index.rsh
+  range: 3 - 5
+  ```
+
   This defaults to `{!rsh} false`, because it is onerous to verify.
   We recommend turning it on before final deployment, but leaving it off during development.
   When it is `{!rsh} false`, connectors will ensure that overflows do not actually occur on the network.
@@ -71,12 +84,24 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
   When this is `{!rsh} true`, then connector-specific constants, like `{!rsh} UInt.max`, will be instantiated to literal numbers.
   This concretization of these constants can induce performance degradation in the verifier.
 
+  See example below:
+  ```reach
+  load: hs/t/y/overflow_con.rsh
+  range: 3 - 6
+  ```
+
 + @{ref("rsh", "connectors")} `{!rsh} connectors`
 
   @{ref("rsh", "ETH")}@{ref("rsh", "ALGO")} `{!rsh} [ETH, ALGO]` (default)
 
   A tuple of the connectors that the application should be compiled for.
   By default, all available connectors are chosen.
+
+  In the example below, only `ETH` and `ALGO` are chosen:
+  ```reach
+  load: examples/popularity-contest/index.rsh
+  range: 10 - 15
+  ```
 
 ## {#ref-programs-appinit-exprs} Expressions
 
