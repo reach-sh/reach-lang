@@ -382,8 +382,9 @@ instance Optimize DLExpr where
       case t' of
         DLA_Var tv ->
           optKnownLargeArg tv >>= \case
-            Just (DLLA_Tuple as) ->
-              return $ DLE_Arg at $ unsafeAt as $ fromIntegral i
+            Just (DLLA_Tuple as) -> do
+              let a = unsafeAt as $ fromIntegral i
+              DLE_Arg at <$> opt a
             _ -> meh
         _ -> meh
     DLE_ObjectRef at o k -> DLE_ObjectRef at <$> opt o <*> pure k
@@ -433,7 +434,7 @@ instance Optimize DLExpr where
           optKnownLargeArg mv >>= \case
             Just (DLLA_Data _ vn a) ->
               case vn of
-                "Some" -> return $ DLE_Arg at $ a
+                "Some" -> DLE_Arg at <$> opt a
                 _ -> return $ DLE_Arg at da'
             _ -> meh
         _ -> meh
