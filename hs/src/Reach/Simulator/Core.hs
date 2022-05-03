@@ -860,6 +860,7 @@ instance Interp LLStep where
                     runWithWinner dlr phId
           Consensus -> do
             v <- suspend $ PS_Suspend (Just at) (A_TieBreak phId $ M.keys sends)
+            incrPhaseId
             checkTimeout tc_mtime phId $ case v of
               V_Data s v' -> do
                 let actId' = vUInt v'
@@ -902,7 +903,6 @@ instance Interp LLStep where
                       Right winningMsg' -> do
                         void $ fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg') (m_pay winningMsg') apiFlag
                         winner dlr phId
-                        incrPhaseId
                         interp $ dr_k
               _ -> possible "expected V_Data value"
 

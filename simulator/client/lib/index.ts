@@ -528,6 +528,12 @@ const passTime = async (s: number,n: number) => {
   return r
 }
 
+const forceTimeout = async (s: number) => {
+  const r = await interact('POST', `${address}/timeout/${s}`)
+  console.log(r)
+  return r
+}
+
 // ping the server for a friendly greeting ^_^
 const ping = async () => {
   const r = await interact(`GET`, `${address}/ping`)
@@ -601,5 +607,6 @@ export {
   viewCall,
   getStateGraph,
   passTime,
-  dotGraph
+  dotGraph,
+  forceTimeout
 };

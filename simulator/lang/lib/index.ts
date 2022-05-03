@@ -121,6 +121,11 @@ class Scenario {
     return this.next();
   }
 
+  async forceTimeout() {
+    await c.forceTimeout(this.state.id);
+    return this.next();
+  }
+
 }
 
 class FunctionalScenario extends Scenario {

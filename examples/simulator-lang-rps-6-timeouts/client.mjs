@@ -25,7 +25,6 @@ const main = async () => {
   s = await (await s.who(alice).getNextAction()).resolve(0);
   // getRandom
   s = await (await s.who(alice).getNextAction()).resolve(4444);
-  s = await s.wait(9999);
   // Alice's wager/deadline is published
   s = await (await s.who(consensus).getNextAction()).resolve(0);
   // Alice observes that her hand is published
@@ -34,13 +33,18 @@ const main = async () => {
   s = await (await s.who(bob).getNextAction()).resolve();
 
   // Bob interactively gets his hand (1)
-  ss = await (await s.who(bob).getNextAction()).resolve(1);
+  let ss = await (await s.who(bob).getNextAction()).resolve(1);
+  s = await ss.forceTimeout();
+
   // Bob's hand (1) is published
-  s = await (await ss.who(consensus).getNextAction()).resolve(1);
+  s = await (await s.who(consensus).getNextAction()).resolve(1);
   // Alice observes that Bob's hand is published
   s = await (await s.who(alice).getNextAction()).resolve();
   // Bob observes that his hand is published
   s = await (await s.who(bob).getNextAction()).resolve();
+  //
+  // s = await (await s.who(alice).getNextAction()).resolve();
+
   // Alice's hand is published
   s = await (await s.who(consensus).getNextAction()).resolve(0);
   // Seen
@@ -68,7 +72,7 @@ const main = async () => {
   // assert.equal(r,"Done");
 
   console.log("Done ########################");
-  console.log("Testing Complete")
+  console.log("Testing Complete!")
 }
 
 main();
