@@ -19,35 +19,24 @@ export const ParticipantDropdown = ({
   const [options, setOptions] = useState([])
   useEffect(() => {
       const filterParticipants =  async (unfilteredParticipants: Participant[]): any => {
-        console.log('unfiltered');
-        console.log(unfilteredParticipants);
-        console.log(predicate)
+       
       return filterAsync(predicate, unfilteredParticipants)
     }
     const setFilteredOptions = async (p: Participant[]) => {
-      console.log(p);
-      
       const options = await filterParticipants(p)
-      console.log(options);
-      
       setOptions(options)
     }
     setFilteredOptions(participants)
   }, [])
 
-  const createOptions = (participants: Participant[]): JSX.Element[] => {
-    console.log(participants);
-    
+  const createOptions = (participants: Participant[]): JSX.Element[] => {    
     return participants.map((participant) => (
       <option key={participant.actorId} value={participant.actorId}>{participant.who}</option>
     ));
     };
   const nullOption = () => <option style={{display: "none"}}></option>
   if(participants && participants.length > 0){
-    console.log(participants)
-    const opt = createOptions(options);
-    console.log(opt);
-    
+    const opt = createOptions(options);    
     return <DropdownInput value={value || ''} options={[nullOption(),...opt]} onChange={setValue} />;
   } else {
       return null
