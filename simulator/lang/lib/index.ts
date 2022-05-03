@@ -243,8 +243,8 @@ class Participant extends Actor {
     super(id, account, name, scene);
   }
 
-  async init(liv={},accID="") {
-    const r = await c.initFor(this.scene.state.id,this.id,JSON.stringify(liv),accID)
+  async init(blce="",liv={},accID="") {
+    const r = await c.initFor(this.scene.state.id,this.id,JSON.stringify(liv),accID,blce)
     console.log(r);
     return this.scene.next();
   }

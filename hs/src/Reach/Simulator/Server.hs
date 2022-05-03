@@ -543,8 +543,14 @@ initProgSim ll = do
   ps <- return $ C.initApp ll initSt
   processNewState Nothing ps Consensus
 
-initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> Maybe C.Account -> LLProg -> WebM Bool
-initProgSimFor actId sid liv accId (LLProg _ _ _ _ _ _ _ _ _ step) = do
+initProgSimFor :: C.ActorId ->
+                  StateId ->
+                  C.LocalInteractEnv ->
+                  Maybe C.Account ->
+                  Maybe Integer ->
+                  LLProg ->
+                  WebM Bool
+initProgSimFor actId sid liv accId blce (LLProg _ _ _ _ _ _ _ _ _ step) = do
   graph <- gets e_graph
   modify $ \st -> st {e_actor_id = actId}
   let (g, l) = saferMaybe "initProgSimFor" $ M.lookup sid graph
@@ -553,10 +559,15 @@ initProgSimFor actId sid liv accId (LLProg _ _ _ _ _ _ _ _ _ step) = do
   let accId' = case accId of
         Nothing -> C.l_acct lcl
         Just accId'' -> accId''
+  let blce' = case blce of
+        Nothing -> 0
+        Just n -> n
   let lcl' = lcl { C.l_livs = liv, C.l_acct = accId' }
   let locals' = M.insert actId lcl' locals
   let l' = l {C.l_curr_actor_id = actId, C.l_locals = locals'}
-  ps <- return $ C.initAppFromStep step (g, l')
+  let ledger = M.insert accId' (M.singleton C.nwToken blce') $ C.e_ledger g
+  let g' = g {C.e_ledger = ledger}
+  ps <- return $ C.initAppFromStep step (g', l')
   processNewState (Just sid) ps Local
 
 startServer :: LLProg -> String -> IO ()
@@ -668,6 +679,12 @@ app p srcTxt dg = do
         case (parseParam prm) :: Either Text C.Account of
           Left e -> possible $ show e
           Right w -> return $ Just w
+    blce <- case M.lookup "startingBalance" ps of
+      Nothing -> return Nothing
+      Just prm -> do
+        case (parseParam prm) :: Either Text Integer of
+          Left e -> possible $ show e
+          Right w -> return $ Just w
     liv :: LB.ByteString <- param "liv"
     ll <- webM $ gets e_src
     let liv' :: Maybe C.LocalInteractEnv = decode liv
@@ -677,7 +694,7 @@ app p srcTxt dg = do
         case ll of
           Nothing -> json $ ("No Program" :: String)
           Just ll' -> do
-            outcome <- webM $ initProgSimFor a s liv'' acc ll'
+            outcome <- webM $ initProgSimFor a s liv'' acc blce ll'
             raiseError outcome
 
   get "/init_details/:a" $ do

@@ -399,8 +399,9 @@ const respondWithVal = async (s: number,a: number,v: any,w: any = false,t='numbe
 // optionally, provide an account id acc (integer)
 // for example :
 // await c.initFor(0,0,JSON.stringify({'wager':{'tag':'V_UInt','contents':10}}))
-const initFor = async (s: number,a: number,liv="{}",acc: any = false) => {
+const initFor = async (s: number,a: number,liv="{}",acc: any = false,blce: any = false) => {
   const accParam = (acc || acc === 0) ? `&accountId=${acc}` : ``
+  const balance = (blce || blce === 0) ? `&startingBalance=${blce}` : ``
   let livS = liv
   if (
     typeof liv === 'object' &&
@@ -409,7 +410,7 @@ const initFor = async (s: number,a: number,liv="{}",acc: any = false) => {
   ) {
     livS = JSON.stringify(liv)
   }
-  const r = await interact('POST', `${address}/init/${a}/${s}/?liv=${livS}${accParam}`)
+  const r = await interact('POST', `${address}/init/${a}/${s}/?liv=${livS}${accParam}${balance}`)
   console.log(r)
   return r
 }

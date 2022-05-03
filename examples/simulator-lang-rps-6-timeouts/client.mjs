@@ -15,12 +15,12 @@ const main = async () => {
   // console.log("YUKBEWIULCEWIUVLELBI")
   // console.log(await s.who(consensus).getNetworkTime());
   // init Alice
-  s = await s.who(alice).init(
+  s = await s.who(alice).init(10,
     {'wager':{'tag':'V_UInt','contents':10},
     'deadline':{'tag':'V_UInt','contents':99}}
   );
   // init Bob
-  s = await s.who(bob).init();
+  s = await s.who(bob).init(10);
   // Alice interactively gets her hand (0)
   s = await (await s.who(alice).getNextAction()).resolve(0);
   // getRandom
