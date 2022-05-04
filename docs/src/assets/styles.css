@@ -356,7 +356,7 @@ i.fas:hover {cursor: pointer;}
 #page-col a:hover:not(.btn) {color: var(--link-hover); text-decoration: none;}
 #page-col a:hover.ui-tooltip {color: var(--reach-red-hover);}
 #page-col a.ui-tooltip {color: var(--reach-red);}
-#page-col a.ui-tooltip::after {content: " \1F6C8";}
+#page-col a.ui-tooltip::after {content: " \1F6C8"; cursor: help;}
 
 #page-col div#hh-viewer ul:not(.nav) {list-style-type: square;}
 
