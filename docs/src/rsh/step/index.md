@@ -508,6 +508,12 @@ exit();
 By comparing this example to `{!rsh} closeTo`, you can see that using this Reach standard library function helps save thinking, as well as additional lines of code, reducing the chances of introducing new errors.
 
 The `{!rsh} nonNetPayAmt` parameter should be a pay amount. For example, when closing a program that uses a `{!rsh} Token` `{!rsh} token`, the argument would be `{!rsh} [ [balance(tok), tok] ]`.
+
+```reach
+load: examples/secured-loan/index.rsh
+range: 55 - 58
+```
+
 The `{!rsh} after` and `{!rsh} nonNetPayAmt` arguments are optional.
 
 ### `call`
