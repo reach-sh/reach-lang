@@ -420,7 +420,7 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
   };
 
   const tooltip = (text, hoverText) => {
-    return `<a class="ui-tooltip" title="${hoverText}"><span style="cursor">${text}</span></a>`;
+    return `<a class="ui-tooltip" title="${hoverText}"><span style="cursor: help">${text}</span></a>`;
   };
 
   const makeDirectiveWithClass = (classString) => {
