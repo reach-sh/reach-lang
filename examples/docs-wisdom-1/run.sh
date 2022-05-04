@@ -2,7 +2,7 @@
 export REACH_DEBUG=0
 alias reach="../../reach"
 
-[ -n "$CIRCLECI" ] && reach devnet --await-background
+[ -z "$CIRCLECI" ] && reach devnet --await-background
 
 # Role selection not yet implemented
 reach run index
