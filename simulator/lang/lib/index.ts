@@ -129,14 +129,17 @@ class Scenario {
 }
 
 class FunctionalScenario extends Scenario {
+  top: State;
+
   constructor() {
     super();
+    this.top = new State();
   }
 
   next() {
+    this.top.next();
     const next = Object.assign(new FunctionalScenario(), this);
-    next.state = Object.assign(new State(), this.state);
-    next.state.next();
+    next.state = Object.assign(new State(), this.top);
     return next;
   }
 
@@ -206,6 +209,11 @@ class Actor {
   async getWallet() {
     const g = await c.getStateGlobals(this.scene.state.id)
     return g.e_ledger[this.account.id]
+  }
+
+  async getNetworkTokenBalance() {
+    const g = await c.getStateGlobals(this.scene.state.id)
+    return g.e_ledger[this.account.id][-1]
   }
 
   async getPhase() {
