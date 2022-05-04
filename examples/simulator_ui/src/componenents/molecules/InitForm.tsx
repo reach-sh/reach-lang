@@ -30,8 +30,8 @@ export default function InitForm({initDetails, updateEntry, initValues}:{initDet
   return (
     <FormContainer>
         {initDetails && initValues &&
-        Object.entries(initDetails).map((entry: any) => (
-            <FormItem>
+        Object.entries(initDetails).map((entry: any, index: number) => (
+            <FormItem key={index}>
                 <span>
                     <ItemLabel>{capitalizeFirstLetter(entry[0])}: </ItemLabel> 
                     <ItemLabel>{entry[1].slice(7)}</ItemLabel>

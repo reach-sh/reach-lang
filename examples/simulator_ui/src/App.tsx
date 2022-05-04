@@ -122,6 +122,7 @@ function App() {
   const initLogAndUpdate = async ({participant, node, values, details}: {participant: number, node: number, values: any, details: any}) => {
     let result = await initParticipant(participant, node, values, details)
     if (result[0] == 'OK' ){
+     setNodeId(nodeId + 1)
      updateJsonLog([...jsonLog, ["initFor", node, participant, JSON.stringify(result[1])]]) 
     }
   }
@@ -194,6 +195,7 @@ function App() {
             participants={
               objectViewData && getParticipants(objectViewData, nodeId)
             }
+            nodeId={nodeId}
           />
         </InfoContainer>
       </Container>
