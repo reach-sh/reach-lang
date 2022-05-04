@@ -323,25 +323,30 @@ maxTypeSize m =
     True -> 0
     False -> maximum $ map typeSizeOf $ M.elems m
 
-typeSig :: DLType -> String
-typeSig x =
-  case x of
-    T_Null -> "byte[0]"
-    T_Bool -> "byte" -- "bool"
-    T_UInt False -> "uint64"
-    T_UInt True -> "uint256"
-    T_Bytes sz -> "byte" <> array sz
-    T_Digest -> "digest"
-    T_Address -> "address"
-    T_Contract -> typeSig $ T_UInt uintWord
-    T_Token -> typeSig $ T_UInt uintWord
-    T_Array t sz -> typeSig t <> array sz
-    T_Tuple ts -> "(" <> intercalate "," (map typeSig ts) <> ")"
-    T_Object m -> typeSig $ T_Tuple $ M.elems m
-    T_Data m -> "(byte,byte" <> array (maxTypeSize m) <> ")"
-    T_Struct ts -> typeSig $ T_Tuple $ map snd ts
+typeSig_ :: Bool -> DLType -> String
+typeSig_ addr2acc = \case
+  T_Null -> "byte[0]"
+  T_Bool -> "byte" -- "bool"
+  T_UInt False -> "uint64"
+  T_UInt True -> "uint256"
+  T_Bytes sz -> "byte" <> array sz
+  T_Digest -> "digest"
+  T_Address -> if addr2acc then "account" else "address"
+  T_Contract -> typeSig $ T_UInt uintWord
+  T_Token -> typeSig $ T_UInt uintWord
+  T_Array t sz -> typeSig t <> array sz
+  T_Tuple ts -> "(" <> intercalate "," (map typeSig ts) <> ")"
+  T_Object m -> typeSig $ T_Tuple $ M.elems m
+  T_Data m -> "(byte,byte" <> array (maxTypeSize m) <> ")"
+  T_Struct ts -> typeSig $ T_Tuple $ map snd ts
   where
+    --The ABI allows us to do this, but we don't know how to do in the remote
+    --call generator
+    --rec = typeSig_ addr2acc
     array sz = "[" <> show sz <> "]"
+
+typeSig :: DLType -> String
+typeSig = typeSig_ False
 
 typeSizeOf :: DLType -> Integer
 typeSizeOf = \case
@@ -2053,7 +2058,7 @@ ce = \case
           cla $ mdaToMaybeLA mt mva
           cTupleSet at mdt $ fromIntegral i
   DLE_Remote at fs ro rng_ty rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo ma -> do
-    let DLRemoteALGO _fees r_assets = malgo
+    let DLRemoteALGO _fees r_assets r_addr2acc = malgo
     warn_lab <- asks eWhich >>= \case
       Just which -> return $ "Step " <> show which
       Nothing -> return $ "This program"
@@ -2061,7 +2066,7 @@ ce = \case
       warn_lab <> " calls a remote object at " <> show at <> ". This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object. Furthermore, the remote object may require special transaction parameters which are not expressed in the Reach API or the Algorand ABI standards."
     let ts = map argTypeOf as
     let rm = fromMaybe rm' ma
-    let sig = signatureStr rm ts (Just rng_ty)
+    let sig = signatureStr r_addr2acc rm ts (Just rng_ty)
     remoteTxns <- liftIO $ newCounter 0
     let mayIncTxn m = do
           b <- m
@@ -2114,9 +2119,26 @@ ce = \case
         makeTxn1 "ApplicationID"
         cbs $ sigStrToBytes sig
         makeTxn1 "ApplicationArgs"
+        accountsR <- liftIO $ newCounter 1
         forM_ as $ \a -> do
           ca a
-          ctobs $ argTypeOf a
+          let t = argTypeOf a
+          ctobs t
+          case t of
+            -- XXX This is bad and will not work in most cases
+            T_Address -> do
+              incResource R_Account a
+              let m = makeTxn1 "Accounts"
+              case r_addr2acc of
+                False -> do
+                  op "dup"
+                  m
+                True -> do
+                  i <- liftIO $ incCounter accountsR
+                  m
+                  cint $ fromIntegral i
+                  ctobs $ T_UInt uintWord
+            _ -> return ()
           makeTxn1 "ApplicationArgs"
         -- XXX If we can "inherit" resources, then this needs to be removed and
         -- we need to check that nnZeros actually stay 0
@@ -2124,13 +2146,6 @@ ce = \case
           incResource R_Asset a
           ca a
           makeTxn1 "Assets"
-        -- XXX This is bad and will not work in most cases
-        let isAddress = (==) T_Address . argTypeOf
-        forM_ (filter isAddress as) $ \a -> do
-          incResource R_Account a
-          ca a
-          ctobs $ argTypeOf a
-          makeTxn1 "Accounts"
         op "itxn_submit"
         show_stack ("Remote: " <> sig) Nothing at fs
         appl_idx <- liftIO $ readCounter remoteTxns
@@ -2278,11 +2293,11 @@ multipleApiCalls w = do
     Just n  -> return $ n > 1
     Nothing -> return False
 
-signatureStr :: String -> [DLType] -> Maybe DLType -> String
-signatureStr f args mret = sig
+signatureStr :: Bool -> String -> [DLType] -> Maybe DLType -> String
+signatureStr addr2acc f args mret = sig
   where
     rets = fromMaybe "" $ fmap typeSig mret
-    sig = f <> "(" <> intercalate "," (map typeSig args) <> ")" <> rets
+    sig = f <> "(" <> intercalate "," (map (typeSig_ addr2acc) args) <> ")" <> rets
 
 sigStrToBytes :: String -> BS.ByteString
 sigStrToBytes sig = shabs
@@ -2295,7 +2310,7 @@ sigStrToInt = fromIntegral . btoi . sigStrToBytes
 
 clogEvent :: String -> [DLVar] -> App ()
 clogEvent eventName vs = do
-  let sigStr = signatureStr eventName (map varType vs) Nothing
+  let sigStr = signatureStr False eventName (map varType vs) Nothing
   let as = map DLA_Var vs
   let cheader = cbs (bpack sigStr) >> op "sha512_256" >> output (TSubstring 0 4)
   cconcatbs $ (T_Bytes 4, cheader) : map (\a -> (argTypeOf a, ca a)) as
@@ -3038,7 +3053,7 @@ capi qualify (who, (ApiInfo {..})) = do
   where
     capi_who = who
     capi_which = ai_which
-    mk_sig n = signatureStr n capi_arg_tys mret
+    mk_sig n = signatureStr False n capi_arg_tys mret
     capi_sig = mk_sig f
     f = adjustApiName (bunpack who) ai_which qualify
     imp = impossible "apiSig"
@@ -3075,7 +3090,7 @@ genApiJump who ms = do
   let whichs = map capi_which ms'
   let labels = map capi_label ms'
   let (arg_tys, mret) = apiArgsAndRet m
-  let sig = signatureStr (bunpack who) arg_tys $ Just mret
+  let sig = signatureStr False (bunpack who) arg_tys $ Just mret
   return $ (sig, CApi {
       capi_who = who
     , capi_label = capi_label m
@@ -3104,7 +3119,7 @@ cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs) = (cview_sig, c)
   where
     cview_who = who
     f = bunpack who
-    cview_sig = signatureStr f cview_arg_tys $ Just cview_ret_ty
+    cview_sig = signatureStr False f cview_arg_tys $ Just cview_ret_ty
     c = CView {..}
 
 doWrapData :: [DLType] -> (DLArg -> App ()) -> App ()

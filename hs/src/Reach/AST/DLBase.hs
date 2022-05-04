@@ -621,6 +621,7 @@ instance Pretty ApiInfo where
 data DLRemoteALGO = DLRemoteALGO
   { ralgo_fees :: DLArg
   , ralgo_assets :: [DLArg]
+  , ralgo_addr2acc :: Bool
   }
   deriving (Eq, Ord)
 
@@ -628,11 +629,13 @@ instance PrettySubst DLRemoteALGO where
   prettySubst (DLRemoteALGO {..}) = do
     f' <- prettySubst ralgo_fees
     a' <- mapM prettySubst ralgo_assets
+    let a2a' = pretty ralgo_addr2acc
     return $
       render_obj $
         M.fromList
           [ ("fees" :: String, f')
           , ("assets", render_das a')
+          , ("addr2acc", pretty a2a')
           ]
 
 data DLExpr

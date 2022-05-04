@@ -93,8 +93,11 @@ instance FreeVars DLPayAmt where
 instance FreeVars DLWithBill where
   freeVars (DLWithBill _ a b) = freeVars [a, b]
 
+instance FreeVars Bool where
+  freeVars = const mempty
+
 instance FreeVars DLRemoteALGO where
-  freeVars (DLRemoteALGO a b) = freeVars a <> freeVars b
+  freeVars (DLRemoteALGO a b z) = freeVars a <> freeVars b <> freeVars z
 
 instance FreeVars DLTokenNew where
   freeVars (DLTokenNew a b c d e f) = freeVars [a, b, c, d, e] <> freeVars f
