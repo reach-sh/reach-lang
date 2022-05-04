@@ -30,7 +30,7 @@ class Scenario {
   constructor() {
     this.state = new State();
     this.participants = {};
-    this.consensus = new Consensus(new Account(-1,this),this);
+    this.consensus = new Consensus(new Account(consensusID,this),this);
     this.apis = {};
     this.views = {};
   }
@@ -213,7 +213,7 @@ class Actor {
 
   async getNetworkTokenBalance() {
     const g = await c.getStateGlobals(this.scene.state.id)
-    return g.e_ledger[this.account.id][-1]
+    return g.e_ledger[this.account.id][nwToken]
   }
 
   async getPhase() {
@@ -315,8 +315,12 @@ class Action {
     this.scene = scene;
   }
 
-  async resolve(resp: number = -999,ty: string = "number") {
-    const r = await c.respondWithVal(this.scene.state.id,this.id,resp,this.owner.id,ty)
+  async resolve(resp: any = -999,ty: string = "number") {
+    let v = resp
+    if (resp instanceof Actor) {
+      v = resp.id
+    }
+    const r = await c.respondWithVal(this.scene.state.id,this.id,v,this.owner.id,ty)
     console.log(r);
     return this.scene.next();
   }

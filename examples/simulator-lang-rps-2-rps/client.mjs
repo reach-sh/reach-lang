@@ -21,7 +21,7 @@ const main = async () => {
     // Alice interactively gets her hand (0)
     await (await alice.getNextAction()).resolve(aHand);
     // Alice's hand (0) is published
-    await (await consensus.getNextAction()).resolve(0);
+    await (await consensus.getNextAction()).resolve(alice);
     // Alice observes that her hand is published
     await (await alice.getNextAction()).resolve();
     // Bob observes that Alice's hand is published
@@ -29,7 +29,7 @@ const main = async () => {
     // Bob interactively gets his hand (1)
     await (await bob.getNextAction()).resolve(bHand);
     // Bob's hand (1) is published
-    await (await consensus.getNextAction()).resolve(1);
+    await (await consensus.getNextAction()).resolve(bob);
     // Alice observes that Bob's hand is published
     await (await alice.getNextAction()).resolve();
     // Bob observes that his hand is published
@@ -58,7 +58,7 @@ const main = async () => {
     // Alice interactively gets her hand (0)
     s = await (await s.who(alice).getNextAction()).resolve(aHand);
     // Alice's hand (0) is published
-    s = await (await s.who(consensus).getNextAction()).resolve(0);
+    s = await (await s.who(consensus).getNextAction()).resolve(alice);
     // Alice observes that her hand is published
     s = await (await s.who(alice).getNextAction()).resolve();
     // Bob observes that Alice's hand is published
@@ -66,7 +66,7 @@ const main = async () => {
     // Bob interactively gets his hand (1)
     s = await (await s.who(bob).getNextAction()).resolve(bHand);
     // Bob's hand (1) is published
-    s = await (await s.who(consensus).getNextAction()).resolve(1);
+    s = await (await s.who(consensus).getNextAction()).resolve(bob);
     // Alice observes that Bob's hand is published
     s = await (await s.who(alice).getNextAction()).resolve();
     // Bob observes that his hand is published

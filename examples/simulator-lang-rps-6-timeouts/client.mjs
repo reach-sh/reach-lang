@@ -24,7 +24,7 @@ const main = async () => {
   // getRandom
   s = await (await s.who(alice).getNextAction()).resolve(4444);
   // Alice's wager/deadline is published
-  s = await (await s.who(consensus).getNextAction()).resolve(0);
+  s = await (await s.who(consensus).getNextAction()).resolve(alice);
   // Alice observes that her hand is published
   s = await (await s.who(alice).getNextAction()).resolve();
   // Bob observes that Alice's hand is published
@@ -37,11 +37,11 @@ const main = async () => {
   // force Bob's hand publish to timeout
   s = await ss.forceTimeout();
   // timeout
-  s = await (await s.who(consensus).getNextAction()).resolve(1);
+  s = await (await s.who(consensus).getNextAction()).resolve(bob);
   s = await (await s.who(alice).getNextAction()).resolve();
   s = await (await s.who(bob).getNextAction()).resolve();
   // closeTo
-  s = await (await s.who(consensus).getNextAction()).resolve(0);
+  s = await (await s.who(consensus).getNextAction()).resolve(alice);
   s = await (await s.who(alice).getNextAction()).resolve();
   s = await (await s.who(bob).getNextAction()).resolve();
   // first scenario done
@@ -54,16 +54,16 @@ const main = async () => {
   // test the scenario where Alice times out
   // we're going back in time to our breakpoint here
   //               ↓↓
-  s = await (await ss.who(consensus).getNextAction()).resolve(1);
+  s = await (await ss.who(consensus).getNextAction()).resolve(bob);
   s = await (await s.who(alice).getNextAction()).resolve();
   s = await (await s.who(bob).getNextAction()).resolve();
   s = await s.forceTimeout();
   // timeout
-  s = await (await s.who(consensus).getNextAction()).resolve(0);
+  s = await (await s.who(consensus).getNextAction()).resolve(alice);
   s = await (await s.who(alice).getNextAction()).resolve();
   s = await (await s.who(bob).getNextAction()).resolve();
   // closeTo
-  s = await (await s.who(consensus).getNextAction()).resolve(0);
+  s = await (await s.who(consensus).getNextAction()).resolve(alice);
   s = await (await s.who(alice).getNextAction()).resolve();
   s = await (await s.who(bob).getNextAction()).resolve();
   w = await bob.getNetworkTokenBalance();
