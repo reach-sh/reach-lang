@@ -1,8 +1,11 @@
 import styled from "styled-components";
 import { ReactElement, useState, createRef, useEffect } from "react";
-import Graphin, { IUserEdge, Graph } from "@antv/graphin";
+import Graphin, { IUserEdge, Graph, Behaviors, IG6GraphEvent, IUserNode, NodeConfig } from "@antv/graphin";
 import { ParticipantDropdown } from "../atoms/ParticipantDropdown";
 import { Participant } from "../../types";
+const {ClickSelect} = Behaviors
+
+
 
 type GraphinRef = {
   graph: Graph
@@ -63,18 +66,43 @@ export default function VisualizerPanel({
   participants,
   edges,
   nodes,
+  nodeId
 }: {
   data: any;
   selectNode: Function;
   participants: Participant[];
   edges: IUserEdge[]
-  nodes: any
+  nodes: any,
+  nodeId: number
 }): ReactElement {
   const graphinRef = createRef<Graphin>();
   const [perspective, changePerspective] = useState<string>("");
   const isAParticipant = (participant: Participant) => {
     return (participant === participant)
   }
+
+  const SelectNode = ({nodeId}:{ nodeId: number}) => {
+  const { graph, apis } = graphinRef.current as GraphinRef;
+
+  useEffect(() => {
+    apis.focusNodeById(nodeId.toString());
+
+    const handleClick = (evt: IG6GraphEvent) => {
+      const node = evt.item as any;
+      const model = node.getModel() as NodeConfig;
+      apis.focusNodeById(model.id);
+    };
+
+
+    
+    graph.on('node:click', handleClick);
+    return () => {
+      graph.off('node:click', handleClick);
+    };
+  }, []);
+  return null;
+};
+  
 
     if(nodes.length > 0){
       nodes.forEach((node: any) => {
@@ -102,9 +130,10 @@ export default function VisualizerPanel({
       graph, // Graph instance of g6
       apis, // API interface provided by Graphin
     } = graphinRef.current as GraphinRef;
-    console.log('ref', graphinRef, graph, apis);
+
+
   }, []);
-  
+
   return data ? (
     <VisualizerContainer>
       {participants && (
@@ -126,7 +155,9 @@ export default function VisualizerPanel({
           primaryEdgeColor: "#FFFFFF",
           edgeSize: 1,
         }}
-      />
+      >
+        <SelectNode nodeId={nodeId}/>
+      </Graphin>
     </VisualizerContainer>
   ) : (
     <VisualizerContainer>Initiate Program</VisualizerContainer>

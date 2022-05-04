@@ -34,7 +34,7 @@ export const ParticipantDropdown = ({
       <option key={participant.actorId} value={participant.actorId}>{participant.who}</option>
     ));
     };
-  const nullOption = () => <option style={{display: "none"}}></option>
+  const nullOption = () => <option key={'nullOpt'} style={{display: "none"}}></option>
   if(participants && participants.length > 0){
     const opt = createOptions(options);    
     return <DropdownInput value={value || ''} options={[nullOption(),...opt]} onChange={setValue} />;
