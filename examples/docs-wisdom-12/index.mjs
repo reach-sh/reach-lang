@@ -18,6 +18,8 @@ const showBalance = async (acc) => console.log(`Your balance is ${toSU(await std
 console.log(`The atomic unit is ${stdlib.atomicUnit}`);
 
 const commonInteract = (role) => ({
+  reportTransfer: (payment) => { console.log(`The contract paid ${toSU(payment)} ${suStr} to ${role == 'seller' ? 'you' : 'the seller'}.`) },
+  reportPayment: (payment) => { console.log(`${role == 'buyer' ? 'You' : 'The buyer'} paid ${toSU(payment)} ${suStr} to the contract.`) },
   reportCancellation: () => { console.log(`${role == 'buyer' ? 'You' : 'The buyer'} cancelled the order.`); }
 });
 
@@ -57,6 +59,6 @@ if (role === 'seller') {
   await showBalance(acc);
   await ctc.p.Buyer(buyerInteract);
   await showBalance(acc);
-}
+};
 
 ask.done();
