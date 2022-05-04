@@ -68,7 +68,7 @@ When the installation is finished, a terminal called `Ubuntu` should open on you
 :::
 
 
-Installing Docker:
+## {#qs-installing-docker} Installing Docker:
 
 To install Docker we want to use `winget`. It is the official package manager for Windows.
 We will download the package from Microsoft's official GitHub account.
