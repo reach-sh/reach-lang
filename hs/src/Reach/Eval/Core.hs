@@ -5060,29 +5060,24 @@ doForkAPI2Case isSingleFun args = do
         return $ [w] <> l <> [z']
   let splitApiConsensus stmts = do
         case reverse stmts of
-          JSReturn _ (Just (JSArrayLiteral _ els _)) _ : rst ->
-            case jsa_flatten els of
-              [pay, con] -> return (assumes, Just pay, con)
-              [con]      -> return (assumes, Nothing, con)
-              _ -> expect_ $ Err_Api_Return_Type
+          JSReturn _ (Just (JSArrayLiteral _ els _)) _ : rst
+              | [pay, con] <- jsa_flatten els -> return (assumes, Just pay, con)
+              | [con]      <- jsa_flatten els -> return (assumes, Nothing, con)
             where assumes = reverse rst
           _ -> expect_ $ Err_Api_Return_Type
   -- Splits the `api_` function into distinct assume, pay, and consensus expressions,
   -- each of which have checks injected
   let ignore = jid "_"
-  let splitSingleApiBody w = \case
-        JSArrowExpression darg_pl fa cb -> do
-          let domain = parseJSArrowFormals at darg_pl
-          let i_args = ignore <$ domain
-          (chks, mpay, con) <- splitApiConsensus $ jsBlockToStmts $ jsArrowBodyToRetBlock cb
-          chk_ss <- flip jsInlineCall [dotdom] $ jsArrowStmts fa domain chks
-          let no_op = jsArrowStmts fa i_args []
-          let assume = mkAssume chk_ss no_op
-          con_e <- mkConsensus w chk_ss =<< prependFunArgs [ignore] con
-          mpay_e <- forM mpay $ mkPay chks . jsArrowExpr fa domain
-          return (assume, mpay_e, con_e)
-        JSExpressionParen _ e _ -> splitSingleApiBody w e
-        _ -> impossible "expected function"
+  let splitSingleApiBody w f = do
+        let fa = jsa f
+        (domain, body) <- deconstructFunStmts f
+        (chks, mpay, con) <- splitApiConsensus body
+        chk_ss <- flip jsInlineCall [dotdom] $ jsArrowStmts fa domain chks
+        let no_op = jsArrowStmts fa (ignore <$ domain) []
+        let assume = mkAssume chk_ss no_op
+        con_e <- mkConsensus w chk_ss =<< prependFunArgs [ignore] con
+        mpay_e <- forM mpay $ mkPay chks . jsArrowExpr fa domain
+        return (assume, mpay_e, con_e)
   let goSingle who f = do
         (assumes, mpay, con) <- splitSingleApiBody who f
         return $ [who, assumes] <> catMaybes [mpay] <>  [con]
