@@ -11,15 +11,15 @@ Verification failed:
 
   const UInt.max = 20;
 
-  const data_id/322 = <switch case binding for T(10 )>;
+  const data_id/338 = <switch case binding for T(10 )>;
   //    ^ could = 10
   //      from: ./pr417.rsh:18:12:switch
 
   // Theorem Formalization
 
-  const v395 = 0 == ((10 + data_id/322) - 10);
+  const v415 = 0 == ((10 + data_id/338) - 10);
   //    ^ would be false
-  assert(v395);
+  assert(v415);
 
   Verifying when NO participants are honest
 Verification failed:
@@ -35,9 +35,9 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v318 = 0 == ((10 + 10) - 10);
+  const v334 = 0 == ((10 + 10) - 10);
   //    ^ would be false
-  assert(v318);
+  assert(v334);
 
 Verification failed:
   when NO participants are honest
@@ -49,32 +49,32 @@ Verification failed:
 
   const UInt.max = 20;
 
-  const tok/209 = <a publication>;
+  const tok/217 = <a publication>;
   //    ^ could = Token!val!2
   //      from: ./pr417.rsh:10:5:dot
 
   // Theorem Formalization
 
-  const tokInfos/201 = array(Tuple(UInt, UInt, Bool), [[0, 0, false ] ]);
+  const tokInfos/209 = array(Tuple(UInt, UInt, Bool), [[0, 0, false ] ]);
   //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
-  const tokInfo/212 = tokInfos/201[0];
+  const tokInfo/220 = tokInfos/209[0];
   //    ^ would be [0, 0, false ]
-  const tokInfos'/217 = Array.set(tokInfos/201, 0, [0, tokInfo/212[1], tokInfo/212[2] ] );
+  const tokInfos'/225 = Array.set(tokInfos/209, 0, [0, tokInfo/220[1], tokInfo/220[2] ] );
   //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
-  const tokInfo/224 = tokInfos'/217[0];
+  const tokInfo/234 = tokInfos'/225[0];
   //    ^ would be [0, 0, false ]
-  const tokInfos'/232 = Array.set(tokInfos'/217, 0, [(tokInfo/224[0] + 10), tokInfo/224[1], tokInfo/224[2] ] );
+  const tokInfos'/244 = Array.set(tokInfos'/225, 0, [(tokInfo/234[0] + 10), tokInfo/234[1], tokInfo/234[2] ] );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[10, 0, false ] ] )
-  const tokIdx/347 = ((Array.set(array(Token, [Token.zero ]), 0, tok/209 )[0] == tok/209) ? [true, 0 ] : [false, 1 ])[1];
+  const tokIdx/365 = ((Array.set(array(Token, [Token.zero ]), 0, tok/217 )[0] == tok/217) ? [true, 0 ] : [false, 1 ])[1];
   //    ^ would be 0
-  const tokInfo/349 = tokInfos'/232[tokIdx/347];
+  const tokInfo/367 = tokInfos'/244[tokIdx/365];
   //    ^ would be [10, 0, false ]
-  const tokInfos'/372 = Array.set(tokInfos'/232, tokIdx/347, [(tokInfo/349[0] + 10), tokInfo/349[1], tokInfo/349[2] ] );
+  const tokInfos'/392 = Array.set(tokInfos'/244, tokIdx/365, [(tokInfo/367[0] + 10), tokInfo/367[1], tokInfo/367[2] ] );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[20, 0, false ] ] )
-  const tokInfo/382 = tokInfos'/372[0];
+  const tokInfo/402 = tokInfos'/392[0];
   //    ^ would be [20, 0, false ]
-  const v398 = 0 == Array.set(tokInfos'/372, 0, [(tokInfo/382[0] - 10), tokInfo/382[1], tokInfo/382[2] ] )[0][0];
+  const v418 = 0 == Array.set(tokInfos'/392, 0, [(tokInfo/402[0] - 10), tokInfo/402[1], tokInfo/402[2] ] )[0][0];
   //    ^ would be false
-  assert(v398);
+  assert(v418);
 
 Checked 41 theorems; 4 failures (and 1 omitted repeats) :'(

@@ -151,7 +151,7 @@
 	"Tuple.set": "Method",
 	"UInt": "TypeParameter",
 	"unknowable": "Function",
-	"verifyOverflow": "Field",
+	"verifyArithmetic": "Field",
 	"verifyPerConnector": "Field",
 	"wait": "Function",
 	"while": "Keyword",

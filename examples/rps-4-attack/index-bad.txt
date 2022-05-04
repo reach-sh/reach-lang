@@ -11,25 +11,25 @@ Verification failed:
 
   const UInt.max = 2;
 
-  const wager/81 = "Alice".interact.wager;
+  const wager/85 = "Alice".interact.wager;
   //    ^ could = 1
   //      from: ./index-bad.rsh:11:10:property binding
-  const handAlice/84 = protect<UInt>("Alice".interact.getHand());
+  const handAlice/88 = protect<UInt>("Alice".interact.getHand());
   //    ^ could = 0
   //      from: ./index-bad.rsh:21:50:application
-  const handBob/94 = protect<UInt>("Bob".interact.getHand());
+  const handBob/100 = protect<UInt>("Bob".interact.getHand());
   //    ^ could = 2
   //      from: ./index-bad.rsh:29:48:application
 
   // Theorem Formalization
 
-  const outcome/103 = (handAlice/84 + (4 - handBob/94)) % 3;
+  const outcome/111 = (handAlice/88 + (4 - handBob/100)) % 3;
   //    ^ would be 2
-  const v110 = ((outcome/103 == 2) ? [1, 0 ] : ((outcome/103 == 0) ? [0, 2 ] : [1, 1 ]));
+  const v118 = ((outcome/111 == 2) ? [1, 0 ] : ((outcome/111 == 0) ? [0, 2 ] : [1, 1 ]));
   //    ^ would be [1, 0 ]
-  const v124 = 0 == (((wager/81 + wager/81) - (v110[0] * wager/81)) - (v110[1] * wager/81));
+  const v132 = 0 == (((wager/85 + wager/85) - (v118[0] * wager/85)) - (v118[1] * wager/85));
   //    ^ would be false
-  assert(v124);
+  assert(v132);
 
   Verifying when NO participants are honest
 Checked 12 theorems; 2 failures (and 1 omitted repeats) :'(

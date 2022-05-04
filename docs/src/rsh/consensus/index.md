@@ -243,6 +243,7 @@ A @{defn("parallel reduce statement")} is written:
 @{ref("rsh", "parallelReduce.paySpec")}
 @{ref("rsh", "parallelReduce.case")}
 @{ref("rsh", "parallelReduce.api")}
+@{ref("rsh", "parallelReduce.api_")}
 @{ref("rsh", "parallelReduce.timeout")}
 ```reach
 const LHS =
@@ -261,6 +262,8 @@ const LHS =
     ASSUME_EXPR,
     PAY_EXPR,
     CONSENSUS_EXPR)
+  .api_(API_EXPR,
+    CHECKED_CONSENSUS_EXPR)
   .timeout(DELAY_EXPR, () =>
     TIMEOUT_BLOCK);
 ```
@@ -268,7 +271,7 @@ const LHS =
 The `{!rsh} LHS` and `{!rsh} INIT_EXPR` are like the initialization component of a `{!rsh} while` loop; and,
 the `{!rsh} .invariant` and `{!rsh} .while` components are like the invariant and condition of a `{!rsh} while` loop;
 the `{!rsh} DEFINE_BLOCK` is like the `{!rsh} DEFINE_BLOCK` of a `{!rsh} while` loop;
-while the `{!rsh} .case`, `{!rsh} .api`, `{!rsh} .timeout`, and `{!rsh} .paySpec` components are like the corresponding components of a `{!rsh} fork` statement.
+while the `{!rsh} .case`, `{!rsh} .api`, `{!rsh} .api_`, `{!rsh} .timeout`, and `{!rsh} .paySpec` components are like the corresponding components of a `{!rsh} fork` statement.
 
 The `{!rsh} .case` component may be repeated many times, just like in a `{!rsh} fork` statement.
 
