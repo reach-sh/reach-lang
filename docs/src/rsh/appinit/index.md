@@ -218,5 +218,18 @@ Events({
 ```
 
 An event is defined with `{!rsh} Events(eventName, eventInterface)` or `{!rsh} Events(eventInterface)`, where `{!rsh} eventName` is a string that labels the event and `{!rsh} eventInterface` is an object where each field is a `{!rsh} Tuple` of `{!rsh} Type`s, representing the type of values that an event will emit.
+
+For example, the `{!rsh} Events` in the code below has no `{!rsh} eventName`:
+```reach
+load: examples/event-monitor/index.rsh
+range: 10 - 13
+```
+
+While the `{!rsh} Events` in following example has an `{!rsh} eventName`:
+```reach
+load: examples/dominant-assurance/index.rsh
+range: 34 - 35
+```
+
 These events are available in the frontends via the `{!js} ctc.events` object.
 In the DApp, the result of this application argument is referred to as an event object.
