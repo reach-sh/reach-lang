@@ -1,5 +1,4 @@
 import * as lang from '@reach-sh/simulator-lang';
-// import * as lang from '../../simulator/lang/lib.mjs';
 import * as assert from 'assert';
 
 const main = async () => {
