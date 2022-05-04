@@ -1774,10 +1774,10 @@ evalForm f args = do
         makeTimeoutArgs mode aa = Just (mode, fst aa, snd aa)
         retTimeout prm aa = go $ p {slpr_mtime = makeTimeoutArgs prm aa}
     SLForm_Part_ToConsensus p@(ToConsensusRec {..}) -> do
-      let mustBeThunk = \case
-            JSExpressionParen _ e _ -> mustBeThunk e
-            thnk@(JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ _) -> return $ thnk
-            _ -> expect_ $ Err_ExpectedThunk
+      let mustBeThunk fn = do
+            fst <$> deconstructFun fn >>= \case
+              [] -> return fn
+              _  -> expect_ Err_ExpectedThunk
       case slptc_mode of
         Just TCM_Publish -> do
           at <- withAt id
@@ -2448,6 +2448,32 @@ tokenMetaAssert tm tok lhs op msg = do
     evalApplyVals' ass_rator $
       [cmp_v, public $ SLV_Bytes at msg]
 
+assumeOp :: B.ByteString -> SPrimOp -> DLVar -> SLVal -> App ()
+assumeOp lab op v bound = do
+  cmp <- evalPrimOp op [public $ SLV_DLVar v, public bound]
+  cmp_v <- compileCheckType T_Bool $ snd cmp
+  doClaim (CT_Assume True) cmp_v $ Just ("assume " <> lab)
+
+assumeGtZero :: DLVar -> App ()
+assumeGtZero v = do
+  at <- withAt id
+  let zero = SLV_Int at (Just uintWord) 0
+  assumeOp ">= 0" S_PGE v zero
+
+assumeLtUMax :: DLVar -> App ()
+assumeLtUMax v = do
+  assumeOp "<= UInt.max" S_PLE v $ SLV_DLC DLC_UInt_max
+
+assumeBalanceUpdate :: SLVal -> SLVal -> (PrimOp, DLVar -> App b) -> App b
+assumeBalanceUpdate balV amtV (op, assumeF) = do
+  at <- withAt id
+  let tInt = T_UInt uintWord
+  bal_dv <- compileCheckType tInt balV
+  amt_dv <- compileCheckType tInt amtV
+  -- Avoid using `evalPrimOp` to avoid generating claims for verify arithmetic
+  bal' <- ctxt_lift_expr (DLVar at Nothing tInt) $ DLE_PrimOp at op [bal_dv, amt_dv]
+  assumeF bal'
+
 doBalanceUpdate :: Maybe DLArg -> SPrimOp -> SLVal -> App ()
 doBalanceUpdate mtok op = \case
   SLV_Int _ _ 0 -> return ()
@@ -2456,15 +2482,12 @@ doBalanceUpdate mtok op = \case
     let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [(Public, rhs)]
     -- Find the current balance of mtok
     bsv <- getBalanceOf mtok
-    -- Assume we can pay into contract
-    when (op == S_ADD) $ do
-          bsv_dv <- compileCheckType (T_UInt uintWord) $ snd bsv
-          rhs_dv <- compileCheckType (T_UInt uintWord) $ rhs
-          -- Avoid using `evalPrimOp` to avoid generating claims for verify arithmetic
-          balAdd <- ctxt_lift_expr (DLVar at Nothing $ T_UInt uintWord) $ DLE_PrimOp at (ADD uintWord) [bsv_dv, rhs_dv]
-          cmp <- evalPrimOp S_PLE [public $ SLV_DLVar balAdd, public $ SLV_DLC DLC_UInt_max]
-          balLtMax <- compileCheckType T_Bool $ snd cmp
-          doClaim (CT_Assume True) balLtMax $ Just "Can pay into balance"
+    -- Assume we can add/sub from balance
+    let assumeOps = M.fromList [
+          (S_ADD, (ADD uintWord, assumeLtUMax)),
+          (S_SUB, (SUB uintWord, assumeGtZero)) ]
+    forM_ (M.lookup op assumeOps) $
+      assumeBalanceUpdate (snd bsv) rhs
     bv' <- evalApplyVals' up_rator [bsv]
     bva <- compileCheckType (T_UInt uintWord) $ snd bv'
     setBalance TM_Balance mtok bva
@@ -4986,17 +5009,17 @@ doApiCall lhs (ApiCallRec {..}) = do
   let ss = [callOnly [onlyThunk], es pub5, assignLhs, es setDetails]
   return ss
 
-prependFunStmts :: [JSStatement] -> JSExpression -> App JSExpression
-prependFunStmts stmts f = do
+prependToFun :: [JSExpression] -> [JSStatement] -> JSExpression -> App JSExpression
+prependToFun xtraArgs xtraStmts f = do
+  let a = jsa f
   (fargs, fs) <- deconstructFunStmts f
-  return $ jsArrowStmts a fargs $ stmts <> fs
-  where a = jsa f
+  return $ jsArrowStmts a (xtraArgs <> fargs) $ (xtraStmts <> fs)
+
+prependFunStmts :: [JSStatement] -> JSExpression -> App JSExpression
+prependFunStmts = prependToFun mempty
 
 prependFunArgs :: [JSExpression] -> JSExpression -> App JSExpression
-prependFunArgs xtra f = do
-  (args, stmts) <- deconstructFunStmts f
-  return $ jsArrowStmts a (xtra <> args) stmts
-  where a = jsa f
+prependFunArgs = flip prependToFun mempty
 
 doForkAPI2Case :: Bool -> [JSExpression] -> App [JSExpression]
 doForkAPI2Case isSingleFun args = do
@@ -5011,15 +5034,11 @@ doForkAPI2Case isSingleFun args = do
   let dotdom2 = JSSpreadExpression a $ dom2
   let sp = a2sp a
   let e2s = flip JSExpressionStatement sp
-  let jsInlineCall f fargs =
-        case f of
-          JSExpressionParen _ e _ -> jsInlineCall e fargs
-          JSArrowExpression aargs a' s -> do
-            let pargs = parseJSArrowFormals at aargs
-            let JSBlock _ ss _ = jsArrowBodyToRetBlock s
-            let ss' = [jsConst a' (jsArrayLiteral a' pargs) (jsArrayLiteral a fargs)]
-            return $ ss' <> ss
-          _ -> expect_ $ Err_Fork_ConsensusBadArrow f
+  let jsInlineCall f fargs = do
+        let a' = jsa f
+        (pargs, ss) <- deconstructFunStmts f
+        let ss' = [jsConst a' (jsArrayLiteral a' pargs) (jsArrayLiteral a fargs)]
+        return $ ss' <> ss
   let mkAssume chk_ss xp = do
         jsThunkStmts xpa $
                     [jsConst xpa dom (readJsExpr "declassify(interact.in())")] <>
@@ -5199,8 +5218,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
             afterAt = srcloc_jsa "consensus block" (jsa after_e)
   let augWithChecks chk e = do
         (_, chk_ss) <- deconstructFunStmts chk
-        (e_args, e_ss) <- deconstructFunStmts e
-        return $ jsArrowStmts (jsa e) e_args $ chk_ss <> e_ss
+        prependFunStmts chk_ss e
   let augPayWithChecks chk p = do
         let (pay, req) = splitPayExpr an p
         pay' <- augWithChecks chk pay

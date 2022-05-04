@@ -9,18 +9,18 @@ Verification failed:
 
   // Violation Witness
 
-  const condish/186 = "A".interact.condish;
+  const condish/190 = "A".interact.condish;
   //    ^ could = false
   //      from: ./nonunique_payamt.rsh:6:12:property binding
-  const tokens/187 = "A".interact.tokens;
+  const tokens/191 = "A".interact.tokens;
   //    ^ could = array(Token, [Token!val!0 ] )
   //      from: ./nonunique_payamt.rsh:5:11:property binding
 
   // Theorem Formalization
 
-  const v232 = ((tokens/187[1] == array(Token, [(condish/186 ? tokens/187[0] : tokens/187[1]) ])[0]) ? false : true);
+  const v236 = ((tokens/191[1] == array(Token, [(condish/190 ? tokens/191[0] : tokens/191[1]) ])[0]) ? false : true);
   //    ^ would be false
-  assert(v232);
+  assert(v236);
 
   Verifying when NO participants are honest
 Verification failed:
@@ -31,20 +31,20 @@ Verification failed:
 
   // Violation Witness
 
-  const token1/200 = <a publication>;
+  const token1/204 = <a publication>;
   //    ^ could = Token!val!1
   //      from: ./nonunique_payamt.rsh:17:5:dot
-  const token2/201 = <a publication>;
+  const token2/205 = <a publication>;
   //    ^ could = Token!val!3
   //      from: ./nonunique_payamt.rsh:17:5:dot
-  const condish/202 = <a publication>;
+  const condish/206 = <a publication>;
   //    ^ could = false
   //      from: ./nonunique_payamt.rsh:17:5:dot
 
   // Theorem Formalization
 
-  const v244 = ((token2/201 == array(Token, [(condish/202 ? token1/200 : token2/201) ])[0]) ? false : true);
+  const v248 = ((token2/205 == array(Token, [(condish/206 ? token1/204 : token2/205) ])[0]) ? false : true);
   //    ^ would be false
-  assert(v244);
+  assert(v248);
 
 Checked 27 theorems; 2 failures :'(
