@@ -1,8 +1,8 @@
-reachc: error[RE0132]: Expected this function to return `[ PAY_AMT, API_CONSENSUS_EXPR ]` or `[ API_CONSENSUS_EXPR ]`
+reachc: error[RE0134]: Expected this function to return `[ PAY_AMT, API_CONSENSUS_EXPR ]` or `[ API_CONSENSUS_EXPR ]`
 
   ./Err_Api_Return_Type.rsh:28:10:application
 
   28|     .api_(B.go1,
 
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0132
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0134
 
