@@ -632,7 +632,7 @@ caseTypes f s a = \case
     let v = saferMaybe "decode Data" $ decode v'
     webM $ f s a v
   "struct" -> do
-    v' :: LB.ByteString <- param "struct"
+    v' :: LB.ByteString <- param "data"
     let v = saferMaybe "decode Struct" $ decode v'
     webM $ f s a v
   _ -> possible "Unexpected value type"
