@@ -490,6 +490,14 @@ In those cases, it is sometimes useful to specify a particular gas limit.
 It is common on Ethereum to use gas limits like `{!js} 5000000` in testing.
 If you do this, you should inform your clients that they should pay attention to the gas stipend issued.
 
+```js
+load: /examples/atomic-swap/index.mjs
+range: 30-32
+```
+
+Here, there is a `{!js} myGasLimit` object created, which is set to `{!js} 5000000`.
+This is then applied to both the `{!js} accAlice` and `{!js} accBob` by using the `{!js} setGasLimit` method so that the maximum gas cost is set for each account. 
+
 ## {#ref-frontends-js-acc-cfx} Conflux-specific
 
 When connected to the Conflux consensus network, the standard library provides additional functionality.
