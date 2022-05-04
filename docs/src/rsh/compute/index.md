@@ -1701,6 +1701,15 @@ getAddress()
 The @{defn("getAddress")} primitive returns the `{!rsh} Address` value of the deployed contract's account.
 This function may not be called until after the first publication (which creates the contract).
 
+```reach
+load: /examples/ctc-address/index.rsh
+range: 15-22
+```
+
+In this code sample, Alice publishes to create the contract, and then an object named `info` is created to reference `{!rsh} getContract` that pulls in the contract information.
+Another object is created named `addr` to reference `{!rsh} getAddress` to obtain the address of Alice.
+Both `{!rsh} info` and `{!rsh} addr` are then used in the local step of Alice in her `{!rsh} interact` object.
+
 ### `lastConsensusTime` and `lastConsensusSecs`
 
 @{ref("rsh", "lastConsensusTime")}
