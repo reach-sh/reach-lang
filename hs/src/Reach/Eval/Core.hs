@@ -5031,16 +5031,10 @@ doForkAPI2Case isSingleFun args = do
   -- Check if tuple
   let callWithDom a' f = jsArrowExpr a' [dom] $ jsCall a' f [dotdom]
   let mkPay chks y = do
-        case y of
-          JSArrayLiteral _ xs _
-            | pay : req : _ <- jsa_flatten xs -> do
-              pay' <- callWithDom ya <$> injectChecks pay
-              req' <- return $ callWithDom ya req
-              return $ jsArrayLiteral ya [ pay', req' ]
-          ow -> do
-            ow'  <- callWithDom ya <$> injectChecks ow
-            req' <- return $ noop ya 1
-            return $ jsArrayLiteral ya [ ow', req' ]
+        let (pay, mreq) = splitPayExpr' y
+        let req = maybe (noop ya 1) (callWithDom ya) mreq
+        pay' <- callWithDom ya <$> injectChecks pay
+        return $ jsArrayLiteral ya [ pay', req ]
         where
           ya = jsa y
           injectChecks = prependFunStmts chks
@@ -5094,10 +5088,14 @@ doForkAPI2Case isSingleFun args = do
     --- Delay error to next level
     (_, ow) -> return ow
 
+splitPayExpr' :: JSExpression -> (JSExpression, Maybe JSExpression)
+splitPayExpr' = \case
+  JSArrayLiteral _ xs _ | x : y : _ <- jsa_flatten xs -> (x, Just y)
+  ow -> (ow, Nothing)
+
 splitPayExpr :: JSAnnot -> JSExpression -> (JSExpression, JSExpression)
-splitPayExpr a = \case
-  JSArrayLiteral _ xs _ | x : y : _ <- jsa_flatten xs -> (x, y)
-  ow -> (ow, noop a 1)
+splitPayExpr a v = (p, fromMaybe (noop a 1) mr)
+  where (p, mr) = splitPayExpr' v
 
 doFork :: [JSStatement] -> ForkRec -> App SLStmtRes
 doFork ks (ForkRec {..}) = locAt slf_at $ do

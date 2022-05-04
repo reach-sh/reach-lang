@@ -1,8 +1,8 @@
-reachc: error[RE0131]: Expected a syntactic thunk.
+reachc: error[RE0133]: Expected a syntactic thunk.
 
   ./Err_ExpectedThunk.rsh:10:11:application
 
   10|     .check((x) => {
 
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0131
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0133
 

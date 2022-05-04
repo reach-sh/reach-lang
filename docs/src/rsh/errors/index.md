@@ -2327,24 +2327,28 @@ Depending on the intended behavior of the program, you can fix this error in dif
 
 ## {#RE0129} RE0129
 
-This error indicates that you are attempting to perform an `{!rsh} xor` or `{!rsh} mod` operation on an unsupported type.
+This error indicates that you are attempting to perform an `{!rsh} xor` operation on an unsupported type.
 
-Refer to the `{!rsh} xor` or `{!rsh} mod` documentation to see what types are supported.
-
-<!-- ## {#RE0130} RE0130 -->
+Refer to the `{!rsh} xor` documentation to see what types are supported.
 
 ## {#RE0130} RE0130
+
+This error indicates that you are attempting to perform an `{!rsh} mod` operation on an unsupported type.
+
+Refer to the `{!rsh} mod` documentation to see what types are supported.
+
+## {#RE0131} RE0131
 
 This error indicates that you are attempting to overload a method with multiple functions that have the same domain.
 
 You can fix this issue by either removing one of the overloads or changing one of the domains.
 You can change the domain of a function by altering the type of its parameters or adding/removing parameters.
 
-## {#RE0131} RE0131
+## {#RE0132} RE0132
 
 This error indicates you had extra fields in `{!rsh} REMOTE_FUN.ALGO` that are not supported.
 
-## {#RE0132} RE0133
+## {#RE0133} RE0133
 
 This error indicates that a thunk, or function with no parameters, was expected but something else was provided.
 
@@ -2366,7 +2370,7 @@ A.publish(x)
   });
 ```
 
-## {#RE0132} RE0132
+## {#RE0134} RE0134
 
 This error indicates that you returned the wrong values in `{!rsh} CHECKED_CONSENSUS_EXPR` of an `{!rsh} .api_` branch.
 
