@@ -276,6 +276,8 @@ fork()
   API_ASSUME_EXPR,
   API_PAY_EXPR | [API_PAY_EXPR, PAY_REQUIRE_EXPR],
   API_CONSENSUS_EXPR)
+.api_(API_EXPR,
+  API_CHECKED_CONSENSUS_EXPR)
 .timeout(DELAY_EXPR, () =>
   TIMEOUT_BLOCK);
 // or
@@ -300,6 +302,10 @@ If it is present, then `{!rsh} API_ASSUME_EXPR` must be included;
 + (optional) `{!rsh} API_ASSUME_EXPR` is a function parameterized over the input to the API member function which is evaluated for effect in a local step; thus it may be used to add `{!rsh} assume` constraints on the values given by the API; if this is absent, then it is synthesized to an empty function; if it is present, then `{!rsh} API_PAY_EXPR` must be included;
 + (optional) `{!rsh} API_PAY_EXPR` is a function parameterized over the input to the API member function which is evaluated to determine the pay amount, like `{!rsh} PAY_EXPR`;
 + `{!rsh} API_CONSENSUS_EXPR` is a function parameterized over the input to the API member function and a function that returns a value to the API call; this function must be called;
++ `{!rsh} API_CHECKED_CONSENSUS_EXPR` is a function parameterized over the input to the API member function.
+It must return either a pair of `{!rsh} [ PAY_EXPR, CONSENSUS_RET_EXPR ]` or `{!rsh} [ CONSENSUS_RET_EXPR ]`, where `{!rsh} CONSENSUS_RET_EXPR` is a function parameterized over the function that returns a value to the API call.
+The parameter of `{!rsh} CONSENSUS_RET_EXPR` must be called.
+Any `{!rsh} check`s performed before the `{!rsh} return` statement will be applied in the local step, during payment, and the consensus step of the API call.
 + the `{!rsh} timeout` and `{!rsh} throwTimeout` parameter are as in an consensus transfer.
 
 In the discussion of `{!rsh} .api` component, the phrase "parameterized over the input" means that if an API function has two arguments, such as `{!rsh} Fun([UInt, UInt], Null)`, then the corresponding expression must receive two arguments.

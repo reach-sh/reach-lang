@@ -2456,6 +2456,15 @@ doBalanceUpdate mtok op = \case
     let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [(Public, rhs)]
     -- Find the current balance of mtok
     bsv <- getBalanceOf mtok
+    -- Assume we can pay into contract
+    when (op == S_ADD) $ do
+          bsv_dv <- compileCheckType (T_UInt uintWord) $ snd bsv
+          rhs_dv <- compileCheckType (T_UInt uintWord) $ rhs
+          -- Avoid using `evalPrimOp` to avoid generating claims for verify arithmetic
+          balAdd <- ctxt_lift_expr (DLVar at Nothing $ T_UInt uintWord) $ DLE_PrimOp at (ADD uintWord) [bsv_dv, rhs_dv]
+          cmp <- evalPrimOp S_PLE [public $ SLV_DLVar balAdd, public $ SLV_DLC DLC_UInt_max]
+          balLtMax <- compileCheckType T_Bool $ snd cmp
+          doClaim (CT_Assume True) balLtMax $ Just "Can pay into balance"
     bv' <- evalApplyVals' up_rator [bsv]
     bva <- compileCheckType (T_UInt uintWord) $ snd bv'
     setBalance TM_Balance mtok bva
@@ -5026,11 +5035,12 @@ doForkAPI2Case isSingleFun args = do
           JSArrayLiteral _ xs _
             | pay : req : _ <- jsa_flatten xs -> do
               pay' <- callWithDom ya <$> injectChecks pay
-              req' <- callWithDom ya <$> injectChecks req
-              return $ jsArrayLiteral ya [pay', req']
+              req' <- return $ callWithDom ya req
+              return $ jsArrayLiteral ya [ pay', req' ]
           ow -> do
-            ow' <- callWithDom ya <$> injectChecks ow
-            return $ jsArrayLiteral ya [ow', noop ya 1]
+            ow'  <- callWithDom ya <$> injectChecks ow
+            req' <- return $ noop ya 1
+            return $ jsArrayLiteral ya [ ow', req' ]
         where
           ya = jsa y
           injectChecks = prependFunStmts chks
@@ -5052,25 +5062,24 @@ doForkAPI2Case isSingleFun args = do
         case reverse stmts of
           JSReturn _ (Just (JSArrayLiteral _ els _)) _ : rst ->
             case jsa_flatten els of
-              [pay, con] -> return (reverse rst, Just pay, con)
-              [con] -> return (reverse rst, Nothing, con)
+              [pay, con] -> return (assumes, Just pay, con)
+              [con]      -> return (assumes, Nothing, con)
               _ -> expect_ $ Err_Api_Return_Type
+            where assumes = reverse rst
           _ -> expect_ $ Err_Api_Return_Type
   -- Splits the `api_` function into distinct assume, pay, and consensus expressions,
   -- each of which have checks injected
+  let ignore = jid "_"
   let splitSingleApiBody w = \case
         JSArrowExpression darg_pl fa cb -> do
           let domain = parseJSArrowFormals at darg_pl
-          let ignore = jid "_"
           let i_args = ignore <$ domain
           (chks, mpay, con) <- splitApiConsensus $ jsBlockToStmts $ jsArrowBodyToRetBlock cb
           chk_ss <- flip jsInlineCall [dotdom] $ jsArrowStmts fa domain chks
           let no_op = jsArrowStmts fa i_args []
           let assume = mkAssume chk_ss no_op
           con_e <- mkConsensus w chk_ss =<< prependFunArgs [ignore] con
-          mpay_e <- case mpay of
-                    Nothing -> return $ Nothing
-                    Just p  -> Just <$> mkPay chks (jsArrowExpr fa domain p)
+          mpay_e <- forM mpay $ mkPay chks . jsArrowExpr fa domain
           return (assume, mpay_e, con_e)
         JSExpressionParen _ e _ -> splitSingleApiBody w e
         _ -> impossible "expected function"

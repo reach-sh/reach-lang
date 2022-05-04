@@ -6,7 +6,7 @@
 			"",
 			"export const main = Reach.App(() => {",
 			"  const A = Participant('A', {});",
-			"  deploy();",
+			"  init();",
 			"  $0",
 			"});",
 			""
@@ -72,6 +72,13 @@
 			"}"
 		],
 		"description": "while"
+	},
+	"API": {
+		"prefix": "Api",
+		"body": [
+			"API('${1:NAME}', { ${0} })"
+		],
+		"description": "Api constructor"
 	},
 	"Participant": {
 		"prefix": "Participant",
