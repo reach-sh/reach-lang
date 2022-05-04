@@ -5,9 +5,9 @@ Verifying for generic connector
 Checked 164 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
  * Step 0 may use up to 16 assets, but the limit is 8. Step 0 starts at ./many_txns.rsh:62:5:dot.
- * Step 0 may use up to 17 transaction references, but the limit is 8. Step 0 starts at ./many_txns.rsh:62:5:dot.
+ * Step 0 may use up to 18 transaction references, but the limit is 8. Step 0 starts at ./many_txns.rsh:62:5:dot.
  * Step 1 may use up to 16 assets, but the limit is 8. Step 1 starts at ./many_txns.rsh:99:5:dot.
- * Step 1 may use up to 18 transaction references, but the limit is 8. Step 1 starts at ./many_txns.rsh:99:5:dot.
+ * Step 1 may use up to 19 transaction references, but the limit is 8. Step 1 starts at ./many_txns.rsh:99:5:dot.
 WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
  * Step 0 uses 18 input transactions, but the limit is 16. Step 0 starts at ./many_txns.rsh:62:5:dot.
  * Step 1 uses 18 input transactions, but the limit is 16. Step 1 starts at ./many_txns.rsh:99:5:dot.
