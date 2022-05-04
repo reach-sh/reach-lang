@@ -31,6 +31,9 @@ instance {-# OVERLAPS #-} Subst a => Subst (SwitchCases a) where
     where
       go (a, b, c) = (,,) a b <$> subst c
 
+instance Subst Bool where
+  subst = return
+
 instance Subst DLVar where
   subst v = do
     m <- ask
@@ -73,7 +76,7 @@ instance Subst DLWithBill where
     DLWithBill x <$> subst y <*> subst z
 
 instance Subst DLRemoteALGO where
-  subst (DLRemoteALGO x y) = DLRemoteALGO <$> subst x <*> subst y
+  subst (DLRemoteALGO x y z) = DLRemoteALGO <$> subst x <*> subst y <*> subst z
 
 instance Subst DLExpr where
   subst = \case

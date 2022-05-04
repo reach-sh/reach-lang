@@ -1447,6 +1447,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const now = Date.now();
           const minMillis = isIsolatedNetwork() ? 0 : appStateMinRefreshMillis;
           if ( lastAppState && now - lastAppStateTime < minMillis){
+            debug('getAppState cached');
             return lastAppState;
           }
           lastAppState = await getAppStateFresh();
@@ -1454,7 +1455,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           return lastAppState;
         };
         const getAppStateFresh = async (): Promise<AppStateKVs|undefined> => {
-          const lab = `getAppState`;
+          const lab = `getAppStateFresh`;
           const appInfoM = await getApplicationInfoM(ApplicationID);
           if ( 'exn' in appInfoM || appInfoM.val.deleted ) {
             return undefined;

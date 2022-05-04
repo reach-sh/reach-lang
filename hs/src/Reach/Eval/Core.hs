@@ -3388,7 +3388,7 @@ evalPrim p sargs =
       metam <- mustBeObject =<< one_arg
       metam' <- mapM (ensure_public . sss_sls) metam
       let actual = M.keysSet metam'
-      let valid = S.fromList $ [ "fees", "assets" ]
+      let valid = S.fromList $ [ "fees", "assets", "addressToAccount" ]
       unless (actual `S.isSubsetOf` valid) $ do
         expect_ $ Err_Remote_ALGO_extra $ S.toAscList $
           actual `S.difference` valid
@@ -3402,6 +3402,10 @@ evalPrim p sargs =
         Just v -> do
           vs <- explodeTupleLike "REMOTE_FUN.ALGO.assets" v
           mapM (compileCheckType T_Token) vs
+      ralgo_addr2acc <- metal "addressToAccount" $ \case
+        Nothing -> return $ False
+        Just (SLV_Bool _ b) -> return $ b
+        Just _ -> expect_ $ Err_Remote_ALGO_extra $ [ "addressToAccount with non-compile value" ]
       let malgo = Just $ DLRemoteALGO {..}
       return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay mbill malgo Nothing ma)
     SLPrim_remotef rat aa m stf mpay mbill malgo Nothing ma -> do
@@ -3434,7 +3438,7 @@ evalPrim p sargs =
       allTokens <- fmap DLA_Var <$> readSt st_toks
       let nnToksNotBilled = allTokens \\ nntbRecv
       let withBill = DLWithBill nBilled nntbRecv nnToksNotBilled
-      let ralgo0 = DLRemoteALGO dzero mempty
+      let ralgo0 = DLRemoteALGO dzero mempty False
       let ralgo = fromMaybe ralgo0 malgo
       res' <-
         doInteractiveCall

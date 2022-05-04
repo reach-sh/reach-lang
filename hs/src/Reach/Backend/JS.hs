@@ -449,7 +449,7 @@ jsExpr = \case
       JM_Backend -> return "undefined /* Remote */"
       JM_View -> impossible "view Remote"
       JM_Simulate -> do
-        let DLRemoteALGO r_fees r_assets = malgo
+        let DLRemoteALGO r_fees r_assets _r_addr2acc = malgo
         -- These are totally made up and could be totally busted
         obj' <- jsArg ro
         fees' <- jsArg r_fees

@@ -113,7 +113,7 @@ instance CollectsTypes PrimOp where
     _ -> mempty
 
 instance CollectsTypes DLRemoteALGO where
-  cts (DLRemoteALGO x y) = cts x <> cts y
+  cts (DLRemoteALGO x y z) = cts x <> cts y <> cts z
 
 instance CollectsTypes DLExpr where
   cts = \case

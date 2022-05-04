@@ -128,7 +128,7 @@ instance Countable DLWithBill where
     counts y <> counts z
 
 instance Countable DLRemoteALGO where
-  counts (DLRemoteALGO x y) = counts x <> counts y
+  counts (DLRemoteALGO x y z) = counts x <> counts y <> counts z
 
 instance Countable DLExpr where
   counts = \case
