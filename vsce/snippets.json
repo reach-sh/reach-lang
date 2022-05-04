@@ -74,11 +74,11 @@
 		"description": "while"
 	},
 	"API": {
-		"prefix": "Api",
+		"prefix": "API",
 		"body": [
 			"API('${1:NAME}', { ${0} })"
 		],
-		"description": "Api constructor"
+		"description": "API constructor"
 	},
 	"Participant": {
 		"prefix": "Participant",
