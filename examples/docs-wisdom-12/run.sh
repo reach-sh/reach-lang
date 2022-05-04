@@ -5,8 +5,9 @@ alias reach="../../reach"
 rm -f Seller.in Seller.out Buyer.in Buyer.out
 mkfifo Seller.in Seller.out Buyer.in Buyer.out
 
+reach devnet --await-background
 reach run index seller < Seller.in > Seller.out &
-reach run index buyer  < Buyer.in  > Buyer.out &
+reach run index buyer  < Buyer.in  > Buyer.out  &
 
 exec 3> Seller.in
 exec 4< Seller.out
@@ -51,5 +52,10 @@ write_buyer "$CTC_INFO"
 read_buyer
 read_buyer
 write_buyer y
+read_buyer
+read_seller
+read_buyer
+read_buyer
+read_seller
 
 wait
