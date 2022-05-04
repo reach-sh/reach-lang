@@ -2327,24 +2327,20 @@ Depending on the intended behavior of the program, you can fix this error in dif
 
 ## {#RE0129} RE0129
 
-This error indicates that you are attempting to perform an `{!rsh} xor` operation on an unsupported type.
+This error indicates that you are attempting to perform an `{!rsh} xor` or `{!rsh} mod` operation on an unsupported type.
 
-Refer to the `{!rsh} xor` documentation to see what types are supported.
+Refer to the `{!rsh} xor` or `{!rsh} mod` documentation to see what types are supported.
+
+<!-- ## {#RE0130} RE0130 -->
 
 ## {#RE0130} RE0130
-
-This error indicates that you are attempting to perform a `{!rsh} mod` operation on an unsupported type.
-
-Refer to the `{!rsh} polyMod` documentation to see what types are supported.
-
-## {#RE0131} RE0131
 
 This error indicates that you are attempting to overload a method with multiple functions that have the same domain.
 
 You can fix this issue by either removing one of the overloads or changing one of the domains.
 You can change the domain of a function by altering the type of its parameters or adding/removing parameters.
 
-## {#RE0132} RE0132
+## {#RE0131} RE0131
 
 This error indicates you had extra fields in `{!rsh} REMOTE_FUN.ALGO` that are not supported.
 
@@ -2370,6 +2366,44 @@ A.publish(x)
   });
 ```
 
+## {#RE0132} RE0132
+
+This error indicates that you returned the wrong values in `{!rsh} CHECKED_CONSENSUS_EXPR` of an `{!rsh} .api_` branch.
+
+For example, the code below erroneously returns the new accumulator for `{!rsh} parallelReduce`:
+
+```reach
+.api_(B.setX,
+  (x) => {
+    check(x > 0);
+    return [ x ];
+  })
+```
+
+You can fix this error by returning a function that accepts the API return function as a parameter.
+
+```reach
+.api_(B.setX,
+  (x) => {
+    check(x > 0);
+    return [ (k) => {
+      return [ x ];
+    }]
+  })
+```
+
+Alternatively, if you want the api `B.setX` to pay into the contract, you can specify the pay amount as the first element in the return value:
+
+```reach
+.api_(B.setX,
+  (x) => {
+    check(x > 0);
+    const payAmt = 5;
+    return [ payAmt, (k) => {
+      return [ x ];
+    }]
+  })
+```
 
 ## {#REP0000} REP0000
 
