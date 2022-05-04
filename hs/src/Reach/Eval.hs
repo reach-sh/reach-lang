@@ -177,8 +177,11 @@ instance Pandemic DLSBlock where
 instance Pandemic DLWithBill where
   pan (DLWithBill nr b nb) = DLWithBill nr <$> pan b <*> pan nb
 
+instance Pandemic Bool where
+  pan = return
+
 instance Pandemic DLRemoteALGO where
-  pan (DLRemoteALGO x y) = DLRemoteALGO <$> pan x <*> pan y
+  pan (DLRemoteALGO x y z) = DLRemoteALGO <$> pan x <*> pan y <*> pan z
 
 instance Pandemic DLPayAmt where
   pan (DLPayAmt net ks) = do

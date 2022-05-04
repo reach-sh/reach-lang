@@ -300,8 +300,8 @@ instance Optimize DLWithBill where
   gcs _ = return ()
 
 instance Optimize DLRemoteALGO where
-  opt (DLRemoteALGO x y) =
-    DLRemoteALGO <$> opt x <*> opt y
+  opt (DLRemoteALGO x y z) =
+    DLRemoteALGO <$> opt x <*> opt y <*> opt z
   gcs _ = return ()
 
 unsafeAt :: [a] -> Int -> a

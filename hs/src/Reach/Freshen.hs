@@ -120,8 +120,11 @@ instance Freshen ClaimType where
 instance Freshen DLWithBill where
   fu (DLWithBill x y z) = DLWithBill x <$> fu y <*> fu z
 
+instance Freshen Bool where
+  fu = return
+
 instance Freshen DLRemoteALGO where
-  fu (DLRemoteALGO x y) = DLRemoteALGO <$> fu x <*> fu y
+  fu (DLRemoteALGO x y z) = DLRemoteALGO <$> fu x <*> fu y <*> fu z
 
 instance Freshen DLExpr where
   fu = \case
