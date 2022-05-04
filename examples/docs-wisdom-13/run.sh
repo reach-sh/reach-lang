@@ -23,7 +23,7 @@ read_seller() {
 }
 
 write_seller() {
-    echo "Seller says:  $@"
+    echo "Seller says:  $*"
     echo "$@" >&3
 }
 
@@ -33,7 +33,7 @@ read_buyer() {
 }
 
 write_buyer() {
-    echo "Buyer says:   $@"
+    echo "Buyer says:   $*"
     echo "$@" >&5
 }
 
