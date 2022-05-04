@@ -5,7 +5,7 @@ alias reach="../../reach"
 rm -f Seller.in Seller.out Buyer.in Buyer.out
 mkfifo Seller.in Seller.out Buyer.in Buyer.out
 
-[ -n "$CIRCLECI" ] && reach devnet --await-background
+[ -z "$CIRCLECI" ] && reach devnet --await-background
 reach run index seller < Seller.in > Seller.out &
 reach run index buyer  < Buyer.in  > Buyer.out  &
 
