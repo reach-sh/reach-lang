@@ -6,7 +6,7 @@ export const main =
     [Participant('A', { x : UInt })],
     (A) => {
       A.only(() => {
-        assert(sqrt(10, declassify(interact.x)) == 3);
+        assert(sqrtApprox(10, declassify(interact.x)) == 3);
       });
     }
   );

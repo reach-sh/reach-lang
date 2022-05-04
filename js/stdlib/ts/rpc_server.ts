@@ -242,7 +242,7 @@ export const serveRpc = async (backend: any) => {
   const contract       = mkKont();
   const token          = mkKont();
   const kont           = mkKont();
-  const real_stdlib    = await loadStdlib();
+  const real_stdlib    = loadStdlib();
   const reBigNumberify = mkReBigNumberify(real_stdlib);
   const rpc_stdlib     = await mkStdlibProxy(real_stdlib, { account, token });
   const app            = express();

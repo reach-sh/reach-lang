@@ -543,10 +543,10 @@ base_env_slvals =
   , ("unknowable", SLV_Form $ SLForm_unknowable)
   , ("balance", SLV_Prim $ SLPrim_balance)
   , ("lastConsensusTime", SLV_Prim $ SLPrim_fluid_read_canWait FV_lastConsensusTime)
-  , ("thisConsensusTime", SLV_Prim $ SLPrim_fluid_read_canWait FV_thisConsensusTime)
+  , ("thisConsensusTime", SLV_Prim $ SLPrim_fluid_read_didPublish FV_thisConsensusTime)
   , ("baseWaitTime", SLV_Prim $ SLPrim_fluid_read_canWait FV_baseWaitTime)
   , ("lastConsensusSecs", SLV_Prim $ SLPrim_fluid_read_canWait FV_lastConsensusSecs)
-  , ("thisConsensusSecs", SLV_Prim $ SLPrim_fluid_read_canWait FV_thisConsensusSecs)
+  , ("thisConsensusSecs", SLV_Prim $ SLPrim_fluid_read_didPublish FV_thisConsensusSecs)
   , ("baseWaitSecs", SLV_Prim $ SLPrim_fluid_read_canWait FV_baseWaitSecs)
   , ("didPublish", SLV_Prim $ SLPrim_didPublish)
   , ("Digest", SLV_Type ST_Digest)
@@ -577,6 +577,7 @@ base_env_slvals =
   , ("polyMod", SLV_Prim $ SLPrim_mod)
   , ("digestEq", SLV_Prim $ SLPrim_op S_DIGEST_EQ)
   , ("addressEq", SLV_Prim $ SLPrim_op S_ADDRESS_EQ)
+  , ("sqrt", SLV_Prim $ SLPrim_op S_SQRT)
   , ("isType", SLV_Prim SLPrim_is_type)
   , ("typeEq", SLV_Prim SLPrim_type_eq)
   , ("typeOf", SLV_Prim SLPrim_typeOf)
@@ -2094,6 +2095,7 @@ evalPrimOp sp sargs = do
                   False -> snd <$> typeOfBytes b
           make_var_ (T_UInt uintWord) [ae]
         _ -> expect_ $ Err_Apply_ArgCount at 1 (length args)
+    S_SQRT -> n2n iSqrt
     S_ADD ->
       case args of
         [SLV_Int _ mt 0, rhs] | mtOkay mt rhs -> static rhs
@@ -2191,6 +2193,14 @@ evalPrimOp sp sargs = do
         _ -> do
           dom <- arg1ty 2
           make_var [dom, dom] T_Bool args
+    n2n op =
+      case args of
+        [SLV_Int _ mt lhs] -> do
+          at <- withAt id
+          static $ SLV_Int at mt $ op lhs
+        _ -> do
+          dom <- arg1ty 1
+          make_var [dom] dom args
     nn2n op =
       case args of
         [SLV_Int _ mt1 lhs, SLV_Int _ mt2 rhs] | mtOkay' mt1 mt2 -> do
@@ -2658,6 +2668,10 @@ evalPrim p sargs =
     SLPrim_fluid_read fv -> do
       zero_args
       doFluidRef fv
+    SLPrim_fluid_read_didPublish fv -> do
+      ensure_after_first
+      zero_args
+      evalPrim (SLPrim_fluid_read fv) []
     SLPrim_fluid_read_canWait fv -> do
       ensure_can_wait
       zero_args
@@ -3373,11 +3387,21 @@ evalPrim p sargs =
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote ALGO"
       metam <- mustBeObject =<< one_arg
       metam' <- mapM (ensure_public . sss_sls) metam
+      let actual = M.keysSet metam'
+      let valid = S.fromList $ [ "fees", "assets" ]
+      unless (actual `S.isSubsetOf` valid) $ do
+        expect_ $ Err_Remote_ALGO_extra $ S.toAscList $
+          actual `S.difference` valid
       let metal f k = k (M.lookup f metam')
       at <- withAt id
       ralgo_fees <- metal "fees" $ \case
         Nothing -> return $ DLA_Literal $ DLL_Int at uintWord 0
         Just v -> compileCheckType (T_UInt uintWord) v
+      ralgo_assets <- metal "assets" $ \case
+        Nothing -> return $ mempty
+        Just v -> do
+          vs <- explodeTupleLike "REMOTE_FUN.ALGO.assets" v
+          mapM (compileCheckType T_Token) vs
       let malgo = Just $ DLRemoteALGO {..}
       return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay mbill malgo Nothing ma)
     SLPrim_remotef rat aa m stf mpay mbill malgo Nothing ma -> do
@@ -3410,7 +3434,7 @@ evalPrim p sargs =
       allTokens <- fmap DLA_Var <$> readSt st_toks
       let nnToksNotBilled = allTokens \\ nntbRecv
       let withBill = DLWithBill nBilled nntbRecv nnToksNotBilled
-      let ralgo0 = DLRemoteALGO dzero
+      let ralgo0 = DLRemoteALGO dzero mempty
       let ralgo = fromMaybe ralgo0 malgo
       res' <-
         doInteractiveCall
@@ -4959,7 +4983,8 @@ doForkAPI2Case args = do
   let mkz w z = do
         log' <- doLog w
         let za = jsa z
-        z' <- jsInlineCall z [dotdom, jsArrowStmts za [jidg "rng"] [jsConst za (jidg "rngl") log', e2s $ mkzOnly w]]
+        z' <- locAtf (srcloc_jsa "consensus block" za) $
+                jsInlineCall z [dotdom, jsArrowStmts za [jidg "rng"] [jsConst za (jidg "rngl") log', e2s $ mkzOnly w]]
         return $ jsArrowStmts za [dom] z'
   let mkz' w l z = do
         z' <- mkz w z
@@ -5033,7 +5058,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   let lookupLocalTy t = fromMaybe T_Null $ M.lookup "_local" t
   let mkPartCase who n = who <> show n <> "_" <> show idx
   let mkLocalCase who n = who <> show n <> "_" <> show idx2
-  let getAfter who_e isApi who usesData (a_at, after_e, case_n, case_ty) = locAt a_at $
+  let getAfter who_e isApi who usesData (a_at, after_e, case_n, case_ty) = locAtf afterAt $
         case after_e of
           JSArrowExpression args _ s -> do
             let JSBlock _ ss _ = jsArrowBodyToRetBlock s
@@ -5074,6 +5099,8 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
             return $ (sco', sps <> mdefmsg <> ss)
           JSExpressionParen _ e _ -> getAfter who_e isApi who usesData (a_at, e, case_n, case_ty)
           _ -> expect_ $ Err_Fork_ConsensusBadArrow after_e
+          where
+            afterAt = srcloc_jsa "consensus block" (jsa after_e)
   let go pcases = do
         let (ats, whos, who_es, before_es, paytup_es, after_es) =
               unzip6 $ map (\ForkCase {..} -> (fc_at, fc_who, fc_who_e, fc_before, fc_pay, fc_after)) pcases
@@ -5448,7 +5475,8 @@ evalStmtTrampoline sp ks ev =
     Nothing ->
       typeOf ev >>= \case
         (T_Null, _) -> evalStmt ks
-        (ty, _) -> locAt (srclocOf ev) $ expect_ $ Err_Block_NotNull ty
+        (ty, _) -> locAtf (srcloc_mtake_lab $ srclocOf ev) $
+                    expect_ $ Err_Block_NotNull ty
 
 findStmtTrampoline :: SLVal -> Maybe (JSSemi -> [JSStatement] -> App SLStmtRes)
 findStmtTrampoline = \case

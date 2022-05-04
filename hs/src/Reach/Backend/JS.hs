@@ -283,6 +283,7 @@ jsPrimApply = \case
   PEQ t -> jsApply_ui t "stdlib.eq"
   PGE t -> jsApply_ui t "stdlib.ge"
   PGT t -> jsApply_ui t "stdlib.gt"
+  SQRT t -> jsApply_ui t "stdlib.sqrt"
   UCAST x y -> \a -> jsApply "stdlib.cast" $ [ jsUIntTy x, jsUIntTy y ] <> a
   LSH -> jsApply "stdlib.lsh"
   RSH -> jsApply "stdlib.rsh"
@@ -448,17 +449,17 @@ jsExpr = \case
       JM_Backend -> return "undefined /* Remote */"
       JM_View -> impossible "view Remote"
       JM_Simulate -> do
-        let DLRemoteALGO {..} = malgo
+        let DLRemoteALGO r_fees r_assets = malgo
         -- These are totally made up and could be totally busted
         obj' <- jsArg ro
-        fees' <- jsArg ralgo_fees
+        fees' <- jsArg r_fees
         let notStaticZero = not . staticZero
         let pay_ks_nz = filter (notStaticZero . fst) pay_ks
         let l2n x = jsCon $ DLL_Int at uintWord $ fromIntegral $ length $ x
         pays' <- l2n $ filter notStaticZero $ pay_net : map fst pay_ks_nz
         let nRecvCount = if nRecv then [ro] else []
         bills' <- l2n $ nRecvCount <> nnRecv
-        toks' <- mapM jsArg $ nnRecv <> map snd pay_ks_nz
+        toks' <- mapM jsArg $ nnRecv <> map snd pay_ks_nz <> r_assets
         let isAddress = (==) T_Address . argTypeOf
         accs' <- mapM jsArg $ filter isAddress as
         let res' = parens $ jsSimTxn "remote" $
@@ -885,8 +886,45 @@ jsMapDefns varsHuh = do
 jsError :: Doc -> Doc
 jsError err = "new Error(" <> err <> ")"
 
-jsPart :: DLInit -> SLPart -> EPProg -> App Doc
-jsPart dli p (EPProg _ ctxt_isAPI _ et) = do
+setupPart :: Doc -> [Doc]
+setupPart who = [
+  ctcTopChk who
+  , interactChk who
+  , "const ctc = ctcTop._initialize();"
+  , "const stdlib = ctc.stdlib;" ]
+
+jsApiWrapper :: B.ByteString -> [Int] -> App Doc
+jsApiWrapper p whichs = do
+  let who = pretty $ bunpack p
+  let chk_which w = "step == " <> pretty w
+  let chk_st = concatWith (\ l r -> l <> " || " <> r) $ map chk_which whichs
+  let allowed = pretty whichs
+  let assertStep = "stdlib.assert" <> parens (chk_st <> ", 'API called in the wrong state. Currently in state: ' + step + ', expected:  " <> allowed <> "'") <> semi
+  let jmps = map (\ which -> do
+          let inst = "_" <> who <> pretty which
+          "if" <+> parens ("step" <+> "==" <+> pretty which) <+> braces ("return " <> inst <> parens "ctcTop, interact" <> semi)
+        ) whichs
+  let body = vsep $
+        setupPart who
+        <> [ "const step = await ctc.getCurrentStep()"
+            , assertStep ]
+        <> jmps
+  return $ "export" <+> jsFunction who ["ctcTop", "interact"] body
+
+iExpect :: Doc -> Doc -> Doc -> Doc
+iExpect who this nth = "`The backend for" <+> who <+> "expects to receive" <+> this <+> "as its" <+> nth <+> "argument.`"
+
+rejectIf :: Doc -> Doc -> Doc
+rejectIf cond err = jsWhen cond $ jsReturn $ jsApply "Promise.reject" [jsError err]
+
+ctcTopChk :: Doc -> Doc
+ctcTopChk who = rejectIf "typeof(ctcTop) !== 'object' || ctcTop._initialize === undefined" $ iExpect who "a contract" "first"
+
+interactChk :: Doc -> Doc
+interactChk who = rejectIf "typeof(interact) !== 'object'" $ iExpect who "an interact object" "second"
+
+jsPart :: DLInit -> (SLPart, Maybe Int) -> EPProg -> App Doc
+jsPart dli (p, m_api_which) (EPProg { epp_isApi=ctxt_isAPI, epp_tail }) = do
   jsc@(JSContracts {..}) <- newJsContract
   let ctxt_ctcs = Just jsc
   let ctxt_who = p
@@ -896,25 +934,18 @@ jsPart dli p (EPProg _ ctxt_isAPI _ et) = do
   let ctxt_maps = dli_maps dli
   local (const JSCtxt {..}) $ do
     maps_defn <- jsMapDefns True
-    et' <- jsETail et
+    et' <- jsETail epp_tail
     i2t' <- liftIO $ readIORef jsc_i2t
     let ctcs = vsep $ map snd $ M.toAscList i2t'
-    let who = pretty $ bunpack p
-    let iExpect this nth = "`The backend for" <+> who <+> "expects to receive" <+> this <+> "as its" <+> nth <+> "argument.`"
-    let rejectIf cond err = jsWhen cond $ jsReturn $ jsApply "Promise.reject" [jsError err]
-    let ctcTopChk = rejectIf "typeof(ctcTop) !== 'object' || ctcTop._initialize === undefined" $ iExpect "a contract" "first"
-    let interactChk = rejectIf "typeof(interact) !== 'object'" $ iExpect "an interact object" "second"
+    let who = adjustApiName (bunpack p) (fromMaybe 0 m_api_which) (isJust m_api_which)
     let bodyp' =
-          vsep
-            [ ctcTopChk
-            , interactChk
-            , "const ctc = ctcTop._initialize();"
-            , "const stdlib = ctc.stdlib;"
-            , ctcs
+          vsep $
+            setupPart (pretty who)
+            <> [ ctcs
             , maps_defn
             , et'
             ]
-    return $ "export" <+> jsFunction who ["ctcTop", "interact"] bodyp'
+    return $ "export" <+> jsFunction (pretty who) ["ctcTop", "interact"] bodyp'
 
 jsConnInfo :: ConnectorInfo -> App Doc
 jsConnInfo = \case
@@ -1070,11 +1101,11 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 13
+reachBackendVersion = 15
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
-jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = do
-  let DLInit {..} = dli
+jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do
+  let DLInit {..} = plp_init
   let preamble =
         vsep
           [ pretty $ "// Automatically generated with Reach " ++ versionHashStr
@@ -1084,28 +1115,32 @@ jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = 
           , "export const _versionHash =" <+> jsString versionHashStr <> semi
           , "export const _backendVersion =" <+> pretty reachBackendVersion <> semi
           ]
-  partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList epps_m
+  let go_api (p, mw) _ acc =
+        case mw of
+          Just w  -> M.insertWith (<>) p [w] acc
+          Nothing -> acc
+  let api_whichs = M.foldrWithKey go_api mempty epps_m
+  api_wrappers <- mapM (uncurry jsApiWrapper) $ M.toAscList api_whichs
+  partsp <- mapM (uncurry (jsPart plp_init)) $ M.toAscList epps_m
   cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr
   let connMap = M.fromList [(name, "_" <> pretty name) | name <- HM.keys cr]
-  ssmDoc <- mapM (\x -> jsAssertInfo (fst x) (snd x) Nothing) ssm
-  exportsp <- jsExports dexports
+  ssmDoc <- mapM (\x -> jsAssertInfo (fst x) (snd x) Nothing) plp_stateSrcMap
+  exportsp <- jsExports plp_exports
   viewsp <-
     local (\e -> e {ctxt_maps = dli_maps}) $
-      jsViews vi
+      jsViews cpp_views
   mapsp <- jsMaps dli_maps
-  let partMap = flip M.mapWithKey epps_m $ \p _ -> pretty $ bunpack p
-  let apiMap =
-        M.foldrWithKey
-          (\k v acc ->
-             let f = case k of
-                      Just k' -> M.insert (bunpack k') . jsObject
-                      Nothing -> M.union in
-              let v' = M.map (pretty . bunpack . fst) v in
-              f v' acc)
-          mempty
-          epps_apis
-  eventsp <- jsEvents devts
-  return $ vsep $ [preamble, exportsp, eventsp, viewsp, mapsp] <> partsp <> cnpsp <> [jsObjectDef "_stateSourceMap" ssmDoc, jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
+  let partMap = M.foldrWithKey (\ (p, _) _ acc -> M.insert p (pretty $ bunpack p) acc) mempty epps_m
+  let go_api_map k v acc =
+        let f = case k of
+                Just k' -> M.insert (bunpack k') . jsObject
+                Nothing -> M.union in
+        let v' = M.map (pretty . bunpack . fst) v in
+        f v' acc
+  let apiMap = M.foldrWithKey go_api_map mempty epps_apis
+  eventsp <- jsEvents cpp_events
+  return $ vsep $ [preamble, exportsp, eventsp, viewsp, mapsp] <> partsp <> api_wrappers <> cnpsp <> [jsObjectDef "_stateSourceMap" ssmDoc, jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
+
 
 backend_js :: Backend
 backend_js outn crs pl = do

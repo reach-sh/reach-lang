@@ -50,12 +50,13 @@ With the `Reach IDE VSCode extension` installed, VSCode compiles automatically i
 1. Download and install [Sublime](https://www.sublimetext.com/).
 2. Download the [Reach-IDE](https://github.com/chrisnevers/reach-ide-sublime/releases).
 3. Unzip the `Reach-IDE` into the `\Sublime Text\Packages` folder of your Sublime installation.
-4. Open your project in Sublime and click `Tools\Command Palette`, and then type `Reach`.
+4. Open your project in Sublime.
+5. Click `Tools\Command Palette`, and then type `Reach`.
 
 ![Command Palette`](/guide/editor-support/CommandPalette.png)
 
-5. Click `Set Syntax:Reach`.
+6. Click `Set Syntax:Reach`.
 
 ![Set Syntax:Reach](/guide/editor-support/ReachSyntax.png)
 
-6. Repeat 3 and 4 to select `Reach - Compile` or `Reach - Run` to build with `Reach`.
+7. Repeat 5 and then select `Reach - Compile` to build with `Reach`.

@@ -25,6 +25,14 @@ changed because that name was misleading.
 Its continuation is a step, which means its content is specified by @{seclink("ref-programs-step")}.
 It represents the body of the DApp to be compiled.
 
+In the example below, see how `{!rsh} init();` is used to finalize the available `{!rsh} Participant` and `{!rsh} API`. 
+After which a local step is introduced:
+
+```reach
+load: ./examples/api-twice/index.rsh
+range: 4 - 15
+```
+
 ### `setOptions`
 
 @{ref("rsh", "setOptions")}
@@ -43,6 +51,12 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
   A mapping is trustworthy if its values are guaranteed to be preserved across interactions.
   When this is `{!rsh} true`, the verifier will enforce that your program does not rely on values being preserved.
 
+  See example below:
+  ```reach
+  load: examples/map-simpl/index.rsh
+  range: 4 - 6
+  ```
+
   Reach cannot provide trustworthy mappings with some connectors; therefore it is dangerous to not set this to `{!rsh} true` on such connectors.
   Reach will emit a warning during compilation if you do such a dangerous thing.
 
@@ -51,6 +65,13 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
   `{!rsh} true` or `{!rsh} false` (default)
 
   Determines whether arithmetic operations automatically introduce static assertions that they do not overflow beyond `{!rsh} UInt.max`.
+
+  See example below:
+  ```reach
+  load: examples/uint256/index.rsh
+  range: 3 - 5
+  ```
+
   This defaults to `{!rsh} false`, because it is onerous to verify.
   We recommend turning it on before final deployment, but leaving it off during development.
   When it is `{!rsh} false`, connectors will ensure that overflows do not actually occur on the network.
@@ -63,12 +84,24 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
   When this is `{!rsh} true`, then connector-specific constants, like `{!rsh} UInt.max`, will be instantiated to literal numbers.
   This concretization of these constants can induce performance degradation in the verifier.
 
+  See example below:
+  ```reach
+  load: hs/t/y/overflow_con.rsh
+  range: 3 - 6
+  ```
+
 + @{ref("rsh", "connectors")} `{!rsh} connectors`
 
   @{ref("rsh", "ETH")}@{ref("rsh", "ALGO")} `{!rsh} [ETH, ALGO]` (default)
 
   A tuple of the connectors that the application should be compiled for.
   By default, all available connectors are chosen.
+
+  In the example below, only `ETH` and `ALGO` are chosen:
+  ```reach
+  load: examples/popularity-contest/index.rsh
+  range: 10 - 15
+  ```
 
 ## {#ref-programs-appinit-exprs} Expressions
 
@@ -155,6 +188,19 @@ View({ owner: Address })
 Views are read-only functions that can be called by other contracts, as well as off-chain.
 
 A view is defined with `{!rsh} View(viewName, viewInterface)` or `{!rsh} View(viewInterface)`, where `{!rsh} viewName` is a string that labels the view and `{!rsh} viewInterface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp.
+
+For example, `{!rsh} View` is used in the code below without a `{!rsh} viewName`:
+```reach
+load: examples/remote-rsh/index.rsh
+range: 16 - 19
+```
+
+While the `{!rsh} View` in the following code contains a `{!rsh} viewName`:
+```reach
+load: examples/view-steps/index.rsh
+range: 11 - 12
+```
+
 These views are available in frontends via the `{!js} ctc.views` object.
 In the DApp, the result of this application argument is referred to as a view object.
 
@@ -172,5 +218,18 @@ Events({
 ```
 
 An event is defined with `{!rsh} Events(eventName, eventInterface)` or `{!rsh} Events(eventInterface)`, where `{!rsh} eventName` is a string that labels the event and `{!rsh} eventInterface` is an object where each field is a `{!rsh} Tuple` of `{!rsh} Type`s, representing the type of values that an event will emit.
+
+For example, the `{!rsh} Events` in the code below has no `{!rsh} eventName`:
+```reach
+load: examples/event-monitor/index.rsh
+range: 10 - 13
+```
+
+While the `{!rsh} Events` in following example has an `{!rsh} eventName`:
+```reach
+load: examples/dominant-assurance/index.rsh
+range: 34 - 35
+```
+
 These events are available in the frontends via the `{!js} ctc.events` object.
 In the DApp, the result of this application argument is referred to as an event object.

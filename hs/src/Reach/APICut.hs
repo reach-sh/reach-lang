@@ -158,7 +158,7 @@ seek = \case
       True -> do
         (liftIO $ readIORef eSeenInR) >>= \case
           False -> liftIO $ writeIORef eSeenInR True
-          True -> err at API_Twice
+          True -> impossible "API called `interact.in` multiple times"
         slurp k >>= \case
           Nothing -> err at API_NoOut
           Just k' -> return $ Just $ mkCom ET_Com c k'
@@ -228,7 +228,6 @@ clipAtFrom = \case
 slurp :: ETail -> App (Maybe ETail)
 slurp = \case
   ET_Com c k -> do
-    let at = srclocOf c
     let m = fmap (ET_Com c) <$> slurp k
     case has interactOut c of
       False -> m
@@ -236,7 +235,8 @@ slurp = \case
         Env {..} <- ask
         (liftIO $ readIORef eSeenOutR) >>= \case
           False -> liftIO $ writeIORef eSeenOutR True
-          True -> err at API_Twice
+          -- OK because there could be different paths that call `interact.out`
+          True -> return ()
         local (\e -> e {eSeenOut = True}) $
           -- We only keep reading the program because we need to grab the tail
           -- for simulation. It would be better if (a) Algorand didn't need
@@ -318,9 +318,9 @@ many_ = getFirst . mconcat . map First
 _many :: (a -> App (Maybe a)) -> [a] -> App (Maybe a)
 _many f l = many_ <$> mapM f l
 
-apc :: HasCounter a => a -> SLPart -> EPProg -> IO EPProg
-apc hc eWho = \case
-  EPProg at True ie et -> do
+apc :: HasCounter a => a -> (SLPart, Maybe Int) -> EPProg -> IO EPProg
+apc hc (eWho, _) = \case
+  EPProg epp_at True epp_interactEnv epp_tail -> do
     let eSeenOut = False
     eSeenInR <- newIORef False
     eSeenOutR <- newIORef False
@@ -330,23 +330,23 @@ apc hc eWho = \case
     eConstsR <- newIORef mempty
     let env0 = Env {..}
     et' <- flip runReaderT env0 $ do
-      seek et >>= \case
+      seek epp_tail >>= \case
         Just k' -> do
           ms <- liftIO $ readIORef eConstsR
-          let mst = dtList at $ toList ms
-          let c' = DL_LocalDo at mst
+          let mst = dtList epp_at $ toList ms
+          let c' = DL_LocalDo epp_at mst
           let k'' = mkCom ET_Com c' k'
           let badVars = countsl k''
           unless (null badVars) $
-            err at (API_NonCS badVars)
+            err epp_at (API_NonCS badVars)
           return k''
-        Nothing -> err at API_NoIn
-    return $ EPProg at True ie et'
+        Nothing -> err epp_at API_NoIn
+    return $ EPProg epp_at True epp_interactEnv et'
   p -> return p
 
 apicut :: PLProg -> IO PLProg
-apicut (PLProg at plo dli dex ssm epps cp) = do
-  let EPPs apis em = epps
-  em' <- mapWithKeyM (apc plo) em
+apicut (PLProg {..}) = do
+  let EPPs apis em = plp_epps
+  em' <- mapWithKeyM (apc plp_opts) em
   let epps' = EPPs apis em'
-  return $ PLProg at plo dli dex ssm epps' cp
+  return PLProg { plp_epps = epps', ..}

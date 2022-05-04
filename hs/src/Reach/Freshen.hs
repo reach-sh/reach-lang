@@ -121,7 +121,7 @@ instance Freshen DLWithBill where
   fu (DLWithBill x y z) = DLWithBill x <$> fu y <*> fu z
 
 instance Freshen DLRemoteALGO where
-  fu (DLRemoteALGO x) = DLRemoteALGO <$> fu x
+  fu (DLRemoteALGO x y) = DLRemoteALGO <$> fu x <*> fu y
 
 instance Freshen DLExpr where
   fu = \case
@@ -275,8 +275,8 @@ instance Freshen ETail where
     ET_Continue at asn -> ET_Continue at <$> fu asn
 
 instance Freshen LLProg where
-  fu (LLProg at opts sps dli dex dvs das alias devts s) =
-    LLProg at opts sps dli dex dvs das alias devts <$> fu s
+  fu (LLProg llp_at llp_opts llp_parts llp_init llp_exports llp_views llp_apis llp_aliases llp_events llp_step) =
+    LLProg llp_at llp_opts llp_parts llp_init llp_exports llp_views llp_apis llp_aliases llp_events <$> fu llp_step
 
 freshen_ :: Freshen a => Counter -> a -> [DLVar] -> IO (a, [DLVar])
 freshen_ fCounter x vs = do

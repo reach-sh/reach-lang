@@ -1217,6 +1217,7 @@ run' = command "run" . info f $ d <> noIntersperse
       cleanup <- intercalate "\n" <$> forM toClean (pure . (\a -> "rm " <> esc' a) . snd)
       let rsh = projDirContainer </> unpack projName <> ".rsh"
       let mjs = projDirContainer </> unpack projName <> ".mjs"
+      -- XXX the program may not have the export 'main'
       let bjs = projDirContainer </> "build" </> unpack projName <> ".main.mjs"
       let abortIfAbsent p =
             liftIO . whenM (not <$> doesFileExist p)

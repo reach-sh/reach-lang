@@ -75,6 +75,7 @@ export interface Arith {
   band: (x: num, y: num) => BigNumber
   bior: (x: num, y: num) => BigNumber
   bxor: (x: num, y: num) => BigNumber
+  sqrt: (n1: num, n2: num) => BigNumber
   add256: (x: num, y: num) => BigNumber
   sub256: (x: num, y: num) => BigNumber
   mod256: (x: num, y: num) => BigNumber
@@ -83,6 +84,7 @@ export interface Arith {
   band256: (x: num, y: num) => BigNumber
   bior256: (x: num, y: num) => BigNumber
   bxor256: (x: num, y: num) => BigNumber
+  sqrt256: (n1: num, n2: num) => BigNumber
   muldiv: (x: num, y: num, z:num) => BigNumber
   cast: (from: UIntTy, to: UIntTy, x: num) => BigNumber
 };

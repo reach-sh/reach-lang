@@ -87,6 +87,48 @@ The requested image's platform (linux/amd64) does not match the detected host pl
 
 * Use `reach-cli` to update the other Reach docker images by running `$ ./reach update` in the terminal.
 
+## {#ts-out-of-memory} Out of Memory
+
+If you receive the following error:
+
+![No memory](./terminal-no-memory.png)
+
+Then that means `docker` needs more memory to function properly.
+
+Please follow the next steps to fix the problem:
+
+* Open your Docker home page
+
+![docker home page](./docker-home-page.png)
+
+* Click on the `settings` Icon at the top-right corner.
+
+![docker settings](./docker-settings-icon.png)
+
+* In the side bar, click on `Resources`. This drops down a sub menu.
+
+* In the sub menu, click on `Advanced` if it is not selected already.
+
+<p align="center">
+<img src="./docker-side-bar.png" alt="docker sub menu" width="250" height="500" />
+</p>
+
+* In the main panel at the middle, adjust the `Memory` to 4GB or more depending on how much RAM you have in your machine.
+
+* Still in the main panel, adjust the `Disk image size` to 200GB or more depending on how much HDD or SSD storage you have in your machine.
+
+![docker settings main panel](./docker-settings-main-panel.png)
+
+* At the bottom-right, click on `Apply & Restart`.
+
+![docker Apply & Restart button](./docker-apply-restart.png)
+
+This should fix the problem after it is done restarting.
+
+:::note
+If this didn't fix the issue, please restart your machine.
+:::
+
 ## Other issues
 
 If the information in this troubleshooting guide does not fix your issue, please report any errors you encounter in the [Discord #help](https://discord.com/channels/628402598663290882/749639931399241792) channel.

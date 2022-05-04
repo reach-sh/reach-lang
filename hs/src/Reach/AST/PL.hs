@@ -128,13 +128,17 @@ instance Pretty ETail where
       ns = render_nest
       cm l = parens (hsep $ punctuate comma $ l)
 
-data EPProg
-  = EPProg SrcLoc Bool InteractEnv ETail
+data EPProg = EPProg
+  { epp_at :: SrcLoc
+  , epp_isApi :: Bool
+  , epp_interactEnv :: InteractEnv
+  , epp_tail :: ETail
+  }
   deriving (Eq)
 
 instance Pretty EPProg where
-  pretty (EPProg _ _ ie et) =
-    pretty ie <> semi <> hardline <> pretty et
+  pretty (EPProg _ _ epp_interactEnv epp_tail) =
+    pretty epp_interactEnv <> semi <> hardline <> pretty epp_tail
 
 data CTail
   = CT_Com DLStmt CTail
@@ -259,24 +263,29 @@ type ViewInfos = M.Map Int ViewInfo
 
 type CPViews = DLViews
 
-type ApiInfos = M.Map SLPart ApiInfo
+type ApiInfos = M.Map SLPart (M.Map Int ApiInfo)
 
-data CPProg
-  = CPProg SrcLoc (CPViews, ViewInfos) ApiInfos DLEvents CHandlers
+data CPProg = CPProg
+  { cpp_at :: SrcLoc
+  , cpp_views :: (CPViews, ViewInfos)
+  , cpp_apis :: ApiInfos
+  , cpp_events :: DLEvents
+  , cpp_handlers :: CHandlers
+  }
   deriving (Eq)
 
 instance Pretty CPProg where
-  pretty (CPProg _ vis ai devts chs) =
-    "views:" <+> pretty vis <> hardline
-      <> "apiInfo:" <+> pretty ai
+  pretty (CPProg _cpp_at cpp_views cpp_apis cpp_events cpp_handlers) =
+    "views:" <+> pretty cpp_views <> hardline
+      <> "apiInfo:" <+> pretty cpp_apis
       <> hardline
-      <> "events:" <+> pretty devts
+      <> "events:" <+> pretty cpp_events
       <> hardline
-      <> pretty chs
+      <> pretty cpp_handlers
 
 data EPPs = EPPs
   { epps_apis :: DLAPIs
-  , epps_m :: M.Map SLPart EPProg
+  , epps_m :: M.Map (SLPart, Maybe Int) EPProg
   }
   deriving (Eq)
 
@@ -306,21 +315,28 @@ instance HasCounter PLOpts where
 
 type StateSrcMap = M.Map Int (SrcLoc, [SLCtxtFrame])
 
-data PLProg
-  = PLProg SrcLoc PLOpts DLInit DLExports StateSrcMap EPPs CPProg
+data PLProg = PLProg
+  { plp_at :: SrcLoc
+  , plp_opts :: PLOpts
+  , plp_init :: DLInit
+  , plp_exports :: DLExports
+  , plp_stateSrcMap :: StateSrcMap
+  , plp_epps :: EPPs
+  , plp_cpprog :: CPProg
+  }
   deriving (Eq)
 
 instance HasCounter PLProg where
-  getCounter (PLProg _ plo _ _ _ _ _) = getCounter plo
+  getCounter = getCounter . plp_opts
 
 instance Pretty PLProg where
-  pretty (PLProg _ _ dli dex _ ps cp) =
+  pretty (PLProg _ _ plp_init plp_exports _ plp_epps plp_cpprog) =
     "#lang pl" <> hardline
-      <> pretty dex
+      <> pretty plp_exports
       <> hardline
-      <> pretty dli
+      <> pretty plp_init
       <> hardline
-      <> pretty ps
+      <> pretty plp_epps
       <> hardline
       <> hardline
-      <> pretty cp
+      <> pretty plp_cpprog

@@ -80,29 +80,39 @@ data LLOpts = LLOpts
 instance HasCounter LLOpts where
   getCounter (LLOpts {..}) = llo_counter
 
-data LLProg
-  = LLProg SrcLoc LLOpts SLParts DLInit DLExports DLViews DLAPIs Aliases DLEvents LLStep
+data LLProg = LLProg
+  { llp_at :: SrcLoc
+  , llp_opts :: LLOpts
+  , llp_parts :: SLParts
+  , llp_init :: DLInit
+  , llp_exports :: DLExports
+  , llp_views :: DLViews
+  , llp_apis :: DLAPIs
+  , llp_aliases :: Aliases
+  , llp_events :: DLEvents
+  , llp_step :: LLStep
+  }
   deriving (Eq)
 
 instance HasCounter LLProg where
-  getCounter (LLProg _ llo _ _ _ _ _ _ _ _) = getCounter llo
+  getCounter = getCounter . llp_opts
 
 instance Pretty LLProg where
-  pretty (LLProg _at _ sps dli dex dvs dapis alias devts db) =
+  pretty (LLProg _llp_at _llp_opts llp_parts llp_init llp_exports llp_views llp_apis llp_aliases llp_events llp_step) =
     "#lang ll" <> hardline
-      <> pretty sps
+      <> pretty llp_parts
       <> hardline
       <> hardline
-      <> pretty dli
+      <> pretty llp_init
       <> hardline
-      <> pretty dex
+      <> pretty llp_exports
       <> hardline
-      <> pretty dvs
+      <> pretty llp_views
       <> hardline
-      <> pretty dapis
+      <> pretty llp_apis
       <> hardline
-      <> pretty alias
+      <> pretty llp_aliases
       <> hardline
-      <> pretty devts
+      <> pretty llp_events
       <> hardline
-      <> pretty db
+      <> pretty llp_step

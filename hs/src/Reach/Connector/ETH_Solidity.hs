@@ -38,6 +38,7 @@ import System.FilePath
 import System.IO.Temp
 import System.Process
 import Text.Printf
+import Safe (headMay)
 
 --- Debugging tools
 
@@ -508,6 +509,7 @@ solPrimApply = \case
   PEQ _ -> binOp "=="
   PGE _ -> binOp ">="
   PGT _ -> binOp ">"
+  SQRT _ -> \args -> return $ solApply "safeSqrt" args
   UCAST _ _ -> \case
     [x] -> return x
     _ -> impossible "ucast"
@@ -1294,25 +1296,27 @@ solBytesSplit sz f = map go [0 .. lastOne]
           True -> lastLen
           False -> byteChunkSize
 
-apiDef :: SLPart -> ApiInfo -> App Doc
-apiDef who ApiInfo {..} = do
-  let who_s = bunpack who
-  let mf = solMsg_fun ai_which
+funRetSig :: DLType -> App Doc
+funRetSig ret_ty = do
+  ret_ty' <- solType_ ret_ty
+  let ret_ty'' = ret_ty' <+> withArgLoc ret_ty
+  return $ "external payable returns" <+> parens ret_ty''
+
+apiArgs :: ApiInfo -> App (Doc, [Doc], [Doc], [Doc], Doc)
+apiArgs ApiInfo {..} = do
   which_msg <- (liftIO . readIORef) =<< asks ctxt_which_msg
   ai_msg_vs <- case M.lookup ai_which which_msg of
     Just vs -> return vs
     Nothing -> impossible "apiDef: no which"
+  m_arg_ty <- solArgType Nothing ai_msg_vs
   let mkArgDefns ts = do
         let indexedTypes = zip ts [0 ..]
-        unzip
-          <$> mapM
-            (\(ty, i :: Int) -> do
-               let name = pretty $ "_a" <> show i
-               sol_ty <- solType ty
-               let decl = solDecl name (sol_ty <> withArgLoc ty)
-               return (name, decl))
-            indexedTypes
-  m_arg_ty <- solArgType Nothing ai_msg_vs
+        unzip <$> mapM (\(ty, i :: Int) -> do
+                      let name = pretty $ "_a" <> show i
+                      sol_ty <- solType ty
+                      let decl = solDecl name (sol_ty <> withArgLoc ty)
+                      return (name, decl))
+                  indexedTypes
   -- Creates the tuple needed to call the consensus function
   let makeConsensusArg args = do
         case ai_msg_vs of
@@ -1358,15 +1362,21 @@ apiDef who ApiInfo {..} = do
                 ]
           tc <- solType_ $ vsToType ai_msg_vs
           let ty = solApply tc ["_vt"]
-          return $ (ty, argDefns, lifts, args)
+          return $ (ty, argDefns, lifts, args, m_arg_ty)
         AIC_SpreadArg -> do
           (args, argDefns) <-
             case ai_msg_tys of
               [T_Tuple ts] -> mkArgDefns ts
               _ -> impossible "apiDef: Expected one tuple arg"
           ty <- makeConsensusArg args
-          return $ (ty, argDefns, [], args)
-  (ty, argDefns, tyLifts, args) <- go ai_compile
+          return $ (ty, argDefns, [], args, m_arg_ty)
+  go ai_compile
+
+apiDef :: SLPart -> Bool -> ApiInfo -> App Doc
+apiDef who qualify ApiInfo {..} = do
+  let who_s = adjustApiName (bunpack who) ai_which qualify
+  let mf = solMsg_fun ai_which
+  (ty, argDefns, tyLifts, args, m_arg_ty) <- apiArgs $ ApiInfo {..}
   let body =
         vsep $
           [ "ApiRng memory _r;"
@@ -1377,9 +1387,7 @@ apiDef who ApiInfo {..} = do
                , solApply mf ["_t", "_r"] <> semi
                , pretty ("return _r." <> who_s) <> semi
                ]
-  ret_ty' <- solType_ ai_ret_ty
-  let ret_ty'' = ret_ty' <+> withArgLoc ai_ret_ty
-  let ret = "external payable returns" <+> parens ret_ty''
+  ret <- funRetSig ai_ret_ty
   let mk w = solFunction (pretty w) argDefns ret
   let alias = case bunpack <$> ai_alias of
               Just ai -> do
@@ -1388,9 +1396,36 @@ apiDef who ApiInfo {..} = do
               Nothing -> []
   return $ vsep $ mk who_s body : alias
 
+genApiJump :: SLPart -> M.Map Int ApiInfo -> App Doc
+genApiJump p ms = do
+  let who = pretty $ bunpack p
+  let ai = fromMaybe (impossible "genApiJump") $ headMay $ M.elems ms
+  (_, argDefns, _, args, _) <- apiArgs ai
+  let whichs = map ai_which $ M.elems ms
+  let chk_which w = solBinOp "==" "current_step" $ pretty w
+  let chk_st = concatWith (\ l r -> l <> " || " <> r) $ map chk_which whichs
+  let require = solApply "require" [chk_st] <> semi
+  let mk w = solWhen (chk_which w) thn
+        where
+          thn = "return " <> solApply ("this." <> inst) args <> semi <> hardline
+          inst = "_" <> who <> pretty w
+  let go = vsep $ map (mk . fst) $ M.toAscList ms
+  ret <- funRetSig $ ai_ret_ty ai
+  let body = vsep $ require : [go]
+  return $ solFunction who argDefns ret $ body
+
 apiDefs :: ApiInfos -> App Doc
-apiDefs defs =
-  vsep <$> (mapM (uncurry apiDef) $ M.toList defs)
+apiDefs defs = do
+  let defL = M.toList defs
+  defs' <- forM defL $ \ (p, ms) -> do
+            let qualify = M.size ms > 1
+            ds <- mapM (apiDef p qualify . snd) $ M.toAscList ms
+            case qualify of
+              True  -> do
+                d <- genApiJump p ms
+                return $ d : ds
+              False -> return ds
+  return $ vsep $ concat defs'
 
 solDefineType :: DLType -> App ()
 solDefineType t = case t of
@@ -1496,12 +1531,26 @@ solEB args (DLinExportBlock _ mfargls (DLBlock _ _ t r)) = do
   r' <- solArg r
   return $ vsep [t', "return" <+> r' <> semi]
 
-createAPIRng :: M.Map SLPart DLType -> App Doc
+createAPIRng :: ApiInfos -> App Doc
 createAPIRng env =
   case M.null env of
     True -> return ""
     False -> do
-      fields <- mapM (\(k, v) -> (pretty (bunpack k),) <$> solType_ v) $ M.toAscList env
+      fields <- fmap concat $ forM (M.toAscList env) $ \(k, ms) -> do
+          let qualify = M.size ms > 1
+          let k' = bunpack k
+          fs <- mapM (\ (w, ai) -> do
+                  let n = pretty $ adjustApiName k' w qualify
+                  -- let n = pretty $ prefix <> k' <> suffix
+                  t <- solType_ $ ai_ret_ty ai
+                  return (n, t)
+                ) $ M.toAscList ms
+          case qualify of
+            True  -> do
+              let (_, st) = fromMaybe (impossible "createApiRng: empty list") $ headMay fs
+              return $ (pretty $ k', st) : fs
+            False -> return fs
+
       return $ fromMaybe (impossible "createAPIRng") $ solStruct "ApiRng" fields
 
 baseTypes :: M.Map DLType Doc
@@ -1518,7 +1567,7 @@ baseTypes =
     ]
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo dli _ _ _ (CPProg at (vs, vi) ai _ hs)) = do
+solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at = at, cpp_views = (vs, vi), cpp_apis = ai, cpp_handlers = hs} } = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   ctxt_varm <- newIORef mempty
@@ -1635,7 +1684,7 @@ solPLProg (PLProg _ plo dli _ _ _ (CPProg at (vs, vi) ai _ hs)) = do
     intsp <- getm ctxt_ints
     outputsp <- getm ctxt_outputs
     tlfunsp <- getm ctxt_tlfuns
-    api_rng <- createAPIRng $ M.map ai_ret_ty ai
+    api_rng <- createAPIRng ai
     let defp =
           vsep $
             [ "receive () external payable {}"

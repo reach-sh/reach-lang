@@ -24,6 +24,7 @@ import Reach.Pretty
 import Reach.Texty
 import Reach.Util
 import Data.Bifunctor
+import Data.Bool (bool)
 
 type PrettySubstEnv = M.Map DLVar Doc
 
@@ -619,12 +620,20 @@ instance Pretty ApiInfo where
 
 data DLRemoteALGO = DLRemoteALGO
   { ralgo_fees :: DLArg
+  , ralgo_assets :: [DLArg]
   }
   deriving (Eq, Ord)
 
 instance PrettySubst DLRemoteALGO where
   prettySubst (DLRemoteALGO {..}) = do
-    prettySubst ralgo_fees
+    f' <- prettySubst ralgo_fees
+    a' <- mapM prettySubst ralgo_assets
+    return $
+      render_obj $
+        M.fromList
+          [ ("fees" :: String, f')
+          , ("assets", render_das a')
+          ]
 
 data DLExpr
   = DLE_Arg SrcLoc DLArg
@@ -1229,9 +1238,15 @@ type DLAPIs = InterfaceLikeMap (SLPart, IType)
 
 type DLEvents = InterfaceLikeMap [DLType]
 
+type ApiCalls = M.Map SLPart Int
+
 arraysLength :: [DLArg] -> Integer
 arraysLength arrays = do
   let sizes = map (snd . argArrTypeLen) arrays
   case allEqual sizes of
     Right s -> s
     _ -> impossible "Inconsistent array sizes."
+
+adjustApiName :: Show a => String -> a -> Bool -> String
+adjustApiName who which qualify = prefix <> who <> suffix
+  where (prefix, suffix) = bool ("", "") ("_", show which) qualify

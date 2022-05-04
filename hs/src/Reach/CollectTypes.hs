@@ -113,7 +113,7 @@ instance CollectsTypes PrimOp where
     _ -> mempty
 
 instance CollectsTypes DLRemoteALGO where
-  cts (DLRemoteALGO x) = cts x
+  cts (DLRemoteALGO x y) = cts x <> cts y
 
 instance CollectsTypes DLExpr where
   cts = \case
@@ -209,8 +209,9 @@ instance CollectsTypes Int where
   cts _ = mempty
 
 instance CollectsTypes LLProg where
-  cts (LLProg _ _ ps dli dex dvs das alias devts s) =
-    cts ps <> cts dli <> cts dex <> cts dvs <> cts das <> cts alias <> cts devts <> cts s
+  cts (LLProg _ _ llp_parts llp_init llp_exports llp_views llp_apis llp_aliases llp_events llp_step) =
+    cts llp_parts <> cts llp_init <> cts llp_exports <> cts llp_views <> cts llp_apis
+                  <> cts llp_aliases <> cts llp_events <> cts llp_step
 
 instance CollectsTypes DLLetVar where
   cts (DLV_Eff) = mempty

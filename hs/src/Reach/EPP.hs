@@ -3,7 +3,7 @@ module Reach.EPP (epp, EPPError (..)) where
 import Control.Monad.Reader
 import Data.Foldable
 import Data.IORef
-import Data.List.Extra (mconcatMap)
+import Data.List.Extra (mconcatMap, groupOn)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
@@ -21,6 +21,7 @@ import Reach.FixedPoint
 import Reach.Optimize
 import Reach.Texty
 import Reach.Util
+import Safe (headMay)
 
 shouldTrace :: Bool
 shouldTrace = False
@@ -131,6 +132,7 @@ solve fi = do
 data EPPError
   = Err_ContinueDomination
   | Err_ViewSetDomination (Maybe SLPart) SLVar
+  | Err_API_Twice SLPart
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode EPPError where
@@ -143,6 +145,7 @@ instance HasErrorCode EPPError where
   errIndex = \case
     Err_ContinueDomination {} -> 0
     Err_ViewSetDomination {} -> 1
+    Err_API_Twice {} -> 2
 
 instance Show EPPError where
   show = \case
@@ -151,12 +154,15 @@ instance Show EPPError where
     Err_ViewSetDomination v f ->
       let mvn = maybe "" (\v' -> bunpack v' <> ".") v
        in "The value that the view `" <> mvn <> show (pretty f) <> "` is set to will never be observable"
+    Err_API_Twice who ->
+      "The API `" <> bunpack who <> "` is called many times in the same consensus step."
 
 type ViewSet = M.Map (SrcLoc, Maybe SLPart, SLVar) (IORef Bool)
 
 data BEnv = BEnv
   { be_prev :: Int
   , be_prevs :: S.Set Int
+  , be_which_prev :: M.Map Int Int
   , be_savec :: Counter
   , be_handlerc :: Counter
   , be_interval :: CInterval DLTimeArg
@@ -174,10 +180,12 @@ data BEnv = BEnv
   , be_inConsensus :: Bool
   , be_counter :: Counter
   , be_which :: Int
-  , be_api_info :: IORef (M.Map SLPart ApiInfo)
+  , be_apis :: S.Set SLPart
+  , be_api_info :: IORef (M.Map SLPart (M.Map Int ApiInfo))
   , be_alias :: Aliases
   , be_api_rets :: IORef (M.Map SLPart DLType)
   , be_ms :: Seq.Seq DLStmt
+  , be_api_steps :: IORef (M.Map SLPart [(Int, SrcLoc)])
   }
 
 type BApp = ReaderT BEnv IO
@@ -269,6 +277,7 @@ type CApp = ReaderT CEnv IO
 data EEnv = EEnv
   { ee_flow :: FlowOutput
   , ee_who :: SLPart
+  , ee_m_api_step :: Maybe Int
   }
 
 type EApp = ReaderT EEnv IO
@@ -316,8 +325,11 @@ addVars at k = do
 
 -- End-point Construction
 
-itsame :: SLPart -> EApp Bool
-itsame who = ((who ==) . ee_who) <$> ask
+itsame :: SLPart -> Maybe Int -> EApp Bool
+itsame who mApiStep = do
+  e_who <- asks ee_who
+  e_m_api_step <- asks ee_m_api_step
+  return $ mApiStep == e_m_api_step && e_who == who
 
 eeIze :: (a -> BApp (b, c)) -> a -> BApp c
 eeIze f x = do
@@ -355,9 +367,14 @@ be_m = \case
         rets <- liftIO $ readIORef be_api_rets
         let ret = fromMaybe T_Null $ M.lookup p rets
         let alias = join $ M.lookup (bunpack p) be_alias
+        let prev = be_prev
+        let as = be_api_steps
+        liftIO $ modifyIORef as $ M.insertWith (<>) p [(prev, apiAt)]
         liftIO $
-          modifyIORef be_api_info $
-            M.insert p $ ApiInfo apiAt tys mc be_which isf ret alias
+          modifyIORef be_api_info $ \ m ->
+              M.insert p (M.insert be_which (ApiInfo apiAt tys mc be_which isf ret alias) $ ai m) m
+            where
+              ai = fromMaybe mempty . M.lookup p
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
@@ -414,9 +431,20 @@ be_m = \case
   DL_Only at (Left who) l -> do
     ic <- be_inConsensus <$> ask
     l'l <- ee_t l
+    mprev <- isApi who >>= \case
+      False -> return $ Nothing
+      True  -> do
+          case ic of
+            True -> do
+              which <- asks be_which
+              wps <- asks be_which_prev
+              case M.lookup which wps of
+                Just p' -> return $ Just p'
+                _ -> impossible "which has no prev"
+            False -> Just <$> asks be_prev
     let t'c = return $ DL_Nop at
     let t'l = do
-          itsame who >>= \case
+          itsame who mprev >>= \case
             False -> return $ DL_Nop at
             True -> DL_Only at (Right ic) <$> l'l
     return $ (,) t'c t'l
@@ -427,6 +455,9 @@ be_m = \case
     return $ (,) (mk <$> t'c) (mk <$> t'l)
   where
     nop at = retb0 $ const $ return $ DL_Nop at
+
+isApi :: SLPart -> BApp Bool
+isApi who = S.member who <$> asks be_apis
 
 be_t :: BAppT2 DLTail
 be_t = \case
@@ -533,6 +564,7 @@ be_c = \case
   LLC_FromConsensus at1 _at2 fs s -> do
     this <- newSavePoint "fromConsensus"
     views <- asks be_views
+    which <- asks be_which
     (more, s'l) <-
       captureMore $
         local
@@ -541,6 +573,7 @@ be_c = \case
                { be_interval = default_interval
                , be_prev = this
                , be_prevs = S.singleton this
+               , be_which_prev = M.insert which this (be_which_prev e)
                , be_view_sets = mempty
                })
           $ do
@@ -607,7 +640,6 @@ be_c = \case
     (this_loopj, this_loopsp) <-
       fromMaybe (impossible "no loop") . be_loop <$> ask
     prevs <- be_prevs <$> ask
-    -- liftIO $ putStrLn $ "continue at " <> show at <> ": " <> show (this_loopsp, prevs)
     when (S.member this_loopsp prevs) $
       expect_thrown at Err_ContinueDomination
     fg_saves $ this_loopsp
@@ -660,6 +692,7 @@ be_s_ = \case
              e
                { be_interval = int_ok
                , be_which = this_h
+               , be_which_prev = M.insert this_h prev (be_which_prev e)
                })
           $ do
             ms <- asks be_ms
@@ -680,11 +713,13 @@ be_s_ = \case
     let ok_l''m = do
           ok_l' <- ok_l'm
           who <- ee_who <$> ask
-          mfrom <- case M.lookup who send of
-            Nothing -> return $ Nothing
-            Just (DLSend {..}) -> do
+          m_api_step <- ee_m_api_step <$> ask
+          let same_which = maybe True (== prev) m_api_step
+          mfrom <- case (M.lookup who send, same_which) of
+            (Just (DLSend {..}), True) -> do
               svs <- ee_readSave prev
               return $ Just (ds_msg, ds_pay, ds_when, svs, soloSend)
+            (_, _) -> return $ Nothing
           mtime' <- mtime'm
           return $ ET_ToConsensus at from_v prev (Just lct_v) this_h mfrom msg_vs out_vs time_v secs_v didSend_v mtime' ok_l'
     return $ ok_l''m
@@ -697,7 +732,7 @@ mk_eb (DLinExportBlock at vs (DLBlock bat sf ll a)) = do
   return $ DLinExportBlock at vs (DLBlock bat sf body' a)
 
 epp :: LLProg -> IO PLProg
-epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
+epp (LLProg llp_at (LLOpts {..}) llp_parts llp_init llp_exports llp_views llp_apis llp_aliases llp_events llp_step) = do
   -- Step 1: Analyze the program to compute basic blocks
   let be_counter = llo_counter
   be_savec <- newCounter 1
@@ -710,6 +745,8 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
   let be_prev = 0
   let be_which = 0
   let be_prevs = mempty
+  let SLParts {..} = llp_parts
+  let be_apis = sps_apis
   be_api_info <- newIORef mempty
   be_api_rets <- newIORef mempty
   let be_interval = default_interval
@@ -721,8 +758,10 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
   let be_view_sets = mempty
   let be_inConsensus = False
   let be_ms = mempty
-  let be_alias = alias
-  mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
+  let be_alias = llp_aliases
+  be_api_steps <- newIORef mempty
+  let be_which_prev = mempty
+  mkep_ <- flip runReaderT (BEnv {..}) $ be_s llp_step
   check_view_sets =<< readIORef be_view_setsr
   api_info <- liftIO $ readIORef be_api_info
   hs <- readIORef be_handlers
@@ -739,23 +778,41 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
         flip runReaderT (CEnv {..}) m
   dex' <-
     flip runReaderT (BEnv {..}) $
-      mapM mk_eb dex
+      mapM mk_eb llp_exports
   vm <- flip mapWithKeyM mkvm $ \which mk ->
     mkh $ mk <$> ce_readSave which
-  cp <- (CPProg at (dvs, vm) api_info devts . CHandlers) <$> mapM mkh hs
+  let cpp_at = llp_at
+  let cpp_views = (llp_views, vm)
+  let cpp_apis = api_info
+  let cpp_events = llp_events
+  cpp_handlers <- CHandlers <$> mapM mkh hs
+  let cp = CPProg {..}
   stateToSrcMap <- readIORef be_stateToSrcMap
   -- Step 4: Generate the end-points
-  let SLParts {..} = ps
-  let mkep ee_who ie = do
-        let isAPI = S.member ee_who sps_apis
+  as <- readIORef be_api_steps
+  -- Ensure an API is called at most once in a given consensus step
+  forM_ (M.toAscList as) $ \ (k, v) -> do
+      forM_ (groupOn fst v) $ \ vs -> do
+        when (length vs /= 1) $ do
+          let apiAt = snd $ fromMaybe (impossible "api empty") $ headMay vs
+          expect_thrown apiAt $ Err_API_Twice k
+  -- Make a separate `EPProg` for each `API x Step`,
+  -- where step is the one in which `interact.in` gets called.
+  let genSepApis k v acc =
+        case M.lookup k as of
+          Just ns -> foldr (\ (x,_) acc' -> M.insert (k, Just x) v acc') acc ns
+          _ -> M.insert (k, Nothing) v acc
+  let sps_ies' = M.foldrWithKey genSepApis mempty sps_ies
+  let mkep (who, step) ie = do
+        let isAPI = S.member who sps_apis
+        let ee_who = who
+        let ee_m_api_step = step
         let ee_flow = flow
-        et <-
-          flip runReaderT (EEnv {..}) $
-            mkep_
-        return $ EPProg at isAPI ie et
-  pps <- EPPs das <$> mapWithKeyM mkep sps_ies
+        et <- flip runReaderT (EEnv {..}) $ mkep_
+        return $ EPProg llp_at isAPI ie et
+  pps <- EPPs llp_apis <$> mapWithKeyM mkep sps_ies'
   -- Step 4: Generate the final PLProg
   let plo_verifyArithmetic = llo_verifyArithmetic
   let plo_untrustworthyMaps = llo_untrustworthyMaps
   let plo_counter = llo_counter
-  return $ PLProg at (PLOpts {..}) dli dex' stateToSrcMap pps cp
+  return $ PLProg llp_at (PLOpts {..}) llp_init dex' stateToSrcMap pps cp

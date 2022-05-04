@@ -94,7 +94,7 @@ instance FreeVars DLWithBill where
   freeVars (DLWithBill _ a b) = freeVars [a, b]
 
 instance FreeVars DLRemoteALGO where
-  freeVars (DLRemoteALGO a) = freeVars [a]
+  freeVars (DLRemoteALGO a b) = freeVars a <> freeVars b
 
 instance FreeVars DLTokenNew where
   freeVars (DLTokenNew a b c d e f) = freeVars [a, b, c, d, e] <> freeVars f

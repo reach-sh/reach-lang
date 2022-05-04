@@ -2115,6 +2115,29 @@ Maybe(UInt).Some(5).match({
 This error indicates that you have inspected the details about a publication, such as via `{!rsh} didPublish()`, before there has been a publication.
 This is impossible, so the expression must be moved after the first publication.
 
+For example, the code below erroneously puts `{!rsh} didPublish()` before `{!rsh} publish`:
+
+``` reach
+load: /hs/t/n/Err_NotAfterFirst.rsh
+range: 6 - 10
+```
+
+This error can be corrected by placing `{!rsh} publish` before `{!rsh} didPublish()`:
+
+```reach
+load: /examples/raffle/index.rsh
+range: 35 - 35
+```
+
+```reach
+load: /examples/raffle/index.rsh
+range: 59 - 65
+```
+
+:::note
+Notice that the `Sponsor` `{!rsh} publish`ed on line 35. On Line 62, `{!rsh} didPublish()` is used to make a check.
+:::
+
 ## {#RE0120} RE0120
 
 This error indicates that an actor who is not a `{!rsh} Participant`, e.g. a `{!rsh} ParticipantClass`, is
@@ -2183,6 +2206,29 @@ no `{!rsh} Participant`s or `{!rsh} ParticipantClass`es declared.
 
 This issue can arise when you use `{!rsh} Anybody.publish()`. To fix this issue, ensure you declare
 a `{!rsh} Participant` or `{!rsh} ParticipantClass`.
+
+For example, the program below erroneously uses `{!rsh} Anybody.publish()` without declaring any `{!rsh} Participant` or `{!rsh} ParticipantClass`:
+
+```reach
+load: ./hs/t/n/Err_No_Participants.rsh
+range: 3 - 9
+```
+
+However, the correct thing to do is to declare at least one `{!rsh} Participant` or `{!rsh} ParticipantClass` before using `{!rsh} Anybody.publish()` like in the program below:
+
+```reach
+load: ./examples/api-call/index.rsh
+range: 4 - 7
+```
+
+```reach
+load: ./examples/api-call/index.rsh
+range: 47 - 49
+```
+
+:::note 
+Since `{!rsh} ParticipantClass` is being deprecated, it is preferable to use `{!rsh} API`.
+:::
 
 ## {#RE0125} RE0125
 
@@ -2298,6 +2344,9 @@ This error indicates that you are attempting to overload a method with multiple 
 You can fix this issue by either removing one of the overloads or changing one of the domains.
 You can change the domain of a function by altering the type of its parameters or adding/removing parameters.
 
+## {#RE0132} RE0132
+
+This error indicates you had extra fields in `{!rsh} REMOTE_FUN.ALGO` that are not supported.
 
 ## {#REP0000} REP0000
 
@@ -2406,6 +2455,30 @@ export const main = Reach.App(() => {
 This change will ensure the `{!rsh} View` `{!rsh} I.i` is set to `{!rsh} i` on every iteration of the
 loop. Additionally, the continuation of the loop will have `{!rsh} I.i` set to the last value of
 the loop variable `{!rsh} i`.
+
+## {#REP0002} REP0002
+
+This error indicates that you called an API multiple times within the same consensus step.
+
+For example, the erroneous code below calls the API, `{!rsh} U.f`, many times in the same `{!rsh} parallelReduce`.
+
+```reach
+const x =
+  parallelReduce(0)
+  .invariant(balance() == 0)
+  .while( x < 10 )
+  .api(U.f, (k) => {
+      k(null);
+      return x + 1;
+  })
+  .api(U.f, (k) => {
+      k(null);
+      return x + 2;
+  });
+```
+
+You can fix this error by removing the duplicate `{!rsh} .api` case.
+Alternatively, you can create a new API method and replace one of the offending cases.
 
 ## {#RI0000} RI0000
 
@@ -2624,6 +2697,8 @@ This error means that you returned the result to an API without calling it.
 This is generally not possible unless you directly use the internal representation of APIs.
 
 ## {#RAPI0002} RAPI0002
+
+@{errver(false, "v0.1.10")}
 
 The error means that you use an API in two places in your program, which is not allowed.
 

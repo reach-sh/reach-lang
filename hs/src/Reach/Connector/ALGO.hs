@@ -41,7 +41,7 @@ import Reach.Texty (pretty)
 import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Warning
-import Safe (atMay)
+import Safe (atMay, headMay)
 import System.Exit
 import System.FilePath
 import System.IO.Temp
@@ -185,28 +185,32 @@ restrictGraph g n = do
   let removeDisconnected = M.filterWithKey onlyConnected
   return $ M.map removeDisconnected $ removeDisconnected g
 
-ensureAllPaths :: Ord a => LPGraph a b -> a -> a -> (b -> Integer) -> IO (Maybe [a])
-ensureAllPaths g s e getc = return $ checkFrom 0 mempty s
+ensureAllPaths :: (Show a, Ord a) => String -> LPGraph a b -> a -> a -> (b -> Integer) -> IO (Maybe [a])
+ensureAllPaths rlab g s e getc = checkFrom 0 mempty s
   where
-    checkFrom t p l =
+    checkFrom t p l = do
+      loud $ rlab <> " " <> show l
+      when (elem l p) $ do
+        impossible "loop"
       case l == e of
         True ->
           case t == 1 of
-            True -> Nothing
-            False -> Just p
+            True -> return $ Nothing
+            False -> return $ Just p
         False ->
           checkChildren t (l : p) $ M.toAscList $ fromMaybe mempty $ M.lookup l g
     checkChildren t p = \case
-      [] -> Nothing
+      [] -> return $ Nothing
       (d, x) : xs -> checkEdges t p d (S.toAscList x) `cmb` checkChildren t p xs
     checkEdges t p d = \case
-      [] -> Nothing
+      [] -> return $ Nothing
       x : xs -> checkEdge t p d x `cmb` checkEdges t p d xs
     checkEdge t p d (_cs, r) =
       checkFrom (t + getc r) p d
-    cmb = \case
-      Just x -> const $ Just x
-      Nothing -> \x -> x
+    cmb mx my = do
+      mx >>= \case
+        Just x -> return $ Just x
+        Nothing -> my
 
 aarray :: [Aeson.Value] -> Aeson.Value
 aarray = Aeson.Array . Vector.fromList
@@ -639,8 +643,8 @@ type BudgetCFG = IO (Bool, Integer, Integer)
 type AnalyzeCFG = Resource -> IO Integer
 type ResourceCost = M.Map Resource Integer
 
-buildCFG :: [TEAL] -> IO (DotGraph, RestrictCFG)
-buildCFG ts = do
+buildCFG :: String -> [TEAL] -> IO (DotGraph, RestrictCFG)
+buildCFG rlab ts = do
   res_gr :: IORef (LPGraph String ResourceCost) <- newIORef mempty
   let lTop = "TOP"
   let lBot = "BOT"
@@ -770,7 +774,8 @@ buildCFG ts = do
         let analyzeCFG = longestPathBetween g' lTop lBots . getc
         let budgetCFG = budgetAnalyze g' lTop lBots (flip getc)
         return $ (gs g', analyzeCFG, budgetCFG)
-  ensureAllPaths g lTop lBots (getc R_CheckedCompletion) >>= \case
+  loud $ rlab <> " OnCompletion"
+  ensureAllPaths (rlab <> ".OnC") g lTop lBots (getc R_CheckedCompletion) >>= \case
     Nothing -> return ()
     Just p ->
       impossible $ "found a path where OnCompletion was not checked: " <> show p
@@ -781,6 +786,7 @@ data LabelRec = LabelRec
   , lr_at :: SrcLoc
   , lr_what :: String
   }
+  deriving (Show)
 
 type CompanionCalls = M.Map Label Integer
 type CompanionInfo = Maybe CompanionCalls
@@ -797,18 +803,20 @@ data CompanionRec = CompanionRec
   , cr_del :: Integer
   }
 
-checkCost :: Notify -> Disp -> [LabelRec] -> CompanionInfo -> [TEAL] -> IO (Either String CompanionInfo)
-checkCost notify disp ls ci ts = do
+checkCost :: String -> Notify -> Disp -> [LabelRec] -> CompanionInfo -> [TEAL] -> IO (Either String CompanionInfo)
+checkCost rlab notify disp ls ci ts = do
   msgR <- newIORef mempty
   let addMsg x = modifyIORef msgR $ flip (<>) $ x <> "\n"
   caR <- newIORef (mempty :: S.Set CompanionAdds)
   let rgs lab gs = void $ disp ("." <> lab <> "dot") $ LT.toStrict $ T.render $ dotty gs
-  (gs, restrictCFG) <- buildCFG ts
+  loud $ rlab <> " buildCFG"
+  (gs, restrictCFG) <- buildCFG rlab ts
   rgs "" gs
   addMsg $ "Conservative analysis on Algorand found:"
   forM_ ls $ \LabelRec {..} -> do
     let starts_at = " starts at " <> show lr_at <> "."
     addMsg $ " * " <> lr_what <> ", which" <> starts_at
+    loud $ rlab <> " restrictCFG " <> show lr_lab
     (gs', analyzeCFG, budgetCFG) <- restrictCFG lr_lab
     when True $
       rgs (LT.unpack lr_lab <> ".") gs'
@@ -899,6 +907,7 @@ data Env = Env
   , eCompanion :: CompanionInfo
   , eCompanionRec :: CompanionRec
   , eLibrary :: IORef (M.Map LibFun (Label, App ()))
+  , eApiCalls :: M.Map SLPart Int
   }
 
 type App = ReaderT Env IO
@@ -1325,6 +1334,7 @@ cprim = \case
   PEQ t -> bcall t "=="
   PGT t -> bcall t ">"
   PGE t -> bcall t ">="
+  SQRT t -> bcallz t "sqrt"
   UCAST from to -> \case
     [v] -> do
       case (from, to) of
@@ -2042,8 +2052,8 @@ ce = \case
           cMapLoad
           cla $ mdaToMaybeLA mt mva
           cTupleSet at mdt $ fromIntegral i
-  DLE_Remote at fs ro rng_ty rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) _malgo ma -> do
-    --let DLRemoteALGO {..} = malgo
+  DLE_Remote at fs ro rng_ty rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo ma -> do
+    let DLRemoteALGO _fees r_assets = malgo
     warn_lab <- asks eWhich >>= \case
       Just which -> return $ "Step " <> show which
       Nothing -> return $ "This program"
@@ -2110,7 +2120,7 @@ ce = \case
           makeTxn1 "ApplicationArgs"
         -- XXX If we can "inherit" resources, then this needs to be removed and
         -- we need to check that nnZeros actually stay 0
-        forM_ nnRecv $ \a -> do
+        forM_ (r_assets <> nnRecv) $ \a -> do
           incResource R_Asset a
           ca a
           makeTxn1 "Assets"
@@ -2198,7 +2208,10 @@ ce = \case
         clogEvent name vs
         --cl DLL_Null -- Event log values are never used
   DLE_setApiDetails at p _ _ _ -> do
-    callCompanion at $ CompanionLabel $ apiLabel p
+    which <- fromMaybe (impossible "setApiDetails no which") <$> asks eWhich
+    mac <- multipleApiCalls p
+    let p' = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) which mac
+    callCompanion at $ CompanionLabel p'
   DLE_GetUntrackedFunds at mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
     cGetBalance at mtok
@@ -2257,6 +2270,13 @@ ce = \case
       comment $ LT.pack $ "at " <> (unsafeRedactAbsStr $ show at)
       forM_ fs $ \f ->
         comment $ LT.pack $ unsafeRedactAbsStr $ show f
+
+multipleApiCalls :: SLPart -> App Bool
+multipleApiCalls w = do
+  apiCalls <- asks eApiCalls
+  case M.lookup w apiCalls of
+    Just n  -> return $ n > 1
+    Nothing -> return False
 
 signatureStr :: String -> [DLType] -> Maybe DLType -> String
 signatureStr f args mret = sig
@@ -2978,6 +2998,7 @@ data CMeth
     , capi_arg_tys :: [DLType]
     , capi_doWrap :: App ()
     , capi_label :: LT.Text
+    , capi_jumps :: [(Int, LT.Text)]
     }
   | CView
     { cview_who :: SLPart
@@ -3007,9 +3028,9 @@ cmethIsView = \case
   CView {} -> True
   CAlias {..} -> cmethIsView calias_meth
 
-capi :: (SLPart, ApiInfo) -> App [(String, CMeth)]
-capi (who, (ApiInfo {..})) = do
-  capi_label <- freshLabel $ bunpack who
+capi :: Bool -> (SLPart, ApiInfo) -> App [(String, CMeth)]
+capi qualify (who, (ApiInfo {..})) = do
+  capi_label <- freshLabel f
   let c = CApi {..}
   let apis = [(capi_sig, c)]
   let mk_alias alias = apis <> [(mk_sig $ bunpack alias, CAlias alias c)]
@@ -3019,7 +3040,7 @@ capi (who, (ApiInfo {..})) = do
     capi_which = ai_which
     mk_sig n = signatureStr n capi_arg_tys mret
     capi_sig = mk_sig f
-    f = bunpack who
+    f = adjustApiName (bunpack who) ai_which qualify
     imp = impossible "apiSig"
     (capi_arg_tys, capi_doWrap) =
       case ai_compile of
@@ -3037,6 +3058,46 @@ capi (who, (ApiInfo {..})) = do
     cid = fromMaybe imp ai_mcase_id
     capi_ret_ty = ai_ret_ty
     mret = Just $ capi_ret_ty
+    capi_jumps = []
+
+apiArgsAndRet :: CMeth -> ([DLType], DLType)
+apiArgsAndRet = \case
+  CApi {..}   -> (capi_arg_tys, capi_ret_ty)
+  CAlias {..} -> apiArgsAndRet $ calias_meth
+  _ -> impossible $ "apiArgsAndRet: Expected API"
+
+genApiJump :: SLPart -> [(String, CMeth)] -> App (String, CMeth)
+genApiJump who ms = do
+  let ms' = map snd ms
+  -- Grab any one of the methods to store argument/return type information.
+  -- All methods have same signature.
+  let m = fromMaybe (impossible "genApiJump") $ headMay ms'
+  let whichs = map capi_which ms'
+  let labels = map capi_label ms'
+  let (arg_tys, mret) = apiArgsAndRet m
+  let sig = signatureStr (bunpack who) arg_tys $ Just mret
+  return $ (sig, CApi {
+      capi_who = who
+    , capi_label = capi_label m
+    , capi_jumps = zip whichs labels
+    -- These fields don't really matter
+    , capi_sig = sig
+    , capi_ret_ty = capi_ret_ty m
+    , capi_which = capi_which m
+    , capi_arg_tys = capi_arg_tys m
+    , capi_doWrap = capi_doWrap m
+    })
+
+capis :: (SLPart, M.Map a ApiInfo) -> App [(String, CMeth)]
+capis (p, ms) = do
+  ms' <- concatMapM (capi qualify . (p,) . snd) $ M.toAscList ms
+  case qualify of
+    True  -> do
+      m <- genApiJump p ms'
+      return $ m : ms'
+    False -> return ms'
+  where
+    qualify = M.size ms > 1
 
 cview :: (SLPart, VSITopInfo) -> (String, CMeth)
 cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs) = (cview_sig, c)
@@ -3069,7 +3130,7 @@ cmeth sigi = \case
     comment $ LT.pack $ sigDump sigi
     block_' (bunpack alias) $ do
       code "b" [capi_label]
-  CApi _ sig _ which tys doWrap lab -> do
+  CApi _ sig _ which tys doWrap lab [] -> do
     block lab $ do
       comment $ LT.pack $ "API: " <> sig
       comment $ LT.pack $ sigDump sigi
@@ -3078,6 +3139,15 @@ cmeth sigi = \case
       cconcatbs_ (const $ return ()) $ zipWith f tys [1 ..]
       doWrap
       code "b" [handlerLabel which]
+  -- This API occurs in multiple places throughout the program.
+  -- Jump to the correct handler
+  CApi who sig _ _ _ _ _ wls -> do
+    block_' (bunpack who) $ do
+      comment $ LT.pack $ "API: " <> sig
+      comment $ LT.pack $ sigDump sigi
+      gvLoad GV_currentStep
+      let go _ l = code "b" [l]
+      cblt "api" go $ bltM $ M.fromList wls
   CView who sig _ hs -> do
     block_' (bunpack who) $ do
       comment $ LT.pack $ "View: " <> sig
@@ -3136,8 +3206,8 @@ analyzeViews (vs, vis) = vsit
 
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
-  let PLProg _at ePLO dli _ _ _ cpp = pl
-  let CPProg at vsi ai _ (CHandlers hm) = cpp
+  let PLProg { plp_opts = ePLO, plp_init = dli, plp_cpprog = cpp } = pl
+  let CPProg { cpp_at = at, cpp_views = vsi, cpp_apis = ai, cpp_handlers = (CHandlers hm) } = cpp
   -- This is the final result
   resr <- newIORef mempty
   totalLenR <- newIORef (0 :: Integer)
@@ -3188,6 +3258,7 @@ compile_algo env disp pl = do
   let eLets = mempty
   let eLetSmalls = mempty
   let eWhich = Nothing
+  let eApiCalls = M.map M.size ai
   let recordSize prefix size = do
         modifyIORef resr $
           M.insert (prefix <> "Size") $
@@ -3210,13 +3281,16 @@ compile_algo env disp pl = do
             lr_at = ch_at
             lr_what = "Step " <> show i
         (_, C_Loop {}) -> Nothing
-  let a2lr (p, ApiInfo {..}) = LabelRec {..}
+  let a2lr qualify (p, ApiInfo {..}) = LabelRec {..}
         where
-          lr_lab = apiLabel p
+          lr_lab = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) ai_which qualify
           lr_at = ai_at
-          lr_what = "API " <> bunpack p
+          lr_what = "API " <> LT.unpack lr_lab
+  let as2lrs (p, ms) =
+        map (a2lr qualify . (p,) . snd) $ M.toAscList ms
+        where qualify = M.size ms > 1
   let pubLs = mapMaybe h2lr $ M.toAscList hm
-  let apiLs = map a2lr $ M.toAscList ai
+  let apiLs = concatMap as2lrs $ M.toAscList ai
   let progLs = pubLs <> apiLs
   meth_sm_r <- newIORef mempty
   let run :: CompanionInfo -> App () -> IO (TEALs, Notify, IO ())
@@ -3254,24 +3328,29 @@ compile_algo env disp pl = do
   let runProg m = do
         let lab = "appApproval"
         let disp' = disp . (lab <>)
-        let rec inclAll ci = do
+        let rec r inclAll ci = do
+              let r' = r + 1
+              let rlab= "ALGO." <> show r
+              loud $ rlab <> " run"
               (ts, notify, finalize) <- run ci m
-              let ts' = optimize $ DL.toList ts
+              loud $ rlab <> " optimize"
+              let !ts' = optimize $ DL.toList ts
               let ls = if inclAll then progLs else apiLs
-              checkCost notify disp' ls ci ts' >>= \case
-                Right ci' -> rec inclAll ci'
+              loud $ rlab <> " check"
+              checkCost rlab notify disp' ls ci ts' >>= \case
+                Right ci' -> rec r' inclAll ci'
                 Left msg ->
                   case inclAll of
-                    False -> rec True ci
+                    False -> rec r' True ci
                     True -> do
                       finalize
                       when showCost $ putStr msg
                       modifyIORef resr $ M.insert "companionInfo" (Aeson.toJSON ci)
                       return ts'
-        ts' <- rec False Nothing
+        ts' <- rec (0::Integer) False Nothing
         void $ addProg lab ts'
   runProg $ do
-    ai_sm <- M.fromList <$> concatMapM capi (M.toAscList ai)
+    ai_sm <- M.fromList <$> concatMapM capis (M.toAscList ai)
     let vsiTop = analyzeViews vsi
     let vsi_sm = M.fromList $ map cview $ M.toAscList vsiTop
     let meth_sm = M.union ai_sm vsi_sm

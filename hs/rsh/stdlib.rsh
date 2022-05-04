@@ -194,7 +194,7 @@ export function closeTo(Who, after = (() => null), nonNetPayAmt = []) {
 
 // Math
 
-export const sqrt = (y, k) =>
+export const sqrtApprox = (y, k) =>
   Array.iota(k).reduce([ y, (y / 2 + 1) ], ([ z, x ], _) =>
     (x < 2)
     ? [ x, x ]
@@ -312,9 +312,14 @@ export const fxdiv = (x, y, scaleFactor) => {
   return fx(x_.scale / y.i.scale)(r.sign, r.i);
 }
 
-export const fxsqrt = (x, k) => {
+export const fxsqrt = (x) => {
   assert(x.sign == Pos, "fxsqrt: Cannot find the square root of a negative number.");
-  return fx( x.i.scale / sqrt(x.i.scale, k) )(Pos, sqrt(x.i.i, k));
+  return fx( x.i.scale / sqrt(x.i.scale) )(Pos, sqrt(x.i.i));
+}
+
+export const fxsqrtApprox = (x, k) => {
+  assert(x.sign == Pos, "fxsqrt: Cannot find the square root of a negative number.");
+  return fx( x.i.scale / sqrtApprox(x.i.scale, k) )(Pos, sqrtApprox(x.i.i, k));
 }
 
 export const fxcmp = (cmp, x, y) => {

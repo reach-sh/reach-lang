@@ -1,16 +1,8 @@
 import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib(process.env);
-const thread = async (f) => await f();
-
-export class Signal {
-  constructor() {
-    const me = this;
-    this.p = new Promise((resolve) => { me.r = resolve; });
-  }
-  wait() { return this.p; }
-  notify() { this.r(true); }
-};
+import { util } from '@reach-sh/stdlib';
+const { thread, Signal } = util;
 
 (async () => {
   if (stdlib.connector !== 'ALGO') {

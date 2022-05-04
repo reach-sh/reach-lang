@@ -65,6 +65,7 @@ import {
   makeSigningMonitor,
   j2sf,
   j2s,
+  hideWarnings,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -94,7 +95,7 @@ import { window, process } from './shim';
 import { sha512_256 } from 'js-sha512';
 export const {
   add, sub, mod, mul, div, band, bior, bxor, eq, ge, gt, le, lt,
-  add256, sub256, mod256, mul256, div256, band256, bior256, bxor256, eq256, ge256, gt256, le256, lt256,
+  add256, sub256, mod256, mul256, div256, band256, bior256, bxor256, eq256, ge256, gt256, le256, lt256, sqrt, sqrt256,
   cast, muldiv,
   protect, assert, Array_set,
   bytesEq, digestEq, digest_xor, bytes_xor, btoiLast8
@@ -156,7 +157,7 @@ export type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 13;
+const reachBackendVersion = 15;
 const reachAlgoBackendVersion = 10;
 export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
@@ -595,7 +596,7 @@ function must_be_supported(bin: Backend) {
   const algob = bin._Connectors.ALGO;
   const { unsupported, warnings } = algob;
   const render = (x: string[]) => x.map(s => ` * ${s}`).join('\n');
-  if ( warnings.length > 0 ) {
+  if ( warnings.length > 0 && ! hideWarnings() ) {
     console.error(`This Reach application is dangerous to run on Algorand for the following reasons:\n${render(warnings)}`);
   }
   if ( unsupported.length > 0 ) {
@@ -853,7 +854,7 @@ const checkAccounts = (addr: string, got?: string[]): void => {
   }
 }
 
-const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
+const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns_:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
   let p: Provider|undefined = undefined;
   const base = opts['providerEnv'] || 'LocalHost';
   const _env = typeof base === 'string' ? providerEnvByName(base) : base;
@@ -882,7 +883,8 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     if ( !p ) { throw new Error(`must call enable`) };
     return p.indexer_bc;
   }
-  const signAndPostTxns = async (txns:WalletTransaction[], sopts?:object) => {
+  const signTxns = async (txns:WalletTransaction[], sopts?:object) => {
+    // XXX arguably p isn't needed here
     if ( !p ) { throw new Error(`must call enable`) };
     void(sopts);
     debug(`fallBack: signAndPostTxns`, {txns});
@@ -893,7 +895,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
       }
     });
     debug(`fallBack: signAndPostTxns`, {to_sign});
-    const signed: string[] = to_sign.length == 0 ? [] : await signTxns(to_sign);
+    const signed: string[] = to_sign.length == 0 ? [] : await signTxns_(to_sign);
     debug(`fallBack: signAndPostTxns`, {signed});
     const stxns: string[] = txns.map((txn) => {
       if ( txn.stxn ) { return txn.stxn; }
@@ -901,12 +903,21 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
       if ( ! s ) { throw new Error(`txn not signed`); }
       return s;
     });
+    return stxns;
+  };
+  const postTxns = async (stxns: string[], popts?:object) => {
+    if ( !p ) { throw new Error(`must call enable`) };
+    void(popts);
     const bs = stxns.map((stxn) => Buffer.from(stxn, 'base64'));
     debug(`fallBack: signAndPostTxns`, bs);
     await p.algodClient.sendRawTransaction(bs).do();
-    return {};
+    return {}; // TODO
+  }
+  const signAndPostTxns = async (txns:WalletTransaction[], spopts?:object) => {
+    const stxns = await signTxns(txns, spopts);
+    return await postTxns(stxns, spopts);
   };
-  return { _env, enable, enableNetwork, enableAccounts, getAlgodv2Client, getIndexerClient, signAndPostTxns };
+  return { _env, enable, enableNetwork, enableAccounts, getAlgodv2Client, getIndexerClient, signTxns, postTxns, signAndPostTxns };
 };
 const walletFallback_mnemonic = (opts:object) => (): ARC11_Wallet => {
   debug(`using mnemonic wallet fallback`);
@@ -1495,6 +1506,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
     };
 
+    const getCurrentStep_ = async (getC:GetC): Promise<BigNumber> => {
+      const { getAppState, getGlobalState } = await getC();
+      const appSt = await getAppState();
+      if ( !appSt ) { throw Error(`getCurrentStep_: no appSt`); }
+      const gs = await getGlobalState(appSt);
+      if ( !gs ) { throw Error(`getCurrentStep_: no gs`); }
+      return gs[0];
+    }
+
     const getState_ = async (getC:GetC, lookup:((vibna:BigNumber) => AnyALGO_Ty[])): Promise<[ContractInfo|undefined, Array<any>]> => {
       const { getAppState, getGlobalState } = await getC();
       const appSt = await getAppState();
@@ -1528,6 +1548,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const { ApplicationID } = await getC();
         return ApplicationID;
       };
+
+      const getCurrentStep = async () => {
+        return await getCurrentStep_(getC);
+      }
 
       const getState = async (vibne:BigNumber, vtys:AnyALGO_Ty[]): Promise<Array<any>> => {
         debug('getState');
@@ -1984,7 +2008,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         return result;
       }
 
-      return { getContractInfo, getContractAddress, getBalance, getState, sendrecv, recv, apiMapRef };
+      return { getContractInfo, getContractAddress, getBalance, getState, getCurrentStep, sendrecv, recv, apiMapRef };
     };
 
     const readStateBytes = (prefix:string, key:number[], src:AppStateKVs): (Uint8Array|undefined) => {
@@ -2032,13 +2056,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug('getView1', v, k, args);
           const { decode } = vim;
           try {
-            let vi = 0;
-            const [ _, vvs ] = await getState_(getC, (vibna:BigNumber) => {
-              vi = bigNumberToNumber(vibna);
-              const vtys = vs[vi];
-              if ( ! vtys ) { throw Error(`no views for state ${vibna}`); }
-              return vtys;
-            });
+            const step = await getCurrentStep_(getC);
+            const vi = bigNumberToNumber(step);
+            const vtys = vs[vi];
+            if ( ! vtys ) { throw Error(`no views for state ${step}`); }
+            const [ _, vvs ] = await getState_(getC, _ => vtys);
             const vres = await decode(vi, vvs, args);
             debug({vres});
             return isSafe ? ['Some', vres] : vres;

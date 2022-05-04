@@ -258,6 +258,9 @@ srcloc_at lab mp (SrcLoc _ _ rs) = SrcLoc (Just lab) mp rs
 srcloc_lab :: String -> SrcLoc -> SrcLoc
 srcloc_lab lab (SrcLoc _ tp rs) = SrcLoc (Just lab) tp rs
 
+srcloc_mtake_lab :: SrcLoc -> SrcLoc -> SrcLoc
+srcloc_mtake_lab (SrcLoc a' _ _) (SrcLoc a b c) = SrcLoc (maybe a Just a') b c
+
 srcloc_file :: SrcLoc -> Maybe FilePath
 srcloc_file = \case
   SrcLoc _ _ (Just (ReachSourceFile f)) -> Just f
@@ -321,6 +324,11 @@ uint256 = True
 uint256_Max :: Integer
 uint256_Max = 2 ^ (256 :: Integer) - 1
 
+iSqrt :: Integer -> Integer
+iSqrt x = floor $ sqrt x'
+  where
+    x' :: Double = fromIntegral x
+
 data PrimOp
   = ADD UIntTy
   | SUB UIntTy
@@ -332,6 +340,7 @@ data PrimOp
   | PEQ UIntTy
   | PGE UIntTy
   | PGT UIntTy
+  | SQRT UIntTy
   | UCAST UIntTy UIntTy
   | IF_THEN_ELSE
   | DIGEST_EQ
@@ -363,6 +372,7 @@ instance Pretty PrimOp where
     PEQ t -> uitp t <> "=="
     PGE t -> uitp t <> ">="
     PGT t -> uitp t <> ">"
+    SQRT t -> uitp t <> "sqrt"
     UCAST x y -> "cast" <> parens (uitp x <> "," <> uitp y)
     IF_THEN_ELSE -> "ite"
     DIGEST_EQ -> "=="

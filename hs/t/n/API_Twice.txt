@@ -3,11 +3,11 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 14 theorems; No failures!
-reachc: error[RAPI0002]: API "Writer_f" occurs multiple times in program
+reachc: error[REP0002]: The API `Writer_f` is called many times in the same consensus step.
 
-  ./API_Twice.rsh:21:10:application
+  ./API_Twice.rsh:14:19:application
 
-  21|     .api(U.f, (k) => {
+  14|     parallelReduce(0)
 
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RAPI0002
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#REP0002
 

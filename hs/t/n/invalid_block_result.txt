@@ -1,0 +1,11 @@
+reachc: error[RE0003]: Invalid block result type. Expected Null, got UInt
+
+  ./invalid_block_result.rsh:9:6:application
+
+  9|     x;
+
+Trace:
+  in [unknown function] from (./invalid_block_result.rsh:7:13:function exp) at (./invalid_block_result.rsh:7:9:application)
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0003
+

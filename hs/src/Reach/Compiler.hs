@@ -29,6 +29,7 @@ import Reach.Simulator.Server
 import Reach.StateDiagram
 import Reach.Texty
 import Reach.Util
+import Reach.UnsafeUtil
 import Reach.Verify
 import System.Directory
 import System.Exit
@@ -73,10 +74,14 @@ compile env (CompilerOpts {..}) = do
       let woutn = co_output . ((T.pack which <> ".") <>)
       let woutnMay = outnMay woutn
       let showp :: Pretty a => T.Text -> a -> IO ()
-          showp l = interOut woutn l . render . pretty
+          showp l x = do
+            let x' = pretty x
+            let x'' = render x'
+            loud $ "showp " <> show l
+            interOut woutn l x''
       -- showp "bundle.js" $ render $ pretty djp
       dl <- compileDApp which
-      let DLProg _ (DLOpts {..}) _ _ _ _ _ _ _ _ = dl
+      let DLProg { dlp_opts = DLOpts {..} } = dl
       let connectors = map (all_connectors M.!) dlo_connectors
       showp "dl" dl
       unless co_stopAfterEval $ do
@@ -107,8 +112,12 @@ compile env (CompilerOpts {..}) = do
         showp "apc" apc
         pl <- bigopt (showp, "pl") apc
         showp "pl" pl
-        let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
+        let runConnector c = do
+              let n = conName c
+              loud $ "running connector " <> show n
+              (,) n <$> conGen c woutnMay pl
         crs <- HM.fromList <$> mapM runConnector connectors
+        loud $ "running backend js"
         backend_js woutn crs pl
         return ()
 

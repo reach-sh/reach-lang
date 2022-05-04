@@ -550,7 +550,7 @@ initProgSimFor :: C.ActorId ->
                   Maybe Integer ->
                   LLProg ->
                   WebM Bool
-initProgSimFor actId sid liv accId blce (LLProg _ _ _ _ _ _ _ _ _ step) = do
+initProgSimFor actId sid liv accId blce (LLProg {..}) = do
   graph <- gets e_graph
   modify $ \st -> st {e_actor_id = actId}
   let (g, l) = saferMaybe "initProgSimFor" $ M.lookup sid graph
@@ -567,7 +567,7 @@ initProgSimFor actId sid liv accId blce (LLProg _ _ _ _ _ _ _ _ _ step) = do
   let l' = l {C.l_curr_actor_id = actId, C.l_locals = locals'}
   let ledger = M.insert accId' (M.singleton C.nwToken blce') $ C.e_ledger g
   let g' = g {C.e_ledger = ledger}
-  ps <- return $ C.initAppFromStep step (g', l')
+  ps <- return $ C.initAppFromStep llp_step (g', l')
   processNewState (Just sid) ps Local
 
 startServer :: LLProg -> String -> IO ()

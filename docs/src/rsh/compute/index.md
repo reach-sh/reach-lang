@@ -1568,7 +1568,15 @@ and the next N values are distinct `{!rsh} UInt`s.
 assert( claim, [msg] )
 ```
 
- A static assertion which is only valid if `{!rsh} claim` always evaluates to `{!rsh} true`.
+ A static assertion which is only valid if `{!rsh} claim` always evaluates to `{!rsh} true`. 
+
+ For example, the following assertions were made in the [Rock, Paper, Scissors tutorial](##tut-5):
+
+ ```reach
+ load: /examples/rps-8-interact/index.rsh
+ range: 6 - 11
+ ```
+
 :::note
 The Reach compiler will produce a counter-example (i.e. an assignment of the identifiers in the program to falsify the `{!rsh} claim`) when an invalid `{!rsh} claim` is provided.
 It is possible to write a `{!rsh} claim` that actually always evaluates to `{!rsh} true`, but for which our current approach cannot prove always evaluates to `{!rsh} true`; if this is the case, Reach will fail to compile the program, reporting that its analysis is incomplete.
@@ -1590,6 +1598,18 @@ check( claim, [msg] )
 
 A dynamic assertion that `{!rsh} claim` evaluates to `{!rsh} true`, which expands to either a `{!rsh} require` or `{!rsh} assume` depending on where it is used in a program.
 It accepts an optional bytes argument, which is included in any reported violation.
+
+For example, `A` makes the following `{!rsh} check` with a second (optional) argument on line 21:
+```reach
+load: /examples/map-sender/index.rsh
+range: 18 - 22
+```
+
+While the `{!rsh} check` in the following example, takes just the first argument on line 62:
+```reach
+load: /examples/api-overload/index.rsh
+range: 61 - 62
+```
 
 ### `forall`
 
@@ -1641,6 +1661,18 @@ balance(gil);
 The @{defn("balance")} primitive returns the balance of the contract account for the DApp.
 It takes an optional non-network token value, in which case it returns the balance of the given token.
 
+The example below shows the non-network token being passed as an argument to `{!rsh} balance`:
+```reach
+load: /examples/abstract-tok/index.rsh
+range: 24 - 26
+```
+
+While in the following example, `{!rsh} balance` takes no argument:
+```reach
+load: /examples/rps-7-loops/index.rsh
+range: 60 - 60
+```
+
 ### `getContract`
 
 @{ref("rsh", "getContract")}
@@ -1650,6 +1682,14 @@ getContract()
 
 The @{defn("getContract")} primitive returns the `{!rsh} Contract` value for the deployed contract.
 This function may not be called until after the first publication (which creates the contract).
+
+```reach
+load: /examples/remote-rsh/index.rsh
+range: 26-29
+```
+	
+In this example, on line 26, `D` publishes the values for `x` and `tok`, which creates the contract.
+After the `{!rsh} publish`, now `{!rsh} getContract` is called and it returns the value `x` in token `tok` of the contract created in the publication.
 
 ### `getAddress`
 
@@ -1871,22 +1911,28 @@ When used inside of a local step or export, it will generate an `{!rsh} assume` 
 When used inside of a consensus step, it will generate a `{!rsh} require` claim.
 When used inside of any other step, it will generate an `{!rsh} assert` claim.
 
-
 ### `sqrt`
 
 @{ref("rsh", "sqrt")}
 ```reach
-sqrt(81, 10)
+sqrt(81)
 ```
 
- Calculates an approximate square root of the first argument. This method utilizes
-the [Babylonian Method](https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method) for computing
-the square root. The second argument must be a `{!rsh} UInt` whose value is known at compile time, which represents the number
-of iterations the algorithm should perform.
+`{!rsh} sqrt(x)` returns the largest integer `i` such that `i * i <= x`.
 
-For reference, when performing `{!rsh} 5` iterations, the algorithm can reliably calculate the square root
-up to `32` squared, or `1,024`. When performing `{!rsh} 10` iterations, the algorithm can reliably calculate the
-square root up to `580` squared, or `336,400`.
+### `sqrtApprox`
+
+@{ref("rsh", "sqrtApprox")}
+```reach
+sqrtApprox(81, 10)
+```
+
+Calculates an approximate square root of the first argument.
+This method utilizes the [Babylonian Method](https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method) for computing the square root.
+The second argument must be a `{!rsh} UInt` whose value is known at compile time, which represents the number of iterations the algorithm should perform.
+
+For reference, when performing `{!rsh} 5` iterations, the algorithm can reliably calculate the square root up to `32` squared, or `1,024`.
+When performing `{!rsh} 10` iterations, the algorithm can reliably calculate the square root up to `580` squared, or `336,400`.
 
 ### `pow`
 
@@ -2052,8 +2098,10 @@ will be multiplied by the scale factor to provide a more precise answer. For exa
  `{!rsh} fxfloor(x)` returns the greatest integer not greater than `x`.
 
 @{ref("rsh", "fxsqrt")}
- `{!rsh} fxsqrt(x, k)` approximates the sqrt of the fixed number, `x`, using
-`k` iterations of the `{!rsh} sqrt` algorithm.
+ `{!rsh} fxsqrt(x, k)` returns the square root of the fixed number, `x`.
+
+@{ref("rsh", "fxsqrtApprox")}
+ `{!rsh} fxsqrtApprox(x, k)` approximates the square root of the fixed number, `x`, using `k` iterations of the `{!rsh} sqrtApprox` algorithm.
 
 @{ref("rsh", "fxpow")}
 `{!rsh} const base  = 2.0;

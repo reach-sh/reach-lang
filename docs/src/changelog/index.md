@@ -7,6 +7,14 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.10 is the current Reach release candidate version.
 
++ 2022/04/30: Added `assets` field to `{!rsh} remote.ALGO`.
++ 2022/04/28: Added `{!rsh} sqrt` and renamed old version to `{!rsh} sqrtApprox`.
+  This change is backwards incompatible, but we believe that most users will prefer the new version and will want to be warned, via a compile error, that it is available.
++ 2022/04/28: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
++ 2022/04/28: Added `{!cmd} REACH_NO_WARN` environment variable.
++ 2022/04/28: Added `{!js} test` to the JavaScript standard library.
++ 2022/04/26: Add support for calling `{!rsh} API`s multiple times in a program.
++ 2022/04/26: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/04/22: Added `--verify-fail-once` flag to @{seclink("ref-usage-compile")} to only print the first verification failure produced by a program.
 + 2022/04/19: Added `{!js} withDisconnect` and `{!js} disconnect` to help participant frontends disconnect early from a contract.
 + 2022/04/18: Added `{!rsh} Contract.addressEq`.

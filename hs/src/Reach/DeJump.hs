@@ -83,9 +83,9 @@ instance DeJump CHandler where
     return $ C_Handler ch_at ch_int ch_from ch_last ch_svs ch_msg ch_timev ch_secsv ch_body'
 
 dejump :: PLProg -> IO PLProg
-dejump (PLProg at plo dli dex ssm epps cp) = do
-  let PLOpts {..} = plo
-  let CPProg cat vi ai devts (CHandlers hs) = cp
+dejump PLProg {..} = do
+  let PLOpts {..} = plp_opts
+  let CPProg { cpp_handlers = (CHandlers hs), ..} = plp_cpprog
   let go h@(C_Loop {}) =
         -- XXX: We leave these unchanged because the ALGO backend uses an
         -- array rather than a map. It would be good to change that.
@@ -96,5 +96,5 @@ dejump (PLProg at plo dli dex ssm epps cp) = do
         let e_idx = plo_counter
         flip runReaderT (Env {..}) $ dj h
   hs' <- mapM go hs
-  let cp' = CPProg cat vi ai devts (CHandlers hs')
-  return $ PLProg at plo dli dex ssm epps cp'
+  let cp' = CPProg { cpp_handlers = (CHandlers hs'), ..}
+  return PLProg { plp_cpprog = cp', .. }
