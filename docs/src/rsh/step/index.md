@@ -221,7 +221,7 @@ This overwriting applies even if `{!rsh} Alice` wins and `{!rsh} Alice` is a par
 
 ### `fork`
 
-@{ref("rsh", "fork")}@{ref("rsh", "fork.case")}@{ref("rsh", "paySpec")}@{ref("rsh", "fork.paySpec")}@{ref("rsh", "fork.api")}@{ref("rsh", "fork.timeout")}@{ref("rsh", "fork.throwTimeout")}
+@{ref("rsh", "fork")}@{ref("rsh", "fork.case")}@{ref("rsh", "paySpec")}@{ref("rsh", "fork.paySpec")}@{ref("rsh", "fork.api")}@{ref("rsh", "fork.api_")}@{ref("rsh", "fork.timeout")}@{ref("rsh", "fork.throwTimeout")}
 ```reach
 fork()
 .case(Alice, (() => ({
@@ -272,7 +272,6 @@ fork()
   PAY_EXPR | [PAY_EXPR, PAY_REQUIRE_EXPR],
   CONSENSUS_EXPR)
 .api(API_EXPR,
-  API_CHECK_EXPR,
   API_ASSUME_EXPR,
   API_PAY_EXPR | [API_PAY_EXPR, PAY_REQUIRE_EXPR],
   API_CONSENSUS_EXPR)
@@ -296,9 +295,6 @@ If it is present, then `{!rsh} PAY_EXPR` must be included;
 If this is absent, then it is synthesized to an empty function.
 + `{!rsh} CONSENSUS_EXPR` is a syntactic arrow expression parameterized over the `msg` and `_local` values which is evaluated in a consensus step;
 + `{!rsh} API_EXPR` is an expression that evaluates to an API member function;
-+ (optional) `{!rsh} CHECK_EXPR` is a syntactic arrow expression that is evaluated in both the local step and consensus step.
-This block can be used to specify `{!rsh} check`s and declare variable bindings.
-If it is present, then `{!rsh} API_ASSUME_EXPR` must be included;
 + (optional) `{!rsh} API_ASSUME_EXPR` is a function parameterized over the input to the API member function which is evaluated for effect in a local step; thus it may be used to add `{!rsh} assume` constraints on the values given by the API; if this is absent, then it is synthesized to an empty function; if it is present, then `{!rsh} API_PAY_EXPR` must be included;
 + (optional) `{!rsh} API_PAY_EXPR` is a function parameterized over the input to the API member function which is evaluated to determine the pay amount, like `{!rsh} PAY_EXPR`;
 + `{!rsh} API_CONSENSUS_EXPR` is a function parameterized over the input to the API member function and a function that returns a value to the API call; this function must be called;
@@ -548,6 +544,7 @@ commit();
 @{ref("rsh", "call")}
 @{ref("rsh", "call.pay")}
 @{ref("rsh", "call.assume")}
+@{ref("rsh", "call.check")}
 @{ref("rsh", "call.throwTimeout")}
 A @{defn("call")} is written:
 
@@ -556,6 +553,7 @@ const [ DOMAIN, RET_FUN ] =
   call(API_EXPR)
     .pay(API_PAY_EXPR)
     .assume(API_ASSUME_EXPR)
+    .check(API_CHECK_EXPR)
     .throwTimeout(DELAY_EXPR, THROW_EXPR)
 ```
 
@@ -563,6 +561,9 @@ where:
 + `DOMAIN` is the the domain of the API member function.
 + `RET_FUN` is a function that returns a value to the API call. This function must be called.
 + `API_EXPR` is an expression that evaluates to an API member function.
++ `API_CHECK_EXPR` is a function parameterized over the domain of the API function.
+This function can be used to add `{!rsh} check`s involving the domain.
+These checks will be applied as assumptions and requirements.
 + `API_PAY_EXPR` and `API_ASSUME_EXPR` are like the corresponding parts in a `{!rsh} fork` statement, and `{!rsh} call.throwTimeout` is like in `{!rsh} fork.throwTimeout`.
 They are optional.
 

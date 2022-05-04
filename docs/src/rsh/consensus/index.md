@@ -258,7 +258,6 @@ const LHS =
     PAY_EXPR,
     CONSENSUS_EXPR)
   .api(API_EXPR,
-    CHECK_EXPR,
     ASSUME_EXPR,
     PAY_EXPR,
     CONSENSUS_EXPR)
