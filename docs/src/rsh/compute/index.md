@@ -1862,6 +1862,13 @@ hasRandom
 ```
 
  A participant interact interface which specifies `random` as a function that takes no arguments and returns an unsigned integer of bit width bits. Reach provides a default frontend implementation via hasRandom (Frontend).
+ 
+ ```reach
+load: /examples/rps-7-loops/index.rsh
+range: 20-24
+```
+
+This code section gives the `{!rsh} Player` object the method `{!rsh} hasRandom` so that a random number is used to select a hand in the [Rock, Paper, Scissors!](##tut) tutorial.
 
 ### `hasConsoleLogger`
 
