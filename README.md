@@ -1,3 +1,7 @@
+# Have a question?
+
+Let's talk. **[Start a GitHub Discussion](https://github.com/reach-sh/reach-lang/discussions)**
+
 # Reach
 [![CircleCI Build Status](https://circleci.com/gh/reach-sh/reach-lang.svg?style=shield)](https://circleci.com/gh/reach-sh/reach-lang) [![GitHub License](https://img.shields.io/github/license/reach-sh/reach-lang)](https://raw.githubusercontent.com/reach-sh/reach-lang/master/LICENSE) [![Docs](https://img.shields.io/badge/docs-delicious-blue)](http://docs.reach.sh) [![Discord](https://img.shields.io/discord/628402598663290882)](https://discord.com/channels/628402598663290882)  [![Twitter Follow](https://img.shields.io/twitter/follow/reachlang?style=social)](https://twitter.com/reachlang) [![Subreddit subscribers](https://img.shields.io/reddit/subreddit-subscribers/reach_sh?style=social)](https://www.reddit.com/r/reach_sh)
 
