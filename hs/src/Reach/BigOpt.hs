@@ -29,5 +29,5 @@ bigopt_sim ctr = flip fixedPoint_ rec
   where
     rec _ x0 = do
       x1 <- opt_sim ctr x0
-      x2 <- add_counts x1
+      x2 <- add_counts_sim x1
       return x2

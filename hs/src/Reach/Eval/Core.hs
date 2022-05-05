@@ -2487,8 +2487,8 @@ doBalanceUpdate mtok op = \case
           (S_ADD, (ADD uintWord, assumeLtUMax)),
           (S_SUB, (SUB uintWord, assumeGtZero)) ]
     whenVerifyArithmetic $ do
-          forM_ (M.lookup op assumeOps) $
-            assumeBalanceUpdate (snd bsv) rhs
+      forM_ (M.lookup op assumeOps) $
+        assumeBalanceUpdate (snd bsv) rhs
     bv' <- evalApplyVals' up_rator [bsv]
     bva <- compileCheckType (T_UInt uintWord) $ snd bv'
     setBalance TM_Balance mtok bva
