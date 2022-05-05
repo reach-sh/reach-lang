@@ -1,4 +1,4 @@
-module Reach.Optimize (optimize_, optimize, Optimize) where
+module Reach.Optimize (optimize_, optimize, opt_sim, Optimize) where
 
 import Control.Monad.Reader
 import Data.IORef
@@ -69,6 +69,7 @@ data Env = Env
   , eConst :: S.Set DLVar
   , eMaps :: DLMapInfos
   , eClearMaps :: Bool
+  , eSimulate :: Bool
   }
 
 updateClearMaps :: Bool -> Env -> Env
@@ -198,8 +199,8 @@ updateLookup up = do
           F_One _ -> f == eFocus
   updateLookupWhen writeHuh up
 
-mkEnv0 :: Counter -> Counter -> S.Set DLVar -> [SLPart] -> DLMapInfos -> IO Env
-mkEnv0 eCounter eDroppedAsserts eConst eParts eMaps = do
+mkEnv0 :: Counter -> Counter -> S.Set DLVar -> [SLPart] -> DLMapInfos -> Bool -> IO Env
+mkEnv0 eCounter eDroppedAsserts eConst eParts eMaps eSimulate = do
   let eFocus = F_Ctor
   let eClearMaps = False
   let eEnvs =
@@ -393,13 +394,15 @@ instance Optimize DLExpr where
     DLE_Claim at fs t a m -> do
       a' <- opt a
       let meh = return $ DLE_Claim at fs t a' m
-      case (t, a') of
-        (CT_Possible, _) -> meh
-        (_, DLA_Literal (DLL_Bool True)) -> do
+      isSim <- asks eSimulate
+      case (t, a', isSim) of
+        (_, _, True) -> nop at
+        (CT_Possible, _, _) -> meh
+        (_, DLA_Literal (DLL_Bool True), _) -> do
           Env {..} <- ask
           void $ liftIO $ incCounter eDroppedAsserts
           nop at
-        (_, DLA_Var dv) -> do
+        (_, DLA_Var dv, _) -> do
           void $ rememberVarIsArg at dv $ DLA_Literal $ DLL_Bool True
           meh
         _ -> meh
@@ -751,7 +754,7 @@ instance Optimize LLProg where
     let psl = M.keys sps_ies
     cs <- asks eConst
     let mis = dli_maps llp_init
-    env0 <- liftIO $ mkEnv0 (getCounter llp_opts) (llo_droppedAsserts llp_opts) cs psl mis
+    env0 <- liftIO $ mkEnv0 (getCounter llp_opts) (llo_droppedAsserts llp_opts) cs psl mis False
     local (const env0) $ local (updateClearMaps $ llo_untrustworthyMaps llp_opts) $
       focus_ctor $
         LLProg llp_at llp_opts llp_parts <$> opt llp_init <*> opt llp_exports <*> pure llp_views
@@ -856,16 +859,19 @@ instance Optimize PLProg where
              <*> opt plp_epps <*> opt plp_cpprog
   gcs PLProg {..} = gcs plp_epps >> gcs plp_cpprog
 
-optimize_ :: (Optimize a) => Counter -> a -> IO a
-optimize_ c t = do
+optimize_ :: (Optimize a) => Counter -> Bool -> a -> IO a
+optimize_ c sim t = do
   eConstR <- newIORef $ mempty
   flip runReaderT (ConstEnv {..}) $ gcs t
   cs <- readIORef eConstR
   let csvs = M.keysSet $ M.filter (\x -> x < 2) cs
   dac <- newCounter 0
-  env0 <- mkEnv0 c dac csvs [] mempty
+  env0 <- mkEnv0 c dac csvs [] mempty sim
   flip runReaderT env0 $
     opt t
 
+opt_sim :: (Optimize a) => Counter -> a -> IO a
+opt_sim c t = optimize_ c True t
+
 optimize :: (HasCounter a, Optimize a) => a -> IO a
-optimize t = optimize_ (getCounter t) t
+optimize t = optimize_ (getCounter t) False t

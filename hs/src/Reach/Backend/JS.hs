@@ -21,6 +21,7 @@ import Reach.Texty
 import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Version
+import Reach.BigOpt
 
 --- JS Helpers
 
@@ -107,6 +108,7 @@ data JSCtxt = JSCtxt
   , ctxt_while :: JSCtxtWhile
   , ctxt_ctcs :: Maybe JSContracts
   , ctxt_maps :: M.Map DLMVar DLMapInfo
+  , ctxt_ctr :: Counter
   }
 
 type App = ReaderT JSCtxt IO
@@ -779,7 +781,8 @@ jsETail = \case
             let svs_as = map DLA_Var svs
             amtp <- jsPayAmt amt
             let withSim = local (\e -> e {ctxt_mode = JM_Simulate})
-            sim_body_core <- withSim $ jsETail k_ok
+            k_ok_sim <- liftIO . flip bigopt_sim k_ok =<< asks ctxt_ctr
+            sim_body_core <- withSim $ jsETail k_ok_sim
             let dupeMap (mpv, _) = do
                   return $
                     (jsApply "stdlib.simMapDupe" $
@@ -932,6 +935,7 @@ jsPart dli (p, m_api_which) (EPProg { epp_isApi=ctxt_isAPI, epp_tail }) = do
   let ctxt_while = JWhile_None
   let ctxt_mode = JM_Backend
   let ctxt_maps = dli_maps dli
+  ctxt_ctr <- asks ctxt_ctr
   local (const JSCtxt {..}) $ do
     maps_defn <- jsMapDefns True
     et' <- jsETail epp_tail
@@ -1143,7 +1147,7 @@ jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do
 
 
 backend_js :: Backend
-backend_js outn crs pl = do
+backend_js outn crs pl@(PLProg {..}) = do
   let jsf = outn "mjs"
   let ctxt_who = "Module"
   let ctxt_isAPI = False
@@ -1152,6 +1156,7 @@ backend_js outn crs pl = do
   let ctxt_while = JWhile_None
   let ctxt_ctcs = Nothing
   let ctxt_maps = mempty
+  let ctxt_ctr = plo_counter plp_opts
   d <-
     flip runReaderT (JSCtxt {..}) $
       jsPIProg crs pl
