@@ -628,7 +628,7 @@ be_c = \case
     cnt <- asks be_counter
     setHandler this_loopj $ do
       loop_svs <- ce_readSave this_loopsp
-      loopc <- (liftIO . optimize_ cnt) =<< addVars at =<< loop_top
+      loopc <- (liftIO . optimize_ cnt False) =<< addVars at =<< loop_top
       return $ C_Loop at (map v2vl loop_svs) (map v2vl loop_vars) loopc
     fg_saves $ this_loopsp
     let cm = CT_Jump at this_loopj <$> ce_readSave this_loopsp <*> pure asn
