@@ -96,6 +96,13 @@ Returns two values, `{!rsh} [ commitment, salt ]`, where `{!rsh} salt` is the re
 `{!rsh} commitment` is the digest of `{!rsh} salt` and `{!rsh} x`.
 This is used in a local step before `{!rsh} checkCommitment` is used in a consensus step.
 
+This is demonstrated in the example below. 
+`{!rsh} makeCommitment` is used on line 18 before `{!rsh} checkCommitment` on line 21:
+```reach
+load: examples/object-digest/index.rsh
+range: 16 - 22
+```
+
 ### `didPublish`
 
 @{ref("rsh", "didPublish")}
