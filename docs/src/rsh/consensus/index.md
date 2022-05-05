@@ -269,7 +269,7 @@ const LHS =
 
 The `{!rsh} LHS` and `{!rsh} INIT_EXPR` are like the initialization component of a `{!rsh} while` loop; and,
 the `{!rsh} .invariant` and `{!rsh} .while` components are like the invariant and condition of a `{!rsh} while` loop;
-the `{!rsh} DEFINE_BLOCK` is like the `{!rsh} DEFINE_BLOCK` of a `{!rsh} while` loop;
+the `{!rsh} DEFINE_BLOCK` is like the `{!rsh} DEFINE_BLOCK` of a `{!rsh} while` loop. It may be specified multiple times;
 while the `{!rsh} .case`, `{!rsh} .api`, `{!rsh} .api_`, `{!rsh} .timeout`, and `{!rsh} .paySpec` components are like the corresponding components of a `{!rsh} fork` statement.
 
 The `{!rsh} .case` component may be repeated many times, just like in a `{!rsh} fork` statement.

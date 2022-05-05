@@ -1,8 +1,8 @@
-reachc: error[RE0113]: `define` expects an argument of the form: `() => DEFINE_BLOCK`, where `DEFINE_BLOCK` is a statement block.
+reachc: error[RE0035]: Invalid function application. Cannot apply: UInt
 
-  ./Err_ParallelReduce_DefineBlock.rsh:13:15:define
+  ./Err_ParallelReduce_DefineBlock.rsh:12:19:application
 
-  13|       .define(5)
+  12|     parallelReduce([ 0, 1])
 
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0113
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0035
 

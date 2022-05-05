@@ -1305,7 +1305,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
             <> gom "timeRemaining" PRM_TimeRemaining slpr_mtime
             <> gom "throwTimeout" PRM_ThrowTimeout slpr_mtime
             <> gom "paySpec" PRM_PaySpec Nothing
-            <> gom "define" PRM_Def slpr_mdef
+            <> go "define" PRM_Def
     where
       gom key mode me =
         case me of
@@ -1740,7 +1740,7 @@ evalForm f args = do
       let slpr_apis = []
       let slpr_api_s = []
       let slpr_mtime = Nothing
-      let slpr_mdef = Nothing
+      let slpr_defs = []
       let slpr_mpay = Nothing
       retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial $ ParallelReduceRec {..}
     SLForm_parallel_reduce_partial (p@ParallelReduceRec {..}) -> do
@@ -1763,7 +1763,7 @@ evalForm f args = do
           go $ p {slpr_mpay = Just x}
         Just PRM_Def -> do
           x <- one_arg
-          go $ p {slpr_mdef = Just x}
+          go $ p {slpr_defs = x : slpr_defs}
         Just PRM_Timeout -> retTimeout PRM_Timeout aa
         Just PRM_TimeRemaining -> retTimeout PRM_TimeRemaining aa
         Just PRM_ThrowTimeout -> retTimeout PRM_ThrowTimeout aa
@@ -5479,7 +5479,7 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let pr_apis = slpr_apis
   let pr_api_s = slpr_api_s
   let pr_mtime = slpr_mtime
-  let pr_mdef = slpr_mdef
+  let pr_defs = slpr_defs
   idx <- ctxt_alloc
   let prid x = ".pr" <> (show idx) <> "." <> x
   case pr_mode of
@@ -5566,11 +5566,9 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let commit_s = JSMethodCall (jid "commit") a JSLNil a sp
   let while_body = [commit_s, fork_s]
   let while_s = JSWhile a a while_e a $ JSStatementBlock a while_body a sp
-  block_s <- case pr_mdef of
-    Just (JSArrowExpression _ _ b) -> return $ jsArrowBodyToStmt b
-    Just ow -> locAtf (srcloc_jsa "define" $ jsa ow) $ expect_ Err_ParallelReduce_DefineBlock
-    Nothing -> return $ JSStatementBlock a [] a sp
-  let pr_ss = [var_s, block_s, inv_s, while_s]
+  block_ss <- flip concatMapM pr_defs $ fmap snd . deconstructFunStmts
+  let block_sb = JSStatementBlock a block_ss a sp
+  let pr_ss = [var_s, block_sb, inv_s, while_s]
   -- liftIO $ putStrLn $ "ParallelReduce"
   -- liftIO $ putStrLn $ show $ pretty pr_ss
   return $ pr_ss
