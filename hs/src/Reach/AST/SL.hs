@@ -546,7 +546,7 @@ data ParallelReduceRec = ParallelReduceRec
   , slpr_api_s :: [(SrcLoc, [JSExpression])]
   , slpr_mtime :: Maybe (ParallelReduceMode, SrcLoc, [JSExpression])
   , slpr_mpay :: Maybe JSExpression
-  , slpr_mdef :: Maybe JSExpression
+  , slpr_defs :: [JSExpression]
   }
   deriving (Eq, Generic)
 
