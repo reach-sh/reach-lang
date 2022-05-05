@@ -212,6 +212,15 @@ while ( x == 0 ) {
 }
 ```
 
+The following example displays how a `{!rsh} continue` is used inside of a `{!rsh} while` loop that started in line 43.
+Bob and Alice race to be the first to `{!rsh} publish` and therefore be the round winner.
+When one of them publishes, the `keepGoing` function returns false, and the program hits `{!rsh} continue` where it exits the `{!rsh} race` and moves on with the rest of the program.
+
+```reach
+load: /examples/chicken-race/index.rsh
+range: 53-58
+```
+
 ### `parallelReduce`
 
 @{ref("rsh", "parallelReduce")}
