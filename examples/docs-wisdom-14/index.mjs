@@ -39,7 +39,7 @@ if (role === 'seller') {
     }
   };
 		
-  const acc = await stdlib.newTestAccount(stdlib.parseCurrency(iBalance));
+  const acc = await stdlib.newTestAccount(iBalance);
   await showBalance(acc);
   const ctc = acc.contract(backend);
   await ctc.participants.Seller(sellerInteract)
@@ -50,7 +50,7 @@ if (role === 'seller') {
   const buyerInteract = {
     ...commonInteract(role),
     confirmPurchase: async (price) => await ask.ask(`Do you want to purchase wisdom for ${toSU(price)} ${suStr}?`, ask.yesno),
-	reportWisdom: (wisdom) => console.log(`Your new wisdom is "${wisdom}"`)
+	  reportWisdom: (wisdom) => console.log(`Your new wisdom is "${wisdom}"`)
   };
   
   const acc = await stdlib.newTestAccount(iBalance);
