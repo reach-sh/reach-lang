@@ -7,6 +7,147 @@ const nwToken = -1
 const filter = (obj: any, predicate: any) =>
   Object.fromEntries(Object.entries(obj).filter(predicate));
 
+
+class ReachValue {
+  contents: any;
+  taggedJSON () {};
+  untaggedJSON () {};
+
+  constructor(v: any) {
+    this.contents = v
+  }
+}
+
+class ReachNull extends ReachValue {
+  contents: any;
+  taggedJSON () {};
+  untaggedJSON () {};
+
+  constructor(v: null) {
+    super(v);
+  }
+}
+
+class ReachBool extends ReachValue {
+  contents: any;
+  taggedJSON () {};
+  untaggedJSON () {};
+
+  constructor(v: boolean) {
+    super(v);
+  }
+}
+
+class ReachNumber extends ReachValue {
+  contents: any;
+  taggedJSON () {};
+  untaggedJSON () {};
+
+  constructor(v: number) {
+    super(v);
+  }
+}
+
+class ReachToken extends ReachValue {
+  contents: any;
+  taggedJSON () {};
+  untaggedJSON () {};
+
+  constructor(v: number) {
+    super(v);
+  }
+}
+
+class ReachBytes extends ReachValue {
+  contents: any;
+  taggedJSON () {};
+  untaggedJSON () {};
+
+  constructor(v: string) {
+    super(v);
+  }
+}
+
+class ReachDigest extends ReachValue {
+  contents: any;
+  taggedJSON () {};
+  untaggedJSON () {};
+
+  constructor(v: ReachValue) {
+    super(v);
+  }
+}
+
+class ReachAddress extends ReachValue {
+  contents: any;
+  taggedJSON () {};
+  untaggedJSON () {};
+
+  constructor(v: number) {
+    super(v);
+  }
+}
+
+class ReachContract extends ReachValue {
+  contents: any;
+  taggedJSON () {};
+  untaggedJSON () {};
+
+  constructor(v: number) {
+    super(v);
+  }
+}
+
+class ReachArray extends ReachValue {
+  contents: any;
+  taggedJSON () {};
+  untaggedJSON () {};
+
+  constructor(v: ReachValue[]) {
+    super(v);
+  }
+}
+
+class ReachTuple extends ReachValue {
+  contents: any;
+  taggedJSON () {};
+  untaggedJSON () {};
+
+  constructor(v: ReachValue[]) {
+    super(v);
+  }
+}
+
+class ReachObject extends ReachValue {
+  contents: any;
+  taggedJSON () {};
+  untaggedJSON () {};
+
+  constructor(v: any) {
+    super(v);
+  }
+}
+
+class ReachData extends ReachValue {
+  contents: any;
+  taggedJSON () {};
+  untaggedJSON () {};
+
+  constructor(v: any) {
+    super(v);
+  }
+}
+
+class ReachStruct extends ReachValue {
+  contents: any;
+  taggedJSON () {};
+  untaggedJSON () {};
+
+  constructor(v: any) {
+    super(v);
+  }
+}
+
 class State {
   id: number;
 
