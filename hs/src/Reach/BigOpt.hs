@@ -1,4 +1,4 @@
-module Reach.BigOpt (bigopt) where
+module Reach.BigOpt (bigopt, bigopt_sim) where
 
 import qualified Data.Text as T
 import Reach.AST.DLBase
@@ -6,6 +6,7 @@ import Reach.AddCounts
 import Reach.FixedPoint
 import Reach.Optimize
 import Reach.Util
+import Reach.Counter
 
 i2t :: Integer -> T.Text
 i2t = s2t . show
@@ -21,4 +22,12 @@ bigopt (showp, lab) = flip fixedPoint_ rec
       showp (i2t i <> ".ac." <> lab) x2
       -- XXX it would be better for optimize and add_counts to say "I did
       -- something"
+      return x2
+
+bigopt_sim :: (Optimize a, AC a, Eq a) => Counter -> a -> IO a
+bigopt_sim ctr = flip fixedPoint_ rec
+  where
+    rec _ x0 = do
+      x1 <- opt_sim ctr x0
+      x2 <- add_counts x1
       return x2
