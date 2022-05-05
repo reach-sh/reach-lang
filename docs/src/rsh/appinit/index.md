@@ -152,7 +152,7 @@ API({ vote: Fun([Address], UInt) })
 // or
 API('Voter', { vote: Fun([Address], UInt)}, { vote: "castVote" })
 // or
-API({ add2: Fun([UInt, UInt], UInt), add1: Fun([UInt], UInt) }, { add1: "add", add2: "add })
+API({ add2: Fun([UInt, UInt], UInt), add1: Fun([UInt], UInt) }, { add1: "add", add2: "add" })
 ```
 
 APIs are functions that can be called by other contracts, as well as off-chain.
