@@ -416,6 +416,18 @@ checkCommitment( commitment, salt, x )
  Makes a requirement that `{!rsh} commitment` is the digest of `{!rsh} salt` and `{!rsh} x`.
 This is used in a consensus step after `{!rsh} makeCommitment` was used in a local step.
 
+The example below shows `{!rsh} checkCommitment` being used in a consensus step on line 87 after `{!rsh} makeCommitment` was used in a local step on line 66:
+
+```reach
+load: examples/rps-7-loops/index.rsh
+range: 64 - 68
+```
+
+```reach
+load: examples/rps-7-loops/index.rsh
+range: 85 - 87
+```
+
 ### {#ref-programs-consensus-token-minting} Token minting
 
 @{ref("rsh", "burn")}
