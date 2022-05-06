@@ -24,6 +24,7 @@ import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { JSDOM } from 'jsdom';
 import githubSlugger from 'github-slugger';
+import { writeFileSync } from 'fs';
 const slugify = githubSlugger.slug;
 const topDoc = new JSDOM("").window.document;
 
@@ -1001,6 +1002,10 @@ await Promise.all([
 await Promise.all([
   generateSearch(),
 ]);
+
+writeFileSync('/proj/docs/dev/xrefs.json', JSON.stringify(
+  xrefs.h.xrefs, null, 2
+) + '\n');
 
 if ( hasError ) {
   throw Error(`Build had errors`);
