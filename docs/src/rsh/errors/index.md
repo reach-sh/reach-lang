@@ -2000,8 +2000,6 @@ You can fix this by removing the erroneous statement.
 
 ## {#RE0113} RE0113
 
-@{errver(false, '0.1.10')}
-
 This error indicates that you provided an incorrect value to the `{!rsh} .define` component of a
 `{!rsh} parallelReduce` statement. The argument to `{!rsh} .define` should be of the form: `{!rsh} () => DEFINE_BLOCK`.
 Please review the `{!rsh} parallelReduce` documentation for information on how `{!rsh} .define` works.
