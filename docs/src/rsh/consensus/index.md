@@ -17,6 +17,13 @@ commit();
 
 A @{defn("commit statement")}, written `{!rsh} commit();`, commits to statement's continuation as the next step of the DApp computation. In other words, it ends the current consensus step and allows more local steps.
 
+For example, in the code below, the `{!rsh} commit();` on line 79 allows `Alice` to perform a local step after a consensus step:
+
+```reach
+load: examples/rps-7-loops/index.rsh
+range: 77 - 84
+```
+
 ### {#ref-programs-only-consensus} `only` and `each`
 
 @{seclink("ref-programs-only-step")} are allowed in consensus steps and are executed by backends once they observe the completion of the consensus step (i.e., after the associated commit statement.)
