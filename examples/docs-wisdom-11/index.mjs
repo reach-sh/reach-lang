@@ -50,6 +50,6 @@ if (role === 'seller') {
   await showBalance(acc);
   await ctc.p.Buyer(buyerInteract);
   await showBalance(acc);
+};
 
 ask.done();
-};
