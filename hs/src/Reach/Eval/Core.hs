@@ -1763,7 +1763,7 @@ evalForm f args = do
           go $ p {slpr_mpay = Just x}
         Just PRM_Def -> do
           x <- one_arg
-          go $ p {slpr_defs = x : slpr_defs}
+          go $ p {slpr_defs = slpr_defs <> [x]}
         Just PRM_Timeout -> retTimeout PRM_Timeout aa
         Just PRM_TimeRemaining -> retTimeout PRM_TimeRemaining aa
         Just PRM_ThrowTimeout -> retTimeout PRM_ThrowTimeout aa
@@ -5453,20 +5453,26 @@ getReturnAnnot = \case
           JSReturn a _ _:_ -> Just a
           _ -> Nothing
 
-deconstructFun :: JSExpression -> App ([JSExpression], JSBlock)
-deconstructFun = \case
+deconstructFun' :: (SLValTy -> EvalError) -> JSExpression -> App ([JSExpression], JSBlock)
+deconstructFun' mkErr = \case
   a@(JSArrowExpression _ _ cb) -> return $ (getFormals a, jsArrowBodyToRetBlock cb)
-  JSExpressionParen _ e _ -> deconstructFun e
+  JSExpressionParen _ e _ -> deconstructFun' mkErr e
   e -> do
     e' <- evalExpr e
     case snd e' of
       SLV_Clo _ _ (SLClo _ args bl _) -> return $ (args, bl)
-      ow -> expect_ . Err_Eval_NotApplicable =<< mkValType ow
+      ow -> expect_ . mkErr =<< mkValType ow
+
+deconstructFunStmts' :: (SLValTy -> EvalError) -> JSExpression -> App ([JSExpression], [JSStatement])
+deconstructFunStmts' mkErr f = do
+  (args, bl) <- deconstructFun' mkErr f
+  return $ (args, jsBlockToStmts bl)
+
+deconstructFun :: JSExpression -> App ([JSExpression], JSBlock)
+deconstructFun = deconstructFun' Err_Eval_NotApplicable
 
 deconstructFunStmts :: JSExpression -> App ([JSExpression], [JSStatement])
-deconstructFunStmts f = do
-  (args, bl) <- deconstructFun f
-  return $ (args, jsBlockToStmts bl)
+deconstructFunStmts = deconstructFunStmts' Err_Eval_NotApplicable
 
 doParallelReduce :: JSExpression -> ParallelReduceRec -> App [JSStatement]
 doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
@@ -5566,7 +5572,9 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let commit_s = JSMethodCall (jid "commit") a JSLNil a sp
   let while_body = [commit_s, fork_s]
   let while_s = JSWhile a a while_e a $ JSStatementBlock a while_body a sp
-  block_ss <- flip concatMapM pr_defs $ fmap snd . deconstructFunStmts
+  block_ss <- flip concatMapM pr_defs $ \def ->
+                locAtf (srcloc_jsa "define" $ jsa def) $
+                  snd <$> deconstructFunStmts' (const Err_ParallelReduce_DefineBlock) def
   let block_sb = JSStatementBlock a block_ss a sp
   let pr_ss = [var_s, block_sb, inv_s, while_s]
   -- liftIO $ putStrLn $ "ParallelReduce"

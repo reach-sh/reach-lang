@@ -25,7 +25,7 @@ export const main = Reach.App(() => {
           }];
         })
       .define(() => {
-        const div2 = (x) => x / 2;
+        const div2 = (x) => mul2(x) / 2 / 2;
       })
       .api_(B.g,
         (x) => {
