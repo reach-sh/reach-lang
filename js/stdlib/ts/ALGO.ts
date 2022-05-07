@@ -1631,6 +1631,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         debug(dhead, '--- START');
 
+        const curTime = await getNetworkTime();
+        const curSecs = await getTimeSecs(curTime);
+
         const [ _svs, msg ] = argsSplit(args, evt_cnt);
         const [ _svs_tys, msg_tys ] = argsSplit(tys, evt_cnt);
         void(_svs); void(_svs_tys);
@@ -1638,8 +1641,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           didSend: true,
           didTimeout: false,
           data: msg,
-          time: bigNumberify(0), // This should not be read.
-          secs: bigNumberify(0), // This should not be read.
+          time: curTime,
+          secs: curSecs,
           value: value,
           from: pks,
           getOutput: (async <X extends CBR_Val>(o_mode:string, o_lab:string, o_ctc:ALGO_Ty<X>, o_val:X): Promise<X> => {
