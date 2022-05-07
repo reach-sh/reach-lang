@@ -552,7 +552,6 @@ export type ISimTxn<Token, ContractInfo> = {
 } | {
   kind: 'from',
   to: string,
-  amt: BigNumber,
   tok: Token|undefined,
 } | {
   kind: 'halt',

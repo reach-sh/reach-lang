@@ -376,12 +376,10 @@ jsExpr = \case
           True -> mempty
           False -> do
             who' <- jsArg who
-            amt' <- jsArg amt
             mtok' <- jsArg_m mtok
             return $
               jsSimTxn "from" $
                 [ ("to", who')
-                , ("amt", amt')
                 , ("tok", mtok')
                 ]
   DLE_TokenInit _ tok -> do
