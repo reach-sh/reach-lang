@@ -98,9 +98,10 @@ This is used in a local step before `{!rsh} checkCommitment` is used in a consen
 
 This is demonstrated in the example below. 
 `{!rsh} makeCommitment` is used on line 18 before `{!rsh} checkCommitment` on line 21:
+
 ```reach
-load: examples/object-digest/index.rsh
-range: 16 - 22
+load: /examples/object-digest/index.rsh
+range: 16-22
 ```
 
 ### `didPublish`
@@ -116,11 +117,11 @@ A `{!rsh} didPublish` call must be inside an `{!rsh} only` block of code and be 
 For example, in the code below, a `{!rsh} didPublish` call is made on line 62 in an `{!rsh} only` block of code after a `{!rsh} publish` call was made on line 35:
 
 ```reach
-load: examples/raffle/index.rsh
-range: 35 - 35
+load: /examples/raffle/index.rsh
+range: 35-35
 ```
 
 ```reach
-load: examples/raffle/index.rsh
-range: 62 - 62
+load: /examples/raffle/index.rsh
+range: 62-62
 ```
