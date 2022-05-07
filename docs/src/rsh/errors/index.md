@@ -2217,12 +2217,12 @@ range: 3 - 9
 However, the correct thing to do is to declare at least one `{!rsh} Participant` or `{!rsh} ParticipantClass` before using `{!rsh} Anybody.publish()` like in the program below:
 
 ```reach
-load: ./examples/api-call/index.rsh
+load: /examples/api-call/index.rsh
 range: 4 - 7
 ```
 
 ```reach
-load: ./examples/api-call/index.rsh
+load: /examples/api-call/index.rsh
 range: 47 - 49
 ```
 
