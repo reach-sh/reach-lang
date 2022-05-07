@@ -67,7 +67,7 @@ export default function (objectViewData: any) {
       (key) => {
         const participant = locals[key]
         return (
-          <ParticipantEntry>
+          <ParticipantEntry key={key}>
             <Left>
               <Who key={ key }>{participant.l_who ? participant.l_who : 'Consensus'}</Who>
               <Status text={participant.l_ks ? translatePhase(participant.l_ks): 'Uninitialized'} />

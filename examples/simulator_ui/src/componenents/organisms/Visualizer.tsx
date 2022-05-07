@@ -1,16 +1,29 @@
 import styled from "styled-components";
-import { ReactElement, useState, createRef, useEffect } from "react";
-import Graphin, { IUserEdge, Graph, Behaviors, IG6GraphEvent, IUserNode, NodeConfig } from "@antv/graphin";
+import {
+  ReactElement,
+  useState,
+  createRef,
+  useEffect,
+  useContext,
+} from "react";
+import Graphin, {
+  IUserEdge,
+  Graph,
+  Behaviors,
+  IG6GraphEvent,
+  IUserNode,
+  NodeConfig,
+  GraphinContext,
+} from "@antv/graphin";
 import { ParticipantDropdown } from "../atoms/ParticipantDropdown";
 import { Participant } from "../../types";
-const {ClickSelect} = Behaviors
-
-
+import { INode } from "@antv/g6";
+const { Hoverable } = Behaviors;
 
 type GraphinRef = {
-  graph: Graph
-  apis: any
-}
+  graph: Graph;
+  apis: any;
+};
 
 const VisualizerContainer = styled.div`
   display: grid;
@@ -28,37 +41,36 @@ const VisualizerContainer = styled.div`
 
 const PerspectiveSelector = styled(ParticipantDropdown)``;
 
-function actorToColorString (actor: number): string {
+function actorToColorString(actor: number): string {
   switch (actor) {
     case -1:
       return "#204EC5";
-    case 0: 
-      return "#6AC6E7";  
+    case 0:
+      return "#6AC6E7";
     default:
       return "#6AC6E7";
   }
 }
 
-const defaultNode = { 
-  type : 'graphin-circle' , 
-  style : { 
-    keyshape : { 
-      fill : '#6AC6E7' , 
-      stroke : '#FFFFFF' , 
-      fillOpacity : 1 , 
-      size : 30 , 
-    } ,
-    label : { 
-      visible : true , 
-    } ,
+const defaultNode = {
+  type: "graphin-circle",
+  style: {
+    keyshape: {
+      fill: "#6AC6E7",
+      stroke: "#FFFFFF",
+      fillOpacity: 1,
+      size: 30,
+    },
+    label: {
+      visible: true,
+    },
     icon: {},
     badges: [],
     halo: {
-      visible: false
-    } 
-  } ,
-} ;
-
+      visible: false,
+    },
+  },
+};
 
 export default function VisualizerPanel({
   data,
@@ -66,74 +78,127 @@ export default function VisualizerPanel({
   participants,
   edges,
   nodes,
-  nodeId
+  nodeId,
+  graphinRef
 }: {
   data: any;
   selectNode: Function;
   participants: Participant[];
-  edges: IUserEdge[]
-  nodes: any,
-  nodeId: number
+  edges: IUserEdge[];
+  nodes: any;
+  nodeId: number;
+  graphinRef: any
 }): ReactElement {
-  const graphinRef = createRef<Graphin>();
+
   const [perspective, changePerspective] = useState<string>("");
   const isAParticipant = (participant: Participant) => {
-    return (participant === participant)
+    return participant === participant;
+  };
+
+  const ShowActionOnHover = () => {
+    const { graph, apis } = useContext(GraphinContext);
+    useEffect(() => {
+      if (graphinRef) {
+        const showAction = (evt: IG6GraphEvent) => {
+          const edge = evt.item as any;
+          const edgeModel = edge.getModel()
+          const tag = nodes.find((node: IUserNode) => node.id == edgeModel.target)
+          let label = tag?.label
+          console.log(label)          
+          graph.updateItem(edge, {
+            style: {
+              label: {
+                value: `${label}`,
+                fill: "#000000",
+                fontSize: 12,
+                background: { width: 99, height: 36, radius: 16 },
+                offset: [0, -44],
+                visible: true,
+              },
+            },
+          });
+        };
+        const hideAction = (evt: IG6GraphEvent) => {
+          const edge = evt.item as any;
+          console.log(nodes);
+          graph.updateItem(edge, {
+            style: {
+              label: {
+                visible: false,
+              },
+            },
+          });
+        }
+
+        graph.on("edge:mouseenter", showAction);
+        graph.on("edge:mouseleave", hideAction)
+        return () => {
+          graph.off("edge:mousenter", showAction);
+        };
+      }
+    }, []);
+    return null;
+  };
+
+  if (nodes.length > 0) {
+    nodes.forEach((node: any) => {
+      node.style = {
+        keyshape: {
+          fill: actorToColorString(node.actor),
+        },
+        label: {
+          value: node.id,
+          position: "center",
+          fill: "white",
+          offset: [0, 6],
+        },
+      };
+    });
+  }
+  if (edges.length > 0) {
+    edges = edges.map(
+      (edge: any): IUserEdge => {
+        edge.style = {
+          color: "#000000",
+        };
+        return {
+          source: edge[0].toString(),
+          target: edge[1].toString(),
+          style: edge.style,
+        };
+      }
+    );
   }
 
-  const SelectNode = ({nodeId}:{ nodeId: number}) => {
-  const { graph, apis } = graphinRef.current as GraphinRef;
-
   useEffect(() => {
-    apis.focusNodeById(nodeId.toString());
-
-    const handleClick = (evt: IG6GraphEvent) => {
-      const node = evt.item as any;
-      const model = node.getModel() as NodeConfig;
-      apis.focusNodeById(model.id);
-    };
-
-
-    
-    graph.on('node:click', handleClick);
-    return () => {
-      graph.off('node:click', handleClick);
-    };
-  }, []);
-  return null;
-};
-  
-
-    if(nodes.length > 0){
-      nodes.forEach((node: any) => {
-        node.style = {
-          keyshape:{
-            fill: actorToColorString(node.actor)
-          },
-          label : {
-            value: node.id,
-            position: 'center',
-            fill: 'white',
-            offset: [0, 6]
-          },
-        }
-      })
-    }
-    if(edges.length > 0){
-      edges = edges.map((edge: any):IUserEdge => {
-        return {source: edge[0].toString(), target: edge[1].toString()}
-      })
-    }
-
-    useEffect(() => {
     const {
       graph, // Graph instance of g6
       apis, // API interface provided by Graphin
     } = graphinRef.current as GraphinRef;
-
+    console.log('painting now')
+    graph.paint()
 
   }, []);
 
+  const SelectNode = ({ nodeId }: { nodeId: number }) => {
+    const { graph, apis } = graphinRef.current as GraphinRef;
+
+    useEffect(() => {
+      apis.focusNodeById(nodeId.toString());
+
+      const handleClick = (evt: IG6GraphEvent) => {
+        const node = evt.item as INode;
+        const model = node.getModel() as NodeConfig;
+        apis.focusNodeById(model.id);
+      };
+
+      graph.on("node:click", handleClick);
+      return () => {
+        graph.off("node:click", handleClick);
+      };
+    }, []);
+    return null;
+  };
   return data ? (
     <VisualizerContainer>
       {participants && (
@@ -147,7 +212,7 @@ export default function VisualizerPanel({
       <Graphin
         ref={graphinRef}
         defaultNode={defaultNode}
-        data={{nodes: nodes, edges: edges}}
+        data={{ nodes: nodes, edges: edges }}
         layout={{ type: "dagre", rankdir: "LR" }}
         theme={{
           background: "#101010",
@@ -156,7 +221,7 @@ export default function VisualizerPanel({
           edgeSize: 1,
         }}
       >
-        <SelectNode nodeId={nodeId}/>
+        <ShowActionOnHover />
       </Graphin>
     </VisualizerContainer>
   ) : (

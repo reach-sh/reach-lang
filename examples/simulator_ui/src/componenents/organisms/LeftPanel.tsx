@@ -130,11 +130,9 @@ function LeftPanel({
       type === "UInt" ? parseInt(e.target.value) : `${e.target.value}`;
     setInitValues({ ...initValues, [`${ph[0][0]}`]: value });
   };
-  const participantHasDetails = async (participant: Participant) => {
-        const details = await getInitDetails(participant.actorId)
-        return Object.entries(details).length > 0
-      }
-
+  const isNotConsensys = (participant: Participant) => {
+    return !(participant.actorId == -1)
+  }
 
   useEffect(() => {
     const setDetails = async () => {
@@ -191,20 +189,20 @@ function LeftPanel({
         />
         {openInitSection ? (
           <InitContent>
-            {objectViewData &&(
+            {objectViewData &&
               <ParticipantDropdown
                 participants={participants}
                 setValue={changeDropDownSelection}
                 value={dropDownSelection}
-                predicate={participantHasDetails}
+                predicate={isNotConsensys}
               />
-            )}
+            }
             {initDetails && <InitForm
               initDetails={initDetails}
               updateEntry={updateEntry}
               initValues={initValues}
             />}
-            {initDetails && <InitParticipantsButton
+            { <InitParticipantsButton
               label="Init Participant"
               icon={<></>}
               onClick={() => {

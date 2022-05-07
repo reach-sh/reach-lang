@@ -1,5 +1,5 @@
 import * as c from "@reach-sh/simulator-client";
-import { useEffect, useState, useReducer } from "react";
+import { useEffect, useState, useReducer, createRef } from "react";
 import { createGlobalStyle } from "styled-components";
 import getObjectView from "./reach/ObjectView";
 import LeftPanel from "./componenents/organisms/LeftPanel";
@@ -11,6 +11,7 @@ import styled from "styled-components";
 import VisualizerPanel from "./componenents/organisms/Visualizer";
 import { IUserNode, IUserEdge } from "@antv/graphin";
 import { Participant } from "./types";
+import Graphin from '@antv/graphin'
 
 export const GlobalStyles = createGlobalStyle`
   html {
@@ -106,6 +107,7 @@ const Info = styled.div`
 `;
 
 function App() {
+  const graphinRef = createRef<Graphin>();
   const [initialized, initialize] = useState(false);
   const [nodeId, setNodeId] = useState(0);
   const [objectViewData, setObjectViewData] = useState<any>({});
@@ -123,7 +125,9 @@ function App() {
     let result = await initParticipant(participant, node, values, details)
     if (result[0] == 'OK' ){
      setNodeId(nodeId + 1)
-     updateJsonLog([...jsonLog, ["initFor", node, participant, JSON.stringify(result[1])]]) 
+      console.log(nodeId);
+     updateJsonLog([...jsonLog, ["initFor", node, participant, JSON.stringify(result[1])]])
+     forceUpdate()
     }
   }
 
@@ -136,9 +140,6 @@ function App() {
           const details = dets as any;
           let displayLabel = details[1].tag.slice(2);
           let actorStateID = details[0];
-          if (displayLabel !== "None") {
-            displayLabel = displayLabel + "?";
-          }
           nodeArray.push({ id: s, label: displayLabel, actor: actorStateID });
           setGraphNodes(nodeArray);
         }
@@ -188,6 +189,7 @@ function App() {
             <RightPanel selection={null} />
           </Info>
           <VisualizerPanel
+            graphinRef={graphinRef}
             data={objectViewData}
             nodes={nodes}
             edges={edges}

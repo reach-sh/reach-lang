@@ -2,7 +2,6 @@ import DropdownInput from "./DropdownInput";
 import { Participant } from "../../types";
 import { useEffect, useState } from "react";
 import {filterAsync} from "lodasync"
-import Async, { useAsync } from 'react-select/async';
 
 export const ParticipantDropdown = ({
   participants,
@@ -27,7 +26,7 @@ export const ParticipantDropdown = ({
       setOptions(options)
     }
     setFilteredOptions(participants)
-  }, [])
+  }, [participants])
 
   const createOptions = (participants: Participant[]): JSX.Element[] => {    
     return participants.map((participant) => (

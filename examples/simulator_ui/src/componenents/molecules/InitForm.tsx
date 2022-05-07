@@ -37,8 +37,9 @@ export default function InitForm({initDetails, updateEntry, initValues}:{initDet
                     <ItemLabel>{entry[1].slice(7)}</ItemLabel>
                 </span>
                 <InitInput
+                    key={index}
                     placeholder={`${entry[0]} ${entry[1].slice(7)}`}
-                    value={initValues[`${entry[0]}`]}
+                    value={initValues[`${entry[0]}`] || ''}
                     onChange={updateEntry}
                 />
             </FormItem>
