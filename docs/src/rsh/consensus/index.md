@@ -565,6 +565,8 @@ In addition, a remote function may be augmented with one of the following operat
     If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an insufficient fee error.
   + `{!rsh} opts.assets` records extra assets.
     If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an invalid asset reference.
+  + `{!rsh} opts.addressToAccount` changes `{!rsh} Address` arguments to `Account` array references.
+    If this is needed, and not included, then the consensus transfer to the current consensus step will fail because an incorrectly typed argument was provided to the remote object.
 
 If the remote contract is not expected to return non-network tokens then a pair is returned, where the amount of network tokens received is the first element, and the original result is the second element.
 
