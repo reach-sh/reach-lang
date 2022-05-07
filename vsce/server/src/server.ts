@@ -877,14 +877,14 @@ connection.onHover(
 
       var word = getWord(text, index, true);
       if (isReachKeyword(word)) {
-        let buf = await getReachKeywordMarkdown(word);
+        let buf = getReachKeywordMarkdown(word);
         hover.contents = buf;
         return hover;
       }
 
       var word = getWord(text, index, false);
       if (isReachKeyword(word)) {
-        let buf = await getReachKeywordMarkdown(word);
+        let buf = getReachKeywordMarkdown(word);
         hover.contents = buf;
         return hover;
       }
