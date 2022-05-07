@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh -xe
 # this script replicates the behavior of testCompileOut in /hs/test/Reach/Test_Compiler.hs
 case "$1" in
   *.rsh) RSH="$1" ;;
@@ -22,7 +22,7 @@ cd "$DIRNAME"
 if [ "$REACH_DOCKER" = "0" ]; then
   # don't use reach script directly here because we do not want to include
   # make's output in the golden file
-  make --silent --directory "$REPO"/hs/ hs-build 
+  make --silent --directory "$REPO"/hs/ hs-build
   stack --stack-yaml "$REPO"/hs/stack.yaml exec -- \
     reachc --disable-reporting "$RSH" >"$OUTPUT_F" 2>"$STDERR_F" || true
 else
