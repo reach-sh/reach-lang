@@ -7,6 +7,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.10 is the current Reach release candidate version.
 
++ 2022/05/07: Added `addressToAccount` field to `{!rsh} remote.ALGO`.
 + 2022/05/05: Added support for multiple `{!rsh} .define` branches in a `{!rsh} parallelReduce`.
 + 2022/05/04: Added `.api_` branch to `{!rsh} fork` and `{!rsh} parallelReduce`.
 + 2022/05/04: Added `CHECK_EXPR` to `{!rsh} .case` in `{!rsh} fork` and `{!rsh} parallelReduce`.
