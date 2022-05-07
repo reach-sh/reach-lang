@@ -53,14 +53,22 @@ The connector provides a binding named `{!rsh} ALGO` to backends.
 Reach uses the following environment variables:
 
 + `ALGO_TOKEN` is used as the API token for your `algod`.
+  When left unspecificed, this defaults to the token of the Reach devnet.
 + `ALGO_SERVER` is used as the address of your `algod`.
+  When left unspecificed, this defaults to `http://localhost`.
 + `ALGO_PORT` is used as the port of your `algod`.
+  When left unspecificed, this defaults to `4180`.
 + `ALGO_INDEXER_TOKEN` is used as the API token for your `indexer`.
+  When left unspecificed, this defaults to the token of the Reach devnet.
 + `ALGO_INDEXER_SERVER` is used as the address of your `indexer`.
+  When left unspecificed, this defaults to `http://localhost`.
 + `ALGO_INDEXER_PORT` is used as the port of your `indexer`.
+  When left unspecificed, this defaults to `8980`.
 + `ALGO_NODE_WRITE_ONLY` specifies if your `algod` will handle read requests,
   or just writes.
+  When left unspecificed, this defaults to `no`.
 + `ALGO_FAUCET_PASSPHRASE` is used as the mnemonic for the faucet of your network.
+  When left unspecificed, this defaults to the passphrase of the Reach devnet's faucet.
   This is useful if you are running your own testing network.
 + `ALGO_GENESIS_ID` or `ALGO_GENESIS_HASH` (or both),
   which allows you to request that the user's [ARC-6 compliant wallet](https://github.com/algorandfoundation/ARCs/blob/main/ARCs/arc-0006.md) connect to a specific network.
