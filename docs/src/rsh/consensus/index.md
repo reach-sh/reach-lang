@@ -20,7 +20,7 @@ A @{defn("commit statement")}, written `{!rsh} commit();`, commits to statement'
 For example, in the code below, the `{!rsh} commit();` on line 79 allows `Alice` to perform a local step after a consensus step:
 
 ```reach
-load: examples/rps-7-loops/index.rsh
+load: /examples/rps-7-loops/index.rsh
 range: 77 - 84
 ```
 
@@ -435,12 +435,12 @@ This is used in a consensus step after `{!rsh} makeCommitment` was used in a loc
 The example below shows `{!rsh} checkCommitment` being used in a consensus step on line 87 after `{!rsh} makeCommitment` was used in a local step on line 66:
 
 ```reach
-load: examples/rps-7-loops/index.rsh
+load: /examples/rps-7-loops/index.rsh
 range: 64 - 68
 ```
 
 ```reach
-load: examples/rps-7-loops/index.rsh
+load: /examples/rps-7-loops/index.rsh
 range: 85 - 87
 ```
 

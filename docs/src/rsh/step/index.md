@@ -520,7 +520,7 @@ By comparing this example to `{!rsh} closeTo`, you can see that using this Reach
 The `{!rsh} nonNetPayAmt` parameter should be a pay amount. For example, when closing a program that uses a `{!rsh} Token` `{!rsh} token`, the argument would be `{!rsh} [ [balance(tok), tok] ]`.
 
 ```reach
-load: examples/secured-loan/index.rsh
+load: /examples/secured-loan/index.rsh
 range: 55 - 58
 ```
 
