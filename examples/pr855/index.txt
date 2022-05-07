@@ -1,1 +1,5 @@
-reachc: ./examples/pr855/index.rsh: openFile: does not exist (No such file or directory)
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 14 theorems; No failures!
