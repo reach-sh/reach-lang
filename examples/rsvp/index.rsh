@@ -35,27 +35,24 @@ export const main = Reach.App(() => {
       && RSVPs.Map.size() == howMany
     )
     .while( keepGoing )
-    .api_(A.iWillGo,
-      () => {
-        const who = this;
-        check( ! RSVPs.member(who), "not yet" );
-        return [ price, (k) => {
-          k(true);
-          RSVPs.insert(who);
-          return [ keepGoing, howMany + 1 ];
-        }];
-      })
-    .api_(C.theyCame,
-      (who) => {
-        check( this == D, "you are the boss");
-        check( RSVPs.member(who), "yep" );
-        return [(k) => {
-          k(true);
-          transfer(price).to(who);
-          RSVPs.remove(who);
-          return [ keepGoing, howMany - 1 ];
-        }];
-      })
+    .api_(A.iWillGo, () => {
+      check( ! RSVPs.member(this), "not yet" );
+      return [ price, (k) => {
+        k(true);
+        RSVPs.insert(this);
+        return [ keepGoing, howMany + 1 ];
+      }];
+    })
+    .api_(C.theyCame, (who) => {
+      check( this == D, "you are the boss");
+      check( RSVPs.member(who), "yep" );
+      return [ 0, (k) => {
+        k(true);
+        transfer(price).to(who);
+        RSVPs.remove(who);
+        return [ keepGoing, howMany - 1 ];
+      }];
+    })
     .timeout( deadlineBlock, () => {
       const [ [], k ] = call(C.timesUp);
       k(true);
