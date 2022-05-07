@@ -5087,9 +5087,10 @@ doForkAPI2Case isSingleFun args = do
         (domain, body) <- deconstructFunStmts f
         (chks, mpay, con) <- splitApiConsensus body
         chk_ss <- flip jsInlineCall [dotdom] $ jsArrowStmts fa domain chks
-        let no_op = jsArrowStmts fa (ignore <$ domain) []
+        let iargs = ignore <$ domain
+        let no_op = jsArrowStmts fa iargs []
         let assume = mkAssume chk_ss no_op
-        con_e <- mkConsensus w chk_ss =<< prependFunArgs [ignore] con
+        con_e <- mkConsensus w chk_ss =<< prependFunArgs iargs con
         mpay_e <- forM mpay $ mkPay chks . jsArrowExpr fa domain
         return (assume, mpay_e, con_e)
   let goSingle who f = do
