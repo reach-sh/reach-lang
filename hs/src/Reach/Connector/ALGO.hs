@@ -2226,7 +2226,7 @@ ce = \case
     which <- fromMaybe (impossible "setApiDetails no which") <$> asks eWhich
     mac <- multipleApiCalls p
     let p' = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) which mac
-    callCompanion at $ CompanionLabel p'
+    callCompanion at $ CompanionLabel True p'
   DLE_GetUntrackedFunds at mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
     cGetBalance at mtok
@@ -2831,9 +2831,10 @@ bindFromSvs_ at svs m = do
 
 data CompanionCall
   = CompanionCreate
-  | CompanionLabel Label
+  | CompanionLabel Bool Label
   | CompanionDelete
   | CompanionDeletePre
+  deriving (Eq, Show)
 callCompanion :: SrcLoc -> CompanionCall -> App ()
 callCompanion at cc = do
   mcr <- asks eCompanion
@@ -2853,6 +2854,7 @@ callCompanion at cc = do
             unless del $ do
               incResource R_App cr_ro
         makeTxn1 "ApplicationID"
+  comment $ texty cc
   case cc of
     CompanionCreate -> do
       let mpay pc = ce $ DLE_CheckPay at [] (DLA_Literal $ DLL_Int at uintWord $ pc * algoMinimumBalance) Nothing
@@ -2871,8 +2873,8 @@ callCompanion at cc = do
           code "itxn" ["CreatedApplicationID"]
           gvStore GV_companion
           return ()
-    CompanionLabel l -> do
-      label l
+    CompanionLabel mk l -> do
+      when mk $ label l
       whenJust mcr $ \cim -> do
         let howManyCalls = fromMaybe 0 $ M.lookup l cim
         -- XXX bunch into groups of 16, slightly less cost
@@ -2909,7 +2911,10 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
   let bindFromSvs = bindFromSvs_ at svsl
   let lab = handlerLabel which
   block_ lab $ do
-    callCompanion at $ CompanionLabel lab
+    label lab
+    when isCtor $ do
+      callCompanion at $ CompanionCreate
+    callCompanion at $ CompanionLabel False lab
     comment "check step"
     cint $ fromIntegral prev
     gvLoad GV_currentStep
@@ -2933,8 +2938,6 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
             . (bindFromMsg $ map v2vl msg)
     bindVars $ do
       clogEvent ("_reach_e" <> show which) msg
-      when isCtor $ do
-        callCompanion at $ CompanionCreate
       let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
           checkTime1 cmp clhs rhsa = do
             clhs
