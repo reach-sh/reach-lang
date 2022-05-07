@@ -1333,6 +1333,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   let label = thisAcc.addr.substring(2, 6);
   const pks = T_Address.canonicalize(thisAcc);
   debug(label, 'connectAccount');
+  let createTag = 0;
 
   const selfAddress = (): CBR_Address => {
     return pks;
@@ -1611,7 +1612,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                 appLocalStateNumUInt, appLocalStateNumBytes + mapDataKeys,
                 appGlobalStateNumUInt, appGlobalStateNumBytes + stateKeys,
                 undefined, undefined, undefined, undefined,
-                NOTE_Reach, undefined, undefined, extraPages)));
+                NOTE_Reach_tag(createTag++), undefined, undefined, extraPages)));
 
           const ai = createRes['created-application-index'];
           if ( ! ai ) {
