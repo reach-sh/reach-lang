@@ -30,43 +30,32 @@ export const main = Reach.App(() => {
 
   const [ keepGoing, howMany ] =
     parallelReduce([true, 0])
-    .define(() => {
-      const checkIWillGo = (who) => {
-        check( ! RSVPs.member(who), "not yet" );
-        return () => {
-          RSVPs.insert(who);
-          return [ keepGoing, howMany + 1 ];
-        };
-      };
-      const checkTheyCame = (actor, who) => {
-        check( actor == D, "you are the boss");
-        check( RSVPs.member(who), "yep" );
-        return () => {
-          transfer(price).to(who);
-          RSVPs.remove(who);
-          return [ keepGoing, howMany - 1 ];
-        };
-      };
-    })
     .invariant(
       balance() == howMany * price
       && RSVPs.Map.size() == howMany
     )
     .while( keepGoing )
-    .api(A.iWillGo,
-      () => { const _ = checkIWillGo(this); },
-      () => price,
-      (k) => {
-        k(true);
-        return checkIWillGo(this)();
-    })
-    .api(C.theyCame,
-      (who) => { const _ = checkTheyCame(this, who); },
-      (_) => 0,
-      (who, k) => {
-        k(true);
-        return checkTheyCame(this, who)();
-    })
+    .api_(A.iWillGo,
+      () => {
+        const who = this;
+        check( ! RSVPs.member(who), "not yet" );
+        return [ price, (k) => {
+          k(true);
+          RSVPs.insert(who);
+          return [ keepGoing, howMany + 1 ];
+        }];
+      })
+    .api_(C.theyCame,
+      (who) => {
+        check( this == D, "you are the boss");
+        check( RSVPs.member(who), "yep" );
+        return [(k) => {
+          k(true);
+          transfer(price).to(who);
+          RSVPs.remove(who);
+          return [ keepGoing, howMany - 1 ];
+        }];
+      })
     .timeout( deadlineBlock, () => {
       const [ [], k ] = call(C.timesUp);
       k(true);
