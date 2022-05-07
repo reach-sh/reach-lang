@@ -1,4 +1,4 @@
-reachc: error[RE0134]: Expected this function to return `[ PAY_AMT, API_CONSENSUS_EXPR ]` or `[ API_CONSENSUS_EXPR ]`
+reachc: error[RE0134]: Expected this function to end in a syntactic `return [ PAY_AMT, API_CONSENSUS_EXPR ]` or `return [ API_CONSENSUS_EXPR ]`
 
   ./Err_Api_Return_Type.rsh:28:10:application
 

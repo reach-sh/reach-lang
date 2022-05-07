@@ -764,6 +764,6 @@ instance Show EvalError where
     Err_ExpectedThunk ->
       "Expected a syntactic thunk."
     Err_Api_Return_Type ->
-      "Expected this function to return `[ PAY_AMT, API_CONSENSUS_EXPR ]` or `[ API_CONSENSUS_EXPR ]`"
+      "Expected this function to end in a syntactic `return [ PAY_AMT, API_CONSENSUS_EXPR ]` or `return [ API_CONSENSUS_EXPR ]`"
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
