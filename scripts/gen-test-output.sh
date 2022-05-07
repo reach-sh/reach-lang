@@ -24,7 +24,7 @@ if [ "$REACH_DOCKER" = "0" ]; then
   # make's output in the golden file
   make --silent --directory "$REPO"/hs/ hs-build
   stack --stack-yaml "$REPO"/hs/stack.yaml exec -- \
-    reachc --disable-reporting "$RSH" >"$OUTPUT_F" 2>"$STDERR_F" || true
+    reachc --disable-reporting "${BASENAME}.rsh" >"$OUTPUT_F" 2>"$STDERR_F" || true
 else
   "$REPO"/reach compile --disable-reporting "$RSH" >"$OUTPUT_F" 2>"$STDERR_F" || true
 fi
