@@ -3176,6 +3176,8 @@ evalPrim p sargs =
              locAt (sss_at v) $
                expect_ty ("value of " <> k) (sss_val v))
           argm
+      when (M.null varm) $
+        expect_ $ Err_Eval_EmptyData
       retV $ (lvl, SLV_Type $ ST_Data varm)
     SLPrim_Data_variant t vn vt -> do
       at <- withAt id

@@ -164,6 +164,7 @@ data EvalError
   | Err_Remote_ALGO_extra [SLVar]
   | Err_ExpectedThunk
   | Err_Api_Return_Type
+  | Err_Eval_EmptyData
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -309,6 +310,7 @@ instance HasErrorCode EvalError where
     Err_Remote_ALGO_extra {} -> 132
     Err_ExpectedThunk {} -> 133
     Err_Api_Return_Type {} -> 134
+    Err_Eval_EmptyData -> 135
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -765,5 +767,7 @@ instance Show EvalError where
       "Expected a syntactic thunk."
     Err_Api_Return_Type ->
       "Expected this function to end in a syntactic `return [ PAY_AMT, API_CONSENSUS_EXPR ]` or `return [ API_CONSENSUS_EXPR ]`"
+    Err_Eval_EmptyData ->
+      "Data instances may not be empty"
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
