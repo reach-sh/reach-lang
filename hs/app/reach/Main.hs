@@ -2463,41 +2463,29 @@ support = command "support" $ info (pure step1) d
     d = progDesc "Upload index.rsh and index.mjs to help us troubleshoot!"
     splitByAmpersands :: BSLC8.ByteString -> [Text]
     splitByAmpersands s = T.splitOn "&" (pack $ BSLC8.unpack s)
-
     splitByEqualsSigns :: Text -> [Text]
     splitByEqualsSigns s = T.splitOn (pack "=") s
-
     process :: BSLC8.ByteString -> [[Text]]
     process gitHubResponseString = map splitByEqualsSigns
       $ splitByAmpersands gitHubResponseString
-
     isDeviceCodePair :: [Text] -> Bool
     isDeviceCodePair pair = head pair == pack "device_code"
-
     isErrorPair :: [Text] -> Bool
     isErrorPair pair = head pair == pack "error"
-
     isUserCodePair :: [Text] -> Bool
     isUserCodePair pair = head pair == pack "user_code"
-
     isAccessTokenPair :: [Text] -> Bool
     isAccessTokenPair pair = head pair == pack "access_token"
-
     clientId :: String
     clientId = "b0e24d4cc8251c6cd14c"
-
     scope :: String
     scope = "gist"
-
     language :: String
     language = "JavaScript"
-
     typeForUploadJson :: String
     typeForUploadJson = "application/javascript"
-
     acceptHeader = "Accept"
     authorizationHeader = "Authorization"
-
     step1 :: App
     step1 = do
       let dataJson =
@@ -2526,11 +2514,9 @@ support = command "support" $ info (pure step1) d
           liftIO . T.putStrLn $ pack ""
           liftIO . T.putStrLn $
             "No files uploaded; run reach support again to make another try."
-
     grantType :: String
     grantType = "urn:ietf:params:oauth:grant-type:device_code"
     userAgentHeader = "user-agent"
-
     step2WithThe :: Text -> ReaderT Env IO ()
     step2WithThe deviceCode = do
       let dataJson =
@@ -2558,7 +2544,6 @@ support = command "support" $ info (pure step1) d
         Just accessTokenPair -> do
           let accessToken = accessTokenPair !! 1
           completeStep3WithThe accessToken
-
     completeStep3WithThe :: Text -> ReaderT Env IO ()
     completeStep3WithThe accessToken = do
       indexRshExists <- liftIO $ doesFileExist "index.rsh"
@@ -2584,8 +2569,6 @@ support = command "support" $ info (pure step1) d
           let null' :: A.Pair
               null' = ("empty" .= nullString)
           checkIndexMjs null' False accessToken
-
-
     checkIndexMjs :: A.Pair -> Bool -> Text -> ReaderT Env IO ()
     checkIndexMjs indexRshJson indexRshExists accessToken = do
       indexMjsExists <- liftIO $ doesFileExist "index.mjs"
@@ -2638,7 +2621,6 @@ support = command "support" $ info (pure step1) d
                 "Did not find index.mjs in the current directory; skipping..."
               liftIO . T.putStrLn $ pack ""
               liftIO . T.putStrLn $ pack "Nothing uploaded"
-
     -- @TODO: Also add output of reach hashes!
     uploadGistUsing :: Value -> Text -> ReaderT Env IO ()
     uploadGistUsing mainJson accessToken = do
