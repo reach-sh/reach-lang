@@ -1,0 +1,8 @@
+reachc: error[RE0031]: Invalid operation. `to consensus` cannot be used in context: app init, must be in step. You must `init` first.
+
+  ./pr885.rsh:4:5:dot
+
+  4|   A.publish();
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0031
+
