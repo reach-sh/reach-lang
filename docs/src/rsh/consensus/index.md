@@ -479,6 +479,17 @@ This value is intended to be a digest of a larger metadata document.
 + `supply`: A value of type `{!rsh} UInt`; defaults to `{!rsh} UInt.max`.
 + `decimals`: A value of type `{!rsh} UInt`; defaults to `{!rsh} 6` on Algorand, and `{!rsh} 18` on Ethereum and Conflux.
 
+The following examples demonstrate how the details above may be used:
+```reach
+load: examples/token-decimals/index.rsh
+range: 14 - 17
+```
+
+```reach
+load: examples/mint-basic/index.rsh
+range: 28 - 33
+```
+
 This returns a `{!rsh} Token` value and deposits a `{!rsh} supply` amount of the new non-network tokens into the contract account associated with the DApp.
 These tokens must be destroyed by the end of the DApp.
 
