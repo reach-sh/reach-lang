@@ -4694,6 +4694,8 @@ tokIsUnique sks tok = do
 
 doToConsensus :: [JSStatement] -> ToConsensusRec -> App SLStmtRes
 doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
+  ensure_mode SLM_Step "to consensus"
+  ensure_live "to consensus"
   let whos = slptc_whos
   who_apis <- S.intersection whos <$> (ae_apis <$> aisd)
   unless (S.null who_apis || slptc_api) $
@@ -4711,8 +4713,6 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
         void $ locSco (sco { sco_must_ret = RS_ImplicitNull }) $ evalStmt chk_ss
   at <- withAt id
   st <- readSt id
-  ensure_mode SLM_Step "to consensus"
-  ensure_live "to consensus"
   let st_pure = st {st_mode = SLM_ConsensusPure}
   let pdvs = st_pdvs st
   isSoloSend <- case S.toList whos of
