@@ -1,0 +1,72 @@
+Compiling "mt_array"...
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 10 theorems; No failures!
+Compiling "mt_object"...
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 10 theorems; No failures!
+Compiling "mt_struct"...
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 10 theorems; No failures!
+Compiling "mt_tuple"...
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 10 theorems; No failures!
+warning[RW0005]: The `Object` type's format is controlled by Reach; you may want to use `Struct` instead for external interfaces, so you can mandate and document the format.
+
+  ./pr883.rsh:8:16:application
+
+  8|   const P = API('P', {
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0005
+
+warning[RW0005]: The `Object` type's format is controlled by Reach; you may want to use `Struct` instead for external interfaces, so you can mandate and document the format.
+
+  ./pr883.rsh:8:16:application
+
+  8|   const P = API('P', {
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0005
+
+warning[RW0005]: The `Object` type's format is controlled by Reach; you may want to use `Struct` instead for external interfaces, so you can mandate and document the format.
+
+  ./pr883.rsh:12:17:application
+
+  12|   const V = View('V', {
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0005
+
+warning[RW0005]: The `Object` type's format is controlled by Reach; you may want to use `Struct` instead for external interfaces, so you can mandate and document the format.
+
+  ./pr883.rsh:12:17:application
+
+  12|   const V = View('V', {
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0005
+
+warning[RW0005]: The `Object` type's format is controlled by Reach; you may want to use `Struct` instead for external interfaces, so you can mandate and document the format.
+
+  ./pr883.rsh:12:17:application
+
+  12|   const V = View('V', {
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0005
+
+warning[RW0005]: The `Object` type's format is controlled by Reach; you may want to use `Struct` instead for external interfaces, so you can mandate and document the format.
+
+  ./pr883.rsh:17:19:application
+
+  17|   const E = Events('E', {
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0005
+
