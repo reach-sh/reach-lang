@@ -5093,7 +5093,7 @@ doForkAPI2Case isSingleFun args = do
         let no_op = jsArrowStmts fa iargs []
         let assume = mkAssume chk_ss no_op
         con_e <- mkConsensus w chk_ss =<< prependFunArgs iargs con
-        mpay_e <- forM mpay $ mkPay chks . jsArrowExpr fa domain
+        mpay_e <- forM mpay $ mkPay chks . jsArrayLiteral fa . (: []) . jsArrowExpr fa domain
         return (assume, mpay_e, con_e)
   let goSingle who f = do
         (assumes, mpay, con) <- splitSingleApiBody who f
@@ -5114,6 +5114,7 @@ doForkAPI2Case isSingleFun args = do
 splitPayExpr' :: JSExpression -> (JSExpression, Maybe JSExpression)
 splitPayExpr' = \case
   JSArrayLiteral _ xs _ | x : y : _ <- jsa_flatten xs -> (x, Just y)
+  JSArrayLiteral _ xs _ | [x] <- jsa_flatten xs -> (x, Nothing)
   ow -> (ow, Nothing)
 
 splitPayExpr :: JSAnnot -> JSExpression -> (JSExpression, JSExpression)
