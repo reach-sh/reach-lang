@@ -19,106 +19,6 @@
     "title": "Guarantees",
     "path": "/cout/#ref-backends-js-guarantees"
   },
-  "doc-index": {
-    "title": "Index",
-    "path": "/index/#doc-index"
-  },
-  "ref-networks": {
-    "title": "Networks",
-    "path": "/networks/#ref-networks"
-  },
-  "ref-network-algo": {
-    "title": "Algorand",
-    "path": "/networks/#ref-network-algo"
-  },
-  "ref-network-cfx": {
-    "title": "Conflux",
-    "path": "/networks/#ref-network-cfx"
-  },
-  "cfx-faq": {
-    "title": "FAQ",
-    "path": "/networks/#cfx-faq"
-  },
-  "cfx-faq-mainnet": {
-    "title": "How do I run my Reach DApp on CFX TestNet or MainNet?",
-    "path": "/networks/#cfx-faq-mainnet"
-  },
-  "cfx-faq-cplocal": {
-    "title": "How can I use ConfluxPortal with the Reach devnet?",
-    "path": "/networks/#cfx-faq-cplocal"
-  },
-  "cfx-faq-sponsor": {
-    "title": "How can I use gas and storage sponsorship?",
-    "path": "/networks/#cfx-faq-sponsor"
-  },
-  "ref-network-eth": {
-    "title": "Ethereum",
-    "path": "/networks/#ref-network-eth"
-  },
-  "ref-model": {
-    "title": "Model",
-    "path": "/model/#ref-model"
-  },
-  "ref-model-eval": {
-    "title": "Evaluation Model",
-    "path": "/model/#ref-model-eval"
-  },
-  "ref-model-compile": {
-    "title": "Compilation Model",
-    "path": "/model/#ref-model-compile"
-  },
-  "ref-model-syntax": {
-    "title": "Syntax Model",
-    "path": "/model/#ref-model-syntax"
-  },
-  "search": {
-    "title": "Search",
-    "path": "/search/#search"
-  },
-  "quickstart": {
-    "title": "Quickstart",
-    "path": "/quickstart/#quickstart"
-  },
-  "qs-win": {
-    "title": "Windows",
-    "path": "/quickstart/#qs-win"
-  },
-  "qs-win-prereqs": {
-    "title": "Prerequisites",
-    "path": "/quickstart/#qs-win-prereqs"
-  },
-  "qs-win-install": {
-    "title": "Installation",
-    "path": "/quickstart/#qs-win-install"
-  },
-  "qs-installing-docker": {
-    "title": "Installing Docker:",
-    "path": "/quickstart/#qs-installing-docker"
-  },
-  "qs-win-conf-docker": {
-    "title": "Configuring docker:",
-    "path": "/quickstart/#qs-win-conf-docker"
-  },
-  "qs-linux": {
-    "title": "Linux",
-    "path": "/quickstart/#qs-linux"
-  },
-  "qs-linux-prereqs": {
-    "title": "Prerequisites",
-    "path": "/quickstart/#qs-linux-prereqs"
-  },
-  "qs-linux-install": {
-    "title": "Installation for Ubuntu",
-    "path": "/quickstart/#qs-linux-install"
-  },
-  "qs-mac": {
-    "title": "MacOS",
-    "path": "/quickstart/#qs-mac"
-  },
-  "qs-mac-install": {
-    "title": "Installation",
-    "path": "/quickstart/#qs-mac-install"
-  },
   "ref-frontends": {
     "title": "Frontends",
     "path": "/frontend/#ref-frontends"
@@ -171,6 +71,102 @@
     "title": "Writing tests: test",
     "path": "/frontend/#ref-frontends-js-test"
   },
+  "doc-index": {
+    "title": "Index",
+    "path": "/index/#doc-index"
+  },
+  "ref-networks": {
+    "title": "Networks",
+    "path": "/networks/#ref-networks"
+  },
+  "ref-network-algo": {
+    "title": "Algorand",
+    "path": "/networks/#ref-network-algo"
+  },
+  "ref-network-cfx": {
+    "title": "Conflux",
+    "path": "/networks/#ref-network-cfx"
+  },
+  "cfx-faq": {
+    "title": "FAQ",
+    "path": "/networks/#cfx-faq"
+  },
+  "cfx-faq-mainnet": {
+    "title": "How do I run my Reach DApp on CFX TestNet or MainNet?",
+    "path": "/networks/#cfx-faq-mainnet"
+  },
+  "cfx-faq-cplocal": {
+    "title": "How can I use ConfluxPortal with the Reach devnet?",
+    "path": "/networks/#cfx-faq-cplocal"
+  },
+  "cfx-faq-sponsor": {
+    "title": "How can I use gas and storage sponsorship?",
+    "path": "/networks/#cfx-faq-sponsor"
+  },
+  "ref-network-eth": {
+    "title": "Ethereum",
+    "path": "/networks/#ref-network-eth"
+  },
+  "ref-model": {
+    "title": "Model",
+    "path": "/model/#ref-model"
+  },
+  "ref-model-eval": {
+    "title": "Evaluation Model",
+    "path": "/model/#ref-model-eval"
+  },
+  "ref-model-compile": {
+    "title": "Compilation Model",
+    "path": "/model/#ref-model-compile"
+  },
+  "ref-model-syntax": {
+    "title": "Syntax Model",
+    "path": "/model/#ref-model-syntax"
+  },
+  "quickstart": {
+    "title": "Quickstart",
+    "path": "/quickstart/#quickstart"
+  },
+  "qs-win": {
+    "title": "Windows",
+    "path": "/quickstart/#qs-win"
+  },
+  "qs-win-prereqs": {
+    "title": "Prerequisites",
+    "path": "/quickstart/#qs-win-prereqs"
+  },
+  "qs-win-install": {
+    "title": "Installation",
+    "path": "/quickstart/#qs-win-install"
+  },
+  "qs-installing-docker": {
+    "title": "Installing Docker:",
+    "path": "/quickstart/#qs-installing-docker"
+  },
+  "qs-win-conf-docker": {
+    "title": "Configuring docker:",
+    "path": "/quickstart/#qs-win-conf-docker"
+  },
+  "qs-linux": {
+    "title": "Linux",
+    "path": "/quickstart/#qs-linux"
+  },
+  "qs-linux-prereqs": {
+    "title": "Prerequisites",
+    "path": "/quickstart/#qs-linux-prereqs"
+  },
+  "qs-linux-install": {
+    "title": "Installation for Ubuntu",
+    "path": "/quickstart/#qs-linux-install"
+  },
+  "qs-mac": {
+    "title": "MacOS",
+    "path": "/quickstart/#qs-mac"
+  },
+  "qs-mac-install": {
+    "title": "Installation",
+    "path": "/quickstart/#qs-mac-install"
+  },
   "ref-programs": {
     "title": "Language",
     "path": "/rsh/#ref-programs"
@@ -178,6 +174,10 @@
   "ref-programs-valid": {
     "title": "Validity and other concepts",
     "path": "/rsh/#ref-programs-valid"
+  },
+  "search": {
+    "title": "Search",
+    "path": "/search/#search"
   },
   "trouble": {
     "title": "Troubleshooting",
@@ -295,10 +295,6 @@
     "title": "<span class=\"ref\" id=\"cmd_reach%20config\" data-scope=\"cmd\" data-symbol=\"reach config\"> </span>   reach config",
     "path": "/tool/#ref-usage-config"
   },
-  "tuts": {
-    "title": "Tutorials",
-    "path": "/tut/#tuts"
-  },
   "ref-backends-rpc": {
     "title": "RPC Server",
     "path": "/rpc/#ref-backends-rpc"
@@ -310,6 +306,10 @@
   "guide": {
     "title": "Guide",
     "path": "/guide/#guide"
+  },
+  "tuts": {
+    "title": "Tutorials",
+    "path": "/tut/#tuts"
   },
   "workshop": {
     "title": "Workshop",
@@ -406,6 +406,98 @@
   "workshop-crowdfund": {
     "title": "Crowd-funding",
     "path": "/workshop/#workshop-crowdfund"
+  },
+  "ref-programs-consensus": {
+    "title": "Consensus Steps",
+    "path": "/rsh/consensus/#ref-programs-consensus"
+  },
+  "ref-programs-consensus-stmts": {
+    "title": "Statements",
+    "path": "/rsh/consensus/#ref-programs-consensus-stmts"
+  },
+  "ref-programs-only-consensus": {
+    "title": "only  and  each",
+    "path": "/rsh/consensus/#ref-programs-only-consensus"
+  },
+  "ref-programs-consensus-view": {
+    "title": "View Objects",
+    "path": "/rsh/consensus/#ref-programs-consensus-view"
+  },
+  "ref-programs-consensus-events": {
+    "title": "Event Objects",
+    "path": "/rsh/consensus/#ref-programs-consensus-events"
+  },
+  "ref-programs-consensus-exprs": {
+    "title": "Expressions",
+    "path": "/rsh/consensus/#ref-programs-consensus-exprs"
+  },
+  "ref-programs-consensus-this": {
+    "title": "this",
+    "path": "/rsh/consensus/#ref-programs-consensus-this"
+  },
+  "ref-programs-consensus-token-minting": {
+    "title": "Token minting",
+    "path": "/rsh/consensus/#ref-programs-consensus-token-minting"
+  },
+  "ref-programs-local": {
+    "title": "Local Steps",
+    "path": "/rsh/local/#ref-programs-local"
+  },
+  "ref-programs-local-stmts": {
+    "title": "Statements",
+    "path": "/rsh/local/#ref-programs-local-stmts"
+  },
+  "ref-programs-local-exprs": {
+    "title": "Expressions",
+    "path": "/rsh/local/#ref-programs-local-exprs"
+  },
+  "ref-programs-local-this": {
+    "title": "this",
+    "path": "/rsh/local/#ref-programs-local-this"
+  },
+  "ref-programs-appinit": {
+    "title": "Application Initialization",
+    "path": "/rsh/appinit/#ref-programs-appinit"
+  },
+  "ref-programs-appinit-stmts": {
+    "title": "Statements",
+    "path": "/rsh/appinit/#ref-programs-appinit-stmts"
+  },
+  "ref-programs-appinit-exprs": {
+    "title": "Expressions",
+    "path": "/rsh/appinit/#ref-programs-appinit-exprs"
+  },
+  "ref-programs-appinit-api": {
+    "title": "API Definition",
+    "path": "/rsh/appinit/#ref-programs-appinit-api"
+  },
+  "ref-programs-appinit-view": {
+    "title": "View Definition",
+    "path": "/rsh/appinit/#ref-programs-appinit-view"
+  },
+  "ref-programs-appinit-events": {
+    "title": "Events Definition",
+    "path": "/rsh/appinit/#ref-programs-appinit-events"
+  },
+  "ref-programs-step": {
+    "title": "Steps",
+    "path": "/rsh/step/#ref-programs-step"
+  },
+  "ref-programs-step-stmts": {
+    "title": "Statements",
+    "path": "/rsh/step/#ref-programs-step-stmts"
+  },
+  "ref-programs-only-step": {
+    "title": "only  and  each",
+    "path": "/rsh/step/#ref-programs-only-step"
+  },
+  "payAmt": {
+    "title": "Pay Amounts",
+    "path": "/rsh/step/#payAmt"
+  },
+  "ref-programs-step-exprs": {
+    "title": "Expressions",
+    "path": "/rsh/step/#ref-programs-step-exprs"
   },
   "ref-error-codes": {
     "title": "Error Codes",
@@ -1103,130 +1195,6 @@
     "title": "RW0006",
     "path": "/rsh/errors/#RW0006"
   },
-  "ref-programs-appinit": {
-    "title": "Application Initialization",
-    "path": "/rsh/appinit/#ref-programs-appinit"
-  },
-  "ref-programs-appinit-stmts": {
-    "title": "Statements",
-    "path": "/rsh/appinit/#ref-programs-appinit-stmts"
-  },
-  "ref-programs-appinit-exprs": {
-    "title": "Expressions",
-    "path": "/rsh/appinit/#ref-programs-appinit-exprs"
-  },
-  "ref-programs-appinit-api": {
-    "title": "API Definition",
-    "path": "/rsh/appinit/#ref-programs-appinit-api"
-  },
-  "ref-programs-appinit-view": {
-    "title": "View Definition",
-    "path": "/rsh/appinit/#ref-programs-appinit-view"
-  },
-  "ref-programs-appinit-events": {
-    "title": "Events Definition",
-    "path": "/rsh/appinit/#ref-programs-appinit-events"
-  },
-  "ref-programs-module": {
-    "title": "Modules",
-    "path": "/rsh/module/#ref-programs-module"
-  },
-  "ref-programs-module-stmts": {
-    "title": "Statements",
-    "path": "/rsh/module/#ref-programs-module-stmts"
-  },
-  "ref-programs-export": {
-    "title": "export",
-    "path": "/rsh/module/#ref-programs-export"
-  },
-  "ref-programs-import": {
-    "title": "import",
-    "path": "/rsh/module/#ref-programs-import"
-  },
-  "ref-programs-import-local": {
-    "title": "Local imports",
-    "path": "/rsh/module/#ref-programs-import-local"
-  },
-  "ref-programs-import-package": {
-    "title": "Package imports",
-    "path": "/rsh/module/#ref-programs-import-package"
-  },
-  "ref-programs-module-exprs": {
-    "title": "Expressions",
-    "path": "/rsh/module/#ref-programs-module-exprs"
-  },
-  "ref-programs-reach.app": {
-    "title": "Reach.App",
-    "path": "/rsh/module/#ref-programs-reach.app"
-  },
-  "ref-programs-consensus": {
-    "title": "Consensus Steps",
-    "path": "/rsh/consensus/#ref-programs-consensus"
-  },
-  "ref-programs-consensus-stmts": {
-    "title": "Statements",
-    "path": "/rsh/consensus/#ref-programs-consensus-stmts"
-  },
-  "ref-programs-only-consensus": {
-    "title": "only  and  each",
-    "path": "/rsh/consensus/#ref-programs-only-consensus"
-  },
-  "ref-programs-consensus-view": {
-    "title": "View Objects",
-    "path": "/rsh/consensus/#ref-programs-consensus-view"
-  },
-  "ref-programs-consensus-events": {
-    "title": "Event Objects",
-    "path": "/rsh/consensus/#ref-programs-consensus-events"
-  },
-  "ref-programs-consensus-exprs": {
-    "title": "Expressions",
-    "path": "/rsh/consensus/#ref-programs-consensus-exprs"
-  },
-  "ref-programs-consensus-this": {
-    "title": "this",
-    "path": "/rsh/consensus/#ref-programs-consensus-this"
-  },
-  "ref-programs-consensus-token-minting": {
-    "title": "Token minting",
-    "path": "/rsh/consensus/#ref-programs-consensus-token-minting"
-  },
-  "ref-programs-step": {
-    "title": "Steps",
-    "path": "/rsh/step/#ref-programs-step"
-  },
-  "ref-programs-step-stmts": {
-    "title": "Statements",
-    "path": "/rsh/step/#ref-programs-step-stmts"
-  },
-  "ref-programs-only-step": {
-    "title": "only  and  each",
-    "path": "/rsh/step/#ref-programs-only-step"
-  },
-  "payAmt": {
-    "title": "Pay Amounts",
-    "path": "/rsh/step/#payAmt"
-  },
-  "ref-programs-step-exprs": {
-    "title": "Expressions",
-    "path": "/rsh/step/#ref-programs-step-exprs"
-  },
-  "ref-programs-local": {
-    "title": "Local Steps",
-    "path": "/rsh/local/#ref-programs-local"
-  },
-  "ref-programs-local-stmts": {
-    "title": "Statements",
-    "path": "/rsh/local/#ref-programs-local-stmts"
-  },
-  "ref-programs-local-exprs": {
-    "title": "Expressions",
-    "path": "/rsh/local/#ref-programs-local-exprs"
-  },
-  "ref-programs-local-this": {
-    "title": "this",
-    "path": "/rsh/local/#ref-programs-local-this"
-  },
   "ref-programs-compute": {
     "title": "Computations",
     "path": "/rsh/compute/#ref-programs-compute"
@@ -1267,9 +1235,153 @@
     "title": "Data",
     "path": "/rsh/compute/#ref-programs-data"
   },
+  "ref-programs-module": {
+    "title": "Modules",
+    "path": "/rsh/module/#ref-programs-module"
+  },
+  "ref-programs-module-stmts": {
+    "title": "Statements",
+    "path": "/rsh/module/#ref-programs-module-stmts"
+  },
+  "ref-programs-export": {
+    "title": "export",
+    "path": "/rsh/module/#ref-programs-export"
+  },
+  "ref-programs-import": {
+    "title": "import",
+    "path": "/rsh/module/#ref-programs-import"
+  },
+  "ref-programs-import-local": {
+    "title": "Local imports",
+    "path": "/rsh/module/#ref-programs-import-local"
+  },
+  "ref-programs-import-package": {
+    "title": "Package imports",
+    "path": "/rsh/module/#ref-programs-import-package"
+  },
+  "ref-programs-module-exprs": {
+    "title": "Expressions",
+    "path": "/rsh/module/#ref-programs-module-exprs"
+  },
+  "ref-programs-reach.app": {
+    "title": "Reach.App",
+    "path": "/rsh/module/#ref-programs-reach.app"
+  },
   "ref-backends-rpc-client": {
     "title": "Client Walkthrough",
     "path": "/rpc/client/#ref-backends-rpc-client"
+  },
+  "ref-frontends-rpc-cs": {
+    "title": "C#",
+    "path": "/rpc/cs/#ref-frontends-rpc-cs"
+  },
+  "ref-frontends-rpc-go": {
+    "title": "Go",
+    "path": "/rpc/go/#ref-frontends-rpc-go"
+  },
+  "ref-frontends-rpc-js": {
+    "title": "JavaScript",
+    "path": "/rpc/js/#ref-frontends-rpc-js"
+  },
+  "guide-assert": {
+    "title": "How and what to verify",
+    "path": "/guide/assert/#guide-assert"
+  },
+  "ref-backends-rpc-proto": {
+    "title": "Specification",
+    "path": "/rpc/proto/#ref-backends-rpc-proto"
+  },
+  "guide-abstract": {
+    "title": "Building decentralized abstractions",
+    "path": "/guide/abstract/#guide-abstract"
+  },
+  "ref-frontends-rpc-py": {
+    "title": "Python",
+    "path": "/rpc/py/#ref-frontends-rpc-py"
+  },
+  "guide-ctransfers": {
+    "title": "What do the different kinds of consensus transfers mean? publish ,  pay ,  race ,  fork ,  parallelReduce ?",
+    "path": "/guide/ctransfers/#guide-ctransfers"
+  },
+  "guide-ganache": {
+    "title": "How to use Ganache with Reach",
+    "path": "/guide/ganache/#guide-ganache"
+  },
+  "guide-determ": {
+    "title": "Determinism, simultaneity, and choice in decentralized applications",
+    "path": "/guide/determ/#guide-determ"
+  },
+  "guide-editor-support": {
+    "title": "IDE/Text Editor Support",
+    "path": "/guide/editor-support/#guide-editor-support"
+  },
+  "guide-install-VSCode": {
+    "title": "Install VSCode",
+    "path": "/guide/editor-support/#guide-install-VSCode"
+  },
+  "guide-install-Atom": {
+    "title": "Install Atom",
+    "path": "/guide/editor-support/#guide-install-Atom"
+  },
+  "guide-install-Sublime": {
+    "title": "Install Sublime",
+    "path": "/guide/editor-support/#guide-install-Sublime"
+  },
+  "guide-limits": {
+    "title": "What are Reach's limitations?",
+    "path": "/guide/limits/#guide-limits"
+  },
+  "guide-loop-invs": {
+    "title": "Finding and using loop invariants",
+    "path": "/guide/loop-invs/#guide-loop-invs"
+  },
+  "guide-nntoks": {
+    "title": "How do network and non-network tokens differ?",
+    "path": "/guide/nntoks/#guide-nntoks"
+  },
+  "guide-logging": {
+    "title": "How do I add tracing logs to my Reach program?",
+    "path": "/guide/logging/#guide-logging"
+  },
+  "guide-packages": {
+    "title": "Sharing and discovering shared Reach packages",
+    "path": "/guide/packages/#guide-packages"
+  },
+  "guide-reach": {
+    "title": "How does Reach work?",
+    "path": "/guide/reach/#guide-reach"
+  },
+  "guide-race": {
+    "title": "Racing non-determinism in decentralized applications",
+    "path": "/guide/race/#guide-race"
+  },
+  "guide-roadmap": {
+    "title": "Reach's Roadmap",
+    "path": "/guide/roadmap/#guide-roadmap"
+  },
+  "guide-rpc": {
+    "title": "Do I have to use JavaScript to write my frontend? What about Python, Go, or other languages?",
+    "path": "/guide/rpc/#guide-rpc"
+  },
+  "guide-solidity": {
+    "title": "How does Reach development compare to Solidity development?",
+    "path": "/guide/solidity/#guide-solidity"
+  },
+  "guide-staking": {
+    "title": "Example: Staking and Unstaking Tokens",
+    "path": "/guide/staking/#guide-staking"
+  },
+  "guide-windows": {
+    "title": "Using Reach on Windows",
+    "path": "/guide/windows/#guide-windows"
+  },
+  "guide-timeout": {
+    "title": "Non-participation: What it is and how to protect against it",
+    "path": "/guide/timeout/#guide-timeout"
+  },
+  "guide-versions": {
+    "title": "How does Reach use version numbers?",
+    "path": "/guide/versions/#guide-versions"
   },
   "overview": {
     "title": "Overview",
@@ -1307,9 +1419,69 @@
     "title": "Next steps",
     "path": "/tut/overview/#over-next"
   },
-  "ref-frontends-rpc-js": {
-    "title": "JavaScript",
-    "path": "/rpc/js/#ref-frontends-rpc-js"
+  "workshop-fomo-generalized": {
+    "title": "Fear of Missing Out+",
+    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized"
+  },
+  "workshop-fomo-generalized-pr": {
+    "title": "Problem Analysis",
+    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized-pr"
+  },
+  "workshop-fomo-generalized-dd": {
+    "title": "Data Definition",
+    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized-dd"
+  },
+  "workshop-fomo-generalized-cc": {
+    "title": "Communication Construction",
+    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized-cc"
+  },
+  "workshop-fomo-generalized-ai": {
+    "title": "Assertion Insertion",
+    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized-ai"
+  },
+  "workshop-fomo-generalized-ii": {
+    "title": "Interaction Introduction",
+    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized-ii"
+  },
+  "workshop-fomo-generalized-de": {
+    "title": "Deployment Decisions",
+    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized-de"
+  },
+  "workshop-fomo-generalized-dns": {
+    "title": "Discussion and Next Steps",
+    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized-dns"
+  },
+  "workshop-fomo": {
+    "title": "Fear of Missing Out",
+    "path": "/workshop/fomo/#workshop-fomo"
+  },
+  "workshop-fomo-pr": {
+    "title": "Problem Analysis",
+    "path": "/workshop/fomo/#workshop-fomo-pr"
+  },
+  "workshop-fomo-dd": {
+    "title": "Data Definition",
+    "path": "/workshop/fomo/#workshop-fomo-dd"
+  },
+  "workshop-fomo-cc": {
+    "title": "Communication Construction",
+    "path": "/workshop/fomo/#workshop-fomo-cc"
+  },
+  "workshop-fomo-ai": {
+    "title": "Assertion Insertion",
+    "path": "/workshop/fomo/#workshop-fomo-ai"
+  },
+  "workshop-fomo-ii": {
+    "title": "Interaction Introduction",
+    "path": "/workshop/fomo/#workshop-fomo-ii"
+  },
+  "workshop-fomo-de": {
+    "title": "Deployment Decisions",
+    "path": "/workshop/fomo/#workshop-fomo-de"
+  },
+  "workshop-fomo-dns": {
+    "title": "Discussion and Next Steps",
+    "path": "/workshop/fomo/#workshop-fomo-dns"
   },
   "tut": {
     "title": "Rock, Paper, Scissors!",
@@ -1435,178 +1607,6 @@
     "title": "Onward and Further",
     "path": "/tut/rps/#tut-10"
   },
-  "ref-frontends-rpc-go": {
-    "title": "Go",
-    "path": "/rpc/go/#ref-frontends-rpc-go"
-  },
-  "ref-frontends-rpc-cs": {
-    "title": "C#",
-    "path": "/rpc/cs/#ref-frontends-rpc-cs"
-  },
-  "ref-frontends-rpc-py": {
-    "title": "Python",
-    "path": "/rpc/py/#ref-frontends-rpc-py"
-  },
-  "ref-backends-rpc-proto": {
-    "title": "Specification",
-    "path": "/rpc/proto/#ref-backends-rpc-proto"
-  },
-  "guide-assert": {
-    "title": "How and what to verify",
-    "path": "/guide/assert/#guide-assert"
-  },
-  "guide-abstract": {
-    "title": "Building decentralized abstractions",
-    "path": "/guide/abstract/#guide-abstract"
-  },
-  "guide-determ": {
-    "title": "Determinism, simultaneity, and choice in decentralized applications",
-    "path": "/guide/determ/#guide-determ"
-  },
-  "guide-ganache": {
-    "title": "How to use Ganache with Reach",
-    "path": "/guide/ganache/#guide-ganache"
-  },
-  "guide-ctransfers": {
-    "title": "What do the different kinds of consensus transfers mean? publish ,  pay ,  race ,  fork ,  parallelReduce ?",
-    "path": "/guide/ctransfers/#guide-ctransfers"
-  },
-  "guide-race": {
-    "title": "Racing non-determinism in decentralized applications",
-    "path": "/guide/race/#guide-race"
-  },
-  "guide-logging": {
-    "title": "How do I add tracing logs to my Reach program?",
-    "path": "/guide/logging/#guide-logging"
-  },
-  "guide-editor-support": {
-    "title": "IDE/Text Editor Support",
-    "path": "/guide/editor-support/#guide-editor-support"
-  },
-  "guide-install-VSCode": {
-    "title": "Install VSCode",
-    "path": "/guide/editor-support/#guide-install-VSCode"
-  },
-  "guide-install-Atom": {
-    "title": "Install Atom",
-    "path": "/guide/editor-support/#guide-install-Atom"
-  },
-  "guide-install-Sublime": {
-    "title": "Install Sublime",
-    "path": "/guide/editor-support/#guide-install-Sublime"
-  },
-  "guide-loop-invs": {
-    "title": "Finding and using loop invariants",
-    "path": "/guide/loop-invs/#guide-loop-invs"
-  },
-  "guide-limits": {
-    "title": "What are Reach's limitations?",
-    "path": "/guide/limits/#guide-limits"
-  },
-  "guide-nntoks": {
-    "title": "How do network and non-network tokens differ?",
-    "path": "/guide/nntoks/#guide-nntoks"
-  },
-  "guide-reach": {
-    "title": "How does Reach work?",
-    "path": "/guide/reach/#guide-reach"
-  },
-  "guide-windows": {
-    "title": "Using Reach on Windows",
-    "path": "/guide/windows/#guide-windows"
-  },
-  "guide-packages": {
-    "title": "Sharing and discovering shared Reach packages",
-    "path": "/guide/packages/#guide-packages"
-  },
-  "guide-rpc": {
-    "title": "Do I have to use JavaScript to write my frontend? What about Python, Go, or other languages?",
-    "path": "/guide/rpc/#guide-rpc"
-  },
-  "guide-roadmap": {
-    "title": "Reach's Roadmap",
-    "path": "/guide/roadmap/#guide-roadmap"
-  },
-  "guide-timeout": {
-    "title": "Non-participation: What it is and how to protect against it",
-    "path": "/guide/timeout/#guide-timeout"
-  },
-  "guide-solidity": {
-    "title": "How does Reach development compare to Solidity development?",
-    "path": "/guide/solidity/#guide-solidity"
-  },
-  "workshop-fomo": {
-    "title": "Fear of Missing Out",
-    "path": "/workshop/fomo/#workshop-fomo"
-  },
-  "workshop-fomo-pr": {
-    "title": "Problem Analysis",
-    "path": "/workshop/fomo/#workshop-fomo-pr"
-  },
-  "workshop-fomo-dd": {
-    "title": "Data Definition",
-    "path": "/workshop/fomo/#workshop-fomo-dd"
-  },
-  "workshop-fomo-cc": {
-    "title": "Communication Construction",
-    "path": "/workshop/fomo/#workshop-fomo-cc"
-  },
-  "workshop-fomo-ai": {
-    "title": "Assertion Insertion",
-    "path": "/workshop/fomo/#workshop-fomo-ai"
-  },
-  "workshop-fomo-ii": {
-    "title": "Interaction Introduction",
-    "path": "/workshop/fomo/#workshop-fomo-ii"
-  },
-  "workshop-fomo-de": {
-    "title": "Deployment Decisions",
-    "path": "/workshop/fomo/#workshop-fomo-de"
-  },
-  "workshop-fomo-dns": {
-    "title": "Discussion and Next Steps",
-    "path": "/workshop/fomo/#workshop-fomo-dns"
-  },
-  "guide-staking": {
-    "title": "Example: Staking and Unstaking Tokens",
-    "path": "/guide/staking/#guide-staking"
-  },
-  "guide-versions": {
-    "title": "How does Reach use version numbers?",
-    "path": "/guide/versions/#guide-versions"
-  },
-  "workshop-hash-lock": {
-    "title": "Hash Lock",
-    "path": "/workshop/hash-lock/#workshop-hash-lock"
-  },
-  "workshop-hash-lock-pr": {
-    "title": "Problem Analysis",
-    "path": "/workshop/hash-lock/#workshop-hash-lock-pr"
-  },
-  "workshop-hash-lock-dd": {
-    "title": "Data Definition",
-    "path": "/workshop/hash-lock/#workshop-hash-lock-dd"
-  },
-  "workshop-hash-lock-cc": {
-    "title": "Communication Construction",
-    "path": "/workshop/hash-lock/#workshop-hash-lock-cc"
-  },
-  "workshop-hash-lock-ai": {
-    "title": "Assertion Insertion",
-    "path": "/workshop/hash-lock/#workshop-hash-lock-ai"
-  },
-  "workshop-hash-lock-ii": {
-    "title": "Interaction Introduction",
-    "path": "/workshop/hash-lock/#workshop-hash-lock-ii"
-  },
-  "workshop-hash-lock-de": {
-    "title": "Deployment Decisions",
-    "path": "/workshop/hash-lock/#workshop-hash-lock-de"
-  },
-  "workshop-hash-lock-dns": {
-    "title": "Discussion",
-    "path": "/workshop/hash-lock/#workshop-hash-lock-dns"
-  },
   "workshop-trust-fund": {
     "title": "Trust Fund",
     "path": "/workshop/trust-fund/#workshop-trust-fund"
@@ -1639,38 +1639,6 @@
     "title": "Discussion and Next Steps",
     "path": "/workshop/trust-fund/#workshop-trust-fund-dns"
   },
-  "workshop-fomo-generalized": {
-    "title": "Fear of Missing Out+",
-    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized"
-  },
-  "workshop-fomo-generalized-pr": {
-    "title": "Problem Analysis",
-    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized-pr"
-  },
-  "workshop-fomo-generalized-dd": {
-    "title": "Data Definition",
-    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized-dd"
-  },
-  "workshop-fomo-generalized-cc": {
-    "title": "Communication Construction",
-    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized-cc"
-  },
-  "workshop-fomo-generalized-ai": {
-    "title": "Assertion Insertion",
-    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized-ai"
-  },
-  "workshop-fomo-generalized-ii": {
-    "title": "Interaction Introduction",
-    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized-ii"
-  },
-  "workshop-fomo-generalized-de": {
-    "title": "Deployment Decisions",
-    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized-de"
-  },
-  "workshop-fomo-generalized-dns": {
-    "title": "Discussion and Next Steps",
-    "path": "/workshop/fomo-generalized/#workshop-fomo-generalized-dns"
-  },
   "workshop-relay": {
     "title": "Relay Account",
     "path": "/workshop/relay/#workshop-relay"
@@ -1702,6 +1670,38 @@
   "workshop-relay-dns": {
     "title": "Discussion and Next Steps",
     "path": "/workshop/relay/#workshop-relay-dns"
+  },
+  "workshop-hash-lock": {
+    "title": "Hash Lock",
+    "path": "/workshop/hash-lock/#workshop-hash-lock"
+  },
+  "workshop-hash-lock-pr": {
+    "title": "Problem Analysis",
+    "path": "/workshop/hash-lock/#workshop-hash-lock-pr"
+  },
+  "workshop-hash-lock-dd": {
+    "title": "Data Definition",
+    "path": "/workshop/hash-lock/#workshop-hash-lock-dd"
+  },
+  "workshop-hash-lock-cc": {
+    "title": "Communication Construction",
+    "path": "/workshop/hash-lock/#workshop-hash-lock-cc"
+  },
+  "workshop-hash-lock-ai": {
+    "title": "Assertion Insertion",
+    "path": "/workshop/hash-lock/#workshop-hash-lock-ai"
+  },
+  "workshop-hash-lock-ii": {
+    "title": "Interaction Introduction",
+    "path": "/workshop/hash-lock/#workshop-hash-lock-ii"
+  },
+  "workshop-hash-lock-de": {
+    "title": "Deployment Decisions",
+    "path": "/workshop/hash-lock/#workshop-hash-lock-de"
+  },
+  "workshop-hash-lock-dns": {
+    "title": "Discussion",
+    "path": "/workshop/hash-lock/#workshop-hash-lock-dns"
   },
   "tut-7-rpc": {
     "title": "Rock, Paper, Scissors in Python",
