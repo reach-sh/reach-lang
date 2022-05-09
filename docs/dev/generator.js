@@ -1003,8 +1003,16 @@ await Promise.all([
   generateSearch(),
 ]);
 
+const SORTED_XREFS = {};
+const XREF_KEYS_ARRAY = Object.keys(xrefs.h.xrefs);
+
+XREF_KEYS_ARRAY.sort();
+XREF_KEYS_ARRAY.forEach(key => {
+  SORTED_XREFS[key] = xrefs.h.xrefs[key];
+});
+
 writeFileSync('/proj/docs/dev/xrefs.json', JSON.stringify(
-  xrefs.h.xrefs, null, 2
+  SORTED_XREFS, null, 2
 ) + '\n');
 
 if ( hasError ) {
