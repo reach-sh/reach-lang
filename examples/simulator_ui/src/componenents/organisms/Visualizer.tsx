@@ -90,7 +90,7 @@ export default function VisualizerPanel({
   graphinRef: any
 }): ReactElement {
 
-  const [perspective, changePerspective] = useState<string>("");
+  const [perspective, changePerspective] = useState<string>("-1");
   const isAParticipant = (participant: Participant) => {
     return participant === participant;
   };
@@ -101,7 +101,7 @@ export default function VisualizerPanel({
       if (graphinRef) {
         const showAction = (evt: IG6GraphEvent) => {
           const edge = evt.item as any;
-          const edgeModel = edge.getModel()
+          const edgeModel = edge.getModel() 
           const tag = nodes.find((node: IUserNode) => node.id == edgeModel.target)
           let label = tag?.label
           console.log(label)          
