@@ -45,15 +45,13 @@ export const main = Reach.App(() => {
         ( ) => ({ when: declassify(interact.stop()) }),
         (_) => { return [ false, currentTok, currentWinner, amt ]; }
       )
-      .api(B.changeTok,
-        (newTok) => { check(tokens.includes(newTok), "Tokens include newTok"); },
-        (_) => [ 0, [ amt, currentTok ] ],
-        (newTok, k) => {
-          check(tokens.includes(newTok), "Tokens include newTok");
+      .api_(B.changeTok, (newTok) => {
+        check(tokens.includes(newTok), "Tokens include newTok");
+        return [ [ 0, [ amt, currentTok ] ], (k) => {
           k(null);
           return [ true, newTok, this, amt ];
-        }
-      )
+        }];
+      })
       .timeout(false);
 
   transfer(balance(tok1), tok1).to(currentWinner);
