@@ -19,11 +19,11 @@ let total = stdlib.bigNumberify(0);
 let moment = curTime;
 while (moment.lt(end)) {
   await stdlib.waitUntilTime(moment);
+  moment = moment.add(10);
   try {
     const [ released, resTime ] = await creatorCtc.a.release();
     total = total.add(released);
     console.log('WAITED', { start, end, amount, total, moment, released, resTime });
-    moment = moment.add(10);
   } catch (e) {
     console.log("CAUGHT", e);
   }
