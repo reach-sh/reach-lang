@@ -271,6 +271,7 @@ The `post` argument is a Promise of an unstable object with details about the co
 
 # {#ref-frontends-js-acc} Creating an Account Handle
 
+@{ref("js","acc")}
 The second thing you should do in a frontend is create an account handle.
 
 ---
@@ -290,10 +291,10 @@ This promise will be rejected with an exception if no sensible default account c
 
 ---
 
-But, when you are testing, you will use
-
 @{ref("js", "newTestAccount")}
 @{ref("js", "stdlib.newTestAccount")}
+But, when you are testing, you will use
+
 ```js
 stdlib.newTestAccount(bal:UInt) => Promise<acc>
 ```
@@ -301,8 +302,7 @@ stdlib.newTestAccount(bal:UInt) => Promise<acc>
 Returns a Promise for a Reach account abstraction for a new account on the consensus network with a given balance of network tokens.
 This can only be used in private testing scenarios, as it uses a private faucet to issue network tokens.
 
-@{ref("js", "newTestAccounts")}
-@{ref("js", "stdlib.newTestAccounts")}
+@{ref("js", "newTestAccounts")}@{ref("js", "stdlib.newTestAccounts")}
 ```js
 stdlib.newTestAccounts(howMany:number, balance:UInt) => Promise<Array<acc>>
 ```
@@ -517,11 +517,12 @@ The `{!js} setStorageLimit` function allows you to choose a different storage li
 
 # {#ref-frontends-js-ctc} Creating a Contract Handle
 
+@{ref("js","ctc")}
+@{ref("js", "contract")}
 The third thing you should do in a frontend is create a contract handle, so you can actually interact with your Reach program.
 
 ---
 
-@{ref("js", "contract")}
 ```js
 acc.contract(bin, ?info) => ctc
 ```
