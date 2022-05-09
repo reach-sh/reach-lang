@@ -2411,7 +2411,7 @@ Alternatively, if you want the api `B.setX` to pay into the contract, you can sp
 
 ## {#RE0135} RE0135
 
-This error indicates that you attempted to createa `{!rsh} Data` instance with no variants.
+This error indicates that you attempted to create a `{!rsh} Data` instance with no variants.
 This is not allowed.
 
 ## {#REP0000} REP0000
