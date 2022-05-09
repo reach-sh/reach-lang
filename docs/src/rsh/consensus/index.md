@@ -610,6 +610,18 @@ delete bidsM[this];
 A new mapping of linear state may be constructed in a consensus step by writing `{!rsh} new Map(VAL_TYPE_EXPR)` or `{!rsh} new Map(KEY_TYPE_EXPR, VAL_TYPE_EXPR)`, where `{!rsh} KEY_TYPE_EXPR` and `{!rsh} VAL_TYPE_EXPR` are types.
 If `{!rsh} KEY_TYPE_EXPR` is not specified, it will default to `{!rsh} Address`.
 
+For example the code below contains only the `{!rsh} VAL_TYPE_EXPR`:
+```reach
+load: examples/splice1/index.rsh
+range: 7 - 7
+```
+
+While the following code contains both the `{!rsh} KEY_TYPE_EXPR` and `{!rsh} VAL_TYPE_EXPR`:
+```reach
+load: examples/map-arbitrary-key/index.rsh
+range: 24 - 24
+```
+
 This returns a value which may be used to dereference particular mappings via `{!rsh} map[EXPR]`.
 Such dereferences return a value of type `{!rsh} Maybe(VAL_TYPE_EXPR)`, because the mapping may not contain a value for `{!rsh} EXPR`.
 
