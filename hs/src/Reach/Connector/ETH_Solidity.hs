@@ -454,11 +454,11 @@ mustBeMem = \case
   T_Address -> False
   T_Contract -> False
   T_Token -> False
-  T_Array {} -> True
-  T_Tuple {} -> True
-  T_Object {} -> True
+  T_Array _ sz -> sz /= 0
+  T_Tuple l -> not $ null l
+  T_Object m -> not $ M.null m
   T_Data {} -> True
-  T_Struct {} -> True
+  T_Struct l -> not $ null l
 
 mayMemSol :: Doc -> Doc
 mayMemSol x =
