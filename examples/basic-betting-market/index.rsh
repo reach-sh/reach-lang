@@ -113,16 +113,16 @@ export const main = Reach.App(() => {
   const [numWinners, winnerPool, loserPool] = /*result ?*/ [trueBetters, truePool, falsePool]
                                                      /*: [falseBetters, falsePool, truePool]*/;
   const finalBookieCut = muldiv(bookieCut, loserPool, 1000);
-  const initWinningsPool = loserPool - finalBookieCut;
+  const initPrizePool = loserPool - finalBookieCut;
 
   assert(truePool + falsePool == balance());
   assert(winnerPool + loserPool == balance());
 
-  const [keepGoing_, unpaidWinners, winningsPool] =
-    parallelReduce([true, numWinners, initWinningsPool])
+  const [keepGoing_, unpaidWinners, prizePool] =
+    parallelReduce([true, numWinners, initPrizePool])
     .while(keepGoing_ && unpaidWinners > 0)
     .invariant(numBettingOn(result) == unpaidWinners &&
-               balance() == finalBookieCut + amountBetOn(result) + winningsPool
+               balance() == finalBookieCut + amountBetOn(result) + prizePool
               )
     .api(B.collect,
       () => checkWinner(this),
@@ -133,16 +133,16 @@ export const main = Reach.App(() => {
         const bet = unwrap(bets[this])[1];
         assert(bet <= winnerPool); // since amountBetOn(result) == winnerPool, this is always true, but it fails
 
-        const winnings = muldiv(loserPool, bet, winnerPool);
+        const winnings = muldiv(initPrizePool, bet, winnerPool);
         const payout = bet + winnings;
         transfer(payout).to(this);
         delete bets[this];
-        return [true, unpaidWinners - 1, winningsPool - winnings];
+        return [true, unpaidWinners - 1, prizePool - winnings];
       }
     )
     .timeout(relativeTime(payoutTime), () => {
       awaitOrganizer(OA.payoutTimeout);
-      return [false, unpaidWinners, winningsPool];
+      return [false, unpaidWinners, prizePool];
     });
 
   transfer(balance()).to(O);
