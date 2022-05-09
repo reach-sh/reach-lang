@@ -6,7 +6,7 @@ export const main = Reach.App(() => {
     contract: Contract,
     bettingTime: UInt,
     payoutTime: UInt,
-    bookieCut: FixedPoint, // 0-1 coefficient of losers' bets to take as cut
+    bookieCut: UInt, // 0-1000 tenths of a percent to keep as a cut
     ready: Fun([], Null),
   });
   const OA = API('OrganizerAPI', {
@@ -23,11 +23,6 @@ export const main = Reach.App(() => {
   const BP = Events('BettingPhase', { phase: [Phase] });
   init();
 
-  const uint2fx = (n) => fx(1)(Pos, n);
-  const fx2uint = (n) => fxrescale(n, 1).i.i; // truncating! lossy!
-  const zero = uint2fx(0);
-  const one = uint2fx(1);
-
   const awaitOrganizer = (api) => {
     const [[], k] = call(api).assume(() => check(this == O));
     check(this == O);
@@ -40,54 +35,43 @@ export const main = Reach.App(() => {
     const bettingTime = declassify(interact.bettingTime);
     const payoutTime = declassify(interact.payoutTime);
     const bookieCut = declassify(interact.bookieCut);
-    check(fxgt(bookieCut, zero) && fxlt(bookieCut, one));
+    check(bookieCut <= 1000);
   });
   O.publish(contract, bettingTime, payoutTime, bookieCut);
-  check(fxgt(bookieCut, zero) && fxlt(bookieCut, one));
+  check(bookieCut <= 1000);
   commit();
 
   O.interact.ready();
   awaitOrganizer(OA.startBets);
   BP.phase(Phase.AcceptingBets());
 
-  const trueBets = new Map(UInt);
-  const falseBets = new Map(UInt);
-  const checkValidBet = (better, guess, amt) => {
-    check(better != O);
-    check(amt > 0);
-    if (guess) {
-      check(isNone(falseBets[better]));
-    } else {
-      check(isNone(trueBets[better]));
-    }
-  };
-
   // Take bets
+  const bets = new Map(Tuple(Bool, UInt));
+  const numBettingOn = (guess) => bets.reduce(0, (s, [g, _]) => s + (g == guess ? 1 : 0));
+  const amountBetOn  = (guess) => bets.reduce(0, (s, [g, a]) => s + (g == guess ? a : 0));
   const [keepGoing, trueBetters, truePool, falseBetters, falsePool] =
-    parallelReduce([true, 0, 0, 0, 0])
+    parallelReduce([false, 0, 0, 0, 0])
     .while(keepGoing)
-    .invariant(trueBets.sum() + falseBets.sum() == balance()
-               && truePool == trueBets.sum()
-               && falsePool == falseBets.sum()
+    .invariant(trueBetters + falseBetters == bets.size()
+               && numBettingOn(true) == trueBetters
+               && numBettingOn(false) == falseBetters
+               && numBettingOn(true) + numBettingOn(false) == bets.size()
+               && truePool + falsePool == bets.reduce(0, (s, [_, a]) => s + a)
                && truePool + falsePool == balance()
-               && trueBetters == trueBets.size()
-               && falseBetters == falseBets.size()
-               && trueBets.all(x => x > 0)
-               && falseBets.all(x => x > 0))
+               && amountBetOn(true) == truePool
+               && amountBetOn(false) == falsePool
+               && amountBetOn(true) + amountBetOn(false) == balance())
     .api(B.bet,
-      (guess, amt) => checkValidBet(this, guess, amt),
+      (_, amt) => check(isNone(bets[this]) && amt > 0),
       (_, amt) => amt,
       (guess, amt, k) => {
-        checkValidBet(this, guess, amt);
+        check(isNone(bets[this]) && amt > 0);
         k(null);
+        bets[this] = [guess, amt];
         if (guess) {
-          const newBetter = isNone(trueBets[this]) ? 1 : 0;
-          trueBets[this] = fromSome(trueBets[this], 0) + amt;
-          return [true, trueBetters + newBetter, truePool + amt, falseBetters, falsePool];
+          return [true, trueBetters + 1, truePool + amt, falseBetters, falsePool];
         } else {
-          const newBetter = isNone(falseBets[this]) ? 1 : 0;
-          falseBets[this] = fromSome(falseBets[this], 0) + amt;
-          return [true, trueBetters, truePool, falseBetters + newBetter, falsePool + amt];
+          return [true, trueBetters, truePool, falseBetters + 1, falsePool + amt];
         }
       }
     )
@@ -96,70 +80,69 @@ export const main = Reach.App(() => {
       return [false, trueBetters, truePool, falseBetters, falsePool];
     });
 
-  BP.phase(Phase.AwaitingResult());
-  commit();
-
   assert(truePool + falsePool == balance());
 
   // Await result
-  // const result = true;
+  BP.phase(Phase.AwaitingResult());
+  commit();
+  const result = true;
 
   // Pay winners
-  const numWinners = /* result ? */ trueBetters /* : falseBetters */;
-  const winnerBets = /* result ? */ trueBets /* : falseBets */;
-  const winnerPool = /* result ? */ truePool /* : falsePool */;
-  const loserPool = /* result ? */ falsePool /* : truePool */;
+  awaitOrganizer(OA.startPayout);
 
-  // Do truncation in favor of winners, against bookie
-  const organizerCut = 0; //fx2uint(fxmul(bookieCut, uint2fx(loserPool)));
-  const initialPayoutPool = loserPool - organizerCut;
-
-  const checkWinner = p => {
-    const bet = winnerBets[p];
-    check(bet != Maybe(UInt).None());
-    check(bet != Maybe(UInt).Some(0));
-  }
   const unwrap = m => {
     switch (m) {
-      case Some: return m;
+      case Some:
+        return m;
       case None:
-        assert(false, "unwrap None");
-        return 0;
+        assert(false, "unwrap on None");
+        return [false, 0];
+    }
+  }
+  const checkWinner = p => {
+    const bet = bets[p];
+    switch (bet) {
+      case Some:
+        check(bet[0] == result);
+        check(bet[1] > 0);
+      case None:
+        check(false);
     }
   }
 
-  awaitOrganizer(OA.startPayout);
-  const [keepGoing_, unpaidWinners, payoutPool] =
-    parallelReduce([true, numWinners, initialPayoutPool])
+  const [numWinners, winnerPool, loserPool] = /*result ?*/ [trueBetters, truePool, falsePool]
+                                                     /*: [falseBetters, falsePool, truePool]*/;
+  const finalBookieCut = muldiv(bookieCut, loserPool, 1000);
+  const initWinningsPool = loserPool - finalBookieCut;
+
+  assert(truePool + falsePool == balance());
+  assert(winnerPool + loserPool == balance());
+
+  const [keepGoing_, unpaidWinners, winningsPool] =
+    parallelReduce([true, numWinners, initWinningsPool])
     .while(keepGoing_ && unpaidWinners > 0)
-    .invariant(winnerBets.size() == unpaidWinners
-               && balance() == winnerBets.sum() + payoutPool + organizerCut)
+    .invariant(numBettingOn(result) == unpaidWinners &&
+               balance() == finalBookieCut + amountBetOn(result) + winningsPool
+              )
     .api(B.collect,
       () => checkWinner(this),
       () => 0,
       (k) => {
         checkWinner(this);
         k(null);
-        const mBet = winnerBets[this];
-        assert(mBet != Maybe(UInt).Some(0), "zero bet winner");
-        assert(mBet != Maybe(UInt).None(), "non better winner");
-        assert(isSome(mBet), "non better winner 3");
-        switch (mBet) {
-          case None: assert(false, "non better winner 2");
-          default: ;
-        }
+        const bet = unwrap(bets[this])[1];
+        assert(bet <= winnerPool); // since amountBetOn(result) == winnerPool, this is always true, but it fails
 
-        const bet = unwrap(mBet);
-        const share = fxdiv(uint2fx(bet), uint2fx(winnerPool), 100_000);
-        const winnings = fx2uint(fxmul(share, uint2fx(initialPayoutPool)));
-        delete winnerBets[this];
-        transfer(bet + winnings).to(this);
-        return [true, unpaidWinners - 1, payoutPool - winnings];
+        const winnings = muldiv(loserPool, bet, winnerPool);
+        const payout = bet + winnings;
+        transfer(payout).to(this);
+        delete bets[this];
+        return [true, unpaidWinners - 1, winningsPool - winnings];
       }
     )
     .timeout(relativeTime(payoutTime), () => {
       awaitOrganizer(OA.payoutTimeout);
-      return [false, unpaidWinners, payoutPool];
+      return [false, unpaidWinners, winningsPool];
     });
 
   transfer(balance()).to(O);
