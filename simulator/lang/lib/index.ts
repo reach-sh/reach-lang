@@ -2,7 +2,17 @@ import * as c from '@reach-sh/simulator-client';
 import assert from 'assert';
 
 const consensusID = -1
-const nwToken = -1
+const nwTokenId = -1
+
+class Token {
+  id: number;
+
+  constructor(id: number) {
+    this.id = id;
+  }
+}
+
+const nwToken = new Token(nwTokenId)
 
 const filter = (obj: any, predicate: any) =>
   Object.fromEntries(Object.entries(obj).filter(predicate));
@@ -11,97 +21,147 @@ const filter = (obj: any, predicate: any) =>
 class ReachValue {
   contents: any;
   taggedJSON () {};
-  untaggedJSON () {};
 
   constructor(v: any) {
     this.contents = v
   }
+
+  untaggedJSON() {
+    return JSON.stringify(this);
+  };
+
 }
 
 class ReachNull extends ReachValue {
   contents: any;
-  taggedJSON () {};
-  untaggedJSON () {};
 
   constructor(v: null) {
     super(v);
   }
+
+  taggedJSON() {
+    return {
+      "tag":"V_Null",
+      "contents": "null"
+    };
+  };
+
 }
 
 class ReachBool extends ReachValue {
   contents: any;
-  taggedJSON () {};
-  untaggedJSON () {};
 
   constructor(v: boolean) {
     super(v);
   }
+
+  taggedJSON() {
+    return {
+      "tag":"V_Bool",
+      "contents": this.untaggedJSON()
+    };
+  }
+
 }
 
 class ReachNumber extends ReachValue {
   contents: any;
-  taggedJSON () {};
-  untaggedJSON () {};
 
   constructor(v: number) {
     super(v);
   }
+
+  taggedJSON() {
+    return {
+      "tag":"V_UInt",
+      "contents": this.untaggedJSON()
+    };
+  }
+
 }
 
 class ReachToken extends ReachValue {
   contents: any;
-  taggedJSON () {};
-  untaggedJSON () {};
 
   constructor(v: number) {
     super(v);
   }
+
+  taggedJSON() {
+    return {
+      "tag":"V_Token",
+      "contents": this.untaggedJSON()
+    };
+  }
+
 }
 
 class ReachBytes extends ReachValue {
   contents: any;
-  taggedJSON () {};
-  untaggedJSON () {};
 
   constructor(v: string) {
     super(v);
   }
+
+  taggedJSON() {
+    return {
+      "tag":"V_Bytes",
+      "contents": this.untaggedJSON()
+    };
+  }
+
 }
 
 class ReachDigest extends ReachValue {
   contents: any;
-  taggedJSON () {};
-  untaggedJSON () {};
 
   constructor(v: ReachValue) {
     super(v);
   }
+
+  taggedJSON() {
+    return {
+      "tag":"V_Digest",
+      "contents": this.untaggedJSON()
+    };
+  }
+
 }
 
 class ReachAddress extends ReachValue {
   contents: any;
-  taggedJSON () {};
-  untaggedJSON () {};
 
   constructor(v: number) {
     super(v);
   }
+
+  taggedJSON() {
+    return {
+      "tag":"V_Address",
+      "contents": this.untaggedJSON()
+    };
+  }
+
 }
 
 class ReachContract extends ReachValue {
   contents: any;
-  taggedJSON () {};
-  untaggedJSON () {};
 
   constructor(v: number) {
     super(v);
   }
+
+  taggedJSON() {
+    return {
+      "tag":"V_Contract",
+      "contents": this.untaggedJSON()
+    };
+  }
+
 }
 
 class ReachArray extends ReachValue {
   contents: any;
-  taggedJSON () {};
-  untaggedJSON () {};
 
   constructor(v: ReachValue[]) {
     super(v);
@@ -110,8 +170,6 @@ class ReachArray extends ReachValue {
 
 class ReachTuple extends ReachValue {
   contents: any;
-  taggedJSON () {};
-  untaggedJSON () {};
 
   constructor(v: ReachValue[]) {
     super(v);
@@ -120,8 +178,6 @@ class ReachTuple extends ReachValue {
 
 class ReachObject extends ReachValue {
   contents: any;
-  taggedJSON () {};
-  untaggedJSON () {};
 
   constructor(v: any) {
     super(v);
@@ -130,8 +186,6 @@ class ReachObject extends ReachValue {
 
 class ReachData extends ReachValue {
   contents: any;
-  taggedJSON () {};
-  untaggedJSON () {};
 
   constructor(v: any) {
     super(v);
@@ -140,8 +194,6 @@ class ReachData extends ReachValue {
 
 class ReachStruct extends ReachValue {
   contents: any;
-  taggedJSON () {};
-  untaggedJSON () {};
 
   constructor(v: any) {
     super(v);
@@ -352,9 +404,10 @@ class Actor {
     return g.e_ledger[this.account.id]
   }
 
-  async getNetworkTokenBalance() {
+  async balanceOf(tok: Token = nwToken) {
+    const tokId = tok.id
     const g = await c.getStateGlobals(this.scene.state.id)
-    return g.e_ledger[this.account.id][nwToken]
+    return g.e_ledger[this.account.id][tokId]
   }
 
   async getPhase() {
@@ -480,14 +533,6 @@ class Account {
   async getWallet() {
     const g = await c.getStateGlobals(this.scene.state.id)
     return g.e_ledger[this.id]
-  }
-}
-
-class Token {
-  id: number;
-
-  constructor(id: number) {
-    this.id = id;
   }
 }
 

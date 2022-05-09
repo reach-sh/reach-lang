@@ -8,11 +8,11 @@ const main = async () => {
     // test imperatively
     const is = new lang.ImperativeScenario();
     await is.init();
-    let pi = await is.pingServer();
+    const pi = await is.pingServer();
     console.log(is);
-    let alice = is.participants.Alice;
-    let bob = is.participants.Bob;
-    let consensus = is.consensus;
+    const alice = is.participants.Alice;
+    const bob = is.participants.Bob;
+    const consensus = is.consensus;
     // init Alice
     await alice.init();
     // init Bob
@@ -34,10 +34,10 @@ const main = async () => {
     // Bob observes that his hand is published
     await (await bob.getNextAction()).resolve();
     // Alice's program has run to completion
-    let r = await alice.getStatus();
+    const r = await alice.getStatus();
     console.log(r);
     assert.equal(r,"Done");
-    let store = await alice.getStore();
+    const store = await alice.getStore();
     return store.getVar('outcome')
   }
 
@@ -45,11 +45,11 @@ const main = async () => {
     // test functionally
     const fs = new lang.FunctionalScenario();
     let s = await fs.init();
-    let pi = await fs.pingServer();
+    const pi = await fs.pingServer();
     console.log(fs);
-    let alice = fs.participants.Alice;
-    let bob = fs.participants.Bob;
-    let consensus = fs.consensus;
+    const alice = fs.participants.Alice;
+    const bob = fs.participants.Bob;
+    const consensus = fs.consensus;
     // init Alice
     s = await s.who(alice).init();
     // init Bob
@@ -70,19 +70,23 @@ const main = async () => {
     s = await (await s.who(alice).getNextAction()).resolve();
     // Bob observes that his hand is published
     s = await (await s.who(bob).getNextAction()).resolve();
-    let r = await s.who(alice).getStatus();
+    const r = await s.who(alice).getStatus();
     console.log(r);
     assert.equal(r,"Done");
-    let store = await alice.getStore();
+    const store = await alice.getStore();
     return store.getVar('outcome')
+  }
+
+  const winner = (aHand,bHand) => {
+    return ((aHand + (4 - bHand)) % 3);
   }
 
   for (let aHand = 0; aHand < 3; aHand++) {
     for (let bHand = 0; bHand < 3; bHand++) {
       let r1 = await impScenario(aHand,bHand);
       let r2 = await fScenario(aHand,bHand);
-      r1.assertVar('V_UInt',((aHand + (4 - bHand)) % 3));
-      r2.assertVar('V_UInt',((aHand + (4 - bHand)) % 3));
+      r1.assertVar('V_UInt',winner(aHand,bHand));
+      r2.assertVar('V_UInt',winner(aHand,bHand));
     }
   }
 

@@ -7,10 +7,10 @@ const main = async () => {
   // test functionally
   const fs = new lang.FunctionalScenario();
   let s = await fs.init();
-  let pi = await fs.pingServer();
-  let alice = fs.participants.Alice;
-  let bob = fs.participants.Bob;
-  let consensus = fs.consensus;
+  const pi = await fs.pingServer();
+  const alice = fs.participants.Alice;
+  const bob = fs.participants.Bob;
+  const consensus = fs.consensus;
   // init Alice
   s = await s.who(alice).init(10,
     {'wager':{'tag':'V_UInt','contents':10},
@@ -32,9 +32,9 @@ const main = async () => {
   // let's name a special "breakpoint" that we'll return to
   // in order to test different timeout scenarios
   //  ↓↓
-  let ss = await (await s.who(bob).getNextAction()).resolve(1);
+  let sBeforeTimeout = await (await s.who(bob).getNextAction()).resolve(1);
   // force Bob's hand publish to timeout
-  s = await ss.forceTimeout();
+  s = await sBeforeTimeout.forceTimeout();
   // timeout
   s = await (await s.who(consensus).getNextAction()).resolve(bob);
   s = await (await s.who(alice).getNextAction()).resolve();
@@ -46,14 +46,14 @@ const main = async () => {
   // first scenario done
   let r = await s.who(alice).getStatus();
   console.log(r);
-  let w = await alice.getNetworkTokenBalance();
+  let w = await alice.balanceOf();
   // check that Alice kept her money
   assert.equal(w,10);
 
   // test the scenario where Alice times out
   // we're going back in time to our breakpoint here
   //               ↓↓
-  s = await (await ss.who(consensus).getNextAction()).resolve(bob);
+  s = await (await sBeforeTimeout.who(consensus).getNextAction()).resolve(bob);
   s = await (await s.who(alice).getNextAction()).resolve();
   s = await (await s.who(bob).getNextAction()).resolve();
   s = await s.forceTimeout();
@@ -65,7 +65,7 @@ const main = async () => {
   s = await (await s.who(consensus).getNextAction()).resolve(alice);
   s = await (await s.who(alice).getNextAction()).resolve();
   s = await (await s.who(bob).getNextAction()).resolve();
-  w = await bob.getNetworkTokenBalance();
+  w = await bob.balanceOf();
   // check that Bob got everything
   assert.equal(w,20);
 
