@@ -150,8 +150,8 @@ interactIn = interactX "in"
 interactOut :: DLExpr -> Bool
 interactOut = interactX "out"
 
-setApiDetails :: SLPart -> DLExpr -> Bool
-setApiDetails who = \case
+is_setApiDetails :: SLPart -> DLExpr -> Bool
+is_setApiDetails who = \case
   DLE_setApiDetails _ p _ _ _ -> p == who
   _ -> False
 
@@ -288,13 +288,13 @@ slurp = \case
     alwaysSeeOutR <- liftIO $ newIORef Nothing
     let stop = ET_Stop at
     who <- asks eWho
-    let isRace = any (has (setApiDetails who) . thd3) m
+    let isRace = any (has (is_setApiDetails who) . thd3) m
     let f (y, z, k) = do
           (so, k') <- locSeenOut $ slurp k
           -- We don't expect to see `interact.out` called on
           -- every `case` when we're switching on who won a `race`.
           let shouldSeeOut = case isRace of
-                              True  -> has (setApiDetails who) k
+                              True  -> has (is_setApiDetails who) k
                               False -> True
           when shouldSeeOut $ do
             liftIO $ modifyIORef alwaysSeeOutR $
