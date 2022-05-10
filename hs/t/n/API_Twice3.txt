@@ -3,11 +3,11 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 21 theorems; No failures!
-reachc: error[RAPI0003]: API "P_get" does not return result in same consensus step
+reachc: error[RAPI0003]: API "P_get" does not always return result in same consensus step
 
-  ./API_Twice3.rsh:17:11:while
+  ./API_Twice3.rsh:10:9:application
 
-  17|           while (!d) {
+  10|     .api(P.get, (apiReturn) => {
 
 For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RAPI0003
 
