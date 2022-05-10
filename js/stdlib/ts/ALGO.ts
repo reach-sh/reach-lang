@@ -66,6 +66,7 @@ import {
   j2sf,
   j2s,
   hideWarnings,
+  hasProp,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -508,11 +509,11 @@ export const signSendAndConfirm = async (
     [ sapt_res, notifyComplete ] = await notifySend(txns, p.signAndPostTxns(txns));
   } catch (e:any) {
     const es = `${e}`;
-    if ( 'response' in e ) {
+    if ( hasProp(e, 'response') ) {
       const r = e.response;
-      if ( 'body' in r ) {
+      if ( hasProp(r, 'body') ) {
         e.response = r.body;
-      } else if ( 'text' in r ) {
+      } else if ( hasProp(r, 'text') ) {
         e.response = r.text;
       } else {
         delete r.request;
