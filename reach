@@ -115,6 +115,54 @@ run_s () {
   sh -ac "$TMP/out.sh" "$0"
 }
 
+gen_reachc_id () {
+  REACH_ENV_DIR="${HOME}/.config/reach"
+  REACH_ENV_FILE="${REACH_ENV_DIR}/env"
+  MULT=$(shuf -i 1-100 -n 1)
+  MAX=776627963145224
+  PRE_REACHC_ID=$(echo $(($(shuf -i 1-$MAX -n 1 )*$MULT))| md5sum | head -c 30 | tr [a-z] [A-Z])
+
+  mkdir -p $REACH_ENV_DIR
+
+  if [ ! -e $REACH_ENV_FILE ]; then
+    echo "REACHC_ID=${PRE_REACHC_ID}" > $REACH_ENV_FILE
+  elif ( ! grep REACHC_ID $REACH_ENV_FILE > /dev/null 2>&1 ); then
+    echo "REACHC_ID=${PRE_REACHC_ID}" >> $REACH_ENV_FILE
+  fi
+}
+
+call_home () {
+
+  START_TIME=$1
+  ELAPSED_TIME=$2
+  RESULT=$3
+  REACH_VERSION=$4
+  CONNECTOR_MODE=$5
+  USING_VSSTUDIO_EXTENTION=$6
+  INITIATOR=$7
+
+  CALL_HOME_ENCODED="eyAidXNlcklkIjogInt7UkVBQ0hDX0lEfX0iLCAic3RhcnRUaW1l\
+IjogInt7U1RBUlRfVElNRX19IiwgImVsYXBzZWQiOiAie3tFTEFQU0VEX1RJTUV9fSIsICJ\
+yZXN1bHQiOiAie3tSRVNVTFR9fSIsICJ2ZXJzaW9uIjogInt7UkVBQ0hfVkVSU0lPTn19Ii\
+wgImNvbm5lY3Rvck1vZGUiOiAie3tDT05ORUNUT1JfTU9ERX19IiwgInVzaW5nVmlzdWFsU\
+3R1ZGlvRXh0ZW5zaW9uIjogInt7VVNJTkdfVlNTVFVESU9fRVhURU5USU9OfX0iLCAiaW5p\
+dGlhdG9yIjogInt7SU5JVElBVE9SfX0iIH0="
+  CALL_HOME_TEMPLATE_DECODED=$(echo -n $CALL_HOME_ENCODED | base64 -d)
+  START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  TRANSLATED_TEMPLATE=$(echo $CALL_HOME_TEMPLATE_DECODED | sed -e "s/{{REACHC_ID}}/$REACHC_ID/g" \
+  -e "s/{{START_TIME}}/${START_TIME}/g" \
+  -e "s/{{ELAPSED_TIME}}/${ELAPSED_TIME}/g" \
+  -e "s/{{RESULT}}/${RESULT}/g" \
+  -e "s/{{REACH_VERSION}}/${REACH_VERSION}/g" \
+  -e "s/{{CONNECTOR_MODE}}/${CONNECTOR_MODE}/g" \
+  -e "s/{{USING_VSSTUDIO_EXTENTION}}/${USING_VSSTUDIO_EXTENTION}/g" \
+  -e "s/{{INITIATOR}}/${INITIATOR}/g")
+  CALL_HOME_ENDPOINT="https://log.reach.sh/submit"
+
+  curl -X POST "$CALL_HOME_ENDPOINT" -d "$TRANSLATED_TEMPLATE" || exit 1
+  
+}
+
 package_manager () {
   if ( which apt > /dev/null 2>&1 ); then
     export PACKAGE_MANAGER="apt"
@@ -125,16 +173,10 @@ package_manager () {
   fi
 }
 
-install_make () {
+package_install () {
   package_manager
 
-  sudo ${PACKAGE_MANAGER} install make
-}
-
-install_curl () {
-  package_manager
-
-  sudo ${PACKAGE_MANAGER} install curl 
+  sudo ${PACKAGE_MANAGER} install $1
 }
 
 timeout_validate () {
@@ -184,6 +226,8 @@ install_docker () {
     printf "\nThis installation requires a restart for completion; do you want to restart now? [Y,n]: "
     read RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
+      CALL_HOME_START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+      call_home $CALL_HOME_START_TIME "none" "Docker Installed by Reach" "0.0.0" "none" "none" $1
       powershell.exe 'shutdown -r -t 0'
     fi
   else
@@ -198,16 +242,18 @@ install_docker () {
   cd $OLDPWD
 }
 
+gen_reachc_id
 
 for DEP in make curl docker docker-compose; do
   if ! (which "${DEP}" >/dev/null 2>&1); then
+    CALL_HOME_START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    call_home $CALL_HOME_START_TIME "none" "${DEP} is not installed" "0.0.0" "none" "none" $1
     printf "Reach relies on an installation of %s; do you want to install it? [Y,n]: " "${DEP}"
     read -r RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
       case $DEP in
-        "make") install_make;;
-        "curl") install_curl;;
         "docker") install_docker;;
+               *) package_install $DEP;;
       esac
     fi
   fi
