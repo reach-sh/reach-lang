@@ -2095,11 +2095,11 @@ evalPrimOp sp sargs = do
   at <- withAt id
   let zero mt = SLV_Int at mt 0
   case sp of
-    S_UCAST to ->
+    S_UCAST to trunc -> do
       case args of
-        [SLV_Int lhs_at _ lhs_i] -> static $ SLV_Int lhs_at (Just to) lhs_i
+        [SLV_Int lhs_at _ lhs_i] | not trunc -> static $ SLV_Int lhs_at (Just to) lhs_i
         _ -> do
-          let from = not to
+          let from = if to == UI_Word then UI_256 else UI_Word
           let dom = T_UInt from
           make_var [dom] (T_UInt to) args
     S_BYTES_ZPAD xtra ->
@@ -2257,7 +2257,7 @@ evalPrimOp sp sargs = do
       at <- withAt id
       dargs <- compileArgExprs args'e
       let dopClaim ca msg = doClaim CT_Assert ca $ Just msg
-      let mkvar t = DLVar at Nothing t
+      let mkvar = DLVar at Nothing
       let doOp t cp cargs = DLA_Var <$> (ctxt_lift_expr (mkvar t) $ DLE_PrimOp at cp cargs)
       let doCmp = doOp T_Bool
       let uit_rng = uintTyOf rng
@@ -2290,13 +2290,13 @@ evalPrimOp sp sargs = do
             chkDiv UI_Word $ case dargs of
               [_, _, b] -> b
               _ -> impossible "muldiv args"
-          UCAST UI_256 UI_Word trunc -> do
-            -- We add an assertion when casting from UInt256 to UInt
+          UCAST UI_256 UI_Word trunc -> unless trunc $ do
+            -- We add an assertion when casting from UInt256 to UInt, unless we want to truncate
             let a = case dargs of
                   [a_] -> a_
                   _ -> impossible "cast args"
-            wordLimitAs256 <- doOp (T_UInt uint256) (UCAST uintWord uint256) [ uintTyMax uintWord ]
-            ca <- doCmp (PLE uint256) [a, wordLimitAs256]
+            wordLimitAs256 <- doOp (T_UInt UI_256) (UCAST UI_Word UI_256 False) [ uintTyMax UI_Word ]
+            ca <- doCmp (PLE UI_256) [a, wordLimitAs256]
             dopClaim ca "cast overflow"
           _ -> return $ mempty
       dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_PrimOp at p dargs)
@@ -2612,6 +2612,12 @@ warnInteractType = \case
 evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
   case p of
+    SLPrim_castOrTrunc to -> do
+      let (trunc, sargs') =
+              case sargs of
+                [i, (_, SLV_Bool _ trunc_)] -> (trunc_, [i])
+                _ -> (False, sargs)
+      evalPrimOp (S_UCAST to trunc) sargs'
     SLPrim_Token_burn -> do
       (tokv, mamtv) <-
         case args of
@@ -4018,8 +4024,8 @@ evalApplyVals = evalApplyValsAux False
 evalApplyValsAux :: Bool -> SLVal -> [SLSVal] -> App SLAppRes
 evalApplyValsAux assumePrecondition rator randvs =
   case rator of
-    SLV_Type (ST_UInt t) ->
-      evalApplyValsAux assumePrecondition (SLV_Prim $ SLPrim_op $ S_UCAST t) randvs
+    SLV_Type (ST_UInt to) ->
+      evalApplyValsAux assumePrecondition (SLV_Prim $ SLPrim_castOrTrunc to) randvs
     SLV_Prim p -> do
       sco <- e_sco <$> ask
       SLAppRes sco <$> evalPrim p randvs

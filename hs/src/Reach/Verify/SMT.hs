@@ -314,7 +314,7 @@ smtPrimOp at p dargs =
     PGE _ -> bvapp "bvuge" ">="
     PGT _ -> bvapp "bvugt" ">"
     SQRT _ -> app "UInt_sqrt"
-    UCAST _ _ -> \case
+    UCAST _ _ _ -> \case
       [x] -> return x
       _ -> impossible "ucast"
     LSH -> bvapp "bvshl" "UInt_lsh"

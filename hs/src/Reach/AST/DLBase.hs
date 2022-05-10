@@ -630,7 +630,7 @@ data PrimOp
   | PGE UIntTy
   | PGT UIntTy
   | SQRT UIntTy
-  | UCAST UIntTy UIntTy
+  | UCAST UIntTy UIntTy Bool
   | IF_THEN_ELSE
   | DIGEST_EQ
   | ADDRESS_EQ
@@ -665,7 +665,7 @@ instance Pretty PrimOp where
     PGE t -> uitp t <> ">="
     PGT t -> uitp t <> ">"
     SQRT t -> uitp t <> "sqrt"
-    UCAST x y -> "cast" <> parens (uitp x <> "," <> uitp y)
+    UCAST dom rng trunc -> "cast" <> parens (uitp dom <> "," <> uitp rng <> pretty trunc)
     IF_THEN_ELSE -> "ite"
     DIGEST_EQ -> "=="
     ADDRESS_EQ -> "=="
@@ -687,8 +687,8 @@ instance Pretty PrimOp where
     GET_COMPANION -> "getCompanion()"
     where
       uitp = \case
-        True -> "b"
-        False -> ""
+        UI_256 -> "b"
+        UI_Word -> ""
 
 data DLRemoteALGO = DLRemoteALGO
   { ralgo_fees :: DLArg

@@ -725,10 +725,12 @@ export const makeArith = (m:BigNumber): Arith => {
   type BNOp2 = 'add'|'sub'|'mod'|'mul'|'div'|'and'|'or'|'xor';
   const doBN2 = (f:BNOp2, a:BigNumber, b:BigNumber) => a[f](b);
   const getCheck = (w:UIntTy) => w ? checkB : checkM;
-  const cast = (from:UIntTy, to:UIntTy, x:num): BigNumber => {
+  const cast = (from:UIntTy, to:UIntTy, x:num, trunc:boolean = false): BigNumber => {
     const checkF = getCheck(from);
     const checkT = getCheck(to);
-    return checkT(checkF(bigNumberify(x)));
+    const bigX = bigNumberify(x);
+    const maybeTruncated = trunc ? bigX.and(m) : bigX;
+    return checkT(checkF(maybeTruncated));
   };
 
   const liftX2 = (check:(x:BigNumber) => BigNumber) => (f:BNOp2) => (a:num, b:num): BigNumber => check(doBN2(f, bigNumberify(a), bigNumberify(b)));

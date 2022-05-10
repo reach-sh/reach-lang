@@ -646,7 +646,7 @@ data SPrimOp
   | S_PGE
   | S_PGT
   | S_SQRT
-  | S_UCAST UIntTy
+  | S_UCAST UIntTy Bool
   | S_IF_THEN_ELSE
   | S_DIGEST_EQ
   | S_ADDRESS_EQ
@@ -677,7 +677,7 @@ sprimToPrim dom rng = \case
   S_PGE -> PGE dom
   S_PGT -> PGT dom
   S_SQRT -> SQRT dom
-  S_UCAST _ -> UCAST dom rng
+  S_UCAST _ trunc -> UCAST dom rng trunc
   S_IF_THEN_ELSE -> IF_THEN_ELSE
   S_DIGEST_EQ -> DIGEST_EQ
   S_ADDRESS_EQ -> ADDRESS_EQ
@@ -701,6 +701,7 @@ data RemoteFunMode
   | RFM_ALGO
   deriving (Eq, Generic, Show)
 
+-- Primitive/special forms
 data SLPrimitive
   = SLPrim_makeEnum
   | SLPrim_declassify
@@ -791,6 +792,7 @@ data SLPrimitive
   | SLPrim_distinct
   | SLPrim_xor
   | SLPrim_mod
+  | SLPrim_castOrTrunc UIntTy
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where
