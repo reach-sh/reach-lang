@@ -11,6 +11,7 @@ import {
 import {
   debug,
   j2s,
+  hasProp,
 } from './shared_impl';
 
 const withApiKey = () => {
@@ -341,9 +342,8 @@ export const serveRpc = async (backend: any) => {
     return router;
   };
 
-  // `hasOwnProperty` is important for denying access to prototype fields
   const userDefinedField = (a: any, m: string) =>
-    a && a.hasOwnProperty && a.hasOwnProperty(m) && a[m] || null;
+    hasProp(a, m) && a[m] || null;
 
   const mkUserDefined = (olab: string, prop: string, k: any, unsafe: boolean) => {
     const router = express.Router();
