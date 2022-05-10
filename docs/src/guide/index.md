@@ -10,6 +10,7 @@ The following guides are available:
 + @{seclink("guide-solidity")}
 + @{seclink("guide-rpc")}
 + @{seclink("guide-logging")}
++ @{seclink("guide-testing")}
 + @{seclink("guide-nntoks")}
 + @{seclink("guide-ctransfers")}
 + @{seclink("guide-assert")}

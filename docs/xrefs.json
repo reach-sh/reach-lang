@@ -571,6 +571,10 @@
     "title": "RE0134",
     "path": "/rsh/errors/#RE0134"
   },
+  "RE0135": {
+    "title": "RE0135",
+    "path": "/rsh/errors/#RE0135"
+  },
   "REP0000": {
     "title": "REP0000",
     "path": "/rsh/errors/#REP0000"
@@ -798,6 +802,10 @@
   "guide-staking": {
     "title": "Example: Staking and Unstaking Tokens",
     "path": "/guide/staking/#guide-staking"
+  },
+  "guide-testing": {
+    "title": "How should I test a DApp?",
+    "path": "/guide/testing/#guide-testing"
   },
   "guide-timeout": {
     "title": "Non-participation: What it is and how to protect against it",
