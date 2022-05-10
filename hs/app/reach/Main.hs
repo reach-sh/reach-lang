@@ -2477,7 +2477,7 @@ support = command "support" $ info (pure step1) d
     isAccessTokenPair :: [Text] -> Bool
     isAccessTokenPair pair = head pair == pack "access_token"
     clientId :: String
-    clientId = "b0e24d4cc8251c6cd14c"
+    clientId = "c4bfe74cc8be5bbaf00e"
     scope :: String
     scope = "gist"
     language :: String
