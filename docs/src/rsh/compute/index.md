@@ -1834,6 +1834,12 @@ const _ = parallelReduce(...)
 
 This pattern is so common that it can be abbreviated as `{!rsh} .timeRemaining`.
 
+```reach
+load: /examples/raffle/index.rsh
+range: 37-40
+```
+
+As can be seen in this code block from the Raffle example, `{!rsh} makeDeadline` is being used to set the `{!rsh} deadline` to double the original amount of network blocks if someone returns a ticket.
 
 ### `implies`
 
