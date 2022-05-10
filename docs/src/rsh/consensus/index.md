@@ -628,9 +628,31 @@ only be constructed in a consensus step.
 
 A `{!rsh} Set` may be modified by writing `{!rsh} s.insert(ADDRESS)` to install `{!rsh} ADDRESS` in the
 set, `{!rsh} s`, or `{!rsh} s.remove(ADDRESS)` to remove the `{!rsh} ADDRESS` from the set.
+
+The following example shows the usage of `{!rsh} s.insert(ADDRESS)`:
+
+```reach
+load: /hs/t/y/merit-badge.rsh
+range: 46 - 48
+```
+
+While the example below shows the usage of  `{!rsh} s.remove(ADDRESS)`
+
+```reach
+load: /examples/dominant-assurance/index.rsh
+range: 143 - 143
+```
+
 Such modifications may only occur in a consensus step.
 
 `{!rsh} s.member(ADDRESS)` will return a `{!rsh} Bool` representing whether the address is in the set.
+
+The following example shows the usage of `{!rsh} s.member(ADDRESS)`
+
+```reach
+load: /examples/dominant-assurance/index.rsh
+range: 99 - 99
+```
 
 `{!rsh} s.Map` will return the underlying `{!rsh} Map`, so you can use foldable
 instance methods.
