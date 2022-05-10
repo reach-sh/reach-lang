@@ -55,8 +55,8 @@ instance Show SLType where
   show = \case
     ST_Null -> "Null"
     ST_Bool -> "Bool"
-    ST_UInt False -> "UInt"
-    ST_UInt True -> "UInt256"
+    ST_UInt UI_Word  -> "UInt"
+    ST_UInt UI_256 -> "UInt256"
     ST_Bytes sz -> "Bytes(" <> show sz <> ")"
     ST_Digest -> "Digest"
     ST_Address -> "Address"
@@ -169,7 +169,7 @@ uintTyM :: SLVal -> Maybe UIntTy
 uintTyM = \case
   SLV_Int _ mt _ -> mt
   SLV_DLVar (DLVar _ _ (T_UInt t) _) -> Just t
-  SLV_DLC (DLC_UInt_max) -> Just uintWord
+  SLV_DLC (DLC_UInt_max) -> Just UI_Word
   _ -> Nothing
 
 mtJoin :: Maybe UIntTy -> Maybe UIntTy -> Maybe UIntTy
@@ -223,6 +223,9 @@ instance Equiv Integer where
   equiv = (==)
 
 instance Equiv Bool where
+  equiv = (==)
+
+instance Equiv UIntTy where
   equiv = (==)
 
 instance (Equiv a, Equiv b) => Equiv (Either a b) where

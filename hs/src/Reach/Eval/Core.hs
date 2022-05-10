@@ -552,8 +552,8 @@ base_env_slvals =
   , ("Digest", SLV_Type ST_Digest)
   , ("Null", SLV_Type ST_Null)
   , ("Bool", SLV_Type ST_Bool)
-  , ("UInt", SLV_Type $ ST_UInt uintWord)
-  , ("UInt256", SLV_Type $ ST_UInt uint256)
+  , ("UInt", SLV_Type $ ST_UInt UI_Word)
+  , ("UInt256", SLV_Type $ ST_UInt UI_256)
   , ("Bytes", SLV_Prim SLPrim_Bytes)
   , ("Contract", SLV_Type ST_Contract)
   , ("Address", SLV_Type ST_Address)
@@ -691,7 +691,7 @@ slToDLV :: SLVal -> App (Maybe DLValue)
 slToDLV = \case
   SLV_Null at _ -> lit at DLL_Null
   SLV_Bool at b -> lit at $ DLL_Bool b
-  SLV_Int at mt i -> lit at $ DLL_Int at (fromMaybe uintWord mt) i
+  SLV_Int at mt i -> lit at $ DLL_Int at (fromMaybe UI_Word mt) i
   SLV_Bytes at bs -> return $ Just $ DLV_Bytes at bs
   SLV_DLC c -> arg sb $ DLA_Constant c
   SLV_DLVar dv -> arg (srclocOf dv) $ DLA_Var dv
@@ -1409,14 +1409,14 @@ evalAsEnvM sv@(lvl, obj) = case obj of
     return $ Just $
       M.fromList
         [("addressEq", retV $ public $ SLV_Prim $ SLPrim_op S_CTC_ADDR_EQ)]
-  SLV_Type (ST_UInt False) ->
+  SLV_Type (ST_UInt UI_Word) ->
     return $ Just $
       M.fromList
         [("max", retV $ public $ SLV_DLC DLC_UInt_max)]
-  SLV_Type (ST_UInt True) ->
+  SLV_Type (ST_UInt UI_256) ->
     return $ Just $
       M.fromList
-        [("max", retV $ public $ SLV_Int sb (Just uint256) uint256_Max)]
+        [("max", retV $ public $ SLV_Int sb (Just UI_256) uint256_Max)]
   SLV_Type (ST_Data varm) ->
     return $ Just $
       flip M.mapWithKey varm $ \k t ->
@@ -1624,7 +1624,7 @@ compileTimeArg = \case
     compileTimeArg =<< ensure_public =<< evalApplyVals' f [public v, public c]
   where
     correctData = (==) (dataTypeMap $ eitherT t t)
-    t = T_UInt uintWord
+    t = T_UInt UI_Word
 
 decodePay :: (JSExpression -> App JSExpression) -> JSExpression -> App JSExpression
 decodePay cont = \case
@@ -2118,7 +2118,7 @@ evalPrimOp sp sargs = do
           ae <- case isDigest of
                   True  -> typeOfDigest b
                   False -> snd <$> typeOfBytes b
-          make_var_ (T_UInt uintWord) [ae]
+          make_var_ (T_UInt UI_Word) [ae]
         _ -> expect_ $ Err_Apply_ArgCount at 1 (length args)
     S_SQRT -> n2n isqrt
     S_ADD ->
@@ -2250,9 +2250,9 @@ evalPrimOp sp sargs = do
           =<< zipEq (Err_Apply_ArgCount at) dom args'
       let uit_dom = case dom of
                       x:_ -> uintTyOf x
-                      _ -> uintWord
+                      _ -> UI_Word
       make_var_' uit_dom rng args'e
-    make_var_ = make_var_' uintWord
+    make_var_ = make_var_' UI_Word
     make_var_' uit_dom rng args'e = do
       at <- withAt id
       dargs <- compileArgExprs args'e
@@ -2287,10 +2287,10 @@ evalPrimOp sp sargs = do
               [_, b] -> b
               _ -> impossible "mod args"
           MUL_DIV -> do
-            chkDiv uintWord $ case dargs of
+            chkDiv UI_Word $ case dargs of
               [_, _, b] -> b
               _ -> impossible "muldiv args"
-          UCAST True False -> do
+          UCAST UI_256 UI_Word trunc -> do
             -- We add an assertion when casting from UInt256 to UInt
             let a = case dargs of
                   [a_] -> a_
@@ -2307,7 +2307,7 @@ evalPrimOp sp sargs = do
       whenVerifyArithmetic $
         case p of
           MUL t -> chkMul t
-          MUL_DIV -> chkMul uintWord
+          MUL_DIV -> chkMul UI_Word
           _ -> return $ mempty
       return $ (lvl, SLV_DLVar dv)
 
@@ -2322,7 +2322,7 @@ explodeTupleLike lab = \case
     mconcatMap (uncurry (flip (mkdv tupdv DLE_TupleRef))) $ zip [0 ..] tuptys
   SLV_DLVar tupdv@(DLVar _ _ (T_Array t sz) _) -> do
     at <- withAt id
-    let mkde _ da i = DLE_ArrayRef at da (DLA_Literal $ DLL_Int at uintWord i)
+    let mkde _ da i = DLE_ArrayRef at da (DLA_Literal $ DLL_Int at UI_Word i)
     mconcatMap (mkdv tupdv mkde t) [0 .. sz -1]
   tuplv ->
     expect_ $ Err_Eval_NotSpreadable lab tuplv
@@ -2420,7 +2420,7 @@ setBalance' tm mtok amta initTok =
 doBalanceInit :: TokenMeta -> Maybe DLArg -> App ()
 doBalanceInit tm mtok = do
   at <- withAt id
-  let amt = DLA_Literal $ DLL_Int at uintWord 0
+  let amt = DLA_Literal $ DLL_Int at UI_Word 0
   setBalance' tm mtok amt True
 
 doBalanceInit' :: TokenMeta -> Maybe DLArg -> DLArg -> App ()
@@ -2458,7 +2458,7 @@ assumeOp lab op v bound = do
 assumeGtZero :: DLVar -> App ()
 assumeGtZero v = do
   at <- withAt id
-  let zero = SLV_Int at (Just uintWord) 0
+  let zero = SLV_Int at (Just UI_Word) 0
   assumeOp ">= 0" S_PGE v zero
 
 assumeLtUMax :: DLVar -> App ()
@@ -2468,7 +2468,7 @@ assumeLtUMax v = do
 assumeBalanceUpdate :: SLVal -> SLVal -> (PrimOp, DLVar -> App b) -> App b
 assumeBalanceUpdate balV amtV (op, assumeF) = do
   at <- withAt id
-  let tInt = T_UInt uintWord
+  let tInt = T_UInt UI_Word
   bal_dv <- compileCheckType tInt balV
   amt_dv <- compileCheckType tInt amtV
   -- Avoid using `evalPrimOp` to avoid generating claims for verify arithmetic
@@ -2485,13 +2485,13 @@ doBalanceUpdate mtok op = \case
     bsv <- getBalanceOf mtok
     -- Assume we can add/sub from balance
     let assumeOps = M.fromList [
-          (S_ADD, (ADD uintWord, assumeLtUMax)),
-          (S_SUB, (SUB uintWord, assumeGtZero)) ]
+          (S_ADD, (ADD UI_Word, assumeLtUMax)),
+          (S_SUB, (SUB UI_Word, assumeGtZero)) ]
     whenVerifyArithmetic $ do
       forM_ (M.lookup op assumeOps) $
         assumeBalanceUpdate (snd bsv) rhs
     bv' <- evalApplyVals' up_rator [bsv]
-    bva <- compileCheckType (T_UInt uintWord) $ snd bv'
+    bva <- compileCheckType (T_UInt UI_Word) $ snd bv'
     setBalance TM_Balance mtok bva
 
 tokenMetaUpdate :: TokenMeta -> DLArg -> SPrimOp -> SLVal -> App ()
@@ -2624,7 +2624,7 @@ evalPrim p sargs =
       ensureCreatedToken lab toka
       amta <-
         case mamtv of
-          Just v -> compileCheckType (T_UInt uintWord) v
+          Just v -> compileCheckType (T_UInt UI_Word) v
           Nothing -> DLA_Var <$> getBalanceOf' (Just toka)
       ensure_mode SLM_ConsensusStep lab
       let mtok_a = Just toka
@@ -2659,10 +2659,10 @@ evalPrim p sargs =
       dtn_metadata <- bytes "metadata" tokenMetadataLen
       dtn_supply <- metal "supply" $ \case
         Nothing -> return $ DLA_Constant $ DLC_UInt_max
-        Just v -> compileCheckType (T_UInt uintWord) v
+        Just v -> compileCheckType (T_UInt UI_Word) v
       dtn_decimals <- metal "decimals" $ \case
         Nothing -> return $ Nothing
-        Just v -> Just <$> compileCheckType (T_UInt uintWord) v
+        Just v -> Just <$> compileCheckType (T_UInt UI_Word) v
       let check = \case
             "name" -> ok
             "symbol" -> ok
@@ -2801,7 +2801,7 @@ evalPrim p sargs =
       at <- withAt id
       case map snd sargs of
         [SLV_Int _ mt sz] -> do
-          let t = fromMaybe uintWord mt
+          let t = fromMaybe UI_Word mt
           retV $ (lvl, SLV_Array at (T_UInt t) $ map (SLV_Int at (Just t)) [0 .. (sz -1)])
         [_] -> expect_ $ Err_Prim_InvalidArg_Dynamic p
         _ -> illegal_args
@@ -2859,7 +2859,7 @@ evalPrim p sargs =
             Left _ -> impossible "array_map"
           let f' as i = evalApplyVals' f $ (map (\a -> (lvl, a)) as) <> (if withIndex then [(lvl, i)] else [])
           (a_dv, a_dsv) <- unzip <$> mapM (make_dlvar at) x_ty
-          (i_dv, i_dsv) <- make_dlvar at $ T_UInt uintWord
+          (i_dv, i_dsv) <- make_dlvar at $ T_UInt UI_Word
           -- We ignore the state because if it is impure, then we will unroll
           -- anyways
           SLRes f_lifts _ (f_lvl, f_ty, f_da) <-
@@ -2900,7 +2900,7 @@ evalPrim p sargs =
           (z_ty, z_da) <- compileTypeOf z
           (b_dv, b_dsv) <- make_dlvar at z_ty
           (a_dv, a_dsv) <- unzip <$> mapM (make_dlvar at) x_ty
-          (i_dv, i_dsv) <- make_dlvar at $ T_UInt uintWord
+          (i_dv, i_dsv) <- make_dlvar at $ T_UInt UI_Word
           -- We ignore the state because if it is impure, then we will unroll
           -- anyways
           SLRes f_lifts _ f_da <-
@@ -2935,7 +2935,7 @@ evalPrim p sargs =
         [arrv, idxv, valv] -> do
           (idxty, idxda) <- compileTypeOf idxv
           case (idxty, idxda) of
-            (T_UInt False, (DLA_Literal (DLL_Int _ _ idxi))) ->
+            (T_UInt UI_Word, (DLA_Literal (DLL_Int _ _ idxi))) ->
               case arrv of
                 SLV_Array _ elem_ty arrvs ->
                   case idxi' < length arrvs of
@@ -2959,7 +2959,7 @@ evalPrim p sargs =
                 _ -> illegal_args
               where
                 idxi' = fromIntegral idxi
-            (T_UInt False, _) -> do
+            (T_UInt UI_Word, _) -> do
               (arr_ty, arrda) <- compileTypeOf arrv
               case arr_ty of
                 T_Array elem_ty sz -> do
@@ -3455,8 +3455,8 @@ evalPrim p sargs =
       let metal f k = k (M.lookup f metam')
       at <- withAt id
       ralgo_fees <- metal "fees" $ \case
-        Nothing -> return $ DLA_Literal $ DLL_Int at uintWord 0
-        Just v -> compileCheckType (T_UInt uintWord) v
+        Nothing -> return $ DLA_Literal $ DLL_Int at UI_Word 0
+        Just v -> compileCheckType (T_UInt UI_Word) v
       ralgo_assets <- metal "assets" $ \case
         Nothing -> return $ mempty
         Just v -> do
@@ -3482,17 +3482,17 @@ evalPrim p sargs =
       tokenPay Nothing (pa_net payAmt) "balance sufficient for payment to remote object"
       forM_ (pa_ks payAmt) $ \(a, t) -> do
         tokenPay (Just t) a "balance sufficient for payment to remote object"
-      let dzero = DLA_Literal $ DLL_Int at uintWord 0
+      let dzero = DLA_Literal $ DLL_Int at UI_Word 0
       billAmt <- case fromMaybe (Left zero) mbill of
         Left _ -> return $ DLPayAmt dzero []
         Right v -> compilePayAmt TT_Bill v
       (nBilled, nntbRecv) <- getBillTokens mbill billAmt
       let nntbC = length nntbRecv
-      let nntbT = ST_Tuple $ replicate nntbC $ ST_UInt uintWord
+      let nntbT = ST_Tuple $ replicate nntbC $ ST_UInt UI_Word
       let nntbNo = nntbC == 0
       let nntbTL = if nntbNo then [] else [nntbT]
       let SLTypeFun dom rng pre post pre_msg post_msg = stf
-      let rng' = ST_Tuple $ [ST_UInt uintWord] <> nntbTL <> [rng]
+      let rng' = ST_Tuple $ [ST_UInt UI_Word] <> nntbTL <> [rng]
       drng <- st2dte rng'
       rt <- st2dte rng
       let postArg = "(dom, [_," <> (if nntbNo then "" else " _,") <> " rng])"
@@ -3600,7 +3600,7 @@ evalPrim p sargs =
     SLPrim_verifyMuldiv -> do
       at <- withAt id
       (x, y, z) <- three_args
-      args' <- mapM (compileCheckType $ T_UInt uintWord) [x, y, z]
+      args' <- mapM (compileCheckType $ T_UInt UI_Word) [x, y, z]
       m <- readSt st_mode
       cl <- case m of
         SLM_Export -> return $ CT_Assume True
@@ -3675,11 +3675,11 @@ evalPrim p sargs =
         void $ mustBeToken ty
         return da
       at <- withAt id
-      let mdv = DLVar at Nothing $ T_UInt uintWord
+      let mdv = DLVar at Nothing $ T_UInt UI_Word
       fvBal <- getBalanceOf' mtok
       let trackedBal = DLA_Var fvBal
       untrackedFunds <- ctxt_lift_expr mdv $ DLE_GetUntrackedFunds at mtok trackedBal
-      dv <- ctxt_lift_expr mdv $ DLE_PrimOp at (ADD uintWord) [DLA_Var untrackedFunds, trackedBal]
+      dv <- ctxt_lift_expr mdv $ DLE_PrimOp at (ADD UI_Word) [DLA_Var untrackedFunds, trackedBal]
       setBalance TM_Balance mtok (DLA_Var dv)
       return (lvl, SLV_DLVar untrackedFunds)
     SLPrim_fromSome -> do
@@ -3733,8 +3733,8 @@ evalPrim p sargs =
             evalPrimOp S_MOD [bi, public y]
       case (x_ty, y_ty) of
         (T_UInt x_ui, T_UInt y_ui) | x_ui == y_ui -> evalPrimOp S_MOD sargs
-        (T_Bytes {}, T_UInt False) -> go False
-        (T_Digest, T_UInt False) -> go True
+        (T_Bytes {}, T_UInt UI_Word) -> go False
+        (T_Digest, T_UInt UI_Word) -> go True
         (l, r) -> expect_ $ Err_mod_Types l r
     -- END OF evalPrim case
   where
@@ -4261,7 +4261,7 @@ evalExpr e = case e of
       let mkField k v = JSPropertyNameandValue (JSPropertyString JSNoAnnot $ "'" <> k <> "'") JSNoAnnot [v]
       i' <-
         typeOf (snd ex) >>= \case
-          (T_UInt False, _) ->
+          (T_UInt UI_Word, _) ->
             let i_field = JSLOne $ mkField "i" i
              in let sign_field = mkField "sign" $ JSLiteral JSNoAnnot "true"
                  in let si = JSObjectLiteral JSNoAnnot (JSCTLNone $ JSLCons i_field JSNoAnnot sign_field) JSNoAnnot
@@ -4394,10 +4394,10 @@ doArrRef_ arrv idxv = do
               False ->
                 expect_ $ Err_Eval_RefOutOfBounds (fromIntegral sz) idxi
               True -> do
-                idx_dla <- withAt $ \at -> DLA_Literal (DLL_Int at uintWord idxi)
+                idx_dla <- withAt $ \at -> DLA_Literal (DLL_Int at UI_Word idxi)
                 retArrayRef t sz (DLA_Var adv) idx_dla
         _ -> expect_t arrv $ Err_Eval_RefNotRefable
-    SLV_DLVar idxdv@(DLVar _ _ (T_UInt False) _) -> do
+    SLV_DLVar idxdv@(DLVar _ _ (T_UInt UI_Word) _) -> do
       (arr_ty, arr_dla) <- compileTypeOf arrv
       case arr_ty of
         T_Array elem_ty sz ->
@@ -4629,11 +4629,11 @@ getBindingOrigin _ = Nothing
 compilePayAmt :: TransferType -> SLVal -> App DLPayAmt
 compilePayAmt tt v = do
   at <- withAt id
-  let mtPay = DLPayAmt (DLA_Literal $ DLL_Int at uintWord 0) []
+  let mtPay = DLPayAmt (DLA_Literal $ DLL_Int at UI_Word 0) []
   let v_at = srclocOf_ at v
   (t, ae) <- typeOf v
   case t of
-    T_UInt False -> do
+    T_UInt UI_Word -> do
       a <- compileArgExpr_ ae
       return $ DLPayAmt a []
     T_Tuple ts -> do
@@ -4641,13 +4641,13 @@ compilePayAmt tt v = do
         DLAE_Tuple aes -> do
           let go sa (gt, gae) =
                 case gt of
-                  T_UInt False -> do
+                  T_UInt UI_Word -> do
                     let ((seenNet, sks), DLPayAmt _ tks) = sa
                     when seenNet $
                       locAt v_at $ expect_ $ Err_Transfer_DoubleNetworkToken tt
                     a <- compileArgExpr_ gae
                     return $ ((True, sks), DLPayAmt a tks)
-                  T_Tuple [T_UInt False, T_Token] ->
+                  T_Tuple [T_UInt UI_Word, T_Token] ->
                     case gae of
                       DLAE_Tuple [amt_ae, token_ae] -> do
                         let ((seenNet, sks), DLPayAmt nts tks) = sa
@@ -4663,16 +4663,16 @@ compilePayAmt tt v = do
                 let getPayAmt = DLE_TupleRef at $ DLA_Var dv
                 let mkVar vt e = DLA_Var <$> (ctxt_lift_expr (DLVar at Nothing vt) e)
                 case ty of
-                  T_UInt False -> do
+                  T_UInt UI_Word -> do
                     let ((seenNet, sks), DLPayAmt _ tks) = sa
                     when seenNet $ do
                       locAt v_at $ expect_ $ Err_Transfer_DoubleNetworkToken tt
-                    a <- mkVar (T_UInt uintWord) $ getPayAmt idx
+                    a <- mkVar (T_UInt UI_Word) $ getPayAmt idx
                     return $ ((True, sks), DLPayAmt a tks)
-                  tupTy@(T_Tuple [T_UInt False, T_Token]) -> do
+                  tupTy@(T_Tuple [T_UInt UI_Word, T_Token]) -> do
                     let ((seenNet, sks), DLPayAmt nts tks) = sa
                     tup   <- mkVar tupTy $ getPayAmt idx
-                    amt_a <- mkVar (T_UInt uintWord)  $ DLE_TupleRef at tup 0
+                    amt_a <- mkVar (T_UInt UI_Word)  $ DLE_TupleRef at tup 0
                     tok_a <- mkVar T_Token $ DLE_TupleRef at tup 1
                     verifyTokenUnique sks tok_a
                     return $ ((seenNet, tok_a : sks), (DLPayAmt nts $ tks <> [(amt_a, tok_a)]))
@@ -4921,8 +4921,8 @@ typeToExpr :: DLType -> JSExpression
 typeToExpr = \case
   T_Null -> var "Null"
   T_Bool -> var "Bool"
-  T_UInt False -> var "UInt"
-  T_UInt True -> var "UInt256"
+  T_UInt UI_Word -> var "UInt"
+  T_UInt UI_256 -> var "UInt256"
   T_Bytes i -> call "Bytes" [ie i]
   T_Digest -> var "Digest"
   T_Address -> var "Address"

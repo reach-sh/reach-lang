@@ -313,11 +313,10 @@ type SLPart = B.ByteString
 render_sp :: SLPart -> Doc
 render_sp = viaShow
 
-type UIntTy = Bool
-uintWord :: UIntTy
-uintWord = False
-uint256 :: UIntTy
-uint256 = True
+data UIntTy = UI_Word | UI_256 deriving (Eq, Generic, NFData, Ord, Show)
+
+instance FromJSON UIntTy
+instance ToJSON UIntTy
 
 uint256_Max :: Integer
 uint256_Max = 2 ^ (256 :: Integer) - 1

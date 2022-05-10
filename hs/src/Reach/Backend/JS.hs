@@ -128,10 +128,10 @@ jsContract_ :: DLType -> App Doc
 jsContract_ = \case
   T_Null -> return "stdlib.T_Null"
   T_Bool -> return "stdlib.T_Bool"
-  T_UInt False -> return "stdlib.T_UInt"
-  T_UInt True -> return "stdlib.T_UInt256"
+  T_UInt UI_Word -> return "stdlib.T_UInt"
+  T_UInt UI_256 -> return "stdlib.T_UInt256"
   T_Bytes sz -> do
-    sz' <- jsCon $ DLL_Int sb uintWord sz
+    sz' <- jsCon $ DLL_Int sb UI_Word sz
     return $ jsApply "stdlib.T_Bytes" [sz']
   T_Digest -> return $ "stdlib.T_Digest"
   T_Address -> return $ "stdlib.T_Address"
@@ -139,7 +139,7 @@ jsContract_ = \case
   T_Token -> return $ "stdlib.T_Token"
   T_Array t sz -> do
     t' <- jsContract t
-    sz' <- jsCon (DLL_Int sb uintWord sz)
+    sz' <- jsCon (DLL_Int sb UI_Word sz)
     return $ jsApply ("stdlib.T_Array") $ [t', sz']
   T_Tuple as -> do
     as' <- mapM jsContract as
@@ -222,8 +222,8 @@ jsCon = \case
   DLL_Bool b -> return $ jsBool b
   DLL_Int at uit i -> do
     uim <- case uit of
-             False -> jsArg (DLA_Constant $ DLC_UInt_max)
-             True -> return $ jsNum $ uint256_Max
+             UI_Word -> jsArg (DLA_Constant $ DLC_UInt_max)
+             UI_256 -> return $ jsNum $ uint256_Max
     return $ jsApply "stdlib.checkedBigNumberify" [jsAt at, uim, jsNum i]
   DLL_TokenZero ->
     return "stdlib.Token_zero"
@@ -270,7 +270,7 @@ jsDigest :: AppT [DLArg]
 jsDigest as = jsApply "stdlib.digest" <$> jsContractAndVals as
 
 jsUIntTy :: UIntTy -> Doc
-jsUIntTy = jsBool
+jsUIntTy = undefined -- TODO
 
 jsPrimApply :: PrimOp -> [Doc] -> App Doc
 jsPrimApply = \case
@@ -316,8 +316,8 @@ jsPrimApply = \case
   GET_COMPANION -> const $ do
     return $ "await" <+> jsApply "ctc.getContractCompanion" [ ]
   where
-    jsApply_ui t f = r $ jsApply $ f <> (if t then "256" else "")
     r f = return . f
+    jsApply_ui t f = jsApply $ f <> (if (t == UI_256) then "256" else "")
 
 jsArg_m :: AppT (Maybe DLArg)
 jsArg_m = \case
@@ -352,7 +352,7 @@ jsExpr = \case
     return $ x' <> "." <> jsApply "concat" [y']
   DLE_TupleRef at aa i -> do
     aa' <- jsArg aa
-    i' <- jsCon $ DLL_Int at uintWord i
+    i' <- jsCon $ DLL_Int at UI_Word i
     return $ aa' <> brackets i'
   DLE_ObjectRef _ oa f -> do
     oa' <- jsArg oa
@@ -398,7 +398,7 @@ jsExpr = \case
       JM_Backend -> mempty
       JM_View -> impossible "view tokeninit"
       JM_Simulate -> do
-        zero' <- jsCon $ DLL_Int sb uintWord 0
+        zero' <- jsCon $ DLL_Int sb UI_Word 0
         tok' <- jsArg tok
         return $
           jsSimTxn "init" $
@@ -466,7 +466,7 @@ jsExpr = \case
         fees' <- jsArg r_fees
         let notStaticZero = not . staticZero
         let pay_ks_nz = filter (notStaticZero . fst) pay_ks
-        let l2n x = jsCon $ DLL_Int at uintWord $ fromIntegral $ length $ x
+        let l2n x = jsCon $ DLL_Int at UI_Word $ fromIntegral $ length $ x
         pays' <- l2n $ filter notStaticZero $ pay_net : map fst pay_ks_nz
         let nRecvCount = if nRecv then [ro] else []
         bills' <- l2n $ nRecvCount <> nnRecv
@@ -483,7 +483,7 @@ jsExpr = \case
               , ("apps", jsArray apps')
               , ("fees", fees')
               ]
-        net' <- jsCon $ DLL_Int at uintWord 0
+        net' <- jsCon $ DLL_Int at UI_Word 0
         let bill' = jsArray $ map (const net') nnRecv
         let bill'' = if null nnRecv then [] else [bill']
         let res'' = parens $ res' <> ", undefined"
@@ -536,11 +536,20 @@ jsExpr = \case
   DLE_GetUntrackedFunds at mtok tb -> do
     tok <- maybe (return "") jsArg mtok
     tb' <- jsArg tb
-    zero <- jsArg $ DLA_Literal $ DLL_Int at uintWord 0
+    zero <- jsArg $ DLA_Literal $ DLL_Int at UI_Word 0
     let bal = "await" <+> jsApply "ctc.getBalance" [tok]
+<<<<<<< HEAD
     c' <- jsPrimApply (PLE uintWord) [bal, tb']
     f' <- jsPrimApply (SUB uintWord) [bal, tb']
     rhs <- jsPrimApply IF_THEN_ELSE [ c', zero, f' ]
+=======
+    let rhs = jsPrimApply
+          IF_THEN_ELSE
+          [ jsPrimApply (PLE UI_Word) [bal, tb']
+          , zero
+          , jsPrimApply (SUB UI_Word) [bal, tb']
+          ]
+>>>>>>> 9b9ff4c33 (convert UIntTy from Bool to its own type)
     ctm <- asks ctxt_mode
     let infoSim = case ctm == JM_Simulate && isJust mtok of
           True -> jsSimTxn "info" [("tok", tok)] <> ","
@@ -708,7 +717,7 @@ jsETail = \case
                   let vs = map fst svs
                   vs' <- mapM jsVar vs
                   ctcs <- jsArray <$> (mapM jsContract $ map varType vs)
-                  w' <- jsCon $ DLL_Int sb uintWord $ fromIntegral which
+                  w' <- jsCon $ DLL_Int sb UI_Word $ fromIntegral which
                   let getState = jsApply ("await ctc.getState") [w', ctcs]
                   return ["const" <+> jsArray vs' <+> "=" <+> getState <> semi]
         k' <- local (\e -> e {ctxt_isAPI = False}) $ jsETail k
@@ -805,7 +814,7 @@ jsETail = \case
             vs <- jsArray <$> ((++) <$> mapM jsVar svs <*> mapM jsArg args)
             lct_v' <- case lct_v of
               Just x -> jsArg x
-              Nothing -> jsCon $ DLL_Int sb uintWord 0
+              Nothing -> jsCon $ DLL_Int sb UI_Word 0
             whena' <- jsArg whena
             soloSend' <- jsCon (DLL_Bool soloSend)
             msgts <- mapM (jsContract . argTypeOf) $ svs_as ++ args
@@ -1043,8 +1052,13 @@ jsViews (cvs, vis) = do
       let illegal = jsApply "stdlib.assert" ["false", jsString "illegal view"]
       let enDecode v k vi (ViewInfo vs vim) = do
             vs' <- mapM jsVar vs
+<<<<<<< HEAD
             vi' <- jsCon $ DLL_Int sb uintWord $ fromIntegral vi
             c <- jsPrimApply (PEQ uintWord) ["i", vi']
+=======
+            vi' <- jsCon $ DLL_Int sb UI_Word $ fromIntegral vi
+            let c = jsPrimApply (PEQ UI_Word) ["i", vi']
+>>>>>>> 9b9ff4c33 (convert UIntTy from Bool to its own type)
             let let' = "const" <+> jsArray vs' <+> "=" <+> "svs" <> semi
             ret' <-
               case M.lookup k (fromMaybe mempty $ M.lookup v vim) of

@@ -67,13 +67,13 @@ instance ToJSON DLType
 uintTyOf :: DLType -> UIntTy
 uintTyOf = \case
   T_UInt t -> t
-  _ -> uintWord
+  _ -> UI_Word
 
 tokenInfoElemTy :: DLType
 tokenInfoElemTy = T_Tuple [balance, supply, destroyed]
   where
-    balance = T_UInt False
-    supply = T_UInt False
+    balance = T_UInt UI_Word
+    supply = T_UInt UI_Word
     destroyed = T_Bool
 
 maybeT :: DLType -> DLType
@@ -128,8 +128,8 @@ instance Show DLType where
   show = \case
     T_Null -> "Null"
     T_Bool -> "Bool"
-    T_UInt False -> "UInt"
-    T_UInt True -> "UInt256"
+    T_UInt UI_Word -> "UInt"
+    T_UInt UI_256 -> "UInt256"
     (T_Bytes sz) -> "Bytes(" <> show sz <> ")"
     T_Digest -> "Digest"
     T_Address -> "Address"
@@ -221,7 +221,7 @@ instance Pretty DLConstant where
 
 conTypeOf :: DLConstant -> DLType
 conTypeOf = \case
-  DLC_UInt_max  -> T_UInt False
+  DLC_UInt_max  -> T_UInt UI_Word
   DLC_Token_zero -> T_Token
 
 data DLLiteral
@@ -345,8 +345,8 @@ staticZero = \case
 
 uintTyMax :: UIntTy -> DLArg
 uintTyMax = \case
-  True -> DLA_Literal $ DLL_Int sb True $ uint256_Max
-  False -> DLA_Constant DLC_UInt_max
+  UI_256 -> DLA_Literal $ DLL_Int sb UI_256 $ uint256_Max
+  UI_Word -> DLA_Constant DLC_UInt_max
 
 asnLike :: [DLVar] -> [(DLVar, DLArg)]
 asnLike = map (\x -> (x, DLA_Var x))
@@ -1270,13 +1270,13 @@ fluidVarType :: FluidVar -> DLType
 fluidVarType = \case
   FV_tokenInfos -> impossible "fluidVarType: FV_tokenInfos"
   FV_tokens -> impossible "fluidVarType: FV_tokens"
-  FV_netBalance -> T_UInt False
-  FV_thisConsensusTime -> T_UInt False
-  FV_lastConsensusTime -> T_UInt False
-  FV_baseWaitTime -> T_UInt False
-  FV_thisConsensusSecs -> T_UInt False
-  FV_lastConsensusSecs -> T_UInt False
-  FV_baseWaitSecs -> T_UInt False
+  FV_netBalance -> T_UInt UI_Word
+  FV_thisConsensusTime -> T_UInt UI_Word
+  FV_lastConsensusTime -> T_UInt UI_Word
+  FV_baseWaitTime -> T_UInt UI_Word
+  FV_thisConsensusSecs -> T_UInt UI_Word
+  FV_lastConsensusSecs -> T_UInt UI_Word
+  FV_baseWaitSecs -> T_UInt UI_Word
   FV_didSend -> T_Bool
 
 allFluidVars :: [FluidVar]

@@ -408,7 +408,7 @@ mustBeSDT_D = \case
 
 parseType :: SExpr -> App SDT
 parseType = \case
-  Atom "Int" -> return $ SDT_D $ T_UInt uintWord
+  Atom "Int" -> return $ SDT_D $ T_UInt UI_Word
   Atom "Bytes" -> return $ SDT_D $ T_Bytes 0
   Atom t -> do
     typem <- asks ctxt_smt_typem
@@ -519,7 +519,7 @@ parseVal env sdt v = do
                   SMV_Array_Const ty <$> parseVal env (SDT_D ty) e
                 List [Atom "store", arrse, idxse, vse] -> do
                   arrv <- parseVal env sdt arrse
-                  idxv <- parseVal env (SDT_D $ T_UInt uintWord) idxse
+                  idxv <- parseVal env (SDT_D $ T_UInt UI_Word) idxse
                   vv <- parseVal env (SDT_D ty) vse
                   case (arrv, idxv) of
                     (SMV_Array_Const _ vc, SMV_Int idx) -> do
@@ -775,8 +775,8 @@ assertInvariants at_dv t v =
   case t of
     T_UInt ut -> do
       rhs <- case ut of
-               False -> smt_c at_dv DLC_UInt_max
-               True -> return $ smt_lt at_dv $ DLL_Int at_dv ut uint256_Max
+               UI_Word -> smt_c at_dv DLC_UInt_max
+               UI_256 -> return $ smt_lt at_dv $ DLL_Int at_dv ut uint256_Max
       smtAssert (smtApply "<=" [Atom v, rhs])
     _ -> return ()
 
@@ -1152,14 +1152,14 @@ smt_e at_dv mdv de = do
       n' <- smt_v at n
       let go f = smtAssert . f n'
       case mo of
-        Nothing -> go smtEq $ smt_lt at $ DLL_Int at uintWord 0
+        Nothing -> go smtEq $ smt_lt at $ DLL_Int at UI_Word 0
         Just o -> do
           o' <- smt_a at o
           case op of
             PGT _ -> do
-              let w = DLA_Literal $ DLL_Int at uintWord 1
+              let w = DLA_Literal $ DLL_Int at UI_Word 1
               w' <- smt_a at w
-              go smtEq =<< smtPrimOp at (ADD uintWord) [o, w] [o', w']
+              go smtEq =<< smtPrimOp at (ADD UI_Word) [o, w] [o', w']
             PGE _ -> go smtGe o'
             _ -> impossible $ "timeOrder: bad op: " <> show op
     DLE_EmitLog at _ lv ->
@@ -1434,14 +1434,14 @@ smt_s = \case
                 (pv_tok, _) <- mki "tok"
                 let pv_tok' = Atom pv_tok
                 smt <- ctxt_smt <$> ask
-                let pv_net_dv = DLVar at (Just (at, pv_net)) (T_UInt uintWord) pv_net_i
+                let pv_net_dv = DLVar at (Just (at, pv_net)) (T_UInt UI_Word) pv_net_i
                 let pv_net_let = SMTLet at pv_net_dv (DLV_Let DVC_Once pv_net_dv) Context $ SMTProgram (DLE_Arg at pa_net)
                 smtDeclare smt pv_net (Atom "UInt") $ Just pv_net_let
-                smtTypeInv (T_UInt uintWord) $ pv_net'
+                smtTypeInv (T_UInt UI_Word) $ pv_net'
                 smtDeclare smt pv_tok (Atom "Token") Nothing
                 smtTypeInv T_Token $ pv_tok'
                 smtDeclare smt pv_ks (smtApply "Array" [Atom "Token", Atom "UInt"]) Nothing
-                smtTypeInv (T_UInt uintWord) $ smtApply "select" [pv_ks', pv_tok']
+                smtTypeInv (T_UInt UI_Word) $ smtApply "select" [pv_ks', pv_tok']
                 let one v a = smtAssert =<< (smtEq v <$> smt_a at a)
                 when should $ do
                   one pv_net' pa_net
@@ -1505,8 +1505,8 @@ _smtDefineTypes smt ts = do
       (M.fromList
          [ (T_Null, ("Null", none))
          , (T_Bool, ("Bool", none))
-         , (T_UInt uintWord, ("UInt", uintWord_inv))
-         , (T_UInt uint256, ("UInt", uint256_inv))
+         , (T_UInt UI_Word, ("UInt", uintWord_inv))
+         , (T_UInt UI_256, ("UInt", uint256_inv))
          , (T_Digest, ("Digest", none))
          , (T_Address, ("Address", none))
          , (T_Contract, ("Contract", none))
@@ -1532,7 +1532,7 @@ _smtDefineTypes smt ts = do
             let z = "z_" ++ n
             void $ SMT.declare smt z $ Atom n
             let idxs = [0 .. (sz -1)]
-            let idxses = map (smt_lt sb . DLL_Int sb uintWord) idxs
+            let idxses = map (smt_lt sb . DLL_Int sb UI_Word) idxs
             let cons_vars = map (("e" ++) . show) idxs
             let cons_params = map (\x -> (x, Atom tn)) cons_vars
             let defn1 arrse (idxse, var) = smtApply "store" [arrse, idxse, Atom var]

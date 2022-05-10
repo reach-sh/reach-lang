@@ -420,7 +420,7 @@ mkVar at lab ty = DLVar at (Just (at, lab)) ty <$> df_allocVar
 lookupTokenIdx :: SrcLoc -> DLArg -> DLArg -> DFApp ([DLStmt], DLArg)
 lookupTokenIdx at tok toks = do
   let asn = assign at
-  let uint = T_UInt uintWord
+  let uint = T_UInt UI_Word
   let accTy = T_Tuple [T_Bool, uint]
   init_acc_dv <- mkVar at "initAcc" $ accTy
   acc_dv <- mkVar at "acc" $ accTy
@@ -445,14 +445,14 @@ lookupTokenIdx at tok toks = do
         DT_Com (asn idx $ DLE_TupleRef at (DLA_Var acc_dv) 1) $
         DT_Com (asn toks_eq $ DLE_PrimOp at TOKEN_EQ [DLA_Var elem_dv, tok]) $
         DT_Com (asn cnd $ DLE_PrimOp at IF_THEN_ELSE [DLA_Var found, DLA_Literal $ DLL_Bool True, DLA_Var toks_eq]) $
-        DT_Com (asn idx' $ DLE_PrimOp at (ADD uintWord) [DLA_Var idx, DLA_Literal $ DLL_Int at uintWord 1]) $
+        DT_Com (asn idx' $ DLE_PrimOp at (ADD UI_Word) [DLA_Var idx, DLA_Literal $ DLL_Int at UI_Word 1]) $
         DT_Com (asn fail_acc $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool False, DLA_Var idx']) $
         DT_Com (asn succ_acc $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool True, DLA_Var idx]) $
         DT_Com (asn bl_res $ DLE_PrimOp at IF_THEN_ELSE [DLA_Var cnd, DLA_Var succ_acc, DLA_Var fail_acc]) $
         DT_Return at
   let bl = DLBlock at [] block_tl $ DLA_Var bl_res
   let ss =
-        [ asn init_acc_dv $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool False, DLA_Literal $ DLL_Int at uintWord 0]
+        [ asn init_acc_dv $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool False, DLA_Literal $ DLL_Int at UI_Word 0]
         , DL_ArrayReduce at reduce_res [toks] (DLA_Var init_acc_dv) acc_dv [elem_dv] i_dv bl
         , asn tok_idx $ DLE_TupleRef at (DLA_Var reduce_res) 1
         , asn found' $ DLE_TupleRef at (DLA_Var reduce_res) 0
@@ -471,7 +471,7 @@ df_com mkk back = \case
     (_, tokA)  <- fluidRef at FV_tokens
     (_, infos) <- fluidRef at FV_tokenInfos
     (lookup_ss, idx) <- case mpos of
-              Just i  -> return ([], DLA_Literal $ DLL_Int at uintWord $ fromIntegral i)
+              Just i  -> return ([], DLA_Literal $ DLL_Int at UI_Word $ fromIntegral i)
               Nothing -> lookupTokenIdx at tok tokA
     let meta_idx = fromIntegral $ fromEnum meta
     tokInfo <- mkVar at "tokInfo" tokenInfoElemTy
@@ -485,13 +485,13 @@ df_com mkk back = \case
     (_, tokA) <- fluidRef at FV_tokens
     (_, infos) <- fluidRef at FV_tokenInfos
     (lookup_ss, idx) <- case mpos of
-      Just i -> return ([], DLA_Literal $ DLL_Int at uintWord $ fromIntegral i)
+      Just i -> return ([], DLA_Literal $ DLL_Int at UI_Word $ fromIntegral i)
       Nothing -> lookupTokenIdx at tok tokA
     infoTy <- tokenInfoType
     info <- mkVar at "tokInfo" tokenInfoElemTy
     infos' <- mkVar at "tokInfos'" infoTy
     info' <- mkVar at "tokInfo'" tokenInfoElemTy
-    let uint = T_UInt uintWord
+    let uint = T_UInt UI_Word
     bal <- mkVar at "tokBal" $ uint
     supply <- mkVar at "tokSupply" $ uint
     destroyed <- mkVar at "destroyed" $ T_Bool
@@ -618,8 +618,8 @@ df_step = \case
     let ts = dr_secs recv
     k' <-
       df_con $
-        DK_Com (DKC_Let at DLV_Eff (DLE_TimeOrder at (PGT uintWord) lt tt)) $
-          DK_Com (DKC_Let at DLV_Eff (DLE_TimeOrder at (PGE uintWord) ls ts)) $
+        DK_Com (DKC_Let at DLV_Eff (DLE_TimeOrder at (PGT UI_Word) lt tt)) $
+          DK_Com (DKC_Let at DLV_Eff (DLE_TimeOrder at (PGE UI_Word) ls ts)) $
             dr_k recv
     let recv' = recv {dr_k = k'}
     mtime' <-
@@ -628,7 +628,7 @@ df_step = \case
         Just (ta, tk) -> do
           tk' <- df_step tk
           return $ Just (ta, tk')
-    let lt' = fromMaybe (DLA_Literal $ DLL_Int at uintWord 0) lt
+    let lt' = fromMaybe (DLA_Literal $ DLL_Int at UI_Word 0) lt
     return $ LLS_ToConsensus at lt' send recv' mtime'
   x -> df_com (mkCom LLS_Com) df_step x
 
@@ -645,7 +645,7 @@ df_init k = do
   tokA  <- mkVar sb "tokens" $ T_Array T_Token eBals
   info  <- mkVar sb "initialInfo" tokenInfoElemTy
   let false = DLA_Literal $ DLL_Bool False
-  let zero  = DLA_Literal $ DLL_Int sb uintWord 0
+  let zero  = DLA_Literal $ DLL_Int sb UI_Word 0
   let tokz  = DLA_Constant DLC_Token_zero
   let infos = map DLA_Var $ take (fromIntegral eBals) $ repeat info
   let asn v e = DKC_Let sb (DLV_Let DVC_Many v) e
