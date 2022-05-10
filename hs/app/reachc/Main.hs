@@ -5,6 +5,7 @@ import Control.Monad
 import Data.Aeson
 import Data.ByteString.Lazy.Char8 (pack, unpack)
 import Data.Either.Extra
+import Data.List.Extra (replace)
 import Data.Typeable (cast)
 import Reach.AST.Base
 import Reach.CommandLine
@@ -71,7 +72,8 @@ main = do
     Left exn -> throwIO exn
     Right () -> return ()
  where
+  f = replace "'" "'\\''" . unpack . encode
   report :: Either CompileErrorException () -> IO ()
   report a = do
     x <- getExecutablePath
-    void . spawnCommand $ x <> " --error-format-json --report '" <> (unpack $ encode a) <> "'"
+    void . spawnCommand $ x <> " --error-format-json --report '" <> f a <> "'"
