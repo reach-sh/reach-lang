@@ -411,15 +411,54 @@ Reach's @{defn("type")}s are represented in programs by the following identifier
 + @{ref("rsh", "Bool")} `{!rsh} Bool`, which denotes a boolean.
 + @{ref("rsh", "UInt")} `{!rsh} UInt`, which denotes an unsigned integer.
   @{ref("rsh", "UInt.max")} `{!rsh} UInt.max` is the largest value that may be assigned to a `{!rsh} UInt`.
+
+The following example shows the usage of `{!rsh} Null`, `{!rsh} Bool` and `{!rsh} UInt`:
+
+```reach
+load: /hs/t/y/pr_private_multi.rsh
+range: 10 - 10
+```
+
 + @{ref("rsh", "UInt256")} `{!rsh} UInt256`, which denotes an unsigned integer with 256 bits.
   @{ref("rsh", "UInt256.max")} `{!rsh} UInt256.max` is the largest value that may be assigned to a `{!rsh} UInt256`.
 + `{!rsh} Int`, which denotes a signed integer.
+
+The following example shows the usage of `{!rsh} UInt256` and `{!rsh} Int`:
+
+```reach
+load: /examples/uint256/index.rsh
+range: 30 - 30
+```
+
 + `{!rsh} FixedPoint`, which denotes a fractional number.
 + @{ref("rsh", "Bytes")} `{!rsh} Bytes(length)`, which denotes a string of bytes of length at most `{!rsh} length`.
 Bytes of different lengths are not compatible; however the shorter bytes may be [padded](##padding).
+
+The following example shows the usage of `{!rsh} Bytes(length)`:
+
+```reach
+load: /examples/overview/index-error.rsh
+range: 7 - 7
+```
+
 + @{ref("rsh", "Digest")} `{!rsh} Digest`, which denotes a digest.
+
+The following example shows the usage of `{!rsh} Digest`:
+
+```reach
+load: /hs/t/y/digest_xor.rsh
+range: 4 - 6
+```
+
 + @{ref("rsh", "Address")} `{!rsh} Address`, which denotes an account address.
 + @{ref("rsh", "Contract")} `{!rsh} Contract`, which denotes the identifying information of a contract.
+
+The following example shows the usage of `{!rsh} Address` and `{!rsh} Contract`:
+
+```reach
+load: /examples/core-1452/index.rsh
+range: 3 - 5
+```
 
 :::note
 Reach has different representations of contracts across connectors.
@@ -427,6 +466,13 @@ For example, on Algorand a `{!rsh} Contract` is an Application ID, but on Ethere
 :::
 
 + @{ref("rsh", "Token")} `{!rsh} Token`, which denotes a non-network token. @{seclink("ref-networks")} discusses how `{!rsh} Token`s are represented on specific networks.
+
+The following example shows the usage of `{!rsh} Token`:
+
+```reach
+load: /examples/remote/index.rsh
+range: 21 - 21
+```
 
 :::note
 Reach assumes that every `{!rsh} Token` in your program refers to a different non-network token.
@@ -438,16 +484,64 @@ The domain of a function is negative position.
 The range of a function is positive position.
 + `{!rsh} Fun(true, Range)`, which denotes an @{defn("unconstrained domain function type")}, when `{!rsh} Range` is a type.
 These functions may only appear in participant interact interfaces.
+
+The following example shows the usage of `{!rsh} Fun([Domain_0, ..., Domain_N], Range)` on line 5 and `{!rsh} Fun(true, Range)` on line 6:
+
+```reach
+load: /examples/time-7fd44/index.rsh
+range: 4 - 7
+```
+
 + @{ref("rsh", "Tuple")} `{!rsh} Tuple(Field_0, ..., FieldN)`, which denotes a tuple.
 (Refer to @{seclink("ref-programs-tuples")} for constructing tuples.)
+
+The following example shows the usage of `{!rsh} Tuple(Field_0, ..., FieldN)`:
+
+```reach
+load: /examples/zbeq/index.rsh
+range: 13 - 15
+```
+
 + @{ref("rsh", "Object")} `{!rsh} Object({key_0: Type_0, ..., key_N: Type_N})`, which denotes an object.
+
+The following example shows the usage of `{!rsh} Object({key_0: Type_0, ..., key_N: Type_N})`:
+
+```reach
+load: /examples/mint-basic/index.rsh
+range: 9 - 14
+```
+
 (Refer to @{seclink("ref-programs-objects")} for constructing objects.)
 + @{ref("rsh", "Struct")} `{!rsh} Struct([[key_0, Type_0], ..., [key_N, Type_N]])`, which denotes a struct.
+
+The following example shows the usage of `{!rsh} Struct([[key_0, Type_0], ..., [key_N, Type_N]])`:
+
+```reach
+load: /examples/remote/index.rsh
+range: 10 - 12
+```
+
 (Refer to @{seclink("ref-programs-structs")} for constructing structs.)
 + @{ref("rsh", "Array")} `{!rsh} Array(Type_0, size)`, which denotes a statically-sized array.
 `{!rsh} Type_0` must be a type that can exist at runtime (i.e., not a function type.)
+
+The following example shows the usage of `{!rsh} Array(Type_0, size)`:
+
+```reach
+load: /examples/map-arbitrary-key/index.rsh
+range: 11 - 11
+```
+
 (Refer to @{seclink("ref-programs-arrays")} for constructing arrays.)
 + @{ref("rsh", "Data")} `{!rsh} Data({variant_0: Type_0, ..., variant_N: Type_N})`, which denotes a [tagged union](https://en.wikipedia.org/wiki/Tagged_union) (or _sum type_).
+
+The following example shows the usage of `{!rsh} Data({variant_0: Type_0, ..., variant_N: Type_N})`:
+
+```reach
+load: /examples/dominant-assurance/index.rsh
+range: 33 - 33
+```
+
 (Refer to @{seclink("ref-programs-data")} for constructing data instances.)
 + @{ref("rsh", "Refine")} `{!rsh} Refine(Type_0, Predicate, ?Message)`, where `{!rsh} Predicate` is a unary function returning a boolean, which denotes a [refinement type](https://en.wikipedia.org/wiki/Refinement_type), that is instances of `{!rsh} Type_0` that satisfy `{!rsh} Predicate`.
 When a refinement type appears in a @{defn("negative position")} (such as in an `{!rsh} is` or in the domain of a `{!rsh} Fun` of a participant interact interface), it introduces an `{!rsh} assert`;
@@ -486,12 +580,25 @@ is(x, t) // t
 The `{!rsh} typeOf` primitive function is the same as `{!rsh} typeof`:
 it returns the type of its argument.
 
+The following example shows the usage of `{!rsh} typeOf`:
+
+```reach
+load: /hs/t/y/typeof.rsh
+range: 29 - 29
+```
+
 The `{!rsh} isType` function returns `{!rsh} true` if its argument is a type.
 Any expression satisfying `{!rsh} isType` is compiled away and does not exist at runtime.
 
 The `{!rsh} is` function returns its first argument if it satisfies the type specified by the second argument.
 If it is not, then the program is invalid.
 For example, `{!rsh} is(5, UInt)` returns `{!rsh} 5`, while `{!rsh} is(5, Bool)` is an invalid program.
+
+```reach
+load: /hs/t/y/tut6-refined.rsh
+range: 15 - 15
+```
+
 The value returned by `{!rsh} is` may not be identical to the input, because in some cases, such as for functions, it will record the applied to type and enforce it on future invocations.
 These applications are considered negative positions for `{!rsh} Refine`.
 
