@@ -255,7 +255,7 @@ export const BT_Object = (co: {
       } = {};
       for (const prop in co) {
         if (!hasProp(vo, prop)) {
-          throw Error(`Expected prop ${prop}, but didn't found it in ${Object.keys(vo)}`);
+          throw Error(`Expected prop ${prop}, but didn't find it in ${Object.keys(vo)}`);
         }
         obj[prop] = co[prop].canonicalize(vo[prop]);
       }
