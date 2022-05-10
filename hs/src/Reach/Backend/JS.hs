@@ -270,7 +270,7 @@ jsDigest :: AppT [DLArg]
 jsDigest as = jsApply "stdlib.digest" <$> jsContractAndVals as
 
 jsUIntTy :: UIntTy -> Doc
-jsUIntTy = undefined -- TODO
+jsUIntTy t = jsBool $ if t == UI_Word then False else True -- TODO change stdlib repr
 
 jsPrimApply :: PrimOp -> [Doc] -> App Doc
 jsPrimApply = \case
@@ -286,7 +286,7 @@ jsPrimApply = \case
   PGE t -> jsApply_ui t "stdlib.ge"
   PGT t -> jsApply_ui t "stdlib.gt"
   SQRT t -> jsApply_ui t "stdlib.sqrt"
-  UCAST x y -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy x, jsUIntTy y ] <> a
+  UCAST dom rng trunc -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy dom, jsUIntTy rng ] <> a <> [ jsBool trunc ]
   LSH -> r $ jsApply "stdlib.lsh"
   RSH -> r $ jsApply "stdlib.rsh"
   MUL_DIV -> r $ jsApply "stdlib.muldiv"
