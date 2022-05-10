@@ -127,8 +127,8 @@ data TokenMeta
 
 tmTypeOf :: TokenMeta -> DLType
 tmTypeOf = \case
-  TM_Balance   -> T_UInt uintWord
-  TM_Supply    -> T_UInt uintWord
+  TM_Balance   -> T_UInt UI_Word
+  TM_Supply    -> T_UInt UI_Word
   TM_Destroyed -> T_Bool
 
 instance Pretty DLSStmt where

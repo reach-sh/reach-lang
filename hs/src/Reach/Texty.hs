@@ -38,6 +38,7 @@ import qualified Data.Set as S
 import Data.String
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
+import Data.List (intersperse)
 
 data Doc
   = DText LT.Text
@@ -181,11 +182,7 @@ viaShow :: Show a => a -> Doc
 viaShow = DText . LT.pack . show
 
 punctuate :: Doc -> [Doc] -> [Doc]
-punctuate p = go
-  where
-    go [] = []
-    go [d] = [d]
-    go (d : ds) = (d <> p) : go ds
+punctuate = intersperse
 
 enclose :: Doc -> Doc -> Doc -> Doc
 enclose b a c = b <> c <> a
