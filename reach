@@ -132,6 +132,15 @@ gen_reachc_id () {
 }
 
 call_home () {
+
+  START_TIME=$1
+  ELAPSED_TIME=$2
+  RESULT=$3
+  REACH_VERSION=$4
+  CONNECTOR_MODE=$5
+  USING_VSSTUDIO_EXTENTION=$6
+  INITIATOR=$7
+
   CALL_HOME_ENCODED="eyAidXNlcklkIjogInt7UkVBQ0hDX0lEfX0iLCAic3RhcnRUaW1l\
 IjogInt7U1RBUlRfVElNRX19IiwgImVsYXBzZWQiOiAie3tFTEFQU0VEX1RJTUV9fSIsICJ\
 yZXN1bHQiOiAie3tSRVNVTFR9fSIsICJ2ZXJzaW9uIjogInt7UkVBQ0hfVkVSU0lPTn19Ii\
@@ -142,12 +151,12 @@ dGlhdG9yIjogInt7SU5JVElBVE9SfX0iIH0="
   START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   TRANSLATED_TEMPLATE=$(echo $CALL_HOME_TEMPLATE_DECODED | sed -e "s/{{REACHC_ID}}/$REACHC_ID/g" \
   -e "s/{{START_TIME}}/${START_TIME}/g" \
-  -e 's/{{ELAPSED_TIME}}/none/g' \
-  -e "s/{{RESULT}}/${2} is not installed/g" \
-  -e "s/{{REACH_VERSION}}/0.0.0/g" \
-  -e 's/{{CONNECTOR_MODE}}/none/g' \
-  -e 's/{{USING_VSSTUDIO_EXTENTION}}/none/g' \
-  -e "s/{{INITIATOR}}/${1}/g")
+  -e "s/{{ELAPSED_TIME}}/${ELAPSED_TIME}/g" \
+  -e "s/{{RESULT}}/${RESULT}/g" \
+  -e "s/{{REACH_VERSION}}/${REACH_VERSION}/g" \
+  -e "s/{{CONNECTOR_MODE}}/${CONNECTOR_MODE}/g" \
+  -e "s/{{USING_VSSTUDIO_EXTENTION}}/${USING_VSSTUDIO_EXTENTION}/g" \
+  -e "s/{{INITIATOR}}/${INITIATOR}/g")
   CALL_HOME_ENDPOINT="https://log.reach.sh/submit"
 
   curl -X POST "$CALL_HOME_ENDPOINT" -d "$TRANSLATED_TEMPLATE" || exit 1
@@ -223,6 +232,8 @@ install_docker () {
     printf "\nThis installation requires a restart for completion; do you want to restart now? [Y,n]: "
     read RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
+      CALL_HOME_START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+      call_home $CALL_HOME_START_TIME "none" "Docker Installed by Reach" "0.0.0" "none" "none" $1
       powershell.exe 'shutdown -r -t 0'
     fi
   else
@@ -241,7 +252,8 @@ gen_reachc_id
 
 for DEP in make curl docker docker-compose; do
   if ! (which "${DEP}" >/dev/null 2>&1); then
-    call_home $1 $DEP
+    CALL_HOME_START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    call_home $CALL_HOME_START_TIME "none" "${DEP} is not installed" "0.0.0" "none" "none" $1
     printf "Reach relies on an installation of %s; do you want to install it? [Y,n]: " "${DEP}"
     read -r RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
