@@ -29,6 +29,11 @@ export type CurrencyAmount = string | number | BigNumber | bigint
 
 export type {Connector} from './ConnectorMode';
 
+// This is dumb but it's how ESLint says to do it
+// `hasOwnProperty` is important for denying access to prototype fields
+// https://eslint.org/docs/rules/no-prototype-builtins
+export const hasProp = (o: unknown, p: string) => o && {}.hasOwnProperty.call(o, p);
+
 export const j2sf = (x:any): string => {
   // We're removing duplicated values, so we can remove cyclic references
   const seen: any[] = [];

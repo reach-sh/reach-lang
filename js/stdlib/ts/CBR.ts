@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { checkedBigNumberify } from './shared_backend';
-import { j2s, labelMaps } from './shared_impl';
+import { j2s, labelMaps, hasProp } from './shared_impl';
 // "CBR", canonical backend representation
 
 type BigNumber = ethers.BigNumber;
@@ -254,9 +254,7 @@ export const BT_Object = (co: {
         [key: string]: CBR_Val
       } = {};
       for (const prop in co) {
-        // This is dumb but it's how ESLint says to do it
-        // https://eslint.org/docs/rules/no-prototype-builtins
-        if (!{}.hasOwnProperty.call(vo, prop)) {
+        if (!hasProp(vo, prop)) {
           throw Error(`Expected prop ${prop}, but didn't found it in ${Object.keys(vo)}`);
         }
         obj[prop] = co[prop].canonicalize(vo[prop]);
@@ -290,7 +288,7 @@ export const BT_Data = (co: {
         throw Error(`Expected an array of length two to represent a data instance, but got ${j2s(io)}`);
       }
       const vn = io[0];
-      if (!{}.hasOwnProperty.call(co, vn)) {
+      if (!hasProp(co, vn)) {
         throw Error(`Expected a variant in ${Object.keys(co)}, but got ${vn}`);
       }
       return [vn, co[vn].canonicalize(io[1])];
