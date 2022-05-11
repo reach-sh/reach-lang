@@ -347,6 +347,14 @@ class ImperativeScenario extends Scenario {
     this.state.next();
     return this;
   }
+
+  copy() {
+    const cp = Object.assign(new ImperativeScenario(), this);
+    cp.state = Object.assign(new State(), this.state);
+    return cp;
+  }
+
+
 }
 
 class Store {
