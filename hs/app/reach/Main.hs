@@ -2452,7 +2452,6 @@ whoami = command "whoami" $ info f fullDesc
   where
     f = pure . script $ write [N.text| echo "$whoami'" |]
 
--- https://stackoverflow.com/a/60790430
 newtype GitHubGistResponse = GitHubGistResponse String
 instance FromJSON GitHubGistResponse where
   parseJSON = withObject "GitHubGistResponse" $ \o -> GitHubGistResponse <$> o .: "html_url"
