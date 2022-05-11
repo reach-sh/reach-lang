@@ -377,7 +377,7 @@ instance AC LLConsensus where
       k' <- ac llc_w_k
       body' <- ac llc_w_body
       cond' <- ac llc_w_cond
-      inv' <- ac llc_w_inv
+      inv' <- (, snd llc_w_inv) <$> ac (fst llc_w_inv)
       ac_visit llc_w_asn
       return $ LLC_While llc_w_at llc_w_asn inv' cond' body' k'
     c@(LLC_Continue _ asn) -> do

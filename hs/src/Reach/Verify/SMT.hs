@@ -184,7 +184,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_vst :: VerifySt
   , ctxt_modem :: Maybe VerifyMode
   , ctxt_path_constraint :: [SExpr]
-  , ctxt_while_invariant :: Maybe DLBlock
+  , ctxt_while_invariant :: Maybe (DLBlock, Maybe B.ByteString)
   , ctxt_displayed :: IORef (S.Set SExpr)
   , ctxt_maps :: M.Map DLMVar SMTMapInfo
   , ctxt_addrs :: M.Map SLPart DLVar
@@ -1281,21 +1281,21 @@ smt_block (DLBlock at _ l da) = do
   smt_l l
   smt_a at da
 
-smt_invblock :: BlockMode -> DLBlock -> App ()
-smt_invblock bm b@(DLBlock at f _ _) = do
+smt_invblock :: BlockMode -> DLBlock -> Maybe B.ByteString -> App ()
+smt_invblock bm b@(DLBlock at f _ _) minv_lab = do
   da' <-
     local (\e -> e {ctxt_inv_mode = bm}) $
       smt_block b
   case bm of
     B_Assume True -> smtAssertCtxt da'
     B_Assume False -> smtAssertCtxt (smtNot da')
-    B_Prove inCont -> verify1 at f (TInvariant inCont) da' Nothing
+    B_Prove inCont -> verify1 at f (TInvariant inCont) da' minv_lab
     B_None -> mempty
 
 smt_while_jump :: Bool -> DLAssignment -> App ()
 smt_while_jump vars_are_primed asn = do
   let DLAssignment asnm = asn
-  inv <-
+  (inv, minv_lab) <-
     (ctxt_while_invariant <$> ask) >>= \case
       Just x -> return $ x
       Nothing -> impossible "asn outside loop"
@@ -1314,7 +1314,7 @@ smt_while_jump vars_are_primed asn = do
         let mapCompose bc ab = M.mapMaybe (bc M.!?) ab
         let asnm' = mapCompose asnm rho
         return $ add_asn_lets asnm' inv_f
-  smt_invblock (B_Prove vars_are_primed) inv'
+  smt_invblock (B_Prove vars_are_primed) inv' minv_lab
 
 smt_asn_def :: SrcLoc -> DLAssignment -> App ()
 smt_asn_def at asn = mapM_ def1 $ M.keys asnm
@@ -1365,22 +1365,22 @@ smt_n = \case
     um <- asks ctxt_untrustworthyMaps
     when um $ smtMapRefresh at
     smt_s s
-  LLC_While at asn inv cond body k ->
+  LLC_While at asn (inv, minv_lab) cond body k ->
     mapM_ ctxtNewScope [before_m, loop_m, after_m]
     where
-      with_inv = local (\e -> e {ctxt_while_invariant = Just inv})
+      with_inv = local (\e -> e {ctxt_while_invariant = Just (inv, minv_lab) })
       before_m = with_inv $ smt_while_jump False asn
       loop_m = do
         smtMapRefresh at
         smt_asn_def at asn
-        smt_invblock (B_Assume True) inv
-        smt_invblock (B_Assume True) cond
+        smt_invblock (B_Assume True) inv minv_lab
+        smt_invblock (B_Assume True) cond minv_lab
         (with_inv $ smt_n body)
       after_m = do
         smtMapRefresh at
         smt_asn_def at asn
-        smt_invblock (B_Assume True) inv
-        smt_invblock (B_Assume False) cond
+        smt_invblock (B_Assume True) inv minv_lab
+        smt_invblock (B_Assume False) cond minv_lab
         smt_n k
   LLC_Continue _at asn -> smt_while_jump True asn
   LLC_ViewIs _ _ _ ma k -> do
