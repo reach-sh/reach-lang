@@ -2452,7 +2452,7 @@ whoami = command "whoami" $ info f fullDesc
   where
     f = pure . script $ write [N.text| echo "$whoami'" |]
 
-newtype GitHubGistResponse = GitHubGistResponse String
+newtype GitHubGistResponse = GitHubGistResponse Text
 instance FromJSON GitHubGistResponse where
   parseJSON = withObject "GitHubGistResponse" $ \o -> GitHubGistResponse <$> o .: "html_url"
 
@@ -2493,18 +2493,16 @@ support = command "support" $ info (pure step1) d
       let deviceCode = deviceCodePair !! 1
       let userCodePair = head $ filter isUserCodePair arrayOfArrayOfText
       let userCode = userCodePair !! 1
-      liftIO . T.putStrLn $ pack $ "Your user code is " ++ unpack userCode
-      liftIO . T.putStrLn $ pack "Please enter it at https://github.com/login/device"
-      liftIO . T.putStrLn $ pack ""
-      liftIO . T.putStrLn $ pack "Type 'y' AFTER SUCCESSFUL AUTHORIZATION"
-      liftIO . T.putStrLn $ pack "to upload index.mjs, index.rsh, or both:"
+      liftIO $ T.putStrLn [N.text|
+        Your user code is $userCode.
+        Please enter it at https://github.com/login/device.
+
+        Type 'y' AFTER SUCCESSFUL AUTHORIZATION to upload index.mjs, index.rsh, or both:
+      |]
       userEnteredCharacter <- liftIO getChar
       case toUpper userEnteredCharacter of
         'Y' -> do step2WithThe deviceCode
-        _ -> do
-          liftIO . T.putStrLn $ pack ""
-          liftIO . T.putStrLn $
-            "No files uploaded; run reach support again to make another try."
+        _ -> liftIO $ putStrLn "\nNo files were uploaded. Run `reach support` again to retry."
     grantType :: String
     grantType = "urn:ietf:params:oauth:grant-type:device_code"
     userAgentHeader = "user-agent"
@@ -2525,12 +2523,11 @@ support = command "support" $ info (pure step1) d
       case headMay $ filter isAccessTokenPair arrayOfArrayOfText of
         Nothing -> do
           case headMay $ filter isErrorPair arrayOfArrayOfText of
-            Nothing -> liftIO . T.putStrLn $ pack
-                "Upload unsuccessful; couldn't find an authorization code, or an error!"
+            Nothing -> liftIO $ putStrLn
+              "Upload unsuccessful; couldn't find an authorization code or error!"
             Just errorPair -> do
               let reason = errorPair !! 1
-              liftIO . T.putStr $ pack "\nError while acquiring access token: "
-              liftIO . T.putStrLn $ reason
+              liftIO . T.putStrLn $ pack "Error while acquiring access token:\n" <> reason
         Just accessTokenPair -> do
           let accessToken = accessTokenPair !! 1
           completeStep3WithThe accessToken
@@ -2548,9 +2545,7 @@ support = command "support" $ info (pure step1) d
           let indexRshJson = ("index.rsh" .= indexRshValue)
           checkIndexMjs indexRshJson True accessToken
         False -> do
-          liftIO . T.putStrLn $ pack ""
-          liftIO . T.putStrLn $ pack
-            "Didn't find index.rsh in the current directory; skipping..."
+          liftIO $ putStrLn "\nDidn't find index.rsh in the current directory; skipping..."
           -- @HACK Trying to pass an "empty" A.Pair...
           let nullString :: String
               nullString = ""
@@ -2578,9 +2573,7 @@ support = command "support" $ info (pure step1) d
                       ]
               uploadGistUsing mainJson accessToken
             False -> do
-              liftIO . T.putStrLn $ pack ""
-              liftIO . T.putStrLn $ pack
-                "Didn't find index.mjs in the current directory; skipping..."
+              liftIO $ putStrLn "\nDidn't find index.mjs in the current directory; skipping..."
               let mainJson =
                     object
                       [ "files" .= object [ indexRshJson ]
@@ -2603,17 +2596,17 @@ support = command "support" $ info (pure step1) d
                       [ "files" .= object [ indexMjsJson ]
                       ]
               uploadGistUsing mainJson accessToken
-            False -> do
-              liftIO . T.putStrLn $ pack
-                "Did not find index.mjs in the current directory; skipping..."
-              liftIO . T.putStrLn $ pack ""
-              liftIO . T.putStrLn $ pack "Nothing uploaded"
+            False -> liftIO $ T.putStrLn [N.text|
+                Did not find index.mjs in the current directory; skipping...
+
+                Nothing uploaded.
+              |]
     -- @TODO: Also add output of reach hashes!
     uploadGistUsing mainJson accessToken = do
       parsedRequest2 <- parseRequest "POST https://api.github.com/gists"
       let req1 = setRequestBodyJSON mainJson parsedRequest2
       let req2 = setRequestHeader acceptHeader [BSI.packChars "application/vnd.github.v3+json"] req1
-      let req3 = setRequestHeader authorizationHeader [BSI.packChars ("token " ++ unpack accessToken)] req2
+      let req3 = setRequestHeader authorizationHeader [BSI.packChars ("token " <> unpack accessToken)] req2
       -- @HACK "node.js" is arbitrary; I just picked an arbitrary header
       -- to bypass a "Request forbidden by administrative rules.
       -- Please make sure your request has a User-Agent header"
@@ -2622,10 +2615,10 @@ support = command "support" $ info (pure step1) d
       response2 <- httpBS req4
       let response2Body = getResponseBody response2
       case decodeStrict response2Body of
-        Just (GitHubGistResponse urlToViewGist) -> do
-          liftIO . T.putStrLn $ pack ""
-          liftIO . T.putStrLn $ pack "Your gist is viewable at"
-          liftIO . T.putStrLn $ pack urlToViewGist
+        Just (GitHubGistResponse u) -> liftIO . T.putStrLn $ "\n" <> [N.text|
+            Your gist is viewable at:
+            $u
+          |]
         _ -> error "Couldn't decode JSON from GitHub API!"
 
 log' :: Subcommand
