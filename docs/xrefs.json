@@ -1219,6 +1219,10 @@
     "title": "Usage",
     "path": "/tool/#ref-usage"
   },
+  "ref-usage-arg-disable-reporting": {
+    "title": "<span class=\"ref\" id=\"cmd_reach%20--disable-reporting\" data-scope=\"cmd\" data-symbol=\"reach --disable-reporting\"> </span>   reach --disable-reporting",
+    "path": "/tool/#ref-usage-arg-disable-reporting"
+  },
   "ref-usage-compile": {
     "title": "<span class=\"ref\" id=\"cmd_reach%20compile\" data-scope=\"cmd\" data-symbol=\"reach compile\"> </span>   reach compile",
     "path": "/tool/#ref-usage-compile"
