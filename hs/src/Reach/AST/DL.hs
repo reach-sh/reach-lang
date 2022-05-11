@@ -12,6 +12,7 @@ import Reach.AST.DLBase
 import Reach.Counter
 import Reach.Pretty
 import Reach.Texty
+import Data.ByteString (ByteString)
 
 data Purity
   = ImpureUnless (S.Set Int)
@@ -104,7 +105,7 @@ data DLSStmt
   | DLS_While
       { dls_w_at :: SrcLoc
       , dls_w_asn :: DLAssignment
-      , dls_w_inv :: DLSBlock
+      , dls_w_inv :: (DLSBlock, Maybe ByteString)
       , dls_w_cond :: DLSBlock
       , dls_w_body :: DLStmts
       }

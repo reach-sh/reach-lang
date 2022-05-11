@@ -1,0 +1,53 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: while invariant after loop
+  msg: "GABBAGOOL"
+  at ./invariant_label.rsh:9:19:invariant
+
+  // Violation Witness
+
+  const UInt.max = 10;
+
+  const netBalance/93 = <loop variable>;
+  //    ^ could = 0
+  //      from: ./invariant_label.rsh:9:19:while
+
+  // Theorem Formalization
+
+  const v146 = (netBalance/93 + 1) == 0;
+  //    ^ would be false
+  assert(v146);
+
+  Verifying when NO participants are honest
+Verification failed:
+  when NO participants are honest
+  of theorem: while invariant after loop
+  msg: "GABBAGOOL"
+  at ./invariant_label.rsh:9:19:invariant
+
+  // Violation Witness
+
+  const UInt.max = 10;
+
+  const netBalance/93 = <loop variable>;
+  //    ^ could = 0
+  //      from: ./invariant_label.rsh:9:19:while
+
+  // Theorem Formalization
+
+  const v171 = (netBalance/93 + 1) == 0;
+  //    ^ would be false
+  assert(v171);
+
+Checked 17 theorems; 2 failures :'(
+warning[RW0006]: This program uses network seconds, which are unreliable on most consensus networks. You should read the article about this warning to ensure that you understand the risks of building on them.
+
+  reach standard library:576:12:application
+
+  
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0006
+
