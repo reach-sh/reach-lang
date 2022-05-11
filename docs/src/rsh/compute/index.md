@@ -1641,6 +1641,13 @@ This is convenient for writing general claims about expressions, such as
 forall(UInt, (x) => assert(x == x));
 ```
 
+The following code sample uses a couple of `{!rsh} forall` arguments to assert that `winner` always provides a valid outcome.
+
+```reach
+load: /examples/rps-6-timeouts/index.rsh
+range: 13-15
+```
+
 ### `possible`
 
 @{ref("rsh", "possible")}
