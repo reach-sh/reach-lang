@@ -1070,6 +1070,23 @@ export function setProviderByEnv(env: Partial<ProviderEnv>): void {
   setProvider(makeProviderByEnv(env));
 };
 
+function algonodeEnv(net: string): ProviderEnv {
+  // works for MainNet, TestNet, and BetaNet
+  // https://algonode.io/api/#node-api
+  const prefix = `https://${net.toLowerCase()}-`;
+  const suffix = `.algonode.cloud`;
+  return {
+    ALGO_SERVER: `${prefix}api${suffix}`,
+    ALGO_PORT: ``,
+    ALGO_TOKEN: ``,
+    ALGO_INDEXER_SERVER: `${prefix}idx${suffix}`,
+    ALGO_INDEXER_PORT: ``,
+    ALGO_INDEXER_TOKEN: ``,
+    REACH_ISOLATED_NETWORK: 'no',
+    ALGO_NODE_WRITE_ONLY: 'yes', // XXX no?
+  }
+}
+
 function randlabsProviderEnv(net: string): ProviderEnv {
   const prefix = net === 'MainNet' ? '' : `${net.toLowerCase()}.`;
   const RANDLABS_BASE = `${prefix}algoexplorerapi.io`;
@@ -1089,12 +1106,15 @@ function randlabsProviderEnv(net: string): ProviderEnv {
 export type ProviderName = string;
 export function providerEnvByName(pn: ProviderName): ProviderEnv {
   switch (pn) {
-    case 'MainNet': return randlabsProviderEnv('MainNet');
-    case 'TestNet': return randlabsProviderEnv('TestNet');
-    case 'BetaNet': return randlabsProviderEnv('BetaNet');
+    case 'MainNet': return algonodeEnv('MainNet');
+    case 'TestNet': return algonodeEnv('TestNet');
+    case 'BetaNet': return algonodeEnv('BetaNet');
     case 'randlabs/MainNet': return randlabsProviderEnv('MainNet');
     case 'randlabs/TestNet': return randlabsProviderEnv('TestNet');
     case 'randlabs/BetaNet': return randlabsProviderEnv('BetaNet');
+    case 'algonode/MainNet': return algonodeEnv('MainNet');
+    case 'algonode/TestNet': return algonodeEnv('TestNet');
+    case 'algonode/BetaNet': return algonodeEnv('BetaNet');
     case 'LocalHost': return localhostProviderEnv;
     default: throw Error(`Unrecognized provider name: ${pn}`);
   }
