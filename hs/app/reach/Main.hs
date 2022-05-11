@@ -2473,8 +2473,6 @@ support = command "support" $ info (pure step1) d
     language = "JavaScript"
     typeForUploadJson :: String
     typeForUploadJson = "application/javascript"
-    acceptHeader = "Accept"
-    authorizationHeader = "Authorization"
     step1 = do
       let dataJson =
             object
@@ -2602,8 +2600,8 @@ support = command "support" $ info (pure step1) d
     uploadGistUsing mainJson accessToken = do
       parsedRequest2 <- parseRequest "POST https://api.github.com/gists"
       let req1 = setRequestBodyJSON mainJson parsedRequest2
-      let req2 = setRequestHeader acceptHeader [BSI.packChars "application/vnd.github.v3+json"] req1
-      let req3 = setRequestHeader authorizationHeader [BSI.packChars ("token " <> unpack accessToken)] req2
+      let req2 = setRequestHeader "Accept" [BSI.packChars "application/vnd.github.v3+json"] req1
+      let req3 = setRequestHeader "Authorization" [BSI.packChars ("token " <> unpack accessToken)] req2
       -- @HACK "node.js" is arbitrary; I just picked an arbitrary header
       -- to bypass a "Request forbidden by administrative rules.
       -- Please make sure your request has a User-Agent header"
