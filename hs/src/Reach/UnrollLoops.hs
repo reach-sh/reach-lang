@@ -14,6 +14,7 @@ import Reach.AST.PL
 import Reach.Counter
 import Reach.Freshen
 import Reach.Util
+import qualified Data.ByteString as B
 
 type App = ReaderT Env IO
 
@@ -104,6 +105,9 @@ instance Unroll DLExpr where
       (_, y') <- ul_explode at y
       liftArray at x_ty $ x' <> y'
     e -> return $ e
+
+instance Unroll B.ByteString where
+  ul = return
 
 instance Unroll DLStmt where
   ul = \case

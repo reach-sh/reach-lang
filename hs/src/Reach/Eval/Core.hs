@@ -1748,8 +1748,8 @@ evalForm f args = do
       aa <- withAt $ \at -> (at, args)
       case slpr_mode of
         Just PRM_Invariant -> do
-          x <- one_arg
-          go $ p {slpr_minv = Just x}
+          (x, my) <- one_mtwo_args
+          go $ p {slpr_minv = Just (x, my) }
         Just PRM_While -> do
           x <- one_arg
           go $ p {slpr_mwhile = Just x}
@@ -5511,11 +5511,11 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let want lab = \case
         Just x -> return x
         Nothing -> expect_ $ Err_ParallelReduceIncomplete $ "missing " <> lab
-  inv_e <- want "invariant" pr_minv
+  (inv_e, minv_lab) <- want "invariant" pr_minv
   while_e <- want "while" pr_mwhile
   let var_decls = JSLOne (JSVarInitExpression lhs (JSVarInit a init_e))
   let var_s = JSVariable a var_decls sp
-  let inv_s = JSMethodCall (JSIdentifier a "invariant") a (JSLOne inv_e) a sp
+  let inv_s = JSMethodCall (JSIdentifier a "invariant") a (toJSCL $ inv_e : catMaybes [minv_lab]) a sp
   let fork_e0 = jsCall a (jid "fork") []
   let injectContinueIntoBody addArgs isTimeout e = do
         let ea = jsa e
@@ -6190,11 +6190,18 @@ evalStmt = \case
             -- XXX This is a bad macro, it duplicates blk_ss in the while and
             -- after, rather than expanding/evaluating once and incorporating
             -- things, which might be possible
-            : (JSMethodCall (JSIdentifier inv_a "invariant") _ (JSLOne invariant_e) _ _isp)
+            : (JSMethodCall (JSIdentifier inv_a "invariant") _ inv _ _isp)
             : (JSWhile while_a cond_a while_cond _ while_body)
             : ks
           ) -> locAtf (srcloc_jsa "while" while_a) $ do
+            at <- withAt id
             ensure_mode SLM_ConsensusStep "while"
+            (invariant_e, inv_lab_e) <-
+                  case parseJSFormals at inv of
+                    [x, y] -> return (x, Just y)
+                    [x]    -> return (x, Nothing)
+                    _ -> expect_ Err_Block_Variable
+            inv_lab <- mapM ((mustBeBytes . snd) <=< evalExpr) inv_lab_e
             (while_lhs, while_rhs) <- destructDecls while_decls
             (init_vars, init_dl, sco_env') <- doWhileLikeInitEval while_lhs while_rhs
             let add_preamble a e = jsCallThunk a $ jsThunkStmts a $ blk_ss <> [JSReturn a (Just e) (a2sp a)]
@@ -6217,8 +6224,8 @@ evalStmt = \case
                   captureLifts $ evalStmt $ blk_ss <> [while_body]
             saveLift
               =<< withAt
-                (\at ->
-                   DLS_While at init_dl inv_b cond_b body_lifts)
+                (\at' ->
+                   DLS_While at' init_dl (inv_b, inv_lab) cond_b body_lifts)
             SLStmtRes k_sco' k_rets <- locSco sco_env' $ evalStmt $ blk_ss <> ks
             let rets' = body_rets <> k_rets
             return $ SLStmtRes k_sco' rets'

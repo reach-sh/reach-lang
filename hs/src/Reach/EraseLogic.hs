@@ -155,9 +155,9 @@ instance Erase LLConsensus where
               True -> return (body', asn'')
               False -> loop m
       (body', asn'') <- loop (restrictToUsed asn)
-      let DLBlock inv_at inv_fs _inv_t _inv_a = inv
+      let (DLBlock inv_at inv_fs _inv_t _inv_a, inv_lab) = inv
       let inv' = DLBlock inv_at inv_fs (DT_Return inv_at) (DLA_Literal $ DLL_Null)
-      return $ LLC_While at asn'' inv' cond' body' k'
+      return $ LLC_While at asn'' (inv', inv_lab) cond' body' k'
     LLC_Continue at asn -> do
       asn' <- restrictToUsed asn
       asn'' <- el asn'

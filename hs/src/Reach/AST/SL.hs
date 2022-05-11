@@ -539,7 +539,7 @@ data ParallelReduceRec = ParallelReduceRec
   { slpr_at :: SrcLoc
   , slpr_mode :: Maybe ParallelReduceMode
   , slpr_init :: JSExpression
-  , slpr_minv :: Maybe JSExpression
+  , slpr_minv :: Maybe (JSExpression, Maybe JSExpression)
   , slpr_mwhile :: Maybe JSExpression
   , slpr_cases :: [(SrcLoc, [JSExpression])]
   , slpr_apis :: [(SrcLoc, [JSExpression])]

@@ -151,10 +151,11 @@ dk1 k s =
       let go (ta, time_ss) = (,) ta <$> dk_ k time_ss
       DK_ToConsensus at send recv' <$> mapM go mtime
     DLS_FromConsensus at fs ss -> DK_FromConsensus at at fs <$> dk_ k ss
-    DLS_While at asn inv_b cond_b body -> do
+    DLS_While at asn (inv_b, minv_lab) cond_b body -> do
       let body' = dk_top at body
       let block = dk_block at
-      DK_While at asn <$> block inv_b <*> block cond_b <*> body' <*> pure k
+      inv_b' <- block inv_b
+      DK_While at asn (inv_b', minv_lab) <$> block cond_b <*> body' <*> pure k
     DLS_Continue at asn -> return $ DK_Continue at asn
     DLS_FluidSet at fv a -> com $ DKC_FluidSet at fv a
     DLS_FluidRef at v fv -> com $ DKC_FluidRef at v fv
@@ -559,7 +560,7 @@ df_con = \case
     LLC_Switch a v <$> mapM cm1 csm
     where
       cm1 (dv', b, c) = (\x -> (dv', b, x)) <$> df_con c
-  DK_While at asn inv cond body k -> do
+  DK_While at asn (inv, minv_lab) cond body k -> do
     fvs <- eFVs <$> ask
     let go fv = do
           r <- fluidRefm fv
@@ -577,8 +578,8 @@ df_con = \case
     --- Note: The invariant and condition can't return
     let block b = df_bl =<< block_unpackFVMap at b
     (makeWhile, k') <-
-      withWhileFVMap fvm $
-        (,) <$> (LLC_While at <$> expandFromFVMap at asn <*> block inv <*> block cond <*> body_fvs') <*> (unpackFVMap at k)
+      withWhileFVMap fvm $ do
+        (,) <$> (LLC_While at <$> expandFromFVMap at asn <*> ((, minv_lab) <$> block inv) <*> block cond <*> body_fvs') <*> (unpackFVMap at k)
     makeWhile <$> df_con k'
   DK_Continue at asn ->
     LLC_Continue at <$> expandFromFVMap at asn

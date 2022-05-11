@@ -8,6 +8,7 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
+import qualified Data.ByteString as B
 
 class Sanitize a where
   sani :: a -> a
@@ -19,6 +20,9 @@ instance Sanitize DLVar where
   sani = id
 
 instance Sanitize Bool where
+  sani = id
+
+instance Sanitize B.ByteString where
   sani = id
 
 instance Sanitize DLLiteral where
