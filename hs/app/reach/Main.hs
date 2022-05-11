@@ -2461,13 +2461,10 @@ support = command "support" $ info (pure step1) d
   where
     d = progDesc "Upload index.rsh and index.mjs to help us troubleshoot!"
     splitByAmpersands s = T.splitOn "&" (pack $ BSLC8.unpack s)
-    splitByEqualsSigns s = T.splitOn (pack "=") s
+    splitByEqualsSigns s = T.splitOn "=" s
     process gitHubResponseString = map splitByEqualsSigns
       $ splitByAmpersands gitHubResponseString
-    isDeviceCodePair pair = head pair == pack "device_code"
-    isErrorPair pair = head pair == pack "error"
-    isUserCodePair pair = head pair == pack "user_code"
-    isAccessTokenPair pair = head pair == pack "access_token"
+    is l = maybe False (== pack l) . headMay
     clientId :: String
     clientId = "c4bfe74cc8be5bbaf00e"
     scope :: String
@@ -2489,9 +2486,9 @@ support = command "support" $ info (pure step1) d
       response <- httpLBS request
       let githubResponseString = getResponseBody response
       let arrayOfArrayOfText = process githubResponseString
-      let deviceCodePair = head $ filter isDeviceCodePair arrayOfArrayOfText
+      let deviceCodePair = head $ filter (is "device_code") arrayOfArrayOfText
       let deviceCode = deviceCodePair !! 1
-      let userCodePair = head $ filter isUserCodePair arrayOfArrayOfText
+      let userCodePair = head $ filter (is "user_code") arrayOfArrayOfText
       let userCode = userCodePair !! 1
       liftIO $ T.putStrLn [N.text|
         Your user code is $userCode.
@@ -2520,9 +2517,9 @@ support = command "support" $ info (pure step1) d
       let arrayOfArrayOfText = process githubResponseString
       -- @TODO: Save accessToken; git-credential-store
       -- Warning: Permission errors when doing this^
-      case headMay $ filter isAccessTokenPair arrayOfArrayOfText of
+      case headMay $ filter (is "access_token") arrayOfArrayOfText of
         Nothing -> do
-          case headMay $ filter isErrorPair arrayOfArrayOfText of
+          case headMay $ filter (is "error") arrayOfArrayOfText of
             Nothing -> liftIO $ putStrLn
               "Upload unsuccessful; couldn't find an authorization code or error!"
             Just errorPair -> do
