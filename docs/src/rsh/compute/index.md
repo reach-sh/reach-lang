@@ -703,6 +703,18 @@ But, sometimes it is necessary and useful to extend one byte string into a large
 Each `{!rsh} Bytes` type has a `pad` field that is bound to a function that extends its argument to the needed size.
 A byte string extended in this way is called @{defn("padded")}, because it is extended with additional `NUL` bytes at the end of the string.
 
+The code below shows how `{!rsh} Padding` can be done:
+
+```reach
+load: /examples/dan-storage/index.rsh
+range: 5 - 5
+```
+
+```reach
+load: /examples/dan-storage/index.rsh
+range: 9 - 9
+```
+
 ### Parenthesized expression
 
 ```reach
