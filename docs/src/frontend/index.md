@@ -302,6 +302,14 @@ stdlib.newTestAccount(bal:UInt) => Promise<acc>
 Returns a Promise for a Reach account abstraction for a new account on the consensus network with a given balance of network tokens.
 This can only be used in private testing scenarios, as it uses a private faucet to issue network tokens.
 
+```js
+load: /examples/workshop-trust-fund/index.mjs
+range: 29-33
+```
+
+This example from the Trust Fund workshop creates a `startingBalance` of 100 tokens, and then creates new accounts for the `funder`, `receiver` and `bystander`.
+Each get funded 100 tokens by setting each `{!js} newTestAccount` balance to the `startingBalance` value.
+
 @{ref("js", "newTestAccounts")}@{ref("js", "stdlib.newTestAccounts")}
 ```js
 stdlib.newTestAccounts(howMany:number, balance:UInt) => Promise<Array<acc>>
