@@ -599,17 +599,17 @@ If `{!rsh} KEY_TYPE_EXPR` is not specified, it will default to `{!rsh} Address`.
 
 For example the code below contains only the `{!rsh} VAL_TYPE_EXPR`:
 ```reach
-load: examples/splice1/index.rsh
+load: /examples/splice1/index.rsh
 range: 7 - 7
 ```
 
 While the following code contains both the `{!rsh} KEY_TYPE_EXPR` and `{!rsh} VAL_TYPE_EXPR`:
 ```reach
-load: examples/map-arbitrary-key/index.rsh
+load: /examples/map-arbitrary-key/index.rsh
 range: 24 - 24
 ```
 
-This returns a value which may be used to dereference particular mappings via `{!rsh} map[EXPR]`.
+Such new mapping of linear state exemplified in the code samples above, returns a value which may be used to dereference particular mappings via `{!rsh} map[EXPR]`.
 Such dereferences return a value of type `{!rsh} Maybe(VAL_TYPE_EXPR)`, because the mapping may not contain a value for `{!rsh} EXPR`.
 
 A mapping may be modified by writing `{!rsh} map[EXPR] = VALUE_EXPR` to install `{!rsh} VALUE_EXPR` (of type `{!rsh} VAL_TYPE_EXPR`) at `{!rsh} EXPR`, or by writing `{!rsh} delete map[EXPR]` to remove the mapping entry.
