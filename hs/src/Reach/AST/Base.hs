@@ -324,11 +324,6 @@ uint256 = True
 uint256_Max :: Integer
 uint256_Max = 2 ^ (256 :: Integer) - 1
 
-iSqrt :: Integer -> Integer
-iSqrt x = floor $ sqrt x'
-  where
-    x' :: Double = fromIntegral x
-
 data PrimOp
   = ADD UIntTy
   | SUB UIntTy

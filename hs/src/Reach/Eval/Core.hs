@@ -2119,7 +2119,7 @@ evalPrimOp sp sargs = do
                   False -> snd <$> typeOfBytes b
           make_var_ (T_UInt uintWord) [ae]
         _ -> expect_ $ Err_Apply_ArgCount at 1 (length args)
-    S_SQRT -> n2n iSqrt
+    S_SQRT -> n2n isqrt
     S_ADD ->
       case args of
         [SLV_Int _ mt 0, rhs] | mtOkay mt rhs -> static rhs
