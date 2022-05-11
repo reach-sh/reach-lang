@@ -1,5 +1,5 @@
 'reach 0.1';
-'use strict';
+// 'use strict';
 
 export const main = Reach.App(() => {
   const O = Participant('Organizer', {
@@ -46,7 +46,12 @@ export const main = Reach.App(() => {
   BP.phase(Phase.AcceptingBets());
 
   // Take bets
-  const bets = new Map(Tuple(Bool, UInt));
+  const bets = new Map(Tuple(Bool,   // guess on the result
+                             UInt)); // amount bet
+
+  // Define this for later. After core-24, this can be moved later in the program
+  const winnersPaid = new Map(UInt);
+
   const numBettingOn = (guess) => bets.reduce(0, (s, [g, _]) => s + (g == guess ? 1 : 0));
   const amountBetOn  = (guess) => bets.reduce(0, (s, [g, a]) => s + (g == guess ? a : 0));
   const [keepGoing, trueBetters, truePool, falseBetters, falsePool] =
@@ -60,12 +65,12 @@ export const main = Reach.App(() => {
                && truePool + falsePool == balance()
                && amountBetOn(true) == truePool
                && amountBetOn(false) == falsePool
-               && amountBetOn(true) + amountBetOn(false) == balance())
-    .api(B.bet,
-      (_, amt) => check(isNone(bets[this]) && amt > 0),
-      (_, amt) => amt,
-      (guess, amt, k) => {
-        check(isNone(bets[this]) && amt > 0);
+               && amountBetOn(true) + amountBetOn(false) == balance()
+               && winnersPaid.size() == 0
+               && bets.all(([_, amt]) => amt > 0))
+    .api_(B.bet, (guess, amt) => {
+      check(isNone(bets[this]) && amt > 0);
+      return [amt, k => {
         k(null);
         bets[this] = [guess, amt];
         if (guess) {
@@ -73,8 +78,8 @@ export const main = Reach.App(() => {
         } else {
           return [true, trueBetters, truePool, falseBetters + 1, falsePool + amt];
         }
-      }
-    )
+      }];
+    })
     .timeout(relativeTime(bettingTime), () => {
       awaitOrganizer(OA.bettingTimeout);
       return [false, trueBetters, truePool, falseBetters, falsePool];
@@ -99,16 +104,6 @@ export const main = Reach.App(() => {
         return [false, 0];
     }
   }
-  const checkWinner = p => {
-    const bet = bets[p];
-    switch (bet) {
-      case Some:
-        check(bet[0] == result);
-        check(bet[1] > 0);
-      case None:
-        check(false);
-    }
-  }
 
   const [numWinners, winnerPool, loserPool] = /*result ?*/ [trueBetters, truePool, falsePool]
                                                      /*: [falseBetters, falsePool, truePool]*/;
@@ -121,25 +116,32 @@ export const main = Reach.App(() => {
   const [keepGoing_, unpaidWinners, prizePool] =
     parallelReduce([true, numWinners, initPrizePool])
     .while(keepGoing_ && unpaidWinners > 0)
-    .invariant(numBettingOn(result) == unpaidWinners &&
-               balance() == finalBookieCut + amountBetOn(result) + prizePool
+    .invariant(// numBettingOn(result) == unpaidWinners &&
+               // amountBetOn(result) <= winnerPool &&
+               // amountBetOn(!result) == loserPool &&
+               // prizePool == initPrizePool - paidWinnings &&
+               winnersPaid.size() == numWinners - unpaidWinners &&
+               winnerPool == amountBetOn(result) &&
+               loserPool == amountBetOn(!result) &&
+               bets.all(([_, amt]) => amt > 0) &&
+               winnersPaid.all(amt => amt > 0)
+               // balance() == finalBookieCut + prizePool + winnerPool - winnersPaid.sum()
               )
-    .api(B.collect,
-      () => checkWinner(this),
-      () => 0,
-      (k) => {
-        checkWinner(this);
+    .api_(B.collect, () => {
+      check(isSome(bets[this]));       // The caller bet
+      check(isNone(winnersPaid[this])); // The caller hasn't already been paid
+      const bet = unwrap(bets[this]);
+      check(bet[0] == result);         // The caller guessed correctly
+      return [k => {
+        // assert(bet[1] <= winnerPool); // proven by invariant amountBetOn(result) <= winnerPool
         k(null);
-        const bet = unwrap(bets[this])[1];
-        assert(bet <= winnerPool); // since amountBetOn(result) == winnerPool, this is always true, but it fails
-
-        const winnings = muldiv(initPrizePool, bet, winnerPool);
-        const payout = bet + winnings;
+        winnersPaid[this] = bet[1];
+        const prize = muldiv(initPrizePool, bet[1], winnerPool);
+        const payout = bet[1] + prize;
         transfer(payout).to(this);
-        delete bets[this];
-        return [true, unpaidWinners - 1, prizePool - winnings];
-      }
-    )
+        return [true, unpaidWinners - 1, prizePool - prize];
+      }];
+    })
     .timeout(relativeTime(payoutTime), () => {
       awaitOrganizer(OA.payoutTimeout);
       return [false, unpaidWinners, prizePool];
