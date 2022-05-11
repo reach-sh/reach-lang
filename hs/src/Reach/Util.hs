@@ -30,6 +30,7 @@ module Reach.Util
   , arraySet
   , allEqual
   , maybeAt
+  , isqrt
   )
 where
 
@@ -174,3 +175,11 @@ maybeAt :: Int -> [a] -> Maybe a
 maybeAt 0 (x:_) = Just x
 maybeAt _ [] = Nothing
 maybeAt n (_:xs) = maybeAt (n-1) xs
+
+-- Source https://en.wikipedia.org/wiki/Integer_square_root#Using_only_integer_division
+isqrt :: Integral a => a -> a
+isqrt n = go n2 (iter n2)
+  where
+    n2 = n `div` 2
+    iter x = (x + (n `div` x)) `div` 2
+    go x0 x1 = if x0 == x1 then x0 else go x1 (iter x1)
