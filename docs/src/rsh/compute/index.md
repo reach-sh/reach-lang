@@ -654,8 +654,37 @@ Reach has different unsigned integer types, `{!rsh} UInt` and `{!rsh} UInt256`.
 These values can be casted from one to the other by calling the type as a function with a value.
 
 For example, if `x` is a `{!rsh} UInt`, then `{!rsh} UInt256(x)` is `x` zero-extended to 256 bits.
-Similarly, if `y` is a `{!rsh} UInt256`, then `{!rsh} UInt(y)` is `y` with as many bits as `{!rsh} UInt` has.
-In the second case, if `y` has any non-zero bits that would be lost by the truncation, then the cast will fail at runtime.
+This is demonstrated in the code below:
+
+```reach
+load: /examples/uint256/index.rsh
+range: 79 - 79
+```
+
+```reach
+load: /examples/uint256/index.rsh
+range: 88 - 88
+```
+
+```reach
+load: /examples/uint256/index.rsh
+range: 92 - 93
+```
+
+Similarly, if `y` is a `{!rsh} UInt256`, then `{!rsh} UInt(y)` is `y` with as many bits as `{!rsh} UInt` has. 
+This is demonstrated in the code below:
+
+```reach
+load: /hs/t/y/uint256-verify2.rsh
+range: 6 - 6
+```
+
+```reach
+load: /hs/t/y/uint256-verify2.rsh
+range: 12 - 12
+```
+
+In the second case above, where `{!rsh} UInt256` is casted to `{!rsh} UInt`, if `{!rsh} UInt256` has any non-zero bits that would be lost by the truncation, then the cast will fail at runtime.
 This is guaranteed to not happen when you compile with `{!rsh} verifyArithmetic`.
 
 Numeric literals in your program are considered `{!rsh} UInt`.
