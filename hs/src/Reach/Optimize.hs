@@ -348,6 +348,8 @@ instance Optimize DLExpr where
           return $ DLE_Arg at $ zero t
         (DIV _, [lhs, (DLA_Literal (DLL_Int _ _ 1))]) ->
           return $ DLE_Arg at lhs
+        (SQRT t, [DLA_Literal (DLL_Int _ _ n)]) ->
+          return $ DLE_Arg at $ DLA_Literal $ DLL_Int at t (isqrt n)
         (MUL_DIV, [l, r, d])
           | l == d -> return $ DLE_Arg at r
           | r == d -> return $ DLE_Arg at l
