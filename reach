@@ -116,42 +116,37 @@ run_s () {
 }
 
 gen_reachc_id () {
-  REACH_ENV_DIR="${HOME}/.config/reach"
+  REACH_ENV_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/reach/env"
   REACH_ENV_FILE="${REACH_ENV_DIR}/env"
-  MULT=$(shuf -i 1-100 -n 1)
-  MAX=776627963145224
-  PRE_REACHC_ID=$(echo $(($(shuf -i 1-$MAX -n 1 )*$MULT))| md5sum | head -c 30 | tr [a-z] [A-Z])
+  MD5_CMD=md5sum||md5
+  PRE_REACHC_ID=$(head -n1 /dev/urandom | $MD5_CMD | head -c 30 | tr [a-z] [A-Z])
 
   mkdir -p $REACH_ENV_DIR
 
   if [ ! -e $REACH_ENV_FILE ]; then
-    echo "REACHC_ID=${PRE_REACHC_ID}" > $REACH_ENV_FILE
+    echo "export REACHC_ID=${PRE_REACHC_ID}" > $REACH_ENV_FILE
   elif ( ! grep REACHC_ID $REACH_ENV_FILE > /dev/null 2>&1 ); then
-    echo "REACHC_ID=${PRE_REACHC_ID}" >> $REACH_ENV_FILE
+    echo "export REACHC_ID=${PRE_REACHC_ID}" >> $REACH_ENV_FILE
   fi
 }
 
 call_home () {
-
   START_TIME=$1
-  ELAPSED_TIME=$2
-  RESULT=$3
-  REACH_VERSION=$4
-  CONNECTOR_MODE=$5
-  USING_VSSTUDIO_EXTENTION=$6
-  INITIATOR=$7
+  RESULT=$2
+  REACH_VERSION=$3
+  CONNECTOR_MODE=$4
+  USING_VSSTUDIO_EXTENTION=$5
+  INITIATOR=$6
 
-  CALL_HOME_ENCODED="eyAidXNlcklkIjogInt7UkVBQ0hDX0lEfX0iLCAic3RhcnRUaW1l\
-IjogInt7U1RBUlRfVElNRX19IiwgImVsYXBzZWQiOiAie3tFTEFQU0VEX1RJTUV9fSIsICJ\
-yZXN1bHQiOiAie3tSRVNVTFR9fSIsICJ2ZXJzaW9uIjogInt7UkVBQ0hfVkVSU0lPTn19Ii\
-wgImNvbm5lY3Rvck1vZGUiOiAie3tDT05ORUNUT1JfTU9ERX19IiwgInVzaW5nVmlzdWFsU\
-3R1ZGlvRXh0ZW5zaW9uIjogInt7VVNJTkdfVlNTVFVESU9fRVhURU5USU9OfX0iLCAiaW5p\
-dGlhdG9yIjogInt7SU5JVElBVE9SfX0iIH0="
+  CALL_HOME_ENCODED="eyAidXNlcklkIjogInt7UkVBQ0hDX0lEfX0iLCAic3RhcnRUaW1lIjogInt7U1RBUlRfVElNRX19\
+IiwgInJlc3VsdCI6ICJ7e1JFU1VMVH19IiwgInZlcnNpb24iOiAie3tSRUFDSF9WRVJTSU9OfX0i\
+LCAiY29ubmVjdG9yTW9kZSI6ICJ7e0NPTk5FQ1RPUl9NT0RFfX0iLCAidXNpbmdWaXN1YWxTdHVk\
+aW9FeHRlbnNpb24iOiAie3tVU0lOR19WU1NUVURJT19FWFRFTlRJT059fSIsICJpbml0aWF0b3Ii\
+OiAie3tJTklUSUFUT1J9fSIgfQ==" ###Change the template to not track elapsed time
   CALL_HOME_TEMPLATE_DECODED=$(echo -n $CALL_HOME_ENCODED | base64 -d)
   START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   TRANSLATED_TEMPLATE=$(echo $CALL_HOME_TEMPLATE_DECODED | sed -e "s/{{REACHC_ID}}/$REACHC_ID/g" \
   -e "s/{{START_TIME}}/${START_TIME}/g" \
-  -e "s/{{ELAPSED_TIME}}/${ELAPSED_TIME}/g" \
   -e "s/{{RESULT}}/${RESULT}/g" \
   -e "s/{{REACH_VERSION}}/${REACH_VERSION}/g" \
   -e "s/{{CONNECTOR_MODE}}/${CONNECTOR_MODE}/g" \
@@ -165,11 +160,11 @@ dGlhdG9yIjogInt7SU5JVElBVE9SfX0iIH0="
 
 package_manager () {
   if ( which apt > /dev/null 2>&1 ); then
-    export PACKAGE_MANAGER="apt"
+    PACKAGE_MANAGER="apt"
   fi
 
   if ( which yum > /dev/null 2>&1 ); then
-    export PACKAGE_MANAGER="yum"
+    PACKAGE_MANAGER="yum"
   fi
 }
 
@@ -191,7 +186,7 @@ timeout_validate () {
 }
 
 install_docker () {
-  OLDPWD=$(pwd)
+  OPWD=$(pwd)
 
   cd / # Depending on `$PWD`, Windows sometimes struggles with paths
 
@@ -227,7 +222,7 @@ install_docker () {
     read RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
       CALL_HOME_START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-      call_home $CALL_HOME_START_TIME "none" "Docker Installed by Reach" "0.0.0" "none" "none" $1
+      call_home $CALL_HOME_START_TIME "Docker Installed by Reach" "0.0.0" "none" "none" $1
       powershell.exe 'shutdown -r -t 0'
     fi
   else
@@ -239,7 +234,7 @@ install_docker () {
     printf "RedHat: https://docs.docker.com/engine/install/rhel/\n"
     printf "  SLES: https://docs.docker.com/engine/install/SLES/\n"
   fi
-  cd $OLDPWD
+  cd $OPWD
 }
 
 gen_reachc_id
