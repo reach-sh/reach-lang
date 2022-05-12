@@ -2485,7 +2485,7 @@ support = command "support" $ info (pure step1) d
         Your user code is $userCode.
         Please enter it at https://github.com/login/device.
 
-        Type 'y' AFTER SUCCESSFUL AUTHORIZATION to upload index.mjs, index.rsh, or both:
+        Type 'y' after successful authorization to upload index.mjs, index.rsh, or both:
       |]
       userEnteredCharacter <- liftIO getChar
       case toUpper userEnteredCharacter of
