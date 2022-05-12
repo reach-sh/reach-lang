@@ -2466,15 +2466,11 @@ support = command "support" $ info (pure step1) d
       , "type" .= ("application/javascript" :: String)
       ]
     clientId = "c4bfe74cc8be5bbaf00e" :: String
-    splitByAmpersands s = T.splitOn "&" (pack $ BSLC8.unpack s)
-    splitByEqualsSigns s = T.splitOn "=" s
-    process gitHubResponseString = map splitByEqualsSigns
-      $ splitByAmpersands gitHubResponseString
     is l = maybe False (== pack l) . headMay
     by a x = liftIO
       . maybe (putStrLn ("Missing field `" <> x <> "`.") >> exitWith (ExitFailure 1)) pure
       $ (headMay $ filter (is x) a) >>= (`atMay` 1)
-    req u x = fmap (process . getResponseBody)
+    req u x = fmap (map (T.splitOn "=") . T.splitOn "&" . pack . BSLC8.unpack . getResponseBody)
         $ setRequestBodyJSON (object x)
       <$> parseRequest ("POST " <> u)
       >>= httpLBS
