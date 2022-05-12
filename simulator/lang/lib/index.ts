@@ -237,18 +237,13 @@ class Scenario {
     await c.init()
     const apis: any = await c.getAPIs()
     const views: any = await c.getViews(this.state.id)
-    const l = await c.getStateLocals(this.state.id)
+    const g = await c.getStateGlobals(this.state.id)
 
-    // setup parts
-    for (const a of Object.entries(l.l_locals)) {
-      const k = a[0]
-      const v: any = a[1]
-      const who = v.l_who
-      const acc = new Account(v.l_acct,this)
-      if (who) {
-        const p = new Participant(parseInt(k),acc,who,this)
-        this.participants[who] = p
-      }
+    for (const a of Object.entries(g.e_parts)) {
+      const who = a[0]
+      const acc = new Account(-1,this)
+      const p = new Participant(-1,acc,who,this)
+      this.participants[who] = p
     }
 
     // setup apis
@@ -354,7 +349,6 @@ class ImperativeScenario extends Scenario {
     return cp;
   }
 
-
 }
 
 class Store {
@@ -399,7 +393,7 @@ class Actor {
 
   async getNextAction() {
     const act = await c.getActions(this.scene.state.id,this.id)
-    return new Action(act[0],act[1].tag,this,this.scene);
+    return new Action(act[0],act[1].tag,this,this.scene,act);
   }
 
   async getStore() {
@@ -454,9 +448,23 @@ class Participant extends Actor {
   }
 
   async init(blce="",liv={},accID="") {
-    const r = await c.initFor(this.scene.state.id,this.id,JSON.stringify(liv),accID,blce)
+    const r = await c.initFor(this.scene.state.id,this.name,JSON.stringify(liv),accID,blce)
     console.log(r);
-    return this.scene.next();
+    const rent = Object.entries(r)[0];
+    this.id = parseInt(rent[0]);
+    const v: any = rent[1]
+    this.account = new Account(parseInt(v.l_acct),this.scene)
+    return [this.scene.next(),this];
+  }
+
+  async interact(name:string,val:any) {
+    let a = await this.getNextAction();
+    while (a.name == 'A_Receive') {
+      a = await this.getNextAction();
+    }
+    console.log(a);
+    // TODO: check name
+    await a.resolve(val);
   }
 
 }
@@ -468,6 +476,15 @@ class Consensus extends Actor {
 
   constructor(account: Account,scene: Scenario) {
     super(consensusID, account, 'Consensus', scene);
+  }
+
+  async publish(ac:Participant) {
+    let a = await this.getNextAction();
+    while (a.name != 'A_TieBreak') {
+      a = await this.getNextAction();
+    }
+    console.log(a);
+    await a.resolve(ac);
   }
 
   async transfer(s: number,fr: Actor,to: Actor,tok: Token,amt: number) {
@@ -509,12 +526,14 @@ class Action {
   name: string;
   owner: Actor;
   scene: Scenario;
+  contents: any;
 
-  constructor(id: number,name: string,owner: Actor,scene: Scenario) {
+  constructor(id: number,name: string,owner: Actor,scene: Scenario, contents: any) {
     this.id = id;
     this.name = name;
     this.owner = owner;
     this.scene = scene;
+    this.contents = contents;
   }
 
   async resolve(resp: any = -999,ty: string = "number") {

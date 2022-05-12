@@ -393,13 +393,13 @@ const respondWithVal = async (s: number,a: number,v: any,w: any = false,t='numbe
 }
 
 // initialize the program for
-// actor a (integer)
+// participant a (string)
 // at state s (integer)
 // liv is the interact environment. it is a JSON object
 // optionally, provide an account id acc (integer)
 // for example :
-// await c.initFor(0,0,JSON.stringify({'wager':{'tag':'V_UInt','contents':10}}))
-const initFor = async (s: number,a: number,liv="{}",acc: any = false,blce: any = false) => {
+// await c.initFor(0,'Bob',JSON.stringify({'wager':{'tag':'V_UInt','contents':10}}))
+const initFor = async (s: number,a: string,liv="{}",acc: any = false,blce: any = false) => {
   const accParam = (acc || acc === 0) ? `&accountId=${acc}` : ``
   const balance = (blce || blce === 0) ? `&startingBalance=${blce}` : ``
   let livS = liv

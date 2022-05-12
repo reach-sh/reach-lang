@@ -108,6 +108,7 @@ data Global = Global
   , e_partacts :: M.Map Participant ActorId
   , e_messages :: M.Map PhaseId MessageInfo
   , e_timeouts :: M.Map PhaseId Bool
+  , e_parts :: M.Map String InteractEnv
   }
   deriving (Generic)
 
@@ -159,6 +160,7 @@ initGlobal =
     , e_partacts = mempty
     , e_messages = mempty
     , e_timeouts = mempty
+    , e_parts = mempty
     }
 
 initLocal :: Local
@@ -1066,14 +1068,12 @@ registerView (g, l) v_name v_var v_ty = do
 
 registerParts :: [(SLPart, InteractEnv)] -> App ()
 registerParts [] = return ()
-registerParts ((p, iv) : ps) = do
-  s <- getState
-  let (g,l) = registerPart s (bunpack p) iv
-  setGlobal g
-  setLocal l
-  registerParts ps
+registerParts ps = do
+  g <- getGlobal
+  let g' = g {e_parts = M.fromList $ map (\(a,b)->(bunpack a,b)) ps}
+  setGlobal g'
 
-registerPart :: State -> String -> InteractEnv -> State
+registerPart :: State -> String -> InteractEnv -> (State,ActorId)
 registerPart (g, l) s iv = do
   let actorId = e_nactorid g
   let pacts = e_partacts g
@@ -1100,7 +1100,7 @@ registerPart (g, l) s iv = do
           , e_ledger = ledger'
           }
   let l' = l {l_locals = locals'}
-  (g', l')
+  ((g', l'), actorId)
 
 registerAPIs :: [(SLPart, InteractEnv)] -> App ()
 registerAPIs [] = return ()

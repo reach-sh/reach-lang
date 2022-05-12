@@ -543,17 +543,19 @@ initProgSim ll = do
   ps <- return $ C.initApp ll initSt
   processNewState Nothing ps Consensus
 
-initProgSimFor :: C.ActorId ->
+initProgSimFor :: String ->
                   StateId ->
                   C.LocalInteractEnv ->
                   Maybe C.Account ->
                   Maybe Integer ->
                   LLProg ->
-                  WebM Bool
-initProgSimFor actId sid liv accId blce (LLProg {..}) = do
+                  WebM (Bool,C.Locals)
+initProgSimFor slpart sid liv accId blce (LLProg {..}) = do
   graph <- gets e_graph
+  let (g'',l'') = saferMaybe "initProgSimFor" $ M.lookup sid graph
+  let iv = saferMaybe "initProgSimFor2" $ M.lookup slpart $ C.e_parts g''
+  let ((g, l), actId) = C.registerPart (g'',l'') slpart iv
   modify $ \st -> st {e_actor_id = actId}
-  let (g, l) = saferMaybe "initProgSimFor" $ M.lookup sid graph
   let locals = C.l_locals l
   let lcl = saferMaybe "initProgSimFor1" $ M.lookup actId locals
   let accId' = case accId of
@@ -568,7 +570,8 @@ initProgSimFor actId sid liv accId blce (LLProg {..}) = do
   let ledger = M.insert accId' (M.singleton C.nwToken blce') $ C.e_ledger g
   let g' = g {C.e_ledger = ledger}
   ps <- return $ C.initAppFromStep llp_step (g', l')
-  processNewState (Just sid) ps Local
+  b <- processNewState (Just sid) ps Local
+  return (b, M.singleton actId lcl')
 
 startServer :: LLProg -> String -> IO ()
 startServer p srcTxt = do
@@ -694,8 +697,9 @@ app p srcTxt dg = do
         case ll of
           Nothing -> json $ ("No Program" :: String)
           Just ll' -> do
-            outcome <- webM $ initProgSimFor a s liv'' acc blce ll'
+            (outcome,part) <- webM $ initProgSimFor a s liv'' acc blce ll'
             raiseError outcome
+            json part
 
   get "/init_details/:a" $ do
     setHeaders
