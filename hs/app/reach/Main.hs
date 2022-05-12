@@ -2459,7 +2459,7 @@ instance FromJSON GitHubGistResponse where
 support :: Subcommand
 support = command "support" $ info (pure step1) d
   where
-    d = progDesc "Upload index.rsh and index.mjs to help us troubleshoot!"
+    d = progDesc "Create GitHub gist of index.rsh and index.mjs"
     f i c = i .= object
       [ "content" .= c
       , "language" .= ("JavaScript" :: String)
