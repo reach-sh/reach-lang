@@ -628,6 +628,7 @@ only be constructed in a consensus step.
 
 A `{!rsh} Set` may be modified by writing `{!rsh} s.insert(ADDRESS)` to install `{!rsh} ADDRESS` in the
 set, `{!rsh} s`, or `{!rsh} s.remove(ADDRESS)` to remove the `{!rsh} ADDRESS` from the set.
+Such modifications may only occur in a consensus step.
 
 The following example shows the usage of `{!rsh} s.insert(ADDRESS)`:
 
@@ -643,9 +644,8 @@ load: /examples/dominant-assurance/index.rsh
 range: 143 - 143
 ```
 
-Such modifications may only occur in a consensus step.
-
-`{!rsh} s.member(ADDRESS)` will return a `{!rsh} Bool` representing whether the address is in the set.
+To check whether the address is in the set, `{!rsh} s.member(ADDRESS)` is used.
+And that will return a `{!rsh} Bool`.
 
 The following example shows the usage of `{!rsh} s.member(ADDRESS)`
 
