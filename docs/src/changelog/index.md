@@ -7,6 +7,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.10 is the current Reach release candidate version.
 
++ 2022/05/13: Support custom violation messages for `{!rsh} invariant`s.
++ 2022/05/13: Support multiple `{!rsh} invariant`s for `{!rsh} while` loops and `{!rsh} parallelReduce`.
 + 2022/05/13: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/05/13: Added `{!rsh} getCompanion`.
 + 2022/05/13: Added `apps` field to `{!rsh} remote.ALGO`.
