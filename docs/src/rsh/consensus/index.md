@@ -144,13 +144,14 @@ A @{defn("while statement")} may occur within a consensus step and is written:
 ```reach
 var LHS = INIT_EXPR;
 DEFINE_BLOCK; // optional
-invariant(INVARIANT_EXPR);
+invariant(INVARIANT_EXPR, ?INVARIANT_MSG);
 while( COND_EXPR ) BLOCK
 ```
 
 where `{!rsh} LHS` is a valid left-hand side of an identifier definition where the expression `{!rsh} INIT_EXPR` is the right-hand side, and
 `{!rsh} DEFINE_BLOCK` is an optional block that may define bindings that use the `{!rsh} LHS` values which are bound inside the rest of the `{!rsh} while` and its tail, and
-`{!rsh} INVARIANT_EXPR` is an expression, called the @{defn("loop invariant")}, that must be true before and after every execution of the block `{!rsh} BLOCK`, and
+`{!rsh} INVARIANT_EXPR` is an expression, called the @{defn("loop invariant")}, that must be true before and after every execution of the block `{!rsh} BLOCK`,
+`INVARIANT_MSG` is an optional bytes argument, which is included in any reported violation, and
 if `{!rsh} COND_EXPR` is true, then the block executes,
 and if not, then the loop terminates and control transfers to the continuation of the while statement.
 The identifiers bound by `{!rsh} LHS` are bound within `{!rsh} DEFINE_BLOCK`, `{!rsh} INVARIANT_EXPR`, `{!rsh} COND_EXPR`, `{!rsh} BLOCK`, and the tail of the while statement.
@@ -265,7 +266,7 @@ A @{defn("parallel reduce statement")} is written:
 const LHS =
   parallelReduce(INIT_EXPR)
   .define(() => DEFINE_BLOCK)
-  .invariant(INVARIANT_EXPR)
+  .invariant(INVARIANT_EXPR, ?INVARIANT_MSG)
   .while(COND_EXPR)
   .paySpec(TOKENS_EXPR)
   .case(PART_EXPR,
@@ -285,6 +286,7 @@ const LHS =
 
 The `{!rsh} LHS` and `{!rsh} INIT_EXPR` are like the initialization component of a `{!rsh} while` loop; and,
 the `{!rsh} .invariant` and `{!rsh} .while` components are like the invariant and condition of a `{!rsh} while` loop;
+multiple `.invariant`s may be specified;
 the `{!rsh} DEFINE_BLOCK` is like the `{!rsh} DEFINE_BLOCK` of a `{!rsh} while` loop. It may be specified multiple times;
 while the `{!rsh} .case`, `{!rsh} .api`, `{!rsh} .api_`, `{!rsh} .timeout`, and `{!rsh} .paySpec` components are like the corresponding components of a `{!rsh} fork` statement.
 
