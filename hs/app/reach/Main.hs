@@ -7,7 +7,7 @@ import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Monad.Extra
 import Control.Monad.Reader
-import Data.Aeson (ToJSON, FromJSON, Value(..), toJSON, decodeStrict, encode, object, parseJSON, withObject, withText, (.=), (.:))
+import Data.Aeson (ToJSON, FromJSON, Value(..), toJSON, encode, object, parseJSON, withObject, withText, (.=), (.:))
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A
 import Data.Bits
@@ -2585,24 +2585,18 @@ support = command "support" $ info (pure step1) d
                 Nothing uploaded.
               |]
     -- @TODO: Also add output of reach hashes!
-    uploadGistUsing mainJson accessToken = do
-      parsedRequest2 <- parseRequest "POST https://api.github.com/gists"
-      let req1 = setRequestBodyJSON mainJson parsedRequest2
-      let req2 = setRequestHeader "Accept" [BSI.packChars "application/vnd.github.v3+json"] req1
-      let req3 = setRequestHeader "Authorization" [BSI.packChars ("token " <> unpack accessToken)] req2
-      -- @HACK "node.js" is arbitrary; I just picked an arbitrary header
-      -- to bypass a "Request forbidden by administrative rules.
-      -- Please make sure your request has a User-Agent header"
-      -- error message
-      let req4 = setRequestHeader userAgentHeader [BSI.packChars "node.js"] req3
-      response2 <- httpBS req4
-      let response2Body = getResponseBody response2
-      case decodeStrict response2Body of
-        Just (GitHubGistResponse u) -> liftIO . T.putStrLn $ "\n" <> [N.text|
-            Your gist is viewable at:
-            $u
-          |]
-        _ -> error "Couldn't decode JSON from GitHub API!"
+    uploadGistUsing j t =
+      parseRequest "POST https://api.github.com/gists"
+        >>= httpBS
+          . setRequestHeader userAgentHeader [BSI.packChars "reach"]
+          . setRequestHeader "Authorization" [BSI.packChars ("token " <> unpack t)]
+          . setRequestHeader "Accept" [BSI.packChars "application/vnd.github.v3+json"]
+          . setRequestBodyJSON j
+        >>= Y.decodeThrow . getResponseBody
+        >>= \(GitHubGistResponse u) -> liftIO . T.putStrLn $ "\n" <> [N.text|
+              Your gist is viewable at:
+              $u
+            |]
 
 log' :: Subcommand
 log' = command "log" $ info f fullDesc
