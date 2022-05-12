@@ -2465,6 +2465,9 @@ support = command "support" $ info (pure step1) d
     process gitHubResponseString = map splitByEqualsSigns
       $ splitByAmpersands gitHubResponseString
     is l = maybe False (== pack l) . headMay
+    by a x = liftIO
+      . maybe (putStrLn ("Missing field `" <> x <> "`.") >> exitWith (ExitFailure 1)) pure
+      $ (headMay $ filter (is x) a) >>= (`atMay` 1)
     clientId :: String
     clientId = "c4bfe74cc8be5bbaf00e"
     scope :: String
@@ -2483,11 +2486,9 @@ support = command "support" $ info (pure step1) d
       let request = setRequestBodyJSON dataJson parsedRequest
       response <- httpLBS request
       let githubResponseString = getResponseBody response
-      let arrayOfArrayOfText = process githubResponseString
-      let deviceCodePair = head $ filter (is "device_code") arrayOfArrayOfText
-      let deviceCode = deviceCodePair !! 1
-      let userCodePair = head $ filter (is "user_code") arrayOfArrayOfText
-      let userCode = userCodePair !! 1
+      let a = process githubResponseString
+      deviceCode <- a `by` "device_code"
+      userCode <- a `by` "user_code"
       liftIO $ T.putStrLn [N.text|
         Your user code is $userCode.
         Please enter it at https://github.com/login/device.
@@ -2512,20 +2513,18 @@ support = command "support" $ info (pure step1) d
       let request = setRequestBodyJSON dataJson parsedRequest
       response <- httpLBS request
       let githubResponseString = getResponseBody response
-      let arrayOfArrayOfText = process githubResponseString
+      let a = process githubResponseString
       -- @TODO: Save accessToken; git-credential-store
       -- Warning: Permission errors when doing this^
-      case headMay $ filter (is "access_token") arrayOfArrayOfText of
+      case headMay $ filter (is "access_token") a of
         Nothing -> do
-          case headMay $ filter (is "error") arrayOfArrayOfText of
+          case headMay $ filter (is "error") a of
             Nothing -> liftIO $ putStrLn
               "Upload unsuccessful; couldn't find an authorization code or error!"
-            Just errorPair -> do
-              let reason = errorPair !! 1
-              liftIO . T.putStrLn $ pack "Error while acquiring access token:\n" <> reason
-        Just accessTokenPair -> do
-          let accessToken = accessTokenPair !! 1
-          completeStep3WithThe accessToken
+            Just _ ->
+              a `by` "error" >>= liftIO . T.putStrLn . (pack "Error while acquiring access token:\n" <>)
+        Just _ ->
+          a `by` "access_token" >>= completeStep3WithThe
     completeStep3WithThe accessToken = do
       indexRshExists <- liftIO $ doesFileExist "index.rsh"
       case indexRshExists of
