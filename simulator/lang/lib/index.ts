@@ -467,6 +467,18 @@ class Participant extends Actor {
     await a.resolve(val);
   }
 
+  async exit() {
+    let a = await this.getNextAction();
+    while (a.name == 'A_Receive') {
+      a = await this.getNextAction();
+    }
+    if (a.name == 'A_Done') {
+      return a
+    } else {
+      throw new Error('Exit Error');
+    }
+  }
+
 }
 
 class Consensus extends Actor {

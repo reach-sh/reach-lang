@@ -5,23 +5,15 @@ const main = async () => {
   console.log("Init Testing!")
 
   // test imperatively
-  const impScenario = async (s,aHand,bHand) => {
-    // Alice interactively gets her hand (0)
-    await (await s.who(alice).getNextAction()).resolve(aHand);
-    // Alice's hand (0) is published
-    await (await consensus.getNextAction()).resolve(alice);
-    // Alice observes that her hand is published
-    await (await alice.getNextAction()).resolve();
-    // Bob observes that Alice's hand is published
-    await (await bob.getNextAction()).resolve();
-    // Bob interactively gets his hand (1)
-    await (await bob.getNextAction()).resolve(bHand);
-    // Bob's hand (1) is published
-    await (await consensus.getNextAction()).resolve(bob);
-    // Alice observes that Bob's hand is published
-    await (await alice.getNextAction()).resolve();
-    // Bob observes that his hand is published
-    await (await bob.getNextAction()).resolve();
+  const impScenario = async (s,aHand,bHand,alice,bob,consensus) => {
+    // Alice interactively gets her hand
+    await s.who(alice).interact('getHand', aHand);
+    // Alice's hand is published
+    await consensus.publish(alice);
+    // Bob interactively gets his hand
+    await bob.interact('getHand', bHand);
+    // Bob's hand is published
+    await consensus.publish(bob);
     // Alice's program has run to completion
     const r = await alice.getStatus();
     console.log(r);
@@ -42,13 +34,13 @@ const main = async () => {
   const bob = is.participants.Bob;
   const consensus = is.consensus;
   // init Alice
-  await alice.init();
+  const [, a] = await alice.init();
   // init Bob
-  const s = await bob.init();
+  const [, b] = await bob.init();
 
   for (let aHand = 0; aHand < 3; aHand++) {
     for (let bHand = 0; bHand < 3; bHand++) {
-      const r = await impScenario(s.copy(),aHand,bHand);
+      const r = await impScenario(s.copy(),aHand,bHand,a,b,consensus);
       r.assertVar('V_UInt',winner(aHand,bHand));
     }
   }
