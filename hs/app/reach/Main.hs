@@ -2460,16 +2460,12 @@ support :: Subcommand
 support = command "support" $ info (pure step1) d
   where
     d = progDesc "Upload index.rsh and index.mjs to help us troubleshoot!"
-    clientId :: String
-    clientId = "c4bfe74cc8be5bbaf00e"
-    grantType :: String
-    grantType = "urn:ietf:params:oauth:grant-type:device_code"
-    language :: String
-    language = "JavaScript"
-    scope :: String
-    scope = "gist"
-    typeForUploadJson :: String
-    typeForUploadJson = "application/javascript"
+    f i c = i .= object
+      [ "content" .= c
+      , "language" .= ("JavaScript" :: String)
+      , "type" .= ("application/javascript" :: String)
+      ]
+    clientId = "c4bfe74cc8be5bbaf00e" :: String
     splitByAmpersands s = T.splitOn "&" (pack $ BSLC8.unpack s)
     splitByEqualsSigns s = T.splitOn "=" s
     process gitHubResponseString = map splitByEqualsSigns
@@ -2478,13 +2474,15 @@ support = command "support" $ info (pure step1) d
     by a x = liftIO
       . maybe (putStrLn ("Missing field `" <> x <> "`.") >> exitWith (ExitFailure 1)) pure
       $ (headMay $ filter (is x) a) >>= (`atMay` 1)
-
     req u x = fmap (process . getResponseBody)
-          $ setRequestBodyJSON (object x)
-        <$> parseRequest ("POST " <> u)
-        >>= httpLBS
+        $ setRequestBodyJSON (object x)
+      <$> parseRequest ("POST " <> u)
+      >>= httpLBS
     step1 = do
-      a <- req "https://github.com/login/device/code" [ "client_id" .= clientId, "scope" .= scope ]
+      a <- req "https://github.com/login/device/code"
+        [ "client_id" .= clientId
+        , "scope" .= ("gist" :: String)
+        ]
       deviceCode <- a `by` "device_code"
       userCode <- a `by` "user_code"
       liftIO $ T.putStrLn [N.text|
@@ -2501,7 +2499,7 @@ support = command "support" $ info (pure step1) d
       a <- req "https://github.com/login/oauth/access_token"
         [ "client_id" .= clientId
         , "device_code" .= deviceCode
-        , "grant_type" .= grantType
+        , "grant_type" .= ("urn:ietf:params:oauth:grant-type:device_code" :: String)
         ]
       -- @TODO: Save accessToken; git-credential-store
       -- Warning: Permission errors when doing this^
@@ -2515,88 +2513,42 @@ support = command "support" $ info (pure step1) d
         Just _ ->
           a `by` "access_token" >>= completeStep3WithThe
     completeStep3WithThe accessToken = do
-      indexRshExists <- liftIO $ doesFileExist "index.rsh"
-      case indexRshExists of
-        True -> do
-          indexRsh <- liftIO $ readFile "index.rsh"
-          let indexRshValue =
-                object
-                  [ "content" .= indexRsh
-                  , "language" .= language
-                  , "type" .= typeForUploadJson
-                  ]
-          let indexRshJson = ("index.rsh" .= indexRshValue)
-          checkIndexMjs indexRshJson True accessToken
+      liftIO $ doesFileExist "index.rsh" >>= \case
+        True -> liftIO $ readFile "index.rsh" >>= \i ->
+          checkIndexMjs True accessToken $ f "index.rsh" i
         False -> do
           liftIO $ putStrLn "\nDidn't find index.rsh in the current directory; skipping..."
-          -- @HACK Trying to pass an "empty" A.Pair...
-          let nullString :: String
-              nullString = ""
-          let null' :: A.Pair
-              null' = ("empty" .= nullString)
-          checkIndexMjs null' False accessToken
-    checkIndexMjs indexRshJson indexRshExists accessToken = do
+          checkIndexMjs False accessToken $ "empty" .= ("" :: String)
+    checkIndexMjs indexRshExists accessToken rsh = do
       indexMjsExists <- liftIO $ doesFileExist "index.mjs"
       case indexRshExists of
         True -> do
           case indexMjsExists of
-            True -> do
-              indexMjs <- liftIO $ readFile "index.mjs"
-              let indexMjsValue =
-                    object
-                      [ "content" .= indexMjs
-                      , "language" .= language
-                      , "type" .= typeForUploadJson
-                      ]
-              let indexMjsJson :: A.Pair
-                  indexMjsJson = ("index.mjs" .= indexMjsValue)
-              let mainJson =
-                    object
-                      [ "files" .= object [ indexRshJson, indexMjsJson ]
-                      ]
-              uploadGistUsing mainJson accessToken
+            True -> liftIO $ readFile "index.mjs" >>= \i -> u [ rsh, f "index.mjs" i ]
             False -> do
               liftIO $ putStrLn "\nDidn't find index.mjs in the current directory; skipping..."
-              let mainJson =
-                    object
-                      [ "files" .= object [ indexRshJson ]
-                      ]
-              uploadGistUsing mainJson accessToken
+              u [ rsh ]
         False -> do
           case indexMjsExists of
-            True -> do
-              indexMjs <- liftIO $ readFile "index.mjs"
-              let indexMjsValue =
-                    object
-                      [ "content" .= indexMjs
-                      , "language" .= language
-                      , "type" .= typeForUploadJson
-                      ]
-              let indexMjsJson :: A.Pair
-                  indexMjsJson = ("index.mjs" .= indexMjsValue)
-              let mainJson =
-                    object
-                      [ "files" .= object [ indexMjsJson ]
-                      ]
-              uploadGistUsing mainJson accessToken
+            True -> liftIO $ readFile "index.mjs" >>= \i -> u [ f "index.mjs" i ]
             False -> liftIO $ T.putStrLn [N.text|
                 Did not find index.mjs in the current directory; skipping...
 
                 Nothing uploaded.
               |]
-    -- @TODO: Also add output of reach hashes!
-    uploadGistUsing j t =
-      parseRequest "POST https://api.github.com/gists"
-        >>= httpBS
-          . setRequestHeader "User-Agent" [BSI.packChars "reach"]
-          . setRequestHeader "Authorization" [BSI.packChars ("token " <> unpack t)]
-          . setRequestHeader "Accept" [BSI.packChars "application/vnd.github.v3+json"]
-          . setRequestBodyJSON j
-        >>= Y.decodeThrow . getResponseBody
-        >>= \(GitHubGistResponse u) -> liftIO . T.putStrLn $ "\n" <> [N.text|
-              Your gist is viewable at:
-              $u
-            |]
+      where
+        -- @TODO: Also add output of reach hashes!
+        u a = parseRequest "POST https://api.github.com/gists"
+          >>= httpBS
+            . setRequestHeader "User-Agent" [BSI.packChars "reach"]
+            . setRequestHeader "Authorization" [BSI.packChars ("token " <> unpack accessToken)]
+            . setRequestHeader "Accept" [BSI.packChars "application/vnd.github.v3+json"]
+            . setRequestBodyJSON (object [ "files" .= object a ])
+          >>= Y.decodeThrow . getResponseBody
+          >>= \(GitHubGistResponse r) -> liftIO . T.putStrLn $ "\n" <> [N.text|
+                Your gist is viewable at:
+                $r
+              |]
 
 log' :: Subcommand
 log' = command "log" $ info f fullDesc
