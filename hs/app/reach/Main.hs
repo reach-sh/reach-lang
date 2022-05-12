@@ -2457,7 +2457,7 @@ instance FromJSON GitHubGistResponse where
   parseJSON = withObject "GitHubGistResponse" $ \o -> GitHubGistResponse <$> o .: "html_url"
 
 support :: Subcommand
-support = command "support" $ info (pure step1) d
+support = command "support" $ info (pure g) d
   where
     d = progDesc "Create GitHub gist of index.rsh and index.mjs"
     f i c = i .= object
@@ -2474,7 +2474,7 @@ support = command "support" $ info (pure step1) d
         $ setRequestBodyJSON (object x)
       <$> parseRequest ("POST " <> u)
       >>= httpLBS
-    step1 = do
+    g = do
       a <- req "https://github.com/login/device/code"
         [ "client_id" .= clientId
         , "scope" .= ("gist" :: String)
@@ -2488,27 +2488,22 @@ support = command "support" $ info (pure step1) d
         Type 'y' after successful authorization to upload index.mjs, index.rsh, or both:
       |]
       userEnteredCharacter <- liftIO getChar
-      case toUpper userEnteredCharacter of
-        'Y' -> do step2WithThe deviceCode
-        _ -> liftIO $ putStrLn "\nNo files were uploaded. Run `reach support` again to retry."
-    step2WithThe deviceCode = do
-      a <- req "https://github.com/login/oauth/access_token"
+      unless (toUpper userEnteredCharacter == 'Y') . liftIO $ do
+        putStrLn "\nNo files were uploaded. Run `reach support` again to retry."
+        exitWith $ ExitFailure 1
+      t <- req "https://github.com/login/oauth/access_token"
         [ "client_id" .= clientId
         , "device_code" .= deviceCode
         , "grant_type" .= ("urn:ietf:params:oauth:grant-type:device_code" :: String)
         ]
       -- @TODO: Save accessToken; git-credential-store
       -- Warning: Permission errors when doing this^
-      case headMay $ filter (is "access_token") a of
-        Nothing -> do
-          case headMay $ filter (is "error") a of
-            Nothing -> liftIO $ putStrLn
-              "Upload unsuccessful; couldn't find an authorization code or error!"
-            Just _ ->
-              a `by` "error" >>= liftIO . T.putStrLn . (pack "Error while acquiring access token:\n" <>)
-        Just _ ->
-          a `by` "access_token" >>= completeStep3WithThe
-    completeStep3WithThe accessToken = do
+      when (null $ filter (is "access_token") a) . liftIO $ do
+        case headMay $ filter (is "error") a of
+          Nothing -> putStrLn "Upload unsuccessful; couldn't find an authorization code or error!"
+          Just _ -> t `by` "error" >>= T.putStrLn . (pack "\nError while acquiring access token:\n" <>)
+        exitWith $ ExitFailure 1
+      accessToken <- t `by` "access_token"
       liftIO $ doesFileExist "index.rsh" >>= \case
         True -> liftIO $ readFile "index.rsh" >>= \i ->
           checkIndexMjs True accessToken $ f "index.rsh" i
