@@ -2505,8 +2505,7 @@ support = command "support" $ info (pure g) d
         exitWith $ ExitFailure 1
       accessToken <- t `by` "access_token"
       liftIO $ doesFileExist "index.rsh" >>= \case
-        True -> liftIO $ readFile "index.rsh" >>= \i ->
-          checkIndexMjs True accessToken $ f "index.rsh" i
+        True -> liftIO $ readFile "index.rsh" >>= checkIndexMjs True accessToken . f "index.rsh"
         False -> do
           liftIO $ putStrLn "\nDidn't find index.rsh in the current directory; skipping..."
           checkIndexMjs False accessToken $ "empty" .= ("" :: String)
