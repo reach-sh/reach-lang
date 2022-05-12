@@ -143,7 +143,7 @@ instance Erase LLConsensus where
       return $ LLC_Switch at v' csm'
     LLC_FromConsensus at1 at2 fs s ->
       LLC_FromConsensus at1 at2 fs <$> el s
-    LLC_While at asn inv cond body k -> do
+    LLC_While at asn invs cond body k -> do
       k' <- el k
       cond' <- el cond
       let loop m = do
@@ -155,9 +155,9 @@ instance Erase LLConsensus where
               True -> return (body', asn'')
               False -> loop m
       (body', asn'') <- loop (restrictToUsed asn)
-      let (DLBlock inv_at inv_fs _inv_t _inv_a, inv_lab) = inv
-      let inv' = DLBlock inv_at inv_fs (DT_Return inv_at) (DLA_Literal $ DLL_Null)
-      return $ LLC_While at asn'' (inv', inv_lab) cond' body' k'
+      let invs' = flip map invs $ \ (DLBlock inv_at inv_fs _inv_t _inv_a, inv_lab) ->
+            (DLBlock inv_at inv_fs (DT_Return inv_at) (DLA_Literal $ DLL_Null), inv_lab)
+      return $ LLC_While at asn'' invs' cond' body' k'
     LLC_Continue at asn -> do
       asn' <- restrictToUsed asn
       asn'' <- el asn'
