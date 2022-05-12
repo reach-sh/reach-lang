@@ -6,15 +6,10 @@ const main = async () => {
 
   // test imperatively
   const impScenario = async (s,aHand,bHand,alice,bob,consensus) => {
-    // Alice interactively gets her hand
     await s.who(alice).interact('getHand', aHand);
-    // Alice's hand is published
     await consensus.publish(alice);
-    // Bob interactively gets his hand
     await bob.interact('getHand', bHand);
-    // Bob's hand is published
     await consensus.publish(bob);
-    // Alice's program has run to completion
     const r = await alice.getStatus();
     console.log(r);
     assert.equal(r,"Done");
@@ -33,9 +28,7 @@ const main = async () => {
   const alice = is.participants.Alice;
   const bob = is.participants.Bob;
   const consensus = is.consensus;
-  // init Alice
   const [, a] = await alice.init();
-  // init Bob
   const [, b] = await bob.init();
 
   for (let aHand = 0; aHand < 3; aHand++) {

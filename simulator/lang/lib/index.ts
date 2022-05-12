@@ -479,6 +479,16 @@ class Participant extends Actor {
     }
   }
 
+  async receive() {
+    let a = await this.getNextAction();
+    if (a.name == 'A_Receive') {
+      a = await this.getNextAction();
+      await a.resolve();
+    } else {
+      throw new Error('Receive Error');
+    }
+  }
+
 }
 
 class Consensus extends Actor {

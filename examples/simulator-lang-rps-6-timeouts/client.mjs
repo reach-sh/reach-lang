@@ -6,43 +6,39 @@ const main = async () => {
 
   const fs = new lang.FunctionalScenario();
   let s = await fs.init();
+  const a b;
   const pi = await fs.pingServer();
   const alice = fs.participants.Alice;
   const bob = fs.participants.Bob;
   const consensus = fs.consensus;
-  // init Alice
-  s = await s.who(alice).init(10,
+  [s, a] = await s.who(alice).init(10,
     {'wager':{'tag':'V_UInt','contents':10},
     'deadline':{'tag':'V_UInt','contents':99}}
   );
-  // init Bob
-  s = await s.who(bob).init(10);
-  const fScenario = async (s,aHand,bHand) => {
+  [s, b] = await s.who(bob).init(10);
+
+  const fScenario = async (s,aHand,bHand,alice,bob,consensus) => {
     // Alice interactively gets her hand (0)
-    s = await (await s.who(alice).getNextAction()).resolve(aHand);
+    s = await s.who(alice).interact('getHand', aHand);
     // getRandom
-    s = await (await s.who(alice).getNextAction()).resolve(4444);
+    s = await s.who(alice).interact('random', 4444);
     // Alice's wager/deadline is published
-    s = await (await s.who(consensus).getNextAction()).resolve(alice);
-    // Alice observes that her hand is published
-    s = await (await s.who(alice).getNextAction()).resolve();
-    // Bob observes that Alice's hand is published
-    s = await (await s.who(bob).getNextAction()).resolve();
+    s = await s.who(consensus).publish(alice);
     // Bob interactively gets his hand (1)
     // let's name a special "breakpoint" that we'll return to
     // in order to test different timeout scenarios
     //  ↓↓
-    let sBeforeTimeout = await (await s.who(bob).getNextAction()).resolve(bHand);
+    let sBeforeTimeout = await s.who(bob).interact('getHand', bHand);
     // force Bob's hand publish to timeout
     s = await sBeforeTimeout.forceTimeout();
     // timeout
-    s = await (await s.who(consensus).getNextAction()).resolve(bob);
-    s = await (await s.who(alice).getNextAction()).resolve();
-    s = await (await s.who(bob).getNextAction()).resolve();
+    s = s.who(consensus).publish(bob);
+    s = await s.who(alice).receive();
+    s = await s.who(bob).receive();
     // closeTo
-    s = await (await s.who(consensus).getNextAction()).resolve(alice);
-    s = await (await s.who(alice).getNextAction()).resolve();
-    s = await (await s.who(bob).getNextAction()).resolve();
+    s = s.who(consensus).publish(alice);
+    s = await s.who(alice).receive();
+    s = await s.who(bob).receive();
     // first scenario done
     let r = await s.who(alice).getStatus();
     console.log(r);
@@ -53,23 +49,23 @@ const main = async () => {
     // test the scenario where Alice times out
     // we're going back in time to our breakpoint here
     //               ↓↓
-    s = await (await sBeforeTimeout.who(consensus).getNextAction()).resolve(bob);
-    s = await (await s.who(alice).getNextAction()).resolve();
-    s = await (await s.who(bob).getNextAction()).resolve();
+    s = await sBeforeTimeout.who(consensus).publish(bob);
+    s = await s.who(alice).receive();
+    s = await s.who(bob).receive();
     s = await s.forceTimeout();
     // timeout
-    s = await (await s.who(consensus).getNextAction()).resolve(alice);
-    s = await (await s.who(alice).getNextAction()).resolve();
-    s = await (await s.who(bob).getNextAction()).resolve();
+    s = await s.who(consensus).publish(alice);
+    s = await s.who(alice).receive();
+    s = await s.who(bob).receive();
     // closeTo
-    s = await (await s.who(consensus).getNextAction()).resolve(alice);
-    s = await (await s.who(alice).getNextAction()).resolve();
-    s = await (await s.who(bob).getNextAction()).resolve();
+    s = await s.who(consensus).publish(alice);
+    s = await s.who(alice).receive();
+    s = await s.who(bob).receive();
     w = await bob.balanceOf();
     // check that Bob got everything
     assert.equal(w,20);
   }
-  fScenario(s,0,1);
+  fScenario(s,0,1,a,b,consensus);
   console.log("Testing Complete!!!")
 }
 
