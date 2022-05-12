@@ -2460,6 +2460,16 @@ support :: Subcommand
 support = command "support" $ info (pure step1) d
   where
     d = progDesc "Upload index.rsh and index.mjs to help us troubleshoot!"
+    clientId :: String
+    clientId = "c4bfe74cc8be5bbaf00e"
+    grantType :: String
+    grantType = "urn:ietf:params:oauth:grant-type:device_code"
+    language :: String
+    language = "JavaScript"
+    scope :: String
+    scope = "gist"
+    typeForUploadJson :: String
+    typeForUploadJson = "application/javascript"
     splitByAmpersands s = T.splitOn "&" (pack $ BSLC8.unpack s)
     splitByEqualsSigns s = T.splitOn "=" s
     process gitHubResponseString = map splitByEqualsSigns
@@ -2468,14 +2478,7 @@ support = command "support" $ info (pure step1) d
     by a x = liftIO
       . maybe (putStrLn ("Missing field `" <> x <> "`.") >> exitWith (ExitFailure 1)) pure
       $ (headMay $ filter (is x) a) >>= (`atMay` 1)
-    clientId :: String
-    clientId = "c4bfe74cc8be5bbaf00e"
-    scope :: String
-    scope = "gist"
-    language :: String
-    language = "JavaScript"
-    typeForUploadJson :: String
-    typeForUploadJson = "application/javascript"
+
     req u x = fmap (process . getResponseBody)
           $ setRequestBodyJSON (object x)
         <$> parseRequest ("POST " <> u)
@@ -2494,9 +2497,6 @@ support = command "support" $ info (pure step1) d
       case toUpper userEnteredCharacter of
         'Y' -> do step2WithThe deviceCode
         _ -> liftIO $ putStrLn "\nNo files were uploaded. Run `reach support` again to retry."
-    grantType :: String
-    grantType = "urn:ietf:params:oauth:grant-type:device_code"
-    userAgentHeader = "user-agent"
     step2WithThe deviceCode = do
       a <- req "https://github.com/login/oauth/access_token"
         [ "client_id" .= clientId
@@ -2588,7 +2588,7 @@ support = command "support" $ info (pure step1) d
     uploadGistUsing j t =
       parseRequest "POST https://api.github.com/gists"
         >>= httpBS
-          . setRequestHeader userAgentHeader [BSI.packChars "reach"]
+          . setRequestHeader "User-Agent" [BSI.packChars "reach"]
           . setRequestHeader "Authorization" [BSI.packChars ("token " <> unpack t)]
           . setRequestHeader "Accept" [BSI.packChars "application/vnd.github.v3+json"]
           . setRequestBodyJSON j
