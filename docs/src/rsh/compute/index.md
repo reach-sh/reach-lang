@@ -671,7 +671,7 @@ load: /examples/uint256/index.rsh
 range: 92 - 93
 ```
 
-Similarly, if `y` is a `{!rsh} UInt256`, then `{!rsh} UInt(y)` is `y` with as many bits as `{!rsh} UInt` has. 
+However, if `y` is a `{!rsh} UInt256`, then `{!rsh} UInt(y)` is `y` with as many bits as `{!rsh} UInt` has. 
 This is demonstrated in the code below:
 
 ```reach
