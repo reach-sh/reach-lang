@@ -1297,7 +1297,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
     | slpr_mode == Nothing ->
       return $ Just $
         M.fromList $
-          gom "invariant" PRM_Invariant slpr_minv
+          go "invariant" PRM_Invariant
             <> gom "while" PRM_While slpr_mwhile
             <> go "case" PRM_Case
             <> go "api" PRM_API
@@ -1735,7 +1735,7 @@ evalForm f args = do
       slpr_at <- withAt id
       let slpr_mode = Nothing
       slpr_init <- one_arg
-      let slpr_minv = Nothing
+      let slpr_minv = []
       let slpr_mwhile = Nothing
       let slpr_cases = []
       let slpr_apis = []
@@ -1749,7 +1749,7 @@ evalForm f args = do
       case slpr_mode of
         Just PRM_Invariant -> do
           (x, my) <- one_mtwo_args
-          go $ p {slpr_minv = Just (x, my) }
+          go $ p {slpr_minv = slpr_minv <> [(x, my)] }
         Just PRM_While -> do
           x <- one_arg
           go $ p {slpr_mwhile = Just x}
@@ -5492,7 +5492,7 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let pr_at = slpr_at
   let pr_mode = slpr_mode
   let init_e = slpr_init
-  let pr_minv = slpr_minv
+  let pr_invs = slpr_minv
   let pr_mwhile = slpr_mwhile
   let pr_cases = slpr_cases
   let pr_apis = slpr_apis
@@ -5511,11 +5511,11 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let want lab = \case
         Just x -> return x
         Nothing -> expect_ $ Err_ParallelReduceIncomplete $ "missing " <> lab
-  (inv_e, minv_lab) <- want "invariant" pr_minv
   while_e <- want "while" pr_mwhile
   let var_decls = JSLOne (JSVarInitExpression lhs (JSVarInit a init_e))
   let var_s = JSVariable a var_decls sp
-  let inv_s = JSMethodCall (JSIdentifier a "invariant") a (toJSCL $ inv_e : catMaybes [minv_lab]) a sp
+  let inv_s = flip map pr_invs $ \ (inv_e, minv_lab) ->
+                JSMethodCall (JSIdentifier a "invariant") a (toJSCL $ inv_e : catMaybes [minv_lab]) a sp
   let fork_e0 = jsCall a (jid "fork") []
   let injectContinueIntoBody addArgs isTimeout e = do
         let ea = jsa e
@@ -5589,7 +5589,7 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
                 locAtf (srcloc_jsa "define" $ jsa def) $
                   snd <$> deconstructFunStmts' (const Err_ParallelReduce_DefineBlock) def
   let block_sb = JSStatementBlock a block_ss a sp
-  let pr_ss = [var_s, block_sb, inv_s, while_s]
+  let pr_ss = [var_s, block_sb] <> inv_s <> [while_s]
   -- liftIO $ putStrLn $ "ParallelReduce"
   -- liftIO $ putStrLn $ show $ pretty pr_ss
   return $ pr_ss
@@ -5811,6 +5811,11 @@ evalAssign rhs = \case
   SLLV_MapRef _at mv mc -> do
     ensure_mode SLM_ConsensusStep "Map.set"
     mapSet mv mc =<< ensure_public rhs
+
+getInvariant :: JSStatement -> Maybe (JSCommaList JSExpression)
+getInvariant = \case
+  JSMethodCall (JSIdentifier _ "invariant") _ inv _ _ -> Just inv
+  _ -> Nothing
 
 evalStmt :: [JSStatement] -> App SLStmtRes
 evalStmt = \case
@@ -6190,45 +6195,53 @@ evalStmt = \case
             -- XXX This is a bad macro, it duplicates blk_ss in the while and
             -- after, rather than expanding/evaluating once and incorporating
             -- things, which might be possible
-            : (JSMethodCall (JSIdentifier inv_a "invariant") _ inv _ _isp)
-            : (JSWhile while_a cond_a while_cond _ while_body)
-            : ks
-          ) -> locAtf (srcloc_jsa "while" while_a) $ do
-            at <- withAt id
-            ensure_mode SLM_ConsensusStep "while"
-            (invariant_e, inv_lab_e) <-
-                  case parseJSFormals at inv of
-                    [x, y] -> return (x, Just y)
-                    [x]    -> return (x, Nothing)
+            : rst
+          ) -> do
+            let (inv_ss, rst') = span (isJust . getInvariant) rst
+            let invs = mapMaybe getInvariant inv_ss
+            (while_a, cond_a, while_cond, while_body, ks) <-
+                  case rst' of
+                    JSWhile wa ca wc _ wb : ks -> return (wa, ca, wc, wb, ks)
                     _ -> expect_ Err_Block_Variable
-            inv_lab <- mapM ((mustBeBytes . snd) <=< evalExpr) inv_lab_e
-            (while_lhs, while_rhs) <- destructDecls while_decls
-            (init_vars, init_dl, sco_env') <- doWhileLikeInitEval while_lhs while_rhs
-            let add_preamble a e = jsCallThunk a $ jsThunkStmts a $ blk_ss <> [JSReturn a (Just e) (a2sp a)]
-            inv_b <-
-              locAtf (srcloc_jsa "invariant" inv_a) $
-                locSco sco_env' $
-                  locWhileInvariant $
-                    evalPureExprToBlock (add_preamble inv_a invariant_e) T_Bool
-            cond_b <-
-              locAtf (srcloc_jsa "cond" cond_a) $
-                locSco sco_env' $ evalPureExprToBlock (add_preamble cond_a while_cond) T_Bool
-            let while_sco =
-                  sco_env'
-                    { sco_while_vars = Just init_vars
-                    , sco_must_ret = RS_NeedExplicit
-                    }
-            (body_lifts, (SLStmtRes _ body_rets)) <-
-              unchangedSt $
-                locSco while_sco $
-                  captureLifts $ evalStmt $ blk_ss <> [while_body]
-            saveLift
-              =<< withAt
-                (\at' ->
-                   DLS_While at' init_dl (inv_b, inv_lab) cond_b body_lifts)
-            SLStmtRes k_sco' k_rets <- locSco sco_env' $ evalStmt $ blk_ss <> ks
-            let rets' = body_rets <> k_rets
-            return $ SLStmtRes k_sco' rets'
+            locAtf (srcloc_jsa "while" while_a) $ do
+              at <- withAt id
+              ensure_mode SLM_ConsensusStep "while"
+              invs' <- forM invs $ \ inv -> -- (invariant_e, inv_lab_e)
+                    case parseJSFormals at inv of
+                      [x, y] -> return (x, Just y)
+                      [x]    -> return (x, Nothing)
+                      _ -> expect_ Err_Block_Variable
+              (while_lhs, while_rhs) <- destructDecls while_decls
+              (init_vars, init_dl, sco_env') <- doWhileLikeInitEval while_lhs while_rhs
+              let add_preamble a e = jsCallThunk a $ jsThunkStmts a $ blk_ss <> [JSReturn a (Just e) (a2sp a)]
+              invs'' <- forM invs' $ \(invariant_e, inv_lab_e) -> do
+                    let inv_a = jsa invariant_e
+                    inv_lab <- forM inv_lab_e $ mustBeBytes . snd <=< evalExpr
+                    inv_b <-
+                      locAtf (srcloc_jsa "invariant" inv_a) $
+                        locSco sco_env' $
+                          locWhileInvariant $
+                            evalPureExprToBlock (add_preamble inv_a invariant_e) T_Bool
+                    return (inv_b, inv_lab)
+              cond_b <-
+                locAtf (srcloc_jsa "cond" cond_a) $
+                  locSco sco_env' $ evalPureExprToBlock (add_preamble cond_a while_cond) T_Bool
+              let while_sco =
+                    sco_env'
+                      { sco_while_vars = Just init_vars
+                      , sco_must_ret = RS_NeedExplicit
+                      }
+              (body_lifts, (SLStmtRes _ body_rets)) <-
+                unchangedSt $
+                  locSco while_sco $
+                    captureLifts $ evalStmt $ blk_ss <> [while_body]
+              saveLift
+                =<< withAt
+                  (\at' ->
+                    DLS_While at' init_dl invs'' cond_b body_lifts)
+              SLStmtRes k_sco' k_rets <- locSco sco_env' $ evalStmt $ blk_ss <> ks
+              let rets' = body_rets <> k_rets
+              return $ SLStmtRes k_sco' rets'
         _ -> expect_ $ Err_Block_Variable
   ((JSWhile a _ _ _ _) : _) ->
     locAtf (srcloc_jsa "while" a) $ expect_ $ Err_Block_While

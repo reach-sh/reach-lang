@@ -184,7 +184,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_vst :: VerifySt
   , ctxt_modem :: Maybe VerifyMode
   , ctxt_path_constraint :: [SExpr]
-  , ctxt_while_invariant :: Maybe (DLBlock, Maybe B.ByteString)
+  , ctxt_while_invariant :: [(DLBlock, Maybe B.ByteString)]
   , ctxt_displayed :: IORef (S.Set SExpr)
   , ctxt_maps :: M.Map DLMVar SMTMapInfo
   , ctxt_addrs :: M.Map SLPart DLVar
@@ -1295,26 +1295,27 @@ smt_invblock bm b@(DLBlock at f _ _) minv_lab = do
 smt_while_jump :: Bool -> DLAssignment -> App ()
 smt_while_jump vars_are_primed asn = do
   let DLAssignment asnm = asn
-  (inv, minv_lab) <-
+  invs <-
     (ctxt_while_invariant <$> ask) >>= \case
-      Just x -> return $ x
-      Nothing -> impossible "asn outside loop"
+      [] -> impossible "asn outside loop"
+      xs -> return $ xs
   let add_asn_lets m (DLBlock at fs t ra) =
         DLBlock at fs t' ra
         where
           go (v, a) t_ = DT_Com (DL_Let at (DLV_Let DVC_Many v) (DLE_Arg at a)) t_
           t' = foldr go t $ M.toList m
-  inv' <-
-    case vars_are_primed of
-      False -> return $ add_asn_lets asnm inv
-      True -> do
-        let lvars = M.keys asnm
-        (inv_f, nlvars) <- smt_freshen inv lvars
-        let rho = M.fromList $ zip nlvars lvars
-        let mapCompose bc ab = M.mapMaybe (bc M.!?) ab
-        let asnm' = mapCompose asnm rho
-        return $ add_asn_lets asnm' inv_f
-  smt_invblock (B_Prove vars_are_primed) inv' minv_lab
+  forM_ invs $ \ (inv, minv_lab) -> do
+    inv' <-
+      case vars_are_primed of
+        False -> return $ add_asn_lets asnm inv
+        True -> do
+          let lvars = M.keys asnm
+          (inv_f, nlvars) <- smt_freshen inv lvars
+          let rho = M.fromList $ zip nlvars lvars
+          let mapCompose bc ab = M.mapMaybe (bc M.!?) ab
+          let asnm' = mapCompose asnm rho
+          return $ add_asn_lets asnm' inv_f
+    smtNewScope $ smt_invblock (B_Prove vars_are_primed) inv' minv_lab
 
 smt_asn_def :: SrcLoc -> DLAssignment -> App ()
 smt_asn_def at asn = mapM_ def1 $ M.keys asnm
@@ -1365,22 +1366,24 @@ smt_n = \case
     um <- asks ctxt_untrustworthyMaps
     when um $ smtMapRefresh at
     smt_s s
-  LLC_While at asn (inv, minv_lab) cond body k ->
+  LLC_While at asn invs cond body k ->
     mapM_ ctxtNewScope [before_m, loop_m, after_m]
     where
-      with_inv = local (\e -> e {ctxt_while_invariant = Just (inv, minv_lab) })
+      with_inv = local (\e -> e {ctxt_while_invariant = invs })
       before_m = with_inv $ smt_while_jump False asn
       loop_m = do
         smtMapRefresh at
         smt_asn_def at asn
-        smt_invblock (B_Assume True) inv minv_lab
-        smt_invblock (B_Assume True) cond minv_lab
+        forM_ invs $ \ (inv, minv_lab) -> do
+          smt_invblock (B_Assume True) inv minv_lab
+          smt_invblock (B_Assume True) cond minv_lab
         (with_inv $ smt_n body)
       after_m = do
         smtMapRefresh at
         smt_asn_def at asn
-        smt_invblock (B_Assume True) inv minv_lab
-        smt_invblock (B_Assume False) cond minv_lab
+        forM_ invs $ \ (inv, minv_lab) -> do
+          smt_invblock (B_Assume True) inv minv_lab
+          smt_invblock (B_Assume False) cond minv_lab
         smt_n k
   LLC_Continue _at asn -> smt_while_jump True asn
   LLC_ViewIs _ _ _ ma k -> do
@@ -1642,7 +1645,7 @@ _verify_smt mc ctxt_vst smt lp = do
         return $ SMTMapInfo {..}
   ctxt_maps <- mapM initMapInfo dli_maps
   let ctxt_addrs = M.fromSet (\p -> DLVar at (Just (at, bunpack p)) T_Address 0) $ M.keysSet pies_m
-  let ctxt_while_invariant = Nothing
+  let ctxt_while_invariant = []
   let ctxt_inv_mode = B_None
   let ctxt_path_constraint = []
   let ctxt_modem = Nothing

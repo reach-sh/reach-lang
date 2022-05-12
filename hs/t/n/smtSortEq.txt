@@ -4,7 +4,7 @@ Verifying for generic connector
 Verification failed:
   when ALL participants are honest
   of theorem: while invariant before loop
-  at ./smtSortEq.rsh:17:27:invariant
+  at ./smtSortEq.rsh:19:7:invariant
 
   // Violation Witness
 

@@ -152,6 +152,9 @@ instance Unroll a => Unroll (DLinExportBlock a) where
   ul = \case
     DLinExportBlock at vs b -> DLinExportBlock at vs <$> ul b
 
+instance Unroll a => Unroll [a] where
+  ul = mapM ul
+
 instance Unroll LLConsensus where
   ul = \case
     LLC_Com m k -> ul_m LLC_Com m k
