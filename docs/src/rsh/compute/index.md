@@ -1423,6 +1423,23 @@ maybe(Maybe(UInt).None(), 0, add1);  // 0
  `{!rsh} maybe(m, defaultVal, f)` receives a `{!rsh} Maybe` value, a default value, and a unary function as arguments. The function will
 either return the application of the function, `{!rsh} f`, to the `{!rsh} Some` value or return the default value provided.
 
+The following examples demonstrate different usage of `{!rsh} Maybe`:
+
+```reach
+load: /hs/t/y/data.rsh
+range: 3 - 3
+```
+
+```reach
+load: /hs/t/y/polyEq.rsh
+range: 36 - 36
+```
+
+```reach
+load: /examples/pr-1cc66/index.rsh
+range: 8 - 8
+```
+
 ### `Either`
 
 @{ref("rsh", "Either")}
