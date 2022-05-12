@@ -2476,17 +2476,12 @@ support = command "support" $ info (pure step1) d
     language = "JavaScript"
     typeForUploadJson :: String
     typeForUploadJson = "application/javascript"
+    req u x = fmap (process . getResponseBody)
+          $ setRequestBodyJSON (object x)
+        <$> parseRequest ("POST " <> u)
+        >>= httpLBS
     step1 = do
-      let dataJson =
-            object
-              [ "client_id" .= clientId
-              , "scope" .= scope
-              ]
-      parsedRequest <- parseRequest "POST https://github.com/login/device/code"
-      let request = setRequestBodyJSON dataJson parsedRequest
-      response <- httpLBS request
-      let githubResponseString = getResponseBody response
-      let a = process githubResponseString
+      a <- req "https://github.com/login/device/code" [ "client_id" .= clientId, "scope" .= scope ]
       deviceCode <- a `by` "device_code"
       userCode <- a `by` "user_code"
       liftIO $ T.putStrLn [N.text|
@@ -2503,17 +2498,11 @@ support = command "support" $ info (pure step1) d
     grantType = "urn:ietf:params:oauth:grant-type:device_code"
     userAgentHeader = "user-agent"
     step2WithThe deviceCode = do
-      let dataJson =
-            object
-              [ "client_id" .= clientId
-              , "device_code" .= deviceCode
-              , "grant_type" .= grantType
-              ]
-      parsedRequest <- parseRequest "POST https://github.com/login/oauth/access_token"
-      let request = setRequestBodyJSON dataJson parsedRequest
-      response <- httpLBS request
-      let githubResponseString = getResponseBody response
-      let a = process githubResponseString
+      a <- req "https://github.com/login/oauth/access_token"
+        [ "client_id" .= clientId
+        , "device_code" .= deviceCode
+        , "grant_type" .= grantType
+        ]
       -- @TODO: Save accessToken; git-credential-store
       -- Warning: Permission errors when doing this^
       case headMay $ filter (is "access_token") a of
