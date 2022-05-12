@@ -19,7 +19,7 @@ data LLConsensus
   | LLC_While
       { llc_w_at :: SrcLoc
       , llc_w_asn :: DLAssignment
-      , llc_w_inv :: (DLBlock, Maybe ByteString)
+      , llc_w_invs :: [(DLBlock, Maybe ByteString)]
       , llc_w_cond :: DLBlock
       , llc_w_body :: LLConsensus
       , llc_w_k :: LLConsensus

@@ -62,7 +62,7 @@ data DKTail
   | DK_While
       { dk_w_at :: SrcLoc
       , dk_w_asn :: DLAssignment
-      , dk_w_inv :: (DKBlock, Maybe ByteString)
+      , dk_w_inv :: [(DKBlock, Maybe ByteString)]
       , dk_w_cond :: DKBlock
       , dk_w_body :: DKTail
       , dk_w_k :: DKTail

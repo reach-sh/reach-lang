@@ -14,7 +14,8 @@ export const main = Reach.App(() => {
       () => ({ when: true }),
       (_) => 1,
       (_) => {
-        return [ false, 4 ];
+        transfer(balance()).to(A);
+        return [ false, x ];
       }
     )
     .timeout(10, () => {
@@ -23,4 +24,6 @@ export const main = Reach.App(() => {
     });
 
   commit();
+  assert(balance() == 0);
+  assert(x == 0);
 })

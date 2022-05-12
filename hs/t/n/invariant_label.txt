@@ -4,50 +4,84 @@ Verifying for generic connector
 Verification failed:
   when ALL participants are honest
   of theorem: while invariant after loop
-  msg: "GABBAGOOL"
-  at ./invariant_label.rsh:9:19:invariant
+  msg: "balance() == 0"
+  at ./invariant_label.rsh:11:16:invariant
 
   // Violation Witness
 
   const UInt.max = 10;
 
-  const netBalance/93 = <loop variable>;
+  const netBalance/98 = <loop variable>;
   //    ^ could = 0
   //      from: ./invariant_label.rsh:9:19:while
 
   // Theorem Formalization
 
-  const v146 = (netBalance/93 + 1) == 0;
+  const v162 = (netBalance/98 + 1) == 0;
   //    ^ would be false
-  assert(v146);
+  assert(v162);
+
+Verification failed:
+  when ALL participants are honest
+  of theorem: while invariant after loop
+  msg: "x stays zero"
+  at ./invariant_label.rsh:12:16:invariant
+
+  // Violation Witness
+
+  const UInt.max = 10;
+
+
+  // Theorem Formalization
+
+  const v169 = 4 == 0;
+  //    ^ would be false
+  assert(v169);
 
   Verifying when NO participants are honest
 Verification failed:
   when NO participants are honest
   of theorem: while invariant after loop
-  msg: "GABBAGOOL"
-  at ./invariant_label.rsh:9:19:invariant
+  msg: "balance() == 0"
+  at ./invariant_label.rsh:11:16:invariant
 
   // Violation Witness
 
   const UInt.max = 10;
 
-  const netBalance/93 = <loop variable>;
+  const netBalance/98 = <loop variable>;
   //    ^ could = 0
   //      from: ./invariant_label.rsh:9:19:while
 
   // Theorem Formalization
 
-  const v171 = (netBalance/93 + 1) == 0;
+  const v203 = (netBalance/98 + 1) == 0;
   //    ^ would be false
-  assert(v171);
+  assert(v203);
 
-Checked 17 theorems; 2 failures :'(
-warning[RW0006]: This program uses network seconds, which are unreliable on most consensus networks. You should read the article about this warning to ensure that you understand the risks of building on them.
+Verification failed:
+  when NO participants are honest
+  of theorem: while invariant after loop
+  msg: "x stays zero"
+  at ./invariant_label.rsh:12:16:invariant
 
-  reach standard library:576:12:application
+  // Violation Witness
 
-  
+  const UInt.max = 10;
 
-For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0006
+
+  // Theorem Formalization
+
+  const v210 = 4 == 0;
+  //    ^ would be false
+  assert(v210);
+
+Checked 24 theorems; 4 failures :'(
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs.
+
+  ./invariant_label.rsh:20:13:application
+
+  20|     .timeout(10, () => {
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
