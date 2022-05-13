@@ -18,7 +18,8 @@ export const main = Reach.App(() => {
   D.interact.ready();
 
   const [done, amt] = parallelReduce([false, 0])
-    .invariant(balance() == amt && amt == M.sum())
+    .invariant(balance() == amt)
+    .invariant(amt == M.sum())
     .while(! done || amt > 0)
     .api_(P.done, () => {
       check(this == D);

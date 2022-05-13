@@ -13,7 +13,8 @@ export const main = Reach.App(() => {
       .define(() => {
         const sum = () => x + y;
       })
-      .invariant(balance() == 0 && sum() == sum())
+      .invariant(balance() == 0)
+      .invariant(sum() == sum())
       .while(sum() < 10)
       .case(
         Alice,

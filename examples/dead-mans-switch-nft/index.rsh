@@ -25,7 +25,8 @@ export const main = Reach.App(() => {
 
   const [owner, heir] =
     parallelReduce([C, firstHeir])
-    .invariant(balance() == 0 && owner != heir)
+    .invariant(balance() == 0)
+    .invariant(owner != heir)
     .while(true)
     .api_(O.ping, () => {
       check(this == owner);

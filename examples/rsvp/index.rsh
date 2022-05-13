@@ -30,10 +30,8 @@ export const main = Reach.App(() => {
 
   const [ keepGoing, howMany ] =
     parallelReduce([true, 0])
-    .invariant(
-      balance() == howMany * price
-      && RSVPs.Map.size() == howMany
-    )
+    .invariant(balance() == howMany * price)
+    .invariant(RSVPs.Map.size() == howMany)
     .while( keepGoing )
     .api_(A.iWillGo, () => {
       check( ! RSVPs.member(this), "not yet" );

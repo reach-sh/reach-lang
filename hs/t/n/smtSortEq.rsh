@@ -7,18 +7,14 @@ export const main = Reach.App(() => {
   A.publish();
   const xM = new Map(UInt);
   const x = parallelReduce(0)
-    .invariant(
-      balance() == 0
-      && xM.all((_) => true)
-    )
+    .invariant(balance() == 0)
+    .invariant(xM.all((_) => true))
     .while(x < 2)
     .case(B, (() => ({ msg: null })), ((_) => { return x; }))
     .timeout(false);
   const y = parallelReduce(0)
-    .invariant(
-      balance() == 0
-      && xM.sum() == x
-    )
+    .invariant(balance() == 0)
+    .invariant(xM.sum() == x)
     .while(y < x)
     .case(B, (() => ({ msg: null })), ((_) => { return y; }))
     .timeout(false);

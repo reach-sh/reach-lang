@@ -29,7 +29,8 @@ export const main = Reach.App(() => {
 
   const ctMap = new Map(UInt);
   const [sum, stop] = parallelReduce([0, false])
-    .invariant(balance() == sum && balance() == ctMap.sum())
+    .invariant(balance() == sum)
+    .invariant(balance() == ctMap.sum())
     .while(! stop && balance() < p.goal)
     .case(C, () => {
         const amt = declassify(interact.getContribution());

@@ -33,7 +33,8 @@ export const main = Reach.App(() => {
       }
       const releasable = (time) => vested(time) - released;
     })
-    .invariant(released >= 0 && releasable(thisConsensusTime()) >= 0)
+    .invariant(released >= 0)
+    .invariant(releasable(thisConsensusTime()) >= 0)
     .while(balance() > 0)
     .api(P.release, (callback) => {
       const curTime = thisConsensusTime();

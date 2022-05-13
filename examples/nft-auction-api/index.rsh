@@ -31,7 +31,8 @@ export const main = Reach.App(() => {
         lastPrice,
         isFirstBid,
     ] = parallelReduce([Creator, minBid, true])
-        .invariant(balance(nftId) == amt && balance() == (isFirstBid ? 0 : lastPrice))
+        .invariant(balance(nftId) == amt)
+        .invariant(balance() == (isFirstBid ? 0 : lastPrice))
         .while(lastConsensusTime() <= end)
         .api_(Bidder.bid, (bid) => {
             check(bid > lastPrice, "bid is too low");
