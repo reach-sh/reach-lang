@@ -472,8 +472,7 @@ class Participant extends Actor {
       this.scene = await a.resolve();
       a = await this.getNextAction();
     }
-    console.log(a);
-    // TODO: check name
+    assert.equal(name,a.contents[1].contents[2])
     this.scene = await a.resolve(val);
     console.log(this.scene.state)
     return this.scene;
