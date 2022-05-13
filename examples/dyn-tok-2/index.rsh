@@ -39,7 +39,8 @@ export const main = Reach.App(() => {
         V.currentTok.set(currentTok);
       })
       .paySpec([ currentTok ])
-      .invariant(balance() == 0 && tokens.includes(currentTok))
+      .invariant(balance() == 0)
+      .invariant(tokens.includes(currentTok))
       .while(alive)
       .case(A,
         ( ) => ({ when: declassify(interact.stop()) }),

@@ -40,7 +40,8 @@ export const main = Reach.App(() => {
 
     const [ highestBidder, isFirstBid, currentPrice ] =
       parallelReduce([ Auctioneer, true, reservePrice ])
-        .invariant(balance(tokA) == amtA && balance(tokB) == (isFirstBid ? 0 : currentPrice))
+        .invariant(balance(tokA) == amtA)
+        .invariant(balance(tokB) == (isFirstBid ? 0 : currentPrice))
         .while(keepGoing())
         .paySpec([ tokB ])
         .case(Bidder,

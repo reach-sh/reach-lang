@@ -11,7 +11,8 @@ export const main = Reach.App(() => {
   const [x, y] =
     parallelReduce([ 0, 1])
       .define(5)
-      .invariant(balance() == 0 && sum() == sum())
+      .invariant(balance() == 0)
+      .invariant(sum() == sum())
       .while(sum() < 10)
       .case(
         Alice,

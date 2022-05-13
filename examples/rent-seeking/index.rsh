@@ -36,8 +36,8 @@ export const main =
 
     const [ winner, winningBid ] =
       parallelReduce([ Sponsor, 0 ])
-      .invariant( balance() == prize + bidsM.sum()
-        && balance() == prize + Map.sum(bidsM) )
+      .invariant(balance() == prize + bidsM.sum())
+      .invariant(balance() == prize + Map.sum(bidsM))
       .while( keepBidding() )
       .case( Bidder, () => {
           const previousBid = getBid(this);
