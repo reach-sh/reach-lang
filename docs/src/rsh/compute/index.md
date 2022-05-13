@@ -1535,8 +1535,6 @@ or `default` if the variant is `Right`.
  `{!rsh} fromRight(e, default)` is a convenience method that returns the value in `Right`,
 or `default` if the variant is `Left`.
 
-See following example summarizes all that have been said above:
-
 ```reach
 load: /hs/t/y/either_stdlib.rsh
 range: 11 - 25
