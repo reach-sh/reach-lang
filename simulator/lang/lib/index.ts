@@ -458,7 +458,6 @@ class Participant extends Actor {
 
   async init(blce="",liv={},accID="") {
     const r = await c.initFor(this.scene.state.id,this.name,JSON.stringify(liv),accID,blce)
-    console.log(r);
     const rent = Object.entries(r)[0];
     this.id = parseInt(rent[0]);
     const v: any = rent[1]
@@ -474,7 +473,6 @@ class Participant extends Actor {
     }
     assert.equal(name,a.contents[1].contents[2])
     this.scene = await a.resolve(val);
-    console.log(this.scene.state)
     return this.scene;
 
   }
@@ -515,14 +513,11 @@ class Consensus extends Actor {
   }
 
   async publish(ac:Participant) {
-    console.log(this.scene.state)
-
     let a = await this.getNextAction();
     while (a.name != 'A_TieBreak') {
       this.scene = await a.resolve();
       a = await this.getNextAction();
     }
-    console.log(a);
     this.scene = await a.resolve(ac);
     return this.scene;
   }
@@ -582,7 +577,6 @@ class Action {
       v = resp.id
     }
     const r = await c.respondWithVal(this.scene.state.id,this.id,v,this.owner.id,ty)
-    console.log(r);
     return this.scene.next();
   }
 
