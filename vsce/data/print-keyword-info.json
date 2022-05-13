@@ -815,6 +815,9 @@
   "getAddress": {
     "CompletionItemKind": "Function"
   },
+  "getCompanion": {
+    "CompletionItemKind": "Function"
+  },
   "getContract": {
     "CompletionItemKind": "Function"
   },
