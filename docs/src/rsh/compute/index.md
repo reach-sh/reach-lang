@@ -1780,6 +1780,20 @@ In this code sample, Alice publishes to create the contract, and then an object 
 Another object is created named `addr` to reference `{!rsh} getAddress` to obtain the address of Alice.
 Both `{!rsh} info` and `{!rsh} addr` are then used in the local step of Alice in her `{!rsh} interact` object.
 
+### `getCompanion`
+
+@{ref("rsh", "getCompanion")}
+```reach
+getCompanion()
+```
+
+The `{!rsh} getCompanion` primitive returns the `{!rsh} Contract` value of the deployed contract's companion, wrapped in a `{!rsh} Maybe` value, because not all contracts have a companion.
+
+:::note
+This is useful on Algorand if contract A calls contract B and contract B needs a companion.
+Contract A will need to use the `{!rsh} REMOTE_FUN.ALGO.apps` options and include B's companion in the call.
+:::
+
 ### `lastConsensusTime` and `lastConsensusSecs`
 
 @{ref("rsh", "lastConsensusTime")}
