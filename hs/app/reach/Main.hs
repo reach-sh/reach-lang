@@ -2465,33 +2465,32 @@ support = command "support" $ info (pure g) d
       , "language" .= ("JavaScript" :: String)
       , "type" .= ("application/javascript" :: String)
       ]
-    z i = liftIO $ doesFileExist i >>= \case
+    z i = doesFileExist i >>= \case
       False -> pure []
       True -> (\a -> [f (pack i) a]) <$> readFile i
     clientId = "c4bfe74cc8be5bbaf00e" :: String
     is l = maybe False (== pack l) . headMay
-    by a x = liftIO
-      . maybe (putStrLn ("Missing field `" <> x <> "`.") >> exitWith (ExitFailure 1)) pure
+    by a x = maybe (putStrLn ("Missing field `" <> x <> "`.") >> exitWith (ExitFailure 1)) pure
       $ (headMay $ filter (is x) a) >>= (`atMay` 1)
     req u x = fmap (map (T.splitOn "=") . T.splitOn "&" . pack . BSLC8.unpack . getResponseBody)
         $ setRequestBodyJSON (object x)
       <$> parseRequest ("POST " <> u)
       >>= httpLBS
-    g = do
+    g = liftIO $ do
       a <- req "https://github.com/login/device/code"
         [ "client_id" .= clientId
         , "scope" .= ("gist" :: String)
         ]
       deviceCode <- a `by` "device_code"
       userCode <- a `by` "user_code"
-      liftIO $ T.putStrLn [N.text|
+      T.putStrLn [N.text|
         Your user code is $userCode.
         Please enter it at https://github.com/login/device.
 
         Type 'y' after successful authorization to upload index.mjs, index.rsh, or both:
       |]
-      userEnteredCharacter <- liftIO getChar
-      unless (toUpper userEnteredCharacter == 'Y') . liftIO $ do
+      userEnteredCharacter <- getChar
+      unless (toUpper userEnteredCharacter == 'Y') $ do
         putStrLn "\nNo files were uploaded. Run `reach support` again to retry."
         exitWith $ ExitFailure 1
       t <- req "https://github.com/login/oauth/access_token"
@@ -2501,7 +2500,7 @@ support = command "support" $ info (pure g) d
         ]
       -- @TODO: Save accessToken; git-credential-store
       -- Warning: Permission errors when doing this^
-      when (null $ filter (is "access_token") a) . liftIO $ do
+      when (null $ filter (is "access_token") a) $ do
         case headMay $ filter (is "error") a of
           Nothing -> putStrLn "Upload unsuccessful; couldn't find an authorization code or error!"
           Just _ -> t `by` "error" >>= T.putStrLn . (pack "\nError while acquiring access token:\n" <>)
@@ -2509,13 +2508,11 @@ support = command "support" $ info (pure g) d
       gat <- unpack <$> t `by` "access_token"
       rsh <- z "index.rsh"
       mjs <- z "index.mjs"
-      when (null rsh && null mjs) . liftIO $ do
+      when (null rsh && null mjs) $ do
         putStrLn "\nNeither index.rsh nor index.mjs exist in the current directory; aborting."
         exitWith ExitSuccess
-      when (null rsh) . liftIO
-        $ putStrLn "\nDidn't find index.rsh in the current directory; skipping..."
-      when (null mjs) . liftIO
-        $ putStrLn "\nDidn't find index.mjs in the current directory; skipping..."
+      when (null rsh) $ putStrLn "\nDidn't find index.rsh in the current directory; skipping..."
+      when (null mjs) $ putStrLn "\nDidn't find index.mjs in the current directory; skipping..."
       -- @TODO: Also add output of reach hashes!
       parseRequest "POST https://api.github.com/gists"
         >>= httpBS
@@ -2524,7 +2521,7 @@ support = command "support" $ info (pure g) d
           . setRequestHeader "Accept" [ BSI.packChars "application/vnd.github.v3+json" ]
           . setRequestBodyJSON (object [ "files" .= object (rsh <> mjs) ])
         >>= Y.decodeThrow . getResponseBody
-        >>= \(GitHubGistResponse r) -> liftIO . T.putStrLn $ "\n" <> [N.text|
+        >>= \(GitHubGistResponse r) -> T.putStrLn $ "\n" <> [N.text|
               Your gist is viewable at:
               $r
             |]
