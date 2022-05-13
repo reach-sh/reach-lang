@@ -713,12 +713,9 @@ const bnSqrt = (y:BigNumber) => {
   return ans;
 };
 
-export interface UIntTy {
-  uintty?: 'UInt' | 'UInt256'
-}
-
-export const UInt256_max = ethers.BigNumber.from(2).pow(256).sub(1);
-
+export type UIntTy = 'UInt' | 'UInt256';
+export const UInt256_max =
+  ethers.BigNumber.from(2).pow(256).sub(1);
 export const makeArith = (m:BigNumber): Arith => {
   const checkB = (x: BigNumber) =>
     checkedBigNumberify(`internal`, UInt256_max, x);
@@ -727,12 +724,8 @@ export const makeArith = (m:BigNumber): Arith => {
 
   type BNOp2 = 'add'|'sub'|'mod'|'mul'|'div'|'and'|'or'|'xor';
   const doBN2 = (f:BNOp2, a:BigNumber, b:BigNumber) => a[f](b);
-  const getCheck = (t:UIntTy) => (t.uintty == 'UInt256') ? checkB : checkM;
+  const getCheck = (w:UIntTy) => w ? checkB : checkM;
   const cast = (from:UIntTy, to:UIntTy, x:num, trunc:boolean): BigNumber => {
-    if (!from.uintty || !to.uintty) {
-      throw Error("stdlib.cast called with non-UInt types");
-    }
-
     const checkF = getCheck(from);
     const checkT = getCheck(to);
     const bigX = bigNumberify(x);
