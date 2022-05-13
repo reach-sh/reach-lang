@@ -159,7 +159,7 @@ instance Unroll LLConsensus where
     LLC_Switch at ov csm -> LLC_Switch at ov <$> ul csm
     LLC_FromConsensus at at' fs s -> LLC_FromConsensus at at' fs <$> ul s
     LLC_While at asn inv cond body k -> do
-      inv' <- mapM (\(ik,v) -> (,) <$> ul ik <*> ul v) inv
+      inv' <- mapM (\(DLInvariant ik v) -> DLInvariant <$> ul ik <*> ul v) inv
       LLC_While at asn inv' <$> ul cond <*> ul body <*> ul k
     LLC_Continue at asn -> return $ LLC_Continue at asn
     LLC_ViewIs at vn vk a k ->

@@ -9,7 +9,6 @@ import Reach.AST.DLBase
 import Reach.Counter
 import Reach.Pretty
 import Reach.Texty
-import Data.ByteString (ByteString)
 
 data LLConsensus
   = LLC_Com DLStmt LLConsensus
@@ -19,7 +18,7 @@ data LLConsensus
   | LLC_While
       { llc_w_at :: SrcLoc
       , llc_w_asn :: DLAssignment
-      , llc_w_invs :: [(DLBlock, Maybe ByteString)]
+      , llc_w_invs :: [DLInvariant DLBlock]
       , llc_w_cond :: DLBlock
       , llc_w_body :: LLConsensus
       , llc_w_k :: LLConsensus

@@ -229,8 +229,8 @@ instance Pandemic a => Pandemic (DLRecv a) where
   pan (DLRecv r s t u v w) =
     DLRecv <$> pan r <*> pan s <*> pan t <*> pan u <*> pan v <*> pan w
 
-instance Pandemic B.ByteString where
-  pan = return
+instance Pandemic a => Pandemic (DLInvariant a) where
+  pan (DLInvariant inv lab) = DLInvariant <$> pan inv <*> pure lab
 
 instance Pandemic DLSStmt where
   pan = \case

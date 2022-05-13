@@ -1051,6 +1051,15 @@ type SwitchCases a = M.Map SLVar (DLVar, Bool, a)
 instance IsPure a => IsPure (SwitchCases a) where
   isPure = isPure . map (\(_,_,z)->z) . M.elems
 
+data DLInvariant a = DLInvariant
+  { dl_inv :: a
+  , dl_inv_lab :: Maybe B.ByteString
+  } deriving (Eq, Show)
+
+instance Pretty a => Pretty (DLInvariant a) where
+  pretty (DLInvariant {..}) =
+    "invariant" <> parens (pretty dl_inv <> ", " <> pretty dl_inv_lab)
+
 data DLStmt
   = DL_Nop SrcLoc
   | DL_Let SrcLoc DLLetVar DLExpr
