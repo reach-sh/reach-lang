@@ -1284,8 +1284,8 @@ smt_block (DLBlock at _ l da) = do
 smt_invblock :: BlockMode -> DLBlock -> Maybe B.ByteString -> App ()
 smt_invblock bm b@(DLBlock at f _ _) minv_lab = do
   da' <-
-    local (\e -> e {ctxt_inv_mode = bm}) $
-      smt_block b
+      local (\e -> e {ctxt_inv_mode = bm}) $
+        smt_block b
   case bm of
     B_Assume True -> smtAssertCtxt da'
     B_Assume False -> smtAssertCtxt (smtNot da')
@@ -1304,7 +1304,7 @@ smt_while_jump vars_are_primed asn = do
         where
           go (v, a) t_ = DT_Com (DL_Let at (DLV_Let DVC_Many v) (DLE_Arg at a)) t_
           t' = foldr go t $ M.toList m
-  forM_ invs $ \ (inv, minv_lab) -> do
+  forM_ invs $ \ (inv, minv_lab) -> smtNewScope $ do
     inv' <-
       case vars_are_primed of
         False -> return $ add_asn_lets asnm inv
@@ -1315,7 +1315,7 @@ smt_while_jump vars_are_primed asn = do
           let mapCompose bc ab = M.mapMaybe (bc M.!?) ab
           let asnm' = mapCompose asnm rho
           return $ add_asn_lets asnm' inv_f
-    smtNewScope $ smt_invblock (B_Prove vars_are_primed) inv' minv_lab
+    smt_invblock (B_Prove vars_are_primed) inv' minv_lab
 
 smt_asn_def :: SrcLoc -> DLAssignment -> App ()
 smt_asn_def at asn = mapM_ def1 $ M.keys asnm
@@ -1376,14 +1376,14 @@ smt_n = \case
         smt_asn_def at asn
         forM_ invs $ \ (inv, minv_lab) -> do
           smt_invblock (B_Assume True) inv minv_lab
-          smt_invblock (B_Assume True) cond minv_lab
+        smt_invblock (B_Assume True) cond Nothing
         (with_inv $ smt_n body)
       after_m = do
         smtMapRefresh at
         smt_asn_def at asn
         forM_ invs $ \ (inv, minv_lab) -> do
           smt_invblock (B_Assume True) inv minv_lab
-          smt_invblock (B_Assume False) cond minv_lab
+        smt_invblock (B_Assume False) cond Nothing
         smt_n k
   LLC_Continue _at asn -> smt_while_jump True asn
   LLC_ViewIs _ _ _ ma k -> do
