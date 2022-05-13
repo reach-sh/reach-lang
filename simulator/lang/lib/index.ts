@@ -406,6 +406,10 @@ class Actor {
     return new Store(l.l_locals[this.id].l_store);
   }
 
+  async getVar(v:any) {
+    return (await this.getStore()).getVar(v);
+  }
+
   async getWallet() {
     const g = await c.getStateGlobals(this.scene.state.id)
     return g.e_ledger[this.account.id]

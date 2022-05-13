@@ -14,8 +14,7 @@ const main = async () => {
     const r = await alice.getStatus();
     console.log(r);
     assert.equal(r,"Done");
-    const store = await alice.getStore();
-    return store.getVar('outcome')
+    return alice.getVar('outcome');
   }
 
   const winner = (aHand,bHand) => {

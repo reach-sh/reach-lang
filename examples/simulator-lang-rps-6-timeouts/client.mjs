@@ -6,7 +6,8 @@ const main = async () => {
 
   const fs = new lang.FunctionalScenario();
   let s = await fs.init();
-  const a b;
+  let a;
+  let b;
   const pi = await fs.pingServer();
   const alice = fs.participants.Alice;
   const bob = fs.participants.Bob;
@@ -24,6 +25,7 @@ const main = async () => {
     s = await s.who(alice).interact('random', 4444);
     // Alice's wager/deadline is published
     s = await s.who(consensus).publish(alice);
+    s = await s.who(alice).receive();
     // Bob interactively gets his hand (1)
     // let's name a special "breakpoint" that we'll return to
     // in order to test different timeout scenarios
@@ -32,11 +34,11 @@ const main = async () => {
     // force Bob's hand publish to timeout
     s = await sBeforeTimeout.forceTimeout();
     // timeout
-    s = s.who(consensus).publish(bob);
+    s = await s.who(consensus).publish(bob);
     s = await s.who(alice).receive();
     s = await s.who(bob).receive();
     // closeTo
-    s = s.who(consensus).publish(alice);
+    s = await s.who(consensus).publish(alice);
     s = await s.who(alice).receive();
     s = await s.who(bob).receive();
     // first scenario done
@@ -65,7 +67,7 @@ const main = async () => {
     // check that Bob got everything
     assert.equal(w,20);
   }
-  fScenario(s,0,1,a,b,consensus);
+  await fScenario(s,0,1,a,b,consensus);
   console.log("Testing Complete!!!")
 }
 
