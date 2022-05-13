@@ -2489,7 +2489,8 @@ support = command "support" $ info (pure g) d
 
         Type 'y' after successful authorization to upload index.mjs, index.rsh, or both:
       |]
-      getChar >>= \c -> unless (toUpper c == 'Y') $ do
+      c <- getChar
+      unless (toUpper c == 'Y') $ do
         putStrLn "\nNo files were uploaded. Run `reach support` again to retry."
         exitWith $ ExitFailure 1
       t <- req "https://github.com/login/oauth/access_token"
