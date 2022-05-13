@@ -1011,6 +1011,14 @@ stdlib.digest(ty:Type, x:ty) => Digest
 
 Hashes the value.
 
+```js
+load: /examples/digest-mod/index.mjs
+range: 14-15
+```
+
+The `ExampleeExampleeExampleeExamplee` is a string of the Reach type that `{!rsh} digest` turns into a hash.
+The maximum string length that can be digested in this example is set to 32 bytes.
+
 ---
 @{ref("js", "randomUInt")}
 ```js
