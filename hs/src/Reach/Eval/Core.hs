@@ -6206,7 +6206,7 @@ evalStmt = \case
             locAtf (srcloc_jsa "while" while_a) $ do
               at <- withAt id
               ensure_mode SLM_ConsensusStep "while"
-              invs' <- forM invs $ \ inv -> -- (invariant_e, inv_lab_e)
+              invs' <- forM invs $ \ inv ->
                     case parseJSFormals at inv of
                       [x, y] -> return (x, Just y)
                       [x]    -> return (x, Nothing)
