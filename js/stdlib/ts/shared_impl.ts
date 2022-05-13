@@ -15,6 +15,7 @@ import {
   bytesEq,
   assert,
   formatAssertInfo,
+  MaybeRep,
 } from './shared_backend';
 import type { MapRefT } from './shared_backend'; // =>
 import { process } from './shim';
@@ -184,6 +185,7 @@ export type APIMap = ViewMap;
 export type EventMap = { [key: string]: any }
 
 export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
+  getContractCompanion: () => Promise<MaybeRep<ContractInfo>>,
   getContractInfo: () => Promise<ContractInfo>,
   getContractAddress: () => Promise<CBR_Address>,
   getBalance: () => Promise<BigNumber>,
@@ -211,7 +213,7 @@ export type ISetupViewArgs<ContractInfo, VerifyResult> =
 export type ISetupEventArgs<ContractInfo, VerifyResult> =
   Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
 
-type SpecificKeys = ("getContractInfo"|"getContractAddress"|"getBalance"|"sendrecv"|"recv"|"getState"|"getCurrentStep"|"apiMapRef");
+type SpecificKeys = ("getContractInfo"|"getContractAddress"|"getContractCompanion"|"getBalance"|"sendrecv"|"recv"|"getState"|"getCurrentStep"|"apiMapRef");
 
 export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, (SpecificKeys)>;
 
@@ -341,13 +343,15 @@ export const stdContract =
   const setupArgs = { ...viewArgs, setInfo };
 
   const _initialize = () => {
-    const { getContractInfo, getContractAddress, getBalance,
-            sendrecv, recv, getCurrentStep, getState, apiMapRef } =
+    const {
+      getContractInfo, getContractAddress, getContractCompanion,
+      getBalance, sendrecv, recv, getCurrentStep, getState, apiMapRef
+    } =
       _setup(setupArgs);
     return {
       selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
-      getContractInfo, getContractAddress, getBalance,
-      sendrecv, recv,
+      getContractInfo, getContractAddress, getContractCompanion,
+      getBalance, sendrecv, recv,
       getCurrentStep, getState, apiMapRef,
     };
   };
@@ -583,6 +587,7 @@ export type ISimTxn<Token, ContractInfo> = {
   bills: BigNumber,
   toks: Array<Token>,
   accs: Array<string>,
+  apps: Array<ContractInfo>,
   fees: BigNumber,
 } | {
   kind: 'info',

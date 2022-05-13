@@ -243,8 +243,6 @@ kgq_e ctxt mv = \case
   DLE_TokenDestroy _ t ->
     kgq_a_all ctxt t
   DLE_TimeOrder {} -> mempty
-  DLE_GetContract {} -> mempty
-  DLE_GetAddress {} -> mempty
   DLE_EmitLog _ _ lv ->
     mapM_ (kgq_a_onlym ctxt mv . DLA_Var) lv
   DLE_setApiDetails {} -> mempty

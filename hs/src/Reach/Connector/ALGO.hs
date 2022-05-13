@@ -42,6 +42,7 @@ import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Warning
 import Safe (atMay, headMay)
+import Safe.Foldable (maximumMay)
 import System.Exit
 import System.FilePath
 import System.IO.Temp
@@ -318,10 +319,7 @@ tealVersionPragma = "#pragma version 6"
 -- Algo specific stuff
 
 maxTypeSize :: M.Map a DLType -> Integer
-maxTypeSize m =
-  case M.null m of
-    True -> 0
-    False -> maximum $ map typeSizeOf $ M.elems m
+maxTypeSize m = fromMaybe 0 $ maximumMay $ map typeSizeOf $ M.elems m
 
 typeSig_ :: Bool -> DLType -> String
 typeSig_ addr2acc = \case
@@ -1438,6 +1436,10 @@ cprim = \case
       ca aa
       op "=="
     _ -> impossible "ctcAddrEq args"
+  GET_CONTRACT -> const $ do
+    code "txn" ["ApplicationID"]
+  GET_ADDRESS -> const $ cContractAddr
+  GET_COMPANION -> const $ callCompanion sb CompanionGet
   where
     call o = \args -> do
       forM_ args ca
@@ -2058,7 +2060,7 @@ ce = \case
           cla $ mdaToMaybeLA mt mva
           cTupleSet at mdt $ fromIntegral i
   DLE_Remote at fs ro rng_ty rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo ma -> do
-    let DLRemoteALGO _fees r_assets r_addr2acc = malgo
+    let DLRemoteALGO _fees r_assets r_addr2acc r_apps = malgo
     warn_lab <- asks eWhich >>= \case
       Just which -> return $ "Step " <> show which
       Nothing -> return $ "This program"
@@ -2146,6 +2148,10 @@ ce = \case
           incResource R_Asset a
           ca a
           makeTxn1 "Assets"
+        forM_ r_apps $ \a -> do
+          incResource R_App a
+          ca a
+          makeTxn1 "Applications"
         op "itxn_submit"
         show_stack ("Remote: " <> sig) Nothing at fs
         appl_idx <- liftIO $ readCounter remoteTxns
@@ -2198,8 +2204,6 @@ ce = \case
     -- XXX We could give the minimum balance back to the creator
     return ()
   DLE_TimeOrder {} -> impossible "timeorder"
-  DLE_GetContract _ -> code "txn" ["ApplicationID"]
-  DLE_GetAddress _ -> cContractAddr
   DLE_EmitLog at k vs -> do
     let internal = do
           (v, n) <- case vs of
@@ -2834,6 +2838,7 @@ data CompanionCall
   | CompanionLabel Bool Label
   | CompanionDelete
   | CompanionDeletePre
+  | CompanionGet
   deriving (Eq, Show)
 callCompanion :: SrcLoc -> CompanionCall -> App ()
 callCompanion at cc = do
@@ -2856,6 +2861,15 @@ callCompanion at cc = do
         makeTxn1 "ApplicationID"
   comment $ texty cc
   case cc of
+    CompanionGet -> do
+      let t = T_Contract
+      let go = cla . mdaToMaybeLA t
+      case mcr of
+        Nothing -> go Nothing
+        Just _ -> do
+          dv <- allocDLVar at t
+          sallocLet dv (gvLoad GV_companion) $
+            go $ Just $ DLA_Var dv
     CompanionCreate -> do
       let mpay pc = ce $ DLE_CheckPay at [] (DLA_Literal $ DLL_Int at uintWord $ pc * algoMinimumBalance) Nothing
       case mcr of

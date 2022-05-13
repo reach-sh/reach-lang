@@ -158,7 +158,7 @@ export type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 15;
+const reachBackendVersion = 16;
 const reachAlgoBackendVersion = 10;
 export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
@@ -1571,6 +1571,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const { ApplicationID } = await getC();
         return ApplicationID;
       };
+      const getContractCompanion = async (): Promise<MaybeRep<ContractInfo>> => {
+        if ( hasCompanion ) {
+          return ['None', null];
+        } else {
+          // @ts-ignore
+          return ['Some', companionApp];
+        }
+      };
 
       const getCurrentStep = async () => {
         return await getCurrentStep_(getC);
@@ -1766,6 +1774,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               recordApp(t.obj);
               t.toks.map(recordAsset);
               t.accs.map(recordAccount);
+              t.apps.map(recordApp);
               howManyMoreFees +=
                 1
                 + bigNumberToNumber(t.pays)
@@ -2034,7 +2043,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         return result;
       }
 
-      return { getContractInfo, getContractAddress, getBalance, getState, getCurrentStep, sendrecv, recv, apiMapRef };
+      return { getContractInfo, getContractAddress, getContractCompanion, getBalance, getState, getCurrentStep, sendrecv, recv, apiMapRef };
     };
 
     const readStateBytes = (prefix:string, key:number[], src:AppStateKVs): (Uint8Array|undefined) => {

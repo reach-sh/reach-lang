@@ -113,7 +113,7 @@ instance CollectsTypes PrimOp where
     _ -> mempty
 
 instance CollectsTypes DLRemoteALGO where
-  cts (DLRemoteALGO x y z) = cts x <> cts y <> cts z
+  cts (DLRemoteALGO x y z w) = cts x <> cts y <> cts z <> cts w
 
 instance CollectsTypes DLExpr where
   cts = \case
@@ -143,8 +143,6 @@ instance CollectsTypes DLExpr where
     DLE_TokenBurn _ a b -> cts [a, b]
     DLE_TokenDestroy _ a -> cts a
     DLE_TimeOrder _ _ a b -> cts a <> cts b
-    DLE_GetContract _ -> mempty
-    DLE_GetAddress _ -> mempty
     DLE_EmitLog _ _ a -> cts a
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ mt tb -> cts mt <> cts tb
