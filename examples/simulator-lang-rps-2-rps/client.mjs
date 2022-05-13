@@ -4,12 +4,13 @@ import * as assert from 'assert';
 const main = async () => {
   console.log("Init Testing!")
 
-  // test imperatively
-  const impScenario = async (s,aHand,bHand,alice,bob,consensus) => {
-    await s.who(alice).interact('getHand', aHand);
-    await consensus.publish(alice);
-    await bob.interact('getHand', bHand);
+  const impScenario = async (sf,aHand,bHand,alice,bob,consensus) => {
+    let s = await sf.who(alice).interact('getHand', aHand);
+    s = await s.who(consensus).publish(alice);
+    s = await s.who(bob).interact('getHand', bHand);
     await consensus.publish(bob);
+    await alice.exit();
+    await bob.exit();
     const r = await alice.getStatus();
     console.log(r);
     assert.equal(r,"Done");
@@ -29,11 +30,12 @@ const main = async () => {
   const bob = is.participants.Bob;
   const consensus = is.consensus;
   const [, a] = await alice.init();
-  const [, b] = await bob.init();
+  const [s, b] = await bob.init();
 
   for (let aHand = 0; aHand < 3; aHand++) {
     for (let bHand = 0; bHand < 3; bHand++) {
       const r = await impScenario(s.copy(),aHand,bHand,a,b,consensus);
+      console.log(aHand,bHand)
       r.assertVar('V_UInt',winner(aHand,bHand));
     }
   }

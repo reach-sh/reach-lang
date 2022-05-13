@@ -213,14 +213,19 @@ class State {
 }
 
 class Scenario {
+  top: State;
   state: State;
   participants: Record<string, Participant>;
   consensus: Consensus;
   apis: Record<string, API>;
   views: Record<string, View>;
-  next() {};
+
+  next(): Scenario {
+    return new Scenario();
+  };
 
   constructor() {
+    this.top = new State();
     this.state = new State();
     this.participants = {};
     this.consensus = new Consensus(new Account(consensusID,this),this);
@@ -317,14 +322,12 @@ class Scenario {
 }
 
 class FunctionalScenario extends Scenario {
-  top: State;
 
   constructor() {
     super();
-    this.top = new State();
   }
 
-  next() {
+  next(): FunctionalScenario {
     this.top.next();
     const next = Object.assign(new FunctionalScenario(), this);
     next.state = Object.assign(new State(), this.top);
@@ -334,16 +337,18 @@ class FunctionalScenario extends Scenario {
 }
 
 class ImperativeScenario extends Scenario {
+
   constructor() {
     super();
   }
 
-  next() {
-    this.state.next();
+  next(): ImperativeScenario {
+    this.top.next();
+    this.state = Object.assign(new State(), this.top);
     return this;
   }
 
-  copy() {
+  copy(): ImperativeScenario {
     const cp = Object.assign(new ImperativeScenario(), this);
     cp.state = Object.assign(new State(), this.state);
     return cp;
@@ -460,20 +465,25 @@ class Participant extends Actor {
   async interact(name:string,val:any) {
     let a = await this.getNextAction();
     while (a.name == 'A_Receive') {
+      this.scene = await a.resolve();
       a = await this.getNextAction();
     }
     console.log(a);
     // TODO: check name
-    await a.resolve(val);
+    this.scene = await a.resolve(val);
+    console.log(this.scene.state)
+    return this.scene;
+
   }
 
   async exit() {
     let a = await this.getNextAction();
     while (a.name == 'A_Receive') {
+      this.scene = await a.resolve();
       a = await this.getNextAction();
     }
-    if (a.name == 'A_Done') {
-      return a
+    if (a.name == 'A_None') {
+      return this.scene;
     } else {
       throw new Error('Exit Error');
     }
@@ -482,8 +492,9 @@ class Participant extends Actor {
   async receive() {
     let a = await this.getNextAction();
     if (a.name == 'A_Receive') {
-      a = await this.getNextAction();
-      await a.resolve();
+      this.scene = await a.resolve();
+      return this.scene;
+
     } else {
       throw new Error('Receive Error');
     }
@@ -501,12 +512,16 @@ class Consensus extends Actor {
   }
 
   async publish(ac:Participant) {
+    console.log(this.scene.state)
+
     let a = await this.getNextAction();
     while (a.name != 'A_TieBreak') {
+      this.scene = await a.resolve();
       a = await this.getNextAction();
     }
     console.log(a);
-    await a.resolve(ac);
+    this.scene = await a.resolve(ac);
+    return this.scene;
   }
 
   async transfer(s: number,fr: Actor,to: Actor,tok: Token,amt: number) {
