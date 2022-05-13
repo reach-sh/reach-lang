@@ -644,8 +644,7 @@ load: /examples/dominant-assurance/index.rsh
 range: 143 - 143
 ```
 
-To check whether the `{!rsh} ADDRESS` is in the set, `{!rsh} s.member(ADDRESS)` is used.
-And that will return a `{!rsh} Bool`.
+To check whether an address is in the set, `{!rsh} s.member(ADDRESS)` is used.
 
 The following example shows the usage of `{!rsh} s.member(ADDRESS)`
 
