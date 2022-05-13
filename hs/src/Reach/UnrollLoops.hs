@@ -152,17 +152,15 @@ instance Unroll a => Unroll (DLinExportBlock a) where
   ul = \case
     DLinExportBlock at vs b -> DLinExportBlock at vs <$> ul b
 
-instance Unroll a => Unroll [a] where
-  ul = mapM ul
-
 instance Unroll LLConsensus where
   ul = \case
     LLC_Com m k -> ul_m LLC_Com m k
     LLC_If at c t f -> LLC_If at c <$> ul t <*> ul f
     LLC_Switch at ov csm -> LLC_Switch at ov <$> ul csm
     LLC_FromConsensus at at' fs s -> LLC_FromConsensus at at' fs <$> ul s
-    LLC_While at asn inv cond body k ->
-      LLC_While at asn <$> ul inv <*> ul cond <*> ul body <*> ul k
+    LLC_While at asn inv cond body k -> do
+      inv' <- mapM (\(ik,v) -> (,) <$> ul ik <*> ul v) inv
+      LLC_While at asn inv' <$> ul cond <*> ul body <*> ul k
     LLC_Continue at asn -> return $ LLC_Continue at asn
     LLC_ViewIs at vn vk a k ->
       -- Note: We're making a choice here to *not* unroll the view function.
