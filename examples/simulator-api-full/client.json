@@ -18,7 +18,7 @@
   [
     "initFor",
     0,
-    0,
+    "Admin",
     "{\"amt\":{\"tag\":\"V_UInt\",\"contents\":1},\"tok\":{\"tag\":\"V_Token\",\"contents\":-1}}",
     ""
   ],

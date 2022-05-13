@@ -11,13 +11,13 @@
   [
     "initFor",
     0,
-    0,
+    "Auctioneer",
     "{}"
   ],
   [
     "initFor",
     1,
-    1,
+    "Bidder",
     "{}"
   ],
   [

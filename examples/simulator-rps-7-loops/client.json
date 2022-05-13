@@ -11,14 +11,14 @@
   [
     "initFor",
     0,
-    0,
+    "Alice",
     "{\"deadline\":{\"tag\":\"V_UInt\",\"contents\":9999},\"wager\":{\"tag\":\"V_UInt\",\"contents\":22}}",
     ""
   ],
   [
     "initFor",
     1,
-    1,
+    "Bob",
     "{}",
     ""
   ],
