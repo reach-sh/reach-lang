@@ -13,9 +13,6 @@ import type { // =>
   CBR_Val,
   BackendTy,
 } from './CBR';
-import type {
-  UIntTy,
-} from './shared_impl';
 
 export type Address = string;
 
@@ -26,7 +23,7 @@ export type TransactionResponse = ethers.providers.TransactionResponse;
 
 // BV = backend value
 // NV = net value
-export interface ETH_Ty<BV extends CBR_Val, NV> extends BackendTy<BV>, UIntTy {
+export interface ETH_Ty<BV extends CBR_Val, NV> extends BackendTy<BV> {
   munge: (bv: BV) => NV,
   unmunge: (nv: NV) => BV,
   /** @description describes the shape of the munged value */

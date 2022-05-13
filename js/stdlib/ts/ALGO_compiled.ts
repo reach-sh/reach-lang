@@ -8,7 +8,6 @@ import {
   MkPayAmt,
   makeArith,
   UInt256_max,
-  UIntTy,
 } from './shared_impl';
 import {
   bigNumberToNumber,
@@ -46,7 +45,7 @@ export const UInt_max: BigNumber =
 // NV = Net Value
 export type NV = Uint8Array;
 
-export interface ALGO_Ty<BV extends CBR_Val> extends BackendTy<BV>, UIntTy {
+export interface ALGO_Ty<BV extends CBR_Val> extends BackendTy<BV> {
   netSize: number
   toNet(bv: BV): NV,
   fromNet(nv: NV): BV,
@@ -88,7 +87,6 @@ export const T_UInt: ALGO_Ty<CBR_UInt> = {
     return ethers.BigNumber.from(nv.slice(0, 8));
   },
   netName: 'uint64',
-  uintty: 'UInt',
 }
 
 export const T_UInt256: ALGO_Ty<CBR_UInt> = {
@@ -107,7 +105,6 @@ export const T_UInt256: ALGO_Ty<CBR_UInt> = {
     return ethers.BigNumber.from(nv.slice(0, 32));
   },
   netName: 'uint256',
-  uintty: 'UInt256',
 }
 
 /** @description For arbitrary utf8 strings */
