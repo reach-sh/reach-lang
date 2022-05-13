@@ -1098,7 +1098,7 @@ stdlib.band256(UInt256, UInt256) => UInt256
 stdlib.bior256(UInt256, UInt256) => UInt256
 stdlib.bxor256(UInt256, UInt256) => UInt256
 stdlib.muldiv(UInt, UInt) => UInt
-stdlib.cast(UIntTy, UIntTy, UInt) => UInt
+stdlib.cast(UIntTy, UIntTy, UInt, Bool) => UInt // Bool argument decides if cast should truncate
 ```
 
 Integer arithmetic on `{!rsh} UInt`.
