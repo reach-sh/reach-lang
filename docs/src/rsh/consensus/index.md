@@ -150,7 +150,7 @@ while( COND_EXPR ) BLOCK
 
 where `{!rsh} LHS` is a valid left-hand side of an identifier definition where the expression `{!rsh} INIT_EXPR` is the right-hand side, and
 `{!rsh} DEFINE_BLOCK` is an optional block that may define bindings that use the `{!rsh} LHS` values which are bound inside the rest of the `{!rsh} while` and its tail, and
-`{!rsh} INVARIANT_EXPR` is an expression, called the @{defn("loop invariant")}, that must be true before and after every execution of the block `{!rsh} BLOCK`,
+`{!rsh} INVARIANT_EXPR` is an expression, called the @{defn("loop invariant")}, that must be true before and after every execution of the block `{!rsh} BLOCK`—it may be specified multiple times,
 `INVARIANT_MSG` is an optional bytes argument, which is included in any reported violation, and
 if `{!rsh} COND_EXPR` is true, then the block executes,
 and if not, then the loop terminates and control transfers to the continuation of the while statement.
