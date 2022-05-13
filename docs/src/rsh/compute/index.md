@@ -1720,6 +1720,13 @@ The digest primitive performs a [cryptographic hash](https://en.wikipedia.org/wi
 This returns a `{!rsh} Digest` value.
 The exact algorithm used depends on the connector.
 
+```reach
+load: /examples/workshop-hash-lock/index.rsh
+range: 12 - 14
+```
+
+The code here digests Alice's password into a hash so that the hash can be shared safely with Bob on the consensus network without people on the network knowing the password.
+
 ### `balance`
 
 @{ref("rsh", "balance")}
