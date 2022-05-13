@@ -2465,6 +2465,9 @@ support = command "support" $ info (pure g) d
       , "language" .= ("JavaScript" :: String)
       , "type" .= ("application/javascript" :: String)
       ]
+    z i = liftIO $ doesFileExist i >>= \case
+      False -> pure []
+      True -> (\a -> [f (pack i) a]) <$> readFile i
     clientId = "c4bfe74cc8be5bbaf00e" :: String
     is l = maybe False (== pack l) . headMay
     by a x = liftIO
@@ -2503,42 +2506,28 @@ support = command "support" $ info (pure g) d
           Nothing -> putStrLn "Upload unsuccessful; couldn't find an authorization code or error!"
           Just _ -> t `by` "error" >>= T.putStrLn . (pack "\nError while acquiring access token:\n" <>)
         exitWith $ ExitFailure 1
-      accessToken <- t `by` "access_token"
-      liftIO $ doesFileExist "index.rsh" >>= \case
-        True -> liftIO $ readFile "index.rsh" >>= checkIndexMjs True accessToken . f "index.rsh"
-        False -> do
-          liftIO $ putStrLn "\nDidn't find index.rsh in the current directory; skipping..."
-          checkIndexMjs False accessToken $ "empty" .= ("" :: String)
-    checkIndexMjs indexRshExists accessToken rsh = do
-      indexMjsExists <- liftIO $ doesFileExist "index.mjs"
-      case indexRshExists of
-        True -> do
-          case indexMjsExists of
-            True -> liftIO $ readFile "index.mjs" >>= \i -> u [ rsh, f "index.mjs" i ]
-            False -> do
-              liftIO $ putStrLn "\nDidn't find index.mjs in the current directory; skipping..."
-              u [ rsh ]
-        False -> do
-          case indexMjsExists of
-            True -> liftIO $ readFile "index.mjs" >>= \i -> u [ f "index.mjs" i ]
-            False -> liftIO $ T.putStrLn [N.text|
-                Did not find index.mjs in the current directory; skipping...
-
-                Nothing uploaded.
-              |]
-      where
-        -- @TODO: Also add output of reach hashes!
-        u a = parseRequest "POST https://api.github.com/gists"
-          >>= httpBS
-            . setRequestHeader "User-Agent" [BSI.packChars "reach"]
-            . setRequestHeader "Authorization" [BSI.packChars ("token " <> unpack accessToken)]
-            . setRequestHeader "Accept" [BSI.packChars "application/vnd.github.v3+json"]
-            . setRequestBodyJSON (object [ "files" .= object a ])
-          >>= Y.decodeThrow . getResponseBody
-          >>= \(GitHubGistResponse r) -> liftIO . T.putStrLn $ "\n" <> [N.text|
-                Your gist is viewable at:
-                $r
-              |]
+      gat <- unpack <$> t `by` "access_token"
+      rsh <- z "index.rsh"
+      mjs <- z "index.mjs"
+      when (null rsh && null mjs) . liftIO $ do
+        putStrLn "\nNeither index.rsh nor index.mjs exist in the current directory; aborting."
+        exitWith ExitSuccess
+      when (null rsh) . liftIO
+        $ putStrLn "\nDidn't find index.rsh in the current directory; skipping..."
+      when (null mjs) . liftIO
+        $ putStrLn "\nDidn't find index.mjs in the current directory; skipping..."
+      -- @TODO: Also add output of reach hashes!
+      parseRequest "POST https://api.github.com/gists"
+        >>= httpBS
+          . setRequestHeader "User-Agent" [ BSI.packChars "reach" ]
+          . setRequestHeader "Authorization" [ BSI.packChars ("token " <> gat) ]
+          . setRequestHeader "Accept" [ BSI.packChars "application/vnd.github.v3+json" ]
+          . setRequestBodyJSON (object [ "files" .= object (rsh <> mjs) ])
+        >>= Y.decodeThrow . getResponseBody
+        >>= \(GitHubGistResponse r) -> liftIO . T.putStrLn $ "\n" <> [N.text|
+              Your gist is viewable at:
+              $r
+            |]
 
 log' :: Subcommand
 log' = command "log" $ info f fullDesc
