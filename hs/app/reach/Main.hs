@@ -2500,8 +2500,8 @@ support = command "support" $ info (pure g) d
         ]
       -- @TODO: Save accessToken; git-credential-store
       -- Warning: Permission errors when doing this^
-      when (null $ filter (is "access_token") a) $ do
-        case headMay $ filter (is "error") a of
+      when (null $ filter (is "access_token") t) $ do
+        case headMay $ filter (is "error") t of
           Nothing -> putStrLn "Upload unsuccessful; couldn't find an authorization code or error!"
           Just _ -> t `by` "error" >>= T.putStrLn . (pack "\nError while acquiring access token:\n" <>)
         exitWith $ ExitFailure 1
