@@ -13,7 +13,8 @@ export const main = Reach.App(() => {
 
   const [ x ] =
     parallelReduce([ 1 ])
-    .invariant(balance() == 0 && x > 0)
+    .invariant(balance() == 0)
+    .invariant(x > 0)
     .while( x < 10 )
     .api(U.f, (_) => 0, (i, k) => {
       const xp = x + i;

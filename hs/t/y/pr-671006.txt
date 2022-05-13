@@ -2,12 +2,12 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 34 theorems; No failures!
+Checked 42 theorems; No failures!
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs.
 
-  ./pr-671006.rsh:45:13:application
+  ./pr-671006.rsh:46:13:application
 
-  45|     .timeout(p.duration, () => {
+  46|     .timeout(p.duration, () => {
 
 For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
