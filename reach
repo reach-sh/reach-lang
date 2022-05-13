@@ -116,7 +116,7 @@ run_s () {
 }
 
 gen_reachc_id () {
-  REACH_ENV_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/reach/env"
+  REACH_ENV_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/reach/"
   REACH_ENV_FILE="${REACH_ENV_DIR}/env"
   MD5_CMD=md5sum||md5
   PRE_REACHC_ID=$(head -n1 /dev/urandom | $MD5_CMD | head -c 30 | tr [a-z] [A-Z])
@@ -128,6 +128,7 @@ gen_reachc_id () {
   elif ( ! grep REACHC_ID $REACH_ENV_FILE > /dev/null 2>&1 ); then
     echo "export REACHC_ID=${PRE_REACHC_ID}" >> $REACH_ENV_FILE
   fi
+  . $REACH_ENV_FILE
 }
 
 call_home () {
@@ -216,13 +217,13 @@ install_docker () {
     while [ ! -f "${DOCKER_BIN}" ]; do
       sleep 120;
       STOPPER=$(($STOPPER+1))
-      timeout_validate 2 $STOPPER "Docker wasn't installed successfully and timed out!\n"
+      timeout_validate 6 $STOPPER "Docker wasn't installed successfully and timed out!\n"
     done
     printf "\nThis installation requires a restart for completion; do you want to restart now? [Y,n]: "
     read RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
       CALL_HOME_START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-      call_home $CALL_HOME_START_TIME "Docker Installed by Reach" "0.0.0" "none" "none" $1
+      call_home $CALL_HOME_START_TIME "none" "Docker Installed by Reach" "0.0.0" "none" "none" $1
       powershell.exe 'shutdown -r -t 0'
     fi
   else
