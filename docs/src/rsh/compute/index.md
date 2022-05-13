@@ -1561,6 +1561,11 @@ where the first value is a `{!rsh} Fun([UInt], Bool)`
 which tells you if its argument is one of the enum's values,
 and the next N values are distinct `{!rsh} UInt`s.
 
+```reach
+load: ./examples/secured-loan/index.rsh
+range: 13 - 13
+```
+
 ### `assert`
 
 @{ref("rsh", "assert")}
