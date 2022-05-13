@@ -951,6 +951,8 @@ solCom = \case
   DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ GET_COMPANION []) -> do
     addMemVar dv
     solLargeArg dv $ mdaToMaybeLA T_Contract Nothing
+  DL_Let _ (DLV_Eff) (DLE_GetUntrackedFunds {}) ->
+    return ""
   DL_Let _ (DLV_Let _ dv) (DLE_GetUntrackedFunds at mtok tb) -> do
     addMemVar dv
     actBalV <- allocVar
