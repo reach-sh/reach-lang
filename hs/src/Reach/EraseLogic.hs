@@ -155,8 +155,8 @@ instance Erase LLConsensus where
               True -> return (body', asn'')
               False -> loop m
       (body', asn'') <- loop (restrictToUsed asn)
-      let invs' = flip map invs $ \ (DLBlock inv_at inv_fs _inv_t _inv_a, inv_lab) ->
-            (DLBlock inv_at inv_fs (DT_Return inv_at) (DLA_Literal $ DLL_Null), inv_lab)
+      let invs' = flip map invs $ \ (DLInvariant (DLBlock inv_at inv_fs _inv_t _inv_a) inv_lab) ->
+            DLInvariant (DLBlock inv_at inv_fs (DT_Return inv_at) (DLA_Literal $ DLL_Null)) inv_lab
       return $ LLC_While at asn'' invs' cond' body' k'
     LLC_Continue at asn -> do
       asn' <- restrictToUsed asn
