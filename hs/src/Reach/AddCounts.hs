@@ -377,7 +377,7 @@ instance AC LLConsensus where
       k' <- ac llc_w_k
       body' <- ac llc_w_body
       cond' <- ac llc_w_cond
-      invs' <- forM llc_w_invs $ \ (inv, lab) -> (, lab) <$> ac inv
+      invs' <- forM llc_w_invs $ \ (DLInvariant inv lab) -> DLInvariant <$> ac inv <*> pure lab
       ac_visit llc_w_asn
       return $ LLC_While llc_w_at llc_w_asn invs' cond' body' k'
     c@(LLC_Continue _ asn) -> do

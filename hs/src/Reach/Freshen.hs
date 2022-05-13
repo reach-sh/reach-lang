@@ -14,7 +14,6 @@ import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
 import Reach.Counter
-import qualified Data.ByteString as B
 
 type App = ReaderT Env IO
 
@@ -124,8 +123,8 @@ instance Freshen DLWithBill where
 instance Freshen Bool where
   fu = return
 
-instance Freshen B.ByteString where
-  fu = return
+instance Freshen a => Freshen (DLInvariant a) where
+  fu (DLInvariant inv lab) = DLInvariant <$> fu inv <*> pure lab
 
 instance Freshen DLRemoteALGO where
   fu (DLRemoteALGO x y z w) = DLRemoteALGO <$> fu x <*> fu y <*> fu z <*> fu w

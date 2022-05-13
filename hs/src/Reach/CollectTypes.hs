@@ -177,6 +177,9 @@ instance CollectsTypes DLTail where
 instance CollectsTypes DLBlock where
   cts (DLBlock _ _ k a) = cts k <> cts a
 
+instance CollectsTypes a => CollectsTypes (DLInvariant a) where
+  cts (DLInvariant inv _) = cts inv
+
 instance CollectsTypes LLConsensus where
   cts (LLC_Com m k) = cts m <> cts k
   cts (LLC_If _ c t f) = cts c <> cts t <> cts f

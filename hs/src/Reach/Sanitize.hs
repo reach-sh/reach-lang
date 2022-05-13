@@ -129,6 +129,10 @@ instance {-# OVERLAPS #-} Sanitize a => Sanitize (DLinExportBlock a) where
     DLinExportBlock _ vs b ->
       DLinExportBlock sb vs (sani b)
 
+instance {-# OVERLAPS #-} Sanitize a => Sanitize (DLInvariant a) where
+  sani (DLInvariant inv lab) =
+    DLInvariant (sani inv) (sani lab)
+
 instance Sanitize LLConsensus where
   sani = \case
     LLC_Com m k -> LLC_Com (sani m) (sani k)

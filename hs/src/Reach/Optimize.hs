@@ -14,7 +14,6 @@ import Reach.Sanitize
 import Reach.UnrollLoops
 import Reach.Util
 import Safe (atMay)
-import qualified Data.ByteString as B
 
 type App = ReaderT Env IO
 
@@ -669,9 +668,9 @@ instance {-# OVERLAPPING #-} Optimize a => Optimize (DLinExportBlock a) where
     newScope $ DLinExportBlock at vs <$> opt b
   gcs (DLinExportBlock _ _ b) = gcs b
 
-instance Optimize B.ByteString where
-  opt = return
-  gcs = const $ return ()
+instance {-# OVERLAPS #-} Optimize a => Optimize (DLInvariant a) where
+  opt (DLInvariant inv lab) = DLInvariant <$> opt inv <*> pure lab
+  gcs (DLInvariant inv _) = gcs inv
 
 instance Optimize LLConsensus where
   opt = \case

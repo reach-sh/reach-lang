@@ -6199,6 +6199,8 @@ evalStmt = \case
           ) -> do
             let (inv_ss, rst') = span (isJust . getInvariant) rst
             let invs = mapMaybe getInvariant inv_ss
+            when (null invs) $ do
+              expect_ $ Err_Block_Variable
             (while_a, cond_a, while_cond, while_body, ks) <-
                   case rst' of
                     JSWhile wa ca wc _ wb : ks -> return (wa, ca, wc, wb, ks)
@@ -6222,7 +6224,7 @@ evalStmt = \case
                         locSco sco_env' $
                           locWhileInvariant $
                             evalPureExprToBlock (add_preamble inv_a invariant_e) T_Bool
-                    return (inv_b, inv_lab)
+                    return $ DLInvariant inv_b inv_lab
               cond_b <-
                 locAtf (srcloc_jsa "cond" cond_a) $
                   locSco sco_env' $ evalPureExprToBlock (add_preamble cond_a while_cond) T_Bool
