@@ -98,9 +98,13 @@ const T_UInt: ETH_Ty<CBR_UInt, BigNumber> = {
   munge: (bv: CBR_UInt): BigNumber => bigNumberify(bv),
   unmunge: (nv: BigNumber): CBR_UInt => V_UInt(nv),
   paramType: 'uint256',
+  uintty: 'UInt',
 };
 
-const T_UInt256 = T_UInt;
+const T_UInt256: ETH_Ty<CBR_UInt, BigNumber> = {
+  ...T_UInt,
+  uintty: 'UInt256'
+}
 
 const V_UInt = (n: BigNumber): CBR_UInt => {
   return T_UInt.canonicalize(n);

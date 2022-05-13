@@ -313,7 +313,10 @@ type SLPart = B.ByteString
 render_sp :: SLPart -> Doc
 render_sp = viaShow
 
-data UIntTy = UI_Word | UI_256 deriving (Eq, Generic, NFData, Ord, Show)
+data UIntTy
+  = UI_Word
+  | UI_256
+  deriving (Eq, Generic, NFData, Ord, Show)
 
 instance FromJSON UIntTy
 instance ToJSON UIntTy

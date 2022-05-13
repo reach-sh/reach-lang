@@ -2613,11 +2613,11 @@ evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
   case p of
     SLPrim_castOrTrunc to -> do
-      let (trunc, sargs') =
-              case sargs of
-                [i, (_, SLV_Bool _ trunc_)] -> (trunc_, [i])
-                _ -> (False, sargs)
-      evalPrimOp (S_UCAST to trunc) sargs'
+      (mTrunc, sargs') <-
+        case sargs of
+          [i, (_, SLV_Bool _ trunc)] -> return (Just trunc, [i])
+          _ -> return (Nothing, sargs)
+      evalPrimOp (S_UCAST to (fromMaybe False mTrunc)) sargs'
     SLPrim_Token_burn -> do
       (tokv, mamtv) <-
         case args of
