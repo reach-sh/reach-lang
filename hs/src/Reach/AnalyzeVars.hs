@@ -97,7 +97,7 @@ instance FreeVars Bool where
   freeVars = const mempty
 
 instance FreeVars DLRemoteALGO where
-  freeVars (DLRemoteALGO a b z) = freeVars a <> freeVars b <> freeVars z
+  freeVars (DLRemoteALGO a b z w) = freeVars a <> freeVars b <> freeVars z <> freeVars w
 
 instance FreeVars DLTokenNew where
   freeVars (DLTokenNew a b c d e f) = freeVars [a, b, c, d, e] <> freeVars f
@@ -129,8 +129,6 @@ instance FreeVars DLExpr where
     DLE_TokenBurn _ a b -> freeVars [a, b]
     DLE_TokenDestroy _ a -> freeVars a
     DLE_TimeOrder _ _ ma b -> freeVars ma <> freeVars b
-    DLE_GetContract {} -> mempty
-    DLE_GetAddress {} -> mempty
     DLE_EmitLog _ _ a -> freeVars a
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ a b -> freeVars a <> freeVars b

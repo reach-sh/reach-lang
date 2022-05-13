@@ -353,6 +353,9 @@ smtPrimOp at p dargs =
                   return $ Atom av
         se -> impossible $ "self address " <> show se
     CTC_ADDR_EQ -> app "Contract_addressEq"
+    GET_CONTRACT -> impossible "GET_CONTRACT"
+    GET_ADDRESS -> impossible "GET_ADDRESS"
+    GET_COMPANION -> impossible "GET_COMPANION"
   where
     app n = return . smtApply n
     bvapp n_bv n_i = app $ if use_bitvectors then n_bv else n_i
@@ -1064,12 +1067,17 @@ smt_e at_dv mdv de = do
       rhs <- smt_c at DLC_UInt_max
       let lt = uint256_le md rhs
       doClaim at f cl lt Nothing
-    DLE_PrimOp at cp args -> do
-      let f = case cp of
-            SELF_ADDRESS {} -> \se -> pathAddBound at mdv (Just $ SMTProgram de) se Witness
-            _ -> bound at
-      args' <- mapM (smt_a at) args
-      f =<< smtPrimOp at cp args args'
+    DLE_PrimOp at cp args ->
+      case cp of
+        GET_CONTRACT -> unbound at
+        GET_ADDRESS -> unbound at
+        GET_COMPANION -> unbound at
+        _ -> do
+          let f = case cp of
+                SELF_ADDRESS {} -> \se -> pathAddBound at mdv (Just $ SMTProgram de) se Witness
+                _ -> bound at
+          args' <- mapM (smt_a at) args
+          f =<< smtPrimOp at cp args args'
     DLE_ArrayRef at arr_da idx_da -> do
       arr_da' <- smt_a at arr_da
       idx_da' <- smt_a at idx_da
@@ -1154,8 +1162,6 @@ smt_e at_dv mdv de = do
               go smtEq =<< smtPrimOp at (ADD uintWord) [o, w] [o', w']
             PGE _ -> go smtGe o'
             _ -> impossible $ "timeOrder: bad op: " <> show op
-    DLE_GetContract at -> unbound at
-    DLE_GetAddress at -> unbound at
     DLE_EmitLog at _ lv ->
       mapM_ (bound at <=< smt_v at) lv
     DLE_setApiDetails {} -> mempty

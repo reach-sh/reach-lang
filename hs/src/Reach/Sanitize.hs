@@ -55,7 +55,7 @@ instance Sanitize DLWithBill where
   sani (DLWithBill x y z) = DLWithBill x (sani y) (sani z)
 
 instance Sanitize DLRemoteALGO where
-  sani (DLRemoteALGO x y z) = DLRemoteALGO (sani x) (sani y) (sani z)
+  sani (DLRemoteALGO x y z w) = DLRemoteALGO (sani x) (sani y) (sani z) (sani w)
 
 instance Sanitize DLExpr where
   sani = \case
@@ -84,8 +84,6 @@ instance Sanitize DLExpr where
     DLE_TokenBurn _ tok amt -> DLE_TokenBurn sb (sani tok) (sani amt)
     DLE_TokenDestroy _ tok -> DLE_TokenDestroy sb (sani tok)
     DLE_TimeOrder _ op a b -> DLE_TimeOrder sb op (sani a) (sani b)
-    DLE_GetContract _ -> DLE_GetContract sb
-    DLE_GetAddress _ -> DLE_GetAddress sb
     DLE_EmitLog _ k a -> DLE_EmitLog sb k (sani a)
     DLE_setApiDetails _ w d c f -> DLE_setApiDetails sb w d c f
     DLE_GetUntrackedFunds _ mt tb -> DLE_GetUntrackedFunds sb (sani mt) (sani tb)

@@ -604,6 +604,7 @@ base_env_slvals =
   , ("unstrict", SLV_Prim $ SLPrim_unstrict)
   , ("getContract", SLV_Prim $ SLPrim_getContract)
   , ("getAddress", SLV_Prim $ SLPrim_getAddress)
+  , ("getCompanion", SLV_Prim $ SLPrim_getCompanion)
   , (".emitLog", SLV_Prim $ SLPrim_EmitLog)
   , ("call", SLV_Form $ SLForm_apiCall)
   , (".setApiDetails", SLV_Form $ SLForm_setApiDetails)
@@ -3447,7 +3448,7 @@ evalPrim p sargs =
       metam <- mustBeObject =<< one_arg
       metam' <- mapM (ensure_public . sss_sls) metam
       let actual = M.keysSet metam'
-      let valid = S.fromList $ [ "fees", "assets", "addressToAccount" ]
+      let valid = S.fromList $ [ "fees", "assets", "addressToAccount", "apps" ]
       unless (actual `S.isSubsetOf` valid) $ do
         expect_ $ Err_Remote_ALGO_extra $ S.toAscList $
           actual `S.difference` valid
@@ -3461,6 +3462,11 @@ evalPrim p sargs =
         Just v -> do
           vs <- explodeTupleLike "REMOTE_FUN.ALGO.assets" v
           mapM (compileCheckType T_Token) vs
+      ralgo_apps <- metal "apps" $ \case
+        Nothing -> return $ mempty
+        Just v -> do
+          vs <- explodeTupleLike "REMOTE_FUN.ALGO.apps" v
+          mapM (compileCheckType T_Contract) vs
       ralgo_addr2acc <- metal "addressToAccount" $ \case
         Nothing -> return $ False
         Just (SLV_Bool _ b) -> return $ b
@@ -3497,7 +3503,7 @@ evalPrim p sargs =
       allTokens <- fmap DLA_Var <$> readSt st_toks
       let nnToksNotBilled = allTokens \\ nntbRecv
       let withBill = DLWithBill nBilled nntbRecv nnToksNotBilled
-      let ralgo0 = DLRemoteALGO dzero mempty False
+      let ralgo0 = DLRemoteALGO dzero mempty False mempty
       let ralgo = fromMaybe ralgo0 malgo
       res' <-
         doInteractiveCall
@@ -3619,8 +3625,9 @@ evalPrim p sargs =
       notFn <- unaryToPrim (JSUnaryOpNot JSNoAnnot)
       eqFn <- evalPrimOp S_PEQ $ map (lvl,) [x, y]
       evalApplyVals' notFn [eqFn]
-    SLPrim_getContract -> getContractInfo T_Contract
-    SLPrim_getAddress -> getContractInfo T_Address
+    SLPrim_getContract -> getContractInfo GET_CONTRACT
+    SLPrim_getAddress -> getContractInfo GET_ADDRESS
+    SLPrim_getCompanion -> getContractInfo GET_COMPANION
     SLPrim_EmitLog -> do
       (x, y) <- two_args
       ma <- mustBeBytes y
@@ -3819,15 +3826,17 @@ evalPrim p sargs =
         aisiPut aisi_env $ \ae ->
           ae {ae_classes = S.insert n $ ae_classes ae}
       return (lvl, SLV_Participant at n Nothing Nothing)
-    getContractInfo t = do
+    getContractInfo po = do
+      zero_args
+      let t = case po of
+            GET_ADDRESS -> T_Address
+            GET_CONTRACT -> T_Contract
+            GET_COMPANION -> maybeT T_Contract
+            _ -> impossible "getContractInfo"
       ensure_after_first
       at <- withAt id
-      let de = case t of
-            T_Address -> DLE_GetAddress at
-            T_Contract -> DLE_GetContract at
-            _ -> impossible "getContractInfo"
       let mdv = DLVar at Nothing t
-      dv <- ctxt_lift_expr mdv de
+      dv <- ctxt_lift_expr mdv $ DLE_PrimOp at po []
       return $ (lvl, SLV_DLVar dv)
 
 doInteractiveCall :: [SLSVal] -> SrcLoc -> Either SLTypeFun SLType -> SLMode -> String -> ClaimType -> (SrcLoc -> [SLCtxtFrame] -> DLType -> [DLArg] -> App DLExpr) -> App SLVal
