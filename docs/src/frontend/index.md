@@ -793,8 +793,7 @@ called whenever the `{!rsh} Event` occurs.
 The standard library provides a convenient way to launch new non-network tokens.
 
 ---
-@{ref("js", "launchToken")}
-@{ref("js", "stdlib.launchToken")}
+@{ref("js", "launchToken")}@{ref("js", "stdlib.launchToken")}
 ```js
 stdlib.launchToken(accCreator: Account, name: string, sym: string, opts?: LaunchTokenOpts) => Promise<object>
 ```

@@ -159,6 +159,7 @@ completionKind v =
         SLPrim_didPublish -> Just CK_Function
         SLPrim_unstrict -> Just CK_Function
         SLPrim_polyNeq -> Just CK_Function
+        SLPrim_getCompanion -> Just CK_Function
         SLPrim_getContract -> Just CK_Function
         SLPrim_getAddress -> Just CK_Function
         SLPrim_EmitLog -> Nothing

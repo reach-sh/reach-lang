@@ -777,6 +777,7 @@ data SLPrimitive
   | SLPrim_polyNeq
   | SLPrim_getContract
   | SLPrim_getAddress
+  | SLPrim_getCompanion
   | SLPrim_EmitLog
   | SLPrim_Event
   | SLPrim_event_is (Maybe SLPart) SLVar [SLType]

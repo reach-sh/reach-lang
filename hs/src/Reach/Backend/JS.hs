@@ -272,9 +272,9 @@ jsDigest as = jsApply "stdlib.digest" <$> jsContractAndVals as
 jsUIntTy :: UIntTy -> Doc
 jsUIntTy = jsBool
 
-jsPrimApply :: PrimOp -> [Doc] -> Doc
+jsPrimApply :: PrimOp -> [Doc] -> App Doc
 jsPrimApply = \case
-  SELF_ADDRESS {} -> jsApply "ctc.selfAddress"
+  SELF_ADDRESS {} -> r $ jsApply "ctc.selfAddress"
   ADD t -> jsApply_ui t "stdlib.add"
   SUB t -> jsApply_ui t "stdlib.sub"
   MUL t -> jsApply_ui t "stdlib.mul"
@@ -286,27 +286,38 @@ jsPrimApply = \case
   PGE t -> jsApply_ui t "stdlib.ge"
   PGT t -> jsApply_ui t "stdlib.gt"
   SQRT t -> jsApply_ui t "stdlib.sqrt"
-  UCAST x y -> \a -> jsApply "stdlib.cast" $ [ jsUIntTy x, jsUIntTy y ] <> a
-  LSH -> jsApply "stdlib.lsh"
-  RSH -> jsApply "stdlib.rsh"
-  MUL_DIV -> jsApply "stdlib.muldiv"
+  UCAST x y -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy x, jsUIntTy y ] <> a
+  LSH -> r $ jsApply "stdlib.lsh"
+  RSH -> r $ jsApply "stdlib.rsh"
+  MUL_DIV -> r $ jsApply "stdlib.muldiv"
   BAND t -> jsApply_ui t "stdlib.band"
   BIOR t -> jsApply_ui t "stdlib.bior"
   BXOR t -> jsApply_ui t "stdlib.bxor"
-  DIGEST_XOR -> jsApply "stdlib.digest_xor"
-  BYTES_XOR -> jsApply "stdlib.bytes_xor"
+  DIGEST_XOR -> r $ jsApply "stdlib.digest_xor"
+  BYTES_XOR -> r $ jsApply "stdlib.bytes_xor"
   IF_THEN_ELSE -> \args -> case args of
-    [c, t, f] -> c <+> "?" <+> t <+> ":" <+> f
+    [c, t, f] -> return $ c <+> "?" <+> t <+> ":" <+> f
     _ -> impossible $ "emitJS: ITE called with wrong number of arguments"
   --  BYTES_EQ -> jsApply "stdlib.bytesEq"
-  DIGEST_EQ -> jsApply "stdlib.digestEq"
-  ADDRESS_EQ -> jsApply "stdlib.addressEq"
-  TOKEN_EQ -> jsApply "stdlib.tokenEq"
-  BYTES_ZPAD xtra -> \args -> jsApply "stdlib.bytesConcat" (args <> [jsBytes $ bytesZero xtra])
-  BTOI_LAST8 _ -> jsApply "stdlib.btoiLast8"
-  CTC_ADDR_EQ -> jsApply "stdlib.ctcAddrEq"
+  DIGEST_EQ -> r $ jsApply "stdlib.digestEq"
+  ADDRESS_EQ -> r $ jsApply "stdlib.addressEq"
+  TOKEN_EQ -> r $ jsApply "stdlib.tokenEq"
+  BYTES_ZPAD xtra -> \args -> return $ jsApply "stdlib.bytesConcat" (args <> [jsBytes $ bytesZero xtra])
+  BTOI_LAST8 _ -> r $ jsApply "stdlib.btoiLast8"
+  CTC_ADDR_EQ -> r $ jsApply "stdlib.ctcAddrEq"
+  GET_CONTRACT -> const $ do
+    isInitial <- (==) 0 <$> asks ctxt_txn
+    asks ctxt_mode >>= \case
+      JM_Simulate
+        | isInitial -> return $ jsApply "stdlib.emptyContractInfo" []
+      _ -> return $ "await" <+> jsApply "ctc.getContractInfo" []
+  GET_ADDRESS -> const $
+    return $ "await" <+> jsApply "ctc.getContractAddress" []
+  GET_COMPANION -> const $ do
+    return $ "await" <+> jsApply "ctc.getContractCompanion" [ ]
   where
-    jsApply_ui t f = jsApply $ f <> (if t then "256" else "")
+    jsApply_ui t f = r $ jsApply $ f <> (if t then "256" else "")
+    r f = return . f
 
 jsArg_m :: AppT (Maybe DLArg)
 jsArg_m = \case
@@ -327,7 +338,7 @@ jsExpr = \case
   DLE_VerifyMuldiv at _ _ _ err ->
     expect_thrown at err
   DLE_PrimOp _ p as ->
-    jsPrimApply p <$> mapM jsArg as
+    jsPrimApply p =<< mapM jsArg as
   DLE_ArrayRef _ aa ia -> do
     aa' <- jsArg aa
     ia' <- jsArg ia
@@ -449,7 +460,7 @@ jsExpr = \case
       JM_Backend -> return "undefined /* Remote */"
       JM_View -> impossible "view Remote"
       JM_Simulate -> do
-        let DLRemoteALGO r_fees r_assets _r_addr2acc = malgo
+        let DLRemoteALGO r_fees r_assets _r_addr2acc r_apps = malgo
         -- These are totally made up and could be totally busted
         obj' <- jsArg ro
         fees' <- jsArg r_fees
@@ -462,12 +473,14 @@ jsExpr = \case
         toks' <- mapM jsArg $ nnRecv <> map snd pay_ks_nz <> r_assets
         let isAddress = (==) T_Address . argTypeOf
         accs' <- mapM jsArg $ filter isAddress as
+        apps' <- mapM jsArg r_apps
         let res' = parens $ jsSimTxn "remote" $
               [ ("obj", obj')
               , ("pays", pays')
               , ("bills", bills')
               , ("toks", jsArray toks')
               , ("accs", jsArray accs')
+              , ("apps", jsArray apps')
               , ("fees", fees')
               ]
         net' <- jsCon $ DLL_Int at uintWord 0
@@ -504,13 +517,6 @@ jsExpr = \case
       JM_Backend -> return "undefined /* TokenDestroy */"
       JM_View -> impossible "token.burn"
   DLE_TimeOrder {} -> impossible "timeorder"
-  DLE_GetContract {} -> do
-    isInitial <- (==) 0 <$> asks ctxt_txn
-    asks ctxt_mode >>= \case
-      JM_Simulate
-        | isInitial -> return $ jsApply "stdlib.emptyContractInfo" []
-      _ -> return $ "await" <+> jsApply "ctc.getContractInfo" []
-  DLE_GetAddress {} -> return $ "await" <+> jsApply "ctc.getContractAddress" []
   DLE_EmitLog _at kind dvs -> do
     let go :: String -> DLVar -> App Doc
         go mode dv = do
@@ -532,12 +538,9 @@ jsExpr = \case
     tb' <- jsArg tb
     zero <- jsArg $ DLA_Literal $ DLL_Int at uintWord 0
     let bal = "await" <+> jsApply "ctc.getBalance" [tok]
-    let rhs = jsPrimApply
-          IF_THEN_ELSE
-          [ jsPrimApply (PLE uintWord) [bal, tb']
-          , zero
-          , jsPrimApply (SUB uintWord) [bal, tb']
-          ]
+    c' <- jsPrimApply (PLE uintWord) [bal, tb']
+    f' <- jsPrimApply (SUB uintWord) [bal, tb']
+    rhs <- jsPrimApply IF_THEN_ELSE [ c', zero, f' ]
     ctm <- asks ctxt_mode
     let infoSim = case ctm == JM_Simulate && isJust mtok of
           True -> jsSimTxn "info" [("tok", tok)] <> ","
@@ -1041,7 +1044,7 @@ jsViews (cvs, vis) = do
       let enDecode v k vi (ViewInfo vs vim) = do
             vs' <- mapM jsVar vs
             vi' <- jsCon $ DLL_Int sb uintWord $ fromIntegral vi
-            let c = jsPrimApply (PEQ uintWord) ["i", vi']
+            c <- jsPrimApply (PEQ uintWord) ["i", vi']
             let let' = "const" <+> jsArray vs' <+> "=" <+> "svs" <> semi
             ret' <-
               case M.lookup k (fromMaybe mempty $ M.lookup v vim) of
@@ -1103,7 +1106,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 15
+reachBackendVersion = 16
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do

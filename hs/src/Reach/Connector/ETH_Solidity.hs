@@ -39,6 +39,7 @@ import System.IO.Temp
 import System.Process
 import Text.Printf
 import Safe (headMay)
+import Safe.Foldable (maximumMay)
 
 --- Debugging tools
 
@@ -343,7 +344,7 @@ class DepthOf a where
   depthOf :: a -> App Int
 
 instance (Traversable t, DepthOf a) => DepthOf (t a) where
-  depthOf o = maximum <$> mapM depthOf o
+  depthOf o = (fromMaybe 0 . maximumMay) <$> mapM depthOf o
 
 instance {-# OVERLAPS #-} (DepthOf a, DepthOf b) => DepthOf (a, b) where
   depthOf (x, y) = max <$> depthOf x <*> depthOf y
@@ -406,8 +407,6 @@ instance DepthOf DLExpr where
     DLE_TokenBurn _ t a -> add1 $ depthOf [t, a]
     DLE_TokenDestroy _ t -> add1 $ depthOf t
     DLE_TimeOrder {} -> impossible "timeorder"
-    DLE_GetContract {} -> return 1
-    DLE_GetAddress {} -> return 1
     DLE_EmitLog _ _ a -> add1 $ depthOf a
     DLE_setApiDetails {} -> return 0
     DLE_GetUntrackedFunds _ mt tb -> max <$> depthOf mt <*> depthOf tb
@@ -535,7 +534,11 @@ solPrimApply = \case
   BYTES_ZPAD {} -> impossible "bytes concat"
   BTOI_LAST8 {} -> impossible "btoiLast8"
   CTC_ADDR_EQ -> binOp "=="
+  GET_CONTRACT -> constr "payable(address(this))"
+  GET_ADDRESS -> constr "payable(address(this))"
+  GET_COMPANION -> impossible "GET_COMPANION"
   where
+    constr = const . return
     safeOp fun op args = do
       PLOpts {..} <- ctxt_plo <$> ask
       case plo_verifyArithmetic of
@@ -691,8 +694,6 @@ solExpr sp = \case
     ta' <- solArg ta
     return $ solApply "safeReachTokenDestroy" [ta'] <> sp
   DLE_TimeOrder {} -> impossible "timeorder"
-  DLE_GetContract {} -> return $ "payable(address(this))"
-  DLE_GetAddress {} -> return $ "payable(address(this))"
   DLE_EmitLog {} -> impossible "emitLog"
   DLE_setApiDetails {} -> impossible "setApiDetails"
   DLE_FromSome _ mo da -> do
@@ -947,6 +948,9 @@ solCom = \case
   DL_Let _ (DLV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv
     solLargeArg dv la
+  DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ GET_COMPANION []) -> do
+    addMemVar dv
+    solLargeArg dv $ mdaToMaybeLA T_Contract Nothing
   DL_Let _ (DLV_Let _ dv) (DLE_GetUntrackedFunds at mtok tb) -> do
     addMemVar dv
     actBalV <- allocVar
@@ -1598,7 +1602,7 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
           let ext_ret = "external " <> ret
           let int_ret = "internal " <> ret
           let ref = (solArrayRef (solMapVar mpv) "addr")
-          do_none <- solLargeArg' "res" $ DLLA_Data (dataTypeMap mt) "None" $ DLA_Literal DLL_Null
+          do_none <- solLargeArg' "res" $ mdaToMaybeLA (dlmi_ty mi) Nothing
           let do_some = solSet "res" ref
           eq <- solEq (ref <> ".which") (solVariant valTy "Some")
           let int_defn =
