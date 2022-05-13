@@ -59,6 +59,7 @@ These mappings are referred to as "@{defn("linear state")}" because their size i
 Furthermore, a contract may provide @{defn("views")} of its consensus state, which are labeled functions and values which may be hierarchically organized, such as `NFT.owner` or `scoreOfPlayer`.
 These views are visible in sub-trees of the computation graph.
 A contract may also emit @{defn("event")}s, which are externally observable values that are persistently available.
+On some networks, contracts have @{defn("companion")}s, which we are another contract that does work for them that cannot be done in the contract itself.
 The creation of a contract is called @{defn("deploy")}ment.
 
 A @{defn("participant")} is a logical actor which takes part in a DApp.
