@@ -618,10 +618,83 @@ instance Pretty ApiInfo where
         , ("ret", pretty ai_ret_ty)
         ]
 
+data PrimOp
+  = ADD UIntTy
+  | SUB UIntTy
+  | MUL UIntTy
+  | DIV UIntTy
+  | MOD UIntTy
+  | PLT UIntTy
+  | PLE UIntTy
+  | PEQ UIntTy
+  | PGE UIntTy
+  | PGT UIntTy
+  | SQRT UIntTy
+  | UCAST UIntTy UIntTy
+  | IF_THEN_ELSE
+  | DIGEST_EQ
+  | ADDRESS_EQ
+  | TOKEN_EQ
+  | SELF_ADDRESS SLPart Bool Int
+  | LSH
+  | RSH
+  | BAND UIntTy
+  | BIOR UIntTy
+  | BXOR UIntTy
+  | BYTES_ZPAD Integer
+  | MUL_DIV
+  | DIGEST_XOR
+  | BYTES_XOR
+  | BTOI_LAST8 Bool
+  | CTC_ADDR_EQ
+  | GET_CONTRACT
+  | GET_ADDRESS
+  | GET_COMPANION
+  deriving (Eq, Generic, Ord, Show)
+
+instance Pretty PrimOp where
+  pretty = \case
+    ADD t -> uitp t <> "+"
+    SUB t -> uitp t <> "-"
+    MUL t -> uitp t <> "*"
+    DIV t -> uitp t <> "/"
+    MOD t -> uitp t <> "%"
+    PLT t -> uitp t <> "<"
+    PLE t -> uitp t <> "<="
+    PEQ t -> uitp t <> "=="
+    PGE t -> uitp t <> ">="
+    PGT t -> uitp t <> ">"
+    SQRT t -> uitp t <> "sqrt"
+    UCAST x y -> "cast" <> parens (uitp x <> "," <> uitp y)
+    IF_THEN_ELSE -> "ite"
+    DIGEST_EQ -> "=="
+    ADDRESS_EQ -> "=="
+    TOKEN_EQ -> "=="
+    SELF_ADDRESS x y z -> "selfAddress" <> parens (render_das [pretty x, pretty y, pretty z])
+    LSH -> "<<"
+    RSH -> ">>"
+    BAND t -> uitp t <> "&"
+    BIOR t -> uitp t <> "|"
+    BXOR t -> uitp t <> "^"
+    BYTES_ZPAD x -> "zpad" <> parens (pretty x)
+    MUL_DIV -> "muldiv"
+    DIGEST_XOR -> "digest_xor"
+    BYTES_XOR -> "bytes_xor"
+    BTOI_LAST8 isDigest -> "btoiLast8(" <> bool "Bytes" "Digest" isDigest <> ")"
+    CTC_ADDR_EQ -> "Contract.addressEq"
+    GET_CONTRACT -> "getContract()"
+    GET_ADDRESS -> "getAddress()"
+    GET_COMPANION -> "getCompanion()"
+    where
+      uitp = \case
+        True -> "b"
+        False -> ""
+
 data DLRemoteALGO = DLRemoteALGO
   { ralgo_fees :: DLArg
   , ralgo_assets :: [DLArg]
   , ralgo_addr2acc :: Bool
+  , ralgo_apps :: [DLArg]
   }
   deriving (Eq, Ord)
 
@@ -629,6 +702,7 @@ instance PrettySubst DLRemoteALGO where
   prettySubst (DLRemoteALGO {..}) = do
     f' <- prettySubst ralgo_fees
     a' <- mapM prettySubst ralgo_assets
+    p' <- mapM prettySubst ralgo_apps
     let a2a' = pretty ralgo_addr2acc
     return $
       render_obj $
@@ -636,6 +710,7 @@ instance PrettySubst DLRemoteALGO where
           [ ("fees" :: String, f')
           , ("assets", render_das a')
           , ("addr2acc", pretty a2a')
+          , ("apps", render_das p')
           ]
 
 data DLExpr
@@ -664,8 +739,6 @@ data DLExpr
   | DLE_TokenBurn SrcLoc DLArg DLArg
   | DLE_TokenDestroy SrcLoc DLArg
   | DLE_TimeOrder SrcLoc PrimOp (Maybe DLArg) DLVar
-  | DLE_GetContract SrcLoc
-  | DLE_GetAddress SrcLoc
   | -- | DLE_EmitLog SrcLoc LogKind [DLVar]
     -- * the LogKind specifies whether the log generated from an API, Events, or is internal
     -- * the [DLVar] are the values to log
@@ -803,8 +876,6 @@ instance PrettySubst DLExpr where
       return $ "Token(" <> tok' <> ").destroy()"
     DLE_TimeOrder _ op mx y -> do
       return $ "timeOrder" <> parens (pretty op <> ", " <> pretty mx <> ", " <> pretty y)
-    DLE_GetContract {} -> return $ "getContract()"
-    DLE_GetAddress {} -> return $ "getAddress()"
     DLE_EmitLog _ lk vs -> do
       lk' <- prettySubst lk
       vs' <- render_dasM $ map DLA_Var vs
@@ -851,8 +922,6 @@ instance IsPure DLExpr where
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> False
     DLE_Digest {} -> True
-    DLE_GetContract {} -> True
-    DLE_GetAddress {} -> True
     DLE_Claim {} ->
       -- These are all false, because we use purity to determine if we can
       -- reorder things and an assert can not be ordered outside of an IF to
@@ -902,8 +971,6 @@ instance IsLocal DLExpr where
     DLE_TokenBurn {} -> False
     DLE_TokenDestroy {} -> False
     DLE_TimeOrder {} -> True
-    DLE_GetContract {} -> True
-    DLE_GetAddress {} -> True
     DLE_EmitLog {} -> False
     DLE_setApiDetails {} -> False
     DLE_GetUntrackedFunds {} -> True

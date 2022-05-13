@@ -301,8 +301,8 @@ instance Optimize DLWithBill where
   gcs _ = return ()
 
 instance Optimize DLRemoteALGO where
-  opt (DLRemoteALGO x y z) =
-    DLRemoteALGO <$> opt x <*> opt y <*> opt z
+  opt (DLRemoteALGO x y z w) =
+    DLRemoteALGO <$> opt x <*> opt y <*> opt z <*> opt w
   gcs _ = return ()
 
 unsafeAt :: [a] -> Int -> a
@@ -425,8 +425,6 @@ instance Optimize DLExpr where
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> opt tok <*> opt amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> opt tok
     DLE_TimeOrder at op a b -> DLE_TimeOrder at op <$> opt a <*> opt b
-    DLE_GetContract at -> return $ DLE_GetContract at
-    DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at k a -> DLE_EmitLog at k <$> opt a
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mt tb -> DLE_GetUntrackedFunds at <$> opt mt <*> opt tb

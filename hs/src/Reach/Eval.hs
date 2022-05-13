@@ -150,8 +150,6 @@ instance Pandemic DLExpr where
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> pan tok <*> pan amt
     DLE_TokenDestroy at a -> DLE_TokenDestroy at <$> pan a
     DLE_TimeOrder at op a b -> DLE_TimeOrder at op <$> pan a <*> pan b
-    DLE_GetContract at -> return $ DLE_GetContract at
-    DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at lk vars -> DLE_EmitLog at lk <$> pan vars
     DLE_setApiDetails at who dom mc info -> return $ DLE_setApiDetails at who dom mc info
     DLE_GetUntrackedFunds at marg a -> DLE_GetUntrackedFunds at <$> pan marg <*> pan a
@@ -181,7 +179,7 @@ instance Pandemic Bool where
   pan = return
 
 instance Pandemic DLRemoteALGO where
-  pan (DLRemoteALGO x y z) = DLRemoteALGO <$> pan x <*> pan y <*> pan z
+  pan (DLRemoteALGO x y z w) = DLRemoteALGO <$> pan x <*> pan y <*> pan z <*> pan w
 
 instance Pandemic DLPayAmt where
   pan (DLPayAmt net ks) = do
