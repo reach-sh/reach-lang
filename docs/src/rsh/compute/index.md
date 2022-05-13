@@ -1704,6 +1704,11 @@ possible( claim, [msg] )
  A possibility assertion which is only valid if it is possible for `{!rsh} claim` to evaluate to `{!rsh} true` with honest frontends and participants.
 It accepts an optional bytes argument, which is included in any reported violation.
 
+```reach
+load: /examples/algo-try-csp/index.rsh
+range: 30 - 32
+```
+
 ### `digest`
 
 @{ref("rsh", "digest")}
