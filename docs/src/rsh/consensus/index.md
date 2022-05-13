@@ -622,7 +622,7 @@ load: /examples/map-arbitrary-key/index.rsh
 range: 24 - 24
 ```
 
-Such new mapping of linear state exemplified in the code samples above, returns a value which may be used to dereference particular mappings via `{!rsh} map[EXPR]`.
+These examples return a value which may be used to dereference particular mappings via `{!rsh} map[EXPR]`.
 Such dereferences return a value of type `{!rsh} Maybe(VAL_TYPE_EXPR)`, because the mapping may not contain a value for `{!rsh} EXPR`.
 
 A mapping may be modified by writing `{!rsh} map[EXPR] = VALUE_EXPR` to install `{!rsh} VALUE_EXPR` (of type `{!rsh} VAL_TYPE_EXPR`) at `{!rsh} EXPR`, or by writing `{!rsh} delete map[EXPR]` to remove the mapping entry.
