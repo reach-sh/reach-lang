@@ -438,25 +438,25 @@ acc.tokenMetadata(token) => Promise<object>
 Returns a Promise of the metadata for a non-network token specified by the `{!js} token`.
 
 ---
-@{ref("js", "balanceOf")}
+@{ref("js", "balanceOf")}@{ref("js", "stdlib.balanceOf")}@{ref("js", "acc.balanceOf")}
 ```js
 acc.balanceOf(token?) => Promise<BigNumber>
 stdlib.balanceOf(acc, token?) => Promise<BigNumber>
 ```
 
-Promises the balance of network tokens (or non-network tokens if `{!js} token` is provided) held by the account given by a Reach account abstraction provided by the `{!js} acc` argument.
+Promises the balance of network tokens (or non-network tokens if `{!js} token` is provided) held by given by a Reach account abstraction `{!js} acc`.
 
 ---
-@{ref("js", "balancesOf")}
+@{ref("js", "balancesOf")}@{ref("js", "stdlib.balancesOf")}@{ref("js", "acc.balancesOf")}
 ```js
 acc.balancesOf(tokens: Array<Token | null>) => Promise<Array<BigNumber>>
 stdlib.balancesOf(acc: Account, tokens: Array<Token | null>) => Promise<Array<BigNumber>>
 ```
 Promises an array of balances that corresponds with the provided array of tokens, `{!js} tokens`,
-for a given account `{!js} acc`.
+for a given Reach account `{!js} acc`.
 If `{!js} tokens` contains a `{!js} null`,
 the corresponding position in the output array will contain the account's balance of network tokens.
-This function is more efficient for getting multiple token balances than repeated calls to `{!js} balanceOf`.
+This function is more efficient for getting multiple token balances than repeated calls to `{!js} stdlib.balanceOf`.
 
 ---
 @{ref("js", "minimumBalanceOf")}
