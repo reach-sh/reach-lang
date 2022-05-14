@@ -83,6 +83,10 @@ dk_block _ (DLSBlock at fs l a) =
 turnVarIntoLet :: Bool
 turnVarIntoLet = True
 
+d_inv :: (Applicative m) => (a -> m b) -> DLInvariant a -> m (DLInvariant b)
+d_inv block (DLInvariant inv_b minv_lab) =
+  DLInvariant <$> block inv_b <*> pure minv_lab
+
 dk1 :: DKTail -> DLSStmt -> DKApp DKTail
 dk1 k s =
   case s of
@@ -154,7 +158,7 @@ dk1 k s =
     DLS_While at asn invs cond_b body -> do
       let body' = dk_top at body
       let block = dk_block at
-      invs' <- forM invs $ \ (DLInvariant inv_b minv_lab) -> DLInvariant <$> block inv_b <*> pure minv_lab
+      invs' <- forM invs $ d_inv block
       DK_While at asn invs' <$> block cond_b <*> body' <*> pure k
     DLS_Continue at asn -> return $ DK_Continue at asn
     DLS_FluidSet at fv a -> com $ DKC_FluidSet at fv a
@@ -579,7 +583,7 @@ df_con = \case
     let block b = df_bl =<< block_unpackFVMap at b
     (makeWhile, k') <-
       withWhileFVMap fvm $ do
-        invs' <- forM invs $ \ (DLInvariant inv minv_lab) -> DLInvariant <$> block inv <*> pure minv_lab
+        invs' <- forM invs $ d_inv block
         (,) <$> (LLC_While at <$> expandFromFVMap at asn <*> pure invs' <*> block cond <*> body_fvs') <*> (unpackFVMap at k)
     makeWhile <$> df_con k'
   DK_Continue at asn ->

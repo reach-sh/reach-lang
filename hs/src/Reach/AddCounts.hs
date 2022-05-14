@@ -325,6 +325,9 @@ instance {-# OVERLAPS #-} AC a => AC (DLRecv a) where
     dr_k' <- ac dr_k
     return $ DLRecv dr_from dr_msg dr_time dr_secs dr_didSend dr_k'
 
+instance {-# OVERLAPS #-} AC a => AC (DLInvariant a) where
+  ac (DLInvariant inv lab) = DLInvariant <$> ac inv <*> pure lab
+
 instance AC LLConsensus where
   ac = \case
     LLC_Com m c -> do
@@ -377,7 +380,7 @@ instance AC LLConsensus where
       k' <- ac llc_w_k
       body' <- ac llc_w_body
       cond' <- ac llc_w_cond
-      invs' <- forM llc_w_invs $ \ (DLInvariant inv lab) -> DLInvariant <$> ac inv <*> pure lab
+      invs' <- mapM ac llc_w_invs
       ac_visit llc_w_asn
       return $ LLC_While llc_w_at llc_w_asn invs' cond' body' k'
     c@(LLC_Continue _ asn) -> do
