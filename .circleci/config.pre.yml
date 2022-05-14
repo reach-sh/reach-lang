@@ -282,7 +282,7 @@ jobs:
                 "text": {
                   "type": "mrkdwn",
                   "text": "*CATASTROPHIC* ${CIRCLE_USERNAME}/<https://github.com/reach-sh/reach-lang/tree/${CIRCLE_BRANCH}|${CIRCLE_BRANCH}>${CIRCLE_PULL_REQUEST:+/<$CIRCLE_PULL_REQUEST|PR>} > examples.<<parameters.connector>> <${CIRCLE_BUILD_URL}|more...>" }}]}
-  "examples-sink":
+  "build-sink":
     executor: fake
     steps:
     - checkout
@@ -304,25 +304,20 @@ jobs:
                 "text": {
                   "type": "mrkdwn",
                   "text": "${RECORD_MESSAGE}" }}]}
-  "build-sink":
-    executor: fake
-    steps:
-    - run: |
-        echo Go team!
   "browser-tests":
     executor: real
     parameters:
       connector:
         description: "which connector"
         type: string
-      devnet:
-        description: "which devnet"
+      deps:
+        description: "docker dependencies"
         type: string
     steps:
     - checkout
     - workattach
     - and_restore_docker:
-        deps: "<<parameters.devnet>> react-runner reach-cli reach"
+        deps: <<parameters.deps>>
     - run: |
         cd examples/rps-9-web/
         patch index.js cypress.patch
@@ -369,37 +364,7 @@ workflows:
         type: approval
         requires:
           - "build-sink"
-          - "browser-tests.eth"
-          - "browser-tests.algo"
-          - "browser-tests.cfx"
         filters:
           branches:
             only: master
-    - "browser-tests":
-        name: "browser-tests.eth"
-        connector: "ETH"
-        devnet: "devnet-eth"
-        requires:
-          - "build-devnet-eth"
-          - "build-react-runner"
-          - "build-reach-cli"
-          - "build-reach"
-    - "browser-tests":
-        name: "browser-tests.algo"
-        connector: "ALGO"
-        devnet: "devnet-algo"
-        requires:
-          - "build-devnet-algo"
-          - "build-react-runner"
-          - "build-reach-cli"
-          - "build-reach"
-    - "browser-tests":
-        name: "browser-tests.cfx"
-        connector: "CFX"
-        devnet: "devnet-cfx"
-        requires:
-          - "build-devnet-cfx"
-          - "build-react-runner"
-          - "build-reach-cli"
-          - "build-reach"
     # Sink and examples follow
