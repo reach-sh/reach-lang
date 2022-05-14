@@ -1620,7 +1620,7 @@ which tells you if its argument is one of the enum's values,
 and the next N values are distinct `{!rsh} UInt`s.
 
 ```reach
-load: ./examples/secured-loan/index.rsh
+load: /examples/secured-loan/index.rsh
 range: 13 - 13
 ```
 
@@ -1663,12 +1663,14 @@ A dynamic assertion that `{!rsh} claim` evaluates to `{!rsh} true`, which expand
 It accepts an optional bytes argument, which is included in any reported violation.
 
 For example, `A` makes the following `{!rsh} check` with a second (optional) argument on line 21:
+
 ```reach
 load: /examples/map-sender/index.rsh
 range: 18 - 22
 ```
 
 While the `{!rsh} check` in the following example, takes just the first argument on line 62:
+
 ```reach
 load: /examples/api-overload/index.rsh
 range: 61 - 62
@@ -1730,7 +1732,7 @@ load: /examples/workshop-hash-lock/index.rsh
 range: 12 - 14
 ```
 
-The code here digests Alice's password into a hash so that the hash can be shared safely with Bob on the consensus network without people on the network knowing the password.
+This sample digests password, `_pass` into a hash, `passDigest`, so that it can be shared safely on the consensus network without eavesdroppers learning the password.
 
 ### `balance`
 
@@ -1743,13 +1745,15 @@ balance(gil);
 The @{defn("balance")} primitive returns the balance of the contract account for the DApp.
 It takes an optional non-network token value, in which case it returns the balance of the given token.
 
-The example below shows the non-network token being passed as an argument to `{!rsh} balance`:
+The example below shows non-network tokens being passed as arguments to the `{!rsh} balance` primitives:
+
 ```reach
 load: /examples/abstract-tok/index.rsh
 range: 24 - 26
 ```
 
 While in the following example, `{!rsh} balance` takes no argument:
+
 ```reach
 load: /examples/rps-7-loops/index.rsh
 range: 60 - 60
@@ -1770,8 +1774,8 @@ load: /examples/remote-rsh/index.rsh
 range: 26-29
 ```
 	
-In this example, on line 26, `D` publishes the values for `x` and `tok`, which creates the contract.
-After the `{!rsh} publish`, now `{!rsh} getContract` is called and it returns the value `x` in token `tok` of the contract created in the publication.
+In line 26, `D` publishes the values for `x` and `tok`.
+After the `{!rsh} publish`, `{!rsh} getContract` returns the value `x` in token `tok`.
 
 ### `getAddress`
 
@@ -1788,8 +1792,9 @@ load: /examples/ctc-address/index.rsh
 range: 15-22
 ```
 
-In this code sample, Alice publishes to create the contract, and then an object named `info` is created to reference `{!rsh} getContract` that pulls in the contract information.
-Another object is created named `addr` to reference `{!rsh} getAddress` to obtain the address of Alice.
+In the sample above, Alice publishes to create the contract. 
+Then, an object named `info` references `{!rsh} getContract` which pulls in the contract information.
+Another object, `addr`, references `{!rsh} getAddress` to obtain the address of Alice.
 Both `{!rsh} info` and `{!rsh} addr` are then used in the local step of Alice in her `{!rsh} interact` object.
 
 ### `getCompanion`
