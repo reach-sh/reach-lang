@@ -152,6 +152,9 @@ instance Unroll a => Unroll (DLinExportBlock a) where
   ul = \case
     DLinExportBlock at vs b -> DLinExportBlock at vs <$> ul b
 
+instance Unroll a => Unroll (DLInvariant a) where
+  ul (DLInvariant ik v) = DLInvariant <$> ul ik <*> ul v
+
 instance Unroll LLConsensus where
   ul = \case
     LLC_Com m k -> ul_m LLC_Com m k
@@ -159,7 +162,7 @@ instance Unroll LLConsensus where
     LLC_Switch at ov csm -> LLC_Switch at ov <$> ul csm
     LLC_FromConsensus at at' fs s -> LLC_FromConsensus at at' fs <$> ul s
     LLC_While at asn inv cond body k -> do
-      inv' <- mapM (\(DLInvariant ik v) -> DLInvariant <$> ul ik <*> ul v) inv
+      inv' <- mapM ul inv
       LLC_While at asn inv' <$> ul cond <*> ul body <*> ul k
     LLC_Continue at asn -> return $ LLC_Continue at asn
     LLC_ViewIs at vn vk a k ->

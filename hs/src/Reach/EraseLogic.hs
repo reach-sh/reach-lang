@@ -126,6 +126,10 @@ restrictToUsed (DLAssignment m) = do
   m' <- M.fromList <$> (filterM go $ M.toList m)
   return $ DLAssignment m'
 
+instance {-# OVERLAPS #-} Erase (DLInvariant DLBlock) where
+  el (DLInvariant (DLBlock inv_at inv_fs _inv_t _inv_a) inv_lab) =
+    return $ DLInvariant (DLBlock inv_at inv_fs (DT_Return inv_at) (DLA_Literal $ DLL_Null)) inv_lab
+
 instance Erase LLConsensus where
   el = \case
     LLC_Com m k -> do
@@ -155,8 +159,7 @@ instance Erase LLConsensus where
               True -> return (body', asn'')
               False -> loop m
       (body', asn'') <- loop (restrictToUsed asn)
-      let invs' = flip map invs $ \ (DLInvariant (DLBlock inv_at inv_fs _inv_t _inv_a) inv_lab) ->
-            DLInvariant (DLBlock inv_at inv_fs (DT_Return inv_at) (DLA_Literal $ DLL_Null)) inv_lab
+      invs' <- mapM el invs
       return $ LLC_While at asn'' invs' cond' body' k'
     LLC_Continue at asn -> do
       asn' <- restrictToUsed asn

@@ -10,6 +10,10 @@ c () {
   ${REACH} compile --intermediate-files "$@"
 }
 
+ce () {
+  c "examples/${1}/index.rsh"
+}
+
 fc () {
   if ! [ -f "$1" ] ; then
     echo "$1" does not exist
