@@ -270,7 +270,7 @@ jsDigest :: AppT [DLArg]
 jsDigest as = jsApply "stdlib.digest" <$> jsContractAndVals as
 
 jsUIntTy :: UIntTy -> Doc
-jsUIntTy t = if t == UI_Word then "stdlib.T_UInt" else "stdlib.T_UInt256"
+jsUIntTy t = if t == UI_Word then "\"UInt\"" else "\"UInt256\""
 
 jsPrimApply :: PrimOp -> [Doc] -> App Doc
 jsPrimApply = \case
