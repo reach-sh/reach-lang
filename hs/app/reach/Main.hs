@@ -2461,7 +2461,7 @@ support = command "support" $ info (pure g) d
   where
     d = progDesc "Create GitHub gist of index.rsh and index.mjs"
     f i c = i .= object
-      [ "content" .= c
+      [ "content" .= if T.null (T.strip $ pack c) then "// (Empty source file)" else c
       , "language" .= ("JavaScript" :: String)
       , "type" .= ("application/javascript" :: String)
       ]
