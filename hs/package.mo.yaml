@@ -86,6 +86,10 @@ dependencies:
 - pretty-terminal
 - generic-data
 - zlib
+- exceptions
+- tomland
+- base16
+- attoparsec
 
 default-extensions:
 - BangPatterns
@@ -131,6 +135,17 @@ ghc-options:
 library:
   source-dirs: src
 
+tests:
+  reach-test:
+    main:                Main.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - reach
+
 executables:
   reachc:
     main:                Main.hs
@@ -154,15 +169,4 @@ executables:
     - parsec
     - safe
     - unix
-    - reach
-
-tests:
-  reach-test:
-    main:                Main.hs
-    source-dirs:         test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
     - reach

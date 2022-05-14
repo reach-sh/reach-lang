@@ -25,8 +25,11 @@ sol/stdlib.sol: sol/stdlib_openzep.sol sol/stdlib_reach.sol
 sol/stdlib.json: sol/stdlib.sol
 	solc --optimize --combined-json abi,bin $< > $@
 
-package.yaml: package.mo.yaml $(ROOT)/VERSION
-	(. $(ROOT)/VERSION && export VERSION && mo $< > $@)
+package.closed.yaml:
+	echo > $@
+
+package.yaml: package.mo.yaml package.closed.yaml $(ROOT)/VERSION
+	(. $(ROOT)/VERSION && export VERSION && ( mo $< ; cat package.closed.yaml ) > $@)
 
 src/Reach/Version.hs: src/Reach/Version.mo.hs $(ROOT)/VERSION $(ROOT)/DEPS
 	(. $(ROOT)/VERSION && export MAJOR MINOR PATCH && . $(ROOT)/DEPS && export SOLC_VERSION && mo $< > $@)
