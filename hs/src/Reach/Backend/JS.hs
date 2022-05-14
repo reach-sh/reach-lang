@@ -275,24 +275,24 @@ jsUIntTy t = if t == UI_Word then "stdlib.T_UInt" else "stdlib.T_UInt256"
 jsPrimApply :: PrimOp -> [Doc] -> App Doc
 jsPrimApply = \case
   SELF_ADDRESS {} -> r $ jsApply "ctc.selfAddress"
-  ADD t -> jsApply_ui t "stdlib.add"
-  SUB t -> jsApply_ui t "stdlib.sub"
-  MUL t -> jsApply_ui t "stdlib.mul"
-  DIV t -> jsApply_ui t "stdlib.div"
-  MOD t -> jsApply_ui t "stdlib.mod"
-  PLT t -> jsApply_ui t "stdlib.lt"
-  PLE t -> jsApply_ui t "stdlib.le"
-  PEQ t -> jsApply_ui t "stdlib.eq"
-  PGE t -> jsApply_ui t "stdlib.ge"
-  PGT t -> jsApply_ui t "stdlib.gt"
-  SQRT t -> jsApply_ui t "stdlib.sqrt"
+  ADD t -> r $ jsApply_ui t "stdlib.add"
+  SUB t -> r $ jsApply_ui t "stdlib.sub"
+  MUL t -> r $ jsApply_ui t "stdlib.mul"
+  DIV t -> r $ jsApply_ui t "stdlib.div"
+  MOD t -> r $ jsApply_ui t "stdlib.mod"
+  PLT t -> r $ jsApply_ui t "stdlib.lt"
+  PLE t -> r $ jsApply_ui t "stdlib.le"
+  PEQ t -> r $ jsApply_ui t "stdlib.eq"
+  PGE t -> r $ jsApply_ui t "stdlib.ge"
+  PGT t -> r $ jsApply_ui t "stdlib.gt"
+  SQRT t -> r $ jsApply_ui t "stdlib.sqrt"
   UCAST dom rng trunc -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy dom, jsUIntTy rng ] <> a <> [ jsBool trunc ]
   LSH -> r $ jsApply "stdlib.lsh"
   RSH -> r $ jsApply "stdlib.rsh"
   MUL_DIV -> r $ jsApply "stdlib.muldiv"
-  BAND t -> jsApply_ui t "stdlib.band"
-  BIOR t -> jsApply_ui t "stdlib.bior"
-  BXOR t -> jsApply_ui t "stdlib.bxor"
+  BAND t -> r $ jsApply_ui t "stdlib.band"
+  BIOR t -> r $ jsApply_ui t "stdlib.bior"
+  BXOR t -> r $ jsApply_ui t "stdlib.bxor"
   DIGEST_XOR -> r $ jsApply "stdlib.digest_xor"
   BYTES_XOR -> r $ jsApply "stdlib.bytes_xor"
   IF_THEN_ELSE -> \args -> case args of
@@ -538,18 +538,9 @@ jsExpr = \case
     tb' <- jsArg tb
     zero <- jsArg $ DLA_Literal $ DLL_Int at UI_Word 0
     let bal = "await" <+> jsApply "ctc.getBalance" [tok]
-<<<<<<< HEAD
-    c' <- jsPrimApply (PLE uintWord) [bal, tb']
-    f' <- jsPrimApply (SUB uintWord) [bal, tb']
+    c' <- jsPrimApply (PLE UI_Word) [bal, tb']
+    f' <- jsPrimApply (SUB UI_Word) [bal, tb']
     rhs <- jsPrimApply IF_THEN_ELSE [ c', zero, f' ]
-=======
-    let rhs = jsPrimApply
-          IF_THEN_ELSE
-          [ jsPrimApply (PLE UI_Word) [bal, tb']
-          , zero
-          , jsPrimApply (SUB UI_Word) [bal, tb']
-          ]
->>>>>>> 9b9ff4c33 (convert UIntTy from Bool to its own type)
     ctm <- asks ctxt_mode
     let infoSim = case ctm == JM_Simulate && isJust mtok of
           True -> jsSimTxn "info" [("tok", tok)] <> ","
@@ -1052,13 +1043,8 @@ jsViews (cvs, vis) = do
       let illegal = jsApply "stdlib.assert" ["false", jsString "illegal view"]
       let enDecode v k vi (ViewInfo vs vim) = do
             vs' <- mapM jsVar vs
-<<<<<<< HEAD
-            vi' <- jsCon $ DLL_Int sb uintWord $ fromIntegral vi
-            c <- jsPrimApply (PEQ uintWord) ["i", vi']
-=======
             vi' <- jsCon $ DLL_Int sb UI_Word $ fromIntegral vi
-            let c = jsPrimApply (PEQ UI_Word) ["i", vi']
->>>>>>> 9b9ff4c33 (convert UIntTy from Bool to its own type)
+            c <- jsPrimApply (PEQ UI_Word) ["i", vi']
             let let' = "const" <+> jsArray vs' <+> "=" <+> "svs" <> semi
             ret' <-
               case M.lookup k (fromMaybe mempty $ M.lookup v vim) of
