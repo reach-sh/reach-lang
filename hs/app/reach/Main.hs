@@ -2477,6 +2477,11 @@ support = command "support" $ info (pure g) d
       <$> parseRequest ("POST " <> u)
       >>= httpLBS
     g = liftIO $ do
+      rsh <- z "index.rsh"
+      mjs <- z "index.mjs"
+      when (null rsh && null mjs) $ do
+        putStrLn "Neither index.rsh nor index.mjs exist in the current directory; aborting."
+        exitWith ExitSuccess
       a <- req "https://github.com/login/device/code"
         [ "client_id" .= clientId
         , "scope" .= ("gist" :: String)
@@ -2505,11 +2510,6 @@ support = command "support" $ info (pure g) d
           Just _ -> t `by` "error" >>= T.putStrLn . (pack "\nError while acquiring access token:\n" <>)
         exitWith $ ExitFailure 1
       gat <- unpack <$> t `by` "access_token"
-      rsh <- z "index.rsh"
-      mjs <- z "index.mjs"
-      when (null rsh && null mjs) $ do
-        putStrLn "\nNeither index.rsh nor index.mjs exist in the current directory; aborting."
-        exitWith ExitSuccess
       when (null rsh) $ putStrLn "\nDidn't find index.rsh in the current directory; skipping..."
       when (null mjs) $ putStrLn "\nDidn't find index.mjs in the current directory; skipping..."
       -- @TODO: Also add output of reach hashes!
