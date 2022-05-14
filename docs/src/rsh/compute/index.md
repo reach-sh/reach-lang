@@ -687,6 +687,16 @@ range: 12 - 12
 In the second case above, where `{!rsh} UInt256` is casted to `{!rsh} UInt`, if `{!rsh} UInt256` has any non-zero bits that would be lost by the truncation, then the cast will fail at runtime.
 This is guaranteed to not happen when you compile with `{!rsh} verifyArithmetic`.
 
+If you wish to explicitly truncate a `{!rsh} UInt`* type into a smaller size, you can pass a second, `{!rsh} Bool` argument to the cast call.
+Passing `{!rsh} true` truncates the number.
+Passing `{!rsh} false` causes the cast to fail, as describe above. 
+This is the default behavior.
+
+```reach
+const x = UInt256(/* big number */);
+const x_truncated = UInt(x, true);
+```
+
 Numeric literals in your program are considered `{!rsh} UInt`.
 If they are cast to `{!rsh} UInt256`, then your program can contain constant `{!rsh} UInt256` values.
 
