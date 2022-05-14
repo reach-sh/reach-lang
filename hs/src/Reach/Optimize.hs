@@ -669,7 +669,8 @@ instance {-# OVERLAPPING #-} Optimize a => Optimize (DLinExportBlock a) where
   gcs (DLinExportBlock _ _ b) = gcs b
 
 instance {-# OVERLAPS #-} Optimize a => Optimize (DLInvariant a) where
-  opt (DLInvariant inv lab) = DLInvariant <$> opt inv <*> pure lab
+  opt (DLInvariant inv lab) =
+    DLInvariant <$> (newScope $ opt inv) <*> pure lab
   gcs (DLInvariant inv _) = gcs inv
 
 instance Optimize LLConsensus where
