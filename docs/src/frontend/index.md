@@ -851,6 +851,15 @@ stdlib.getNetworkSecs() => Promise<secs>
 Like `{!js} getNetworkTime`, but returns a network seconds Promise.
 
 ---
+@{ref("js", "stdlib.getTimeSecs")}
+@{ref("js", "getTimeSecs")}
+```js
+stdlib.getTimeSecs(time) => Promise<secs>
+```
+
+Takes a network time, such as a value returned from `{!js} getNetworkTime`, and converts it into network seconds.
+
+---
 @{ref("js", "stdlib.waitUntilTime")}
 @{ref("js", "waitUntilTime")}
 ```js
