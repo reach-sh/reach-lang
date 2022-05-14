@@ -2189,7 +2189,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   };
   const unsupportedAcc = stdAccount_unsupported(connector);
 
-  return stdAccount({ ...unsupportedAcc, networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract });
+  const accObj = { ...unsupportedAcc, networkAccount, getAddress: selfAddress, 
+                   stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract };
+  const acc = accObj as unknown as Account;
+  const balanceOf_ = (token?: Token): Promise<BigNumber> => balanceOf(acc, token);
+  const balancesOf_ = (tokens: Array<Token | null>): Promise<Array<BigNumber>> => balancesOf(acc, tokens);
+
+  return stdAccount({ ...accObj, balanceOf: balanceOf_, balancesOf: balancesOf_ });
 };
 
 export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {

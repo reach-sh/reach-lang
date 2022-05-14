@@ -501,6 +501,8 @@ export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   getGasLimit: () => BigNumber,
   setStorageLimit: (nsl:unknown) => void,
   getStorageLimit: () => BigNumber,
+  balanceOf: (token?: Token) => Promise<BigNumber>,
+  balancesOf: (tokens: Array<Token | null>) => Promise<Array<BigNumber>>,
 };
 
 export const stdAccount_unsupported =
