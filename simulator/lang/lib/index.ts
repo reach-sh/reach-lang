@@ -1,5 +1,8 @@
 import * as c from '@reach-sh/simulator-client';
 import assert from 'assert';
+import { loadStdlib } from '@reach-sh/stdlib';
+
+const stdlib = loadStdlib();
 
 const consensusID = -1
 const nwTokenId = -1
@@ -36,7 +39,7 @@ class ReachNull extends ReachValue {
   contents: any;
 
   constructor(v: null) {
-    super(v);
+    super(stdlib.protect(stdlib.T_Null, v));
   }
 
   taggedJSON() {
@@ -52,7 +55,7 @@ class ReachBool extends ReachValue {
   contents: any;
 
   constructor(v: boolean) {
-    super(v);
+    super(stdlib.protect(stdlib.T_Bool, v));
   }
 
   taggedJSON() {
@@ -68,7 +71,7 @@ class ReachNumber extends ReachValue {
   contents: any;
 
   constructor(v: number) {
-    super(v);
+    super(stdlib.protect(stdlib.T_UInt, v));
   }
 
   taggedJSON() {
@@ -84,7 +87,7 @@ class ReachToken extends ReachValue {
   contents: any;
 
   constructor(v: number) {
-    super(v);
+    super(stdlib.protect(stdlib.T_UInt, v));
   }
 
   taggedJSON() {
@@ -115,8 +118,8 @@ class ReachBytes extends ReachValue {
 class ReachDigest extends ReachValue {
   contents: any;
 
-  constructor(v: ReachValue) {
-    super(v);
+  constructor(v: ReachValue,n:number) {
+    super(stdlib.protect(stdlib.T_Bytes(n), v));
   }
 
   taggedJSON() {
@@ -132,7 +135,7 @@ class ReachAddress extends ReachValue {
   contents: any;
 
   constructor(v: number) {
-    super(v);
+    super(stdlib.protect(stdlib.T_UInt, v));
   }
 
   taggedJSON() {
@@ -148,7 +151,7 @@ class ReachContract extends ReachValue {
   contents: any;
 
   constructor(v: number) {
-    super(v);
+    super(stdlib.protect(stdlib.T_UInt, v));
   }
 
   taggedJSON() {
@@ -163,40 +166,40 @@ class ReachContract extends ReachValue {
 class ReachArray extends ReachValue {
   contents: any;
 
-  constructor(v: ReachValue[]) {
-    super(v);
+  constructor(v: ReachValue[],t:any) {
+    super(stdlib.protect(t, v));
   }
 }
 
 class ReachTuple extends ReachValue {
   contents: any;
 
-  constructor(v: ReachValue[]) {
-    super(v);
+  constructor(v: ReachValue[],t:any) {
+    super(stdlib.protect(t, v));
   }
 }
 
 class ReachObject extends ReachValue {
   contents: any;
 
-  constructor(v: any) {
-    super(v);
+  constructor(v: any,t:any) {
+    super(stdlib.protect(t, v));
   }
 }
 
 class ReachData extends ReachValue {
   contents: any;
 
-  constructor(v: any) {
-    super(v);
+  constructor(v: any,t:any) {
+    super(stdlib.protect(t, v));
   }
 }
 
 class ReachStruct extends ReachValue {
   contents: any;
 
-  constructor(v: any) {
-    super(v);
+  constructor(v: any,t:any) {
+    super(stdlib.protect(t, v));
   }
 }
 
