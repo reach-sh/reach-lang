@@ -440,6 +440,7 @@ Returns a Promise of the metadata for a non-network token specified by the `{!js
 ---
 @{ref("js", "balanceOf")}
 ```js
+acc.balanceOf(token?) => Promise<BigNumber>
 stdlib.balanceOf(acc, token?) => Promise<BigNumber>
 ```
 
@@ -448,6 +449,7 @@ Promises the balance of network tokens (or non-network tokens if `{!js} token` i
 ---
 @{ref("js", "balancesOf")}
 ```js
+acc.balancesOf(tokens: Array<Token | null>) => Promise<Array<BigNumber>>
 stdlib.balancesOf(acc: Account, tokens: Array<Token | null>) => Promise<Array<BigNumber>>
 ```
 Promises an array of balances that corresponds with the provided array of tokens, `{!js} tokens`,
