@@ -2489,8 +2489,7 @@ support = command "support" $ info (pure g) d
       deviceCode <- a `by` "device_code"
       userCode <- a `by` "user_code"
       T.putStrLn [N.text|
-        Your user code is $userCode.
-        Please enter it at https://github.com/login/device.
+        Please enter $userCode at https://github.com/login/device.
 
         Type 'y' after successful authorization to upload index.mjs, index.rsh, or both:
       |]
