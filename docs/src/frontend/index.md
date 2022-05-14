@@ -824,8 +824,7 @@ https://developer.algorand.org/docs/get-details/transactions/transactions/#asset
 The standard library provides a number of utilities functions for interacting with the connected network.
 
 ---
-@{ref("js", "stdlib.connector")}
-@{ref("js", "connector")}
+@{ref("js", "stdlib.connector")}@{ref("js", "connector")}
 ```js
 stdlib.connector : string
 ```
@@ -833,8 +832,7 @@ stdlib.connector : string
 Represents the `{!js} Connector` the `{!js} stdlib` uses.
 
 ---
-@{ref("js", "stdlib.getNetworkTime")}
-@{ref("js", "getNetworkTime")}
+@{ref("js", "stdlib.getNetworkTime")}@{ref("js", "getNetworkTime")}
 ```js
 stdlib.getNetworkTime() => Promise<time>
 ```
@@ -842,26 +840,23 @@ stdlib.getNetworkTime() => Promise<time>
 Returns a Promise for the current consensus network time, represented as a `BigNumber`.
 
 ---
-@{ref("js", "stdlib.getNetworkSecs")}
-@{ref("js", "getNetworkSecs")}
+@{ref("js", "stdlib.getNetworkSecs")}@{ref("js", "getNetworkSecs")}
 ```js
 stdlib.getNetworkSecs() => Promise<secs>
 ```
 
-Like `{!js} getNetworkTime`, but returns a network seconds Promise.
+Like `{!js} stdlib.getNetworkTime`, but returns a network seconds Promise.
 
 ---
-@{ref("js", "stdlib.getTimeSecs")}
-@{ref("js", "getTimeSecs")}
+@{ref("js", "stdlib.getTimeSecs")}@{ref("js", "getTimeSecs")}
 ```js
 stdlib.getTimeSecs(time) => Promise<secs>
 ```
 
-Takes a network time, such as a value returned from `{!js} getNetworkTime`, and converts it into network seconds.
+Takes a network time, such as a value returned from `{!js} stdlib.getNetworkTime`, and converts it into network seconds.
 
 ---
-@{ref("js", "stdlib.waitUntilTime")}
-@{ref("js", "waitUntilTime")}
+@{ref("js", "stdlib.waitUntilTime")}@{ref("js", "waitUntilTime")}
 ```js
 stdlib.waitUntilTime(time, onProgress?) => Promise<time>
 ```
@@ -876,27 +871,25 @@ which may be called many times up until the specified network time.
 It will receive an object with keys `{!js} current` and `{!js} target`,
 
 ---
-@{ref("js", "stdlib.waitUntilSecs")}
-@{ref("js", "waitUntilSecs")}
+@{ref("js", "stdlib.waitUntilSecs")}@{ref("js", "waitUntilSecs")}
 ```js
 stdlib.waitUntilSecs(secs, onProgress?) => Promise<secs>
 ```
 
-Like `{!js} waitUntilSecs`, but waits for a certain network seconds deadline.
+Like `{!js} stdlib.waitUntilSecs`, but waits for a certain network seconds deadline.
 
 ---
-@{ref("js", "stdlib.wait")}
-@{ref("js", "wait")}
+@{ref("js", "stdlib.wait")}@{ref("js", "wait")}
 ```js
 stdlib.wait(timedelta, onProgress?) => Promise<networkTime>
 ```
 
 Returns a Promise that will only be resolved after the specified time delta has elapsed.
-The expression `{!js} await wait(delta, onProgress)` is the same as
-`{!js} await waitUntilTime(add(await getNetworkTime(), delta), onProgress)`.
-As with `{!js} waitUntilTime`, the `{!js} onProgress` callback is optional.
+The expression `{!js} await stdlib.wait(delta, onProgress)` is the same as
+`{!js} await stdlib.waitUntilTime(add(await stdlib.getNetworkTime(), delta), onProgress)`.
+As with `{!js} stdlib.waitUntilTime`, the `{!js} onProgress` callback is optional.
 
-One use case example of `{!js} wait` is to emit an event and then call `stdlib.wait(delta, onProgress)` to ensure the event has time to complete.
+One use case example of `{!js} stdlib.wait` is to emit an event and then call `stdlib.wait(delta, onProgress)` to ensure the event has time to complete.
 (In the example below, `wt` is shorthand for "wait time".)
 
 ```js
@@ -914,8 +907,7 @@ Although, it is possible to use `{!js} wait` to give an event time to execute,
 it is a better practice to create an explicit synchronization with an [event](##ref-programs-appinit-events) or instruct the deployer to communicate with [API](##ref-programs-appinit-api) callers off-chain.
 
 ---
-@{ref("js", "stdlib.setValidQueryWindow")}
-@{ref("js", "setValidQueryWindow")}
+@{ref("js", "stdlib.setValidQueryWindow")}@{ref("js", "setValidQueryWindow")}
 ```js
 stdlib.setValidQueryWindow(width: number|true) => void
 ```
@@ -929,8 +921,7 @@ While each connector has a default value that works for most common cases, tweak
 The standard library provides a number of utilities functions for interacting with JavaScript representations of Reach values.
 
 ---
-@{ref("js", "stdlib.protect")}
-@{ref("js", "protect")}
+@{ref("js", "stdlib.protect")}@{ref("js", "protect")}
 ```js
 stdlib.protect(t, x) => x
 ```
@@ -971,10 +962,7 @@ stdlib.Array_set(arr, idx, val)
 Returns a new array identical to `{!js} arr`, except that index `{!js} idx` is `{!js} val`.
 
 ---
-@{ref("js", "bigNumberify")}
-@{ref("js", "isBigNumber")}
-@{ref("js", "bigNumberToNumber")}
-@{ref("js", "bigNumberToBigInt")}
+@{ref("js", "bigNumberify")}@{ref("js", "isBigNumber")}@{ref("js", "bigNumberToNumber")}@{ref("js", "bigNumberToBigInt")}
 ```js
 stdlib.bigNumberify(x) => UInt
 stdlib.isBigNumber(x) => bool
@@ -1029,8 +1017,7 @@ Generates random bits as a `{!rsh} UInt`.
 The number of bits generated depends on the particular consensus network.
 
 ---
-@{ref("js", "hasRandom")}
-@{ref("js", "stdlib.hasRandom")}
+@{ref("js", "hasRandom")}@{ref("js", "stdlib.hasRandom")}
 ```js
 stdlib.hasRandom
 ```
@@ -1040,8 +1027,7 @@ Reach does not natively support randomness and leaves random number generation t
 This value is provided out of convenience; it is not mandatory to use this implementation.
 
 ---
-@{ref("js", "hasConsoleLogger")}
-@{ref("js", "stdlib.hasConsoleLogger")}
+@{ref("js", "hasConsoleLogger")}@{ref("js", "stdlib.hasConsoleLogger")}
 ```js
 stdlib.hasConsoleLogger
 ```
@@ -1156,11 +1142,10 @@ BigNumber is used to represet values in WEI.
 Quantities of a network token should always be passed into Reach
 in the token's atomic unit.
 
-`{!js} bigNumberify` is transparently applied to `{!js} formatCurrency`'s and `{!js} formatWithDecimals`'s first arguments.
+`{!js} stdlib.bigNumberify` is transparently applied to `{!js} stdlib.formatCurrency`'s and `{!js} stdlib.formatWithDecimals`'s first arguments.
 
 ---
-@{ref("js", "formatAddress")}
-@{ref("js", "stdlib.formatAddress")}
+@{ref("js", "formatAddress")}@{ref("js", "stdlib.formatAddress")}
 ```js
 stdlib.formatAddress(acc) => string
 ```
