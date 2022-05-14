@@ -2,19 +2,13 @@
 TOTALP1=$(find ../examples -maxdepth 1 -type d | wc -l)
 TOTAL=$((TOTALP1 - 1))
 
+# XXX Run everest linker
+
 PRE=config.pre.yml
 MID=config.mid.yml
 END=config.end.yml
-IEND=config.iend.yml
 cat >"${MID}" </dev/null
 cat >"${END}" </dev/null
-cat >"${IEND}" </dev/null
-
-cat >>"${IEND}" <<END
-    - "build-sink":
-        requires:
-          - "hs-test"
-END
 
 deps () {
   DEPS="$*"
@@ -45,9 +39,6 @@ image () {
         exec: "${EXEC}"
 END
   deps "$@"
-  cat >>"${IEND}" <<END
-          - "${NAME}"
-END
 }
 
 image "real" "haskell-build-artifacts" "devnet-algo"
@@ -60,8 +51,9 @@ image "fake" "react-runner" "stdlib" "js-deps"
 image "fake" "rpc-server" "runner"
 
 cat >>"${END}" <<END
-    - "examples-sink":
+    - "build-sink":
         requires:
+          - "hs-test"
 END
 
 conn () {
@@ -80,8 +72,16 @@ conn () {
         size: ${SIZE}
 END
   deps "reach" "reach-cli" "runner" "react-runner" "rpc-server" "${IMAGE}"
+  BT_NAME="browser-tests.${CONN}"
+  cat >>"${MID}" <<END
+    - "browser-tests":
+        name: "${BT_NAME}"
+        connector: "${CONN}"
+END
+  deps "reach" "reach-cli" "react-runner" "${IMAGE}"
   cat >>"${END}" <<END
           - "${NAME}"
+          - "${BT_NAME}"
 END
 }
 
@@ -90,12 +90,11 @@ per () {
   echo $(((TOTAL + (PER - 1)) / PER))
 }
 
+# XXX Learn connectors from repo
 conn fake ETH "$(per 16)"
 conn fake ALGO "$(per 16)"
 conn fake CFX "$(per 16)"
 
-cat >>"${END}" <<END
-          - "hs-test"
-END
+# XXX Allow closed to add stuff
 
-cat "${PRE}" "${MID}" "${END}" "${IEND}" > config.gen.yml
+cat "${PRE}" "${MID}" "${END}" > config.gen.yml

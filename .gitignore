@@ -16,7 +16,6 @@ build
 
 # We do NOT include reach-everest so `ag` and `fzf` still search it
 # But we DO include the things that get linked
-.circleci/config.d-closed
 hs/app-closed
 hs/package.closed.yaml
 hs/src/Reach/Closed
