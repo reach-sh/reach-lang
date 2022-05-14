@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE CPP #-}
 
 module Main (main) where
 
@@ -44,6 +45,7 @@ import Reach.CommandLine
 import Reach.Report
 import Reach.Util
 import Reach.Version
+import Reach.EverestUtil
 import Safe
 import System.Directory.Extra
 import System.Environment
@@ -58,6 +60,15 @@ import Text.Parsec.Language
 import Text.ParserCombinators.Parsec.Combinator (count)
 import Text.ParserCombinators.Parsec.Token
 import Text.Pretty.Simple
+
+onlyEverest :: String -> String
+onlyEverest x = x <> me
+  where
+    me = if hasReachEverest then "" else (" (" <> onlyWithReachEverest <> ")")
+
+f_onlyEverest :: String -> Parser App
+f_onlyEverest sub = pure $ do
+  putStrLnPacked $ "reach " <> sub <> " is " <> onlyWithReachEverest
 
 uriIssues :: Text
 uriIssues = "https://github.com/reach-sh/reach-lang/issues"
@@ -876,8 +887,7 @@ argAppOrDir =
   strArgument $
     metavar "APP or DIR"
       <> help
-        "May be either a module name without its extension (e.g. \"index\") \
-        \or a relative sub-directory path"
+        "May be either a module name without its extension (e.g. \"index\")G or a relative sub-directory path"
       <> value ""
 
 manyArgs :: String -> Parser [Text]
@@ -2560,6 +2570,16 @@ initTemplates = fmap f . listDirectory . dirInitTemplates'
   where
     f = (:) "  - default" . fmap ("  - " <>) . L.sort . filter (/= "_default")
 
+tsa :: Subcommand
+tsa = command "tsa" $ info f d
+  where
+    d = progDesc $ onlyEverest "Run the TEAL Static Analyzer"
+#ifdef REACH_EVEREST
+    f = f_everest
+#else
+    f = f_onlyEverest "tsa"
+#endif
+
 main :: IO ()
 main = do
   eff <- newIORef InProcess
@@ -2586,6 +2606,7 @@ main = do
           <> run'
           <> scaffold
           <> support
+          <> tsa
           <> update
           <> version'
   let hs =
