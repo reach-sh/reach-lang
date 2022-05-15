@@ -81,7 +81,7 @@ uriReachScript = "https://docs.reach.sh/reach"
 
 esc :: FilePath -> FilePath
 esc x = "'" <> e <> "'" where
-  e = L.foldl (\a c -> a <> (if c == '\'' then "'\\''" else [c])) "" x
+  e = L.foldl' (\a c -> a <> (if c == '\'' then "'\\''" else [c])) "" x
 
 esc' :: FilePath -> Text
 esc' = pack . esc
