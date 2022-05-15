@@ -60,6 +60,9 @@ import Text.Parsec.Language
 import Text.ParserCombinators.Parsec.Combinator (count)
 import Text.ParserCombinators.Parsec.Token
 import Text.Pretty.Simple
+#ifdef REACH_EVEREST
+import qualified Reach.Closed.TSA.Main as TSA
+#endif
 
 onlyEverest :: String -> String
 onlyEverest x = x <> me
@@ -2574,10 +2577,41 @@ tsa :: Subcommand
 tsa = command "tsa" $ info f d
   where
     d = progDesc $ onlyEverest "Run the TEAL Static Analyzer"
-#ifdef REACH_EVEREST
-    f = f_everest
+    f :: Parser App
+    f = everestSelect f_no f_yes
+    f_no = f_onlyEverest "tsa"
+#ifndef REACH_EVEREST
+    f_yes = impossible "no"
 #else
-    f = f_onlyEverest "tsa"
+    f_yes = go <$> TSA.opts
+    go :: FilePath -> App
+    go p = do
+      Var {..} <- asks e_var
+      let args = intercalate " " [ pack p ]
+      scriptWithConnectorModeOptional $ do
+        realpath
+        -- XXX Share code with compile
+        write
+          [N.text|
+        REACH="$$(realpath "$reachEx")"
+        HS="$$(dirname "$$REACH")/hs"
+
+        export REACH
+
+        if [ "$${REACH_DOCKER}" = "0" ] \
+          && [ -d "$${HS}/.stack-work"  ] \
+          && which stack >/dev/null 2>&1; then
+
+          STACK_YAML="$${REACH_STACK_YAML:-"$${HS}/stack.yaml"}"
+          REACHC_HASH="$$("$${HS}/../scripts/git-hash.sh")"
+          export STACK_YAML REACHC_HASH
+
+          stack exec -- tsa $args
+        else
+          echo XXX nope!
+          exit 1
+        fi
+          |]
 #endif
 
 main :: IO ()
