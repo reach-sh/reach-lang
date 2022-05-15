@@ -890,7 +890,7 @@ argAppOrDir =
   strArgument $
     metavar "APP or DIR"
       <> help
-        "May be either a module name without its extension (e.g. \"index\")G or a relative sub-directory path"
+        "May be either a module name without its extension (e.g. \"index\") or a relative sub-directory path"
       <> value ""
 
 manyArgs :: String -> Parser [Text]
