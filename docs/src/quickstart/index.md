@@ -48,7 +48,7 @@ shutdown -r -t 0
 After rebooting, reopen `Powershell` as an administrator, and execute the following commands:
 
 ```cmd
-cd c:\; mkdir downloads; cd c:\downloads; wget  -uri https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -outfile .\wsl_update_x64.msi; .\wsl_update_x64.msi
+cd c:\; mkdir downloads; cd c:\downloads; wget -uri https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -outfile .\wsl_update_x64.msi; .\wsl_update_x64.msi
 ```
 
 In the Command Prompt window, run the following command to set the WSL version to 2:
@@ -258,4 +258,3 @@ $ ./reach version
 
 You are now ready to start programming in Reach.
 Check out our [tutorials](##tuts) to get started.
-

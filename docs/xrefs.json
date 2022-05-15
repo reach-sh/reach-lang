@@ -707,6 +707,10 @@
     "title": "RX0000",
     "path": "/rsh/errors/#RX0000"
   },
+  "buidl": {
+    "title": "Reach is for BUIDLers",
+    "path": "/why/#buidl"
+  },
   "cfx-faq": {
     "title": "FAQ",
     "path": "/networks/#cfx-faq"
@@ -920,7 +924,7 @@
     "path": "/quickstart/#quickstart"
   },
   "reach-top": {
-    "title": "Reach: The Safest and Easiest DApp Programming Language",
+    "title": "Reach: The Smartest, Fastest, and Safest DApp Programming Language",
     "path": "/#reach-top"
   },
   "ref": {
