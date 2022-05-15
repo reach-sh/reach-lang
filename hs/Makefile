@@ -7,6 +7,12 @@ include $(ROOT)/VERSION
 include $(ROOT)/DEPS
 include Makefile.docker
 
+ifeq ($(wildcard $(CLOSED_YAML)),)
+	MEVEREST=
+else
+	MEVEREST=--flag reach:everest
+endif
+
 .PHONY: expand
 expand: package.yaml src/Reach/Version.hs sol/stdlib.sol
 
@@ -63,7 +69,7 @@ check: hs-check
 
 .PHONY: hs-check
 hs-check: expand
-	stack build --fast
+	stack build --fast $(MEVEREST)
 	stack test --fast --no-run-tests
 	$(MAKE) docker-check
 
@@ -74,7 +80,7 @@ hs-clean: expand
 
 .PHONY: hs-build
 hs-build: expand
-	stack build --fast
+	stack build --fast $(MEVEREST)
 
 .PHONY: hs-test
 hs-test: hs-build

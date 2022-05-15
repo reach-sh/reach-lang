@@ -1,6 +1,6 @@
 #!/bin/sh -e
 ROOT=$(pwd)
-REACH=${ROOT}/reach
+export REACH="${ROOT}/reach"
 
 export REACH_DOCKER=0
 ${REACH} -h
