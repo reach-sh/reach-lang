@@ -3,6 +3,7 @@
   "hasOtp": true,
   "hasPageHeader": true,
   "DISCORD": "https://discord.gg/AZsgcXu",
+  "DISCUSSIONS": "https://github.com/reach-sh/reach-lang/discussions",
   "REPO": "https://github.com/reach-sh/reach-lang/tree/master",
   "bookTitle": "Reach"
 }
