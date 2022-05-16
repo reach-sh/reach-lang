@@ -1831,6 +1831,11 @@ lastConsensusTime()
 The @{defn("lastConsensusTime")} primitive returns the network time of the last publication of the DApp.
 This may not be available if there was no such previous publication, such as at the beginning of an application before the first publication.
 
+```reach
+load: /examples/realtime/index.rsh
+range: 17 - 17
+```
+
 ---
 
 @{ref("rsh", "lastConsensusSecs")}
@@ -1839,13 +1844,6 @@ lastConsensusSecs()
 ```
 
 @{defn("lastConsensusSecs")} is like `{!rsh} lastConsensusTime`, except it returns the network seconds.
-
-See how these primitives are used in the code below:
-
-```reach
-load: /examples/realtime/index.rsh
-range: 16 - 18
-```
 
 ### `thisConsensusTime` and `thisConsensusSecs`
 
