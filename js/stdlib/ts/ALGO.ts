@@ -189,7 +189,7 @@ type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
 type SetupEventArgs = ISetupEventArgs<ContractInfo, VerifyResult>;
 type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyALGO_Ty>;
 
-type AccountAssetInfo = {
+type AssetHolding = {
   'asset-id': bigint,
   'amount': bigint,
 };
@@ -211,10 +211,13 @@ type AppSchema = {
 }
 type AccountInfo = {
   'amount': bigint,
-  'assets'?: Array<AccountAssetInfo>,
+  'assets'?: Array<AssetHolding>,
   'apps-local-state'?: Array<AppState>,
   'apps-total-schema'?: AppSchema,
   'created-apps'?: Array<AppInfo>
+};
+type AccountAssetInfo = {
+  'asset-holding'?: AssetHolding
 };
 type IndexerAccountInfoRes = {
   'current-round': bigint,
@@ -2225,16 +2228,36 @@ const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Arr
 
   const balanceOfSingleToken = (token: Token | null) => {
     if (token) {
+      // token => token balance
       const tokenId = bigNumberify(token);
       const tokenAsset = accountAssets.find(asset => tokenId.eq(asset['asset-id']));
       return tokenAsset ? bigNumberify(tokenAsset['amount']) : false;
     } else {
+      // null => algo balance
       return bigNumberify(accountInfo.amount);
     }
   };
 
   return tokens.map(balanceOfSingleToken);
 };
+
+const balanceOfM = async (acc: Account, token?: Token): Promise<BigNumber | false> => {
+  if (token == null) {
+    return (await balancesOfM(acc, [null]))[0];
+  } else {
+    const tokenId = bigNumberToNumber(bigNumberify(token));
+    const addr = extractAddr(acc);
+    const client = await getAlgodClient();
+    const query = client.accountAssetInformation(addr, tokenId) as ApiCall<AccountAssetInfo>;
+    const accountAssetInfoM = await doQueryM_('balanceOfM', query);
+    if ('val' in accountAssetInfoM) {
+      const assetHolding = accountAssetInfoM.val['asset-holding'];
+      return assetHolding ? bigNumberify(assetHolding['amount']) : false;
+    } else {
+      return false;
+    }
+  }
+}
 
 export const balancesOf = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber>> => {
   return (await balancesOfM(acc, tokens)).map(bal => {
@@ -2245,10 +2268,6 @@ export const balancesOf = async (acc: Account, tokens: Array<Token|null>): Promi
     }
   });
 };
-
-const balanceOfM = async (acc: Account, token?: Token): Promise<BigNumber | false> => {
-  return (await balancesOfM(acc, [token || null]))[0];
-}
 
 export const balanceOf = async (acc: Account, token?: Token): Promise<BigNumber> => {
   return (await balancesOf(acc, [token || null]))[0];
