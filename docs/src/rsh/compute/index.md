@@ -1562,7 +1562,7 @@ which tells you if its argument is one of the enum's values,
 and the next N values are distinct `{!rsh} UInt`s.
 
 ```reach
-load: ./examples/secured-loan/index.rsh
+load: /examples/secured-loan/index.rsh
 range: 13 - 13
 ```
 
