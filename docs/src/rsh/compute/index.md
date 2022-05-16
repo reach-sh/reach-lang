@@ -1847,6 +1847,11 @@ lastConsensusSecs()
 
 @{defn("lastConsensusSecs")} is like `{!rsh} lastConsensusTime`, except it returns the network seconds.
 
+```reach
+load: /examples/realtime/index.rsh
+range: 18 - 18
+```
+
 ### `thisConsensusTime` and `thisConsensusSecs`
 
 @{ref("rsh", "thisConsensusTime")}
