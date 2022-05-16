@@ -4,7 +4,7 @@ Verifying for generic connector
 Verification failed:
   when ALL participants are honest
   of theorem: while invariant before loop
-  at ./smtSortEq.rsh:17:27:invariant
+  at ./smtSortEq.rsh:17:16:invariant
 
   // Violation Witness
 
@@ -13,18 +13,15 @@ Verification failed:
   const x/136 = <loop variable>;
   //    ^ could = 2
   //      from: ./smtSortEq.rsh:9:27:while
-  const netBalance/140 = <loop variable>;
-  //    ^ could = 0
-  //      from: ./smtSortEq.rsh:9:27:while
-  const v167 = <map reduction>;
+  const v166 = <map reduction>;
   //    ^ could = 3
   //      from: reach standard library:139:18:application
 
   // Theorem Formalization
 
-  const v175 = ((netBalance/140 == 0) ? (v167 == x/136) : false);
+  const v173 = v166 == x/136;
   //    ^ would be false
-  assert(v175);
+  assert(v173);
 
   Verifying when NO participants are honest
-Checked 19 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 27 theorems; 2 failures (and 1 omitted repeats) :'(

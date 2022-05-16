@@ -1,4 +1,4 @@
-reachc: error[RE0083]: Parallel reduce incomplete: missing invariant
+reachc: error[RE0083]: Parallel reduce incomplete: missing while
 
   ./Err_ParallelReduceIncomplete.rsh:9:23:application
 

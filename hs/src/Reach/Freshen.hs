@@ -120,8 +120,14 @@ instance Freshen ClaimType where
 instance Freshen DLWithBill where
   fu (DLWithBill x y z) = DLWithBill x <$> fu y <*> fu z
 
+instance Freshen Bool where
+  fu = return
+
+instance Freshen a => Freshen (DLInvariant a) where
+  fu (DLInvariant inv lab) = DLInvariant <$> fu inv <*> pure lab
+
 instance Freshen DLRemoteALGO where
-  fu (DLRemoteALGO x y) = DLRemoteALGO <$> fu x <*> fu y
+  fu (DLRemoteALGO x y z w) = DLRemoteALGO <$> fu x <*> fu y <*> fu z <*> fu w
 
 instance Freshen DLExpr where
   fu = \case
@@ -150,8 +156,6 @@ instance Freshen DLExpr where
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> fu tok <*> fu amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> fu tok
     DLE_TimeOrder at op a b -> DLE_TimeOrder at op <$> fu a <*> fu b
-    DLE_GetContract at -> return $ DLE_GetContract at
-    DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at k a -> DLE_EmitLog at k <$> fu a
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mt tb -> DLE_GetUntrackedFunds at <$> fu mt <*> fu tb

@@ -461,6 +461,8 @@ interpPrim at = \case
   (BAND _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (.&.) lhs rhs
   (BIOR _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (.|.) lhs rhs
   (BXOR _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ xor lhs rhs
+  (GET_CONTRACT, []) -> V_Contract <$> l_acct <$> getMyLocalInfo
+  (GET_ADDRESS, []) -> V_Address <$> l_acct <$> getMyLocalInfo
   (f, args) -> suspend $ PS_Error (Just at) $ "Unhandled Primop: " <> show f <> " " <> show args
 
 conCons' :: DLConstant -> DLVal
@@ -656,8 +658,6 @@ instance Interp DLExpr where
       return V_Null
     DLE_TokenDestroy _at _dlarg -> return V_Null
     DLE_TimeOrder {} -> return V_Null
-    DLE_GetContract _at -> V_Contract <$> l_acct <$> getMyLocalInfo
-    DLE_GetAddress _at -> V_Address <$> l_acct <$> getMyLocalInfo
     DLE_EmitLog _at (L_Api _) [dlvar] -> consensusLookup dlvar
     DLE_EmitLog _at L_Internal [dlvar] -> consensusLookup dlvar
     -- events from Events are : [a] -> Null

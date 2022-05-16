@@ -86,7 +86,7 @@ export interface Arith {
   bxor256: (x: num, y: num) => BigNumber
   sqrt256: (n1: num, n2: num) => BigNumber
   muldiv: (x: num, y: num, z:num) => BigNumber
-  cast: (from: UIntTy, to: UIntTy, x: num) => BigNumber
+  cast: (from: UIntTy, to: UIntTy, x: num, truncate: boolean) => BigNumber
 };
 
 export interface Stdlib_Backend_Base<Ty> extends Stdlib_Backend_Shared<Ty>, Arith, TypeDefs<Ty> {

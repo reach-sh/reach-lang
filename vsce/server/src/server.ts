@@ -56,17 +56,7 @@ import {
   TextDocument, Range, TextEdit
 } from 'vscode-languageserver-textdocument';
 import { KEYWORD_TO_COMPLETION_ITEM_KIND, REACH_KEYWORDS } from './keywordCompletion';
-
-// Do this import differently so we can add types, to avoid a
-// "No index signature with a parameter of type 'string' was found... ts(7053)"
-// error later. See
-// https://stackoverflow.com/questions/42986950/how-to-define-import-variable-type
-// Also, if we do this import this way, we don't have to add
-// "resolveJsonModule": true,
-// to tsconfig.json.
-const KEYWORD_TO_DOCUMENTATION: { [ keyword: string ] : string } = require(
-  '../../data/keywordToDocumentation.json'
-);
+import KEYWORD_TO_DOCUMENTATION from './keywordToDocumentation';
 
 // for "smart auto-complete" for things like
 // Reach.App, Participant.Set, Array.zip, etc.
@@ -810,7 +800,7 @@ connection.onCompletion((
     })`,
     documentation: {
       kind: 'markdown',
-      value: getReachKeywordMarkdown(keyword)
+      value: KEYWORD_TO_DOCUMENTATION[keyword]
     },
   }));
 });
@@ -876,16 +866,16 @@ connection.onHover(
       var index = textDocument.offsetAt(position) - textDocument.offsetAt(start);
 
       var word = getWord(text, index, true);
-      if (isReachKeyword(word)) {
-        let buf = await getReachKeywordMarkdown(word);
-        hover.contents = buf;
+      let documentation = KEYWORD_TO_DOCUMENTATION[word];
+      if (documentation) {
+        hover.contents = documentation;
         return hover;
       }
 
       var word = getWord(text, index, false);
-      if (isReachKeyword(word)) {
-        let buf = await getReachKeywordMarkdown(word);
-        hover.contents = buf;
+      documentation = KEYWORD_TO_DOCUMENTATION[word];
+      if (documentation) {
+        hover.contents = documentation;
         return hover;
       }
     }
@@ -893,21 +883,6 @@ connection.onHover(
   }
 
 );
-
-function isReachKeyword(word: string): boolean {
-  return KEYWORD_TO_COMPLETION_ITEM_KIND[word] != undefined;
-}
-
-function getReachKeywordMarkdown(word: string): string {
-  // source: https://docs.reach.sh/ref-programs-module.html#%28tech._source._file%29
-  // then input to: https://euangoddard.github.io/clipboard2markdown/
-  // then input to: https://www.freeformatter.com/javascript-escape.html
-  // If we don't have documentation for `word`,
-  // then just set `buf` to the empty string.
-  let buf = KEYWORD_TO_DOCUMENTATION[word] || '';
-  buf = buf.replace(/`/g, ''); // Get rid of all code formatting which messes up hyperlinks
-  return buf;
-}
 
 function getWord(text: string, index: number, includeDot: boolean) {
   var beginSubstring = text.substring(0, index);

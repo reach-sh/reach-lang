@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE CPP #-}
 
 module Main (main) where
 
@@ -7,10 +8,11 @@ import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Monad.Extra
 import Control.Monad.Reader
-import Data.Aeson (ToJSON, FromJSON, Value(..), toJSON, encode, parseJSON, withText)
+import Data.Aeson (ToJSON, FromJSON, Value(..), toJSON, encode, object, parseJSON, withObject, withText, (.=), (.:))
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A
 import Data.Bits
+import qualified Data.ByteString.Internal as BSI
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSLC8
 import Data.Char
@@ -43,6 +45,7 @@ import Reach.CommandLine
 import Reach.Report
 import Reach.Util
 import Reach.Version
+import Reach.EverestUtil
 import Safe
 import System.Directory.Extra
 import System.Environment
@@ -57,6 +60,18 @@ import Text.Parsec.Language
 import Text.ParserCombinators.Parsec.Combinator (count)
 import Text.ParserCombinators.Parsec.Token
 import Text.Pretty.Simple
+#ifdef REACH_EVEREST
+import qualified Reach.Closed.TSA.Main as TSA
+#endif
+
+onlyEverest :: String -> String
+onlyEverest x = x <> me
+  where
+    me = if hasReachEverest then "" else (" (" <> onlyWithReachEverest <> ")")
+
+f_onlyEverest :: String -> Parser App
+f_onlyEverest sub = pure $ do
+  putStrLnPacked $ "reach " <> sub <> " is " <> onlyWithReachEverest
 
 uriIssues :: Text
 uriIssues = "https://github.com/reach-sh/reach-lang/issues"
@@ -66,7 +81,7 @@ uriReachScript = "https://docs.reach.sh/reach"
 
 esc :: FilePath -> FilePath
 esc x = "'" <> e <> "'" where
-  e = L.foldl (\a c -> a <> (if c == '\'' then "'\\''" else [c])) "" x
+  e = L.foldl' (\a c -> a <> (if c == '\'' then "'\\''" else [c])) "" x
 
 esc' :: FilePath -> Text
 esc' = pack . esc
@@ -875,8 +890,7 @@ argAppOrDir =
   strArgument $
     metavar "APP or DIR"
       <> help
-        "May be either a module name without its extension (e.g. \"index\") \
-        \or a relative sub-directory path"
+        "May be either a module name without its extension (e.g. \"index\") or a relative sub-directory path"
       <> value ""
 
 manyArgs :: String -> Parser [Text]
@@ -2451,6 +2465,78 @@ whoami = command "whoami" $ info f fullDesc
   where
     f = pure . script $ write [N.text| echo "$whoami'" |]
 
+newtype GitHubGistResponse = GitHubGistResponse Text
+instance FromJSON GitHubGistResponse where
+  parseJSON = withObject "GitHubGistResponse" $ \o -> GitHubGistResponse <$> o .: "html_url"
+
+support :: Subcommand
+support = command "support" $ info (pure g) d
+  where
+    d = progDesc "Create GitHub gist of index.rsh and index.mjs"
+    f i c = i .= object
+      [ "content" .= if T.null (T.strip $ pack c) then "// (Empty source file)" else c
+      , "language" .= ("JavaScript" :: String)
+      , "type" .= ("application/javascript" :: String)
+      ]
+    z i = doesFileExist i >>= \case
+      False -> pure []
+      True -> (\a -> [f (pack i) a]) <$> readFile i
+    clientId = "c4bfe74cc8be5bbaf00e" :: String
+    is l = maybe False (== pack l) . headMay
+    by a x = maybe (putStrLn ("Missing field `" <> x <> "`.") >> exitWith (ExitFailure 1)) pure
+      $ (headMay $ filter (is x) a) >>= (`atMay` 1)
+    req u x = fmap (map (T.splitOn "=") . T.splitOn "&" . pack . BSLC8.unpack . getResponseBody)
+        $ setRequestBodyJSON (object x)
+      <$> parseRequest ("POST " <> u)
+      >>= httpLBS
+    g = liftIO $ do
+      rsh <- z "index.rsh"
+      mjs <- z "index.mjs"
+      when (null rsh && null mjs) $ do
+        putStrLn "Neither index.rsh nor index.mjs exist in the current directory; aborting."
+        exitWith ExitSuccess
+      a <- req "https://github.com/login/device/code"
+        [ "client_id" .= clientId
+        , "scope" .= ("gist" :: String)
+        ]
+      deviceCode <- a `by` "device_code"
+      userCode <- a `by` "user_code"
+      T.putStrLn [N.text|
+        Please enter $userCode at https://github.com/login/device.
+
+        Type 'y' after successful authorization to upload index.mjs, index.rsh, or both:
+      |]
+      hFlush stdout >> getChar >>= \c -> unless (toUpper c == 'Y') $ do
+        putStrLn "\nNo files were uploaded. Run `reach support` again to retry."
+        exitWith $ ExitFailure 1
+      t <- req "https://github.com/login/oauth/access_token"
+        [ "client_id" .= clientId
+        , "device_code" .= deviceCode
+        , "grant_type" .= ("urn:ietf:params:oauth:grant-type:device_code" :: String)
+        ]
+      -- @TODO: Save accessToken; git-credential-store
+      -- Warning: Permission errors when doing this^
+      when (null $ filter (is "access_token") t) $ do
+        case headMay $ filter (is "error") t of
+          Nothing -> putStrLn "Upload unsuccessful; couldn't find an authorization code or error!"
+          Just _ -> t `by` "error" >>= T.putStrLn . (pack "\nError while acquiring access token:\n" <>)
+        exitWith $ ExitFailure 1
+      gat <- unpack <$> t `by` "access_token"
+      when (null rsh) $ putStrLn "\nDidn't find index.rsh in the current directory; skipping..."
+      when (null mjs) $ putStrLn "\nDidn't find index.mjs in the current directory; skipping..."
+      -- @TODO: Also add output of reach hashes!
+      parseRequest "POST https://api.github.com/gists"
+        >>= httpBS
+          . setRequestHeader "User-Agent" [ BSI.packChars "reach" ]
+          . setRequestHeader "Authorization" [ BSI.packChars ("token " <> gat) ]
+          . setRequestHeader "Accept" [ BSI.packChars "application/vnd.github.v3+json" ]
+          . setRequestBodyJSON (object [ "files" .= object (rsh <> mjs) ])
+        >>= Y.decodeThrow . getResponseBody
+        >>= \(GitHubGistResponse r) -> T.putStrLn $ "\n" <> [N.text|
+              Your gist is viewable at:
+              $r
+            |]
+
 log' :: Subcommand
 log' = command "log" $ info f fullDesc
   where
@@ -2487,6 +2573,47 @@ initTemplates = fmap f . listDirectory . dirInitTemplates'
   where
     f = (:) "  - default" . fmap ("  - " <>) . L.sort . filter (/= "_default")
 
+tsa :: Subcommand
+tsa = command "tsa" $ info f d
+  where
+    d = progDesc $ onlyEverest "Run the TEAL Static Analyzer"
+    f :: Parser App
+    f = everestSelect f_no f_yes
+    f_no = f_onlyEverest "tsa"
+#ifndef REACH_EVEREST
+    f_yes = impossible "no"
+#else
+    f_yes = go <$> TSA.opts
+    go :: FilePath -> App
+    go p = do
+      Var {..} <- asks e_var
+      let args = intercalate " " [ pack p ]
+      scriptWithConnectorModeOptional $ do
+        realpath
+        -- XXX Share code with compile
+        write
+          [N.text|
+        REACH="$$(realpath "$reachEx")"
+        HS="$$(dirname "$$REACH")/hs"
+
+        export REACH
+
+        if [ "$${REACH_DOCKER}" = "0" ] \
+          && [ -d "$${HS}/.stack-work"  ] \
+          && which stack >/dev/null 2>&1; then
+
+          STACK_YAML="$${REACH_STACK_YAML:-"$${HS}/stack.yaml"}"
+          REACHC_HASH="$$("$${HS}/../scripts/git-hash.sh")"
+          export STACK_YAML REACHC_HASH
+
+          stack exec -- tsa $args
+        else
+          echo XXX nope!
+          exit 1
+        fi
+          |]
+#endif
+
 main :: IO ()
 main = do
   eff <- newIORef InProcess
@@ -2512,6 +2639,8 @@ main = do
           <> rpcServer
           <> run'
           <> scaffold
+          <> support
+          <> tsa
           <> update
           <> version'
   let hs =

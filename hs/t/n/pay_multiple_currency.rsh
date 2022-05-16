@@ -16,7 +16,7 @@ export const main =
       A.publish();
 
       const publishE = () => ({
-        msg: declassify(interact.amts()),
+        msg: declassify(interact.amts),
         when: declassify(interact.shouldPay())
       });
 

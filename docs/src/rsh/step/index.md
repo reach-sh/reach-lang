@@ -28,7 +28,7 @@ Alice.only(() => {
   const y = x + 1; });
 ```
 
-is a valid program where `{!rsh} Alice`'s local state includes the private values `{!rsh} x` (bound to `{!rsh} 3`) and `{!rsh} y` (bound to `{!rsh} 4`). 
+is a valid program where `{!rsh} Alice`'s local state includes the private values `{!rsh} x` (bound to `{!rsh} 3`) and `{!rsh} y` (bound to `{!rsh} 4`).
 However, such bindings are _not_ consensus state, so they are purely local state.
 For example,
 
@@ -221,7 +221,7 @@ This overwriting applies even if `{!rsh} Alice` wins and `{!rsh} Alice` is a par
 
 ### `fork`
 
-@{ref("rsh", "fork")}@{ref("rsh", "fork.case")}@{ref("rsh", "paySpec")}@{ref("rsh", "fork.paySpec")}@{ref("rsh", "fork.api")}@{ref("rsh", "fork.timeout")}@{ref("rsh", "fork.throwTimeout")}
+@{ref("rsh", "fork")}@{ref("rsh", "fork.case")}@{ref("rsh", "paySpec")}@{ref("rsh", "fork.paySpec")}@{ref("rsh", "fork.api")}@{ref("rsh", "fork.api_")}@{ref("rsh", "fork.timeout")}@{ref("rsh", "fork.throwTimeout")}
 ```reach
 fork()
 .case(Alice, (() => ({
@@ -267,6 +267,7 @@ A @{defn("fork statement")} is written:
 fork()
 .paySpec(TOKENS_EXPR)
 .case(PART_EXPR,
+  CHECK_EXPR,
   PUBLISH_EXPR,
   PAY_EXPR | [PAY_EXPR, PAY_REQUIRE_EXPR],
   CONSENSUS_EXPR)
@@ -274,6 +275,8 @@ fork()
   API_ASSUME_EXPR,
   API_PAY_EXPR | [API_PAY_EXPR, PAY_REQUIRE_EXPR],
   API_CONSENSUS_EXPR)
+.api_(API_EXPR,
+  API_CHECKED_CONSENSUS_EXPR)
 .timeout(DELAY_EXPR, () =>
   TIMEOUT_BLOCK);
 // or
@@ -283,6 +286,9 @@ where:
 + `{!rsh} TOKENS_EXPR` is a syntactic tuple of `{!rsh} Token` identifiers,
   or a static ternary expression that evaluates to one;
 + `{!rsh} PART_EXPR` is an expression that evaluates to a participant;
++ (optional) `{!rsh} CHECK_EXPR` is a syntactic arrow expression that is evaluated in both the local step and consensus step.
+This block can be used to specify `{!rsh} check`s and declare variable bindings.
+If it is present, then `{!rsh} PAY_EXPR` must be included;
 + `{!rsh} PUBLISH_EXPR` is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a `msg` field, which may be of any type, a `when` field, which must be a boolean, and a `_local` field, which may be of any type;
 + (optional) `{!rsh} PAY_EXPR` is an expression that evaluates to a function parameterized over the `msg` value and returns a pay amount; if this component is left-out, it is synthesized to zero;
 + (optional) `{!rsh} PAY_REQUIRE_EXPR` is a function parameterized over the `msg` value which is evaluated for effect in a consensus step; thus it may be used to add `{!rsh} require` constraints on the value used for payment.
@@ -292,6 +298,10 @@ If this is absent, then it is synthesized to an empty function.
 + (optional) `{!rsh} API_ASSUME_EXPR` is a function parameterized over the input to the API member function which is evaluated for effect in a local step; thus it may be used to add `{!rsh} assume` constraints on the values given by the API; if this is absent, then it is synthesized to an empty function; if it is present, then `{!rsh} API_PAY_EXPR` must be included;
 + (optional) `{!rsh} API_PAY_EXPR` is a function parameterized over the input to the API member function which is evaluated to determine the pay amount, like `{!rsh} PAY_EXPR`;
 + `{!rsh} API_CONSENSUS_EXPR` is a function parameterized over the input to the API member function and a function that returns a value to the API call; this function must be called;
++ `{!rsh} API_CHECKED_CONSENSUS_EXPR` is a function parameterized over the input to the API member function.
+It must return either a pair of `{!rsh} [ PAY_EXPR, CONSENSUS_RET_EXPR ]` or `{!rsh} [ CONSENSUS_RET_EXPR ]`, where `{!rsh} CONSENSUS_RET_EXPR` is a function parameterized over the function that returns a value to the API call.
+The parameter of `{!rsh} CONSENSUS_RET_EXPR` must be called.
+Any `{!rsh} check`s performed before the `{!rsh} return` statement will be applied in the local step, during payment, and the consensus step of the API call.
 + the `{!rsh} timeout` and `{!rsh} throwTimeout` parameter are as in an consensus transfer.
 
 In the discussion of `{!rsh} .api` component, the phrase "parameterized over the input" means that if an API function has two arguments, such as `{!rsh} Fun([UInt, UInt], Null)`, then the corresponding expression must receive two arguments.
@@ -510,7 +520,7 @@ By comparing this example to `{!rsh} closeTo`, you can see that using this Reach
 The `{!rsh} nonNetPayAmt` parameter should be a pay amount. For example, when closing a program that uses a `{!rsh} Token` `{!rsh} token`, the argument would be `{!rsh} [ [balance(tok), tok] ]`.
 
 ```reach
-load: examples/secured-loan/index.rsh
+load: /examples/secured-loan/index.rsh
 range: 55 - 58
 ```
 
@@ -534,6 +544,7 @@ commit();
 @{ref("rsh", "call")}
 @{ref("rsh", "call.pay")}
 @{ref("rsh", "call.assume")}
+@{ref("rsh", "call.check")}
 @{ref("rsh", "call.throwTimeout")}
 A @{defn("call")} is written:
 
@@ -542,6 +553,7 @@ const [ DOMAIN, RET_FUN ] =
   call(API_EXPR)
     .pay(API_PAY_EXPR)
     .assume(API_ASSUME_EXPR)
+    .check(API_CHECK_EXPR)
     .throwTimeout(DELAY_EXPR, THROW_EXPR)
 ```
 
@@ -549,6 +561,9 @@ where:
 + `DOMAIN` is the the domain of the API member function.
 + `RET_FUN` is a function that returns a value to the API call. This function must be called.
 + `API_EXPR` is an expression that evaluates to an API member function.
++ `API_CHECK_EXPR` is a function parameterized over the domain of the API function.
+This function can be used to add `{!rsh} check`s involving the domain.
+These checks will be applied as assumptions and requirements.
 + `API_PAY_EXPR` and `API_ASSUME_EXPR` are like the corresponding parts in a `{!rsh} fork` statement, and `{!rsh} call.throwTimeout` is like in `{!rsh} fork.throwTimeout`.
 They are optional.
 

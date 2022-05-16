@@ -8,6 +8,7 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
+import qualified Data.ByteString as B
 
 class Sanitize a where
   sani :: a -> a
@@ -19,6 +20,9 @@ instance Sanitize DLVar where
   sani = id
 
 instance Sanitize Bool where
+  sani = id
+
+instance Sanitize B.ByteString where
   sani = id
 
 instance Sanitize DLLiteral where
@@ -55,7 +59,7 @@ instance Sanitize DLWithBill where
   sani (DLWithBill x y z) = DLWithBill x (sani y) (sani z)
 
 instance Sanitize DLRemoteALGO where
-  sani (DLRemoteALGO x y) = DLRemoteALGO (sani x) (sani y)
+  sani (DLRemoteALGO x y z w) = DLRemoteALGO (sani x) (sani y) (sani z) (sani w)
 
 instance Sanitize DLExpr where
   sani = \case
@@ -84,8 +88,6 @@ instance Sanitize DLExpr where
     DLE_TokenBurn _ tok amt -> DLE_TokenBurn sb (sani tok) (sani amt)
     DLE_TokenDestroy _ tok -> DLE_TokenDestroy sb (sani tok)
     DLE_TimeOrder _ op a b -> DLE_TimeOrder sb op (sani a) (sani b)
-    DLE_GetContract _ -> DLE_GetContract sb
-    DLE_GetAddress _ -> DLE_GetAddress sb
     DLE_EmitLog _ k a -> DLE_EmitLog sb k (sani a)
     DLE_setApiDetails _ w d c f -> DLE_setApiDetails sb w d c f
     DLE_GetUntrackedFunds _ mt tb -> DLE_GetUntrackedFunds sb (sani mt) (sani tb)
@@ -126,6 +128,10 @@ instance {-# OVERLAPS #-} Sanitize a => Sanitize (DLinExportBlock a) where
   sani = \case
     DLinExportBlock _ vs b ->
       DLinExportBlock sb vs (sani b)
+
+instance {-# OVERLAPS #-} Sanitize a => Sanitize (DLInvariant a) where
+  sani (DLInvariant inv lab) =
+    DLInvariant (sani inv) (sani lab)
 
 instance Sanitize LLConsensus where
   sani = \case

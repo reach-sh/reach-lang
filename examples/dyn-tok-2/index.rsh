@@ -39,21 +39,20 @@ export const main = Reach.App(() => {
         V.currentTok.set(currentTok);
       })
       .paySpec([ currentTok ])
-      .invariant(balance() == 0 && tokens.includes(currentTok))
+      .invariant(balance() == 0)
+      .invariant(tokens.includes(currentTok))
       .while(alive)
       .case(A,
         ( ) => ({ when: declassify(interact.stop()) }),
         (_) => { return [ false, currentTok, currentWinner, amt ]; }
       )
-      .api(B.changeTok,
-        (newTok) => { check(tokens.includes(newTok), "Tokens include newTok"); },
-        (_) => [ 0, [ amt, currentTok ] ],
-        (newTok, k) => {
-          check(tokens.includes(newTok), "Tokens include newTok");
+      .api_(B.changeTok, (newTok) => {
+        check(tokens.includes(newTok), "Tokens include newTok");
+        return [ [ 0, [ amt, currentTok ] ], (k) => {
           k(null);
           return [ true, newTok, this, amt ];
-        }
-      )
+        }];
+      })
       .timeout(false);
 
   transfer(balance(tok1), tok1).to(currentWinner);

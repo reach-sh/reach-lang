@@ -14,6 +14,7 @@ import Reach.AST.PL
 import Reach.Counter
 import Reach.Freshen
 import Reach.Util
+import qualified Data.ByteString as B
 
 type App = ReaderT Env IO
 
@@ -83,7 +84,7 @@ ul_explode at a =
       where
         mk1 i =
           liftExpr at t $
-            DLE_ArrayRef at a (DLA_Literal (DLL_Int at uintWord $ fromIntegral i))
+            DLE_ArrayRef at a (DLA_Literal (DLL_Int at UI_Word $ fromIntegral i))
 
 fu_ :: DLBlock -> [(DLVar, DLArg)] -> App DLArg
 fu_ b nvs = do
@@ -105,6 +106,9 @@ instance Unroll DLExpr where
       liftArray at x_ty $ x' <> y'
     e -> return $ e
 
+instance Unroll B.ByteString where
+  ul = return
+
 instance Unroll DLStmt where
   ul = \case
     DL_Nop at -> return $ DL_Nop at
@@ -115,12 +119,12 @@ instance Unroll DLStmt where
     DL_LocalSwitch at ov csm -> DL_LocalSwitch at ov <$> ul csm
     DL_ArrayMap at ans xs as i fb -> do
       (_, xs') <- unzip <$> mapM (ul_explode at) xs
-      r' <- zipWithM (\xa iv -> fu_ fb $ (zip as xa) <> [(i, (DLA_Literal $ DLL_Int at uintWord iv))]) (transpose xs') [0..]
+      r' <- zipWithM (\xa iv -> fu_ fb $ (zip as xa) <> [(i, (DLA_Literal $ DLL_Int at UI_Word iv))]) (transpose xs') [0..]
       let r_ty = arrType $ varType ans
       return $ DL_Let at (DLV_Let DVC_Many ans) (DLE_LArg at $ DLLA_Array r_ty r')
     DL_ArrayReduce at ans xs z b as i fb -> do
       (_, xs') <- unzip <$> mapM (ul_explode at) xs
-      let xs'i = zip (transpose xs') $ map (DLA_Literal . DLL_Int at uintWord) [0..]
+      let xs'i = zip (transpose xs') $ map (DLA_Literal . DLL_Int at UI_Word) [0..]
       r' <- foldlM (\za (xa, ia) -> fu_ fb ([(b, za)] <> (zip as xa) <> [(i, ia)])) z xs'i
       return $ DL_Let at (DLV_Let DVC_Many ans) (DLE_Arg at r')
     DL_MapReduce at mri ans x z b a fb ->
@@ -148,14 +152,18 @@ instance Unroll a => Unroll (DLinExportBlock a) where
   ul = \case
     DLinExportBlock at vs b -> DLinExportBlock at vs <$> ul b
 
+instance Unroll a => Unroll (DLInvariant a) where
+  ul (DLInvariant ik v) = DLInvariant <$> ul ik <*> ul v
+
 instance Unroll LLConsensus where
   ul = \case
     LLC_Com m k -> ul_m LLC_Com m k
     LLC_If at c t f -> LLC_If at c <$> ul t <*> ul f
     LLC_Switch at ov csm -> LLC_Switch at ov <$> ul csm
     LLC_FromConsensus at at' fs s -> LLC_FromConsensus at at' fs <$> ul s
-    LLC_While at asn inv cond body k ->
-      LLC_While at asn <$> ul inv <*> ul cond <*> ul body <*> ul k
+    LLC_While at asn inv cond body k -> do
+      inv' <- mapM ul inv
+      LLC_While at asn inv' <$> ul cond <*> ul body <*> ul k
     LLC_Continue at asn -> return $ LLC_Continue at asn
     LLC_ViewIs at vn vk a k ->
       -- Note: We're making a choice here to *not* unroll the view function.

@@ -86,6 +86,10 @@ dependencies:
 - pretty-terminal
 - generic-data
 - zlib
+- exceptions
+- tomland
+- base16
+- attoparsec
 
 default-extensions:
 - BangPatterns
@@ -128,19 +132,42 @@ ghc-options:
 - -fwrite-ide-info
 - -hiedir=.hie
 
+flags:
+  everest:
+    description: Build with Reach Everest
+    manual: True
+    default: False
+
+when:
+  - condition: flag(everest)
+    cpp-options: -DREACH_EVEREST
+
 library:
   source-dirs: src
-
-executables:
-  reachc:
+tests:
+  reach-test:
     main:                Main.hs
-    source-dirs:         app/reachc
+    source-dirs:         test
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
     - reach
+
+_std_exe: &std-exe
+  main:                Main.hs
+  ghc-options:
+  - -threaded
+  - -rtsopts
+  - -with-rtsopts=-N
+  dependencies:
+  - reach
+
+executables:
+  reachc:
+    <<: *std-exe
+    source-dirs:         app/reachc
   reach:
     main:                Main.hs
     source-dirs:         app/reach
@@ -154,15 +181,4 @@ executables:
     - parsec
     - safe
     - unix
-    - reach
-
-tests:
-  reach-test:
-    main:                Main.hs
-    source-dirs:         test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
     - reach

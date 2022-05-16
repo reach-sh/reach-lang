@@ -55,8 +55,8 @@ instance Show SLType where
   show = \case
     ST_Null -> "Null"
     ST_Bool -> "Bool"
-    ST_UInt False -> "UInt"
-    ST_UInt True -> "UInt256"
+    ST_UInt UI_Word  -> "UInt"
+    ST_UInt UI_256 -> "UInt256"
     ST_Bytes sz -> "Bytes(" <> show sz <> ")"
     ST_Digest -> "Digest"
     ST_Address -> "Address"
@@ -169,7 +169,7 @@ uintTyM :: SLVal -> Maybe UIntTy
 uintTyM = \case
   SLV_Int _ mt _ -> mt
   SLV_DLVar (DLVar _ _ (T_UInt t) _) -> Just t
-  SLV_DLC (DLC_UInt_max) -> Just uintWord
+  SLV_DLC (DLC_UInt_max) -> Just UI_Word
   _ -> Nothing
 
 mtJoin :: Maybe UIntTy -> Maybe UIntTy -> Maybe UIntTy
@@ -223,6 +223,9 @@ instance Equiv Integer where
   equiv = (==)
 
 instance Equiv Bool where
+  equiv = (==)
+
+instance Equiv UIntTy where
   equiv = (==)
 
 instance (Equiv a, Equiv b) => Equiv (Either a b) where
@@ -467,11 +470,13 @@ data ToConsensusMode
   | TCM_ThrowTimeout
   | TCM_Fork
   | TCM_Api
+  | TCM_Check
   deriving (Eq, Generic, Show)
 
 data ForkMode
   = FM_Case
   | FM_API
+  | FM_API_
   | FM_Timeout
   | FM_ThrowTimeout
   | FM_PaySpec
@@ -482,6 +487,7 @@ data ParallelReduceMode
   | PRM_While
   | PRM_Case
   | PRM_API
+  | PRM_API_
   | PRM_Timeout
   | PRM_TimeRemaining
   | PRM_ThrowTimeout
@@ -493,6 +499,7 @@ data ApiCallMode
   = AC_Pay
   | AC_ThrowTimeout
   | AC_Assume
+  | AC_Check
   deriving (Eq, Generic, Show)
 
 data ToConsensusRec = ToConsensusRec
@@ -507,6 +514,7 @@ data ToConsensusRec = ToConsensusRec
   , slptc_timeout :: Maybe (SrcLoc, JSExpression, Maybe JSBlock)
   , slptc_fork :: Bool
   , slptc_api :: Bool
+  , slptc_check :: Maybe JSExpression
   }
   deriving (Eq, Generic)
 
@@ -515,6 +523,7 @@ data ForkCase = ForkCase
   , fc_who_e :: JSExpression
   , fc_who :: String
   , fc_before :: JSExpression
+  , fc_check :: JSExpression
   , fc_pay :: JSExpression
   , fc_after :: JSExpression
   }
@@ -533,13 +542,14 @@ data ParallelReduceRec = ParallelReduceRec
   { slpr_at :: SrcLoc
   , slpr_mode :: Maybe ParallelReduceMode
   , slpr_init :: JSExpression
-  , slpr_minv :: Maybe JSExpression
+  , slpr_minv :: [(JSExpression, Maybe JSExpression)]
   , slpr_mwhile :: Maybe JSExpression
   , slpr_cases :: [(SrcLoc, [JSExpression])]
   , slpr_apis :: [(SrcLoc, [JSExpression])]
+  , slpr_api_s :: [(SrcLoc, [JSExpression])]
   , slpr_mtime :: Maybe (ParallelReduceMode, SrcLoc, [JSExpression])
   , slpr_mpay :: Maybe JSExpression
-  , slpr_mdef :: Maybe JSExpression
+  , slpr_defs :: [JSExpression]
   }
   deriving (Eq, Generic)
 
@@ -550,6 +560,7 @@ data ApiCallRec = ApiCallRec
   , slac_mpay :: Maybe JSExpression
   , slac_massume :: Maybe JSExpression
   , slac_mtime :: Maybe (JSExpression, JSExpression)
+  , slac_mcheck :: Maybe JSExpression
   }
   deriving (Eq, Generic)
 
@@ -635,7 +646,7 @@ data SPrimOp
   | S_PGE
   | S_PGT
   | S_SQRT
-  | S_UCAST UIntTy
+  | S_UCAST UIntTy Bool
   | S_IF_THEN_ELSE
   | S_DIGEST_EQ
   | S_ADDRESS_EQ
@@ -666,7 +677,7 @@ sprimToPrim dom rng = \case
   S_PGE -> PGE dom
   S_PGT -> PGT dom
   S_SQRT -> SQRT dom
-  S_UCAST _ -> UCAST dom rng
+  S_UCAST _ trunc -> UCAST dom rng trunc
   S_IF_THEN_ELSE -> IF_THEN_ELSE
   S_DIGEST_EQ -> DIGEST_EQ
   S_ADDRESS_EQ -> ADDRESS_EQ
@@ -690,6 +701,7 @@ data RemoteFunMode
   | RFM_ALGO
   deriving (Eq, Generic, Show)
 
+-- Primitive/special forms
 data SLPrimitive
   = SLPrim_makeEnum
   | SLPrim_declassify
@@ -769,6 +781,7 @@ data SLPrimitive
   | SLPrim_polyNeq
   | SLPrim_getContract
   | SLPrim_getAddress
+  | SLPrim_getCompanion
   | SLPrim_EmitLog
   | SLPrim_Event
   | SLPrim_event_is (Maybe SLPart) SLVar [SLType]
@@ -779,6 +792,7 @@ data SLPrimitive
   | SLPrim_distinct
   | SLPrim_xor
   | SLPrim_mod
+  | SLPrim_castOrTrunc UIntTy
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

@@ -92,7 +92,7 @@ type Interface = real_ethers.utils.Interface;
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-const reachBackendVersion = 15;
+const reachBackendVersion = 16;
 const reachEthBackendVersion = 7;
 export type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
@@ -772,13 +772,16 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       const getBalance = (mtok: Token|false = false) => {
         return balanceOfNetworkAccount(networkAccount, mtok);
       }
+      const getContractCompanion = async (): Promise<MaybeRep<ContractInfo>> => {
+        return ['None', null];
+      };
 
       const getCurrentStep = async () => {
         const [ cs, _ ] = await getGlobalState();
         return cs;
       }
 
-      return { getContractInfo, getContractAddress, getBalance, getCurrentStep, sendrecv, recv, getState, apiMapRef };
+      return { getContractInfo, getContractAddress, getContractCompanion, getBalance, getCurrentStep, sendrecv, recv, getState, apiMapRef };
     };
 
     const setupView = (setupViewArgs: SetupViewArgs) => {
@@ -885,7 +888,14 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return md;
   };
 
-  return stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract, setGasLimit, getGasLimit, setStorageLimit, getStorageLimit });
+  const accObj = { networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, 
+                   tokenAccepted, tokenAccept, tokenMetadata, contract, setGasLimit, 
+                   getGasLimit, setStorageLimit, getStorageLimit };
+  const acc = accObj as unknown as Account;
+  const balanceOf_ = (token?: Token): Promise<BigNumber> => balanceOf(acc, token);
+  const balancesOf_ = (tokens: Array<Token | null>): Promise<Array<BigNumber>> => balancesOf(acc, tokens);
+
+  return stdAccount({ ...accObj, balanceOf: balanceOf_, balancesOf: balancesOf_ });
 };
 
 const newAccountFromSecret = async (secret: string): Promise<Account> => {

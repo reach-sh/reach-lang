@@ -271,6 +271,7 @@ The `post` argument is a Promise of an unstable object with details about the co
 
 # {#ref-frontends-js-acc} Creating an Account Handle
 
+@{ref("js","acc")}
 The second thing you should do in a frontend is create an account handle.
 
 ---
@@ -290,10 +291,10 @@ This promise will be rejected with an exception if no sensible default account c
 
 ---
 
-But, when you are testing, you will use
-
 @{ref("js", "newTestAccount")}
 @{ref("js", "stdlib.newTestAccount")}
+But, when you are testing, you will use
+
 ```js
 stdlib.newTestAccount(bal:UInt) => Promise<acc>
 ```
@@ -301,8 +302,15 @@ stdlib.newTestAccount(bal:UInt) => Promise<acc>
 Returns a Promise for a Reach account abstraction for a new account on the consensus network with a given balance of network tokens.
 This can only be used in private testing scenarios, as it uses a private faucet to issue network tokens.
 
-@{ref("js", "newTestAccounts")}
-@{ref("js", "stdlib.newTestAccounts")}
+```js
+load: /examples/workshop-trust-fund/index.mjs
+range: 29-33
+```
+
+This example from the Trust Fund workshop creates a `startingBalance` of 100 tokens, and then creates new accounts for the `funder`, `receiver` and `bystander`.
+Each get funded 100 tokens by setting each `{!js} newTestAccount` balance to the `startingBalance` value.
+
+@{ref("js", "newTestAccounts")}@{ref("js", "stdlib.newTestAccounts")}
 ```js
 stdlib.newTestAccounts(howMany:number, balance:UInt) => Promise<Array<acc>>
 ```
@@ -430,23 +438,25 @@ acc.tokenMetadata(token) => Promise<object>
 Returns a Promise of the metadata for a non-network token specified by the `{!js} token`.
 
 ---
-@{ref("js", "balanceOf")}
+@{ref("js", "balanceOf")}@{ref("js", "stdlib.balanceOf")}@{ref("js", "acc.balanceOf")}
 ```js
+acc.balanceOf(token?) => Promise<BigNumber>
 stdlib.balanceOf(acc, token?) => Promise<BigNumber>
 ```
 
-Promises the balance of network tokens (or non-network tokens if `{!js} token` is provided) held by the account given by a Reach account abstraction provided by the `{!js} acc` argument.
+Promises the balance of network tokens (or non-network tokens if `{!js} token` is provided) held by given by a Reach account abstraction `{!js} acc`.
 
 ---
-@{ref("js", "balancesOf")}
+@{ref("js", "balancesOf")}@{ref("js", "stdlib.balancesOf")}@{ref("js", "acc.balancesOf")}
 ```js
+acc.balancesOf(tokens: Array<Token | null>) => Promise<Array<BigNumber>>
 stdlib.balancesOf(acc: Account, tokens: Array<Token | null>) => Promise<Array<BigNumber>>
 ```
 Promises an array of balances that corresponds with the provided array of tokens, `{!js} tokens`,
-for a given account `{!js} acc`.
+for a given Reach account `{!js} acc`.
 If `{!js} tokens` contains a `{!js} null`,
 the corresponding position in the output array will contain the account's balance of network tokens.
-This function is more efficient for getting multiple token balances than repeated calls to `{!js} balanceOf`.
+This function is more efficient for getting multiple token balances than repeated calls to `{!js} stdlib.balanceOf`.
 
 ---
 @{ref("js", "minimumBalanceOf")}
@@ -490,6 +500,14 @@ In those cases, it is sometimes useful to specify a particular gas limit.
 It is common on Ethereum to use gas limits like `{!js} 5000000` in testing.
 If you do this, you should inform your clients that they should pay attention to the gas stipend issued.
 
+```js
+load: /examples/atomic-swap/index.mjs
+range: 30-32
+```
+
+Here, there is a `{!js} myGasLimit` object created, which is set to `{!js} 5000000`.
+This is then applied to both the `{!js} accAlice` and `{!js} accBob` by using the `{!js} setGasLimit` method so that the maximum gas cost is set for each account. 
+
 ## {#ref-frontends-js-acc-cfx} Conflux-specific
 
 When connected to the Conflux consensus network, the standard library provides additional functionality.
@@ -509,11 +527,12 @@ The `{!js} setStorageLimit` function allows you to choose a different storage li
 
 # {#ref-frontends-js-ctc} Creating a Contract Handle
 
+@{ref("js","ctc")}
+@{ref("js", "contract")}
 The third thing you should do in a frontend is create a contract handle, so you can actually interact with your Reach program.
 
 ---
 
-@{ref("js", "contract")}
 ```js
 acc.contract(bin, ?info) => ctc
 ```
@@ -776,8 +795,7 @@ called whenever the `{!rsh} Event` occurs.
 The standard library provides a convenient way to launch new non-network tokens.
 
 ---
-@{ref("js", "launchToken")}
-@{ref("js", "stdlib.launchToken")}
+@{ref("js", "launchToken")}@{ref("js", "stdlib.launchToken")}
 ```js
 stdlib.launchToken(accCreator: Account, name: string, sym: string, opts?: LaunchTokenOpts) => Promise<object>
 ```
@@ -808,8 +826,7 @@ https://developer.algorand.org/docs/get-details/transactions/transactions/#asset
 The standard library provides a number of utilities functions for interacting with the connected network.
 
 ---
-@{ref("js", "stdlib.connector")}
-@{ref("js", "connector")}
+@{ref("js", "stdlib.connector")}@{ref("js", "connector")}
 ```js
 stdlib.connector : string
 ```
@@ -817,8 +834,7 @@ stdlib.connector : string
 Represents the `{!js} Connector` the `{!js} stdlib` uses.
 
 ---
-@{ref("js", "stdlib.getNetworkTime")}
-@{ref("js", "getNetworkTime")}
+@{ref("js", "stdlib.getNetworkTime")}@{ref("js", "getNetworkTime")}
 ```js
 stdlib.getNetworkTime() => Promise<time>
 ```
@@ -826,17 +842,23 @@ stdlib.getNetworkTime() => Promise<time>
 Returns a Promise for the current consensus network time, represented as a `BigNumber`.
 
 ---
-@{ref("js", "stdlib.getNetworkSecs")}
-@{ref("js", "getNetworkSecs")}
+@{ref("js", "stdlib.getNetworkSecs")}@{ref("js", "getNetworkSecs")}
 ```js
 stdlib.getNetworkSecs() => Promise<secs>
 ```
 
-Like `{!js} getNetworkTime`, but returns a network seconds Promise.
+Like `{!js} stdlib.getNetworkTime`, but returns a network seconds Promise.
 
 ---
-@{ref("js", "stdlib.waitUntilTime")}
-@{ref("js", "waitUntilTime")}
+@{ref("js", "stdlib.getTimeSecs")}@{ref("js", "getTimeSecs")}
+```js
+stdlib.getTimeSecs(time) => Promise<secs>
+```
+
+Takes a network time, such as a value returned from `{!js} stdlib.getNetworkTime`, and converts it into network seconds.
+
+---
+@{ref("js", "stdlib.waitUntilTime")}@{ref("js", "waitUntilTime")}
 ```js
 stdlib.waitUntilTime(time, onProgress?) => Promise<time>
 ```
@@ -851,27 +873,25 @@ which may be called many times up until the specified network time.
 It will receive an object with keys `{!js} current` and `{!js} target`,
 
 ---
-@{ref("js", "stdlib.waitUntilSecs")}
-@{ref("js", "waitUntilSecs")}
+@{ref("js", "stdlib.waitUntilSecs")}@{ref("js", "waitUntilSecs")}
 ```js
 stdlib.waitUntilSecs(secs, onProgress?) => Promise<secs>
 ```
 
-Like `{!js} waitUntilSecs`, but waits for a certain network seconds deadline.
+Like `{!js} stdlib.waitUntilSecs`, but waits for a certain network seconds deadline.
 
 ---
-@{ref("js", "stdlib.wait")}
-@{ref("js", "wait")}
+@{ref("js", "stdlib.wait")}@{ref("js", "wait")}
 ```js
 stdlib.wait(timedelta, onProgress?) => Promise<networkTime>
 ```
 
 Returns a Promise that will only be resolved after the specified time delta has elapsed.
-The expression `{!js} await wait(delta, onProgress)` is the same as
-`{!js} await waitUntilTime(add(await getNetworkTime(), delta), onProgress)`.
-As with `{!js} waitUntilTime`, the `{!js} onProgress` callback is optional.
+The expression `{!js} await stdlib.wait(delta, onProgress)` is the same as
+`{!js} await stdlib.waitUntilTime(add(await stdlib.getNetworkTime(), delta), onProgress)`.
+As with `{!js} stdlib.waitUntilTime`, the `{!js} onProgress` callback is optional.
 
-One use case example of `{!js} wait` is to emit an event and then call `stdlib.wait(delta, onProgress)` to ensure the event has time to complete.
+One use case example of `{!js} stdlib.wait` is to emit an event and then call `stdlib.wait(delta, onProgress)` to ensure the event has time to complete.
 (In the example below, `wt` is shorthand for "wait time".)
 
 ```js
@@ -889,8 +909,7 @@ Although, it is possible to use `{!js} wait` to give an event time to execute,
 it is a better practice to create an explicit synchronization with an [event](##ref-programs-appinit-events) or instruct the deployer to communicate with [API](##ref-programs-appinit-api) callers off-chain.
 
 ---
-@{ref("js", "stdlib.setValidQueryWindow")}
-@{ref("js", "setValidQueryWindow")}
+@{ref("js", "stdlib.setValidQueryWindow")}@{ref("js", "setValidQueryWindow")}
 ```js
 stdlib.setValidQueryWindow(width: number|true) => void
 ```
@@ -904,8 +923,7 @@ While each connector has a default value that works for most common cases, tweak
 The standard library provides a number of utilities functions for interacting with JavaScript representations of Reach values.
 
 ---
-@{ref("js", "stdlib.protect")}
-@{ref("js", "protect")}
+@{ref("js", "stdlib.protect")}@{ref("js", "protect")}
 ```js
 stdlib.protect(t, x) => x
 ```
@@ -946,10 +964,7 @@ stdlib.Array_set(arr, idx, val)
 Returns a new array identical to `{!js} arr`, except that index `{!js} idx` is `{!js} val`.
 
 ---
-@{ref("js", "bigNumberify")}
-@{ref("js", "isBigNumber")}
-@{ref("js", "bigNumberToNumber")}
-@{ref("js", "bigNumberToBigInt")}
+@{ref("js", "bigNumberify")}@{ref("js", "isBigNumber")}@{ref("js", "bigNumberToNumber")}@{ref("js", "bigNumberToBigInt")}
 ```js
 stdlib.bigNumberify(x) => UInt
 stdlib.isBigNumber(x) => bool
@@ -994,6 +1009,14 @@ stdlib.digest(ty:Type, x:ty) => Digest
 
 Hashes the value.
 
+```js
+load: /examples/digest-mod/index.mjs
+range: 14-15
+```
+
+The `ExampleeExampleeExampleeExamplee` is a string of the Reach type that `{!rsh} digest` turns into a hash.
+The maximum string length that can be digested in this example is set to 32 bytes.
+
 ---
 @{ref("js", "randomUInt")}
 ```js
@@ -1004,8 +1027,7 @@ Generates random bits as a `{!rsh} UInt`.
 The number of bits generated depends on the particular consensus network.
 
 ---
-@{ref("js", "hasRandom")}
-@{ref("js", "stdlib.hasRandom")}
+@{ref("js", "hasRandom")}@{ref("js", "stdlib.hasRandom")}
 ```js
 stdlib.hasRandom
 ```
@@ -1015,8 +1037,7 @@ Reach does not natively support randomness and leaves random number generation t
 This value is provided out of convenience; it is not mandatory to use this implementation.
 
 ---
-@{ref("js", "hasConsoleLogger")}
-@{ref("js", "stdlib.hasConsoleLogger")}
+@{ref("js", "hasConsoleLogger")}@{ref("js", "stdlib.hasConsoleLogger")}
 ```js
 stdlib.hasConsoleLogger
 ```
@@ -1077,7 +1098,7 @@ stdlib.band256(UInt256, UInt256) => UInt256
 stdlib.bior256(UInt256, UInt256) => UInt256
 stdlib.bxor256(UInt256, UInt256) => UInt256
 stdlib.muldiv(UInt, UInt) => UInt
-stdlib.cast(UIntTy, UIntTy, UInt) => UInt
+stdlib.cast(UIntTy, UIntTy, UInt, Bool) => UInt // Bool argument decides if cast should truncate
 ```
 
 Integer arithmetic on `{!rsh} UInt`.
@@ -1131,11 +1152,10 @@ BigNumber is used to represet values in WEI.
 Quantities of a network token should always be passed into Reach
 in the token's atomic unit.
 
-`{!js} bigNumberify` is transparently applied to `{!js} formatCurrency`'s and `{!js} formatWithDecimals`'s first arguments.
+`{!js} stdlib.bigNumberify` is transparently applied to `{!js} stdlib.formatCurrency`'s and `{!js} stdlib.formatWithDecimals`'s first arguments.
 
 ---
-@{ref("js", "formatAddress")}
-@{ref("js", "stdlib.formatAddress")}
+@{ref("js", "formatAddress")}@{ref("js", "stdlib.formatAddress")}
 ```js
 stdlib.formatAddress(acc) => string
 ```

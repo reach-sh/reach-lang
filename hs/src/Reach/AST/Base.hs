@@ -17,14 +17,12 @@ import GHC.Generics
 import GHC.Stack (callStack, HasCallStack, prettyCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
-import Reach.Pretty
 import Reach.Texty
 import Reach.UnsafeUtil
 import Reach.Util (makeErrCode)
 import Safe (atMay)
 import qualified System.Console.Pretty as TC
 import Control.Exception (Exception, throw)
-import Data.Bool (bool)
 
 --- Source Information
 data ReachSource
@@ -315,85 +313,16 @@ type SLPart = B.ByteString
 render_sp :: SLPart -> Doc
 render_sp = viaShow
 
-type UIntTy = Bool
-uintWord :: UIntTy
-uintWord = False
-uint256 :: UIntTy
-uint256 = True
+data UIntTy
+  = UI_Word
+  | UI_256
+  deriving (Eq, Generic, NFData, Ord, Show)
+
+instance FromJSON UIntTy
+instance ToJSON UIntTy
 
 uint256_Max :: Integer
 uint256_Max = 2 ^ (256 :: Integer) - 1
-
-iSqrt :: Integer -> Integer
-iSqrt x = floor $ sqrt x'
-  where
-    x' :: Double = fromIntegral x
-
-data PrimOp
-  = ADD UIntTy
-  | SUB UIntTy
-  | MUL UIntTy
-  | DIV UIntTy
-  | MOD UIntTy
-  | PLT UIntTy
-  | PLE UIntTy
-  | PEQ UIntTy
-  | PGE UIntTy
-  | PGT UIntTy
-  | SQRT UIntTy
-  | UCAST UIntTy UIntTy
-  | IF_THEN_ELSE
-  | DIGEST_EQ
-  | ADDRESS_EQ
-  | TOKEN_EQ
-  | SELF_ADDRESS SLPart Bool Int
-  | LSH
-  | RSH
-  | BAND UIntTy
-  | BIOR UIntTy
-  | BXOR UIntTy
-  | BYTES_ZPAD Integer
-  | MUL_DIV
-  | DIGEST_XOR
-  | BYTES_XOR
-  | BTOI_LAST8 Bool
-  | CTC_ADDR_EQ
-  deriving (Eq, Generic, NFData, Ord, Show)
-
-instance Pretty PrimOp where
-  pretty = \case
-    ADD t -> uitp t <> "+"
-    SUB t -> uitp t <> "-"
-    MUL t -> uitp t <> "*"
-    DIV t -> uitp t <> "/"
-    MOD t -> uitp t <> "%"
-    PLT t -> uitp t <> "<"
-    PLE t -> uitp t <> "<="
-    PEQ t -> uitp t <> "=="
-    PGE t -> uitp t <> ">="
-    PGT t -> uitp t <> ">"
-    SQRT t -> uitp t <> "sqrt"
-    UCAST x y -> "cast" <> parens (uitp x <> "," <> uitp y)
-    IF_THEN_ELSE -> "ite"
-    DIGEST_EQ -> "=="
-    ADDRESS_EQ -> "=="
-    TOKEN_EQ -> "=="
-    SELF_ADDRESS x y z -> "selfAddress" <> parens (render_das [pretty x, pretty y, pretty z])
-    LSH -> "<<"
-    RSH -> ">>"
-    BAND t -> uitp t <> "&"
-    BIOR t -> uitp t <> "|"
-    BXOR t -> uitp t <> "^"
-    BYTES_ZPAD x -> "zpad" <> parens (pretty x)
-    MUL_DIV -> "muldiv"
-    DIGEST_XOR -> "digest_xor"
-    BYTES_XOR -> "bytes_xor"
-    BTOI_LAST8 isDigest -> "btoiLast8(" <> bool "Bytes" "Digest" isDigest <> ")"
-    CTC_ADDR_EQ -> "Contract.addressEq"
-    where
-      uitp = \case
-        True -> "b"
-        False -> ""
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)

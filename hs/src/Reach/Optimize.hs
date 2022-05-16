@@ -1,4 +1,4 @@
-module Reach.Optimize (optimize_, optimize, Optimize) where
+module Reach.Optimize (optimize_, optimize, opt_sim, Optimize) where
 
 import Control.Monad.Reader
 import Data.IORef
@@ -69,6 +69,7 @@ data Env = Env
   , eConst :: S.Set DLVar
   , eMaps :: DLMapInfos
   , eClearMaps :: Bool
+  , eSimulate :: Bool
   }
 
 updateClearMaps :: Bool -> Env -> Env
@@ -198,8 +199,8 @@ updateLookup up = do
           F_One _ -> f == eFocus
   updateLookupWhen writeHuh up
 
-mkEnv0 :: Counter -> Counter -> S.Set DLVar -> [SLPart] -> DLMapInfos -> IO Env
-mkEnv0 eCounter eDroppedAsserts eConst eParts eMaps = do
+mkEnv0 :: Counter -> Counter -> S.Set DLVar -> [SLPart] -> DLMapInfos -> Bool -> IO Env
+mkEnv0 eCounter eDroppedAsserts eConst eParts eMaps eSimulate = do
   let eFocus = F_Ctor
   let eClearMaps = False
   let eEnvs =
@@ -300,8 +301,8 @@ instance Optimize DLWithBill where
   gcs _ = return ()
 
 instance Optimize DLRemoteALGO where
-  opt (DLRemoteALGO x y) =
-    DLRemoteALGO <$> opt x <*> opt y
+  opt (DLRemoteALGO x y z w) =
+    DLRemoteALGO <$> opt x <*> opt y <*> opt z <*> opt w
   gcs _ = return ()
 
 unsafeAt :: [a] -> Int -> a
@@ -347,19 +348,21 @@ instance Optimize DLExpr where
           return $ DLE_Arg at $ zero t
         (DIV _, [lhs, (DLA_Literal (DLL_Int _ _ 1))]) ->
           return $ DLE_Arg at lhs
+        (SQRT t, [DLA_Literal (DLL_Int _ _ n)]) ->
+          return $ DLE_Arg at $ DLA_Literal $ DLL_Int at t (isqrt n)
         (MUL_DIV, [l, r, d])
           | l == d -> return $ DLE_Arg at r
           | r == d -> return $ DLE_Arg at l
         (MUL_DIV, [l, r, DLA_Literal (DLL_Int _ _ 1)]) ->
-          opt $ DLE_PrimOp at (MUL uintWord) [l, r]
+          opt $ DLE_PrimOp at (MUL UI_Word) [l, r]
         (MUL_DIV, [DLA_Literal (DLL_Int _ _ 1), r, d]) ->
-          opt $ DLE_PrimOp at (DIV uintWord) [r, d]
+          opt $ DLE_PrimOp at (DIV UI_Word) [r, d]
         (MUL_DIV, [l, DLA_Literal (DLL_Int _ _ 1), d]) ->
-          opt $ DLE_PrimOp at (DIV uintWord) [l, d]
+          opt $ DLE_PrimOp at (DIV UI_Word) [l, d]
         (MUL_DIV, [DLA_Literal (DLL_Int _ _ 0), _, _]) ->
-          return $ DLE_Arg at $ zero uintWord
+          return $ DLE_Arg at $ zero UI_Word
         (MUL_DIV, [_, DLA_Literal (DLL_Int _ _ 0), _, _]) ->
-          return $ DLE_Arg at $ zero uintWord
+          return $ DLE_Arg at $ zero UI_Word
         (IF_THEN_ELSE, [c, (DLA_Literal (DLL_Bool True)), (DLA_Literal (DLL_Bool False))]) ->
           return $ DLE_Arg at $ c
         (IF_THEN_ELSE, [(DLA_Literal (DLL_Bool c)), t, f]) ->
@@ -393,13 +396,15 @@ instance Optimize DLExpr where
     DLE_Claim at fs t a m -> do
       a' <- opt a
       let meh = return $ DLE_Claim at fs t a' m
-      case (t, a') of
-        (CT_Possible, _) -> meh
-        (_, DLA_Literal (DLL_Bool True)) -> do
+      isSim <- asks eSimulate
+      case (t, a', isSim) of
+        (_, _, True) -> nop at
+        (CT_Possible, _, _) -> meh
+        (_, DLA_Literal (DLL_Bool True), _) -> do
           Env {..} <- ask
           void $ liftIO $ incCounter eDroppedAsserts
           nop at
-        (_, DLA_Var dv) -> do
+        (_, DLA_Var dv, _) -> do
           void $ rememberVarIsArg at dv $ DLA_Literal $ DLL_Bool True
           meh
         _ -> meh
@@ -420,8 +425,6 @@ instance Optimize DLExpr where
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> opt tok <*> opt amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> opt tok
     DLE_TimeOrder at op a b -> DLE_TimeOrder at op <$> opt a <*> opt b
-    DLE_GetContract at -> return $ DLE_GetContract at
-    DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at k a -> DLE_EmitLog at k <$> opt a
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mt tb -> DLE_GetUntrackedFunds at <$> opt mt <*> opt tb
@@ -665,6 +668,11 @@ instance {-# OVERLAPPING #-} Optimize a => Optimize (DLinExportBlock a) where
     newScope $ DLinExportBlock at vs <$> opt b
   gcs (DLinExportBlock _ _ b) = gcs b
 
+instance {-# OVERLAPS #-} Optimize a => Optimize (DLInvariant a) where
+  opt (DLInvariant inv lab) =
+    DLInvariant <$> (newScope $ opt inv) <*> pure lab
+  gcs (DLInvariant inv _) = gcs inv
+
 instance Optimize LLConsensus where
   opt = \case
     LLC_Com m k -> mkCom LLC_Com <$> opt m <*> opt k
@@ -751,7 +759,7 @@ instance Optimize LLProg where
     let psl = M.keys sps_ies
     cs <- asks eConst
     let mis = dli_maps llp_init
-    env0 <- liftIO $ mkEnv0 (getCounter llp_opts) (llo_droppedAsserts llp_opts) cs psl mis
+    env0 <- liftIO $ mkEnv0 (getCounter llp_opts) (llo_droppedAsserts llp_opts) cs psl mis False
     local (const env0) $ local (updateClearMaps $ llo_untrustworthyMaps llp_opts) $
       focus_ctor $
         LLProg llp_at llp_opts llp_parts <$> opt llp_init <*> opt llp_exports <*> pure llp_views
@@ -856,16 +864,19 @@ instance Optimize PLProg where
              <*> opt plp_epps <*> opt plp_cpprog
   gcs PLProg {..} = gcs plp_epps >> gcs plp_cpprog
 
-optimize_ :: (Optimize a) => Counter -> a -> IO a
-optimize_ c t = do
+optimize_ :: (Optimize a) => Counter -> Bool -> a -> IO a
+optimize_ c sim t = do
   eConstR <- newIORef $ mempty
   flip runReaderT (ConstEnv {..}) $ gcs t
   cs <- readIORef eConstR
   let csvs = M.keysSet $ M.filter (\x -> x < 2) cs
   dac <- newCounter 0
-  env0 <- mkEnv0 c dac csvs [] mempty
+  env0 <- mkEnv0 c dac csvs [] mempty sim
   flip runReaderT env0 $
     opt t
 
+opt_sim :: (Optimize a) => Counter -> a -> IO a
+opt_sim c t = optimize_ c True t
+
 optimize :: (HasCounter a, Optimize a) => a -> IO a
-optimize t = optimize_ (getCounter t) t
+optimize t = optimize_ (getCounter t) False t

@@ -80,6 +80,8 @@ main {height: calc(100% - 56px);}
     --div-note-bg: #F5F5DC;
     --div-q-and-a-bg: #F5DCDC;
     --page-col-a-pid: #C8A8FF;
+    --reach-red: #F45747;
+    --reach-red-hover: #B62B1B;
 
     --shiki-color-text: #24292E;
     --shiki-color-background: var(--snippet);
@@ -131,6 +133,8 @@ main {height: calc(100% - 56px);}
     --div-note-bg: #201500;
     --div-q-and-a-bg: #210700;
     --page-col-a-pid: #38287F;
+    --reach-red: #F45747;
+    --reach-red-hover: #B62B1B;
 
     --shiki-color-text: #d0d0d0;
     --shiki-color-background: var(--snippet);
@@ -350,6 +354,9 @@ i.fas:hover {cursor: pointer;}
 
 #page-col a:not(.btn) {color: var(--link-no-hover); text-decoration: none;}
 #page-col a:hover:not(.btn) {color: var(--link-hover); text-decoration: none;}
+#page-col span:hover.ui-tooltip {color: var(--reach-red-hover);}
+#page-col span.ui-tooltip {color: var(--reach-red);}
+#page-col span.ui-tooltip::after {content: " \1F6C8"; cursor: help;}
 
 #page-col div#hh-viewer ul:not(.nav) {list-style-type: square;}
 

@@ -20,6 +20,7 @@ import Reach.Counter
 import Reach.Freshen
 import Reach.Texty
 import Reach.Util
+import Data.Tuple.Extra
 
 -- What is going on in this file?
 --
@@ -76,7 +77,7 @@ instance Show APICutError where
     API_NoIn p -> p <> "does not occur in program"
     API_OutBeforeIn p -> p <> "calls interact.out() before interact.in()"
     API_Twice p -> p <> "occurs multiple times in program"
-    API_NoOut p -> p <> "does not return result in same consensus step"
+    API_NoOut p -> p <> "does not always return result in same consensus step"
     API_NonCS vs p -> p <> "refers to non-consensus state: " <> (show $ pretty $ map showErr vs)
 
 type App = ReaderT Env IO
@@ -117,6 +118,18 @@ instance Contains DLTail where
     DT_Return {} -> False
     DT_Com s t -> has q s || has q t
 
+instance Contains ETail where
+  has q = \case
+    ET_Com ds et -> has q ds || has q et
+    ET_Stop _ -> False
+    ET_If _ _ et et' -> has q et || has q et'
+    ET_Switch _ _ m -> any (has q . thd3) m
+    ET_FromConsensus _ _ _ et -> has q et
+    ET_ToConsensus _ _ _ _ _ _ _ _ _ _ _ (Just (_, et')) et -> has q et || has q et'
+    ET_ToConsensus _ _ _ _ _ _ _ _ _ _ _ _ et -> has q et
+    ET_While _ _ _ et et' -> has q et || has q et'
+    ET_Continue _ _ -> False
+
 third :: (a, b, c) -> c
 third (_, _, z) = z
 
@@ -136,6 +149,11 @@ interactIn = interactX "in"
 
 interactOut :: DLExpr -> Bool
 interactOut = interactX "out"
+
+is_setApiDetails :: SLPart -> DLExpr -> Bool
+is_setApiDetails who = \case
+  DLE_setApiDetails _ p _ _ _ -> p == who
+  _ -> False
 
 err :: SrcLoc -> (String -> APICutError) -> App a
 err at mk = do
@@ -211,6 +229,14 @@ seek = \case
 seekNoMore :: ETail -> App ()
 seekNoMore = void . seek
 
+locSeenOut :: App b -> App (Bool, b)
+locSeenOut m = do
+  seenOutR <- asks eSeenOutR
+  seenOutD <- liftIO $ dupeIORef seenOutR
+  res <- local (\ e -> e { eSeenOutR = seenOutD }) $ m
+  seenOut <- liftIO $ readIORef seenOutD
+  return (seenOut, res)
+
 clipAtFrom :: ETail -> ETail
 clipAtFrom = \case
   ET_Com c k -> ET_Com c (r k)
@@ -245,28 +271,47 @@ slurp = \case
           m
   ET_Stop _ -> return Nothing
   ET_If at c t f -> do
-    t' <- slurp t
-    f' <- slurp f
+    (so_t, t') <- locSeenOut $ slurp t
+    (so_f, f') <- locSeenOut $ slurp f
     let stop = ET_Stop at
     let go tt ff = return $ Just $ ET_If at c tt ff
-    case (t', f') of
-      (Just tt, Just ff) -> go tt ff
-      (Just tt, _) -> go tt stop
-      (_, Just ff) -> go stop ff
+    let alwaysSeeOut = and [so_t, so_f]
+    when alwaysSeeOut $ do
+      liftIO . flip writeIORef True =<< asks eSeenOutR
+    case (t', f', alwaysSeeOut) of
+      (Just tt, Just ff, True) -> go tt ff
+      (Just tt, _, True) -> go tt stop
+      (_, Just ff, True) -> go stop ff
       _ -> return $ Nothing
   ET_Switch at x m -> do
     found <- liftIO $ newIORef False
+    alwaysSeeOutR <- liftIO $ newIORef Nothing
     let stop = ET_Stop at
+    who <- asks eWho
+    let isRace = any (has (is_setApiDetails who) . thd3) m
     let f (y, z, k) = do
-          slurp k >>= \case
+          (so, k') <- locSeenOut $ slurp k
+          -- We don't expect to see `interact.out` called on
+          -- every `case` when we're switching on who won a `race`.
+          let shouldSeeOut = case isRace of
+                              True  -> has (is_setApiDetails who) k
+                              False -> True
+          when shouldSeeOut $ do
+            liftIO $ modifyIORef alwaysSeeOutR $
+              maybe (return so) $ return . (&&) so
+          case k' of
             Nothing -> return (y, z, stop)
-            Just k' -> do
+            Just et -> do
               liftIO $ writeIORef found True
-              return (y, z, k')
+              return (y, z, et)
     m' <- mapM f m
-    (liftIO $ readIORef found) >>= \case
-      False -> return Nothing
-      True -> return $ Just $ ET_Switch at x m'
+    alwaysSeeOut <- liftIO $ readIORef alwaysSeeOutR
+    isFound <- liftIO $ readIORef found
+    case (isFound, alwaysSeeOut) of
+      (True, Just True) -> do
+        liftIO . flip writeIORef True =<< asks eSeenOutR
+        return $ Just $ ET_Switch at x m'
+      _ -> return Nothing
   ET_FromConsensus at x y k -> do
     seekNoMore k
     ensureSeen $ return $ Just $ ET_FromConsensus at x y $ ET_Stop at

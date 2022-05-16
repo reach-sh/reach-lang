@@ -21,6 +21,7 @@ import Reach.Texty
 import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Version
+import Reach.BigOpt
 
 --- JS Helpers
 
@@ -107,6 +108,7 @@ data JSCtxt = JSCtxt
   , ctxt_while :: JSCtxtWhile
   , ctxt_ctcs :: Maybe JSContracts
   , ctxt_maps :: M.Map DLMVar DLMapInfo
+  , ctxt_ctr :: Counter
   }
 
 type App = ReaderT JSCtxt IO
@@ -126,10 +128,10 @@ jsContract_ :: DLType -> App Doc
 jsContract_ = \case
   T_Null -> return "stdlib.T_Null"
   T_Bool -> return "stdlib.T_Bool"
-  T_UInt False -> return "stdlib.T_UInt"
-  T_UInt True -> return "stdlib.T_UInt256"
+  T_UInt UI_Word -> return "stdlib.T_UInt"
+  T_UInt UI_256 -> return "stdlib.T_UInt256"
   T_Bytes sz -> do
-    sz' <- jsCon $ DLL_Int sb uintWord sz
+    sz' <- jsCon $ DLL_Int sb UI_Word sz
     return $ jsApply "stdlib.T_Bytes" [sz']
   T_Digest -> return $ "stdlib.T_Digest"
   T_Address -> return $ "stdlib.T_Address"
@@ -137,7 +139,7 @@ jsContract_ = \case
   T_Token -> return $ "stdlib.T_Token"
   T_Array t sz -> do
     t' <- jsContract t
-    sz' <- jsCon (DLL_Int sb uintWord sz)
+    sz' <- jsCon (DLL_Int sb UI_Word sz)
     return $ jsApply ("stdlib.T_Array") $ [t', sz']
   T_Tuple as -> do
     as' <- mapM jsContract as
@@ -220,8 +222,8 @@ jsCon = \case
   DLL_Bool b -> return $ jsBool b
   DLL_Int at uit i -> do
     uim <- case uit of
-             False -> jsArg (DLA_Constant $ DLC_UInt_max)
-             True -> return $ jsNum $ uint256_Max
+             UI_Word -> jsArg (DLA_Constant $ DLC_UInt_max)
+             UI_256 -> return $ jsNum $ uint256_Max
     return $ jsApply "stdlib.checkedBigNumberify" [jsAt at, uim, jsNum i]
   DLL_TokenZero ->
     return "stdlib.Token_zero"
@@ -268,43 +270,54 @@ jsDigest :: AppT [DLArg]
 jsDigest as = jsApply "stdlib.digest" <$> jsContractAndVals as
 
 jsUIntTy :: UIntTy -> Doc
-jsUIntTy = jsBool
+jsUIntTy t = if t == UI_Word then "\"UInt\"" else "\"UInt256\""
 
-jsPrimApply :: PrimOp -> [Doc] -> Doc
+jsPrimApply :: PrimOp -> [Doc] -> App Doc
 jsPrimApply = \case
-  SELF_ADDRESS {} -> jsApply "ctc.selfAddress"
-  ADD t -> jsApply_ui t "stdlib.add"
-  SUB t -> jsApply_ui t "stdlib.sub"
-  MUL t -> jsApply_ui t "stdlib.mul"
-  DIV t -> jsApply_ui t "stdlib.div"
-  MOD t -> jsApply_ui t "stdlib.mod"
-  PLT t -> jsApply_ui t "stdlib.lt"
-  PLE t -> jsApply_ui t "stdlib.le"
-  PEQ t -> jsApply_ui t "stdlib.eq"
-  PGE t -> jsApply_ui t "stdlib.ge"
-  PGT t -> jsApply_ui t "stdlib.gt"
-  SQRT t -> jsApply_ui t "stdlib.sqrt"
-  UCAST x y -> \a -> jsApply "stdlib.cast" $ [ jsUIntTy x, jsUIntTy y ] <> a
-  LSH -> jsApply "stdlib.lsh"
-  RSH -> jsApply "stdlib.rsh"
-  MUL_DIV -> jsApply "stdlib.muldiv"
-  BAND t -> jsApply_ui t "stdlib.band"
-  BIOR t -> jsApply_ui t "stdlib.bior"
-  BXOR t -> jsApply_ui t "stdlib.bxor"
-  DIGEST_XOR -> jsApply "stdlib.digest_xor"
-  BYTES_XOR -> jsApply "stdlib.bytes_xor"
+  SELF_ADDRESS {} -> r $ jsApply "ctc.selfAddress"
+  ADD t -> r $ jsApply_ui t "stdlib.add"
+  SUB t -> r $ jsApply_ui t "stdlib.sub"
+  MUL t -> r $ jsApply_ui t "stdlib.mul"
+  DIV t -> r $ jsApply_ui t "stdlib.div"
+  MOD t -> r $ jsApply_ui t "stdlib.mod"
+  PLT t -> r $ jsApply_ui t "stdlib.lt"
+  PLE t -> r $ jsApply_ui t "stdlib.le"
+  PEQ t -> r $ jsApply_ui t "stdlib.eq"
+  PGE t -> r $ jsApply_ui t "stdlib.ge"
+  PGT t -> r $ jsApply_ui t "stdlib.gt"
+  SQRT t -> r $ jsApply_ui t "stdlib.sqrt"
+  UCAST dom rng trunc -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy dom, jsUIntTy rng ] <> a <> [ jsBool trunc ]
+  LSH -> r $ jsApply "stdlib.lsh"
+  RSH -> r $ jsApply "stdlib.rsh"
+  MUL_DIV -> r $ jsApply "stdlib.muldiv"
+  BAND t -> r $ jsApply_ui t "stdlib.band"
+  BIOR t -> r $ jsApply_ui t "stdlib.bior"
+  BXOR t -> r $ jsApply_ui t "stdlib.bxor"
+  DIGEST_XOR -> r $ jsApply "stdlib.digest_xor"
+  BYTES_XOR -> r $ jsApply "stdlib.bytes_xor"
   IF_THEN_ELSE -> \args -> case args of
-    [c, t, f] -> c <+> "?" <+> t <+> ":" <+> f
+    [c, t, f] -> return $ c <+> "?" <+> t <+> ":" <+> f
     _ -> impossible $ "emitJS: ITE called with wrong number of arguments"
   --  BYTES_EQ -> jsApply "stdlib.bytesEq"
-  DIGEST_EQ -> jsApply "stdlib.digestEq"
-  ADDRESS_EQ -> jsApply "stdlib.addressEq"
-  TOKEN_EQ -> jsApply "stdlib.tokenEq"
-  BYTES_ZPAD xtra -> \args -> jsApply "stdlib.bytesConcat" (args <> [jsBytes $ bytesZero xtra])
-  BTOI_LAST8 _ -> jsApply "stdlib.btoiLast8"
-  CTC_ADDR_EQ -> jsApply "stdlib.ctcAddrEq"
+  DIGEST_EQ -> r $ jsApply "stdlib.digestEq"
+  ADDRESS_EQ -> r $ jsApply "stdlib.addressEq"
+  TOKEN_EQ -> r $ jsApply "stdlib.tokenEq"
+  BYTES_ZPAD xtra -> \args -> return $ jsApply "stdlib.bytesConcat" (args <> [jsBytes $ bytesZero xtra])
+  BTOI_LAST8 _ -> r $ jsApply "stdlib.btoiLast8"
+  CTC_ADDR_EQ -> r $ jsApply "stdlib.ctcAddrEq"
+  GET_CONTRACT -> const $ do
+    isInitial <- (==) 0 <$> asks ctxt_txn
+    asks ctxt_mode >>= \case
+      JM_Simulate
+        | isInitial -> return $ jsApply "stdlib.emptyContractInfo" []
+      _ -> return $ "await" <+> jsApply "ctc.getContractInfo" []
+  GET_ADDRESS -> const $
+    return $ "await" <+> jsApply "ctc.getContractAddress" []
+  GET_COMPANION -> const $ do
+    return $ "await" <+> jsApply "ctc.getContractCompanion" [ ]
   where
-    jsApply_ui t f = jsApply $ f <> (if t then "256" else "")
+    r f = return . f
+    jsApply_ui t f = jsApply $ f <> (if (t == UI_256) then "256" else "")
 
 jsArg_m :: AppT (Maybe DLArg)
 jsArg_m = \case
@@ -325,7 +338,7 @@ jsExpr = \case
   DLE_VerifyMuldiv at _ _ _ err ->
     expect_thrown at err
   DLE_PrimOp _ p as ->
-    jsPrimApply p <$> mapM jsArg as
+    jsPrimApply p =<< mapM jsArg as
   DLE_ArrayRef _ aa ia -> do
     aa' <- jsArg aa
     ia' <- jsArg ia
@@ -339,7 +352,7 @@ jsExpr = \case
     return $ x' <> "." <> jsApply "concat" [y']
   DLE_TupleRef at aa i -> do
     aa' <- jsArg aa
-    i' <- jsCon $ DLL_Int at uintWord i
+    i' <- jsCon $ DLL_Int at UI_Word i
     return $ aa' <> brackets i'
   DLE_ObjectRef _ oa f -> do
     oa' <- jsArg oa
@@ -374,12 +387,10 @@ jsExpr = \case
           True -> mempty
           False -> do
             who' <- jsArg who
-            amt' <- jsArg amt
             mtok' <- jsArg_m mtok
             return $
               jsSimTxn "from" $
                 [ ("to", who')
-                , ("amt", amt')
                 , ("tok", mtok')
                 ]
   DLE_TokenInit _ tok -> do
@@ -387,7 +398,7 @@ jsExpr = \case
       JM_Backend -> mempty
       JM_View -> impossible "view tokeninit"
       JM_Simulate -> do
-        zero' <- jsCon $ DLL_Int sb uintWord 0
+        zero' <- jsCon $ DLL_Int sb UI_Word 0
         tok' <- jsArg tok
         return $
           jsSimTxn "init" $
@@ -449,28 +460,30 @@ jsExpr = \case
       JM_Backend -> return "undefined /* Remote */"
       JM_View -> impossible "view Remote"
       JM_Simulate -> do
-        let DLRemoteALGO r_fees r_assets = malgo
+        let DLRemoteALGO r_fees r_assets _r_addr2acc r_apps = malgo
         -- These are totally made up and could be totally busted
         obj' <- jsArg ro
         fees' <- jsArg r_fees
         let notStaticZero = not . staticZero
         let pay_ks_nz = filter (notStaticZero . fst) pay_ks
-        let l2n x = jsCon $ DLL_Int at uintWord $ fromIntegral $ length $ x
+        let l2n x = jsCon $ DLL_Int at UI_Word $ fromIntegral $ length $ x
         pays' <- l2n $ filter notStaticZero $ pay_net : map fst pay_ks_nz
         let nRecvCount = if nRecv then [ro] else []
         bills' <- l2n $ nRecvCount <> nnRecv
         toks' <- mapM jsArg $ nnRecv <> map snd pay_ks_nz <> r_assets
         let isAddress = (==) T_Address . argTypeOf
         accs' <- mapM jsArg $ filter isAddress as
+        apps' <- mapM jsArg r_apps
         let res' = parens $ jsSimTxn "remote" $
               [ ("obj", obj')
               , ("pays", pays')
               , ("bills", bills')
               , ("toks", jsArray toks')
               , ("accs", jsArray accs')
+              , ("apps", jsArray apps')
               , ("fees", fees')
               ]
-        net' <- jsCon $ DLL_Int at uintWord 0
+        net' <- jsCon $ DLL_Int at UI_Word 0
         let bill' = jsArray $ map (const net') nnRecv
         let bill'' = if null nnRecv then [] else [bill']
         let res'' = parens $ res' <> ", undefined"
@@ -504,13 +517,6 @@ jsExpr = \case
       JM_Backend -> return "undefined /* TokenDestroy */"
       JM_View -> impossible "token.burn"
   DLE_TimeOrder {} -> impossible "timeorder"
-  DLE_GetContract {} -> do
-    isInitial <- (==) 0 <$> asks ctxt_txn
-    asks ctxt_mode >>= \case
-      JM_Simulate
-        | isInitial -> return $ jsApply "stdlib.emptyContractInfo" []
-      _ -> return $ "await" <+> jsApply "ctc.getContractInfo" []
-  DLE_GetAddress {} -> return $ "await" <+> jsApply "ctc.getContractAddress" []
   DLE_EmitLog _at kind dvs -> do
     let go :: String -> DLVar -> App Doc
         go mode dv = do
@@ -530,14 +536,11 @@ jsExpr = \case
   DLE_GetUntrackedFunds at mtok tb -> do
     tok <- maybe (return "") jsArg mtok
     tb' <- jsArg tb
-    zero <- jsArg $ DLA_Literal $ DLL_Int at uintWord 0
+    zero <- jsArg $ DLA_Literal $ DLL_Int at UI_Word 0
     let bal = "await" <+> jsApply "ctc.getBalance" [tok]
-    let rhs = jsPrimApply
-          IF_THEN_ELSE
-          [ jsPrimApply (PLE uintWord) [bal, tb']
-          , zero
-          , jsPrimApply (SUB uintWord) [bal, tb']
-          ]
+    c' <- jsPrimApply (PLE UI_Word) [bal, tb']
+    f' <- jsPrimApply (SUB UI_Word) [bal, tb']
+    rhs <- jsPrimApply IF_THEN_ELSE [ c', zero, f' ]
     ctm <- asks ctxt_mode
     let infoSim = case ctm == JM_Simulate && isJust mtok of
           True -> jsSimTxn "info" [("tok", tok)] <> ","
@@ -705,7 +708,7 @@ jsETail = \case
                   let vs = map fst svs
                   vs' <- mapM jsVar vs
                   ctcs <- jsArray <$> (mapM jsContract $ map varType vs)
-                  w' <- jsCon $ DLL_Int sb uintWord $ fromIntegral which
+                  w' <- jsCon $ DLL_Int sb UI_Word $ fromIntegral which
                   let getState = jsApply ("await ctc.getState") [w', ctcs]
                   return ["const" <+> jsArray vs' <+> "=" <+> getState <> semi]
         k' <- local (\e -> e {ctxt_isAPI = False}) $ jsETail k
@@ -779,7 +782,8 @@ jsETail = \case
             let svs_as = map DLA_Var svs
             amtp <- jsPayAmt amt
             let withSim = local (\e -> e {ctxt_mode = JM_Simulate})
-            sim_body_core <- withSim $ jsETail k_ok
+            k_ok_sim <- liftIO . flip bigopt_sim k_ok =<< asks ctxt_ctr
+            sim_body_core <- withSim $ jsETail k_ok_sim
             let dupeMap (mpv, _) = do
                   return $
                     (jsApply "stdlib.simMapDupe" $
@@ -801,7 +805,7 @@ jsETail = \case
             vs <- jsArray <$> ((++) <$> mapM jsVar svs <*> mapM jsArg args)
             lct_v' <- case lct_v of
               Just x -> jsArg x
-              Nothing -> jsCon $ DLL_Int sb uintWord 0
+              Nothing -> jsCon $ DLL_Int sb UI_Word 0
             whena' <- jsArg whena
             soloSend' <- jsCon (DLL_Bool soloSend)
             msgts <- mapM (jsContract . argTypeOf) $ svs_as ++ args
@@ -932,6 +936,7 @@ jsPart dli (p, m_api_which) (EPProg { epp_isApi=ctxt_isAPI, epp_tail }) = do
   let ctxt_while = JWhile_None
   let ctxt_mode = JM_Backend
   let ctxt_maps = dli_maps dli
+  ctxt_ctr <- asks ctxt_ctr
   local (const JSCtxt {..}) $ do
     maps_defn <- jsMapDefns True
     et' <- jsETail epp_tail
@@ -1038,8 +1043,8 @@ jsViews (cvs, vis) = do
       let illegal = jsApply "stdlib.assert" ["false", jsString "illegal view"]
       let enDecode v k vi (ViewInfo vs vim) = do
             vs' <- mapM jsVar vs
-            vi' <- jsCon $ DLL_Int sb uintWord $ fromIntegral vi
-            let c = jsPrimApply (PEQ uintWord) ["i", vi']
+            vi' <- jsCon $ DLL_Int sb UI_Word $ fromIntegral vi
+            c <- jsPrimApply (PEQ UI_Word) ["i", vi']
             let let' = "const" <+> jsArray vs' <+> "=" <+> "svs" <> semi
             ret' <-
               case M.lookup k (fromMaybe mempty $ M.lookup v vim) of
@@ -1101,7 +1106,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 15
+reachBackendVersion = 16
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do
@@ -1143,7 +1148,7 @@ jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do
 
 
 backend_js :: Backend
-backend_js outn crs pl = do
+backend_js outn crs pl@(PLProg {..}) = do
   let jsf = outn "mjs"
   let ctxt_who = "Module"
   let ctxt_isAPI = False
@@ -1152,6 +1157,7 @@ backend_js outn crs pl = do
   let ctxt_while = JWhile_None
   let ctxt_ctcs = Nothing
   let ctxt_maps = mempty
+  let ctxt_ctr = plo_counter plp_opts
   d <-
     flip runReaderT (JSCtxt {..}) $
       jsPIProg crs pl

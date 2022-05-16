@@ -32,7 +32,8 @@ export const main = Reach.App(() => {
 
   const [ highestBidder, lastPrice, currentPrice ] =
     parallelReduce([ Creator, 0, reservePrice ])
-      .invariant(balance(nftId) == amt && balance() == lastPrice)
+      .invariant(balance(nftId) == amt)
+      .invariant(balance() == lastPrice)
       .while(lastConsensusTime() <= end)
       .case(Bidder,
         () => {

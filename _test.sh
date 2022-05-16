@@ -1,6 +1,6 @@
 #!/bin/sh -e
 ROOT=$(pwd)
-REACH=${ROOT}/reach
+export REACH="${ROOT}/reach"
 
 export REACH_DOCKER=0
 ${REACH} -h
@@ -8,6 +8,10 @@ ${REACH} -h
 c () {
   echo c "$@"
   ${REACH} compile --intermediate-files "$@"
+}
+
+ce () {
+  c "examples/${1}/index.rsh"
 }
 
 fc () {

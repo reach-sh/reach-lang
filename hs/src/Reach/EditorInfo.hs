@@ -159,6 +159,7 @@ completionKind v =
         SLPrim_didPublish -> Just CK_Function
         SLPrim_unstrict -> Just CK_Function
         SLPrim_polyNeq -> Just CK_Function
+        SLPrim_getCompanion -> Just CK_Function
         SLPrim_getContract -> Just CK_Function
         SLPrim_getAddress -> Just CK_Function
         SLPrim_EmitLog -> Nothing
@@ -171,6 +172,7 @@ completionKind v =
         SLPrim_distinct -> Just CK_Function
         SLPrim_xor -> Just CK_Function
         SLPrim_mod -> Just CK_Function
+        SLPrim_castOrTrunc _ -> Just CK_Function
     SLV_Form slf ->
       case slf of
         SLForm_App -> Just CK_Constructor

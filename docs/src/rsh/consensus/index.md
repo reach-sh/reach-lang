@@ -17,6 +17,13 @@ commit();
 
 A @{defn("commit statement")}, written `{!rsh} commit();`, commits to statement's continuation as the next step of the DApp computation. In other words, it ends the current consensus step and allows more local steps.
 
+For example, in the code below, the `{!rsh} commit();` on line 79 allows `Alice` to perform a local step after a consensus step:
+
+```reach
+load: /examples/rps-7-loops/index.rsh
+range: 77 - 84
+```
+
 ### {#ref-programs-only-consensus} `only` and `each`
 
 @{seclink("ref-programs-only-step")} are allowed in consensus steps and are executed by backends once they observe the completion of the consensus step (i.e., after the associated commit statement.)
@@ -137,17 +144,18 @@ A @{defn("while statement")} may occur within a consensus step and is written:
 ```reach
 var LHS = INIT_EXPR;
 DEFINE_BLOCK; // optional
-invariant(INVARIANT_EXPR);
+invariant(INVARIANT_EXPR, ?INVARIANT_MSG);
 while( COND_EXPR ) BLOCK
 ```
 
 where `{!rsh} LHS` is a valid left-hand side of an identifier definition where the expression `{!rsh} INIT_EXPR` is the right-hand side, and
 `{!rsh} DEFINE_BLOCK` is an optional block that may define bindings that use the `{!rsh} LHS` values which are bound inside the rest of the `{!rsh} while` and its tail, and
-`{!rsh} INVARIANT_EXPR` is an expression, called the @{defn("loop invariant")}, that must be true before and after every execution of the block `{!rsh} BLOCK`, and
+`{!rsh} INVARIANT_EXPR` is an expression, called the @{defn("loop invariant")}, that must be true before and after every execution of the block `{!rsh} BLOCK`—it may be specified multiple times,
+`INVARIANT_MSG` is an optional bytes argument, which is included in any reported violation, and
 if `{!rsh} COND_EXPR` is true, then the block executes,
 and if not, then the loop terminates and control transfers to the continuation of the while statement.
 The identifiers bound by `{!rsh} LHS` are bound within `{!rsh} DEFINE_BLOCK`, `{!rsh} INVARIANT_EXPR`, `{!rsh} COND_EXPR`, `{!rsh} BLOCK`, and the tail of the while statement.
- 
+
 :::note
 Read about finding [loop invariants](##guide-loop-invs) in the Reach guide.
 :::
@@ -205,6 +213,15 @@ while ( x == 0 ) {
 }
 ```
 
+The following example displays how a `{!rsh} continue` is used inside of a `{!rsh} while` loop that started in line 43.
+Bob and Alice race to be the first to `{!rsh} publish` and therefore be the round winner.
+When one of them publishes, the `keepGoing` function returns false, and the program hits `{!rsh} continue` where it exits the `{!rsh} race` and moves on with the rest of the program.
+
+```reach
+load: /examples/chicken-race/index.rsh
+range: 53-58
+```
+
 ### `parallelReduce`
 
 @{ref("rsh", "parallelReduce")}
@@ -243,15 +260,17 @@ A @{defn("parallel reduce statement")} is written:
 @{ref("rsh", "parallelReduce.paySpec")}
 @{ref("rsh", "parallelReduce.case")}
 @{ref("rsh", "parallelReduce.api")}
+@{ref("rsh", "parallelReduce.api_")}
 @{ref("rsh", "parallelReduce.timeout")}
 ```reach
 const LHS =
   parallelReduce(INIT_EXPR)
   .define(() => DEFINE_BLOCK)
-  .invariant(INVARIANT_EXPR)
+  .invariant(INVARIANT_EXPR, ?INVARIANT_MSG)
   .while(COND_EXPR)
   .paySpec(TOKENS_EXPR)
   .case(PART_EXPR,
+    CHECK_EXPR,
     PUBLISH_EXPR,
     PAY_EXPR,
     CONSENSUS_EXPR)
@@ -259,14 +278,17 @@ const LHS =
     ASSUME_EXPR,
     PAY_EXPR,
     CONSENSUS_EXPR)
+  .api_(API_EXPR,
+    CHECKED_CONSENSUS_EXPR)
   .timeout(DELAY_EXPR, () =>
     TIMEOUT_BLOCK);
 ```
 
 The `{!rsh} LHS` and `{!rsh} INIT_EXPR` are like the initialization component of a `{!rsh} while` loop; and,
 the `{!rsh} .invariant` and `{!rsh} .while` components are like the invariant and condition of a `{!rsh} while` loop;
-the `{!rsh} DEFINE_BLOCK` is like the `{!rsh} DEFINE_BLOCK` of a `{!rsh} while` loop;
-while the `{!rsh} .case`, `{!rsh} .api`, `{!rsh} .timeout`, and `{!rsh} .paySpec` components are like the corresponding components of a `{!rsh} fork` statement.
+multiple `.invariant`s may be specified;
+the `{!rsh} DEFINE_BLOCK` is like the `{!rsh} DEFINE_BLOCK` of a `{!rsh} while` loop. It may be specified multiple times;
+while the `{!rsh} .case`, `{!rsh} .api`, `{!rsh} .api_`, `{!rsh} .timeout`, and `{!rsh} .paySpec` components are like the corresponding components of a `{!rsh} fork` statement.
 
 The `{!rsh} .case` component may be repeated many times, just like in a `{!rsh} fork` statement.
 
@@ -333,6 +355,7 @@ invariant(INVARIANT_EXPR);
 while(COND_EXPR) {
   fork()
   .case(PART_EXPR,
+    CHECK_EXPR,
     PUBLISH_EXPR,
     PAY_EXPR,
     (m) => {
@@ -411,6 +434,18 @@ checkCommitment( commitment, salt, x )
  Makes a requirement that `{!rsh} commitment` is the digest of `{!rsh} salt` and `{!rsh} x`.
 This is used in a consensus step after `{!rsh} makeCommitment` was used in a local step.
 
+The example below shows `{!rsh} checkCommitment` being used in a consensus step on line 87 after `{!rsh} makeCommitment` was used in a local step on line 66:
+
+```reach
+load: /examples/rps-7-loops/index.rsh
+range: 64 - 68
+```
+
+```reach
+load: /examples/rps-7-loops/index.rsh
+range: 85 - 87
+```
+
 ### {#ref-programs-consensus-token-minting} Token minting
 
 @{ref("rsh", "burn")}
@@ -445,6 +480,17 @@ It is written with the expression `{!rsh} new Token(PARAMS)`, where `{!rsh} PARA
 This value is intended to be a digest of a larger metadata document.
 + `supply`: A value of type `{!rsh} UInt`; defaults to `{!rsh} UInt.max`.
 + `decimals`: A value of type `{!rsh} UInt`; defaults to `{!rsh} 6` on Algorand, and `{!rsh} 18` on Ethereum and Conflux.
+
+The following examples demonstrate how the details above may be used:
+```reach
+load: examples/token-decimals/index.rsh
+range: 14 - 17
+```
+
+```reach
+load: examples/mint-basic/index.rsh
+range: 28 - 33
+```
 
 This returns a `{!rsh} Token` value and deposits a `{!rsh} supply` amount of the new non-network tokens into the contract account associated with the DApp.
 These tokens must be destroyed by the end of the DApp.
@@ -532,6 +578,8 @@ In addition, a remote function may be augmented with one of the following operat
     If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an insufficient fee error.
   + `{!rsh} opts.assets` records extra assets.
     If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an invalid asset reference.
+  + `{!rsh} opts.addressToAccount` changes `{!rsh} Address` arguments to `Account` array references.
+    If this is needed, and not included, then the consensus transfer to the current consensus step will fail because an incorrectly typed argument was provided to the remote object.
 
 If the remote contract is not expected to return non-network tokens then a pair is returned, where the amount of network tokens received is the first element, and the original result is the second element.
 
@@ -562,7 +610,19 @@ delete bidsM[this];
 A new mapping of linear state may be constructed in a consensus step by writing `{!rsh} new Map(VAL_TYPE_EXPR)` or `{!rsh} new Map(KEY_TYPE_EXPR, VAL_TYPE_EXPR)`, where `{!rsh} KEY_TYPE_EXPR` and `{!rsh} VAL_TYPE_EXPR` are types.
 If `{!rsh} KEY_TYPE_EXPR` is not specified, it will default to `{!rsh} Address`.
 
-This returns a value which may be used to dereference particular mappings via `{!rsh} map[EXPR]`.
+For example the code below contains only the `{!rsh} VAL_TYPE_EXPR`:
+```reach
+load: /examples/splice1/index.rsh
+range: 7 - 7
+```
+
+While the following code contains both the `{!rsh} KEY_TYPE_EXPR` and `{!rsh} VAL_TYPE_EXPR`:
+```reach
+load: /examples/map-arbitrary-key/index.rsh
+range: 24 - 24
+```
+
+These examples return a value which may be used to dereference particular mappings via `{!rsh} map[EXPR]`.
 Such dereferences return a value of type `{!rsh} Maybe(VAL_TYPE_EXPR)`, because the mapping may not contain a value for `{!rsh} EXPR`.
 
 A mapping may be modified by writing `{!rsh} map[EXPR] = VALUE_EXPR` to install `{!rsh} VALUE_EXPR` (of type `{!rsh} VAL_TYPE_EXPR`) at `{!rsh} EXPR`, or by writing `{!rsh} delete map[EXPR]` to remove the mapping entry.
@@ -595,7 +655,28 @@ A `{!rsh} Set` may be modified by writing `{!rsh} s.insert(ADDRESS)` to install 
 set, `{!rsh} s`, or `{!rsh} s.remove(ADDRESS)` to remove the `{!rsh} ADDRESS` from the set.
 Such modifications may only occur in a consensus step.
 
-`{!rsh} s.member(ADDRESS)` will return a `{!rsh} Bool` representing whether the address is in the set.
+The following example shows the usage of `{!rsh} s.insert(ADDRESS)`:
+
+```reach
+load: /hs/t/y/merit-badge.rsh
+range: 46 - 48
+```
+
+While the example below shows the usage of  `{!rsh} s.remove(ADDRESS)`
+
+```reach
+load: /examples/dominant-assurance/index.rsh
+range: 143 - 143
+```
+
+To check whether an address is in the set, `{!rsh} s.member(ADDRESS)` is used.
+
+The following example shows the usage of `{!rsh} s.member(ADDRESS)`
+
+```reach
+load: /examples/dominant-assurance/index.rsh
+range: 99 - 99
+```
 
 `{!rsh} s.Map` will return the underlying `{!rsh} Map`, so you can use foldable
 instance methods.

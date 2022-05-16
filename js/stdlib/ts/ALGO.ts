@@ -66,6 +66,7 @@ import {
   j2sf,
   j2s,
   hideWarnings,
+  hasProp,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -157,7 +158,7 @@ export type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 15;
+const reachBackendVersion = 16;
 const reachAlgoBackendVersion = 10;
 export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
@@ -508,11 +509,11 @@ export const signSendAndConfirm = async (
     [ sapt_res, notifyComplete ] = await notifySend(txns, p.signAndPostTxns(txns));
   } catch (e:any) {
     const es = `${e}`;
-    if ( 'response' in e ) {
+    if ( hasProp(e, 'response') ) {
       const r = e.response;
-      if ( 'body' in r ) {
+      if ( hasProp(r, 'body') ) {
         e.response = r.body;
-      } else if ( 'text' in r ) {
+      } else if ( hasProp(r, 'text') ) {
         e.response = r.text;
       } else {
         delete r.request;
@@ -1069,6 +1070,23 @@ export function setProviderByEnv(env: Partial<ProviderEnv>): void {
   setProvider(makeProviderByEnv(env));
 };
 
+function algonodeEnv(net: string): ProviderEnv {
+  // works for MainNet, TestNet, and BetaNet
+  // https://algonode.io/api/#node-api
+  const prefix = `https://${net.toLowerCase()}-`;
+  const suffix = `.algonode.cloud`;
+  return {
+    ALGO_SERVER: `${prefix}api${suffix}`,
+    ALGO_PORT: ``,
+    ALGO_TOKEN: ``,
+    ALGO_INDEXER_SERVER: `${prefix}idx${suffix}`,
+    ALGO_INDEXER_PORT: ``,
+    ALGO_INDEXER_TOKEN: ``,
+    REACH_ISOLATED_NETWORK: 'no',
+    ALGO_NODE_WRITE_ONLY: 'yes', // XXX no?
+  }
+}
+
 function randlabsProviderEnv(net: string): ProviderEnv {
   const prefix = net === 'MainNet' ? '' : `${net.toLowerCase()}.`;
   const RANDLABS_BASE = `${prefix}algoexplorerapi.io`;
@@ -1088,12 +1106,15 @@ function randlabsProviderEnv(net: string): ProviderEnv {
 export type ProviderName = string;
 export function providerEnvByName(pn: ProviderName): ProviderEnv {
   switch (pn) {
-    case 'MainNet': return randlabsProviderEnv('MainNet');
-    case 'TestNet': return randlabsProviderEnv('TestNet');
-    case 'BetaNet': return randlabsProviderEnv('BetaNet');
+    case 'MainNet': return algonodeEnv('MainNet');
+    case 'TestNet': return algonodeEnv('TestNet');
+    case 'BetaNet': return algonodeEnv('BetaNet');
     case 'randlabs/MainNet': return randlabsProviderEnv('MainNet');
     case 'randlabs/TestNet': return randlabsProviderEnv('TestNet');
     case 'randlabs/BetaNet': return randlabsProviderEnv('BetaNet');
+    case 'algonode/MainNet': return algonodeEnv('MainNet');
+    case 'algonode/TestNet': return algonodeEnv('TestNet');
+    case 'algonode/BetaNet': return algonodeEnv('BetaNet');
     case 'LocalHost': return localhostProviderEnv;
     default: throw Error(`Unrecognized provider name: ${pn}`);
   }
@@ -1333,6 +1354,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   let label = thisAcc.addr.substring(2, 6);
   const pks = T_Address.canonicalize(thisAcc);
   debug(label, 'connectAccount');
+  let createTag = 0;
 
   const selfAddress = (): CBR_Address => {
     return pks;
@@ -1447,6 +1469,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const now = Date.now();
           const minMillis = isIsolatedNetwork() ? 0 : appStateMinRefreshMillis;
           if ( lastAppState && now - lastAppStateTime < minMillis){
+            debug('getAppState cached');
             return lastAppState;
           }
           lastAppState = await getAppStateFresh();
@@ -1454,7 +1477,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           return lastAppState;
         };
         const getAppStateFresh = async (): Promise<AppStateKVs|undefined> => {
-          const lab = `getAppState`;
+          const lab = `getAppStateFresh`;
           const appInfoM = await getApplicationInfoM(ApplicationID);
           if ( 'exn' in appInfoM || appInfoM.val.deleted ) {
             return undefined;
@@ -1548,6 +1571,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const { ApplicationID } = await getC();
         return ApplicationID;
       };
+      const getContractCompanion = async (): Promise<MaybeRep<ContractInfo>> => {
+        if ( hasCompanion ) {
+          return ['None', null];
+        } else {
+          // @ts-ignore
+          return ['Some', companionApp];
+        }
+      };
 
       const getCurrentStep = async () => {
         return await getCurrentStep_(getC);
@@ -1610,7 +1641,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                 appLocalStateNumUInt, appLocalStateNumBytes + mapDataKeys,
                 appGlobalStateNumUInt, appGlobalStateNumBytes + stateKeys,
                 undefined, undefined, undefined, undefined,
-                NOTE_Reach, undefined, undefined, extraPages)));
+                NOTE_Reach_tag(createTag++), undefined, undefined, extraPages)));
 
           const ai = createRes['created-application-index'];
           if ( ! ai ) {
@@ -1629,6 +1660,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         debug(dhead, '--- START');
 
+        const curTime = await getNetworkTime();
+        const curSecs = await getTimeSecs(curTime);
+
         const [ _svs, msg ] = argsSplit(args, evt_cnt);
         const [ _svs_tys, msg_tys ] = argsSplit(tys, evt_cnt);
         void(_svs); void(_svs_tys);
@@ -1636,8 +1670,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           didSend: true,
           didTimeout: false,
           data: msg,
-          time: bigNumberify(0), // This should not be read.
-          secs: bigNumberify(0), // This should not be read.
+          time: curTime,
+          secs: curSecs,
           value: value,
           from: pks,
           getOutput: (async <X extends CBR_Val>(o_mode:string, o_lab:string, o_ctc:ALGO_Ty<X>, o_val:X): Promise<X> => {
@@ -1740,6 +1774,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               recordApp(t.obj);
               t.toks.map(recordAsset);
               t.accs.map(recordAccount);
+              t.apps.map(recordApp);
               howManyMoreFees +=
                 1
                 + bigNumberToNumber(t.pays)
@@ -2008,7 +2043,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         return result;
       }
 
-      return { getContractInfo, getContractAddress, getBalance, getState, getCurrentStep, sendrecv, recv, apiMapRef };
+      return { getContractInfo, getContractAddress, getContractCompanion, getBalance, getState, getCurrentStep, sendrecv, recv, apiMapRef };
     };
 
     const readStateBytes = (prefix:string, key:number[], src:AppStateKVs): (Uint8Array|undefined) => {
@@ -2154,7 +2189,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   };
   const unsupportedAcc = stdAccount_unsupported(connector);
 
-  return stdAccount({ ...unsupportedAcc, networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract });
+  const accObj = { ...unsupportedAcc, networkAccount, getAddress: selfAddress, 
+                   stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract };
+  const acc = accObj as unknown as Account;
+  const balanceOf_ = (token?: Token): Promise<BigNumber> => balanceOf(acc, token);
+  const balancesOf_ = (tokens: Array<Token | null>): Promise<Array<BigNumber>> => balancesOf(acc, tokens);
+
+  return stdAccount({ ...accObj, balanceOf: balanceOf_, balancesOf: balancesOf_ });
 };
 
 export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {

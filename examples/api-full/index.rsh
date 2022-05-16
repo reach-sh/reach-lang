@@ -31,7 +31,8 @@ export const main = Reach.App(() => {
 
   const [ done, x, an, at ] =
     parallelReduce([ false, 0, 0, amt ])
-    .invariant(balance() == an && balance(tok) == at)
+    .invariant(balance() == an)
+    .invariant(balance(tok) == at)
     .define(() => {
       V.read.set([done, x, an, at ]);
     })

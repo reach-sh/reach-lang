@@ -24,6 +24,7 @@ import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { JSDOM } from 'jsdom';
 import githubSlugger from 'github-slugger';
+import { writeFileSync } from 'fs';
 const slugify = githubSlugger.slug;
 const topDoc = new JSDOM("").window.document;
 
@@ -420,7 +421,7 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
   };
 
   const tooltip = (text, hoverText) => {
-    return `<a class="ui-tooltip" title="${hoverText}"><span style="cursor">${text}</span></a>`;
+    return `<span class="ui-tooltip" title="${hoverText}"><span style="cursor: help">${text}</span></span>`;
   };
 
   const makeDirectiveWithClass = (classString) => {
@@ -1001,6 +1002,18 @@ await Promise.all([
 await Promise.all([
   generateSearch(),
 ]);
+
+const SORTED_XREFS = {};
+const XREF_KEYS_ARRAY = Object.keys(xrefs.h.xrefs);
+
+XREF_KEYS_ARRAY.sort();
+XREF_KEYS_ARRAY.forEach(key => {
+  SORTED_XREFS[key] = xrefs.h.xrefs[key];
+});
+
+writeFileSync('/proj/docs/dev/xrefs.json', JSON.stringify(
+  SORTED_XREFS, null, 2
+) + '\n');
 
 if ( hasError ) {
   throw Error(`Build had errors`);

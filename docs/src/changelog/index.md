@@ -7,6 +7,17 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.10 is the current Reach release candidate version.
 
++ 2022/05/14: Added `{!cmd} reach support` sub-command.
++ 2022/05/13: Support custom violation messages for `{!rsh} invariant`s.
++ 2022/05/13: Support multiple `{!rsh} invariant`s for `{!rsh} while` loops and `{!rsh} parallelReduce`.
++ 2022/05/13: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
++ 2022/05/13: Added `{!rsh} getCompanion`.
++ 2022/05/13: Added `apps` field to `{!rsh} remote.ALGO`.
++ 2022/05/07: Added `addressToAccount` field to `{!rsh} remote.ALGO`.
++ 2022/05/05: Added support for multiple `{!rsh} .define` branches in a `{!rsh} parallelReduce`.
++ 2022/05/04: Added `.api_` branch to `{!rsh} fork` and `{!rsh} parallelReduce`.
++ 2022/05/04: Added `CHECK_EXPR` to `{!rsh} .case` in `{!rsh} fork` and `{!rsh} parallelReduce`.
++ 2022/05/04: Added `.check` to `{!rsh} publish` and API `{!rsh} call`s.
 + 2022/04/30: Added `assets` field to `{!rsh} remote.ALGO`.
 + 2022/04/28: Added `{!rsh} sqrt` and renamed old version to `{!rsh} sqrtApprox`.
   This change is backwards incompatible, but we believe that most users will prefer the new version and will want to be warned, via a compile error, that it is available.

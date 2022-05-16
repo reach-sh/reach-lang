@@ -1,0 +1,87 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: while invariant after loop
+  msg: "balance() == 0"
+  at ./invariant_label.rsh:11:16:invariant
+
+  // Violation Witness
+
+  const UInt.max = 10;
+
+  const netBalance/98 = <loop variable>;
+  //    ^ could = 0
+  //      from: ./invariant_label.rsh:9:19:while
+
+  // Theorem Formalization
+
+  const v162 = (netBalance/98 + 1) == 0;
+  //    ^ would be false
+  assert(v162);
+
+Verification failed:
+  when ALL participants are honest
+  of theorem: while invariant after loop
+  msg: "x stays zero"
+  at ./invariant_label.rsh:12:16:invariant
+
+  // Violation Witness
+
+  const UInt.max = 10;
+
+
+  // Theorem Formalization
+
+  const v169 = 4 == 0;
+  //    ^ would be false
+  assert(v169);
+
+  Verifying when NO participants are honest
+Verification failed:
+  when NO participants are honest
+  of theorem: while invariant after loop
+  msg: "balance() == 0"
+  at ./invariant_label.rsh:11:16:invariant
+
+  // Violation Witness
+
+  const UInt.max = 10;
+
+  const netBalance/98 = <loop variable>;
+  //    ^ could = 0
+  //      from: ./invariant_label.rsh:9:19:while
+
+  // Theorem Formalization
+
+  const v203 = (netBalance/98 + 1) == 0;
+  //    ^ would be false
+  assert(v203);
+
+Verification failed:
+  when NO participants are honest
+  of theorem: while invariant after loop
+  msg: "x stays zero"
+  at ./invariant_label.rsh:12:16:invariant
+
+  // Violation Witness
+
+  const UInt.max = 10;
+
+
+  // Theorem Formalization
+
+  const v210 = 4 == 0;
+  //    ^ would be false
+  assert(v210);
+
+Checked 24 theorems; 4 failures :'(
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs.
+
+  ./invariant_label.rsh:20:13:application
+
+  20|     .timeout(10, () => {
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
+

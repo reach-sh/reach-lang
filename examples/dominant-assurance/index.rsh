@@ -89,22 +89,18 @@ export const main = Reach.App(() => {
   // Investors are given a change to invest
   const [timedOut, numInvestors] =
     parallelReduce([false, 0])
-    .invariant(
-      balance() == starterInvestment + numInvestors * investorInvestment
-      && investors.Map.size() == numInvestors
-      && numInvestors <= investorQuorum
-    )
+    .invariant(balance() == starterInvestment + numInvestors * investorInvestment)
+    .invariant(investors.Map.size() == numInvestors)
+    .invariant(numInvestors <= investorQuorum)
     .while(!timedOut && numInvestors < investorQuorum)
-    .api(I.invest,
-      () => check(!investors.member(this)),
-      () => investorInvestment,
-      (k) => {
-        check(!investors.member(this));
+    .api_(I.invest, () => {
+      check(!investors.member(this));
+      return [ investorInvestment, (k) => {
         investors.insert(this);
         k(null);
         return [false, numInvestors + 1];
-      }
-    )
+      }];
+    })
     .timeout(investmentTimeout, () => {
       awaitProductApi(PA.investmentTimeout);
       return [true, numInvestors];
@@ -135,17 +131,15 @@ export const main = Reach.App(() => {
       parallelReduce([false, numInvestors])
       .while(!timedOut_ && unpaidInvestors > 0)
       .invariant(balance() == unpaidInvestors * investorFailPay)
-      .api(I.collectFailPay,
-        () => check(investors.member(this)),
-        () => 0,
-        (k) => {
-          check(investors.member(this));
+      .api_(I.collectFailPay, () => {
+        check(investors.member(this));
+        return [ (k) => {
           investors.remove(this);
           transfer(investorFailPay).to(this);
           k(null);
           return [false, unpaidInvestors - 1];
-        }
-      )
+        }];
+      })
       .timeout(failPayTimeout, () => {
         awaitProductApi(PA.failPayTimeout);
         return [true, unpaidInvestors];

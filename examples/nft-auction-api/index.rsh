@@ -27,17 +27,16 @@ export const main = Reach.App(() => {
     assert(balance(nftId) == amt, "balance of NFT is wrong");
     const end = lastConsensusTime() + lenInBlocks;
     const [
-        highestBidder, 
+        highestBidder,
         lastPrice,
         isFirstBid,
     ] = parallelReduce([Creator, minBid, true])
-        .invariant(balance(nftId) == amt && balance() == (isFirstBid ? 0 : lastPrice))
+        .invariant(balance(nftId) == amt)
+        .invariant(balance() == (isFirstBid ? 0 : lastPrice))
         .while(lastConsensusTime() <= end)
-        .api(Bidder.bid,
-            ((bid) => { assume(bid > lastPrice, "bid is too low"); }),
-            ((bid) => bid),
-            ((bid, notify) => {
-                require(bid > lastPrice, "bid is too low");
+        .api_(Bidder.bid, (bid) => {
+            check(bid > lastPrice, "bid is too low");
+            return [ bid, (notify) => {
                 notify([highestBidder, lastPrice]);
                 if ( ! isFirstBid ) {
                     transfer(lastPrice).to(highestBidder);
@@ -45,10 +44,11 @@ export const main = Reach.App(() => {
                 const who = this;
                 Creator.interact.seeBid(who, bid);
                 return [who, bid, false];
-            })
-        ).timeout(absoluteTime(end), () => {
+            }];
+        })
+        .timeout(absoluteTime(end), () => {
             Creator.publish();
-            return [highestBidder, lastPrice, isFirstBid]; 
+            return [highestBidder, lastPrice, isFirstBid];
         });
 
         transfer(amt, nftId).to(highestBidder);

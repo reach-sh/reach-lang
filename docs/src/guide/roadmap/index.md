@@ -4,23 +4,13 @@ This section describes in a vague way some of the bigger future plans for Reach'
 These are vague for expediency, but we're willing to elaborate if you ask in [the Discord community](@{DISCORD}).
 We welcome your contributions on [GitHub](https://github.com/reach-sh/reach-lang) and in [the Discord community](@{DISCORD}) to help bring these plans to fruition.
 
-Last updated: 2021/09/01
+Last updated: 2022/05/10
 
 **Short term**:
-+ General - Apple Silicon support
-+ Language - `{!rsh} race`-winner `{!rsh} only` blocks
-+ Language - `{!rsh} fork`/`{!rsh} parallelReduce` local pass-through values
-+ Language - Stateless participants
 + Language - `{!rsh} interact` continuations
-+ Networks - Explicit state compilation option
 + Networks - Participant fast catch-up
-+ Networks - Algorand - Post-AVM limitation removal - remote objects, token minting, arbitrary contract length, etc
 + Optimization - Unify view functions with identical bodies
-+ Language - State linear in the number of transactions, rather than only participants
-+ Testing - Unified devnet rather than per-application devnet
 + Frontends - Session resumption
-+ Language - Output streams
-+ Networks - Interface constraints
 + General - Reach debugger
 
 **Medium term**:

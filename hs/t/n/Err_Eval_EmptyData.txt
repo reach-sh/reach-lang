@@ -1,0 +1,8 @@
+reachc: error[RE0135]: Data instances may not be empty
+
+  ./Err_Eval_EmptyData.rsh:2:15:application
+
+  2| const D = Data({});
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0135
+

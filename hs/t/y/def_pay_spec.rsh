@@ -15,7 +15,9 @@ export const main = Reach.App(() => {
 
   const [i] =
     parallelReduce([ 0 ])
-      .invariant(balance() == 0 && balance(tokA) == 0 && balance(tokB) == 0)
+      .invariant(balance() == 0)
+      .invariant(balance(tokA) == 0)
+      .invariant(balance(tokB) == 0)
       .while(i < 10)
       .paySpec([tokA, tokB])
       .case(A,

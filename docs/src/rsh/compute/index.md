@@ -654,9 +654,48 @@ Reach has different unsigned integer types, `{!rsh} UInt` and `{!rsh} UInt256`.
 These values can be casted from one to the other by calling the type as a function with a value.
 
 For example, if `x` is a `{!rsh} UInt`, then `{!rsh} UInt256(x)` is `x` zero-extended to 256 bits.
-Similarly, if `y` is a `{!rsh} UInt256`, then `{!rsh} UInt(y)` is `y` with as many bits as `{!rsh} UInt` has.
-In the second case, if `y` has any non-zero bits that would be lost by the truncation, then the cast will fail at runtime.
+This is demonstrated in the code below:
+
+```reach
+load: /examples/uint256/index.rsh
+range: 79 - 79
+```
+
+```reach
+load: /examples/uint256/index.rsh
+range: 88 - 88
+```
+
+```reach
+load: /examples/uint256/index.rsh
+range: 92 - 93
+```
+
+However, if `y` is a `{!rsh} UInt256`, then `{!rsh} UInt(y)` is `y` with as many bits as `{!rsh} UInt` has. 
+This is demonstrated in the code below:
+
+```reach
+load: /hs/t/y/uint256-verify2.rsh
+range: 6 - 6
+```
+
+```reach
+load: /hs/t/y/uint256-verify2.rsh
+range: 12 - 12
+```
+
+In the second case above, where `{!rsh} UInt256` is casted to `{!rsh} UInt`, if `{!rsh} UInt256` has any non-zero bits that would be lost by the truncation, then the cast will fail at runtime.
 This is guaranteed to not happen when you compile with `{!rsh} verifyArithmetic`.
+
+If you wish to explicitly truncate a `{!rsh} UInt`* type into a smaller size, you can pass a second, `{!rsh} Bool` argument to the cast call.
+Passing `{!rsh} true` truncates the number.
+Passing `{!rsh} false` causes the cast to fail, as describe above. 
+This is the default behavior.
+
+```reach
+const x = UInt256(/* big number */);
+const x_truncated = UInt(x, true);
+```
 
 Numeric literals in your program are considered `{!rsh} UInt`.
 If they are cast to `{!rsh} UInt256`, then your program can contain constant `{!rsh} UInt256` values.
@@ -702,6 +741,18 @@ Most of the time this is good, because it is a signal that you should use a `{!r
 But, sometimes it is necessary and useful to extend one byte string into a larger size.
 Each `{!rsh} Bytes` type has a `pad` field that is bound to a function that extends its argument to the needed size.
 A byte string extended in this way is called @{defn("padded")}, because it is extended with additional `NUL` bytes at the end of the string.
+
+The code below shows how `{!rsh} Padding` can be done:
+
+```reach
+load: /examples/dan-storage/index.rsh
+range: 5 - 5
+```
+
+```reach
+load: /examples/dan-storage/index.rsh
+range: 9 - 9
+```
 
 ### Parenthesized expression
 
@@ -1423,6 +1474,23 @@ maybe(Maybe(UInt).None(), 0, add1);  // 0
  `{!rsh} maybe(m, defaultVal, f)` receives a `{!rsh} Maybe` value, a default value, and a unary function as arguments. The function will
 either return the application of the function, `{!rsh} f`, to the `{!rsh} Some` value or return the default value provided.
 
+The following examples demonstrate different usage of `{!rsh} Maybe`:
+
+```reach
+load: /hs/t/y/data.rsh
+range: 3 - 3
+```
+
+```reach
+load: /hs/t/y/polyEq.rsh
+range: 36 - 36
+```
+
+```reach
+load: /examples/pr-1cc66/index.rsh
+range: 8 - 8
+```
+
 ### `Either`
 
 @{ref("rsh", "Either")}
@@ -1561,6 +1629,11 @@ where the first value is a `{!rsh} Fun([UInt], Bool)`
 which tells you if its argument is one of the enum's values,
 and the next N values are distinct `{!rsh} UInt`s.
 
+```reach
+load: /examples/secured-loan/index.rsh
+range: 13 - 13
+```
+
 ### `assert`
 
 @{ref("rsh", "assert")}
@@ -1600,12 +1673,14 @@ A dynamic assertion that `{!rsh} claim` evaluates to `{!rsh} true`, which expand
 It accepts an optional bytes argument, which is included in any reported violation.
 
 For example, `A` makes the following `{!rsh} check` with a second (optional) argument on line 21:
+
 ```reach
 load: /examples/map-sender/index.rsh
 range: 18 - 22
 ```
 
 While the `{!rsh} check` in the following example, takes just the first argument on line 62:
+
 ```reach
 load: /examples/api-overload/index.rsh
 range: 61 - 62
@@ -1629,6 +1704,13 @@ This is convenient for writing general claims about expressions, such as
 forall(UInt, (x) => assert(x == x));
 ```
 
+The following code sample uses a couple of `{!rsh} forall` arguments to assert that `winner` always provides a valid outcome.
+
+```reach
+load: /examples/rps-6-timeouts/index.rsh
+range: 13-15
+```
+
 ### `possible`
 
 @{ref("rsh", "possible")}
@@ -1638,6 +1720,11 @@ possible( claim, [msg] )
 
  A possibility assertion which is only valid if it is possible for `{!rsh} claim` to evaluate to `{!rsh} true` with honest frontends and participants.
 It accepts an optional bytes argument, which is included in any reported violation.
+
+```reach
+load: /examples/algo-try-csp/index.rsh
+range: 30 - 32
+```
 
 ### `digest`
 
@@ -1650,6 +1737,13 @@ The digest primitive performs a [cryptographic hash](https://en.wikipedia.org/wi
 This returns a `{!rsh} Digest` value.
 The exact algorithm used depends on the connector.
 
+```reach
+load: /examples/workshop-hash-lock/index.rsh
+range: 12 - 14
+```
+
+This sample digests password, `_pass` into a hash, `passDigest`, so that it can be shared safely on the consensus network without eavesdroppers learning the password.
+
 ### `balance`
 
 @{ref("rsh", "balance")}
@@ -1661,13 +1755,15 @@ balance(gil);
 The @{defn("balance")} primitive returns the balance of the contract account for the DApp.
 It takes an optional non-network token value, in which case it returns the balance of the given token.
 
-The example below shows the non-network token being passed as an argument to `{!rsh} balance`:
+The example below shows non-network tokens being passed as arguments to the `{!rsh} balance` primitives:
+
 ```reach
 load: /examples/abstract-tok/index.rsh
 range: 24 - 26
 ```
 
 While in the following example, `{!rsh} balance` takes no argument:
+
 ```reach
 load: /examples/rps-7-loops/index.rsh
 range: 60 - 60
@@ -1688,8 +1784,8 @@ load: /examples/remote-rsh/index.rsh
 range: 26-29
 ```
 	
-In this example, on line 26, `D` publishes the values for `x` and `tok`, which creates the contract.
-After the `{!rsh} publish`, now `{!rsh} getContract` is called and it returns the value `x` in token `tok` of the contract created in the publication.
+In line 26, `D` publishes the values for `x` and `tok`.
+After the `{!rsh} publish`, `{!rsh} getContract` returns the value `x` in token `tok`.
 
 ### `getAddress`
 
@@ -1700,6 +1796,30 @@ getAddress()
 
 The @{defn("getAddress")} primitive returns the `{!rsh} Address` value of the deployed contract's account.
 This function may not be called until after the first publication (which creates the contract).
+
+```reach
+load: /examples/ctc-address/index.rsh
+range: 15-22
+```
+
+In the sample above, Alice publishes to create the contract. 
+Then, an object named `info` references `{!rsh} getContract` which pulls in the contract information.
+Another object, `addr`, references `{!rsh} getAddress` to obtain the address of Alice.
+Both `{!rsh} info` and `{!rsh} addr` are then used in the local step of Alice in her `{!rsh} interact` object.
+
+### `getCompanion`
+
+@{ref("rsh", "getCompanion")}
+```reach
+getCompanion()
+```
+
+The `{!rsh} getCompanion` primitive returns the `{!rsh} Contract` value of the deployed contract's companion, wrapped in a `{!rsh} Maybe` value, because not all contracts have a companion.
+
+:::note
+This is useful on Algorand if contract A calls contract B and contract B needs a companion.
+Contract A will need to use the `{!rsh} REMOTE_FUN.ALGO.apps` options and include B's companion in the call.
+:::
 
 ### `lastConsensusTime` and `lastConsensusSecs`
 
@@ -1825,6 +1945,12 @@ const _ = parallelReduce(...)
 
 This pattern is so common that it can be abbreviated as `{!rsh} .timeRemaining`.
 
+```reach
+load: /examples/raffle/index.rsh
+range: 37-40
+```
+
+As can be seen in this code block from the Raffle example, `{!rsh} makeDeadline` is being used to set the `{!rsh} deadline` to double the original amount of network blocks if someone returns a ticket.
 
 ### `implies`
 
@@ -1853,6 +1979,13 @@ hasRandom
 ```
 
  A participant interact interface which specifies `random` as a function that takes no arguments and returns an unsigned integer of bit width bits. Reach provides a default frontend implementation via hasRandom (Frontend).
+ 
+ ```reach
+load: /examples/rps-7-loops/index.rsh
+range: 20-24
+```
+
+This code section gives the `{!rsh} Player` object the method `{!rsh} hasRandom` so that a random number is used to select a hand in the [Rock, Paper, Scissors!](##tut) tutorial.
 
 ### `hasConsoleLogger`
 

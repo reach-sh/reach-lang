@@ -184,7 +184,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_vst :: VerifySt
   , ctxt_modem :: Maybe VerifyMode
   , ctxt_path_constraint :: [SExpr]
-  , ctxt_while_invariant :: Maybe DLBlock
+  , ctxt_while_invariants :: [DLInvariant DLBlock]
   , ctxt_displayed :: IORef (S.Set SExpr)
   , ctxt_maps :: M.Map DLMVar SMTMapInfo
   , ctxt_addrs :: M.Map SLPart DLVar
@@ -314,7 +314,7 @@ smtPrimOp at p dargs =
     PGE _ -> bvapp "bvuge" ">="
     PGT _ -> bvapp "bvugt" ">"
     SQRT _ -> app "UInt_sqrt"
-    UCAST _ _ -> \case
+    UCAST _ _ _ -> \case
       [x] -> return x
       _ -> impossible "ucast"
     LSH -> bvapp "bvshl" "UInt_lsh"
@@ -353,6 +353,9 @@ smtPrimOp at p dargs =
                   return $ Atom av
         se -> impossible $ "self address " <> show se
     CTC_ADDR_EQ -> app "Contract_addressEq"
+    GET_CONTRACT -> impossible "GET_CONTRACT"
+    GET_ADDRESS -> impossible "GET_ADDRESS"
+    GET_COMPANION -> impossible "GET_COMPANION"
   where
     app n = return . smtApply n
     bvapp n_bv n_i = app $ if use_bitvectors then n_bv else n_i
@@ -405,7 +408,7 @@ mustBeSDT_D = \case
 
 parseType :: SExpr -> App SDT
 parseType = \case
-  Atom "Int" -> return $ SDT_D $ T_UInt uintWord
+  Atom "Int" -> return $ SDT_D $ T_UInt UI_Word
   Atom "Bytes" -> return $ SDT_D $ T_Bytes 0
   Atom t -> do
     typem <- asks ctxt_smt_typem
@@ -516,7 +519,7 @@ parseVal env sdt v = do
                   SMV_Array_Const ty <$> parseVal env (SDT_D ty) e
                 List [Atom "store", arrse, idxse, vse] -> do
                   arrv <- parseVal env sdt arrse
-                  idxv <- parseVal env (SDT_D $ T_UInt uintWord) idxse
+                  idxv <- parseVal env (SDT_D $ T_UInt UI_Word) idxse
                   vv <- parseVal env (SDT_D ty) vse
                   case (arrv, idxv) of
                     (SMV_Array_Const _ vc, SMV_Int idx) -> do
@@ -772,8 +775,8 @@ assertInvariants at_dv t v =
   case t of
     T_UInt ut -> do
       rhs <- case ut of
-               False -> smt_c at_dv DLC_UInt_max
-               True -> return $ smt_lt at_dv $ DLL_Int at_dv ut uint256_Max
+               UI_Word -> smt_c at_dv DLC_UInt_max
+               UI_256 -> return $ smt_lt at_dv $ DLL_Int at_dv ut uint256_Max
       smtAssert (smtApply "<=" [Atom v, rhs])
     _ -> return ()
 
@@ -1064,12 +1067,17 @@ smt_e at_dv mdv de = do
       rhs <- smt_c at DLC_UInt_max
       let lt = uint256_le md rhs
       doClaim at f cl lt Nothing
-    DLE_PrimOp at cp args -> do
-      let f = case cp of
-            SELF_ADDRESS {} -> \se -> pathAddBound at mdv (Just $ SMTProgram de) se Witness
-            _ -> bound at
-      args' <- mapM (smt_a at) args
-      f =<< smtPrimOp at cp args args'
+    DLE_PrimOp at cp args ->
+      case cp of
+        GET_CONTRACT -> unbound at
+        GET_ADDRESS -> unbound at
+        GET_COMPANION -> unbound at
+        _ -> do
+          let f = case cp of
+                SELF_ADDRESS {} -> \se -> pathAddBound at mdv (Just $ SMTProgram de) se Witness
+                _ -> bound at
+          args' <- mapM (smt_a at) args
+          f =<< smtPrimOp at cp args args'
     DLE_ArrayRef at arr_da idx_da -> do
       arr_da' <- smt_a at arr_da
       idx_da' <- smt_a at idx_da
@@ -1144,18 +1152,16 @@ smt_e at_dv mdv de = do
       n' <- smt_v at n
       let go f = smtAssert . f n'
       case mo of
-        Nothing -> go smtEq $ smt_lt at $ DLL_Int at uintWord 0
+        Nothing -> go smtEq $ smt_lt at $ DLL_Int at UI_Word 0
         Just o -> do
           o' <- smt_a at o
           case op of
             PGT _ -> do
-              let w = DLA_Literal $ DLL_Int at uintWord 1
+              let w = DLA_Literal $ DLL_Int at UI_Word 1
               w' <- smt_a at w
-              go smtEq =<< smtPrimOp at (ADD uintWord) [o, w] [o', w']
+              go smtEq =<< smtPrimOp at (ADD UI_Word) [o, w] [o', w']
             PGE _ -> go smtGe o'
             _ -> impossible $ "timeOrder: bad op: " <> show op
-    DLE_GetContract at -> unbound at
-    DLE_GetAddress at -> unbound at
     DLE_EmitLog at _ lv ->
       mapM_ (bound at <=< smt_v at) lv
     DLE_setApiDetails {} -> mempty
@@ -1275,40 +1281,41 @@ smt_block (DLBlock at _ l da) = do
   smt_l l
   smt_a at da
 
-smt_invblock :: BlockMode -> DLBlock -> App ()
-smt_invblock bm b@(DLBlock at f _ _) = do
+smt_invblock :: BlockMode -> DLBlock -> Maybe B.ByteString -> App ()
+smt_invblock bm b@(DLBlock at f _ _) minv_lab = do
   da' <-
-    local (\e -> e {ctxt_inv_mode = bm}) $
-      smt_block b
+      local (\e -> e {ctxt_inv_mode = bm}) $
+        smt_block b
   case bm of
     B_Assume True -> smtAssertCtxt da'
     B_Assume False -> smtAssertCtxt (smtNot da')
-    B_Prove inCont -> verify1 at f (TInvariant inCont) da' Nothing
+    B_Prove inCont -> verify1 at f (TInvariant inCont) da' minv_lab
     B_None -> mempty
 
 smt_while_jump :: Bool -> DLAssignment -> App ()
 smt_while_jump vars_are_primed asn = do
   let DLAssignment asnm = asn
-  inv <-
-    (ctxt_while_invariant <$> ask) >>= \case
-      Just x -> return $ x
-      Nothing -> impossible "asn outside loop"
+  invs <-
+    (ctxt_while_invariants <$> ask) >>= \case
+      [] -> impossible "asn outside loop"
+      xs -> return $ xs
   let add_asn_lets m (DLBlock at fs t ra) =
         DLBlock at fs t' ra
         where
           go (v, a) t_ = DT_Com (DL_Let at (DLV_Let DVC_Many v) (DLE_Arg at a)) t_
           t' = foldr go t $ M.toList m
-  inv' <-
-    case vars_are_primed of
-      False -> return $ add_asn_lets asnm inv
-      True -> do
-        let lvars = M.keys asnm
-        (inv_f, nlvars) <- smt_freshen inv lvars
-        let rho = M.fromList $ zip nlvars lvars
-        let mapCompose bc ab = M.mapMaybe (bc M.!?) ab
-        let asnm' = mapCompose asnm rho
-        return $ add_asn_lets asnm' inv_f
-  smt_invblock (B_Prove vars_are_primed) inv'
+  forM_ invs $ \ (DLInvariant inv minv_lab) -> smtNewScope $ do
+    inv' <-
+      case vars_are_primed of
+        False -> return $ add_asn_lets asnm inv
+        True -> do
+          let lvars = M.keys asnm
+          (inv_f, nlvars) <- smt_freshen inv lvars
+          let rho = M.fromList $ zip nlvars lvars
+          let mapCompose bc ab = M.mapMaybe (bc M.!?) ab
+          let asnm' = mapCompose asnm rho
+          return $ add_asn_lets asnm' inv_f
+    smt_invblock (B_Prove vars_are_primed) inv' minv_lab
 
 smt_asn_def :: SrcLoc -> DLAssignment -> App ()
 smt_asn_def at asn = mapM_ def1 $ M.keys asnm
@@ -1359,22 +1366,24 @@ smt_n = \case
     um <- asks ctxt_untrustworthyMaps
     when um $ smtMapRefresh at
     smt_s s
-  LLC_While at asn inv cond body k ->
+  LLC_While at asn invs cond body k ->
     mapM_ ctxtNewScope [before_m, loop_m, after_m]
     where
-      with_inv = local (\e -> e {ctxt_while_invariant = Just inv})
+      with_inv = local (\e -> e {ctxt_while_invariants = invs })
       before_m = with_inv $ smt_while_jump False asn
       loop_m = do
         smtMapRefresh at
         smt_asn_def at asn
-        smt_invblock (B_Assume True) inv
-        smt_invblock (B_Assume True) cond
+        forM_ invs $ \ (DLInvariant inv minv_lab) -> do
+          smt_invblock (B_Assume True) inv minv_lab
+        smt_invblock (B_Assume True) cond Nothing
         (with_inv $ smt_n body)
       after_m = do
         smtMapRefresh at
         smt_asn_def at asn
-        smt_invblock (B_Assume True) inv
-        smt_invblock (B_Assume False) cond
+        forM_ invs $ \ (DLInvariant inv minv_lab) -> do
+          smt_invblock (B_Assume True) inv minv_lab
+        smt_invblock (B_Assume False) cond Nothing
         smt_n k
   LLC_Continue _at asn -> smt_while_jump True asn
   LLC_ViewIs _ _ _ ma k -> do
@@ -1425,14 +1434,14 @@ smt_s = \case
                 (pv_tok, _) <- mki "tok"
                 let pv_tok' = Atom pv_tok
                 smt <- ctxt_smt <$> ask
-                let pv_net_dv = DLVar at (Just (at, pv_net)) (T_UInt uintWord) pv_net_i
+                let pv_net_dv = DLVar at (Just (at, pv_net)) (T_UInt UI_Word) pv_net_i
                 let pv_net_let = SMTLet at pv_net_dv (DLV_Let DVC_Once pv_net_dv) Context $ SMTProgram (DLE_Arg at pa_net)
                 smtDeclare smt pv_net (Atom "UInt") $ Just pv_net_let
-                smtTypeInv (T_UInt uintWord) $ pv_net'
+                smtTypeInv (T_UInt UI_Word) $ pv_net'
                 smtDeclare smt pv_tok (Atom "Token") Nothing
                 smtTypeInv T_Token $ pv_tok'
                 smtDeclare smt pv_ks (smtApply "Array" [Atom "Token", Atom "UInt"]) Nothing
-                smtTypeInv (T_UInt uintWord) $ smtApply "select" [pv_ks', pv_tok']
+                smtTypeInv (T_UInt UI_Word) $ smtApply "select" [pv_ks', pv_tok']
                 let one v a = smtAssert =<< (smtEq v <$> smt_a at a)
                 when should $ do
                   one pv_net' pa_net
@@ -1496,8 +1505,8 @@ _smtDefineTypes smt ts = do
       (M.fromList
          [ (T_Null, ("Null", none))
          , (T_Bool, ("Bool", none))
-         , (T_UInt uintWord, ("UInt", uintWord_inv))
-         , (T_UInt uint256, ("UInt", uint256_inv))
+         , (T_UInt UI_Word, ("UInt", uintWord_inv))
+         , (T_UInt UI_256, ("UInt", uint256_inv))
          , (T_Digest, ("Digest", none))
          , (T_Address, ("Address", none))
          , (T_Contract, ("Contract", none))
@@ -1523,7 +1532,7 @@ _smtDefineTypes smt ts = do
             let z = "z_" ++ n
             void $ SMT.declare smt z $ Atom n
             let idxs = [0 .. (sz -1)]
-            let idxses = map (smt_lt sb . DLL_Int sb uintWord) idxs
+            let idxses = map (smt_lt sb . DLL_Int sb UI_Word) idxs
             let cons_vars = map (("e" ++) . show) idxs
             let cons_params = map (\x -> (x, Atom tn)) cons_vars
             let defn1 arrse (idxse, var) = smtApply "store" [arrse, idxse, Atom var]
@@ -1636,7 +1645,7 @@ _verify_smt mc ctxt_vst smt lp = do
         return $ SMTMapInfo {..}
   ctxt_maps <- mapM initMapInfo dli_maps
   let ctxt_addrs = M.fromSet (\p -> DLVar at (Just (at, bunpack p)) T_Address 0) $ M.keysSet pies_m
-  let ctxt_while_invariant = Nothing
+  let ctxt_while_invariants = []
   let ctxt_inv_mode = B_None
   let ctxt_path_constraint = []
   let ctxt_modem = Nothing

@@ -1,0 +1,8 @@
+reachc: error[RE0004]: Invalid `var` syntax. (Double check your `while` syntax)
+
+  ./while_no_inv.rsh:8:3:var
+
+  8|   var x = 0;
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0004
+

@@ -1,0 +1,13 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 8 theorems; No failures!
+reachc: error[RAPI0003]: API "go" does not always return result in same consensus step
+
+  ./no_interact_out_switch.rsh:15:3:application
+
+  15|   const [ [mi], k ] = call(B.go);
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RAPI0003
+

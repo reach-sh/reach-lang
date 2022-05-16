@@ -30,10 +30,10 @@ if (role === 'seller') {
     }
   };
 		
-  const acc = await stdlib.newTestAccount(stdlib.parseCurrency(iBalance));
+  const acc = await stdlib.newTestAccount(iBalance);
   await showBalance(acc);
   const ctc = acc.contract(backend);
-  await ctc.participants.Seller(sellerInteract)
+  await ctc.participants.Seller(sellerInteract);
   await showBalance(acc);
 	
 // Buyer
@@ -48,6 +48,6 @@ if (role === 'seller') {
   await showBalance(acc);
   await ctc.p.Buyer(buyerInteract);
   await showBalance(acc);
+};
 
 ask.done();
-};

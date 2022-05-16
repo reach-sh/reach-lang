@@ -2217,16 +2217,16 @@ range: 3 - 9
 However, the correct thing to do is to declare at least one `{!rsh} Participant` or `{!rsh} ParticipantClass` before using `{!rsh} Anybody.publish()` like in the program below:
 
 ```reach
-load: ./examples/api-call/index.rsh
+load: /examples/api-call/index.rsh
 range: 4 - 7
 ```
 
 ```reach
-load: ./examples/api-call/index.rsh
+load: /examples/api-call/index.rsh
 range: 47 - 49
 ```
 
-:::note 
+:::note
 Since `{!rsh} ParticipantClass` is being deprecated, it is preferable to use `{!rsh} API`.
 :::
 
@@ -2335,7 +2335,7 @@ Refer to the `{!rsh} xor` documentation to see what types are supported.
 
 This error indicates that you are attempting to perform a `{!rsh} mod` operation on an unsupported type.
 
-Refer to the `{!rsh} polyMod` documentation to see what types are supported.
+Refer to the `{!rsh} mod` documentation to see what types are supported.
 
 ## {#RE0131} RE0131
 
@@ -2347,6 +2347,72 @@ You can change the domain of a function by altering the type of its parameters o
 ## {#RE0132} RE0132
 
 This error indicates you had extra fields in `{!rsh} REMOTE_FUN.ALGO` that are not supported.
+
+## {#RE0133} RE0133
+
+This error indicates that a thunk, or function with no parameters, was expected but something else was provided.
+
+For example, the code below erroneously provides a function with one parameter to the `{!rsh} .check` function:
+
+```reach
+A.publish(x)
+  .check((x) => {
+    check(x > 0, "x > 0");
+  });
+```
+
+You can fix this error by removing the unnecessary function parameter.
+
+```reach
+A.publish(x)
+  .check(() => {
+    check(x > 0, "x > 0");
+  });
+```
+
+## {#RE0134} RE0134
+
+This error indicates that you returned the wrong values in `{!rsh} CHECKED_CONSENSUS_EXPR` of an `{!rsh} .api_` branch.
+
+For example, the code below erroneously returns the new accumulator for `{!rsh} parallelReduce`:
+
+```reach
+.api_(B.setX,
+  (x) => {
+    check(x > 0);
+    return [ x ];
+  })
+```
+
+You can fix this error by returning a function that accepts the API return function as a parameter.
+
+```reach
+.api_(B.setX,
+  (x) => {
+    check(x > 0);
+    return [ (k) => {
+      return [ x ];
+    }]
+  })
+```
+
+Alternatively, if you want the api `B.setX` to pay into the contract, you can specify the pay amount as the first element in the return value:
+
+```reach
+.api_(B.setX,
+  (x) => {
+    check(x > 0);
+    const payAmt = 5;
+    return [ payAmt, (k) => {
+      return [ x ];
+    }]
+  })
+```
+
+## {#RE0135} RE0135
+
+This error indicates that you attempted to create a `{!rsh} Data` instance with no variants.
+This is not allowed.
 
 ## {#REP0000} REP0000
 

@@ -29,7 +29,7 @@ In the example below, see how `{!rsh} init();` is used to finalize the available
 After which a local step is introduced:
 
 ```reach
-load: ./examples/api-twice/index.rsh
+load: /examples/api-twice/index.rsh
 range: 4 - 15
 ```
 
@@ -53,7 +53,7 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
 
   See example below:
   ```reach
-  load: examples/map-simpl/index.rsh
+  load: /examples/map-simpl/index.rsh
   range: 4 - 6
   ```
 
@@ -68,7 +68,7 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
 
   See example below:
   ```reach
-  load: examples/uint256/index.rsh
+  load: /examples/uint256/index.rsh
   range: 3 - 5
   ```
 
@@ -99,7 +99,7 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
 
   In the example below, only `ETH` and `ALGO` are chosen:
   ```reach
-  load: examples/popularity-contest/index.rsh
+  load: /examples/popularity-contest/index.rsh
   range: 10 - 15
   ```
 
@@ -152,7 +152,7 @@ API({ vote: Fun([Address], UInt) })
 // or
 API('Voter', { vote: Fun([Address], UInt)}, { vote: "castVote" })
 // or
-API({ add2: Fun([UInt, UInt], UInt), add1: Fun([UInt], UInt) }, { add1: "add", add2: "add })
+API({ add2: Fun([UInt, UInt], UInt), add1: Fun([UInt], UInt) }, { add1: "add", add2: "add" })
 ```
 
 APIs are functions that can be called by other contracts, as well as off-chain.
@@ -191,13 +191,13 @@ A view is defined with `{!rsh} View(viewName, viewInterface)` or `{!rsh} View(vi
 
 For example, `{!rsh} View` is used in the code below without a `{!rsh} viewName`:
 ```reach
-load: examples/remote-rsh/index.rsh
+load: /examples/remote-rsh/index.rsh
 range: 16 - 19
 ```
 
 While the `{!rsh} View` in the following code contains a `{!rsh} viewName`:
 ```reach
-load: examples/view-steps/index.rsh
+load: /examples/view-steps/index.rsh
 range: 11 - 12
 ```
 
@@ -221,13 +221,13 @@ An event is defined with `{!rsh} Events(eventName, eventInterface)` or `{!rsh} E
 
 For example, the `{!rsh} Events` in the code below has no `{!rsh} eventName`:
 ```reach
-load: examples/event-monitor/index.rsh
+load: /examples/event-monitor/index.rsh
 range: 10 - 13
 ```
 
 While the `{!rsh} Events` in following example has an `{!rsh} eventName`:
 ```reach
-load: examples/dominant-assurance/index.rsh
+load: /examples/dominant-assurance/index.rsh
 range: 34 - 35
 ```
 

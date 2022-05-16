@@ -18,15 +18,16 @@ export const main = Reach.App(() => {
   D.interact.ready();
 
   const [done, amt] = parallelReduce([false, 0])
-    .invariant(balance() == amt && amt == M.sum())
+    .invariant(balance() == amt)
+    .invariant(amt == M.sum())
     .while(! done || amt > 0)
-    .api(P.done, () => {
-      assume(this == D);
-    }, () => 0, (k) => {
-      require(this == D);
-      k(null);
-      D.interact.log('Done when amt == 0');
-      return [ true, amt ];
+    .api_(P.done, () => {
+      check(this == D);
+      return [ (k) => {
+        k(null);
+        D.interact.log('Done when amt == 0');
+        return [ true, amt ];
+      }]
     })
     .api(P.put, (x) => x, (x, k) => {
       const o = fromSome(M[this], 0);
@@ -36,17 +37,17 @@ export const main = Reach.App(() => {
       D.interact.log(this, 'put', x, o, n);
       return [ done, amt + x ];
     })
-    .api(P.get, (x) => {
-      assume(x <= fromSome(M[this], 0));
-    }, (_) => 0, (x, k) => {
+    .api_(P.get, (x) => {
       const o = fromSome(M[this], 0);
-      require(x <= o);
-      const n = o - x;
-      k(n);
-      D.interact.log(this, 'get', x, o, n);
-      transfer(x).to(this);
-      M[this] = n;
-      return [ done, amt - x];
+      check(x <= o);
+      return [ (k) => {
+        const n = o - x;
+        k(n);
+        D.interact.log(this, 'get', x, o, n);
+        transfer(x).to(this);
+        M[this] = n;
+        return [ done, amt - x];
+      }];
     });
   commit();
   exit();

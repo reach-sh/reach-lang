@@ -128,7 +128,7 @@ instance Countable DLWithBill where
     counts y <> counts z
 
 instance Countable DLRemoteALGO where
-  counts (DLRemoteALGO x y) = counts x <> counts y
+  counts (DLRemoteALGO x y z w) = counts x <> counts y <> counts z <> counts w
 
 instance Countable DLExpr where
   counts = \case
@@ -157,8 +157,6 @@ instance Countable DLExpr where
     DLE_TokenBurn _ tok amt -> counts [tok, amt]
     DLE_TokenDestroy _ tok -> counts tok
     DLE_TimeOrder _ _ a b -> counts a <> counts b
-    DLE_GetContract _ -> mempty
-    DLE_GetAddress _ -> mempty
     DLE_EmitLog _ _ a -> counts a
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ mt tb -> counts mt <> counts tb

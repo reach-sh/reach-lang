@@ -104,7 +104,7 @@ data DLSStmt
   | DLS_While
       { dls_w_at :: SrcLoc
       , dls_w_asn :: DLAssignment
-      , dls_w_inv :: DLSBlock
+      , dls_w_inv :: [DLInvariant DLSBlock]
       , dls_w_cond :: DLSBlock
       , dls_w_body :: DLStmts
       }
@@ -127,8 +127,8 @@ data TokenMeta
 
 tmTypeOf :: TokenMeta -> DLType
 tmTypeOf = \case
-  TM_Balance   -> T_UInt uintWord
-  TM_Supply    -> T_UInt uintWord
+  TM_Balance   -> T_UInt UI_Word
+  TM_Supply    -> T_UInt UI_Word
   TM_Destroyed -> T_Bool
 
 instance Pretty DLSStmt where

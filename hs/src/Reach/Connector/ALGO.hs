@@ -42,6 +42,7 @@ import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Warning
 import Safe (atMay, headMay)
+import Safe.Foldable (maximumMay)
 import System.Exit
 import System.FilePath
 import System.IO.Temp
@@ -239,8 +240,8 @@ conName' = "ALGO"
 
 conCons' :: DLConstant -> DLLiteral
 conCons' = \case
-  DLC_UInt_max  -> DLL_Int sb uintWord $ 2 ^ (64 :: Integer) - 1
-  DLC_Token_zero -> DLL_Int sb uintWord $ 0
+  DLC_UInt_max  -> DLL_Int sb UI_Word $ 2 ^ (64 :: Integer) - 1
+  DLC_Token_zero -> DLL_Int sb UI_Word $ 0
 
 algoMinTxnFee :: Integer
 algoMinTxnFee = 1000
@@ -310,7 +311,7 @@ algoMaxAppProgramLen_really :: Integer
 algoMaxAppProgramLen_really = (1 + algoMaxExtraAppProgramPages) * algoMaxAppProgramLen
 
 minimumBalance_l :: DLLiteral
-minimumBalance_l = DLL_Int sb uintWord algoMinimumBalance
+minimumBalance_l = DLL_Int sb UI_Word algoMinimumBalance
 
 tealVersionPragma :: LT.Text
 tealVersionPragma = "#pragma version 6"
@@ -318,42 +319,44 @@ tealVersionPragma = "#pragma version 6"
 -- Algo specific stuff
 
 maxTypeSize :: M.Map a DLType -> Integer
-maxTypeSize m =
-  case M.null m of
-    True -> 0
-    False -> maximum $ map typeSizeOf $ M.elems m
+maxTypeSize m = fromMaybe 0 $ maximumMay $ map typeSizeOf $ M.elems m
+
+typeSig_ :: Bool -> DLType -> String
+typeSig_ addr2acc = \case
+  T_Null -> "byte[0]"
+  T_Bool -> "byte" -- "bool"
+  T_UInt UI_Word -> "uint64"
+  T_UInt UI_256 -> "uint256"
+  T_Bytes sz -> "byte" <> array sz
+  T_Digest -> "digest"
+  T_Address -> if addr2acc then "account" else "address"
+  T_Contract -> typeSig $ T_UInt UI_Word
+  T_Token -> typeSig $ T_UInt UI_Word
+  T_Array t sz -> typeSig t <> array sz
+  T_Tuple ts -> "(" <> intercalate "," (map typeSig ts) <> ")"
+  T_Object m -> typeSig $ T_Tuple $ M.elems m
+  T_Data m -> "(byte,byte" <> array (maxTypeSize m) <> ")"
+  T_Struct ts -> typeSig $ T_Tuple $ map snd ts
+  where
+    --The ABI allows us to do this, but we don't know how to do in the remote
+    --call generator
+    --rec = typeSig_ addr2acc
+    array sz = "[" <> show sz <> "]"
 
 typeSig :: DLType -> String
-typeSig x =
-  case x of
-    T_Null -> "byte[0]"
-    T_Bool -> "byte" -- "bool"
-    T_UInt False -> "uint64"
-    T_UInt True -> "uint256"
-    T_Bytes sz -> "byte" <> array sz
-    T_Digest -> "digest"
-    T_Address -> "address"
-    T_Contract -> typeSig $ T_UInt uintWord
-    T_Token -> typeSig $ T_UInt uintWord
-    T_Array t sz -> typeSig t <> array sz
-    T_Tuple ts -> "(" <> intercalate "," (map typeSig ts) <> ")"
-    T_Object m -> typeSig $ T_Tuple $ M.elems m
-    T_Data m -> "(byte,byte" <> array (maxTypeSize m) <> ")"
-    T_Struct ts -> typeSig $ T_Tuple $ map snd ts
-  where
-    array sz = "[" <> show sz <> "]"
+typeSig = typeSig_ False
 
 typeSizeOf :: DLType -> Integer
 typeSizeOf = \case
   T_Null -> 0
   T_Bool -> 1
-  T_UInt False -> word
-  T_UInt True -> 32
+  T_UInt UI_Word -> word
+  T_UInt UI_256 -> 32
   T_Bytes sz -> sz
   T_Digest -> 32
   T_Address -> 32
-  T_Contract -> typeSizeOf $ T_UInt uintWord
-  T_Token -> typeSizeOf $ T_UInt uintWord
+  T_Contract -> typeSizeOf $ T_UInt UI_Word
+  T_Token -> typeSizeOf $ T_UInt UI_Word
   T_Array t sz -> sz * typeSizeOf t
   T_Tuple ts -> sum $ map typeSizeOf ts
   T_Object m -> sum $ map typeSizeOf $ M.elems m
@@ -1224,15 +1227,15 @@ sallocVarLet (DLVarLet mvc dv) sm cgen km = do
 
 ctobs :: DLType -> App ()
 ctobs = \case
-  T_UInt False -> output (Titob False)
-  T_UInt True -> nop
+  T_UInt UI_Word -> output (Titob False)
+  T_UInt UI_256 -> nop
   T_Bool -> output (Titob True) >> output (TSubstring 7 8)
   T_Null -> nop
   T_Bytes _ -> nop
   T_Digest -> nop
   T_Address -> nop
-  T_Contract -> ctobs $ T_UInt uintWord
-  T_Token -> ctobs $ T_UInt uintWord
+  T_Contract -> ctobs $ T_UInt UI_Word
+  T_Token -> ctobs $ T_UInt UI_Word
   T_Array {} -> nop
   T_Tuple {} -> nop
   T_Object {} -> nop
@@ -1241,15 +1244,15 @@ ctobs = \case
 
 cfrombs :: DLType -> App ()
 cfrombs = \case
-  T_UInt False -> op "btoi"
-  T_UInt True -> nop
+  T_UInt UI_Word -> op "btoi"
+  T_UInt UI_256 -> nop
   T_Bool -> op "btoi"
   T_Null -> nop
   T_Bytes _ -> nop
   T_Digest -> nop
   T_Address -> nop
-  T_Contract -> cfrombs $ T_UInt uintWord
-  T_Token -> cfrombs $ T_UInt uintWord
+  T_Contract -> cfrombs $ T_UInt UI_Word
+  T_Token -> cfrombs $ T_UInt UI_Word
   T_Array {} -> nop
   T_Tuple {} -> nop
   T_Object {} -> nop
@@ -1258,7 +1261,7 @@ cfrombs = \case
 
 ctzero :: DLType -> App ()
 ctzero = \case
-  T_UInt False -> cint 0
+  T_UInt UI_Word -> cint 0
   t -> do
     padding $ typeSizeOf t
     cfrombs t
@@ -1276,8 +1279,8 @@ cl :: DLLiteral -> App ()
 cl = \case
   DLL_Null -> cbs ""
   DLL_Bool b -> cint $ if b then 1 else 0
-  DLL_Int at False i -> cint_ at i
-  DLL_Int at True i ->
+  DLL_Int at UI_Word i -> cint_ at i
+  DLL_Int at UI_256 i ->
     cbs $ itob 32 $ checkIntLiteral at "UInt256" 0 uint256_Max i
   DLL_TokenZero -> cint 0
 
@@ -1335,22 +1338,20 @@ cprim = \case
   PGT t -> bcall t ">"
   PGE t -> bcall t ">="
   SQRT t -> bcallz t "sqrt"
-  UCAST from to -> \case
+  UCAST from to trunc -> \case
     [v] -> do
       case (from, to) of
-        (False, True) -> do
-          --- UInt64 to UInt256
+        (UI_Word, UI_256) -> do
           padding $ 3 * 8
           ca v
           output $ Titob False
           op "concat"
-        (True, False) -> do
-          --- UInt256 to UInt64
+        (UI_256, UI_Word) -> do
           ca v
           -- [ v ]
           let ext i = cint (8 * i) >> op "extract_uint64"
           PLOpts {..} <- asks ePLO
-          unless plo_verifyArithmetic $ do
+          unless (plo_verifyArithmetic || trunc) $ do
             dupn 3
             -- [ v, v, v, v ]
             let go i = ext i >> cint 0 >> asserteq
@@ -1433,18 +1434,22 @@ cprim = \case
       ca aa
       op "=="
     _ -> impossible "ctcAddrEq args"
+  GET_CONTRACT -> const $ do
+    code "txn" ["ApplicationID"]
+  GET_ADDRESS -> const $ cContractAddr
+  GET_COMPANION -> const $ callCompanion sb CompanionGet
   where
     call o = \args -> do
       forM_ args ca
       op o
-    bcall t o = call $ (if t then "b" else "") <> o
+    bcall t o = call $ (if t == UI_256 then "b" else "") <> o
     bcallz t o args = do
       bcall t o args
-      when t $ do
+      when (t == UI_256) $ do
         libCall LF_checkUInt256ResultLen $ do
           op "dup"
           op "len"
-          cint $ typeSizeOf $ T_UInt uint256
+          cint $ typeSizeOf $ T_UInt UI_256
           op "swap"
           op "-"
           -- This traps on purpose when the result is longer than 256
@@ -1457,7 +1462,7 @@ cContractToAddr :: DLArg -> App ()
 cContractToAddr ctca = do
   cbs "appID"
   ca ctca
-  ctobs $ T_UInt uintWord
+  ctobs $ T_UInt UI_Word
   op "concat"
   op "sha512_256"
 
@@ -1703,7 +1708,7 @@ cArrayRef _at t frombs ie = do
         False -> ctobs T_Bool
     _ -> do
       case ie of
-        Left (DLA_Literal (DLL_Int _ False ii)) -> do
+        Left (DLA_Literal (DLL_Int _ UI_Word ii)) -> do
           let start = ii * tsz
           cextract start tsz
         _ -> do
@@ -1968,7 +1973,7 @@ ce = \case
               return $ Just $ ca aa
         let eidx =
               case ia of
-                DLA_Literal (DLL_Int _ False ii) -> Left ii
+                DLA_Literal (DLL_Int _ UI_Word ii) -> Left ii
                 _ -> Right $ ca ia
         cArraySet at (t, alen) mcbig eidx cnew
   DLE_ArrayConcat _ x y -> do
@@ -2003,7 +2008,7 @@ ce = \case
     block_ "TokenInit" $ do
       let mt_always = True
       let mt_mtok = Just tok
-      let mt_amt = DLA_Literal $ DLL_Int sb uintWord 0
+      let mt_amt = DLA_Literal $ DLL_Int sb UI_Word 0
       let mt_mrecv = Nothing
       let mt_next = False
       let mt_submit = True
@@ -2053,7 +2058,7 @@ ce = \case
           cla $ mdaToMaybeLA mt mva
           cTupleSet at mdt $ fromIntegral i
   DLE_Remote at fs ro rng_ty rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo ma -> do
-    let DLRemoteALGO _fees r_assets = malgo
+    let DLRemoteALGO _fees r_assets r_addr2acc r_apps = malgo
     warn_lab <- asks eWhich >>= \case
       Just which -> return $ "Step " <> show which
       Nothing -> return $ "This program"
@@ -2061,7 +2066,7 @@ ce = \case
       warn_lab <> " calls a remote object at " <> show at <> ". This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object. Furthermore, the remote object may require special transaction parameters which are not expressed in the Reach API or the Algorand ABI standards."
     let ts = map argTypeOf as
     let rm = fromMaybe rm' ma
-    let sig = signatureStr rm ts (Just rng_ty)
+    let sig = signatureStr r_addr2acc rm ts (Just rng_ty)
     remoteTxns <- liftIO $ newCounter 0
     let mayIncTxn m = do
           b <- m
@@ -2079,7 +2084,7 @@ ce = \case
         let mtoksiAll = zip [0..] mtoksBill
         let (mtoksiBill, mtoksiZero) = splitAt (length mtoksBill) mtoksiAll
         let paid = M.fromList $ (Nothing, pay_net) : (map (\(x, y) -> (Just y, x)) pay_ks)
-        let balsT = T_Tuple $ map (const $ T_UInt uintWord) mtoksiAll
+        let balsT = T_Tuple $ map (const $ T_UInt UI_Word) mtoksiAll
         let gb_pre _ mtok = do
               cGetBalance at mtok
               case M.lookup mtok paid of
@@ -2087,7 +2092,7 @@ ce = \case
                 Just amt -> do
                   ca amt
                   op "-"
-        cconcatbs $ map (\(i, mtok) -> (T_UInt uintWord, gb_pre i mtok)) mtoksiAll
+        cconcatbs $ map (\(i, mtok) -> (T_UInt UI_Word, gb_pre i mtok)) mtoksiAll
         storeBals
         -- Start the call
         let mt_at = at
@@ -2114,9 +2119,26 @@ ce = \case
         makeTxn1 "ApplicationID"
         cbs $ sigStrToBytes sig
         makeTxn1 "ApplicationArgs"
+        accountsR <- liftIO $ newCounter 1
         forM_ as $ \a -> do
           ca a
-          ctobs $ argTypeOf a
+          let t = argTypeOf a
+          ctobs t
+          case t of
+            -- XXX This is bad and will not work in most cases
+            T_Address -> do
+              incResource R_Account a
+              let m = makeTxn1 "Accounts"
+              case r_addr2acc of
+                False -> do
+                  op "dup"
+                  m
+                True -> do
+                  i <- liftIO $ incCounter accountsR
+                  m
+                  cint $ fromIntegral i
+                  ctobs $ T_UInt UI_Word
+            _ -> return ()
           makeTxn1 "ApplicationArgs"
         -- XXX If we can "inherit" resources, then this needs to be removed and
         -- we need to check that nnZeros actually stay 0
@@ -2124,13 +2146,10 @@ ce = \case
           incResource R_Asset a
           ca a
           makeTxn1 "Assets"
-        -- XXX This is bad and will not work in most cases
-        let isAddress = (==) T_Address . argTypeOf
-        forM_ (filter isAddress as) $ \a -> do
-          incResource R_Account a
+        forM_ r_apps $ \a -> do
+          incResource R_App a
           ca a
-          ctobs $ argTypeOf a
-          makeTxn1 "Accounts"
+          makeTxn1 "Applications"
         op "itxn_submit"
         show_stack ("Remote: " <> sig) Nothing at fs
         appl_idx <- liftIO $ readCounter remoteTxns
@@ -2139,7 +2158,7 @@ ce = \case
               loadBals
               cTupleRef at balsT idx
               op "-"
-        cconcatbs $ map (\(i, mtok) -> (T_UInt uintWord, gb_post i mtok)) mtoksiBill
+        cconcatbs $ map (\(i, mtok) -> (T_UInt UI_Word, gb_post i mtok)) mtoksiBill
         forM_ mtoksiZero $ \(idx, mtok) -> do
           cGetBalance at mtok
           loadBals
@@ -2183,15 +2202,13 @@ ce = \case
     -- XXX We could give the minimum balance back to the creator
     return ()
   DLE_TimeOrder {} -> impossible "timeorder"
-  DLE_GetContract _ -> code "txn" ["ApplicationID"]
-  DLE_GetAddress _ -> cContractAddr
   DLE_EmitLog at k vs -> do
     let internal = do
           (v, n) <- case vs of
             [v'@(DLVar _ _ _ n')] -> return (v', n')
             _ -> impossible "algo ce: Expected one value"
           clog $
-            [ DLA_Literal (DLL_Int at uintWord $ fromIntegral n)
+            [ DLA_Literal (DLL_Int at UI_Word $ fromIntegral n)
             , DLA_Var v
             ]
           cv v
@@ -2211,7 +2228,7 @@ ce = \case
     which <- fromMaybe (impossible "setApiDetails no which") <$> asks eWhich
     mac <- multipleApiCalls p
     let p' = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) which mac
-    callCompanion at $ CompanionLabel p'
+    callCompanion at $ CompanionLabel True p'
   DLE_GetUntrackedFunds at mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
     cGetBalance at mtok
@@ -2278,11 +2295,11 @@ multipleApiCalls w = do
     Just n  -> return $ n > 1
     Nothing -> return False
 
-signatureStr :: String -> [DLType] -> Maybe DLType -> String
-signatureStr f args mret = sig
+signatureStr :: Bool -> String -> [DLType] -> Maybe DLType -> String
+signatureStr addr2acc f args mret = sig
   where
     rets = fromMaybe "" $ fmap typeSig mret
-    sig = f <> "(" <> intercalate "," (map typeSig args) <> ")" <> rets
+    sig = f <> "(" <> intercalate "," (map (typeSig_ addr2acc) args) <> ")" <> rets
 
 sigStrToBytes :: String -> BS.ByteString
 sigStrToBytes sig = shabs
@@ -2295,7 +2312,7 @@ sigStrToInt = fromIntegral . btoi . sigStrToBytes
 
 clogEvent :: String -> [DLVar] -> App ()
 clogEvent eventName vs = do
-  let sigStr = signatureStr eventName (map varType vs) Nothing
+  let sigStr = signatureStr False eventName (map varType vs) Nothing
   let as = map DLA_Var vs
   let cheader = cbs (bpack sigStr) >> op "sha512_256" >> output (TSubstring 0 4)
   cconcatbs $ (T_Bytes 4, cheader) : map (\a -> (argTypeOf a, ca a)) as
@@ -2613,7 +2630,7 @@ ct = \case
           let mt_submit = True
           let mt_next = False
           let mt_mcclose = Just $ cDeployer
-          let mt_amt = DLA_Literal $ DLL_Int at uintWord 0
+          let mt_amt = DLA_Literal $ DLL_Int at UI_Word 0
           forM_ toks $ \tok -> do
             let mt_mtok = Just tok
             void $ makeTxn $ MakeTxn {..}
@@ -2693,12 +2710,12 @@ gvLoad = gvOutput TLoad
 
 gvType :: GlobalVar -> DLType
 gvType = \case
-  GV_txnCounter -> T_UInt uintWord
-  GV_currentStep -> T_UInt uintWord
-  GV_currentTime -> T_UInt uintWord
+  GV_txnCounter -> T_UInt UI_Word
+  GV_currentStep -> T_UInt UI_Word
+  GV_currentTime -> T_UInt UI_Word
   GV_companion -> T_Contract
   GV_svs -> T_Null
-  GV_argTime -> T_UInt uintWord
+  GV_argTime -> T_UInt UI_Word
   GV_argMsg -> T_Null
   GV_wasMeth -> T_Bool
   GV_apiRet -> T_Null
@@ -2816,9 +2833,11 @@ bindFromSvs_ at svs m = do
 
 data CompanionCall
   = CompanionCreate
-  | CompanionLabel Label
+  | CompanionLabel Bool Label
   | CompanionDelete
   | CompanionDeletePre
+  | CompanionGet
+  deriving (Eq, Show)
 callCompanion :: SrcLoc -> CompanionCall -> App ()
 callCompanion at cc = do
   mcr <- asks eCompanion
@@ -2831,16 +2850,26 @@ callCompanion at cc = do
         case ctor of
           True -> do
             cint_ at 0
-            incResource R_App $ DLA_Literal $ DLL_Int at uintWord 0
+            incResource R_App $ DLA_Literal $ DLL_Int at UI_Word 0
             freeResource R_App $ cr_ro
           False -> do
             ca cr_ro
             unless del $ do
               incResource R_App cr_ro
         makeTxn1 "ApplicationID"
+  comment $ texty cc
   case cc of
+    CompanionGet -> do
+      let t = T_Contract
+      let go = cla . mdaToMaybeLA t
+      case mcr of
+        Nothing -> go Nothing
+        Just _ -> do
+          dv <- allocDLVar at t
+          sallocLet dv (gvLoad GV_companion) $
+            go $ Just $ DLA_Var dv
     CompanionCreate -> do
-      let mpay pc = ce $ DLE_CheckPay at [] (DLA_Literal $ DLL_Int at uintWord $ pc * algoMinimumBalance) Nothing
+      let mpay pc = ce $ DLE_CheckPay at [] (DLA_Literal $ DLL_Int at UI_Word $ pc * algoMinimumBalance) Nothing
       case mcr of
         Nothing -> do
           mpay 1
@@ -2856,8 +2885,8 @@ callCompanion at cc = do
           code "itxn" ["CreatedApplicationID"]
           gvStore GV_companion
           return ()
-    CompanionLabel l -> do
-      label l
+    CompanionLabel mk l -> do
+      when mk $ label l
       whenJust mcr $ \cim -> do
         let howManyCalls = fromMaybe 0 $ M.lookup l cim
         -- XXX bunch into groups of 16, slightly less cost
@@ -2894,7 +2923,10 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
   let bindFromSvs = bindFromSvs_ at svsl
   let lab = handlerLabel which
   block_ lab $ do
-    callCompanion at $ CompanionLabel lab
+    label lab
+    when isCtor $ do
+      callCompanion at $ CompanionCreate
+    callCompanion at $ CompanionLabel False lab
     comment "check step"
     cint $ fromIntegral prev
     gvLoad GV_currentStep
@@ -2918,8 +2950,6 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
             . (bindFromMsg $ map v2vl msg)
     bindVars $ do
       clogEvent ("_reach_e" <> show which) msg
-      when isCtor $ do
-        callCompanion at $ CompanionCreate
       let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
           checkTime1 cmp clhs rhsa = do
             clhs
@@ -3038,7 +3068,7 @@ capi qualify (who, (ApiInfo {..})) = do
   where
     capi_who = who
     capi_which = ai_which
-    mk_sig n = signatureStr n capi_arg_tys mret
+    mk_sig n = signatureStr False n capi_arg_tys mret
     capi_sig = mk_sig f
     f = adjustApiName (bunpack who) ai_which qualify
     imp = impossible "apiSig"
@@ -3075,7 +3105,7 @@ genApiJump who ms = do
   let whichs = map capi_which ms'
   let labels = map capi_label ms'
   let (arg_tys, mret) = apiArgsAndRet m
-  let sig = signatureStr (bunpack who) arg_tys $ Just mret
+  let sig = signatureStr False (bunpack who) arg_tys $ Just mret
   return $ (sig, CApi {
       capi_who = who
     , capi_label = capi_label m
@@ -3104,7 +3134,7 @@ cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs) = (cview_sig, c)
   where
     cview_who = who
     f = bunpack who
-    cview_sig = signatureStr f cview_arg_tys $ Just cview_ret_ty
+    cview_sig = signatureStr False f cview_arg_tys $ Just cview_ret_ty
     c = CView {..}
 
 doWrapData :: [DLType] -> (DLArg -> App ()) -> App ()
@@ -3398,7 +3428,7 @@ compile_algo env disp pl = do
       cint argCount
       asserteq
     argLoad ArgMethod
-    cfrombs $ T_UInt uintWord
+    cfrombs $ T_UInt UI_Word
     label "preamble"
     op "dup"
     code "bz" ["publish"]
@@ -3411,13 +3441,13 @@ compile_algo env disp pl = do
     label "publish"
     -- Load and store the time
     argLoad ArgTime
-    cfrombs $ T_UInt uintWord
+    cfrombs $ T_UInt UI_Word
     gvStore GV_argTime
     -- Push the message on the stack for later
     argLoad ArgMsg
     -- Load the publish number
     argLoad ArgPublish
-    cfrombs $ T_UInt uintWord
+    cfrombs $ T_UInt UI_Word
     let isLoop = \case
           C_Loop {} -> True
           C_Handler {} -> False
@@ -3439,7 +3469,7 @@ compile_algo env disp pl = do
       let mt_submit = True
       let mt_next = False
       let mt_mcclose = Just $ cDeployer
-      let mt_amt = DLA_Literal $ DLL_Int at uintWord 0
+      let mt_amt = DLA_Literal $ DLL_Int at UI_Word 0
       void $ makeTxn $ MakeTxn {..}
     code "b" ["updateState"]
     label "updateStateNoOp"

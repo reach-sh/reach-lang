@@ -25,17 +25,16 @@ export const main = Reach.App(() => {
 
   const [owner, heir] =
     parallelReduce([C, firstHeir])
-    .invariant(balance() == 0 && owner != heir)
+    .invariant(balance() == 0)
+    .invariant(owner != heir)
     .while(true)
-    .api(O.ping,
-      () => check(this == owner),
-      () => 0,
-      (k) => {
-        check(this == owner);
+    .api_(O.ping, () => {
+      check(this == owner);
+      return [ (k) => {
         k(null);
         return [owner, heir];
-      }
-    )
+      }];
+    })
     .timeout(relativeTime(switchTime), () => {
       const [[nextHeir], k] =
         call(O.setNextHeir)

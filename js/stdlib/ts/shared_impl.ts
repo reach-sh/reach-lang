@@ -15,6 +15,7 @@ import {
   bytesEq,
   assert,
   formatAssertInfo,
+  MaybeRep,
 } from './shared_backend';
 import type { MapRefT } from './shared_backend'; // =>
 import { process } from './shim';
@@ -28,6 +29,11 @@ type BigNumber = ethers.BigNumber;
 export type CurrencyAmount = string | number | BigNumber | bigint
 
 export type {Connector} from './ConnectorMode';
+
+// This is dumb but it's how ESLint says to do it
+// `hasOwnProperty` is important for denying access to prototype fields
+// https://eslint.org/docs/rules/no-prototype-builtins
+export const hasProp = (o: unknown, p: string) => o && {}.hasOwnProperty.call(o, p);
 
 export const j2sf = (x:any): string => {
   // We're removing duplicated values, so we can remove cyclic references
@@ -179,6 +185,7 @@ export type APIMap = ViewMap;
 export type EventMap = { [key: string]: any }
 
 export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
+  getContractCompanion: () => Promise<MaybeRep<ContractInfo>>,
   getContractInfo: () => Promise<ContractInfo>,
   getContractAddress: () => Promise<CBR_Address>,
   getBalance: () => Promise<BigNumber>,
@@ -206,7 +213,7 @@ export type ISetupViewArgs<ContractInfo, VerifyResult> =
 export type ISetupEventArgs<ContractInfo, VerifyResult> =
   Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
 
-type SpecificKeys = ("getContractInfo"|"getContractAddress"|"getBalance"|"sendrecv"|"recv"|"getState"|"getCurrentStep"|"apiMapRef");
+type SpecificKeys = ("getContractInfo"|"getContractAddress"|"getContractCompanion"|"getBalance"|"sendrecv"|"recv"|"getState"|"getCurrentStep"|"apiMapRef");
 
 export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, (SpecificKeys)>;
 
@@ -336,13 +343,15 @@ export const stdContract =
   const setupArgs = { ...viewArgs, setInfo };
 
   const _initialize = () => {
-    const { getContractInfo, getContractAddress, getBalance,
-            sendrecv, recv, getCurrentStep, getState, apiMapRef } =
+    const {
+      getContractInfo, getContractAddress, getContractCompanion,
+      getBalance, sendrecv, recv, getCurrentStep, getState, apiMapRef
+    } =
       _setup(setupArgs);
     return {
       selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
-      getContractInfo, getContractAddress, getBalance,
-      sendrecv, recv,
+      getContractInfo, getContractAddress, getContractCompanion,
+      getBalance, sendrecv, recv,
       getCurrentStep, getState, apiMapRef,
     };
   };
@@ -492,6 +501,8 @@ export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   getGasLimit: () => BigNumber,
   setStorageLimit: (nsl:unknown) => void,
   getStorageLimit: () => BigNumber,
+  balanceOf: (token?: Token) => Promise<BigNumber>,
+  balancesOf: (tokens: Array<Token | null>) => Promise<Array<BigNumber>>,
 };
 
 export const stdAccount_unsupported =
@@ -552,7 +563,6 @@ export type ISimTxn<Token, ContractInfo> = {
 } | {
   kind: 'from',
   to: string,
-  amt: BigNumber,
   tok: Token|undefined,
 } | {
   kind: 'halt',
@@ -579,6 +589,7 @@ export type ISimTxn<Token, ContractInfo> = {
   bills: BigNumber,
   toks: Array<Token>,
   accs: Array<string>,
+  apps: Array<ContractInfo>,
   fees: BigNumber,
 } | {
   kind: 'info',
@@ -702,7 +713,7 @@ const bnSqrt = (y:BigNumber) => {
   return ans;
 };
 
-export type UIntTy = boolean;
+export type UIntTy = 'UInt' | 'UInt256';
 export const UInt256_max =
   ethers.BigNumber.from(2).pow(256).sub(1);
 export const makeArith = (m:BigNumber): Arith => {
@@ -714,10 +725,12 @@ export const makeArith = (m:BigNumber): Arith => {
   type BNOp2 = 'add'|'sub'|'mod'|'mul'|'div'|'and'|'or'|'xor';
   const doBN2 = (f:BNOp2, a:BigNumber, b:BigNumber) => a[f](b);
   const getCheck = (w:UIntTy) => w ? checkB : checkM;
-  const cast = (from:UIntTy, to:UIntTy, x:num): BigNumber => {
+  const cast = (from:UIntTy, to:UIntTy, x:num, trunc:boolean): BigNumber => {
     const checkF = getCheck(from);
     const checkT = getCheck(to);
-    return checkT(checkF(bigNumberify(x)));
+    const bigX = bigNumberify(x);
+    const maybeTruncated = trunc ? bigX.and(m) : bigX;
+    return checkT(checkF(maybeTruncated));
   };
 
   const liftX2 = (check:(x:BigNumber) => BigNumber) => (f:BNOp2) => (a:num, b:num): BigNumber => check(doBN2(f, bigNumberify(a), bigNumberify(b)));

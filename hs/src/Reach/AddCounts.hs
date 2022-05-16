@@ -1,4 +1,4 @@
-module Reach.AddCounts (add_counts, AC (..), ac_vdef, ac_visit, ac_vls) where
+module Reach.AddCounts (add_counts, add_counts_sim, AC (..), ac_vdef, ac_visit, ac_vls) where
 
 import Control.Monad.Reader
 import Data.IORef
@@ -13,7 +13,8 @@ import Reach.AnalyzeVars
 import Reach.Util
 
 data Env = Env
-  {e_cs :: IORef Counts}
+  { e_cs :: IORef Counts
+  , e_sim :: Bool }
 
 type App = ReaderT Env IO
 
@@ -81,12 +82,22 @@ instance AC DLArg where
 instance AC IType where
   ac = return
 
+isPure' :: DLExpr -> App Bool
+isPure' de = do
+  isSim <- asks e_sim
+  case (isSim, de) of
+    -- HACK: Treat MapRefs as impure in simulation so they will not be dropped.
+    -- This op needs to be simulated so ALGO can get account info
+    (True, DLE_MapRef {}) -> return False
+    (_, _) -> return $ isPure de
+
 instance AC DLStmt where
   ac = \case
     DL_Nop at -> skip at
     DL_Let at x de -> do
       x' <- ac_vdef (canDupe de) x
-      case (isPure de, x') of
+      p <- isPure' de
+      case (p, x') of
         (True, DLV_Eff) -> skip at
         _ -> do
           ac_visit $ de
@@ -314,6 +325,9 @@ instance {-# OVERLAPS #-} AC a => AC (DLRecv a) where
     dr_k' <- ac dr_k
     return $ DLRecv dr_from dr_msg dr_time dr_secs dr_didSend dr_k'
 
+instance {-# OVERLAPS #-} AC a => AC (DLInvariant a) where
+  ac (DLInvariant inv lab) = DLInvariant <$> ac inv <*> pure lab
+
 instance AC LLConsensus where
   ac = \case
     LLC_Com m c -> do
@@ -366,9 +380,9 @@ instance AC LLConsensus where
       k' <- ac llc_w_k
       body' <- ac llc_w_body
       cond' <- ac llc_w_cond
-      inv' <- ac llc_w_inv
+      invs' <- mapM ac llc_w_invs
       ac_visit llc_w_asn
-      return $ LLC_While llc_w_at llc_w_asn inv' cond' body' k'
+      return $ LLC_While llc_w_at llc_w_asn invs' cond' body' k'
     c@(LLC_Continue _ asn) -> do
       ac_visit asn
       return c
@@ -396,7 +410,13 @@ instance AC LLProg where
     LLProg llp_at llp_opts llp_parts llp_init <$>
       ac llp_exports <*> pure llp_views <*> pure llp_apis <*> pure llp_aliases <*> pure llp_events <*> ac llp_step
 
-add_counts :: AC a => a -> IO a
-add_counts x = do
+add_counts' :: AC b => Bool -> b -> IO b
+add_counts' e_sim x = do
   e_cs <- newIORef $ mempty
   flip runReaderT (Env {..}) $ ac x
+
+add_counts :: AC a => a -> IO a
+add_counts = add_counts' False
+
+add_counts_sim :: AC b => b -> IO b
+add_counts_sim = add_counts' True

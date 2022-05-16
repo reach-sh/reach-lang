@@ -1,0 +1,228 @@
+import { Meta } from '@storybook/addon-docs';
+import Code from './assets/code-brackets.svg';
+import Colors from './assets/colors.svg';
+import Comments from './assets/comments.svg';
+import Direction from './assets/direction.svg';
+import Flow from './assets/flow.svg';
+import Plugin from './assets/plugin.svg';
+import Repo from './assets/repo.svg';
+import StackAlt from './assets/stackalt.svg';
+
+<Meta title="Example/Introduction" />
+
+<style>{`
+  .subheading {
+    --mediumdark: '#999999';
+    font-weight: 900;
+    font-size: 13px;
+    color: #999;
+    letter-spacing: 6px;
+    line-height: 24px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    margin-top: 40px;
+  }
+
+  .link-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+    row-gap: 10px;
+  }
+
+  @media (min-width: 620px) {
+    .link-list {
+      row-gap: 20px;
+      column-gap: 20px;
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media all and (-ms-high-contrast:none) {
+  .link-list {
+      display: -ms-grid;
+      -ms-grid-columns: 1fr 1fr;
+      -ms-grid-rows: 1fr 1fr;
+    }
+  }
+
+  .link-item {
+    display: block;
+    padding: 20px 30px 20px 15px;
+    border: 1px solid #00000010;
+    border-radius: 5px;
+    transition: background 150ms ease-out, border 150ms ease-out, transform 150ms ease-out;
+    color: #333333;
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .link-item:hover {
+    border-color: #1EA7FD50;
+    transform: translate3d(0, -3px, 0);
+    box-shadow: rgba(0, 0, 0, 0.08) 0 3px 10px 0;
+  }
+
+  .link-item:active {
+    border-color: #1EA7FD;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .link-item strong {
+    font-weight: 700;
+    display: block;
+    margin-bottom: 2px;
+  }
+  
+  .link-item img {
+    height: 40px;
+    width: 40px;
+    margin-right: 15px;
+    flex: none;
+  }
+
+  .link-item span {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .tip {
+    display: inline-block;
+    border-radius: 1em;
+    font-size: 11px;
+    line-height: 12px;
+    font-weight: 700;
+    background: #E7FDD8;
+    color: #66BF3C;
+    padding: 4px 12px;
+    margin-right: 10px;
+    vertical-align: top;
+  }
+
+  .tip-wrapper {
+    font-size: 13px;
+    line-height: 20px;
+    margin-top: 40px;
+    margin-bottom: 40px;
+  }
+
+  .tip-wrapper code {
+    font-size: 12px;
+    display: inline-block;
+  }
+
+  
+`}</style>
+
+# Simulator UI Written Specification
+In general order of decreasing importance, from top to bottom.
+
+## Graph UI Features
+- The user is able to switch between the perspectives of the various program actors (i.e. Alice, Bob, Consensus) in the graph, emphasizing that user’s perspective (as seen in the visual spec).
+- The user is able to “undo” their most recent UI “action”. This does not mean that the action is reversed or undone server-side, but is essentially a hiding of any node/state produced by that action.
+- The user is able to “redo” their most recently undone UI “action”. This is essentially just showing nodes that were previously hidden by “undo”.
+- The user is able to hide or de-emphasize a node from the graph (and all its children). By default this should work by selecting the node and pressing “delete” on the keyboard. However, we do not delete nodes/states server-side.
+- The user can see the state ID visualized on the node.
+- The user can hover over graph edges to reveal the action taken in that transition. 
+- When the graph visualization is emphasizing a specific actor such as Alice, the user can see the next recommended step (suggestion) for this actor.
+- The user can easily distinguish between local and consensus steps on the graph based on coloring/legend.
+ 
+## SPA (Details Views) Features
+- Layout change: The user can always see what is currently the Objects View of the breadcrumb, in a fixed view of the SPA to the left, and the remainder of the breadcrumb UI moves to the right. 
+- The user is able to utilize a Sophisticated Value Response (JSON Builder) UI to input Reach program values to the Simulator. Essentially just a modern JSON form with options like: Integer, Boolean, String, Tuple, Struct, etc.
+ 
+## Read-Only Code View Features
+- The user can see a legend which describes the position of every actor in the program on their highlighted line.
+- If multiple actors are on the same line, the line becomes gray, and on hover displays the actors present on that line in a tooltip.
+ 
+## Additional Features
+- The user has the option to save their “simulation” either to a file (download) or to their clipboard.
+- The user has the option to load their “simulation” either from a file (download) or from their clipboard.
+- In general, the appearance and UI of the Simulator should match the visual spec as closely as possible.
+
+# Feature List
+ ## Preface
+
+  We need to have an explicit list of features for the Reach Simulator, so that clients and users know exactly what they are getting. This document may also serve as a changelog and roadmap for now.
+
+## Design Proposal
+Reach does not support a traditional interpreter. Reach programs can only be run by first implementing a frontend and then simulating that frontend, which embeds interaction with the Reach program. This is mostly by design because Reach depends on frontends and a consensus network to operate. However, we have designed a symbolic simulator that operates without either frontend or consensus network. We propose to build this simulator. It works by directly executing the linear Reach intermediate language and presents a UI where users can interactively explore a trace of an execution. They specify a linearization of the history of many participants interacting with the Reach program, including the participants coming into existence and attaching. 
+At every branching point (such as when multiple backends are awaiting interactive decisions from their frontends or when two participants are racing to publish a value), they can make a choice and explore the resulting behavior. The goal of the simulator is to help Reach programmers better understand the numerous possibilities regarding how their programs may execute under certain variable conditions. This interactive simulator will be integrated with our theorem prover so value choices can be left abstract and only concretized when future choices restrict them. This will mean that we can execute and explore unverified Reach programs and present the results of verification in the same framework as users can experience when manually exploring the behavior of their program. 
+Finally, we will produce a textual language to specify simulation explorations so they can be iterated throughout development.
+
+## Currently Implemented Features
+The simulator is currently able to:
+
+- directly interpret/execute the linear Reach intermediate language (without either frontend or consensus network).
+- present a Web UI where users can interactively explore a trace of an execution.
+- specify a linearization of the history of many participants interacting with the Reach program, including the participants coming into existence and attaching, visualized as a state graph with details available on node focus.
+- record its sequence of interactions into a serializable JSON object that can be saved and restored.
+
+The simulator is currently able to allow users to make interactive decisions at the following categories of branching/interaction points: 
+- Tie Breaks: races from the consensus’ perspective 
+- Contests: races from non-consensus actor’s perspective
+- Interact Expressions
+- Remote object calls
+- Network Time Increments
+- Network Seconds Increments
+
+## MVP Features-not-yet-done
+1. Svelte UI w/o internal tools
+2. Save/Load JSON “scripts”
+3. Action: Create accounts
+4. Action: Perform transfers
+5. Action: Make non-network tokens
+6. UI: Multi-Actor POI LOC Focus Highlight
+7. Action: Make remote object
+8. Action: Run multiple participants w/ same account
+9. Action: Wrapper around API calls for convenience
+10. UI: Display view values and allow them to be probed (some are functions)
+11. Initial Nina pass on UI
+12. Reach Developer Testing/Feedback
+- Raphael Okure (x2)
+- John Hopkins (x2)
+- Quinn Vaughn (x2)
+- Krysztof (x2)
+- Francisco Rafart (x1)
+13. Final Nina pass on UI
+14. Implement Nina’s final UI specification
+15. Distribution model / `reach simulate` that gives simple instructions for accessing
+16. … more …?
+
+## Future Features
+17. integration with our theorem prover so value choices can be left abstract and only concretized when future choices restrict them
+18. a textual language to specify simulation explorations so they can be iterated throughout development
+19. Documented API for external interfaces
+20. … More …?
+
+## Current Code Coverage
+The simulator is known to operate correctly on the following programs:
+1. rps-2-rps
+2. rps-3-bets
+3. rps-5-trust
+4. rps-6-timeouts
+5. rps-7-loops
+AND
+ 
+## Planned Code Coverage
+1. overview – completeness of examples 
+2. ctc-address – weird function
+3. own-addr – weird function
+4. atomic-swap – tokens
+5. mint-basic — minting
+6. map-any — maps
+7. map-multi — maps
+8. view-map — views
+9. view-steps — views
+10. api-full – APIs 
+11. remote — remote
+12. remote-api — remote & API
+13. remote-view — remote & view
+14. nft-dumb – useful examples, although maybe better to wait until a not-stupid/API-based one is available
+15. nft-auction – same as nft-dumb
+16. atomic-swap-auction – same as nft-dumb
+17. simple-nft-auction – same as nft-dumb
+
+## Future Code Coverage
+- Everything
+

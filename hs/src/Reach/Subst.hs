@@ -31,6 +31,9 @@ instance {-# OVERLAPS #-} Subst a => Subst (SwitchCases a) where
     where
       go (a, b, c) = (,,) a b <$> subst c
 
+instance Subst Bool where
+  subst = return
+
 instance Subst DLVar where
   subst v = do
     m <- ask
@@ -73,7 +76,7 @@ instance Subst DLWithBill where
     DLWithBill x <$> subst y <*> subst z
 
 instance Subst DLRemoteALGO where
-  subst (DLRemoteALGO x y) = DLRemoteALGO <$> subst x <*> subst y
+  subst (DLRemoteALGO x y z w) = DLRemoteALGO <$> subst x <*> subst y <*> subst z <*> subst w
 
 instance Subst DLExpr where
   subst = \case
@@ -102,8 +105,6 @@ instance Subst DLExpr where
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> subst tok <*> subst amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> subst tok
     DLE_TimeOrder at op a b -> DLE_TimeOrder at op <$> subst a <*> subst b
-    DLE_GetContract at -> return $ DLE_GetContract at
-    DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at lk x -> DLE_EmitLog at lk <$> subst x
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mtok tb -> DLE_GetUntrackedFunds at <$> subst mtok <*> subst tb
