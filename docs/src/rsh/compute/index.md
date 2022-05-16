@@ -1869,6 +1869,15 @@ thisConsensusSecs()
 
 @{defn("thisConsensusSecs")} is like `{!rsh} thisConsensusTime`, except it returns the network seconds.
 
+```reach
+load: /examples/thisConsensusTime/index.rsh
+range: 11-15
+```
+
+In this code, three variables are created that set `lastTime` to `{!rsh} thisConsensusTime`, `lastSecs` to `{!rsh} thisConsensusSecs` and `i` to 0.
+Then, an invariant is set to make sure that `lastTime` is greater than `{!rsh} lastConsensusTime`, `lastTime` is equal to `{!rsh} thisConsensusTime`, `lastSecs` is either equal or greater than `{!rsh} lastConsensusSecs` and that the `{!rsh} balance` is equal to 0.
+This makes sure that the order of blocks matches the order of time.
+
 ### `baseWaitTime` and `baseWaitSecs`
 
 @{ref("rsh", "baseWaitTime")}@{ref("rsh", "baseWaitSecs")}
