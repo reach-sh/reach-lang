@@ -11,14 +11,14 @@
   [
     "initFor",
     0,
-    1,
+    "Owner",
     "{}",
     0
   ],
   [
     "initFor",
     1,
-    0,
+    "Creator",
     "{}",
     ""
   ],

@@ -347,6 +347,19 @@ passTime sid' n = do
       let g' = g {C.e_nwsecs = nwsecs, C.e_nwtime = nwtime}
       processNewMetaState sid' (g',l)
 
+forceTimeout :: StateId -> WebM ()
+forceTimeout sid' = do
+  graph <- gets e_graph
+  let sid = fromIntegral sid'
+  case M.lookup sid graph of
+    Nothing -> do
+      possible "passTime: previous state not found"
+    Just (g,l) -> do
+      let phId = C.l_phase $ saferMaybe "forceTimeout" $ M.lookup C.consensusId $ C.l_locals l
+      let timeouts = M.insert phId True $ C.e_timeouts g
+      let g' = g {C.e_timeouts = timeouts}
+      processNewMetaState sid' (g',l)
+
 unblockProg :: Integer -> Integer -> C.DLVal -> WebM (Bool)
 unblockProg sid' aid' v = do
   let sid = fromIntegral sid'
@@ -356,17 +369,21 @@ unblockProg sid' aid' v = do
   avActions <- gets e_ids_actions
   case M.lookup sid graph of
     Nothing -> do
-      possible "previous state not found"
+      registerError (Just sid) Nothing "Previous state not found."
+      return False
     Just (g, l') -> do
       let locals = C.l_locals l'
       case C.l_ks <$> M.lookup actorId locals of
         Nothing -> do
-          possible "actor not found"
+          registerError (Just sid) Nothing "Actor not found."
+          return False
         Just Nothing -> do
-          possible $ "partstate not found for actor "
-            <> show actorId
-            <> " in: "
-            <> (show $ M.keys locals)
+          let err = "partstate not found for actor "
+                <> show actorId
+                <> " in: "
+                <> (show $ M.keys locals)
+          registerError (Just sid) Nothing err
+          return False
         Just (Just (C.PS_Suspend _ _a (_g,_l) k)) -> do
           let l = l' {C.l_curr_actor_id = actorId}
           case M.lookup aid avActions of
@@ -387,7 +404,9 @@ unblockProg sid' aid' v = do
                 C.V_UInt i -> do
                   let ps = k (g, l) $ C.V_Data "actor" $ C.V_UInt i
                   processNewState (Just sid) ps Consensus
-                _ -> possible "unblockProg (Tiebreak): unexpected value"
+                _ -> do
+                  registerError (Just sid) Nothing "Tiebreak: unexpected value."
+                  return False
             Just C.A_None -> do
               let ps = k (g, l) v
               processNewState (Just sid) ps Consensus
@@ -407,9 +426,12 @@ unblockProg sid' aid' v = do
                 False -> do
                   let ps = k (g, l) v
                   processNewState (Just sid) ps Consensus
-            Nothing -> possible "action not found"
+            Nothing -> do
+              registerError (Just sid) Nothing "Action not found."
+              return False
         Just (Just _) -> do
-          possible "previous state already terminated"
+          registerError (Just sid) Nothing "Previous state already terminated."
+          return False
 
 
 stActHist :: StateId -> WebM (StateId, (C.ActorId, C.Action))
@@ -521,21 +543,35 @@ initProgSim ll = do
   ps <- return $ C.initApp ll initSt
   processNewState Nothing ps Consensus
 
-initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> Maybe C.Account -> LLProg -> WebM Bool
-initProgSimFor actId sid liv accId (LLProg {..}) = do
+initProgSimFor :: String ->
+                  StateId ->
+                  C.LocalInteractEnv ->
+                  Maybe C.Account ->
+                  Maybe Integer ->
+                  LLProg ->
+                  WebM (Bool,C.Locals)
+initProgSimFor slpart sid liv accId blce (LLProg {..}) = do
   graph <- gets e_graph
+  let (g'',l'') = saferMaybe "initProgSimFor" $ M.lookup sid graph
+  let iv = saferMaybe "initProgSimFor2" $ M.lookup slpart $ C.e_parts g''
+  let ((g, l), actId) = C.registerPart (g'',l'') slpart iv
   modify $ \st -> st {e_actor_id = actId}
-  let (g, l) = saferMaybe "initProgSimFor" $ M.lookup sid graph
   let locals = C.l_locals l
   let lcl = saferMaybe "initProgSimFor1" $ M.lookup actId locals
   let accId' = case accId of
         Nothing -> C.l_acct lcl
         Just accId'' -> accId''
+  let blce' = case blce of
+        Nothing -> 0
+        Just n -> n
   let lcl' = lcl { C.l_livs = liv, C.l_acct = accId' }
   let locals' = M.insert actId lcl' locals
   let l' = l {C.l_curr_actor_id = actId, C.l_locals = locals'}
-  ps <- return $ C.initAppFromStep llp_step (g, l')
-  processNewState (Just sid) ps Local
+  let ledger = M.insert accId' (M.singleton C.nwToken blce') $ C.e_ledger g
+  let g' = g {C.e_ledger = ledger}
+  ps <- return $ C.initAppFromStep llp_step (g', l')
+  b <- processNewState (Just sid) ps Local
+  return (b, M.singleton actId lcl')
 
 startServer :: LLProg -> String -> IO ()
 startServer p srcTxt = do
@@ -561,9 +597,10 @@ formatError :: (Maybe StateId, Maybe SrcLoc, String) -> String
 formatError (msid, mloc, e) = do
   "\n"
     <>
-    "Error in state: " <> (show msid) <>
+    "\nError in state: " <> (show msid) <>
     "\nOn line: " <> (show mloc) <>
-    "\nMessage: " <> show e
+    "\nMessage: " <> show e <>
+    "\n"
 
 caseTypes :: (Integer -> Integer -> C.DLVal -> WebM a) -> Integer -> Integer -> String -> ActionT Text WebM a
 caseTypes f s a = \case
@@ -598,7 +635,7 @@ caseTypes f s a = \case
     let v = saferMaybe "decode Data" $ decode v'
     webM $ f s a v
   "struct" -> do
-    v' :: LB.ByteString <- param "struct"
+    v' :: LB.ByteString <- param "data"
     let v = saferMaybe "decode Struct" $ decode v'
     webM $ f s a v
   _ -> possible "Unexpected value type"
@@ -645,6 +682,12 @@ app p srcTxt dg = do
         case (parseParam prm) :: Either Text C.Account of
           Left e -> possible $ show e
           Right w -> return $ Just w
+    blce <- case M.lookup "startingBalance" ps of
+      Nothing -> return Nothing
+      Just prm -> do
+        case (parseParam prm) :: Either Text Integer of
+          Left e -> possible $ show e
+          Right w -> return $ Just w
     liv :: LB.ByteString <- param "liv"
     ll <- webM $ gets e_src
     let liv' :: Maybe C.LocalInteractEnv = decode liv
@@ -654,8 +697,9 @@ app p srcTxt dg = do
         case ll of
           Nothing -> json $ ("No Program" :: String)
           Just ll' -> do
-            outcome <- webM $ initProgSimFor a s liv'' acc ll'
+            (outcome,part) <- webM $ initProgSimFor a s liv'' acc blce ll'
             raiseError outcome
+            json part
 
   get "/init_details/:a" $ do
     setHeaders
@@ -748,6 +792,12 @@ app p srcTxt dg = do
     s <- param "s"
     n <- param "n"
     r <- webM $ passTime s n
+    json $ show r
+
+  post "/timeout/:s/" $ do
+    setHeaders
+    s <- param "s"
+    r <- webM $ forceTimeout s
     json $ show r
 
   get "/actions/:s/:a/" $ do

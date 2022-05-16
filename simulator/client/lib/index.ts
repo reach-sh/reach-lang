@@ -92,7 +92,7 @@ const getStatus = async () => {
 // the structure of each action is different
 async function getActions(s: number,a: number) {
   const r = await interact(`GET`, `${address}/actions/${s}/${a}`)
-  console.log(r)
+  console.log(JSON.stringify(r))
   return r;
 }
 
@@ -393,14 +393,15 @@ const respondWithVal = async (s: number,a: number,v: any,w: any = false,t='numbe
 }
 
 // initialize the program for
-// actor a (integer)
+// participant a (string)
 // at state s (integer)
 // liv is the interact environment. it is a JSON object
 // optionally, provide an account id acc (integer)
 // for example :
-// await c.initFor(0,0,JSON.stringify({'wager':{'tag':'V_UInt','contents':10}}))
-const initFor = async (s: number,a: number,liv="{}",acc: any = false) => {
+// await c.initFor(0,'Bob',JSON.stringify({'wager':{'tag':'V_UInt','contents':10}}))
+const initFor = async (s: number,a: string,liv="{}",acc: any = false,blce: any = false) => {
   const accParam = (acc || acc === 0) ? `&accountId=${acc}` : ``
+  const balance = (blce || blce === 0) ? `&startingBalance=${blce}` : ``
   let livS = liv
   if (
     typeof liv === 'object' &&
@@ -409,7 +410,7 @@ const initFor = async (s: number,a: number,liv="{}",acc: any = false) => {
   ) {
     livS = JSON.stringify(liv)
   }
-  const r = await interact('POST', `${address}/init/${a}/${s}/?liv=${livS}${accParam}`)
+  const r = await interact('POST', `${address}/init/${a}/${s}/?liv=${livS}${accParam}${balance}`)
   console.log(r)
   return r
 }
@@ -528,6 +529,12 @@ const passTime = async (s: number,n: number) => {
   return r
 }
 
+const forceTimeout = async (s: number) => {
+  const r = await interact('POST', `${address}/timeout/${s}`)
+  console.log(r)
+  return r
+}
+
 // ping the server for a friendly greeting ^_^
 const ping = async () => {
   const r = await interact(`GET`, `${address}/ping`)
@@ -601,5 +608,6 @@ export {
   viewCall,
   getStateGraph,
   passTime,
-  dotGraph
+  dotGraph,
+  forceTimeout
 };

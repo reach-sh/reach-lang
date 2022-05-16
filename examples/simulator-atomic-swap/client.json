@@ -11,12 +11,12 @@
   [
     "initFor",
     0,
-    0
+    "Alice"
   ],
   [
     "initFor",
     1,
-    1
+    "Bob"
   ],
   [
     "respondWithVal",

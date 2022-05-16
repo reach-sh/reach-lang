@@ -1,11 +1,207 @@
-import c from '@reach-sh/simulator-client';
+import * as c from '@reach-sh/simulator-client';
 import assert from 'assert';
+import { loadStdlib } from '@reach-sh/stdlib';
+
+const stdlib = loadStdlib();
 
 const consensusID = -1
-const nwToken = -1
+const nwTokenId = -1
+
+class Token {
+  id: number;
+
+  constructor(id: number) {
+    this.id = id;
+  }
+}
+
+const nwToken = new Token(nwTokenId)
 
 const filter = (obj: any, predicate: any) =>
   Object.fromEntries(Object.entries(obj).filter(predicate));
+
+
+class ReachValue {
+  contents: any;
+  taggedJSON () {};
+
+  constructor(v: any) {
+    this.contents = v
+  }
+
+  untaggedJSON() {
+    return JSON.stringify(this);
+  };
+
+}
+
+class ReachNull extends ReachValue {
+  contents: any;
+
+  constructor(v: null) {
+    super(stdlib.protect(stdlib.T_Null, v));
+  }
+
+  taggedJSON() {
+    return {
+      "tag":"V_Null",
+      "contents": "null"
+    };
+  };
+
+}
+
+class ReachBool extends ReachValue {
+  contents: any;
+
+  constructor(v: boolean) {
+    super(stdlib.protect(stdlib.T_Bool, v));
+  }
+
+  taggedJSON() {
+    return {
+      "tag":"V_Bool",
+      "contents": this.untaggedJSON()
+    };
+  }
+
+}
+
+class ReachNumber extends ReachValue {
+  contents: any;
+
+  constructor(v: number) {
+    super(stdlib.protect(stdlib.T_UInt, v));
+  }
+
+  taggedJSON() {
+    return {
+      "tag":"V_UInt",
+      "contents": this.untaggedJSON()
+    };
+  }
+
+}
+
+class ReachToken extends ReachValue {
+  contents: any;
+
+  constructor(v: number) {
+    super(stdlib.protect(stdlib.T_UInt, v));
+  }
+
+  taggedJSON() {
+    return {
+      "tag":"V_Token",
+      "contents": this.untaggedJSON()
+    };
+  }
+
+}
+
+class ReachBytes extends ReachValue {
+  contents: any;
+
+  constructor(v: string) {
+    super(v);
+  }
+
+  taggedJSON() {
+    return {
+      "tag":"V_Bytes",
+      "contents": this.untaggedJSON()
+    };
+  }
+
+}
+
+class ReachDigest extends ReachValue {
+  contents: any;
+
+  constructor(v: ReachValue,n:number) {
+    super(stdlib.protect(stdlib.T_Bytes(n), v));
+  }
+
+  taggedJSON() {
+    return {
+      "tag":"V_Digest",
+      "contents": this.untaggedJSON()
+    };
+  }
+
+}
+
+class ReachAddress extends ReachValue {
+  contents: any;
+
+  constructor(v: number) {
+    super(stdlib.protect(stdlib.T_UInt, v));
+  }
+
+  taggedJSON() {
+    return {
+      "tag":"V_Address",
+      "contents": this.untaggedJSON()
+    };
+  }
+
+}
+
+class ReachContract extends ReachValue {
+  contents: any;
+
+  constructor(v: number) {
+    super(stdlib.protect(stdlib.T_UInt, v));
+  }
+
+  taggedJSON() {
+    return {
+      "tag":"V_Contract",
+      "contents": this.untaggedJSON()
+    };
+  }
+
+}
+
+class ReachArray extends ReachValue {
+  contents: any;
+
+  constructor(v: ReachValue[],t:any) {
+    super(stdlib.protect(t, v));
+  }
+}
+
+class ReachTuple extends ReachValue {
+  contents: any;
+
+  constructor(v: ReachValue[],t:any) {
+    super(stdlib.protect(t, v));
+  }
+}
+
+class ReachObject extends ReachValue {
+  contents: any;
+
+  constructor(v: any,t:any) {
+    super(stdlib.protect(t, v));
+  }
+}
+
+class ReachData extends ReachValue {
+  contents: any;
+
+  constructor(v: any,t:any) {
+    super(stdlib.protect(t, v));
+  }
+}
+
+class ReachStruct extends ReachValue {
+  contents: any;
+
+  constructor(v: any,t:any) {
+    super(stdlib.protect(t, v));
+  }
+}
 
 class State {
   id: number;
@@ -20,17 +216,22 @@ class State {
 }
 
 class Scenario {
+  top: State;
   state: State;
   participants: Record<string, Participant>;
   consensus: Consensus;
   apis: Record<string, API>;
   views: Record<string, View>;
-  next() {};
+
+  next(): Scenario {
+    return new Scenario();
+  };
 
   constructor() {
+    this.top = new State();
     this.state = new State();
     this.participants = {};
-    this.consensus = new Consensus(new Account(-1,this),this);
+    this.consensus = new Consensus(new Account(consensusID,this),this);
     this.apis = {};
     this.views = {};
   }
@@ -44,18 +245,13 @@ class Scenario {
     await c.init()
     const apis: any = await c.getAPIs()
     const views: any = await c.getViews(this.state.id)
-    const l = await c.getStateLocals(this.state.id)
+    const g = await c.getStateGlobals(this.state.id)
 
-    // setup parts
-    for (const a of Object.entries(l.l_locals)) {
-      const k = a[0]
-      const v: any = a[1]
-      const who = v.l_who
-      const acc = new Account(v.l_acct,this)
-      if (who) {
-        const p = new Participant(parseInt(k),acc,who,this)
-        this.participants[who] = p
-      }
+    for (const a of Object.entries(g.e_parts)) {
+      const who = a[0]
+      const acc = new Account(-1,this)
+      const p = new Participant(-1,acc,who,this)
+      this.participants[who] = p
     }
 
     // setup apis
@@ -78,6 +274,8 @@ class Scenario {
       const nv: View = new View(parseInt(k),who,vari,tag,contents,this)
       this.views[who] = nv
     }
+
+    return this;
   }
 
   async pingServer() {
@@ -119,30 +317,46 @@ class Scenario {
     return this.next();
   }
 
+  async forceTimeout() {
+    await c.forceTimeout(this.state.id);
+    return this.next();
+  }
+
 }
 
 class FunctionalScenario extends Scenario {
+
   constructor() {
     super();
   }
 
-  next() {
+  next(): FunctionalScenario {
+    this.top.next();
     const next = Object.assign(new FunctionalScenario(), this);
-    next.state.next();
+    next.state = Object.assign(new State(), this.top);
     return next;
   }
 
 }
 
 class ImperativeScenario extends Scenario {
+
   constructor() {
     super();
   }
 
-  next() {
-    this.state.next();
+  next(): ImperativeScenario {
+    this.top.next();
+    this.state = Object.assign(new State(), this.top);
     return this;
   }
+
+  copy(): ImperativeScenario {
+    const cp = Object.assign(new ImperativeScenario(), this);
+    cp.state = Object.assign(new State(), this.state);
+    return cp;
+  }
+
 }
 
 class Store {
@@ -187,7 +401,7 @@ class Actor {
 
   async getNextAction() {
     const act = await c.getActions(this.scene.state.id,this.id)
-    return new Action(act[0],act[1].tag,this,this.scene);
+    return new Action(act[0],act[1].tag,this,this.scene,act);
   }
 
   async getStore() {
@@ -195,9 +409,19 @@ class Actor {
     return new Store(l.l_locals[this.id].l_store);
   }
 
+  async getVar(v:any) {
+    return (await this.getStore()).getVar(v);
+  }
+
   async getWallet() {
     const g = await c.getStateGlobals(this.scene.state.id)
     return g.e_ledger[this.account.id]
+  }
+
+  async balanceOf(tok: Token = nwToken) {
+    const tokId = tok.id
+    const g = await c.getStateGlobals(this.scene.state.id)
+    return g.e_ledger[this.account.id][tokId]
   }
 
   async getPhase() {
@@ -235,10 +459,49 @@ class Participant extends Actor {
     super(id, account, name, scene);
   }
 
-  async init(liv={},accID="") {
-    const r = await c.initFor(this.scene.state.id,this.id,JSON.stringify(liv),accID)
-    console.log(r);
-    return this.scene.next();
+  async init(blce="",liv={},accID="") {
+    const r = await c.initFor(this.scene.state.id,this.name,JSON.stringify(liv),accID,blce)
+    const rent = Object.entries(r)[0];
+    this.id = parseInt(rent[0]);
+    const v: any = rent[1]
+    this.account = new Account(parseInt(v.l_acct),this.scene)
+    return [this.scene.next(),this];
+  }
+
+  async interact(name:string,val:any) {
+    let a = await this.getNextAction();
+    while (a.name == 'A_Receive') {
+      this.scene = await a.resolve();
+      a = await this.getNextAction();
+    }
+    assert.equal(name,a.contents[1].contents[2])
+    this.scene = await a.resolve(val);
+    return this.scene;
+
+  }
+
+  async exit() {
+    let a = await this.getNextAction();
+    while (a.name == 'A_Receive') {
+      this.scene = await a.resolve();
+      a = await this.getNextAction();
+    }
+    if (a.name == 'A_None') {
+      return this.scene;
+    } else {
+      throw new Error('Exit Error');
+    }
+  }
+
+  async receive() {
+    let a = await this.getNextAction();
+    if (a.name == 'A_Receive') {
+      this.scene = await a.resolve();
+      return this.scene;
+
+    } else {
+      throw new Error('Receive Error');
+    }
   }
 
 }
@@ -250,6 +513,16 @@ class Consensus extends Actor {
 
   constructor(account: Account,scene: Scenario) {
     super(consensusID, account, 'Consensus', scene);
+  }
+
+  async publish(ac:Participant) {
+    let a = await this.getNextAction();
+    while (a.name != 'A_TieBreak') {
+      this.scene = await a.resolve();
+      a = await this.getNextAction();
+    }
+    this.scene = await a.resolve(ac);
+    return this.scene;
   }
 
   async transfer(s: number,fr: Actor,to: Actor,tok: Token,amt: number) {
@@ -291,17 +564,22 @@ class Action {
   name: string;
   owner: Actor;
   scene: Scenario;
+  contents: any;
 
-  constructor(id: number,name: string,owner: Actor,scene: Scenario) {
+  constructor(id: number,name: string,owner: Actor,scene: Scenario, contents: any) {
     this.id = id;
     this.name = name;
     this.owner = owner;
     this.scene = scene;
+    this.contents = contents;
   }
 
-  async resolve(resp: number = -999,ty: string = "number") {
-    const r = await c.respondWithVal(this.scene.state.id,this.id,resp,this.owner.id,ty)
-    console.log(r);
+  async resolve(resp: any = -999,ty: string = "number") {
+    let v = resp
+    if (resp instanceof Actor) {
+      v = resp.id
+    }
+    const r = await c.respondWithVal(this.scene.state.id,this.id,v,this.owner.id,ty)
     return this.scene.next();
   }
 
@@ -319,14 +597,6 @@ class Account {
   async getWallet() {
     const g = await c.getStateGlobals(this.scene.state.id)
     return g.e_ledger[this.id]
-  }
-}
-
-class Token {
-  id: number;
-
-  constructor(id: number) {
-    this.id = id;
   }
 }
 

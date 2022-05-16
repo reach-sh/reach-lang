@@ -107,6 +107,8 @@ data Global = Global
   , e_viewids :: M.Map String VID
   , e_partacts :: M.Map Participant ActorId
   , e_messages :: M.Map PhaseId MessageInfo
+  , e_timeouts :: M.Map PhaseId Bool
+  , e_parts :: M.Map String InteractEnv
   }
   deriving (Generic)
 
@@ -157,6 +159,8 @@ initGlobal =
     , e_viewids = mempty
     , e_partacts = mempty
     , e_messages = mempty
+    , e_timeouts = mempty
+    , e_parts = mempty
     }
 
 initLocal :: Local
@@ -833,75 +837,76 @@ instance Interp LLStep where
       phId <- getPhaseId actId
       let msgs' = fromMaybe (NotFixedYet mempty) $ M.lookup phId $ e_messages g
       let sends = M.mapKeys bunpack tc_send
-      incrPhaseId
-      isTheTimePast tc_mtime >>= \case
-        Just sk -> do
-          interp sk
-        Nothing -> do
-          whoAmI >>= \case
-            Participant who -> do
-              case M.lookup who sends of
-                Nothing -> do
-                  case msgs' of
-                    NotFixedYet _msgs'' -> do
-                      void $ suspend $ PS_Suspend (Just at) (A_Receive phId)
-                      runWithWinner dlr phId
-                    Fixed _ -> do
-                      runWithWinner dlr phId
-                Just dls -> do
-                  case msgs' of
-                    NotFixedYet msgs'' -> do
-                      void $ placeMsg dls dlr phId (fromIntegral actId) msgs'' False
-                      void $ suspend $ PS_Suspend (Just at) (A_Receive phId)
-                      runWithWinner dlr phId
-                    Fixed _ -> do
-                      runWithWinner dlr phId
-            Consensus -> do
-              v <- suspend $ PS_Suspend (Just at) (A_TieBreak phId $ M.keys sends)
-              case v of
-                V_Data s v' -> do
-                  let actId' = vUInt v'
-                  apiFlag <- case s == "api" of
-                    True -> return True
-                    False -> do
-                      accId <- getAccId $ fromIntegral actId'
-                      part <- partName <$> whoIs (fromIntegral actId')
-                      let errMsg = ("Participant " <> show part <> " is not in the race/publish." )
-                      dls <- maybeError (M.lookup part sends) errMsg
-                      case dls of
-                        Left err -> do
-                          void $ suspend $ PS_Error (Just at) err
-                          return False
-                        Right dls' -> do
-                          consensusPayout accId (fromIntegral actId') (ds_pay dls')
-                          return False
-                  m' <- case apiFlag of
-                    True -> do
-                      let apiObs = e_apis g
-                      case (\(who) -> M.lookup who sends) =<< a_name <$> (M.lookup actId' apiObs) of
-                        Nothing -> possible "API DLSend not found"
-                        Just dls -> do
-                          Right <$> placeMsg dls dlr phId (fromIntegral actId') mempty True
-                    False -> do
-                      r <- M.lookup phId <$> e_messages <$> getGlobal
-                      maybeError r ("Phase " <> (show phId) <> " hasn't been reached by any Participants.")
-                  case m' of
-                    Left err -> suspend $ PS_Error (Just at) err
-                    Right m'' -> do
-                      let msgs = unfixedMsgs $ m''
-                      let errMsg = ("Message not yet seen from actor ID: "
-                            <> (show actId')
-                            <> ", for Phase "
-                            <> (show phId)
-                            <> ".")
-                      winningMsg <- maybeError (M.lookup (fromIntegral actId') msgs) errMsg
-                      case winningMsg of
-                        Left err -> suspend $ PS_Error (Just at) err
-                        Right winningMsg' -> do
-                          void $ fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg') (m_pay winningMsg') apiFlag
-                          winner dlr phId
-                          interp $ dr_k
-                _ -> possible "expected V_Data value"
+      checkTimeout tc_mtime phId $ do
+        whoAmI >>= \case
+          Participant who -> do
+            case M.lookup who sends of
+              Nothing -> do
+                case msgs' of
+                  NotFixedYet _msgs'' -> do
+                    void $ suspend $ PS_Suspend (Just at) (A_Receive phId)
+                    incrPhaseId
+                    checkTimeout tc_mtime phId $ runWithWinner dlr phId
+                  Fixed _ -> do
+                    incrPhaseId
+                    runWithWinner dlr phId
+              Just dls -> do
+                case msgs' of
+                  NotFixedYet msgs'' -> do
+                    void $ placeMsg dls dlr phId (fromIntegral actId) msgs'' False
+                    void $ suspend $ PS_Suspend (Just at) (A_Receive phId)
+                    incrPhaseId
+                    checkTimeout tc_mtime phId $ runWithWinner dlr phId
+                  Fixed _ -> do
+                    incrPhaseId
+                    runWithWinner dlr phId
+          Consensus -> do
+            v <- suspend $ PS_Suspend (Just at) (A_TieBreak phId $ M.keys sends)
+            incrPhaseId
+            checkTimeout tc_mtime phId $ case v of
+              V_Data s v' -> do
+                let actId' = vUInt v'
+                apiFlag <- case s == "api" of
+                  True -> return True
+                  False -> do
+                    accId <- getAccId $ fromIntegral actId'
+                    part <- partName <$> whoIs (fromIntegral actId')
+                    let errMsg = ("Participant " <> show part <> " is not in the race/publish." )
+                    dls <- maybeError (M.lookup part sends) errMsg
+                    case dls of
+                      Left err -> do
+                        void $ suspend $ PS_Error (Just at) err
+                        return False
+                      Right dls' -> do
+                        consensusPayout accId (fromIntegral actId') (ds_pay dls')
+                        return False
+                m' <- case apiFlag of
+                  True -> do
+                    let apiObs = e_apis g
+                    case (\(who) -> M.lookup who sends) =<< a_name <$> (M.lookup actId' apiObs) of
+                      Nothing -> possible "API DLSend not found"
+                      Just dls -> do
+                        Right <$> placeMsg dls dlr phId (fromIntegral actId') mempty True
+                  False -> do
+                    r <- M.lookup phId <$> e_messages <$> getGlobal
+                    maybeError r ("Phase " <> (show phId) <> " hasn't been reached by any Participants.")
+                case m' of
+                  Left err -> suspend $ PS_Error (Just at) err
+                  Right m'' -> do
+                    let msgs = unfixedMsgs $ m''
+                    let errMsg = ("Message not yet seen from actor ID: "
+                          <> (show actId')
+                          <> ", for Phase "
+                          <> (show phId)
+                          <> ".")
+                    winningMsg <- maybeError (M.lookup (fromIntegral actId') msgs) errMsg
+                    case winningMsg of
+                      Left err -> suspend $ PS_Error (Just at) err
+                      Right winningMsg' -> do
+                        void $ fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg') (m_pay winningMsg') apiFlag
+                        winner dlr phId
+                        interp $ dr_k
+              _ -> possible "expected V_Data value"
 
 maybeError :: Maybe b -> a -> App (Either a b)
 maybeError r s = do
@@ -1001,23 +1006,35 @@ instance Interp LLProg where
     registerViews $ M.toAscList $ M.map M.toAscList llp_views
     interp llp_step
 
-isTheTimePast :: Maybe (DLTimeArg, LLStep) -> App (Maybe LLStep)
-isTheTimePast tc_mtime = do
+checkTimeout :: Maybe (DLTimeArg, LLStep) -> PhaseId -> App DLVal -> App DLVal
+checkTimeout tc_mtime phId m = do
+  isTimeout tc_mtime phId >>= \case
+    Just sk -> do
+      interp sk
+    Nothing -> m
+
+isTimeout :: Maybe (DLTimeArg, LLStep) -> PhaseId -> App (Maybe LLStep)
+isTimeout tc_mtime phId = do
   (g, _) <- getState
+  let timeout = M.lookup phId $ e_timeouts g
   case tc_mtime of
     Just (dltimearg, step) -> case dltimearg of
       Left dlarg -> do
         n' <- vUInt <$> interp dlarg
-        let t = e_nwtime g
-        case (t < n') of
-          True -> return Nothing
-          False -> return $ Just step
+        case timeout of
+          Nothing -> return Nothing
+          Just _ -> do
+            let g' = g {e_nwtime = n'}
+            setGlobal g'
+            return $ Just step
       Right dlarg -> do
         n' <- vUInt <$> interp dlarg
-        let t = e_nwsecs g
-        case (t < n') of
-          True -> return Nothing
-          False -> return $ Just step
+        case timeout of
+          Nothing -> return Nothing
+          Just _ -> do
+            let g' = g {e_nwsecs = n'}
+            setGlobal g'
+            return $ Just step
     Nothing -> return $ Nothing
 
 registerViews :: [(Maybe SLPart, [(SLVar, IType)])] -> App ()
@@ -1051,14 +1068,12 @@ registerView (g, l) v_name v_var v_ty = do
 
 registerParts :: [(SLPart, InteractEnv)] -> App ()
 registerParts [] = return ()
-registerParts ((p, iv) : ps) = do
-  s <- getState
-  let (g,l) = registerPart s (bunpack p) iv
-  setGlobal g
-  setLocal l
-  registerParts ps
+registerParts ps = do
+  g <- getGlobal
+  let g' = g {e_parts = M.fromList $ map (\(a,b)->(bunpack a,b)) ps}
+  setGlobal g'
 
-registerPart :: State -> String -> InteractEnv -> State
+registerPart :: State -> String -> InteractEnv -> (State,ActorId)
 registerPart (g, l) s iv = do
   let actorId = e_nactorid g
   let pacts = e_partacts g
@@ -1085,7 +1100,7 @@ registerPart (g, l) s iv = do
           , e_ledger = ledger'
           }
   let l' = l {l_locals = locals'}
-  (g', l')
+  ((g', l'), actorId)
 
 registerAPIs :: [(SLPart, InteractEnv)] -> App ()
 registerAPIs [] = return ()

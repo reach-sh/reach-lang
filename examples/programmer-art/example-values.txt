@@ -1,6 +1,8 @@
 
-# note that the tags are only necessary for the atomic values such as
-# numbers and strings, only in the context of compound values
+# for `resolve`, note that the tags are only necessary for the atomic values
+# such as numbers and strings, in the context of compound values
+
+# for `initFor`, all the tags are always necessary
 
 # i.e. if you want to send a number to the server, one can just say:
 # HOSTNAME/respond/?v=4&type="number"
