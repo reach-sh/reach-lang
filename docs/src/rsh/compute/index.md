@@ -1838,8 +1838,7 @@ This may not be available if there was no such previous publication, such as at 
 lastConsensusSecs()
 ```
 
-@{defn("lastConsensusSecs")} is like `{!rsh} lastConsensusTime`, except it returns the network seconds. 
-See how it is used on line 14 in the code below:
+@{defn("lastConsensusSecs")} is like `{!rsh} lastConsensusTime`, except it returns the network seconds.
 
 ```reach
 load: /examples/thisConsensusTime/index.rsh
