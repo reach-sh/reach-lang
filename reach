@@ -157,9 +157,8 @@ T19FWFRFTlNJT059fSIsImluaXRpYXRvciI6Int7SU5JVElBVE9SfX0ifQ=="
   -e "s/{{CONNECTOR_MODE}}/${CONNECTOR_MODE}/g" \
   -e "s/{{USING_VSSTUDIO_EXTENSION}}/${USING_VSSTUDIO_EXTENSION}/g" \
   -e "s/{{INITIATOR}}/${INITIATOR}/g")
-  CALL_HOME_ENDPOINT="https://log.reach.sh/submit"
 
-  curl -X POST "$CALL_HOME_ENDPOINT" -d "$TRANSLATED_TEMPLATE" || exit 1
+  curl -X POST "https://log.reach.sh/submit" -d "$TRANSLATED_TEMPLATE" || exit 1
 }
 
 package_manager () {
@@ -179,12 +178,9 @@ package_install () {
 }
 
 timeout_validate () {
-  TIMEOUT=$1
-  STOPPER=$2
-  MESSAGE=$3
 
-  if [ "$STOPPER" -eq "$TIMEOUT" ]; then
-    printf "%s" "$MESSAGE"
+  if [ "$2" -eq "$1" ]; then
+    printf "%s" "$3"
     exit 1
   fi
 }
@@ -225,7 +221,7 @@ install_docker () {
     printf "\nThis installation requires a restart for completion; do you want to restart now? [Y,n]: "
     read RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
-      call_home $START_TIME "none" "Docker Installed by Reach" "0.0.0" "False" "none" $1
+      call_home $START_TIME "none" "Docker Installed by Reach" "0.0.0" "false" "none" $1
       powershell.exe 'shutdown -r -t 0'
     fi
   else
@@ -244,7 +240,7 @@ gen_reachc_id
 
 for DEP in make curl docker docker-compose; do
   if ! (which "${DEP}" >/dev/null 2>&1); then
-    call_home $START_TIME "none" "${DEP} is not installed" "0.0.0" "False" "none" $1
+    call_home $START_TIME "none" "${DEP} is not installed" "0.0.0" "false" "none" $1
     printf "Reach relies on an installation of %s; do you want to install it? [Y,n]: " "${DEP}"
     read -r RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
