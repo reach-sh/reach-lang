@@ -160,7 +160,7 @@ T19FWFRFTlNJT059fSIsImluaXRpYXRvciI6Int7SU5JVElBVE9SfX0ifQ=="
   curl -X POST "https://log.reach.sh/submit" -d "$TRANSLATED_TEMPLATE" || exit 1
 }
 
-package_manager () {
+package_install () {
   if ( which apt > /dev/null 2>&1 ); then
     PACKAGE_MANAGER="apt"
   fi
@@ -168,16 +168,11 @@ package_manager () {
   if ( which yum > /dev/null 2>&1 ); then
     PACKAGE_MANAGER="yum"
   fi
-}
-
-package_install () {
-  package_manager
 
   sudo ${PACKAGE_MANAGER} install $1
 }
 
 timeout_validate () {
-
   if [ "$2" -eq "$1" ]; then
     printf "%s" "$3"
     exit 1
