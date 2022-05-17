@@ -1845,6 +1845,9 @@ load: /examples/thisConsensusTime/index.rsh
 range: 9 - 15
 ```
 
+`{!rsh} lastConsensusSecs` is used to make a check on line 14. 
+This happened after the publication on line 9.
+
 ### `thisConsensusTime` and `thisConsensusSecs`
 
 @{ref("rsh", "thisConsensusTime")}
