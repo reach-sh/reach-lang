@@ -2051,6 +2051,13 @@ muldiv(a, b, c)
 The intermediate value may be larger than `{!rsh} UInt.max` if the connector supports wide arithmetic operations.
 The resulting quotient must be less than `{!rsh} UInt.max`.
 
+```reach
+load: /examples/pr855/index.rsh
+range: 26 - 32
+```
+
+On line 31, `totalAmount` would be multiplied by the result of `(curTime - start)`. The output would then be divided by `duration` immediately. 
+
 ### `verifyMuldiv`
 
 :::note
