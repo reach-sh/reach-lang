@@ -1888,9 +1888,34 @@ The default value of this argument is a no-op.
 
 The `{!rsh} absoluteTime` and `{!rsh} absoluteSecs` are equivalent to `{!rsh} Left` and `{!rsh} Right` variant tags.
 
+```reach
+load: /examples/nft-auction-api/index.rsh
+range: 48 - 52
+```
+
+```reach
+load: /examples/realtime/index.rsh
+range: 40 - 40
+```
+`{!rsh} absoluteTime` and `{!rsh} absoluteSecs` can be used in a method such as 
+`{!rsh} timeout` as on line 49 or other functions as on line 40.
+
 The `{!rsh} relativeTime` and `{!rsh} relativeSecs` functions add `{!rsh} baseWaitTime` and `{!rsh} baseWaitSecs` to their arguments before tagging with the appropriate variant.
 
 If a time argument is required, an integer value is allowed and is interpreted as a `{!rsh} relativeTime`, but this behavior is deprecated and you will see a warning.
+
+```reach
+load: /examples/rps-7-loops/index.rsh
+range: 56 - 57
+```
+
+```reach
+load: /hs/t/y/pr_private.rsh
+range: 32 - 36
+```
+
+`{!rsh} relativeTime` and `{!rsh} relativeSecs` can be used to implement a 
+`{!rsh} timeout` as can be seen on line 57 and 33.
 
 ### Time verification - `verifyRelativeTime`, `verifyAbsoluteTime`, `verifyRelativeSecs`, `verifyAbsoluteSecs`
 
