@@ -1641,10 +1641,10 @@ load: /examples/secured-loan/index.rsh
 range: 13 - 13
 ```
 
-`isOutcome` is a function that takes a `{!rsh} UInt` and returns `true` or `false` depending on if the `{!rsh} UInt` passed to it is a member of that enumeration or not.
+`isOutcome` is a function that takes a `{!rsh} UInt` and returns `{!rsh} true` or `{!rsh} false` depending on if the `{!rsh} UInt` passed to it is a member of that enumeration or not.
 `LENDER_TIMEOUT` and `BORROWER_TIMEOUT` are `{!rsh} UInt`s.
 
-So `isOutcome(LENDER_TIMEOUT)` would return `true` while `isOutcome(SCISSORS)` would return `false`.
+So `isOutcome(LENDER_TIMEOUT)` would return `{!rsh} true` while `isOutcome(SCISSORS)` would return `{!rsh} false`.
 
 ### `assert`
 
