@@ -117,7 +117,6 @@ run_s () {
 }
 
 gen_reachc_id () {
-#  REACH_ENV_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/reach/"
   REACH_ENV_FILE="${CNF}/env"
   MD5_CMD=md5sum
   if [ ! $(which $MD5_CMD) ]; then
