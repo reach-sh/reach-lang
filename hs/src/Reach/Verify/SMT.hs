@@ -667,10 +667,9 @@ display_fail tat f tk mmsg mrd mdv timeout = do
       putLine $ show $ showTrace pm_dv_val smtTrace
   liftIO $ do
     finishedMessage <- readIORef messageRef
-    hPutStrLn stderr $
-      case unsafeIsErrorFormatJson of
-        True -> "error: " ++ makeErrorJson tat (SMTError finishedMessage)
-        False -> finishedMessage
+    case unsafeIsErrorFormatJson of
+      True -> hPutStrLn stderr $ "error: " ++ makeErrorJson tat (SMTError finishedMessage)
+      False -> putStrLn finishedMessage
     when vo_first_fail_quit $
       exitWith $ ExitFailure 1
 
