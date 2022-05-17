@@ -663,6 +663,10 @@
     "title": "RP0012",
     "path": "/rsh/errors/#RP0012"
   },
+  "RV0000": {
+    "title": "RV0000",
+    "path": "/rsh/errors/#RV0000"
+  },
   "RW0000": {
     "title": "RW0000",
     "path": "/rsh/errors/#RW0000"
