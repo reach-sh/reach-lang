@@ -1836,6 +1836,8 @@ load: /examples/realtime/index.rsh
 range: 12 - 18
 ```
 
+Notice how `{!rsh} lastConsensusTime` is called on line 17 after the publication on line 12.
+
 ---
 
 @{ref("rsh", "lastConsensusSecs")}
