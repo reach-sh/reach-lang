@@ -2004,6 +2004,19 @@ hasConsoleLogger
 
  A participant interact interface which specifies `log` with an unconstrained domain function type that returns `{!rsh} Null`. Reach provides a default frontend implementation via hasConsoleLogger (Frontend).
 
+ ```reach
+ load: /examples/log/index.mjs
+ range: 11 - 14
+ ```
+
+ ```reach
+ load: /examples/log/index.rsh
+ range: 5 - 7
+ ```
+
+ In this project, notice how `{!rsh} hasConsoleLogger` is assessed through the standard library on line 13 of the frontend.
+ It is then passed to the backend on line 6.
+
 ### `compose`
 
 @{ref("rsh", "compose")}
