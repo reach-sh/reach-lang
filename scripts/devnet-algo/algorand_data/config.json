@@ -1,4 +1,5 @@
 {
+    "MaxAPIResourcesPerAccount": 0,
     "Version": 16,
     "AccountUpdatesStatsInterval": 5000000000,
     "AccountsRebuildSynchronousMode": 1,

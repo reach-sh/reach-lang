@@ -219,6 +219,10 @@ type AccountInfo = {
 type AccountAssetInfo = {
   'asset-holding'?: AssetHolding
 };
+type AccountApplicationInfo = {
+  'round': bigint,
+  'app-local-state'?: AppState,
+};
 type IndexerAccountInfoRes = {
   'current-round': bigint,
   'account': AccountInfo,
@@ -1429,13 +1433,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         // Read map data
         const getLocalState = async (a:Address): Promise<AppStateKVs|undefined> => {
-          const ai = await getAccountInfo(a);
-          debug(`getLocalState`, ai);
-          const alss = ai['apps-local-state'] || [];
-          const fmtApplicationID = bigNumberToBigInt(ApplicationID);
-          const als = alss.find((x) => (x.id === fmtApplicationID));
-          debug(`getLocalState`, als);
-          return als ? als['key-value'] : undefined;
+          const client = await getAlgodClient();
+          const query = client.accountApplicationInformation(a, bigNumberToNumber(ApplicationID)) as unknown as ApiCall<AccountApplicationInfo>;
+          const accAppInfo = await query.do();
+          return accAppInfo['app-local-state']?.appLocalState['key-value'];
         };
 
         // Application Local State Opt-in
