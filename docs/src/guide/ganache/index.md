@@ -15,7 +15,7 @@ $ REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 RE
 
 This sets the Ethereum URI to the host machine's port and instructs Reach that the network is "isolated", which means it is for testing.
 
-Second, you can programmatically create a Ganache network from inside of your JavaScript frontend and set it is as a provider for the Reach standard library.
+Second, you can programmatically create a Ganache network from inside of your JavaScript frontend and set it as a provider for the Reach standard library.
 This requires some modification to your frontend.
 
 You need to add the `ganache-core` package as a dependency in your `package.json` file.
