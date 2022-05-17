@@ -38,7 +38,7 @@ fi
 IMG='reachsh/reach-cli:latest'
 TMP=$(mkdir -p /tmp/reach/cli; mktemp -d "/tmp/reach/cli/$(date -u '+%Y-%m-%dT%H-%M-%SZ')-XXXX")
 CNF="${XDG_CONFIG_HOME:-$HOME/.config}/reach"; CNF="$(mkdir -p "$CNF" && cd "$CNF" && pwd)"
-START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+START_TIME=$(date -u +"%Y-%m-%d")
 export TMP
 
 if [ -z "$REACH_ENV_PRS" ] && [ -f "$CNF/env" ]; then
@@ -225,7 +225,7 @@ install_docker () {
     printf "\nThis installation requires a restart for completion; do you want to restart now? [Y,n]: "
     read RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
-      call_home $START_TIME "none" "Docker Installed by Reach" "0.0.0" "none" "none" $1
+      call_home $START_TIME "none" "Docker Installed by Reach" "0.0.0" "False" "none" $1
       powershell.exe 'shutdown -r -t 0'
     fi
   else
@@ -244,7 +244,7 @@ gen_reachc_id
 
 for DEP in make curl docker docker-compose; do
   if ! (which "${DEP}" >/dev/null 2>&1); then
-    call_home $START_TIME "none" "${DEP} is not installed" "0.0.0" "none" "none" $1
+    call_home $START_TIME "none" "${DEP} is not installed" "0.0.0" "False" "none" $1
     printf "Reach relies on an installation of %s; do you want to install it? [Y,n]: " "${DEP}"
     read -r RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
