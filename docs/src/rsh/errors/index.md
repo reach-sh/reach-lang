@@ -2919,3 +2919,8 @@ relativeSecs(t) // references network seconds
 absoluteSecs(t) // references network seconds
 lastConsensusSecs() // references network seconds
 ```
+
+## {#RV0000} RV0000
+
+This error indicates your program has failed verification.
+This error code is nonspecific, and is invoked for any verification error.

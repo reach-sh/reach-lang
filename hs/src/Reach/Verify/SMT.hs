@@ -33,7 +33,7 @@ import Reach.Freshen
 import Reach.Pretty
 import Reach.Texty
 import Reach.UnrollLoops
-import Reach.UnsafeUtil (unsafeTermSupportsColor)
+import Reach.UnsafeUtil (unsafeTermSupportsColor, unsafeIsErrorFormatJson)
 import Reach.Util
 import Reach.Verify.SMTAst
 import Reach.Verify.SMTParser
@@ -46,6 +46,7 @@ import System.Exit
 import System.FilePath
 import System.IO
 import Text.Read (readMaybe)
+import GHC.Generics (Generic)
 
 --- SMT Helpers
 
@@ -599,11 +600,25 @@ showTrace pm st = do
   let pm' = M.map pretty pm
   pretty_subst pm' st
 
+data SMTError
+  = SMTError String
+  deriving (Generic, Show)
+
+instance ErrorSuggestions SMTError
+
+instance HasErrorCode SMTError where
+  errPrefix = const "RV"
+  errIndex = const 0
+
+instance ErrorMessageForJson SMTError where
+  errorMessageForJson (SMTError msg) = msg
+
 display_fail :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> Maybe B.ByteString -> Maybe ResultDesc -> Maybe DLVar -> Bool -> App ()
 display_fail tat f tk mmsg mrd mdv timeout = do
-  let iputStrLn = liftIO . putStrLn
+  messageRef <- liftIO $ newIORef ""
+  let putLine s = liftIO $ modifyIORef messageRef (++ s ++ "\n")
   cwd <- liftIO $ getCurrentDirectory
-  let hasColor = unsafeTermSupportsColor
+  let hasColor = (not unsafeIsErrorFormatJson) && unsafeTermSupportsColor
   let color c = if hasColor then TC.color c else id
   let style s = if hasColor then TC.style s else id
   VerifyOpts {..} <- (vst_vo . ctxt_vst) <$> ask
@@ -611,20 +626,20 @@ display_fail tat f tk mmsg mrd mdv timeout = do
         case timeout of
           True -> "timed out after " <> show vo_timeout <> " ms"
           False -> "failed"
-  iputStrLn $ color TC.Red $ style TC.Bold $ "Verification " <> lab <> ":"
+  putLine $ color TC.Red $ style TC.Bold $ "Verification " <> lab <> ":"
   mode <- ctxt_mode
-  iputStrLn $ "  when " ++ (show $ pretty mode)
-  iputStrLn $ "  of theorem: " ++ (show $ pretty tk)
+  putLine $ "  when " ++ (show $ pretty mode)
+  putLine $ "  of theorem: " ++ (show $ pretty tk)
   case mmsg of
     Nothing -> mempty
     Just msg -> do
-      iputStrLn $ "  msg: " <> show msg
-  iputStrLn $ redactAbsStr cwd $ "  at " ++ show tat
-  mapM_ (iputStrLn . ("  " ++) . show) f
-  iputStrLn $ ""
+      putLine $ "  msg: " <> show msg
+  putLine $ redactAbsStr cwd $ "  at " ++ show tat
+  mapM_ (putLine . ("  " ++) . show) f
+  putLine $ ""
   case mdv of
     Nothing -> do
-      iputStrLn $ show $ "  " <> pretty tk <> parens "false" <> ";" <> hardline
+      putLine $ show $ "  " <> pretty tk <> parens "false" <> ";" <> hardline
     Just dv -> do
       let pm = case mrd of
             Nothing -> mempty
@@ -649,9 +664,14 @@ display_fail tat f tk mmsg mrd mdv timeout = do
                  Nothing -> acc)
             []
             (M.toList pm_str_val)
-      iputStrLn $ show $ showTrace pm_dv_val smtTrace
-  when vo_first_fail_quit $
-    liftIO $ exitWith $ ExitFailure 1
+      putLine $ show $ showTrace pm_dv_val smtTrace
+  liftIO $ do
+    finishedMessage <- readIORef messageRef
+    case unsafeIsErrorFormatJson of
+      True -> hPutStrLn stderr $ "error: " ++ makeErrorJson tat (SMTError finishedMessage)
+      False -> putStr finishedMessage
+    when vo_first_fail_quit $
+      exitWith $ ExitFailure 1
 
 dropConstants :: M.Map String SMTVal -> [SMTLet] -> [SMTLet]
 dropConstants pm = \case
