@@ -1436,7 +1436,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const client = await getAlgodClient();
           const query = client.accountApplicationInformation(a, bigNumberToNumber(ApplicationID)) as unknown as ApiCall<AccountApplicationInfo>;
           const accAppInfo = await query.do();
-          return accAppInfo['app-local-state']?.appLocalState['key-value'];
+          return accAppInfo['app-local-state']?.['key-value'];
         };
 
         // Application Local State Opt-in
