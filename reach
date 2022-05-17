@@ -38,6 +38,7 @@ fi
 IMG='reachsh/reach-cli:latest'
 TMP=$(mkdir -p /tmp/reach/cli; mktemp -d "/tmp/reach/cli/$(date -u '+%Y-%m-%dT%H-%M-%SZ')-XXXX")
 CNF="${XDG_CONFIG_HOME:-$HOME/.config}/reach"; CNF="$(mkdir -p "$CNF" && cd "$CNF" && pwd)"
+START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 export TMP
 
 if [ -z "$REACH_ENV_PRS" ] && [ -f "$CNF/env" ]; then
@@ -116,12 +117,13 @@ run_s () {
 }
 
 gen_reachc_id () {
-  REACH_ENV_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/reach/"
-  REACH_ENV_FILE="${REACH_ENV_DIR}/env"
-  MD5_CMD=md5sum||md5
+#  REACH_ENV_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/reach/"
+  REACH_ENV_FILE="${CNF}/env"
+  MD5_CMD=md5sum
+  if [ ! $(which $MD5_CMD) ]; then
+    MD5_CMD=md5
+  fi
   PRE_REACHC_ID=$(head -n1 /dev/urandom | $MD5_CMD | head -c 30 | tr [a-z] [A-Z])
-
-  mkdir -p $REACH_ENV_DIR
 
   if [ ! -e $REACH_ENV_FILE ]; then
     echo "export REACHC_ID=${PRE_REACHC_ID}" > $REACH_ENV_FILE
@@ -136,27 +138,28 @@ call_home () {
   RESULT=$2
   REACH_VERSION=$3
   CONNECTOR_MODE=$4
-  USING_VSSTUDIO_EXTENTION=$5
+  USING_VSSTUDIO_EXTENSION=$5
   INITIATOR=$6
 
-  CALL_HOME_ENCODED="eyAidXNlcklkIjogInt7UkVBQ0hDX0lEfX0iLCAic3RhcnRUaW1lIjogInt7U1RBUlRfVElNRX19\
-IiwgInJlc3VsdCI6ICJ7e1JFU1VMVH19IiwgInZlcnNpb24iOiAie3tSRUFDSF9WRVJTSU9OfX0i\
-LCAiY29ubmVjdG9yTW9kZSI6ICJ7e0NPTk5FQ1RPUl9NT0RFfX0iLCAidXNpbmdWaXN1YWxTdHVk\
-aW9FeHRlbnNpb24iOiAie3tVU0lOR19WU1NUVURJT19FWFRFTlRJT059fSIsICJpbml0aWF0b3Ii\
-OiAie3tJTklUSUFUT1J9fSIgfQ==" ###Change the template to not track elapsed time
+CALL_HOME_ENCODED="eyJ1c2VySWQiOiJ7e1JFQUNIQ19JRH19\
+Iiwic3RhcnRUaW1lIjoie3tTVEFSVF9USU1FfX0iLCJy\
+ZXN1bHQiOiJ7e1JFU1VMVH19IiwidmVyc2lvbiI6Int7\
+UkVBQ0hfVkVSU0lPTn19IiwiY29ubmVjdG9yTW9kZSI6\
+Int7Q09OTkVDVE9SX01PREV9fSIsInVzaW5nVmlzdWFs\
+U3R1ZGlvRXh0ZW5zaW9uIjoie3tVU0lOR19WU1NUVURJ\
+T19FWFRFTlNJT059fSIsImluaXRpYXRvciI6Int7SU5JVElBVE9SfX0ifQ=="
+
   CALL_HOME_TEMPLATE_DECODED=$(echo -n $CALL_HOME_ENCODED | base64 -d)
-  START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   TRANSLATED_TEMPLATE=$(echo $CALL_HOME_TEMPLATE_DECODED | sed -e "s/{{REACHC_ID}}/$REACHC_ID/g" \
   -e "s/{{START_TIME}}/${START_TIME}/g" \
   -e "s/{{RESULT}}/${RESULT}/g" \
   -e "s/{{REACH_VERSION}}/${REACH_VERSION}/g" \
   -e "s/{{CONNECTOR_MODE}}/${CONNECTOR_MODE}/g" \
-  -e "s/{{USING_VSSTUDIO_EXTENTION}}/${USING_VSSTUDIO_EXTENTION}/g" \
+  -e "s/{{USING_VSSTUDIO_EXTENSION}}/${USING_VSSTUDIO_EXTENSION}/g" \
   -e "s/{{INITIATOR}}/${INITIATOR}/g")
   CALL_HOME_ENDPOINT="https://log.reach.sh/submit"
 
   curl -X POST "$CALL_HOME_ENDPOINT" -d "$TRANSLATED_TEMPLATE" || exit 1
-  
 }
 
 package_manager () {
@@ -200,7 +203,7 @@ install_docker () {
       TEMP_DIR="/mnt/c/tmp"
       WIN_TEMP_DIR="c:\\tmp"
       DOCKER_BIN="/mnt/c/Program Files/Docker/Docker/resources/bin/docker"
-      TIMEOUT=180
+
       mkdir -p $TEMP_DIR
       sudo wget $WINGET_BUNDLE_URL -O "${TEMP_DIR}/${WINGET_ARTIFACT_NAME}"; powershell.exe "cd ${WIN_TEMP_DIR}; powershell .\\${WINGET_ARTIFACT_NAME}"
       STOPPER=0
@@ -222,8 +225,7 @@ install_docker () {
     printf "\nThis installation requires a restart for completion; do you want to restart now? [Y,n]: "
     read RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
-      CALL_HOME_START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-      call_home $CALL_HOME_START_TIME "none" "Docker Installed by Reach" "0.0.0" "none" "none" $1
+      call_home $START_TIME "none" "Docker Installed by Reach" "0.0.0" "none" "none" $1
       powershell.exe 'shutdown -r -t 0'
     fi
   else
@@ -242,8 +244,7 @@ gen_reachc_id
 
 for DEP in make curl docker docker-compose; do
   if ! (which "${DEP}" >/dev/null 2>&1); then
-    CALL_HOME_START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-    call_home $CALL_HOME_START_TIME "none" "${DEP} is not installed" "0.0.0" "none" "none" $1
+    call_home $START_TIME "none" "${DEP} is not installed" "0.0.0" "none" "none" $1
     printf "Reach relies on an installation of %s; do you want to install it? [Y,n]: " "${DEP}"
     read -r RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
