@@ -1229,8 +1229,10 @@ const reNetify = (x: string): NV => {
   return ethers.utils.arrayify('0x' + s);
 };
 
-const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
-  const dhead = 'getAccountInfo';
+const getAccountInfo = (acc:Account): Promise<AccountInfo> => getAddressInfo(extractAddr(acc));
+
+const getAddressInfo = async (a:Address): Promise<AccountInfo> => {
+  const dhead = 'getAddressInfo';
   try {
     await ensureNodeCanRead();
     const client = await getAlgodClient();
@@ -1432,11 +1434,19 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         debug(label, 'getC', { ctcAddr });
 
         // Read map data
-        const getLocalState = async (a:Address): Promise<AppStateKVs|undefined> => {
-          const client = await getAlgodClient();
-          const query = client.accountApplicationInformation(a, bigNumberToNumber(ApplicationID)) as unknown as ApiCall<AccountApplicationInfo>;
-          const accAppInfo = await doQuery_('contract.getLocalState', query, 0, _ => { return { val: undefined }; });
-          return accAppInfo?.['app-local-state']?.['key-value'];
+        const getLocalState = async (addr: Address): Promise<AppStateKVs | undefined> => {
+          if (await nodeCanRead()) {
+            const client = await getAlgodClient();
+            const query = client.accountApplicationInformation(addr, bigNumberToNumber(ApplicationID)) as unknown as ApiCall<AccountApplicationInfo>;
+            const accAppInfo = await doQuery_('contract.getLocalState', query, 0, _ => { return { val: undefined }; });
+            return accAppInfo?.['app-local-state']?.['key-value'];
+          } else {
+            const accInfo = await getAddressInfo(addr);
+            const appLocalStates = accInfo['apps-local-state'] ?? [];
+            const appId = bigNumberToBigInt(ApplicationID);
+            const appLocalState = appLocalStates.find(app => app.id == appId);
+            return appLocalState?.['key-value'];
+          }
         };
 
         // Application Local State Opt-in
@@ -2203,8 +2213,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 };
 
 export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
-  const addr = extractAddr(acc);
-  const ai = await getAccountInfo(addr);
+  const ai = await getAccountInfo(acc);
   if ( ai.amount === BigInt(0) ) { return bigNumberify(0); }
   const createdAppCount = bigNumberify((ai['created-apps']??[]).length);
   const optinAppCount = bigNumberify((ai['apps-local-state']??[]).length);
@@ -2222,29 +2231,28 @@ export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
   return accMinBalance;
 };
 
-const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber|false>> => {
-  const addr = extractAddr(acc);
-  const accountInfo = await getAccountInfo(addr);
-  const accountAssets = accountInfo.assets || [];
-
-  const balanceOfSingleToken = (token: Token | null) => {
-    if (token) {
-      // token => token balance
-      const tokenId = bigNumberify(token);
-      const tokenAsset = accountAssets.find(asset => tokenId.eq(asset['asset-id']));
-      return tokenAsset ? bigNumberify(tokenAsset['amount']) : false;
-    } else {
-      // null => algo balance
-      return bigNumberify(accountInfo.amount);
-    }
-  };
-
-  return tokens.map(balanceOfSingleToken);
+const accountInfoTokenBalanceM = (accountInfo: AccountInfo, token: Token | null): BigNumber | false => {
+  if (token == null) {
+    // token => token balance
+    const accountAssets = accountInfo.assets ?? [];
+    const tokenId = bigNumberify(token);
+    const tokenAsset = accountAssets.find(asset => tokenId.eq(asset['asset-id']));
+    return tokenAsset ? bigNumberify(tokenAsset['amount']) : false;
+  } else {
+    // null => algo balance
+    return bigNumberify(accountInfo.amount);
+  }
 };
 
-const balanceOfM = async (acc: Account, token?: Token): Promise<BigNumber | false> => {
-  if (token == null) {
-    return (await balancesOfM(acc, [null]))[0];
+const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber|false>> => {
+  const accountInfo = await getAccountInfo(acc);
+  return Promise.all(tokens.map(t => accountInfoTokenBalanceM(accountInfo, t)));
+};
+
+const balanceOfM = async (acc: Account, token: Token | null): Promise<BigNumber | false> => {
+  const canRead = await nodeCanRead();
+  if (token == null || !canRead) {
+    return (await balancesOfM(acc, [token]))[0];
   } else {
     const tokenId = bigNumberToNumber(bigNumberify(token));
     const addr = extractAddr(acc);
@@ -2271,7 +2279,7 @@ export const balancesOf = async (acc: Account, tokens: Array<Token|null>): Promi
 };
 
 export const balanceOf = async (acc: Account, token?: Token): Promise<BigNumber> => {
-  return (await balancesOf(acc, [token || null]))[0];
+  return (await balanceOfM(acc, token ?? null)) || bigNumberify(0);
 };
 
 export const createAccount = async (): Promise<Account> => {
