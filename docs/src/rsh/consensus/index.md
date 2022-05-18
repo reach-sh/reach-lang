@@ -688,3 +688,7 @@ range: 99 - 99
 
 `{!rsh} s.Map` will return the underlying `{!rsh} Map`, so you can use foldable
 instance methods.
+
+### {#ref-programs-consensus-new-contract} Contract creation
+
+XXX

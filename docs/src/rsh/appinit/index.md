@@ -244,3 +244,7 @@ range: 34 - 35
 
 These events are available in the frontends via the `{!js} ctc.events` object.
 In the DApp, the result of this application argument is referred to as an event object.
+
+### {#ref-programs-appinit-contractcode} Contract code definition
+
+XXX
