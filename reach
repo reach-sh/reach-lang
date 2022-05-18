@@ -133,7 +133,6 @@ gen_reachc_id () {
 }
 
 call_home () {
-  START_TIME=$1
 CALL_HOME_ENCODED="eyJ1c2VySWQiOiJ7e1JFQUNIQ19JRH19\
 Iiwic3RhcnRUaW1lIjoie3tTVEFSVF9USU1FfX0iLCJy\
 ZXN1bHQiOiJ7e1JFU1VMVH19IiwidmVyc2lvbiI6Int7\
