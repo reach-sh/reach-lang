@@ -171,7 +171,6 @@ timeout_validate () {
   fi
 }
 
-# shellcheck disable=SC2120
 install_docker () {
   OPWD=$(pwd)
   cd / # Depending on `$PWD`, Windows sometimes struggles with paths
