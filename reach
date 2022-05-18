@@ -214,7 +214,7 @@ install_docker () {
     printf "\nThis installation requires a restart for completion; do you want to restart now? [Y,n]: "
     read -r RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
-      call_home "${START_TIME}" "none" "Docker Installed by Reach" "0.0.0" "false" "none" "${1}"
+      call_home "Docker installed by Reach" "0.0.0" "none" "false" "script_deps"
       powershell.exe 'shutdown -r -t 0'
     fi
   else
