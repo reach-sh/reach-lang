@@ -220,7 +220,6 @@ type AccountAssetInfo = {
   'asset-holding'?: AssetHolding
 };
 type AccountApplicationInfo = {
-  'round': bigint,
   'app-local-state'?: AppState,
 };
 type IndexerAccountInfoRes = {
@@ -249,6 +248,14 @@ type AppInfo = {
 type IndexerAppInfoRes = {
   'current-round': bigint,
   'application': AppInfo,
+};
+// type IndexerAccountAppLocalStatesRes = {
+//   'current-round': bigint,
+//   'apps-local-states': Array<AppState>,
+// };
+type IndexerAccountAssetsRes = {
+  'current-round': bigint,
+  'assets': Array<AssetHolding>,
 };
 
 type AssetInfo = {
@@ -1230,8 +1237,9 @@ const reNetify = (x: string): NV => {
 };
 
 const getAccountInfo = (acc:Account): Promise<AccountInfo> => getAddressInfo(extractAddr(acc));
-
 const getAddressInfo = async (a:Address): Promise<AccountInfo> => {
+  // Note restrictions on AccountInfo responses due to 'MaxAPIResourcesPerAccount' setting in the node and indexer
+  // https://developer.algorand.org/articles/algorand-unlimited-assets-and-smart-contracts/
   const dhead = 'getAddressInfo';
   try {
     await ensureNodeCanRead();
@@ -1245,7 +1253,6 @@ const getAddressInfo = async (a:Address): Promise<AccountInfo> => {
     debug(dhead, 'node err', e);
   }
   const indexer = await getIndexer();
-  const q = indexer.lookupAccountByID(a) as unknown as ApiCall<IndexerAccountInfoRes>;
   const failOk = (x:any): OrExn<IndexerAccountInfoRes> => {
     if ( typeof x === 'string' && x.includes('no accounts found for address') ) {
       return { val: {
@@ -1258,7 +1265,8 @@ const getAddressInfo = async (a:Address): Promise<AccountInfo> => {
       return { exn: x };
     }
   };
-  const res = await doQuery_(dhead, q, 0, failOk);
+  const query = indexer.lookupAccountByID(a) as unknown as ApiCall<IndexerAccountInfoRes>;
+  const res = await doQuery_(dhead, query, 0, failOk);
   debug(dhead, res);
   return res.account;
 };
@@ -1435,17 +1443,46 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         // Read map data
         const getLocalState = async (addr: Address): Promise<AppStateKVs | undefined> => {
+          const dhead = 'getLocalState';
           if (await nodeCanRead()) {
             const client = await getAlgodClient();
             const query = client.accountApplicationInformation(addr, bigNumberToNumber(ApplicationID)) as unknown as ApiCall<AccountApplicationInfo>;
             const accAppInfo = await doQuery_('contract.getLocalState', query, 0, _ => { return { val: undefined }; });
             return accAppInfo?.['app-local-state']?.['key-value'];
           } else {
-            const accInfo = await getAddressInfo(addr);
-            const appLocalStates = accInfo['apps-local-state'] ?? [];
+            const indexer = await getIndexer();
+
+            // This would fail if the address has local states for over MaxAPIResourcesPerAccount applications.
+            // The default indexer MaxAPIResourcesPerAccount is 1000.
+            const query = indexer
+              .lookupAccountByID(addr)
+              .exclude("assets,created-assets,created-apps") as unknown as ApiCall<IndexerAccountInfoRes>;
+            const accountInfo = await doQuery_(dhead, query);
             const appId = bigNumberToBigInt(ApplicationID);
+            const appLocalStates = accountInfo['account']['apps-local-state'] ?? [];
             const appLocalState = appLocalStates.find(app => app.id == appId);
             return appLocalState?.['key-value'];
+
+            /*
+            // This should work according to the api docs, but apps-local-state always comes back 'null'
+            const query = indexer
+              .lookupAccountAppLocalStates(addr)
+              .applicationID(bigNumberToNumber(ApplicationID)) as unknown as ApiCall<IndexerAccountAppLocalStatesRes>;
+            const appLocalStatesM = await doQueryM_(dhead, query);
+            debug(dhead, appLocalStatesM);
+            if ('val' in appLocalStatesM) {
+              const alsRes = appLocalStatesM['val'];
+              debug(dhead, alsRes);
+              const appsLocalStates = alsRes['apps-local-states'];
+              debug(dhead, appsLocalStates);
+              // const appsLocalStates = appLocalStatesM['val']['apps-local-states'];
+              const appLocalState = appsLocalStates.find(app => ApplicationID.eq(app['id']));
+              debug(dhead, appLocalState);
+              return appLocalState?.['key-value'];
+            } else {
+              return undefined;
+            }
+            */
           }
         };
 
@@ -2231,51 +2268,71 @@ export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
   return accMinBalance;
 };
 
-const accountInfoTokenBalanceM = (accountInfo: AccountInfo, token: Token | null): BigNumber | false => {
-  if (token == null) {
-    // token => token balance
-    const accountAssets = accountInfo.assets ?? [];
-    const tokenId = bigNumberify(token);
-    const tokenAsset = accountAssets.find(asset => tokenId.eq(asset['asset-id']));
-    return tokenAsset ? bigNumberify(tokenAsset['amount']) : false;
-  } else {
-    // null => algo balance
-    return bigNumberify(accountInfo.amount);
-  }
-};
-
 const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber|false>> => {
-  const accountInfo = await getAccountInfo(acc);
-  return Promise.all(tokens.map(t => accountInfoTokenBalanceM(accountInfo, t)));
+  const indexer = await getIndexer();
+  const addr = extractAddr(acc);
+  const query = indexer.lookupAccountAssets(addr) as unknown as ApiCall<IndexerAccountAssetsRes>;
+  const accountAssets = (await doQuery_('balancesOfM', query))['assets'];
+  const tokenBalances = tokens.map(async t => {
+    if (t === null) {
+      return await balanceOfM(acc, t);
+    } else {
+      const bal = accountAssets.find(asset => t.eq(asset['asset-id']))?.['amount'];
+      return bal ? bigNumberify(bal) : false;
+    }
+  });
+  return Promise.all(tokenBalances);
 };
 
 const balanceOfM = async (acc: Account, token: Token | null): Promise<BigNumber | false> => {
-  const canRead = await nodeCanRead();
-  if (token == null || !canRead) {
-    return (await balancesOfM(acc, [token]))[0];
-  } else {
-    const tokenId = bigNumberToNumber(bigNumberify(token));
-    const addr = extractAddr(acc);
+  const dhead = 'balanceOfM';
+  const addr = extractAddr(acc);
+  if (await nodeCanRead()) {
     const client = await getAlgodClient();
-    const query = client.accountAssetInformation(addr, tokenId) as ApiCall<AccountAssetInfo>;
-    const accountAssetInfoM = await doQueryM_('balanceOfM', query);
-    if ('val' in accountAssetInfoM) {
-      const assetHolding = accountAssetInfoM.val['asset-holding'];
-      return assetHolding ? bigNumberify(assetHolding['amount']) : false;
+    if (token == null) {
+      // Node algo balance
+      const query = client.accountInformation(addr).exclude('all') as unknown as ApiCall<AccountInfo>;
+      const accountInfo = await doQuery_(dhead, query);
+      return bigNumberify(accountInfo['amount']);
     } else {
-      return false;
+      // Node token balance
+      const query = client.accountAssetInformation(addr, bigNumberToNumber(token)) as unknown as ApiCall<AccountAssetInfo>;
+      const accountAssetInfoM = await doQueryM_(dhead, query);
+      if ('val' in accountAssetInfoM) {
+        return bigNumberify(accountAssetInfoM['val']?.['asset-holding']?.['amount'] ?? 0);
+      } else {
+        return false;
+      }
+    }
+  } else {
+    const indexer = await getIndexer();
+    if (token == null) {
+      // Indexer algo balance
+      const query = indexer.lookupAccountByID(addr).exclude('all') as unknown as ApiCall<IndexerAccountInfoRes>;
+      const accountInfoM = await doQueryM_(dhead, query);
+      if ('val' in accountInfoM) {
+        return bigNumberify(accountInfoM['val']['account']['amount']);
+      } else {
+        return false;
+      }
+    } else {
+      // Indexer token balance
+      const tokenId = bigNumberToNumber(bigNumberify(token));
+      const client = await getAlgodClient();
+      const query = client.accountAssetInformation(addr, tokenId) as ApiCall<AccountAssetInfo>;
+      const accountAssetInfoM = await doQueryM_(dhead, query);
+      if ('val' in accountAssetInfoM) {
+        const assetHolding = accountAssetInfoM['val']['asset-holding'];
+        return assetHolding ? bigNumberify(assetHolding['amount']) : false;
+      } else {
+        return false;
+      }
     }
   }
 }
 
 export const balancesOf = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber>> => {
-  return (await balancesOfM(acc, tokens)).map(bal => {
-    if (bal === false) {
-      return bigNumberify(0);
-    } else {
-      return bal;
-    }
-  });
+  return (await balancesOfM(acc, tokens)).map(bal => bal == false ? bigNumberify(0) : bal);
 };
 
 export const balanceOf = async (acc: Account, token?: Token): Promise<BigNumber> => {
