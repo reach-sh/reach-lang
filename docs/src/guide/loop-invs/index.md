@@ -14,7 +14,7 @@ while ( COND ) {
  V = NEXT;
  continue; }
 ... after ...
-assert(P); 
+assert(P);
 ```
 
 We can summarize the properties that must be true about this code as follows:

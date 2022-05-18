@@ -23,7 +23,7 @@ This is useful when the local step was initiated by an `{!rsh} each` expression.
 ```reach
 interact.amount
 interact.notify(handA, handB)
-interact.chooseAmount(heap1, heap2) 
+interact.chooseAmount(heap1, heap2)
 ```
 
 An @{defn("interaction expression")}, written `{!rsh} interact.METHOD(EXPR_0, ..., EXPR_n)`, where `{!rsh} METHOD` is an identifier bound in the participant interact interface to a function type, and `{!rsh} EXPR_0` through `{!rsh} EXPR_n` are expressions that evaluate to the result of an interaction with a frontend that receives the evaluation of the `{!rsh} n` expressions and sends a value.
@@ -44,7 +44,7 @@ It has Alice `{!rsh} declassify` the `{!rsh} interact` object for both the `wage
 
 @{ref("rsh", "assume")}
 ```reach
-assume( claim, [msg] ) 
+assume( claim, [msg] )
 ```
 
 An assumption where `{!rsh} claim` evaluates to `{!rsh} true` with honest frontends.
@@ -64,7 +64,7 @@ In this example, the claim is that the two tokens, tokenA and tokenB, are not th
 
 @{ref("rsh", "fail")}
 ```reach
-fail() 
+fail()
 ```
 
 is a convenience method equivalent to `{!rsh} assume(false)`. This may only appear in a local step.
@@ -73,7 +73,7 @@ is a convenience method equivalent to `{!rsh} assume(false)`. This may only appe
 
 @{ref("rsh", "declassify")}
 ```reach
-declassify( arg ) 
+declassify( arg )
 ```
 
 The @{defn("declassify")} primitive performs a declassification of the given argument.
@@ -89,14 +89,14 @@ In this statement, Alice declassifies the wager and then publishes it so that Bo
 
 @{ref("rsh", "makeCommitment")}
 ```reach
-makeCommitment( interact, x ) 
+makeCommitment( interact, x )
 ```
 
 Returns two values, `{!rsh} [ commitment, salt ]`, where `{!rsh} salt` is the result of calling `{!rsh} interact.random()`, and
 `{!rsh} commitment` is the digest of `{!rsh} salt` and `{!rsh} x`.
 This is used in a local step before `{!rsh} checkCommitment` is used in a consensus step.
 
-This is demonstrated in the example below. 
+This is demonstrated in the example below.
 `{!rsh} makeCommitment` is used on line 18 before `{!rsh} checkCommitment` on line 21:
 
 ```reach
@@ -108,7 +108,7 @@ range: 16-22
 
 @{ref("rsh", "didPublish")}
 ```reach
-didPublish() 
+didPublish()
 ```
 
 Returns a boolean that indicates whether the last publication was made by this principal.

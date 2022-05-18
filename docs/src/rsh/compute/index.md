@@ -671,7 +671,7 @@ load: /examples/uint256/index.rsh
 range: 92 - 93
 ```
 
-However, if `y` is a `{!rsh} UInt256`, then `{!rsh} UInt(y)` is `y` with as many bits as `{!rsh} UInt` has. 
+However, if `y` is a `{!rsh} UInt256`, then `{!rsh} UInt(y)` is `y` with as many bits as `{!rsh} UInt` has.
 This is demonstrated in the code below:
 
 ```reach
@@ -689,7 +689,7 @@ This is guaranteed to not happen when you compile with `{!rsh} verifyArithmetic`
 
 If you wish to explicitly truncate a `{!rsh} UInt`* type into a smaller size, you can pass a second, `{!rsh} Bool` argument to the cast call.
 Passing `{!rsh} true` truncates the number.
-Passing `{!rsh} false` causes the cast to fail, as describe above. 
+Passing `{!rsh} false` causes the cast to fail, as describe above.
 This is the default behavior.
 
 ```reach
@@ -1653,7 +1653,7 @@ So `isOutcome(LENDER_TIMEOUT)` would return `{!rsh} true` while `isOutcome(SCISS
 assert( claim, [msg] )
 ```
 
- A static assertion which is only valid if `{!rsh} claim` always evaluates to `{!rsh} true`. 
+ A static assertion which is only valid if `{!rsh} claim` always evaluates to `{!rsh} true`.
 
  For example, the following assertions were made in the [Rock, Paper, Scissors tutorial](##tut-5):
 
@@ -1795,7 +1795,7 @@ This function may not be called until after the first publication (which creates
 load: /examples/remote-rsh/index.rsh
 range: 26-29
 ```
-	
+
 In line 26, `D` publishes the values for `x` and `tok`.
 After the `{!rsh} publish`, `{!rsh} getContract` returns the value `x` in token `tok`.
 
@@ -1814,7 +1814,7 @@ load: /examples/ctc-address/index.rsh
 range: 15-22
 ```
 
-In the sample above, Alice publishes to create the contract. 
+In the sample above, Alice publishes to create the contract.
 Then, an object named `info` references `{!rsh} getContract` which pulls in the contract information.
 Another object, `addr`, references `{!rsh} getAddress` to obtain the address of Alice.
 Both `{!rsh} info` and `{!rsh} addr` are then used in the local step of Alice in her `{!rsh} interact` object.
@@ -1857,7 +1857,7 @@ load: /examples/thisConsensusTime/index.rsh
 range: 9 - 15
 ```
 
-`{!rsh} lastConsensusSecs` is used to make a check on line 14. 
+`{!rsh} lastConsensusSecs` is used to make a check on line 14.
 This happened after the publication on line 9.
 
 ### `thisConsensusTime` and `thisConsensusSecs`
@@ -2008,7 +2008,7 @@ hasRandom
 ```
 
  A participant interact interface which specifies `random` as a function that takes no arguments and returns an unsigned integer of bit width bits. Reach provides a default frontend implementation via hasRandom (Frontend).
- 
+
  ```reach
 load: /examples/rps-7-loops/index.rsh
 range: 20-24
@@ -2056,7 +2056,7 @@ load: /examples/pr855/index.rsh
 range: 26 - 32
 ```
 
-On line 31, `totalAmount` would be multiplied by the result of `(curTime - start)`. The output would then be divided by `duration` immediately. 
+On line 31, `totalAmount` would be multiplied by the result of `(curTime - start)`. The output would then be divided by `duration` immediately.
 
 ### `verifyMuldiv`
 
@@ -2085,10 +2085,10 @@ load: /hs/t/y/verifyMuldiv.rsh
 range: 36 - 43
 ```
 
-`{!rsh} muldiv` is used on line 36 to multiply `x` and `y`. 
+`{!rsh} muldiv` is used on line 36 to multiply `x` and `y`.
 After which, the product of `x` and `y` is immediately divided by the product of `cx` and `cy`.
 On line 41, `{!rsh} verifyMuldiv` is used with the same arguments passed to `{!rsh} muldiv` on line 36.
-In this case, however, it is used to generate a claim that the result of applying the same arguments to 
+In this case, however, it is used to generate a claim that the result of applying the same arguments to
 `{!rsh} muldiv` will not overflow.
 
 ### `sqrt`
@@ -2365,7 +2365,7 @@ load: /examples/multiple-pr-case/index.rsh
 range: 46 - 49
 ```
 
-In this code, the `{!rsh} Participant`s are defined on lines 11 and 12. 
+In this code, the `{!rsh} Participant`s are defined on lines 11 and 12.
 At the moment of `{!rsh} timeout`, line 47 permits any of the `{!rsh} Participant`s to make a publication.
 
 In an application with a participant class, this means any principal at all, because there is no restriction on which principals (i.e. addresses) may serve as a member of that class.

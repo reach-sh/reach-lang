@@ -169,7 +169,7 @@ Then, create an event listener that connects to the API calls:
 # Conclusion
 
 This demonstrates the essential (but not quite complete) elements of implementing a DApp with Reach.
-There's no magic involved, but it definitely feels like there is when you're building a Reach application. 
+There's no magic involved, but it definitely feels like there is when you're building a Reach application.
 As a developer, you don't need to think about forming transaction groups, SDK calls, "opting in", or "ASA ids".
 Because you don't think about these things, your application works on multiple
 networks.
