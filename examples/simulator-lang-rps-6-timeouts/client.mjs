@@ -60,7 +60,7 @@ const main = async () => {
     s = await s.who(alice).receive();
     s = await s.who(bob).receive();
     // closeTo
-    s = await s.who(consensus).publish(alice);
+    s = await s.who(consensus).publish(bob);
     s = await s.who(alice).receive();
     s = await s.who(bob).receive();
     w = await bob.balanceOf();
