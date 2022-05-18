@@ -1093,7 +1093,7 @@ compile = command "compile" $ info f d
         export REACH
 
         if [ "$$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
-          ~/.local/bin/reachc $argsl --disable-reporting
+          ~/.local/bin/reachc $args
 
         elif [ "$${REACH_DOCKER}" = "0" ] \
           && [ -d "$${HS}/.stack-work"  ] \
@@ -1104,8 +1104,8 @@ compile = command "compile" $ info f d
           export STACK_YAML REACHC_HASH
 
           (cd "$$HS" && make hs-build)
-
           stack exec -- reachc $args
+
         else
           cid="$(docker ps -q \
             -f "ancestor=reachsh/reach:$v" \
