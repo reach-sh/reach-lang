@@ -230,7 +230,7 @@ for DEP in make curl docker docker-compose; do
     read -r RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
       case $DEP in
-        "docker") install_docker;;
+        "docker") install_docker ${1};;
                *) package_install $DEP;;
       esac
     fi
