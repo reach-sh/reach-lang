@@ -234,7 +234,7 @@ gen_reachc_id
 
 for DEP in make curl docker docker-compose; do
   if ! (command -v "${DEP}" >/dev/null 2>&1); then
-    call_home "${START_TIME}" "none" "${DEP} is not installed" "0.0.0" "false" "none" "${1}"
+    call_home "$DEP is not installed" "0.0.0" "none" "false" "script_deps"
     printf "Reach relies on an installation of %s; do you want to install it? [Y,n]: " "${DEP}"
     read -r RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
