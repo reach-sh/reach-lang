@@ -152,7 +152,7 @@ T19FWFRFTlNJT059fSIsImluaXRpYXRvciI6Int7SU5JVElBVE9SfX0ifQ=="
   -e "s/{{REACH_VERSION}}/${REACH_VERSION}/g" \
     -e "s/{{CONNECTOR_MODE}}/$3/g" \
     -e "s/{{USING_VSSTUDIO_EXTENSION}}/$4/g" \
-  -e "s/{{INITIATOR}}/${INITIATOR}/g")
+    -e "s/{{INITIATOR}}/$5/g")
   curl -X POST "https://log.reach.sh/submit" -d "$TRANSLATED_TEMPLATE" || exit 1
 }
 
