@@ -19,6 +19,7 @@ This tutorial builds on the [Wisdom For Sale]() tutorial. We assume you have fin
 
 ## {#tut-mkt-starter} Starter Code
 In this section, the boiler plate for the project will be created.
+See full code [here]().
 
 1. Create a folder named `market` in your `Reach` directory:
 
@@ -118,7 +119,89 @@ If the diagram above wasn't clear enough, this next section would help.
 
 Let's G0!
 
+
 ## {#tut-mkt-basic} Basic DApp
+In this section a basic DApp will be created to demonstrate what the finish product would look like. 
+By the end, you will see how a working `Reach` application looks and feels like.
+See full code [here]().
+
+
+### {#tut-mkt-declare} Declare Variables
+
+Start by fleshing out the constants that we have declared.
+Replace this:
+
+```reach
+load: /examples/tuts-mkt-1-starter/index.rsh
+range: 3 - 7
+```
+
+with:
+
+```reach
+load: /examples/tuts-mkt-2-basic/index.rsh
+range: 3 - 37
+```
+
+These are just constants. Nothing surprising:
+
+* Line 3: `choice`. 
+This is an `{!rsh} integer` that would represent the product that the buyer decides to order.
+
+:::note
+An integer is represented by `{!rsh} UInt`. 
+:::
+
+* Line 4: `quantity`. 
+This is an `{!rsh} integer` that would represent the quantity of the product that the buyer order.
+
+* Line 5: `announcement`. 
+This is a `{!rsh} String` that would represent a short advertisement to the buyer. 
+
+:::note
+A string is represented by `{!rsh} Bytes(28)`.
+The integer (28) in braces defines how long the string can be.
+:::
+
+* Lines 6 to 11: `product`. 
+This is an `{!rsh} Object` that contains the properties (i.e. key-value pair) of each product that the `seller` has in stock for sale.
+
+* Line 13: `products`. 
+This is an `{!rsh} Array` of `product`. 
+
+* Lines 14 to 25: `commonInteract`.
+This would hold properties that would be accessible to both the `seller` and `buyer`.
+
+* Lines 15 to 24: `showResult`.
+ This is a  `{!rsh} function` that takes in 2 `Object`s and returns nothing.
+
+:::note
+A `{!rsh} function` in Reach is defined as `{!rsh} Fun([input], output)`.
+:::
+
+* Lines 27 to 33: `sellerInteract`.
+ This would hold all properties accessible by the `seller`.
+
+* Lines 28 to 31: `sellerInfo`.
+ This is an `Object` that would contain the `announcement` and `products` that was declared on lines 5 and 13 respectively.
+
+* Line 32: `reportReady`.
+ This is a `{!rsh} function` that takes in the `announcement` and `products` and returns nothing.
+
+* Lines 35 to 37: `buyerInteract`.
+This would hold all properties accessible by the `buyer`. 
+
+* Line 36: `shop`.
+ This is a `{!rsh} function` that represents the buyer's process in looking through the `seller`'s `products` and making a decision as to which one to pick and how many is needed.
+ It takes in an `Object` of the `seller`'s `announcement` and `products`. 
+ And then returns an `Object` of the `buyer`'s `choice` and `quantity`.
+
+That is all that needs to be done in the backend for now. It now time to move to the frontend.
+
+
+### {#tut-mkt-define} Define Variables
+Having told the backend how those constants declared are to be used, these constants will now be given their proper functionality.
+
 
 ## {#tut-mkt-interaction} Interaction and Independence
 

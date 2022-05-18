@@ -1,6 +1,5 @@
 'reach 0.1';
 
-// define const and var to be used in the frontend (index.mjs)
 const choice = UInt;
 const quantity = UInt;
 const announcement = Bytes(28);
@@ -32,6 +31,7 @@ const sellerInteract = {
   }),
   reportReady: Fun([announcement, products], Null),
 };
+
 const buyerInteract = {
   shop: Fun([Object({ announcement, products })], Object({ choice, quantity })),
 };
