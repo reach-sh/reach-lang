@@ -1083,13 +1083,6 @@ compile = command "compile" $ info f d
       let cn = flip T.map v $ \c -> if isAlphaNum c && isAscii c then c else '-'
       let ci' = if ci then "true" else ""
       let ports = if co_sim then "-p 3001:3001" else ""
-      let reachc_release = [N.text| stack build && stack exec -- reachc $args |]
-      let reachc_dev = [N.text| stack build --fast && stack exec -- reachc $args |]
-      let reachc_prof =
-            [N.text|
-        stack build --profile --fast \
-          && stack exec --profile -- reachc $args +RTS -p
-      |]
       scriptWithConnectorModeOptional $ do
         realpath
         write
@@ -1112,13 +1105,7 @@ compile = command "compile" $ info f d
 
           (cd "$$HS" && make expand)
 
-          if [ "$${REACHC_RELEASE}" = "Y" ]; then
-            $reachc_release
-          elif [ "$${REACHC_PROFILE}" = "Y" ]; then
-            $reachc_prof
-          else
-            $reachc_dev
-          fi
+          stack exec -- reachc $args
         else
           cid="$(docker ps -q \
             -f "ancestor=reachsh/reach:$v" \
