@@ -66,8 +66,7 @@ Preparation is done. Now lets start writing our Reach application code.
 ## Create the first version of your Reach program for the community insurance dapp
 TODO:
 
+...
 
 
 
-
-Thanks for spending your afternoon with us!
