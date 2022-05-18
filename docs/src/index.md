@@ -4,7 +4,7 @@ Reach is a domain-specific language for building decentralized applications (DAp
 
 This set of documents contains everything you need to know about Reach.
 
-+ The [quick start](##quickstart) guide contains instructions for setting up the Reach environment on your Windows, Linux, or Mac computer. 
++ The [quick start](##quickstart) guide contains instructions for setting up the Reach environment on your Windows, Linux, or Mac computer.
 + [The overview](##overview) briefly introduces the basic ideas of Reach.
 It can be helpful to get some context before diving into other sections.
 If you have experience with blockchain development using existing tools, we recommend reading [the overview](##overview) and [a comparision with other development platforms](##guide-solidity).

@@ -50,7 +50,7 @@ Identifier `u` is exported as `u`, and `x` is exported and renamed to be `other_
 An exported identifier in a given module may be imported by other modules.
 Both `u` and `other_x` can be imported from the current module instead of importing them from `other-module.rsh`.
 
-Exports are also exposed to the frontend via `{!js} getExports`. 
+Exports are also exposed to the frontend via `{!js} getExports`.
 For more information on `{!js} getExports` and exposing exports to the frontend, refer to [JavaScript](##ref-backends-js).
 
 Functions are only exposed if they are typed, that is, if they are constructed with `{!rsh} is`.

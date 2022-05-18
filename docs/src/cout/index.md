@@ -75,7 +75,7 @@ is given the `{!js} interact` object,
 ```js
 const x = "A string";
 { get: x,
-  give: (str) => x === str } 
+  give: (str) => x === str }
 ```
 
 then it is not guaranteed that `{!rsh} A` will publish `{!rsh} true`, because the `{!js} str` given to `{!js} give` may not be identical to `{!js} x`.
