@@ -162,7 +162,7 @@ Reach should now build and launch a Docker container for this application.
 Since the application doesn't do anything, you'll just see a lot of diagnostic messages though, so that's not very exciting.
 
 :::note
-The entire process that we just went through can be automated by running 
+The entire process that we just went through can be automated by running
 ```cmd
 $ ./reach init
 ```
@@ -1531,7 +1531,7 @@ To complete this section we'll use the `index.rsh` you've already written and cr
 :::note
 If you do not replace `index.mjs`, then you will get an error when you run `reach react`.
 You can avoid this error by renaming the file to `index.mjs.bak`, or by creating a totally new directory with a copy of the old `index.rsh.`
-We do the second option. 
+We do the second option.
 :::
 
 This code is also supplemented with [index.css](@{REPO}/examples/rps-9-web/index.css)
@@ -1807,7 +1807,7 @@ range: 96-96
 Finally, we call a small helper function from [rps-9-web/views/render.js](@{REPO}/examples/rps-9-web/views/render.js)
 to render our App component.
 
---- 
+---
 As a convenience for running the React development server,
 you can call:
 
@@ -1874,7 +1874,7 @@ reach.setProviderByName('TestNet'); // or 'MainNet'
 For details, see [the Conflux FAQ](##cfx-faq-mainnet).
 :::
 
---- 
+---
 If you'd like to instead use Reach in your own JavaScript project,
 you can call:
 
@@ -1893,7 +1893,7 @@ As usual, you can compile your Reach program `index.rsh` to the `{!js} backend` 
 $ ./reach compile
 ```
 
---- 
+---
 Now our implementation of _Rock, Paper, Scissors!_ is live in the browser!
 We can leverage callbacks in the participant interact interface to display to and gather information from the user,
 through any Web UI framework of our choice.

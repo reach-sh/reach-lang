@@ -506,7 +506,7 @@ range: 30-32
 ```
 
 Here, there is a `{!js} myGasLimit` object created, which is set to `{!js} 5000000`.
-This is then applied to both the `{!js} accAlice` and `{!js} accBob` by using the `{!js} setGasLimit` method so that the maximum gas cost is set for each account. 
+This is then applied to both the `{!js} accAlice` and `{!js} accBob` by using the `{!js} setGasLimit` method so that the maximum gas cost is set for each account.
 
 ## {#ref-frontends-js-acc-cfx} Conflux-specific
 
@@ -905,7 +905,7 @@ waitToPay: async (price) => {
 },
 ```
 
-Although, it is possible to use `{!js} wait` to give an event time to execute, 
+Although, it is possible to use `{!js} wait` to give an event time to execute,
 it is a better practice to create an explicit synchronization with an [event](##ref-programs-appinit-events) or instruct the deployer to communicate with [API](##ref-programs-appinit-api) callers off-chain.
 
 ---

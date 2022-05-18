@@ -21,7 +21,7 @@ or
 
 * Windows 11
 
-* Virtualization Technology (VT-x) enabled on the BIOS 
+* Virtualization Technology (VT-x) enabled on the BIOS
 
 ## {#qs-win-install} Installation
 
@@ -55,7 +55,7 @@ In the Command Prompt window, run the following command to set the WSL version t
 
 ``` cmd
 $ wsl --set-default-version 2
-``` 
+```
 
 After setting up the default version, we will finally install our WSL distribution:
 
@@ -75,7 +75,7 @@ We will download the package from Microsoft's official GitHub account.
 
 To install Winget run:
 ``` cmd
-cd c:\downloads; 
+cd c:\downloads;
 wget -uri https://github.com/microsoft/winget-cli/releases/download/v1.3.431/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle -outfile .\winget.msixbundle; .\winget.msixbundle
 ```
 A window should pop up. Click on Update.
@@ -147,7 +147,7 @@ Reach requires [make](https://en.wikipedia.org/wiki/Make_(software)), [Docker En
 * A version of Linux compatible with Docker.
 
 Our instructions are written assuming you're using the most recent version of Ubuntu.
-Check the [Docker Engine](https://docs.docker.com/engine/install/) page for supported distros. 
+Check the [Docker Engine](https://docs.docker.com/engine/install/) page for supported distros.
 
 ## {#qs-linux-install} Installation for Ubuntu
 
@@ -235,7 +235,7 @@ To verify that Docker Compose is operating on your Mac, execute the command:
 $ docker-compose --version
 ```
 
-When it returns a version number, Reach is ready to be installed. 
+When it returns a version number, Reach is ready to be installed.
 
 Create and navigate to the `reach` directory with the following command:
 

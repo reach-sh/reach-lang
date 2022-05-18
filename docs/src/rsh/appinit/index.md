@@ -25,7 +25,7 @@ changed because that name was misleading.
 Its continuation is a step, which means its content is specified by @{seclink("ref-programs-step")}.
 It represents the body of the DApp to be compiled.
 
-In the example below, see how `{!rsh} init();` is used to finalize the available `{!rsh} Participant` and `{!rsh} API`. 
+In the example below, see how `{!rsh} init();` is used to finalize the available `{!rsh} Participant` and `{!rsh} API`.
 After which a local step is introduced:
 
 ```reach
@@ -126,7 +126,7 @@ ParticipantClass(participantName, participantInteractInterface)
 
 respectively.
 
-:::note 
+:::note
 Since `{!rsh} ParticipantClass` is being deprecated, it is preferable to use `{!rsh} API`.
 :::
 
@@ -170,7 +170,7 @@ range: 24-27
 ```
 
 This example creates an API that has a name of `Investor`, and it has two functions.
-The first function is to invest in the contract, and the second function is to collect the payment if the `Entrepreneur` fails to form a quorum.  
+The first function is to invest in the contract, and the second function is to collect the payment if the `Entrepreneur` fails to form a quorum.
 
 ### {#ref-programs-appinit-view} View Definition
 
