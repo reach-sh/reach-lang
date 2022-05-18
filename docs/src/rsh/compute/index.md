@@ -2354,7 +2354,7 @@ load: /examples/multiple-pr-case/index.rsh
 range: 46 - 49
 ```
 
-In this code, the `{!rsh} Participant`s are defined on line 11 and 12. 
+In this code, the `{!rsh} Participant`s are defined on lines 11 and 12. 
 At the moment of `{!rsh} timeout`, line 47 permits any of the `{!rsh} Participant`s to make a publication.
 
 In an application with a participant class, this means any principal at all, because there is no restriction on which principals (i.e. addresses) may serve as a member of that class.
