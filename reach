@@ -151,7 +151,7 @@ T19FWFRFTlNJT059fSIsImluaXRpYXRvciI6Int7SU5JVElBVE9SfX0ifQ=="
     -e "s/{{START_TIME}}/${START_TIME}/g" \
   -e "s/{{RESULT}}/${RESULT}/g" \
   -e "s/{{REACH_VERSION}}/${REACH_VERSION}/g" \
-  -e "s/{{CONNECTOR_MODE}}/${CONNECTOR_MODE}/g" \
+    -e "s/{{CONNECTOR_MODE}}/$3/g" \
   -e "s/{{USING_VSSTUDIO_EXTENSION}}/${USING_VSSTUDIO_EXTENSION}/g" \
   -e "s/{{INITIATOR}}/${INITIATOR}/g")
   curl -X POST "https://log.reach.sh/submit" -d "$TRANSLATED_TEMPLATE" || exit 1
