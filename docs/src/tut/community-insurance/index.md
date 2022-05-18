@@ -43,6 +43,10 @@ To Configure Tailwind CSS, open the file called `tailwind.config.js` at the root
 ```
 load: /examples/insurance/tailwind.config.js
 ```
+Open your `src/index.css` file and paste the code below, overwriting everything inside.
+```
+load: /examples/insurance/src/index.css
+```
 
 At the root of your application code, there a `package.json` file which contains all the configuration for react 
 and it is responsible for keeping track of all the dependances required to run this application. 
@@ -57,6 +61,10 @@ Now run the command bellow and wait to for npm to finish installing all the Reac
 $ npm install
 ```
 
+Preparation is done. Now lets start writing our Reach application code.
+
+## Create the first version of your Reach program for the community insurance dapp
+TODO:
 
 
 
