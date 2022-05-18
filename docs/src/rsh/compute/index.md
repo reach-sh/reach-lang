@@ -2060,6 +2060,14 @@ sqrt(81)
 
 `{!rsh} sqrt(x)` returns the largest integer `i` such that `i * i <= x`.
 
+```reach
+load: /examples/sqrt/index.rsh
+range: 17 - 19
+```
+
+This code checks if `z` is equivalent to the square root of `x` on line 18.
+For example, if `z` is 9 and `x` is 81, that line would return `{!rsh} true`.
+
 ### `sqrtApprox`
 
 @{ref("rsh", "sqrtApprox")}
