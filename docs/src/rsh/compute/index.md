@@ -1836,7 +1836,10 @@ load: /examples/realtime/index.rsh
 range: 12 - 18
 ```
 
-Notice how `{!rsh} lastConsensusTime` is called on line 17 after the publication on line 12.
+In this code `{!rsh} lastConsensusTime` is called on line 17 after the publication on line 12. 
+The `entry` function on line 15 takes `step` as an argument and produces an array. 
+The array contains the destructured `step`, `lab` that was passed into the parent function (`aStep`), 
+`{!rsh} lastConsensusTime()` and `{!rsh} lastConsensusSecs()`.
 
 ---
 
