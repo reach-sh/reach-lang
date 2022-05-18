@@ -2057,8 +2057,8 @@ range: 36 - 43
 ```
 
 `{!rsh} muldiv` is used on line 36 to multiply `x` and `y`. 
-After which the product is immediately divided by the product of `cx` and `cy`.
-On line 41, `{!rsh} verifyMuldiv` is used with the same arguments passed to the `{!rsh} muldiv` on line 36.
+After which, the product of `x` and `y` is immediately divided by the product of `cx` and `cy`.
+On line 41, `{!rsh} verifyMuldiv` is used with the same arguments passed to `{!rsh} muldiv` on line 36.
 In this case, however, it is used to generate a claim that the result of applying the same arguments to 
 `{!rsh} muldiv` will not overflow.
 
