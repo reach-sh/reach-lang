@@ -2051,6 +2051,17 @@ When used inside of a local step or export, it will generate an `{!rsh} assume` 
 When used inside of a consensus step, it will generate a `{!rsh} require` claim.
 When used inside of any other step, it will generate an `{!rsh} assert` claim.
 
+```reach
+load: /hs/t/y/verifyMuldiv.rsh
+range: 36 - 43
+```
+
+`{!rsh} muldiv` is used on line 36 to multiply `x` and `y`. 
+After which the product is immediately divided by the product of `cx` and `cy`.
+On line 41, `{!rsh} verifyMuldiv` is used with the same arguments passed to the `{!rsh} muldiv` on line 36.
+In this case, however, it is used to generate a claim that the result of applying the same arguments to 
+`{!rsh} muldiv` will not overflow.
+
 ### `sqrt`
 
 @{ref("rsh", "sqrt")}
