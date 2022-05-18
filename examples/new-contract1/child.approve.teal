@@ -1,0 +1,53 @@
+#pragma version 6
+
+// State
+// Global: 0 byte, 2 uint
+
+txn ApplicationID
+bz ctor
+txna ApplicationArgs 0
+byte 0x0fe30569
+==
+bnz f
+err
+
+ctor:
+byte 0x00
+int 0
+app_global_put
+
+byte 0x01
+txna ApplicationArgs 1
+btoi
+app_global_put
+
+b done
+
+f:
+byte 0x151f7c75
+byte 0x00
+dup
+app_global_get
+dup
+store 0
+int 1
++
+app_global_put
+load 0
+byte 0x01
+app_global_get
++
+txna ApplicationArgs 1
+btoi
++
+itob
+concat
+log
+
+b done
+
+// Comment this in to show the warnings
+//byte x
+
+done:
+int 1

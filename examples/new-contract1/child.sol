@@ -12,7 +12,7 @@ contract Contract {
   }
 
   function f(uint256 z) external payable returns (uint256 w) {
-    w = _x + _y + z;
+    w = _x++ + _y + z;
   }
 }
 
