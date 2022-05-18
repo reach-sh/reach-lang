@@ -187,7 +187,6 @@ install_docker () {
       mkdir -p $TEMP_DIR
       sudo wget $WINGET_BUNDLE_URL -O "${TEMP_DIR}/${WINGET_ARTIFACT_NAME}"; powershell.exe "cd ${WIN_TEMP_DIR}; powershell .\\${WINGET_ARTIFACT_NAME}"
       STOPPER=0
-      # shellcheck disable=SC2039
       while ( ! command -v winget.exe > /dev/null 2>&1 ); do
         sleep 1;
         STOPPER=$((STOPPER + 1))
