@@ -1,0 +1,8 @@
+JP Miller — 03/24/2022
+Participant is a user in your program. In the RPS tutorial Alice and Bob are both participants. They are individual actors who can have unique functionality in the program. 
+A ParticipantClass is a class of participants. This is a class, or a grouping, of users who hold the same functionality. 
+However, instead of using ParticipantClass we should use API. 
+API is like ParticipantClass in that it’s a class of users with the same functionality, but an API allows the front end to communicate with the DApp as needed.
+There is an example of API in use here 
+
+https://github.com/reach-sh/reach-lang/tree/master/examples/nft-auction-api 
