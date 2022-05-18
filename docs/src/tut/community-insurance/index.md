@@ -56,9 +56,23 @@ Open it and paste the code bellow, overwriting everything inside.
 load: /examples/insurance/package.json
 ```
 
-Now run the command bellow and wait to for npm to finish installing all the React dependances
+Now run the command bellow and wait for npm to finish installing all React dependances
 ```cmd
 $ npm install
+```
+You have now finished preparing your react frontend app. What about the Reach backend ? 
+Well, if you had successfully completed [the basic tutorial](##tut), by now you know that at the root of 
+the reach project there is a file named `index.rsh`, 
+as well as the reach script file which allows you to run the command `./reach xxx`. 
+To integrate both reach and react, all you need is to make sure that the output file generated after compiling the `.rsh` 
+file resides inside the react project so that it can be imported at the top of react code. 
+To achieve this, create a folder inside the src/ folder of the react app where the reach compilation output will go. 
+While you can name it whatever you want, I suggest `reach-build`. So your reach compiled output should be place inside 
+`community-insurance-dapp/src/reach-build`. By the way, you can direct the output to go there at the time running your 
+commpillation command. By default `reach compile` command places the output in a `build` folder at the root of the reach app.
+You can change the destination of the output by specifying the `-o` flag like so: 
+```cmd
+$ REACH_CONNECTOR_MODE="ALGO-browser" ./reach compile -o community-insurance-dapp/src/reach-build
 ```
 
 Preparation is done. Now lets start writing our Reach application code.
