@@ -3,9 +3,16 @@
 Below is a list of changes to Reach.
 Versions and changes-within-versions are listed in reverse-chronological order: newest things first.
 
-## 0.1.10: 2022/04 - present
+## 0.1.11: 2022/05 - present
 
-Version 0.1.10 is the current Reach release candidate version.
+@{verCur("0.1.11")}
+
++ 2022/05/18: Added @{seclink("ref-programs-consensus-new-contract")} support.
++ 2022/05/18: Added @{seclink("ref-programs-appinit-contractcode")} support.
+
+## 0.1.10: 2022/04 - 2022/05
+
+@{verCur("0.1.10")}
 
 + 2022/05/14: Added `{!cmd} reach support` sub-command.
 + 2022/05/13: Support custom violation messages for `{!rsh} invariant`s.
@@ -41,7 +48,7 @@ Version 0.1.10 is the current Reach release candidate version.
 
 ## 0.1.9: 2022/03 - 2022/04
 
-Version 0.1.9 is the current Reach release version.
+@{verOld("0.1.9")}
 
 + 2022/04/06: Added support for arbitrary `{!rsh} Map` keys on Ethereum/Conflux.
 + 2022/04/05: Added support for creating overloaded `{!rsh} API` functions and calling overloaded `{!rsh} remote` functions.
@@ -75,7 +82,7 @@ Version 0.1.9 is the current Reach release version.
 
 ## 0.1.8: 2022/01 - 2022/03
 
-Version 0.1.8 is an old Reach release version.
+@{verOld("0.1.8")}
 
 + 2022/02/28: Added `{!js} launchToken` for token minting in frontends.
 + 2022/02/25: Added support for tracking `{!rsh} Token` information—such as balance, supply, and whether its destroyed—dynamically.
@@ -108,7 +115,7 @@ Version 0.1.8 is an old Reach release version.
 
 ## 0.1.7: 2021/11 - 2021/12
 
-Version 0.1.7 is an old Reach release version.
+@{verOld("0.1.7")}
 
 + 2022/01/06: Added `{!rsh} getUntrackedFunds`.
 + 2021/12/31: `{!js} setQueryLowerBound` is deprecated.
@@ -134,7 +141,7 @@ On the other hand, some things that used to not work, now do; for example, there
 
 ## 0.1.6: 2021/10 - 2021/11
 
-Version 0.1.6 is an old Reach release version.
+@{verOld("0.1.6")}
 
 + 2021/11/02: Allow `{!rsh} API`s and `{!rsh} View`s to be specified without names.
 + 2021/10/28: `REACH_CONNECTOR_MODE` no longer defaults to `ETH` when unset.
@@ -153,7 +160,7 @@ Attempting to `reach run|react|rpc-server|rpc-run|devnet` without setting `REACH
 
 ## 0.1.5: 2021/09 - 2021/10
 
-Version 0.1.5 is the current Reach release version.
+@{verOld("0.1.5")}
 
 + 2021/10/15: Added `{!js} setValidQueryWindow`.
 + 2021/10/11: The Solidity compiler has been upgraded to 0.8.9.
@@ -177,7 +184,7 @@ Instead, you probably want to select one of your existing participants and assig
 
 ## 0.1.4: 2021/09 - 2021/09
 
-Version 0.1.4 is is an old Reach release version.
+@{verOld("0.1.4")}
 
 + 2021/09/15: `{!rsh} muldiv` added.
 + 2021/09/08: Add `--stop-after-eval` and `--verify-timeout` options to `reach compile`.
@@ -202,7 +209,7 @@ Authors of existing projects which contain unmodified `Makefile` or `docker-comp
 
 ## 0.1.3: 2021/07 - 2021/08
 
-Version 0.1.3 is an old Reach release version.
+@{verOld("0.1.3")}
 
 + 2021/08/31: Added `{!js} acc.setStorageLimit` to JavaScript standard library for Conflux.
 + 2021/08/16: Allow `{!rsh} continue` in step in some cases.
@@ -228,7 +235,7 @@ Version 0.1.3 is an old Reach release version.
 
 ## 0.1.2: 2020/09 - 2021/07
 
-Version 0.1.2 is an old Reach release version.
+@{verOld("0.1.2")}
 
 It is the last version that supports Algorand using TEAL3; if you deployed a contract on Algorand using Reach version 0.1.2, you will need to continue accessing it via the 0.1.2 version of the Reach standard library.
 

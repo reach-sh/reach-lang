@@ -501,7 +501,11 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     return r.join(`\n`);
   };
 
-  const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, externalRef, ref, tooltip, directive_note, directive_hiddenNote, directive_alongside, directive_alongsideColumn, directive_testQ, directive_testA, generateIndex };
+  const verOld = (ver) => `Version ${ver} is an old Reach release version.`;
+  const verCur = (ver) => `Version ${ver} is the current Reach release version.`;
+  const verRC = (ver) => `Version ${ver} is the current Reach release candidate version.`;
+
+  const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, externalRef, ref, tooltip, directive_note, directive_hiddenNote, directive_alongside, directive_alongsideColumn, directive_testQ, directive_testA, generateIndex, verOld, verCur, verRC  };
 
   const expanderDirective = () => (tree) => {
     visit(tree, (node) => {

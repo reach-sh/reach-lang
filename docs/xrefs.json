@@ -1067,6 +1067,10 @@
     "title": "API Definition",
     "path": "/rsh/appinit/#ref-programs-appinit-api"
   },
+  "ref-programs-appinit-contractcode": {
+    "title": "Contract code definition",
+    "path": "/rsh/appinit/#ref-programs-appinit-contractcode"
+  },
   "ref-programs-appinit-events": {
     "title": "Events Definition",
     "path": "/rsh/appinit/#ref-programs-appinit-events"
@@ -1110,6 +1114,10 @@
   "ref-programs-consensus-exprs": {
     "title": "Expressions",
     "path": "/rsh/consensus/#ref-programs-consensus-exprs"
+  },
+  "ref-programs-consensus-new-contract": {
+    "title": "Contract creation",
+    "path": "/rsh/consensus/#ref-programs-consensus-new-contract"
   },
   "ref-programs-consensus-stmts": {
     "title": "Statements",
