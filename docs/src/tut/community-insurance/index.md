@@ -12,7 +12,7 @@ This tutorial assumes that you already
  * have [Docker](https://www.docker.com/get-started), and [Docker Compose](https://docs.docker.com/compose/install/) installed.
  * have node & npm installed on your machine. If not, first head over to the [official website](https://nodejs.org/en/download/) 
     and follow the installation steps.
- * have working knowledge of react hooks. You can checkout [the basics](https://reactjs.org/docs/hooks-overview.html#:~:text=Hooks%20are%20functions%20that%20let,if%20you'd%20like.)) in case this is new to you.
+ * have working knowledge of react hooks. You can checkout [the basics](https://reactjs.org/docs/hooks-overview.html#:~:text=Hooks%20are%20functions%20that%20let,if%20you'd%20like.) in case this is new to you.
  * installed Reach successfully by following the [installation process](##tut) from the basic tutorial. 
 
 Since this is a real world application, we want to style it professionally using [tailwind css](https://tailwindcss.com/). You don't have to be familiar with this framework to follow along though. 
