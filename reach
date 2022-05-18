@@ -146,7 +146,7 @@ T19FWFRFTlNJT059fSIsImluaXRpYXRvciI6Int7SU5JVElBVE9SfX0ifQ=="
   CALL_HOME_TEMPLATE_DECODED=$(echo -n "${CALL_HOME_ENCODED}" | base64 -d)
   TRANSLATED_TEMPLATE=$(echo "${CALL_HOME_TEMPLATE_DECODED}" | sed -e "s/{{REACHC_ID}}/$REACHC_ID/g" \
     -e "s/{{START_TIME}}/${START_TIME}/g" \
-  -e "s/{{RESULT}}/${RESULT}/g" \
+    -e "s/{{RESULT}}/$1/g" \
     -e "s/{{REACH_VERSION}}/$2/g" \
     -e "s/{{CONNECTOR_MODE}}/$3/g" \
     -e "s/{{USING_VSSTUDIO_EXTENSION}}/$4/g" \
