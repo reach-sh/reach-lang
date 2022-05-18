@@ -1103,7 +1103,7 @@ compile = command "compile" $ info f d
           REACHC_HASH="$$("$${HS}/../scripts/git-hash.sh")"
           export STACK_YAML REACHC_HASH
 
-          (cd "$$HS" && make expand)
+          (cd "$$HS" && make hs-build)
 
           stack exec -- reachc $args
         else
