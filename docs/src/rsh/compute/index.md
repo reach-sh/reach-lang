@@ -2306,6 +2306,20 @@ This shorthand can be useful for situations where
 it does not matter who `{!rsh} publish`es, such as in a `{!rsh} timeout`.
 
 `{!rsh} Anybody` is strictly an abbreviation of a `{!rsh} race` involving all of the named participants of the application.
+
+```reach
+load: /examples/multiple-pr-case/index.rsh
+range: 10 - 13
+```
+
+```reach
+load: /examples/multiple-pr-case/index.rsh
+range: 46 - 49
+```
+
+In this code, the `{!rsh} Participant`s are defined on line 11 and 12. 
+At the moment of `{!rsh} timeout`, line 47 permits any of the `{!rsh} Participant`s to make a publication.
+
 In an application with a participant class, this means any principal at all, because there is no restriction on which principals (i.e. addresses) may serve as a member of that class.
 In an application without any participant classes, `{!rsh} Anybody` instead would mean only the actual previously-bound participants.
 
