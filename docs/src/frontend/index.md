@@ -338,6 +338,16 @@ stdlib.newAccountFromSecret(secret: string) => Promise<acc>
 Returns a Promise for a Reach account abstraction for an account on the consensus network specified by the given secret.
 The details of the secret encoding are specified uniquely to the consensus network.
 
+Example:
+
+```js
+load: /examples/rps-8-interact/index.mjs
+range: 18-25
+```
+
+In this code, if the user chooses to not create a new account, then the DApp uses `{!rsh} newAccountFromSecret` to create a new account.
+The `acc` object `{!rsh} awaits` the user to input the secret and then sets the provided account to itself.
+
 ---
 @{ref("js", "newAccountFromMnemonic")}
 ```js
