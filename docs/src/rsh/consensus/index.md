@@ -126,6 +126,17 @@ This may only occur within a consensus step.
 @{seclink("workshop-relay")} is a good introductory project that demonstrates how to use this feature of Reach.
 :::
 
+Example:
+
+```reach
+load: /examples/workshop-relay/index.rsh
+range: 14 - 17
+```
+
+Alice first publishes the amount and the participant, `relay`, that will receive the amount, and then completes a `{!rsh} pay` action.
+Then, the address of `Relay` is `{!rsh} set` in the consensus step, to make sure it is remembered by the consensus.
+This code is also an assert that `relay` is the address of the participant `Relay`.
+
 ### `while`
 
 @{ref("rsh", "while")}@{ref("rsh", "var")}@{ref("rsh", "invariant")}
