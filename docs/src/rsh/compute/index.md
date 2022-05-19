@@ -2547,7 +2547,7 @@ load: /examples/getUntrackedFunds3/index.rsh
 range: 28-30
 ```
 
- The untracked tokens are set to `{!rsh} const` `x` and then transferred to `B`.
+The untracked tokens are set to `{!rsh} const` `x` and then transferred to `B`.
 
 ### `distinct`
 
