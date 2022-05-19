@@ -1,4 +1,9 @@
-pre-build: child.sol.json child.sol.bin child.approve.teal.tok child.clear.teal.tok
+REACH = ../../reach
+
+pre-build: child.sol.json child.sol.bin child.approve.teal.tok child.clear.teal.tok build/child.main.mjs
+
+build/%.main.mjs: %.rsh
+	$(REACH) compile $<
 
 %.sol.json: %.sol
 	solc --combined-json abi,bin $< > $@
