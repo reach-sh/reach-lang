@@ -1032,9 +1032,31 @@ for the function you are attempting to use and provide it with the correct argum
 ## {#RE0056} RE0056
 
 This error indicates that you are attempting to create a variable, although another
-variable in the scope uses the same name. In Reach, identifier shadowing is
-not allowed. You can fix this issue by renaming your variable or moving one of the
+variable in the scope uses the same name. 
+
+Example:
+
+```reach
+load: /hs/t/n/Err_Shadowed.rsh
+range: 3 - 8
+```
+
+In Reach, identifier shadowing is not allowed. 
+You can fix this issue by renaming your variable or moving one of the
 variable declarations to another scope where it does not conflict with the other.
+
+Example:
+
+```reach
+const x = 0;
+const y = 1;
+
+export const main = Reach.App(
+  {}, [], () => {return x;}
+);
+```
+
+In this code, the second variable has been renamed to `y`.
 
 ## {#RE0057} RE0057
 
