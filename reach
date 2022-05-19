@@ -222,9 +222,11 @@ install_docker () {
 
 gen_reachc_id
 
-for DEP in make curl docker docker-compose; do
+for DEP in curl make docker docker-compose; do
   if ! (command -v "${DEP}" >/dev/null 2>&1); then
-    call_home "$DEP is not installed" "0.0.0" "none" "false" "script_deps"
+    if [ "${DEP}" != "curl" ]; then
+      call_home "$DEP is not installed" "0.0.0" "none" "false" "script_deps"
+    fi
     printf "Reach relies on an installation of %s; do you want to install it? [Y,n]: " "${DEP}"
     read -r RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
