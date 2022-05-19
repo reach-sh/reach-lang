@@ -384,6 +384,10 @@ class Variable {
     assert.equal(this.v[1].contents,v);
   }
 
+  contents = () => {
+    return this.v[1].contents;
+  }
+
 }
 
 class Actor {
