@@ -2540,6 +2540,15 @@ So, the amount returned must eventually be transferred out of the contract to sa
  If a contract were to have its funds improperly removed, through clawback or other means, and the actual balance is less
 than Reach's expectation, this function will return `{!rsh} 0`.
 
+Example:
+
+```reach
+load: /examples/getUntrackedFunds3/index.rsh
+range: 28-30
+```
+
+ The untracked tokens are set to `{!rsh} const` `x` and then transferred to `B`.
+
 ### `distinct`
 
 @{ref("rsh", "distinct")}
