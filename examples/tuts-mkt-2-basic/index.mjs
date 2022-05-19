@@ -4,11 +4,9 @@ const stdlib = loadStdlib();
 
 const startingBalance = stdlib.parseCurrency(100);
 
-// create account balance for Seller and Buyer
 const SellerBalance = await stdlib.newTestAccount(startingBalance);
 const BuyerBalance = await stdlib.newTestAccount(startingBalance);
 
-// create contracts for Seller and Buyer
 const SellerContract = SellerBalance.contract(backend);
 const BuyerContract = BuyerBalance.contract(backend, SellerContract.getInfo());
 

@@ -198,9 +198,33 @@ This would hold all properties accessible by the `buyer`.
 
 That is all that needs to be done in the backend for now. It now time to move to the frontend.
 
+### {#tut-mkt-accounts} Create Accounts
+In the [previous section](##tut-mkt-starter-frontend), contracts were setup for the participants:
+
+```reach
+load: /examples/tuts-mkt-1-starter/index.mjs
+range: 5 - 6
+```
+
+These contracts require that each of the `{!rsh} participant`s have an account setup before entering the contract. Let's do that now. 
+
+Just before the contracts, type the following code:
+
+```reach
+load: /examples/tuts-mkt-2-basic/index.mjs
+range: 5 - 8
+```
+
+* Line 5 sets up some funds that can be used by each `{!rsh} participant` as starting balance.
+`{!rsh} parseCurrency` converts the figure passed in to it to an acceptable currency on a DApp.
+* Lines 7 and 8 creates an account for each of the `{!rsh} participant`.
+This is for test purpose. 
+
+With these accounts, our contract will compile successfully when called upon.
 
 ### {#tut-mkt-define} Define Variables
-Having told the backend how those constants declared are to be used, these constants will now be given their proper functionality.
+Having told the backend how those variables declared are to be used, these variables will now be given their proper functionality.
+
 
 
 ## {#tut-mkt-interaction} Interaction and Independence

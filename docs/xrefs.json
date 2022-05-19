@@ -1459,6 +1459,66 @@
     "title": "Waiting for Turn display",
     "path": "/tut/rps/#tut-9-WaitingForTurn"
   },
+  "tut-mkt": {
+    "title": "Market Place",
+    "path": "/tut/mkt/#tut-mkt"
+  },
+  "tut-mkt-Interaction-basic": {
+    "title": "Basic DApp",
+    "path": "/tut/mkt/#tut-mkt-Interaction-basic"
+  },
+  "tut-mkt-Interaction-other": {
+    "title": "Other Reports",
+    "path": "/tut/mkt/#tut-mkt-Interaction-other"
+  },
+  "tut-mkt-Interaction-report": {
+    "title": "Report Cancellation",
+    "path": "/tut/mkt/#tut-mkt-Interaction-report"
+  },
+  "tut-mkt-accounts": {
+    "title": "Create Accounts",
+    "path": "/tut/mkt/#tut-mkt-accounts"
+  },
+  "tut-mkt-basic": {
+    "title": "Basic DApp",
+    "path": "/tut/mkt/#tut-mkt-basic"
+  },
+  "tut-mkt-declare": {
+    "title": "Declare Variables",
+    "path": "/tut/mkt/#tut-mkt-declare"
+  },
+  "tut-mkt-define": {
+    "title": "Define Variables",
+    "path": "/tut/mkt/#tut-mkt-define"
+  },
+  "tut-mkt-interaction": {
+    "title": "Interaction and Independence",
+    "path": "/tut/mkt/#tut-mkt-interaction"
+  },
+  "tut-mkt-introduction": {
+    "title": "Introduction",
+    "path": "/tut/mkt/#tut-mkt-introduction"
+  },
+  "tut-mkt-prerequisite": {
+    "title": "Prerequisite",
+    "path": "/tut/mkt/#tut-mkt-prerequisite"
+  },
+  "tut-mkt-starter": {
+    "title": "Starter Code",
+    "path": "/tut/mkt/#tut-mkt-starter"
+  },
+  "tut-mkt-starter-backend": {
+    "title": "Backend",
+    "path": "/tut/mkt/#tut-mkt-starter-backend"
+  },
+  "tut-mkt-starter-conclusion": {
+    "title": "Conclusion",
+    "path": "/tut/mkt/#tut-mkt-starter-conclusion"
+  },
+  "tut-mkt-starter-frontend": {
+    "title": "Frontend",
+    "path": "/tut/mkt/#tut-mkt-starter-frontend"
+  },
   "tuts": {
     "title": "Tutorials",
     "path": "/tut/#tuts"
