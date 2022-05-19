@@ -18,7 +18,7 @@ const main = async () => {
   );
   [s, b] = await s.who(bob).init(10);
 
-  const fScenario = async (s,aHand,bHand,alice,bob,consensus) => {
+  const play = async (s,aHand,bHand,alice,bob,consensus) => {
     // Alice interactively gets her hand (0)
     s = await s.who(alice).interact('getHand', aHand);
     // getRandom
@@ -67,7 +67,7 @@ const main = async () => {
     // check that Bob got everything
     assert.equal(w,20);
   }
-  await fScenario(s,0,1,a,b,consensus);
+  await play(s,0,1,a,b,consensus);
   console.log("Testing Complete!!!")
 }
 
