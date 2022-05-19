@@ -2526,3 +2526,12 @@ distinct(1, 2, 3);
 
 `{!rsh} distinct(...args)` evaluates to `{!rsh} true` when all its arguments
 are distinct from each other.
+
+Example:
+
+```reach
+load: /hs/t/y/many_txns.rsh
+range: 43 - 60
+```
+
+This code makes an assumption that all the `{!rsh} token`s passed into the `{!rsh} distinct` method are clearly different from each other.
