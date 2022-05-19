@@ -2111,7 +2111,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       debug({bsi});
       return bsi;
     };
-    const recoverSplitBytes = (prefix:string, size:number, howMany:number, src:AppStateKVs): (Uint8Array|undefined) => {
+
+    const recoverSplitBytes = (prefix:string, size:number, howMany:number, src:AppStateKVs): Uint8Array | undefined => {
       debug('recoverSplitBytes', {prefix, size, howMany, src});
       const bs = new Uint8Array(size);
       let offset = 0;
@@ -2203,6 +2204,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const r = await balanceOfM(me_na, token);
     return ( r !== false );
   };
+
   const tokenAccept = async (token:Token): Promise<void> => {
     if ( ! (await tokenAccepted(token)) ) {
       debug(`tokenAccept`, token);
@@ -2210,6 +2212,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       await transfer(me_na, me_na, 0, token);
     }
   };
+
   const tokenMetadata = async (token:Token): Promise<TokenMetadata> => {
     debug(`tokenMetadata`, token);
     const tokenRes = await getAssetInfo(bigNumberToNumber(token));
@@ -2269,6 +2272,27 @@ export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
 };
 
 const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber|false>> => {
+  // Querying Algod for balances
+  if (await nodeCanRead()) {
+    const client = await getAlgodClient();
+    const query = client.accountInformation(extractAddr(acc)) as unknown as ApiCall<AccountInfo>;
+    const accountInfoM = await doQueryM_('balancesOfM', query);
+    if ('val' in accountInfoM) {
+      const accountInfo = accountInfoM['val'];
+      const accountAssets = accountInfo['assets'] ?? [];
+      const tokenBalances = tokens.map(t => {
+        if (t === null) {
+          return bigNumberify(accountInfo['amount']);
+        } else {
+          const bal = accountAssets.find(asset => t.eq(asset['asset-id']))?.['amount'];
+          return bal ? bigNumberify(bal) : false;
+        }
+      });
+      return tokenBalances;
+    }
+  }
+
+  // If Algod failed, (eg if query response exceeded MaxAPIResourcesPerAccount), query the indexer
   const indexer = await getIndexer();
   const addr = extractAddr(acc);
   const query = indexer.lookupAccountAssets(addr) as unknown as ApiCall<IndexerAccountAssetsRes>;
@@ -2299,7 +2323,7 @@ const balanceOfM = async (acc: Account, token: Token | null): Promise<BigNumber 
       const query = client.accountAssetInformation(addr, bigNumberToNumber(token)) as unknown as ApiCall<AccountAssetInfo>;
       const accountAssetInfoM = await doQueryM_(dhead, query);
       if ('val' in accountAssetInfoM) {
-        return bigNumberify(accountAssetInfoM['val']?.['asset-holding']?.['amount'] ?? 0);
+        return bigNumberify(accountAssetInfoM['val']['asset-holding']?.['amount'] ?? 0);
       } else {
         return false;
       }
@@ -2317,7 +2341,7 @@ const balanceOfM = async (acc: Account, token: Token | null): Promise<BigNumber 
       }
     } else {
       // Indexer token balance
-      const tokenId = bigNumberToNumber(bigNumberify(token));
+      const tokenId = bigNumberToNumber(token);
       const client = await getAlgodClient();
       const query = client.accountAssetInformation(addr, tokenId) as ApiCall<AccountAssetInfo>;
       const accountAssetInfoM = await doQueryM_(dhead, query);
@@ -2336,7 +2360,7 @@ export const balancesOf = async (acc: Account, tokens: Array<Token|null>): Promi
 };
 
 export const balanceOf = async (acc: Account, token?: Token): Promise<BigNumber> => {
-  return (await balanceOfM(acc, token ?? null)) || bigNumberify(0);
+  return (await balanceOfM(acc, token || null)) || bigNumberify(0);
 };
 
 export const createAccount = async (): Promise<Account> => {
