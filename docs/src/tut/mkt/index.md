@@ -340,6 +340,116 @@ Go back to the backend file.
 
 ### {#tut-mkt-basic-connect} Connect Frontend to Backend
 
+This stage is the last one for the basic DApp. It will make the backend to interact with the frontend and that in turn, will log outputs in the console.
+
+Go back to the backend file. Just below `{!rsh} init();`, type the following code:
+
+```reach
+load: /examples/tuts-mkt-2-basic/index.rsh
+range: 50 - 55
+```
+
+This is called a `{!rsh} local step`. 
+
+A local step is an action that happens on the `{!rsh} participant`'s machine. This step is used to execute codes that are only accessible to a particular `{!rsh} participant`.
+
+* Line 50 calls the `{!rsh} only()` method on the `Seller`.
+
+* Line 51 has the `Seller` `{!rsh} interact` with the `sellerInfo` `{!rsh} Object`. 
+Calling `{!rsh} Interact` on something in Reach is the same thing as calling upon a `{!rsh} function` to execute the code within it.
+
+After the `{!rsh} Interact`ion is done, the program is then given the permission to share whatsoever the result of that `{!rsh} Interact`ion is with the public. 
+To do this, `declassify()` method is used.
+
+* Line 53 now publicizes the `sellerInfo` that has been declassified.
+
+* Line 54 then `{!rsh} Interact`s with the `Seller`'s `reportReady` `{!rsh} function`. 
+The `reportReady` takes in two arguments (i.e. the `Seller`'s `announcement` and `products`)
+
+* Line 55 concludes the `Seller`'s local step by calling `commit()`.
+
+Now, doing a `./reach run` in the terminal would show some output.
+That concludes concludes the `Seller`'s interaction.
+
+Next, type in the following code for the `Buyer`'s interaction:
+
+```reach
+load: /examples/tuts-mkt-2-basic/index.rsh
+range: 57 - 61
+```
+
+This is the `Buyer`'s local step
+
+* Line 57 calls the `{!rsh} only()` method on the `Buyer`.
+
+* Line 58 has the `Buyer` `{!rsh} interact` with the `shop` `{!rsh} function`. 
+The result of that interaction is also declassified. 
+
+* Line 60 publicizes the `decision` reached on line 58.
+
+* Line 61 concludes the `Buyer`'s steps with a `commit();`
+
+Finally, the result of the program is shown with the following code:
+
+```reach
+load: /examples/tuts-mkt-2-basic/index.rsh
+range: 63 - 63
+```
+
+Line 63 executes the `showResult` `{!rsh} function` on both `{!rsh} participants`.
+
+In the terminal, type `./reach run` and hit `Enter`.
+An output similar to the one below show be displayed:
+
+```
+Welcome to the Market
+Contract info: {"type":"BigNumber","hex":"0x6d"}
+List of products for sale:
+1. Potatoes at 10 per bag.
+2. Carrots at 10 per bunch.
+3. Corn at 5 per ear.
+Buyer wants Potatoes
+Buyer agrees to buy 9 bags of Potatoes
+Seller agrees to sell 9 bags of Potatoes
+
+
+
+Welcome to the Market
+Contract info: {"type":"BigNumber","hex":"0x89"}
+List of products for sale:
+1. Potatoes at 10 per bag.
+2. Carrots at 10 per bunch.
+3. Corn at 5 per ear.
+Buyer wants Carrots
+Buyer agrees to buy 10 bunches of Carrots
+Seller agrees to sell 10 bunches of Carrots
+
+
+
+Welcome to the Market
+Contract info: {"type":"BigNumber","hex":"0x90"}
+List of products for sale:
+1. Potatoes at 10 per bag.
+2. Carrots at 10 per bunch.
+3. Corn at 5 per ear.
+Buyer wants Carrots
+Buyer agrees to buy 81 bunches of Carrots
+Seller agrees to sell 81 bunches of Carrots
+```
+
+Walah!!! You made it.
+You did awesomely.
+
+### {#tut-mkt-basic-conclusion} Conclusion
+That was a good way to start building the market place application that we just embarked upon. I hope you found it really helpful and easy to follow through. 
+
+This tutorial has been able to teach the basics of the Reach language. 
+Concepts that was covered include, variable declaration and definition, 
+the Reach standard library, `{!rsh} Participant`, `{!rsh} Types`, steps and so on.
+
+Congratulations!!! You just became a `Reach developer`.
+
+In the next section, more will be discussed about how `./reach run` works, `process.argv` will be introduced and so on.
 
 ## {#tut-mkt-interaction} Interaction and Independence
 

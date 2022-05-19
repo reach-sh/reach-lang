@@ -47,7 +47,6 @@ export const main = Reach.App(() => {
   });
   init();
 
-  // seller local step
   Seller.only(() => {
     const sellerInfo = declassify(interact.sellerInfo);
   });
@@ -55,13 +54,11 @@ export const main = Reach.App(() => {
   Seller.interact.reportReady(sellerInfo.announcement, sellerInfo.products);
   commit();
 
-  // Buyer local step
   Buyer.only(() => {
     const decision = declassify(interact.shop(sellerInfo));
   });
   Buyer.publish(decision);
   commit();
 
-  // show result of the transaction
   each([Seller, Buyer], () => interact.showResult(decision, sellerInfo));
 });
