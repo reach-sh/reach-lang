@@ -592,8 +592,24 @@ add the needed field to the `{!rsh} object` if necessary.
 ## {#RE0026} RE0026
 
 This error indicates that the `{!rsh} continue` statement is used outside of a
-`{!rsh} while` loop. To fix this issue, delete the erroneous `{!rsh} continue`,
+`{!rsh} while` loop.
+
+Example:
+
+```reach
+load: /hs/t/n/continue.rsh
+range: 4 - 9
+```
+
+To fix this issue, delete the erroneous `{!rsh} continue`,
 or move it to the end of your `{!rsh} while` loop.
+
+Example:
+
+```reach
+load: /hs/t/y/while_multi_inv.rsh
+range: 14 - 24
+```
 
 ## {#RE0027} RE0027
 
