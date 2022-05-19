@@ -219,6 +219,13 @@ interface Provider {
 The `{!js} algodClient` and `{!js} indexer` values are as specified by the [Algorand JS SDK](https://algorand.github.io/js-algorand-sdk/).
 The `{!js} signAndPostTxns` function obeys [ARC-0008](https://github.com/reach-sh/ARCs/blob/reach-wallet/ARCs/arc-0008.md).
 
+Example:
+
+```js
+load: /examples/ganache/index.mjs
+range: 10-13
+```
+
 ---
 @{ref("js", "getProvider")}
 ```js
