@@ -1843,6 +1843,16 @@ lastConsensusTime()
 The @{defn("lastConsensusTime")} primitive returns the network time of the last publication of the DApp.
 This may not be available if there was no such previous publication, such as at the beginning of an application before the first publication.
 
+```reach
+load: /examples/realtime/index.rsh
+range: 12 - 18
+```
+
+In this code, `{!rsh} lastConsensusTime` is called on line 17 after the publication on line 12. 
+The `entry` function on line 15 takes `step` as an argument and produces an array. 
+The array contains the destructured `step`, `lab` that was passed into the parent function (`aStep`), 
+`{!rsh} lastConsensusTime()` and `{!rsh} lastConsensusSecs()`.
+
 ---
 
 @{ref("rsh", "lastConsensusSecs")}
