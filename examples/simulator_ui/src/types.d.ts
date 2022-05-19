@@ -61,3 +61,8 @@ export type store = {
 export type Node = {
     
 }
+
+export type Selection = {
+  view: string
+  data: any
+};

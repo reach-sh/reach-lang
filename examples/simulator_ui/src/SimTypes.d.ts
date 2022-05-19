@@ -2,11 +2,11 @@ declare module '@reach-sh/simulator-client' {
             export function apiCall (): any
             export function catGraph(): any
             export function getAPIs(): any
-            export function getActions(): any
+            export function getActions(nodeId: number, participant: number): any
             export function getEdges(): any
             export function getLoc(): any
-            export function getStateGlobals(): any
-            export function getStateLocals(): any
+            export function getStateGlobals(stateID: number): any
+            export function getStateLocals(stateID: number): any
             export function getStates(): any
             export function getStatus(): any
             export function init(): any

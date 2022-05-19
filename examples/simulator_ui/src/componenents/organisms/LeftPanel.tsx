@@ -6,6 +6,7 @@ import ObsPanel from "../molecules/ObsPanel";
 import { ParticipantDropdown } from "../atoms/ParticipantDropdown";
 import InitForm from "../molecules/InitForm";
 import { Participant } from "../../types";
+import { SectionDivider } from "../atoms/SectionDivider";
 
 
 const PanelContainer = styled.div`
@@ -87,13 +88,6 @@ const InitContent = styled.div`
   align-items: space-between;
 `;
 
-const SectionDivider = styled.div`
-  border: 0.5px solid var(--white);
-  height: 0px;
-  width: 85%;
-  margin-left: 7.5%;
-  align-self: center;
-`;
 const InitParticipantsButton = styled(Button)`
   margin-left: auto;
   width: 156px;

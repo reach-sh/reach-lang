@@ -11,7 +11,8 @@ import styled from "styled-components";
 import VisualizerPanel from "./componenents/organisms/Visualizer";
 import { IUserNode, IUserEdge } from "@antv/graphin";
 import { Participant } from "./types";
-import Graphin from '@antv/graphin'
+import Graphin from "@antv/graphin";
+import { Selection } from "./types";
 
 export const GlobalStyles = createGlobalStyle`
   html {
@@ -41,16 +42,21 @@ async function initReach() {
   return await c.init();
 }
 
-async function getInitDetails(a: number){
-  return await c.initDetails(a)
+async function getInitDetails(a: number) {
+  return await c.initDetails(a);
 }
 
-async function initParticipant(participant: number, nodeId: number, iface: any, details: any) {
-  const values = {} as any
-  for (const [k,v] of Object.entries(iface)){
-    values[k] = {tag: `V_${details[k].slice(7)}`, contents: v }
+async function initParticipant(
+  participant: number,
+  nodeId: number,
+  iface: any,
+  details: any
+) {
+  const values = {} as any;
+  for (const [k, v] of Object.entries(iface)) {
+    values[k] = { tag: `V_${details[k].slice(7)}`, contents: v };
   }
-  return [await c.initFor(participant, nodeId, values), values]
+  return [await c.initFor(participant, nodeId, values), values];
 }
 
 async function initApp(mountProgram: Function) {
@@ -115,24 +121,46 @@ function App() {
   const [nodes, setGraphNodes] = useState<IUserNode[]>([]);
   const [edges, setGraphEdges] = useState<IUserEdge[]>([]);
   const [_, forceUpdate] = useReducer((x) => x + 1, 0);
+  const [selection, setSelection] = useState<Selection>();
+  const [locals, setLocals] = useState<any>();
+  const [globals, setGlobals] = useState<any>();
+  const [perspective, changePerspective] = useState<string>("-1");
+  const [actions, setActions] = useState<any>();
+  const [apis, setApis] = useState<any>();
   const [jsonLog, updateJsonLog] = useState<any>([
     ["resetServer"],
     ["load"],
     ["init"],
   ]);
 
-  const initLogAndUpdate = async ({participant, node, values, details}: {participant: number, node: number, values: any, details: any}) => {
-    let result = await initParticipant(participant, node, values, details)
-    if (result[0] == 'OK' ){
-     setNodeId(nodeId + 1)
-      console.log(nodeId);
-     updateJsonLog([...jsonLog, ["initFor", node, participant, JSON.stringify(result[1])]])
-     forceUpdate()
+  const initLogAndUpdate = async ({
+    participant,
+    node,
+    values,
+    details,
+  }: {
+    participant: number;
+    node: number;
+    values: any;
+    details: any;
+  }) => {
+    let result = await initParticipant(participant, node, values, details);
+    if (result[0] == "OK") {
+      setNodeId(nodeId + 1);
+      updateJsonLog([
+        ...jsonLog,
+        ["initFor", node, participant, JSON.stringify(result[1])],
+      ]);
+      forceUpdate();
     }
-  }
+  };
 
   useEffect(() => {
     const getVisualizerData = async () => {
+      const g = await c.getStateGlobals(nodeId);
+      setGlobals(g)
+      const l = await c.getStateLocals(nodeId);
+      setLocals(l)
       const n = await c.getStates();
       if (nodes.length < Object.keys(n).length) {
         let nodeArray = [];
@@ -145,6 +173,12 @@ function App() {
         }
         const e = await c.getEdges();
         setGraphEdges(e);
+      }
+      if(nodeId && perspective){
+        let a = await c.getActions(nodeId, parseInt(perspective))
+        setActions(a)
+        let apis = await c.getAPIs()
+        setApis(apis)
       }
     };
     getVisualizerData();
@@ -169,7 +203,6 @@ function App() {
       fetchObjectViewData();
     }
   }, [jsonLog]);
-
   return (
     <div className="App">
       <GlobalStyles />
@@ -183,17 +216,21 @@ function App() {
               getInitDetails={getInitDetails}
               objectViewData={objectViewData}
               participants={
-                objectViewData && getParticipants(objectViewData, nodeId) 
+                objectViewData && getParticipants(objectViewData, nodeId)
               }
             />
-            <RightPanel selection={null} />
+            <RightPanel selection={selection} apis={apis} actions={actions} />
           </Info>
           <VisualizerPanel
             graphinRef={graphinRef}
             data={objectViewData}
             nodes={nodes}
             edges={edges}
-            selectNode={setNodeId}
+            locals={locals}
+            globals={globals}
+            selectNode={setSelection}
+            perspective={perspective}
+            changePerspective={changePerspective}
             participants={
               objectViewData && getParticipants(objectViewData, nodeId)
             }

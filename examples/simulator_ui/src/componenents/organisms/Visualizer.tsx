@@ -79,7 +79,11 @@ export default function VisualizerPanel({
   edges,
   nodes,
   nodeId,
-  graphinRef
+  graphinRef,
+  locals,
+  globals,
+  perspective,
+  changePerspective,
 }: {
   data: any;
   selectNode: Function;
@@ -87,13 +91,17 @@ export default function VisualizerPanel({
   edges: IUserEdge[];
   nodes: any;
   nodeId: number;
-  graphinRef: any
+  graphinRef: any;
+  locals: any;
+  globals: any;
+  perspective: any;
+  changePerspective: any;
 }): ReactElement {
-
-  const [perspective, changePerspective] = useState<string>("-1");
   const isAParticipant = (participant: Participant) => {
     return participant === participant;
   };
+
+  const isAnInitNode = (node: IUserNode) => {};
 
   const ShowActionOnHover = () => {
     const { graph, apis } = useContext(GraphinContext);
@@ -101,10 +109,11 @@ export default function VisualizerPanel({
       if (graphinRef) {
         const showAction = (evt: IG6GraphEvent) => {
           const edge = evt.item as any;
-          const edgeModel = edge.getModel() 
-          const tag = nodes.find((node: IUserNode) => node.id == edgeModel.target)
-          let label = tag?.label
-          console.log(label)          
+          const edgeModel = edge.getModel();
+          const tag = nodes.find(
+            (node: IUserNode) => node.id == edgeModel.source
+          );
+          let label = tag?.label;
           graph.updateItem(edge, {
             style: {
               label: {
@@ -120,7 +129,6 @@ export default function VisualizerPanel({
         };
         const hideAction = (evt: IG6GraphEvent) => {
           const edge = evt.item as any;
-          console.log(nodes);
           graph.updateItem(edge, {
             style: {
               label: {
@@ -128,10 +136,10 @@ export default function VisualizerPanel({
               },
             },
           });
-        }
+        };
 
         graph.on("edge:mouseenter", showAction);
-        graph.on("edge:mouseleave", hideAction)
+        graph.on("edge:mouseleave", hideAction);
         return () => {
           graph.off("edge:mousenter", showAction);
         };
@@ -175,21 +183,26 @@ export default function VisualizerPanel({
       graph, // Graph instance of g6
       apis, // API interface provided by Graphin
     } = graphinRef.current as GraphinRef;
-    console.log('painting now')
-    graph.paint()
-
+    graph.paint();
   }, []);
 
-  const SelectNode = ({ nodeId }: { nodeId: number }) => {
-    const { graph, apis } = graphinRef.current as GraphinRef;
-
+  const SelectNode = () => {
     useEffect(() => {
+      const { graph, apis } = graphinRef.current as GraphinRef;
       apis.focusNodeById(nodeId.toString());
 
       const handleClick = (evt: IG6GraphEvent) => {
         const node = evt.item as INode;
         const model = node.getModel() as NodeConfig;
-        apis.focusNodeById(model.id);
+        // apis.focusNodeById(model.id);
+        console.log();
+        selectNode({
+          view: "detail",
+          data: {
+            locals: locals,
+            globals: globals,
+          },
+        });
       };
 
       graph.on("node:click", handleClick);
@@ -221,6 +234,7 @@ export default function VisualizerPanel({
           edgeSize: 1,
         }}
       >
+        <SelectNode />
         <ShowActionOnHover />
       </Graphin>
     </VisualizerContainer>
