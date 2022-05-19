@@ -2046,7 +2046,7 @@ hasConsoleLogger
  range: 5 - 7
  ```
 
- In this project, notice how `{!rsh} hasConsoleLogger` is assessed through the standard library on line 13 of the frontend.
+ In this project, notice how `{!rsh} hasConsoleLogger` is accessed through the standard library on line 13 of the frontend.
  It is then passed to the backend on line 6.
 
 ### `compose`
