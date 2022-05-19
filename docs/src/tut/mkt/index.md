@@ -126,7 +126,7 @@ By the end, you will see how a working `Reach` application looks and feels like.
 See full code [here]().
 
 
-### {#tut-mkt-declare} Declare Variables
+### {#tut-mkt-basic-declare} Declare Variables
 
 Start by fleshing out the constants that we have declared.
 Replace this:
@@ -198,7 +198,7 @@ This would hold all properties accessible by the `buyer`.
 
 That is all that needs to be done in the backend for now. It now time to move to the frontend.
 
-### {#tut-mkt-accounts} Create Accounts
+### {#tut-mkt-basic-accounts} Create Accounts
 In the [previous section](##tut-mkt-starter-frontend), contracts were setup for the participants:
 
 ```reach
@@ -217,14 +217,128 @@ range: 5 - 8
 
 * Line 5 sets up some funds that can be used by each `{!rsh} participant` as starting balance.
 `{!rsh} parseCurrency` converts the figure passed in to it to an acceptable currency on a DApp.
+
 * Lines 7 and 8 creates an account for each of the `{!rsh} participant`.
 This is for test purpose. 
 
-With these accounts, our contract will compile successfully when called upon.
+With these accounts, the contracts will compile successfully when called upon.
 
-### {#tut-mkt-define} Define Variables
+### {#tut-mkt-basic-define} Define Variables
 Having told the backend how those variables declared are to be used, these variables will now be given their proper functionality.
 
+Just below the contracts, enter the following code for the `sellerInteract`:
+
+```reach
+load: /examples/tuts-mkt-2-basic/index.mjs
+range: 13 - 30
+```
+
+Like have already been pointed out, this code will be made accessible to the `Seller` only.
+
+Line 13 defines `sellerInteract` as an object.
+
+Lines 14 to 21 defines the `sellerInfo` as an object.
+
+Line 15 passes a `{!rsh} string` to the `announcement` variable.
+
+Lines 16 - 20: the details of each `product` is passed into the `products` `{!rsh} Array` as `{!rsh} Object`s.
+It is a list of items that the `Seller` puts up for sale with their properties.
+
+Lines 22 to 29 creates a  `{!rsh} function` named `reportReady`. 
+The `{!rsh} function` takes in `announcement` and `products` as arguments.
+
+Line 23 logs a `{!rsh} string` to the console.
+
+Lines 24 to 28 obtains the contract information which is an `Object` and logs it to the console as a JSON string.
+You can see this as the seller's unique identifier.
+
+That is all that the `Seller` will be needing for this section.
+
+The `sellerInteract` output would look like:
+
+```reach
+Welcome to the Market
+Contract info: {"type":"BigNumber","hex":"0x06"}
+```
+
+The next code is for the `buyerInteract`:
+
+```reach
+load: /examples/tuts-mkt-2-basic/index.mjs
+range: 32 - 47
+```
+
+The `Buyer` would have access to this code.
+
+Line 32 defines `buyerInteract` as an `{!rsh} Object`.
+
+Line 33 defines `shop` as a `{!rsh} function`. It takes the `sellerInfo` as an argument.
+
+Line 34 logs the `Seller`'s `announcement` to the console.
+
+Lines 35 to 39 loops through the `Seller`'s `products` and list them out for the `Buyer` to see.
+
+Line 41 gets a random number not more than `4`.
+This number stored as `choice` now represent the position of an item in the `products` array.
+So if the `choice` is `2`, 
+then the `product` chosen will be `{ name: "Corn", unit: "ear", units: "ears", price: "5" }`
+
+Line 41 picks the `quantity` of that `product` the `Buyer` wants.
+This is also a random number that is not more than `100`.
+
+Line 43 displays the `name` of the product that the `Buyer` wants to order.
+
+Line 45 returns the `decision` (i.e. the `choice` and `quantity`) of the `Buyer`.
+
+That completes the `buyerInteract`. The output would look like:
+
+```reach
+List of products for sale:
+1. Potatoes at 10 per bag.
+2. Carrots at 10 per bunch.
+3. Corn at 5 per ear.
+Buyer wants Carrots
+```
+
+Finally, the type the code below for `commonInteract`:
+
+```reach
+load: /examples/tuts-mkt-2-basic/index.mjs
+range: 49 - 61
+```
+
+All `{!rsh} participant`s would have access to this code.
+
+Line 49 defines `commonInteract` as a `{!rsh} function` that takes in `person` as an argument.
+
+Line 50 defines `showResult` as a `{!rsh} function` that takes in `decision` (returned on line 45) and `sellerInfo` as an argument. 
+
+Lines 51 to 59 logs to the console the details of the `product` that the `Buyer` has decided to purchase.
+The same `product` is also logged to the console as the `product` that the `Seller` has decided to sell.
+
+A more detailed breakdown of the code:
+
+i. `${person === "Seller" ? "sell" : "buy"}` means if the `${person}` is `Seller`, log `sell` else log `buy` to the console.
+
+ii. `${decision.quantity}` is the `quantity` that the `Buyer` wants out of the original quantity of the `product`.
+
+iii. `${decision.quantity > 1 ? sellerInfo.products[decision.choice].units : sellerInfo.products[decision.choice].unit}` is either the `unit` or `units` of the product the `Buyer` chose. This is dependent on the `quantity` that the `Buyer` wants.
+
+iv. `${sellerInfo.products[decision.choice].name}` is the name of the product that the buyer chose.
+
+The `commonInteract` output would look like:
+
+```
+Buyer agrees to buy 92 bunches of Carrots
+Seller agrees to sell 92 bunches of Carrots
+```
+
+That seals the frontend for this project.
+Just one more step! 
+Go back to the backend file.
+
+
+### {#tut-mkt-basic-connect} Connect Frontend to Backend
 
 
 ## {#tut-mkt-interaction} Interaction and Independence

@@ -1475,21 +1475,25 @@
     "title": "Report Cancellation",
     "path": "/tut/mkt/#tut-mkt-Interaction-report"
   },
-  "tut-mkt-accounts": {
-    "title": "Create Accounts",
-    "path": "/tut/mkt/#tut-mkt-accounts"
-  },
   "tut-mkt-basic": {
     "title": "Basic DApp",
     "path": "/tut/mkt/#tut-mkt-basic"
   },
-  "tut-mkt-declare": {
-    "title": "Declare Variables",
-    "path": "/tut/mkt/#tut-mkt-declare"
+  "tut-mkt-basic-accounts": {
+    "title": "Create Accounts",
+    "path": "/tut/mkt/#tut-mkt-basic-accounts"
   },
-  "tut-mkt-define": {
+  "tut-mkt-basic-connect": {
+    "title": "Connect Frontend to Backend",
+    "path": "/tut/mkt/#tut-mkt-basic-connect"
+  },
+  "tut-mkt-basic-declare": {
+    "title": "Declare Variables",
+    "path": "/tut/mkt/#tut-mkt-basic-declare"
+  },
+  "tut-mkt-basic-define": {
     "title": "Define Variables",
-    "path": "/tut/mkt/#tut-mkt-define"
+    "path": "/tut/mkt/#tut-mkt-basic-define"
   },
   "tut-mkt-interaction": {
     "title": "Interaction and Independence",
