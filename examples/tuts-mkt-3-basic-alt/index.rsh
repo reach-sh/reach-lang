@@ -1,4 +1,4 @@
-'reach 0.1';
+"reach 0.1";
 
 const choice = UInt;
 const quantity = UInt;
@@ -24,30 +24,24 @@ const commonInteract = {
   ),
 };
 
-const sellerInteract = {
-  sellerInfo: Object({
-    announcement,
-    products,
-  }),
-  reportReady: Fun([announcement, products], Null),
-};
-
-const buyerInteract = {
-  shop: Fun([Object({ announcement, products })], Object({ choice, quantity })),
-};
-
 export const main = Reach.App(() => {
-  const Seller = Participant('Seller', {
+  const Seller = Participant("Seller", {
     ...commonInteract,
-    ...sellerInteract,
+    sellerInfo: Object({
+      announcement,
+      products,
+    }),
+    reportReady: Fun([announcement, products], Null),
   });
-  const Buyer = Participant('Buyer', {
+  const Buyer = Participant("Buyer", {
     ...commonInteract,
-    ...buyerInteract,
+    shop: Fun(
+      [Object({ announcement, products })],
+      Object({ choice, quantity })
+    ),
   });
   init();
 
-  // seller local step
   Seller.only(() => {
     const sellerInfo = declassify(interact.sellerInfo);
   });
@@ -55,13 +49,11 @@ export const main = Reach.App(() => {
   Seller.interact.reportReady(sellerInfo.announcement, sellerInfo.products);
   commit();
 
-  // Buyer local step
   Buyer.only(() => {
     const decision = declassify(interact.shop(sellerInfo));
   });
   Buyer.publish(decision);
   commit();
 
-  // show result of the transaction
   each([Seller, Buyer], () => interact.showResult(decision, sellerInfo));
 });

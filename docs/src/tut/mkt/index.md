@@ -117,7 +117,7 @@ Two (2) important files were created. And the necessary code were added.
 Next, a simple DApp will be built. This will help to visualize what the finish product would look and feel like.
 If the diagram above wasn't clear enough, this next section would help.
 
-Let's G0!
+Time to proceed!
 
 
 ## {#tut-mkt-basic} Basic DApp
@@ -206,7 +206,7 @@ load: /examples/tuts-mkt-1-starter/index.mjs
 range: 5 - 6
 ```
 
-These contracts require that each of the `{!rsh} participant`s have an account setup before entering the contract. Let's do that now. 
+These contracts require that each of the `{!rsh} participant`s have an account setup before entering the contract.
 
 Just before the contracts, type the following code:
 
@@ -443,6 +443,9 @@ You did awesomely.
 ### {#tut-mkt-basic-conclusion} Conclusion
 That was a good way to start building the market place application that we just embarked upon. I hope you found it really helpful and easy to follow through. 
 
+It is important to note that Reach offers flexibility in the way code may be written. 
+Check [here](/examples/tuts-mkt-3-basic-alt) for an optional way that the code may be written.
+
 This tutorial has been able to teach the basics of the Reach language. 
 Concepts that was covered include, variable declaration and definition, 
 the Reach standard library, `{!rsh} Participant`, `{!rsh} Types`, steps and so on.
@@ -452,8 +455,87 @@ Congratulations!!! You just became a `Reach developer`.
 In the next section, more will be discussed about how `./reach run` works, `process.argv` will be introduced and so on.
 
 ## {#tut-mkt-interaction} Interaction and Independence
+The last section demonstrated what building with Reach feels like. 
+But more can be done with Reach than that. 
 
-### {#tut-mkt-Interaction-basic} Basic DApp
+Reach offers autonomy to `{!rsh} Participant`s in a transaction.
+This means that the `Seller` and the `Buyer` could decide whether or not to proceed with the transaction and how they will like the transaction to take place. 
+
+This section would build a similar DApp like the last one but will offer more flexibilities to the `{!rsh} Participant`s.
+By the end, how `./reach run` works would have been properly explained. Other things to learn includes what `{!rsh} process.argv` entails, how to handle money and currency and so on.
+
+Hope you are excited about this project?
+
+This section will begin by explaining how `./reach run` works.
+
+
+#### {#tut-mkt-interaction-reach-run} How `./reach run` works
+
+The `./reach run` command is used to execute whatever is in the `index.rsh` file because in the background, `index.rsh` is added to the command.
+So running `./reach run` in the terminal will behave in the same way just as `./reach run index`.
+
+:::note
+`./reach run index.rsh` will throw the following error:
+
+```reach
+index.rsh.rsh doesn't exist.
+```
+
+This is because Reach adds the extension by default already.
+:::
+
+`./reach run` produces an array by default. It looks like this:
+
+```reach
+[ '/usr/local/bin/node', '/app/index.mjs' ]
+```
+
+So any string added to the `./reach run index` command, would be added to that array.
+For example, `./reach run index seller` would produce:
+
+```reach
+[ '/usr/local/bin/node', '/app/index.mjs', 'seller' ]
+```
+
+The item(s) that come after the second item in the array, tells us the variable that have been passed in.
+
+To see this working, type the following on line 4 of the `index.mjs` file:
+
+```reach
+console.log(process.argv);
+```
+
+Run `./reach run index seller` in the terminal.
+
+The output it produces would look like:
+
+```reach
+[ '/usr/local/bin/node', '/app/index.mjs', 'seller' ]
+Welcome to the Market
+Contract info: {"type":"BigNumber","hex":"0xba"}
+List of products for sale:
+1. Potatoes at 10 per bag.
+2. Carrots at 10 per bunch.
+3. Corn at 5 per ear.
+Buyer wants Potatoes
+Buyer agrees to buy 95 bags of Potatoes
+Seller agrees to sell 95 bags of Potatoes
+```
+
+The first line of the output is the line of interest. 
+That will be leveraged in giving the `{!rsh} Participant`s autonomy as the project for this section is developed.
+
+That is the basics of how the `./reach run` command works. 
+
+### {#tut-mkt-Interaction-basic} Basic Interactive DApp
+In other to make it easy to follow, delete all the codes in the two files.
+
+Type the following code in the backend file:
+
+```reach
+load: /examples/tuts-mkt-4-interaction-basic/index.rsh
+range: 1 - 34
+```
 
 ### {#tut-mkt-Interaction-report} Report Cancellation
 
