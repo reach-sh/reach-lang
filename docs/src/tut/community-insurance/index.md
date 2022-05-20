@@ -163,7 +163,8 @@ We highly recommend reading more about the [syntax of the API.api()](https://doc
 what each of the argument functions should do. Be sure to understand each of the argument function in detail because this is the most important part you need to be able to effectively 
 use API finctions in general. It's worth taking your time on each of these functions as it will not leave you at the same level of understanding of 
 APIs in Reach.
-We are talking about this below (copiedfrom the official [documentation here](https://docs.reach.sh/rsh/consensus/#rsh_parallelReduce.api)). 
+
+We are talking about this below (copied from the official [documentation here](https://docs.reach.sh/rsh/consensus/#rsh_parallelReduce.api)). 
 ```js
 const LHS =                                         // LHS  refers to our left-hand-side [membersCount, claimsCount]
   parallelReduce(INIT_EXPR)                         // INIT_EXPR referes to our [1, 1] on line 98
