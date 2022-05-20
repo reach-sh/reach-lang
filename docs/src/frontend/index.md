@@ -339,7 +339,7 @@ range: 18-25
 ```
 
 In this code, if the user chooses to not create a new account, then the DApp uses `{!rsh} newAccountFromSecret` to create a new account.
-The `acc` object `{!rsh} awaits` the user to input the secret and then sets the provided account to itself.
+The `acc` object `{!rsh} await`s the user to input the secret and then sets the provided account to itself.
 
 ---
 @{ref("js", "newAccountFromMnemonic")}
