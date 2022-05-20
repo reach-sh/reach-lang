@@ -42,3 +42,7 @@ Tests the CLI's ability to channel compilation output to another directory.
 ##### **`.tmp/EXIT`**
 If any `$TARGET` should fail its tests this file will be updated to contain `1`; otherwise it'll contain a default of `0`.
 The test suite terminates with `exit "$(cat ".tmp/EXIT")"` to ensure propagating a true go/no-go status.
+
+## Note
+Executing `make run` twice will fail due to a quirk with Docker volumes and the fact that `run.sh` deletes test directories after invoking `go.sh`.
+Use `reach down` between invocations of `make run` if you need to make this work.
