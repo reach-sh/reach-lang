@@ -57,8 +57,10 @@ else
   o="$("$ROOT"/reach compile --intermediate-files "$r" main --output="/foo/bar/$b" 2>&1)"
   set -e
   [ "$o" = "-o|--output must be a relative subdirectory of $(pwd)." ] || (printf '\n%s' "$o"; exit 1)
-  printf 'Done.'
+  printf 'Done.\n\n'
 
   g compile --intermediate-files "$(printf ''%s'' "$r")" main --output="$(printf ''%s'' "${b#"$(pwd)"/}")"
+  g compile --intermediate-files "$(printf ''%s'' "$r")" main --output "$(printf ''%s'' "${b#"$(pwd)"/}")"
+  g compile --intermediate-files "$(printf ''%s'' "$r")" main       -o "$(printf ''%s'' "${b#"$(pwd)"/}")"
 fi
 echo
