@@ -1287,7 +1287,23 @@ f(Maybe(UInt).Some(1));
 This error indicates that there are multiple cases for the same variant in a `{!rsh} switch` statement or
 `{!rsh} match` expression.
 
+Example:
+
+```reach
+load: /hs/t/n/Err_Switch_DoubleCase.rsh
+range: 10 - 16
+```
+
 You can fix this error by deleting one of the branches, ensuring there is only one branch per variant.
+
+```reach
+      const mi = declassify(interact.get());
+      const i = (() => {
+        switch ( mi ) {
+        case None: return 0;
+        case Some: return mi; } })();
+    });
+```
 
 ## {#RE0074} RE0074
 
