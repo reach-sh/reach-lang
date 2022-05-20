@@ -3,7 +3,7 @@
 ## {#tut-mkt-introduction} Introduction
 This tutorial is a walk-through on creating a safe application that ensures trust in transacting businesses between individuals.
 
-For the purpose of this tutorial, `seller` and a `buyer` will be the users. And [Reach](https://reach.sh/) is the programming to be employed.
+For the purpose of this tutorial, `seller` and a `buyer` will be the `{!rsh} Participant`s. And [Reach](https://reach.sh/) is the programming to be employed.
 
 The following image is a pictorial description of how the application will work at the end of this tutorial.
 
@@ -29,7 +29,7 @@ mkdir market
 
 2.  Create 2 files: `index.rsh` and `index.mjs`
 
-* The `index.mjs` is the frontend of the DApp that will be create since it contains the code the user will interact with.
+* The `index.mjs` is the frontend of the DApp that will be create since it contains the code the `{!rsh} Participant`s will interact with.
 `Reach` requires this file to compile even if it is empty.
 
 * The `index.rsh` is the backend which contains the DApp's instructions and ensures security of the DApp.
@@ -261,6 +261,11 @@ Welcome to the Market
 Contract info: {"type":"BigNumber","hex":"0x06"}
 ```
 
+:::note
+This output is just for visualization purpose. 
+Some output may not show until a section is completed.
+:::
+
 The next code is for the `buyerInteract`:
 
 ```reach
@@ -469,7 +474,7 @@ Hope you are excited about this project?
 This section will begin by explaining how `./reach run` works.
 
 
-#### {#tut-mkt-interaction-reach-run} How `./reach run` works
+### {#tut-mkt-interaction-reach-run} How `./reach run` Works
 
 The `./reach run` command is used to execute whatever is in the `index.rsh` file because in the background, `index.rsh` is added to the command.
 So running `./reach run` in the terminal will behave in the same way just as `./reach run index`.
@@ -536,6 +541,264 @@ Type the following code in the backend file:
 load: /examples/tuts-mkt-4-interaction-basic/index.rsh
 range: 1 - 34
 ```
+
+This code looks familiar. A few changes were made:
+
+* `choice` and `quantity` has been removed.
+
+* `commonInteract` is currently empty. 
+It has also been destructured into the `sellerInteract` and `buyerInteract` `{!rsh} Object`.
+This will produce the same result as before when it was destructured inside of the `{!rsh} Participant` definition.
+
+* `shop` `{!rsh} function` now returns an `{!rsh} Object` containing `prodNum` and `prodAmt` instead of `choice` and `quantity`.
+
+* Since `commonInteract` has already been destructured into the `sellerInteract` and `buyerInteract` `{!rsh} Object`, 
+`sellerInteract` and `buyerInteract` was passed to the `{!rsh} Participant` definition without destructuring.
+
+* Finally, `Seller` and `buyer` has been changed to `S` and `B`.
+
+That's all for the backend for now. Go to the frontend.
+
+In the `index.mjs` file, type the code below:
+
+```reach
+load: /examples/tuts-mkt-4-interaction-basic/index.mjs
+range: 1 - 12
+```
+
+* Line 1 imports the `{!rsh} ask` `{!rsh} Object` alongside `{!rsh} loadStdlib` from the Reach standard library.
+
+* Line 3 calls on the `{!rsh} loadStdlib` `{!rsh} function` and passes the `{!rsh} process.env` as an argument.
+
+* Lines 5 to 8 is a conditional statement that checks if there is no third argument passed to the `./reach run` command or if the third argument passed is `seller` or `buyer`.
+
+* Line 6 logs a message telling the `{!rsh} Participant` what command to run for the program to work if line 5 evaluates to `{!rsh} true`.
+
+* Line 7 terminates the program.
+
+* Line 10 stores the third argument passed to the `./reach run` command as `role`
+
+* Line 11 reveals the role that the `{!rsh} Participant` chose.
+
+* Line 12 reveals the consensus network that the `{!rsh} Participant` chose. 
+
+
+After that, type in the following:
+
+```reach
+load: /examples/tuts-mkt-4-interaction-basic/index.mjs
+range: 14 - 29
+```
+
+* Line 14 accesses the standard unit through the standard library based on the consensus network and stores it as stored as `suStr`.
+
+* Line 15 tells the `{!rsh} Participant` what standard unit is being used.
+
+:::note
+A standard unit is the network token unit most commonly associated with a network. 
+For example, the standard unit of `Ethereum` is `ETH`. 
+:::
+
+* Line 16 accesses the atomic unit through the standard library based on the consensus network and stores it as stored as `auStr`.
+
+* Line 17 tells the `{!rsh} Participant` what atomic unit is being used.
+
+:::note
+An atomic unit on the other hand, is the smallest unit of measure for the standard unit. 
+It cannot be divided into smaller units.
+For example, the atomic unit of `Ethereum` is `WEI`. 
+:::
+
+* Line 18 is a `{!rsh} function` that converts money from its standard unit to its atomic unit.
+
+* Line 19 is a `{!rsh} function` that converts money from its atomic unit to its standard unit.
+
+* Line 20 sets up a standard unit balance of 1000.
+
+* Line 21 displays the standard unit balance.
+
+* Line 22 converts the standard unit balance to it's atomic unit.
+
+* Line 23 displays the atomic unit balance.
+
+* Line 24 converts the atomic unit balance back to the standard unit balance and displays it to the `{!rsh} Participant`.
+
+* Line 19 is a `{!rsh} function` that returns the account balance of a particular `{!rsh} Participant`.
+
+* Line 27 creates a test account.
+
+* Line 29 defines the `commonInteract` `{!rsh} Object`.
+
+The code so far has defined utilities for the DApp. 
+The next thing to do is to utilize these utilities in defining what happens if the `{!rsh} Participant` is a `seller` or a `buyer`.
+
+
+#### {#tut-mkt-Interaction-basic-seller} Seller
+The code below would be executed if the `{!rsh} Participant` is the `seller`:
+
+```reach
+load: /examples/tuts-mkt-4-interaction-basic/index.mjs
+range: 32 - 52
+```
+
+* Line 32 checks if the `{!rsh} Participant` is a `seller`
+
+* Lines 33 to 47 looks familiar. This block defines the `sellerInteract` `{!rsh} Object`.
+
+* Line 34 destructures the `commonInteract`
+
+* Lines 35 - 42 defines the `sellerInfo` `{!rsh} Object`.
+
+* Lines 43 to 46 defines the `reportReady` `{!rsh} function`.
+
+* Line 49 displays the account balance of the `seller` before the transaction begins.
+
+* Line 50 sets up the contract for the transaction.
+
+* Line 51 executes the contract on the `seller`. 
+It also gives the `seller` access to the `sellerInteract` properties.
+
+* Line 52 displays the account balance of the `seller` after the transaction ends.
+
+With that line, the `seller`'s part is done.
+
+The `seller`'s output would look like:
+
+```reach
+Your role is seller
+The consensus network is ALGO.
+The standard unit is ALGO
+The atomic unit is μALGO
+Balance is 1000 ALGO
+Balance is 1000000000 μALGO
+Balance is 1000 ALGO
+Your Balance is 1000 ALGO.
+Welcome to the Market
+Contract info: {"type":"BigNumber","hex":"0xc2"}
+```
+
+#### {#tut-mkt-Interaction-basic-buyer} Buyer
+If the `{!rsh} Participant` is not a `seller`, then the following code would be executed.
+Type the following:
+
+```reach
+load: /examples/tuts-mkt-4-interaction-basic/index.mjs
+range: 55 - 78
+```
+
+* Line 55 checks if the `{!rsh} Participant` is not a `seller`.
+
+* Lines 56 to 66 defines the `buyerInteract` `{!rsh} Object`. And that also looks familiar.
+
+* Line 57 destructures the `commonInteract` `{!rsh} Object`.
+
+* Lines 58 to 65 defines the `shop` `{!rsh} function`.
+
+* Line 68 uses the `{!rsh} ask` `{!rsh} Object` imported on line 1 to request for the contract details to be pasted in the terminal.
+
+
+The `buyer`'s output at this point looks like:
+
+```reach
+Your role is buyer
+The consensus network is ALGO.
+The standard unit is ALGO
+The atomic unit is μALGO
+Balance is 1000 ALGO
+Balance is 1000000000 μALGO
+Balance is 1000 ALGO
+Paste contract info: 
+```
+
+
+* Lines 69 and 70 is executed after the `buyer` has pasted the details of the contract in the terminal
+
+* Line 71 attaches the `buyer` to the contract.
+
+* Line 72 displays a success message
+
+* Line 73 displays the account balance of the `buyer` before the transaction begins.
+
+* Line 74 executes the contract on the `buyer`. 
+It also gives the `seller` access to the `buyerInteract` properties.
+
+* Line 75 displays the account balance of the `buyer` after the transaction ends.
+
+* Line 77 ends the usage of the `{!rsh} ask` `{!rsh} Object`.
+
+That ends the buyer's transaction
+
+The `buyer`'s output now looks like:
+
+```reach
+Your role is buyer
+The consensus network is ALGO.
+The standard unit is ALGO
+The atomic unit is μALGO
+Balance is 1000 ALGO
+Balance is 1000000000 μALGO
+Balance is 1000 ALGO
+Paste contract info: 
+{"type":"BigNumber","hex":"0xc2"}
+Attaching to contract
+...
+Successfully attached
+Your Balance is 1000 ALGO.
+List of products for sale:
+1. Potatoes at 200 ALGO per unit (bag).
+2. Carrots at 100 ALGO per unit (bunch).
+3. Corn at 50 ALGO per unit (ear).
+Your Balance is 999.998 ALGO.
+```
+
+While the `seller`'s output would look like:
+
+```reach
+Your role is seller
+The consensus network is ALGO.
+The standard unit is ALGO
+The atomic unit is μALGO
+Balance is 1000 ALGO
+Balance is 1000000000 μALGO
+Balance is 1000 ALGO
+Your Balance is 1000 ALGO.
+Welcome to the Market
+Contract info: {"type":"BigNumber","hex":"0xc2"}
+Your Balance is 999.997 ALGO.
+```
+
+
+#### {#tut-mkt-Interaction-connect} Connect the frontend to the backend
+To bring everything together, head back to the `index.rsh` file.
+Type the following code after the init line for the `seller`:
+
+```reach
+load: /examples/tuts-mkt-4-interaction-basic/index.rsh
+range: 36 - 41
+```
+The only difference here is that `Seller` has been changed to `S`. 
+Every other thing remains the same.
+
+Type the code below for the `buyer`:
+
+```reach
+load: /examples/tuts-mkt-4-interaction-basic/index.rsh
+range: 43 - 55
+```
+
+Lines 44 and 46: `decision` was changed to `order`.
+
+Line 47 checks if the `prodNum` is zero (0) or `prodNum` is more than the number of items for sale or `prodAmt` is zero (0).
+
+Lines 48 and 49 `{!rsh} commit`s and `{!rsh} exit`s the program respectively if line 47 evaluates to `{!rsh} true`.
+
+Line 51 `{!rsh} commit`s to the program if line 47 evaluates to `{!rsh} false`.
+
+Line 54 terminates the program.
+
+#### {#tut-mkt-Interaction-test} Testing
+
+#### {#tut-mkt-Interaction-conclusion} Conclusion
 
 ### {#tut-mkt-Interaction-report} Report Cancellation
 

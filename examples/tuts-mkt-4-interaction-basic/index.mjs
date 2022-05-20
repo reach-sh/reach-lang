@@ -47,8 +47,6 @@ if (role === 'seller') {
     };
 
     await showBalance(acc);
-    console.log("start");
-    console.log("end");
     const ctc = acc.contract(backend);
     await ctc.p.Seller(sellerInteract);
     await showBalance(acc);
