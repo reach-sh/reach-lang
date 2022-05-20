@@ -1060,10 +1060,16 @@ compile = command "compile" $ info f d
       Env {e_var = Var {..}, ..} <- ask
       rawArgs <- fmap (\a -> if a == co_source then esc a else a) <$> liftIO getArgs
       let rawArgs' = dropWhile (/= "compile") rawArgs
+      let o' (o, a) e = case o of
+            True -> (False, a)
+            False -> case e == "-o" || e == "--output" of
+              True -> (True, a)
+              False -> (False, a <> [e])
       let argsl = intercalate " "
             . map pack
-            . filter (not . L.isPrefixOf "-o")
-            . filter (not . L.isPrefixOf "--output")
+            . filter (not . ("--output=" `L.isPrefixOf`))
+            . snd
+            . L.foldl' o' (False, [])
             . filter (/= "--disable-reporting")
             $ case rawArgs' of
               "compile" : x -> x
@@ -1107,9 +1113,9 @@ compile = command "compile" $ info f d
           stack exec -- reachc $args
 
         else
-          cid="$(docker ps -q \
-            -f "ancestor=reachsh/reach:$v" \
-            -f "label=sh.reach.dir-project=$$PWD" \
+          cid="$(docker ps -f "ancestor=reachsh/reach:$v" --format '{{.ID}} {{.Labels}}' \
+            | grep " sh.reach.dir-project=$$PWD\$$" \
+            | awk '{print $$1}' \
             | head -n1)"
 
           if [ -z "$$cid" ]; then
