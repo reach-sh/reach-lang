@@ -1473,7 +1473,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             if ('val' in appLocalStatesM) {
               const alsRes = appLocalStatesM['val'];
               debug(dhead, alsRes);
-              const appsLocalStates = alsRes['apps-local-states'];
+              const appsLocalStates = alsRes['apps-local-states'] ?? [];
               debug(dhead, appsLocalStates);
               // const appsLocalStates = appLocalStatesM['val']['apps-local-states'];
               const appLocalState = appsLocalStates.find(app => ApplicationID.eq(app['id']));
