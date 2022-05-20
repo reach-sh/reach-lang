@@ -69,9 +69,9 @@ run_d () {
         --dir-config-host="$CNF" \
         "$@"
   else
-    cid="$(docker ps -q \
-      -f "ancestor=$IMG" \
-      -f "label=sh.reach.dir-project=$(pwd)" \
+    cid="$(docker ps -f "ancestor=$IMG" --format '{{.ID}} {{.Labels}}' \
+      | grep " sh.reach.dir-project=$(pwd)\$" \
+      | awk '{print $1}' \
       | head -n1)"
 
     if [ -z "$cid" ]; then
