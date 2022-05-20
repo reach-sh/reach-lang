@@ -158,6 +158,20 @@ Array.iota(arr.length).map((i) => {
 This error indicates that a statement block returns a non-null value although a `{!rsh} null` value is expected.
 The block should either use a `{!rsh} return null;` statement or no return statement at all.
 
+This statement block has a `{!rsh} return` of 1, but it should not have a `{!rsh} return`.
+
+``` reach
+load: /hs/t/n/Err_Block_NotNull.rsh
+range: 3 - 6
+```
+
+This error can be corrected by removing the `{rsh} return` statement:
+
+```reach
+load: /examples/api-multiple-calls/index.rsh
+range: 8 - 11
+```
+
 ## {#RE0004} RE0004
 
 This error indicates that the program uses `{!rsh} var` incorrectly.
