@@ -249,10 +249,10 @@ type IndexerAppInfoRes = {
   'current-round': bigint,
   'application': AppInfo,
 };
-// type IndexerAccountAppLocalStatesRes = {
-//   'current-round': bigint,
-//   'apps-local-states': Array<AppState>,
-// };
+type IndexerAccountAppLocalStatesRes = {
+  'current-round': bigint,
+  'apps-local-states': Array<AppState>,
+};
 type IndexerAccountAssetsRes = {
   'current-round': bigint,
   'assets': Array<AssetHolding>,
@@ -1018,7 +1018,7 @@ const getIndexer = async () => {
   p.setIntEncoding(algosdk.IntDecoding.BIGINT);
   return p;
 };
-const nodeCanRead = async () => ((await getProvider()).nodeWriteOnly === false);
+const nodeCanRead = async () => false; //((await getProvider()).nodeWriteOnly === false);
 const ensureNodeCanRead = async () =>
   assert(await nodeCanRead(), "node can read" );
 
@@ -1454,16 +1454,16 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
             // This would fail if the address has local states for over MaxAPIResourcesPerAccount applications.
             // The default indexer MaxAPIResourcesPerAccount is 1000.
-            const query = indexer
-              .lookupAccountByID(addr)
-              .exclude("assets,created-assets,created-apps") as unknown as ApiCall<IndexerAccountInfoRes>;
-            const accountInfo = await doQuery_(dhead, query);
-            const appId = bigNumberToBigInt(ApplicationID);
-            const appLocalStates = accountInfo['account']['apps-local-state'] ?? [];
-            const appLocalState = appLocalStates.find(app => app.id == appId);
-            return appLocalState?.['key-value'];
+            // const query = indexer
+            //   .lookupAccountByID(addr)
+            //   .exclude("assets,created-assets,created-apps") as unknown as ApiCall<IndexerAccountInfoRes>;
+            // const accountInfo = await doQuery_(dhead, query);
+            // const appId = bigNumberToBigInt(ApplicationID);
+            // const appLocalStates = accountInfo['account']['apps-local-state'] ?? [];
+            // const appLocalState = appLocalStates.find(app => app.id == appId);
+            // return appLocalState?.['key-value'];
 
-            /*
+
             // This should work according to the api docs, but apps-local-state always comes back 'null'
             const query = indexer
               .lookupAccountAppLocalStates(addr)
@@ -1482,7 +1482,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             } else {
               return undefined;
             }
-            */
+
           }
         };
 

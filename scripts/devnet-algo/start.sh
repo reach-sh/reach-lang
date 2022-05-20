@@ -46,6 +46,7 @@ touch algorand-indexer.yaml
 ILOG="${ALGORAND_DATA}/indexer.log"
 (while true ; do
  algorand-indexer daemon \
+  --enable-all-parameters \
   --algod "${ALGORAND_DATA}" \
   --pidfile "${ALGORAND_DATA}/indexer.pid" \
   --dev-mode \

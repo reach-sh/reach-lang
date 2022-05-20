@@ -39,7 +39,7 @@ RUN make install
 ### INDEXER
 WORKDIR ${SRC_PARENT}
 # indexer release
-ARG INDEXER_VERSION=2.10.0
+ARG INDEXER_VERSION=2.11.1
 
 #RUN wget --quiet https://github.com/algorand/indexer/archive/refs/tags/${INDEXER_VERSION}.tar.gz && tar -xvf ${INDEXER_VERSION}.tar.gz
 #WORKDIR ${SRC_PARENT}/indexer-${INDEXER_VERSION}
