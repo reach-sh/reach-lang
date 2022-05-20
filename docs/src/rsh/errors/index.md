@@ -1043,6 +1043,26 @@ to be empty, but it wasn't. This issue may arise if there are statements beyond
 a `{!rsh} return` or `{!rsh} exit` statement. These statements are dead code
 and you can fix this issue by deleting them.
 
+```reach
+load: /hs/t/n/Err_Return_MustBeTail.rsh
+range: 13 - 20
+```
+
+The `{!rsh} return` statement on line 19 will never be executed. 
+The `{!rsh} return` statement in the `{!rsh} if ... else ...` block already handled what is need for the `g` `{!rsh} function`.
+
+To fix the code, line 19 has to be removed.
+
+```reach
+    const g = () => {
+      if ( x > 20 ) {
+        return 0;
+      } else {
+        return 10;
+      }
+    };
+```
+
 ## {#RE0058} RE0058
 
 @{errver(false, "v0.1")}
