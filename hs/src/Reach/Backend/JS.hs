@@ -4,7 +4,6 @@ import Control.Monad.Reader
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Foldable as Foldable
-import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -984,7 +983,7 @@ jsConnInfo = \case
   Aeson.Number i -> return $ pretty $ Sci.formatScientific Sci.Fixed (Just 0) i
   Aeson.String t -> return $ jsBacktickText t
   Aeson.Array a -> jsArray <$> (mapM jsConnInfo $ Foldable.toList a)
-  Aeson.Object m -> jsObject <$> (mapM jsConnInfo $ M.fromList $ HM.toList $ m)
+  Aeson.Object m -> jsObject <$> (mapM jsConnInfo $ kmToM m)
 
 jsCnp :: T.Text -> ConnectorInfo -> App Doc
 jsCnp name cnp = do
@@ -1149,8 +1148,8 @@ jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do
   let api_whichs = M.foldrWithKey go_api mempty epps_m
   api_wrappers <- mapM (uncurry jsApiWrapper) $ M.toAscList api_whichs
   partsp <- mapM (uncurry (jsPart plp_init)) $ M.toAscList epps_m
-  cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr
-  let connMap = M.fromList [(name, "_" <> pretty name) | name <- HM.keys cr]
+  cnpsp <- mapM (uncurry jsCnp) $ M.toAscList cr
+  let connMap = M.fromList [(name, "_" <> pretty name) | name <- M.keys cr]
   ssmDoc <- mapM (\x -> jsAssertInfo (fst x) (snd x) Nothing) plp_stateSrcMap
   exportsp <- jsExports plp_exports
   viewsp <-
