@@ -31,11 +31,18 @@ module Reach.Util
   , allEqual
   , maybeAt
   , isqrt
+  , kmToM
+  , mToKM
+  , aesonObject
   )
 where
 
 import Control.Monad
 import Control.Monad.Extra
+import Data.Aeson as Aeson
+import qualified Data.Aeson.Key as K
+import qualified Data.Aeson.KeyMap as KM
+import Data.Bifunctor (Bifunctor (first))
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import Data.Foldable (foldr')
@@ -183,3 +190,12 @@ isqrt n = go n2 (iter n2)
     n2 = n `div` 2
     iter x = (x + (n `div` x)) `div` 2
     go x0 x1 = if x0 == x1 then x0 else go x1 (iter x1)
+
+kmToM :: KM.KeyMap a -> M.Map T.Text a
+kmToM = M.fromList . map (\(k,v) -> (K.toText k, v)) . KM.toList
+
+mToKM :: M.Map T.Text a -> KM.KeyMap a
+mToKM = KM.fromList . map (\(k,v) -> (K.fromText k, v)) . M.toList
+
+aesonObject :: [(T.Text, Aeson.Value)] -> Aeson.Value
+aesonObject = Aeson.object . map (first K.fromText)

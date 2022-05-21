@@ -12,7 +12,6 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Internal as BI
 import qualified Data.DList as DL
 import Data.Function
-import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import Data.List (intercalate, foldl')
 import qualified Data.List as List
@@ -217,7 +216,7 @@ aarray :: [Aeson.Value] -> Aeson.Value
 aarray = Aeson.Array . Vector.fromList
 
 aobject :: M.Map T.Text Aeson.Value -> Aeson.Value
-aobject = Aeson.Object . HM.fromList . M.toList
+aobject = aesonObject . M.toAscList
 
 mergeIORef :: IORef a -> (a -> a -> a) -> IORef a -> IO ()
 mergeIORef dst f src = do
