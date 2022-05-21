@@ -1,6 +1,5 @@
 #!/bin/bash
 # shTEAL!
-HERE=$(dirname "$0")
 sig() {
   printf "%s" "$1" | hasher -a sha512_256 | cut -c 1-8
 }
