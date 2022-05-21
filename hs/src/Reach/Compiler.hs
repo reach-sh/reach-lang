@@ -1,7 +1,6 @@
 module Reach.Compiler (CompilerOpts (..), compile, make_connectors) where
 
 import Control.Monad
-import qualified Data.HashMap.Strict as HM
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Set as S
@@ -116,7 +115,7 @@ compile env (CompilerOpts {..}) = do
               let n = conName c
               loud $ "running connector " <> show n
               (,) n <$> conGen c woutnMay pl
-        crs <- HM.fromList <$> mapM runConnector connectors
+        crs <- M.fromList <$> mapM runConnector connectors
         loud $ "running backend js"
         backend_js woutn crs pl
         return ()

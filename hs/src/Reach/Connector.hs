@@ -12,7 +12,7 @@ module Reach.Connector
   )
 where
 
-import Data.Aeson (Object, Value)
+import Data.Aeson (Value)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -24,13 +24,15 @@ import Reach.AST.PL
 import Reach.Texty
 import Reach.Util
 
+type ConnectorName = T.Text
+
+type Object = M.Map ConnectorName Value
+
 type ConnectorInfoMap = Object
 
 type ConnectorResult = Object
 
 type ConnectorInfo = Value
-
-type ConnectorName = T.Text
 
 data Connector = Connector
   { conName :: ConnectorName

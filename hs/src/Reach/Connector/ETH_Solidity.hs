@@ -7,12 +7,12 @@ module Reach.Connector.ETH_Solidity (connect_eth) where
 import Control.Monad
 import Control.Monad.Reader
 import Data.Aeson as Aeson
+import qualified Data.Aeson.Key as K
 import Data.Aeson.Encode.Pretty
 import Data.Bifunctor (Bifunctor (first))
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
 import Data.Foldable
-import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import Data.List (intersperse)
 import qualified Data.Map.Strict as M
@@ -1665,7 +1665,7 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
           (o_ks, bs) <- unzip <$> (mapM (tgo v) $ M.toAscList tm)
           -- Lift untagged views
           let keys = case v of
-                Just v' -> [(b2t v', Aeson.object o_ks)]
+                Just v' -> [(b2t v', aesonObject o_ks)]
                 Nothing -> o_ks
           return (keys, vsep bs)
     (view_jsons, view_defns) <- unzip <$> (mapM vgo $ M.toAscList vs)
@@ -1699,8 +1699,8 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
     let ctcbody = vsep $ [state_defn, typefsp, api_rng, outputsp, tlfunsp, hs', apidefs, defp]
     let ctcp = solContract "ReachContract is Stdlib" $ ctcbody
     let cinfo =
-          HM.fromList $
-            [ ("views", Aeson.object view_json)
+          M.fromList $
+            [ ("views", aesonObject view_json)
             ]
     let preamble =
           vsep
@@ -1717,9 +1717,9 @@ data CompiledSolRec = CompiledSolRec
 instance FromJSON CompiledSolRec where
   parseJSON = withObject "CompiledSolRec" $ \o -> do
     ctcs <- o .: "contracts"
-    case find (":ReachContract" `T.isSuffixOf`) (HM.keys ctcs) of
+    case find (":ReachContract" `T.isSuffixOf`) (M.keys $ kmToM ctcs) of
       Just ctcKey -> do
-        ctc <- ctcs .: ctcKey
+        ctc <- ctcs .: (K.fromText ctcKey)
         (abio :: Value) <- ctc .: "abi"
         -- Why are we re-encoding? ethers takes the ABI as a string, not an
         -- object.
@@ -1807,14 +1807,15 @@ compile_sol cinfo solf = do
   (which, CompiledSolRec {..}) <- tryA
   return $
     Aeson.Object $
-      HM.union cinfo $
-        HM.fromList $
-          [ ("ABI", Aeson.String csrAbi)
-          , ("Bytecode", Aeson.String $ "0x" <> csrCode)
-          , ("Which", Aeson.String $ T.pack which)
-          , ("BytecodeLen", Aeson.Number $ (fromIntegral $ T.length csrCode) / 2)
-          , ("version", Aeson.Number $ fromIntegral reachEthBackendVersion)
-          ]
+      mToKM $
+        M.union cinfo $
+          M.fromList $
+            [ ("ABI", Aeson.String csrAbi)
+            , ("Bytecode", Aeson.String $ "0x" <> csrCode)
+            , ("Which", Aeson.String $ T.pack which)
+            , ("BytecodeLen", Aeson.Number $ (fromIntegral $ T.length csrCode) / 2)
+            , ("version", Aeson.Number $ fromIntegral reachEthBackendVersion)
+            ]
 
 connect_eth :: CompilerToolEnv -> Connector
 connect_eth _ = Connector {..}

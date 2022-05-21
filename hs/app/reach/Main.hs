@@ -10,6 +10,8 @@ import Control.Monad.Extra
 import Control.Monad.Reader
 import Data.Aeson (ToJSON, FromJSON, Value(..), toJSON, encode, object, parseJSON, withObject, withText, (.=), (.:))
 import qualified Data.Aeson as A
+import qualified Data.Aeson.Key as K
+import qualified Data.Aeson.KeyMap as KM
 import qualified Data.Aeson.Types as A
 import Data.Bits
 import qualified Data.ByteString.Internal as BSI
@@ -18,7 +20,6 @@ import qualified Data.ByteString.Lazy.Char8 as BSLC8
 import Data.Char
 import Data.Either
 import Data.Functor
-import qualified Data.HashMap.Strict as H
 import Data.IORef
 import qualified Data.List.Extra as L
 import Data.Map.Strict ((!?))
@@ -571,9 +572,9 @@ serviceConnector Env {..} (ConnectorMode c m) ports appService' v = do
   fmt <- T.readFile $ e_dirEmbed </> "docker" </> "service-" <> n <> ".yml"
   cns <- do
     let f a = \case A.String x -> [x] <> a; _ -> a
-    cs <- (\(vs :: H.HashMap Text A.Value) -> [x | A.Object x <- H.elems vs])
+    cs <- (\(vs :: KM.KeyMap A.Value) -> [x | A.Object x <- KM.elems vs])
       <$> Y.decodeThrow (T.encodeUtf8 fmt)
-    pure $ L.foldl' (\a -> maybe a (f a) . H.lookup "container_name") [] cs
+    pure $ L.foldl' (\a -> maybe a (f a) . KM.lookup "container_name") [] cs
 
   let labels = [N.text| - "sh.reach.devnet-for=$d" |]
   let y = swap "REACH_VERSION" v
@@ -2473,7 +2474,7 @@ support = command "support" $ info (pure g) d
       ]
     z i = doesFileExist i >>= \case
       False -> pure []
-      True -> (\a -> [f (pack i) a]) <$> readFile i
+      True -> (\a -> [f (K.fromString i) a]) <$> readFile i
     clientId = "c4bfe74cc8be5bbaf00e" :: String
     is l = maybe False (== pack l) . headMay
     by a x = maybe (putStrLn ("Missing field `" <> x <> "`.") >> exitWith (ExitFailure 1)) pure
