@@ -2017,8 +2017,22 @@ try {
 This error occurs when you attempt to use a `{!rsh} throw` statement outside of a `{!rsh} try`
 block.
 
+Example:
+
+```reach
+load: /hs/t/n/Err_Throw_No_Catch.rsh
+range: 7 - 9
+```
+
 You can fix this error by moving your `{!rsh} throw` statement inside the appropriate block of code
 or wrapping the necessary code into a `{!rsh} try/catch` block.
+
+Example:
+
+```reach
+load: /hs/t/y/Fix_Throw_No_Catch.rsh
+range: 7 - 13
+```
 
 ## {#RE0102} RE0102
 
