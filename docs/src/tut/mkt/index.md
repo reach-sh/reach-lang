@@ -813,11 +813,93 @@ For Buyer
 > Screenshot
 
 
-### {#tut-mkt-Interaction} Reports
-Here, the `{!rsh} Participant`s would be given the ability to choose to cancel a transaction or continue.
+### {#tut-mkt-Interaction-advance} Advance
+Now that the `seller` is able to show `products` and the `buyer` can see them,
+the next thing to do is to give the `buyer` the ability to make an order and give the `seller` the ability to sell.
 
-To do that, navigate to the backend file.
+To do that, navigate to the backend file. 
+More variables are to be declared.
 
+#### {#tut-mkt-Interaction-advance-declare} Declare More Variables
+
+Replace the `commonInteract` `{!rsh} Object` with the following code:
+
+```reach
+load: /examples/tuts-mkt-5-interaction-reports/index.rsh
+range: 12 - 19
+```
+
+* Line 12 declares the `commonInteract` `{!rsh} Object`.
+
+* Line 13 declares `reportCancellation` `{!rsh} function`. It takes in no argument and returns nothing.
+
+* Line 14 declares `reportExit` `{!rsh} function`. It takes in no argument and returns nothing.
+
+* Line 15 declares `reportPayment` `{!rsh} function`. It takes in a `{!rsh} UInt` and returns nothing.
+
+* Line 16 declares `reportTransfer` `{!rsh} function`. It takes in a `{!rsh} UInt` and returns nothing.
+
+* Line 17 declares `reportFulfillment` `{!rsh} function`. It takes in a `product` and a `{!rsh} UInt` and returns nothing.
+
+* Line 18 declares `statusReport` `{!rsh} function`. It takes in no argument and returns nothing.
+
+In the `buyerInteract` `{!rsh} Object`, add the following `{!rsh} function`:
+
+```reach
+load: /examples/tuts-mkt-5-interaction-reports/index.rsh
+range: 36 - 36
+```
+
+* Line 36 declares the `confirmPurchase` `{!rsh} function`. It takes in a `{!rsh} UInt` and returns a `{!rsh} Bool`.
+
+That's all that is needed for the declaration of variables. 
+Proceed to the frontend file.
+
+#### {#tut-mkt-Interaction-advance-define} Define More Variables
+The variables that has just been added in the backend file will now be defined or given their functionalities here.
+
+In the frontend file, replace the `commonInteract` `{!rsh} Object` with the following code:
+
+```reach
+load: /examples/tuts-mkt-5-interaction-reports/index.mjs
+range: 29 - 42
+```
+
+* Line 29 defines the `commonInteract` as an `{!rsh} Object`.
+
+* Lines 30 - 32 defines the `reportCancellation`. It takes in no argument.
+
+* Line 31 logs to the console an order cancellation message.
+
+* Line 33 defines the `reportPayment` `{!rsh} function`. 
+It takes `payment` as argument and logs to the console a message confirming payment by the `buyer`.
+
+* Line 34 defines the `reportTransfer` `{!rsh} function`. 
+It takes `payment` as argument and logs to the console a message transfer of funds to the `seller`.
+
+* Lines 35 to 39 defines the `reportFulfillment`. 
+It takes in `p` (i.e. `product`) and `amt` (i.e. quantity requested by the `buyer`).
+
+* Line 36 defines the subject (`subjectVerb`) of the message to be displayed.
+
+* Line 36 defines the object (`directObject`) of the message to be displayed
+
+* Line 38 logs to the console the details of the product that the `seller` owes the `buyer`.
+
+* Line 40 defines the `reportExit`. It takes in no argument.
+It logs to the console an order cancellation message.
+
+* Line 41 defines the `statusReport`. It takes in no argument.
+It logs to the console who passes the status report.
+
+That concludes the definition of the `commonInteract`.
+
+In the `buyerInteract`, add the following code:
+
+```reach
+load: /examples/tuts-mkt-5-interaction-reports/index.mjs
+range: 87 - 87
+```
 
 ### {#tut-mkt-Interaction-conclusion} Conclusion
 
