@@ -165,11 +165,11 @@ load: /hs/t/n/Err_Block_NotNull.rsh
 range: 3 - 6
 ```
 
-This error can be corrected by removing the `{rsh} return` statement:
+This error can be corrected by putting the `{!rsh} return` inside of a `{!rsh} const` statement block:
 
 ```reach
-load: /examples/api-multiple-calls/index.rsh
-range: 8 - 11
+load: /hs/t/y/data_null.rsh
+range: 5 - 14
 ```
 
 ## {#RE0004} RE0004
