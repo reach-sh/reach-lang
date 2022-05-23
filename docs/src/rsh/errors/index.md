@@ -1049,7 +1049,7 @@ range: 13 - 20
 ```
 
 The `{!rsh} return` statement on line 19 will never be executed. 
-The `{!rsh} return` statement in the `{!rsh} if ... else ...` block already handled what is need for the `g` `{!rsh} function`.
+The `{!rsh} return` statement in the `{!rsh} if ... else ...` block already handled what is needed for the `g` `{!rsh} function`.
 
 To fix the code, line 19 has to be removed.
 
