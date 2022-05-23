@@ -472,14 +472,22 @@ class Participant extends Actor {
     return [this.scene.next(),this];
   }
 
-  async interact(name:string,val:any) {
+  async interact(name:string,constrain:any,observe:any = null) {
     let a = await this.getNextAction();
     while (a.name == 'A_Receive') {
       this.scene = await a.resolve();
       a = await this.getNextAction();
     }
     assert.equal(name,a.contents[1].contents[2])
-    this.scene = await a.resolve(val);
+    let args = a.contents[1].contents[4];
+    if (typeof constrain === 'function') {
+      this.scene = await a.resolve(constrain(args));
+    } else {
+      this.scene = await a.resolve(constrain);
+    }
+    if (typeof observe === 'function') {
+      observe(args);
+    }
     return this.scene;
 
   }

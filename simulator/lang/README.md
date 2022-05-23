@@ -1,4 +1,4 @@
-# SimLang V0.0.45
+# SimLang V0.0.46
 
 The Reach Programmatic Simulator is implemented as a TypeScript library.
 
@@ -7,7 +7,7 @@ It is available on [npm](https://www.npmjs.com/package/@reach-sh/simulator-lang)
 ```javascript
 "name": "@reach-sh/simulator-lang",
   "description": "language/library for the Reach Simulator",
-  "version": "0.0.45",
+  "version": "0.0.46",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": {
@@ -230,6 +230,20 @@ class Consensus extends Actor {
 
 ```
 
+## Variable
+
+```javascript
+class Variable {
+  v: any;
+
+  constructor(v: any)
+
+  assertVar(t: string,v: any)
+
+  contents(): any
+
+}
+```
 
 ## APIs
 
@@ -456,6 +470,73 @@ main();
 
 ## rps-7-loops
 
+In order to demonstrate the power of the simulator, we will go about testing the `rps-7-loops` tutorial in a somewhat contrived manner: we simulate the beginning of the program normally, but upon reaching the while loop which tests the `DRAW` condition, rather than running through the full loop, we repeatedly re-run the first iteration of the loop with random inputs, until someone wins.
+
 ```javascript
-\\ coming soon
+import * as lang from '@reach-sh/simulator-lang';
+import * as assert from 'assert';
+
+const main = async () => {
+  console.log("Init Testing!")
+  const DRAW = 1;
+  const fs = new lang.FunctionalScenario();
+  let s = await fs.init();
+  let alice; let bob;
+  const a = fs.participants.Alice;
+  const b = fs.participants.Bob;
+  const consensus = fs.consensus;
+  [s, alice] = await s.who(a).init(10,
+    {'wager':{'tag':'V_UInt','contents':10},
+    'deadline':{'tag':'V_UInt','contents':99}}
+  );
+  [s, bob] = await s.who(b).init(10);
+  s = await s.who(consensus).publish(alice);
+  s = await s.who(bob).receive();
+  s = await s.who(consensus).publish(bob);
+
+  // here we define the play function to represent one
+  // iteration of the while loop
+  const play = async (s,alice,bob,consensus) => {
+    let aHand = Math.floor(Math.random() * 3);
+    let bHand = Math.floor(Math.random() * 3);
+
+    s = await s.who(alice).interact('getHand', aHand);
+    s = await s.who(alice).interact('random', (Math.floor(Math.random() * 4444)));
+    s = await s.who(consensus).publish(alice);
+
+    s = await s.who(alice).receive();
+    s = await s.who(bob).interact('getHand', bHand);
+    s = await s.who(consensus).publish(bob);
+    s = await s.who(alice).receive();
+    s = await s.who(bob).receive();
+
+    s = await s.who(consensus).publish(alice);
+
+    let outcome = (await s.who(consensus).getVar('outcome')).contents();
+    // when using the FunctionalScenario, functions need to return
+    // the final scenario reference
+    //     ↓↓
+    return [s,outcome];
+  }
+
+  let outcome = DRAW;
+  let counter = 0;
+  while (outcome === DRAW) {
+    counter++;
+    [s,outcome] = await play(s,alice,bob,consensus);
+  }
+
+  s = await s.who(alice).exit();
+  s = await s.who(bob).exit();
+  // show the game outcome, which is guaranteed to not
+  // be a draw
+  console.log(outcome);
+  // show how many times we had to play to find
+  // a clear winner
+  console.log(`game played ${counter} times`);
+  console.log("Testing Complete!!!");
+}
+
+main();
+
 ```
