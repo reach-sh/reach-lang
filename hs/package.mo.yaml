@@ -160,7 +160,7 @@ tests:
 
 _std_exe: &std-exe
   main:                  Main.hs
-  when:
+  when: # https://github.com/sol/hpack/issues/303#issue-340890073
   - condition:           false
     other-modules:       Paths_reach
   ghc-options:
