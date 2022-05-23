@@ -132,18 +132,18 @@ hs-format: expand
 
 .PHONY: watch
 watch: expand
-	@ghcid --target=reach:test:reach-test
+	@ghcid -c 'stack ghci $(MEVEREST) --main-is=reach:test:reach-test'
 
 .PHONY: watch-reach-cli
 watch-reach-cli: expand
-	@REACH_EX=../reach ghcid --target=reach:exe:reach -T Main.main
+	@REACH_EX=../reach ghcid -c 'stack ghci $(MEVEREST) --main-is=reach:exe:reach' -T Main.main
 
 .PHONY: watch-reachc
 watch-reachc: expand
-	@ghcid --target=reach:exe:reachc
+	@ghcid -c 'stack ghci $(MEVEREST) --main-is=reach:exe:reachc'
 
 .PHONY: repl-reach-cli
 repl-reach-cli: expand
-	@stack ghci app/reach/Main.hs \
+	@stack ghci app/reach/Main.hs $(MEVEREST) \
 	  --package pretty-simple \
 	  --ghci-options "-interactive-print=Text.Pretty.Simple.pPrint"
