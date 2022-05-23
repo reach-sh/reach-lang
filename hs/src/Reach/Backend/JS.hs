@@ -324,6 +324,22 @@ jsArg_m = \case
   Nothing -> return $ "undefined /* Nothing */"
   Just a -> jsArg a
 
+shouldHashMapKey :: DLType -> Bool
+shouldHashMapKey = \case
+  T_Null -> False
+  T_Bool -> False
+  T_UInt {} -> False
+  T_Digest -> False
+  T_Address -> False
+  T_Contract -> False
+  T_Token -> False
+  T_Bytes {} -> True
+  T_Array {} -> True
+  T_Data {} -> True
+  T_Tuple {} -> True
+  T_Object {} -> True
+  T_Struct {} -> True
+
 jsExpr :: AppT DLExpr
 jsExpr = \case
   DLE_Arg _ a ->
@@ -439,7 +455,9 @@ jsExpr = \case
         jsArg what
   DLE_MapRef _ mpv fa -> do
     let ctc = jsMapVarCtc mpv
-    fa' <- jsArg fa
+    fa' <- case shouldHashMapKey $ argTypeOf fa of
+              False -> jsArg fa
+              True  -> jsDigest [fa]
     (f, args) <-
       (ctxt_mode <$> ask) >>= \case
         JM_Simulate -> return $ ("await stdlib.simMapRef", ["sim_r", jsMapIdx mpv])
