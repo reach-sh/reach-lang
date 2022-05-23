@@ -1149,4 +1149,16 @@ Your Balance is 799.994 ALGO.
 
 
 ### {#tut-mkt-Interaction-conclusion} Conclusion
+This section has been able to explain in details how the `./reach run` command works. 
+Understanding that made it easy to manipulate the command and create an interactive DApp.
+This is a better version of the DApp since the `{!rsh} Participant`s have been honored with the ability to make their own choice instead of being forced to accept random choices. 
+
+This section also taught how to use the `process.argv` (argument variables), 
+how to `{!rsh} pay` and `{!rsh} transfer` money on a DApp, 
+how to use the `{!rsh} ask` `{!rsh} Object` and so on.
+
+But there is more that can be done. Since regular transactions happen with a GUI an not on a terminal, 
+how can Reach enable the building of a GUI instead of a terminal application?
+
+The next section has been designed to teach everything that you need to know about building a web application using Reach.
 
