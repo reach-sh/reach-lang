@@ -130,21 +130,25 @@ hs-format: expand
 	  --ghc-opt -XTypeApplications \
 	  --mode inplace $$(find . -name '*.hs' | grep -v '.mo')
 
+define w
+ghcid -c 'stack ghci $(MEVEREST) --main-is=reach:$(1)'
+endef
+
 .PHONY: watch
 watch: expand
-	@ghcid -c 'stack ghci $(MEVEREST) --main-is=reach:test:reach-test'
+	@$(call w,test:reach-test)
 
 .PHONY: watch-reach-cli
 watch-reach-cli: expand
-	@REACH_EX=../reach ghcid -c 'stack ghci $(MEVEREST) --main-is=reach:exe:reach' -T Main.main
+	@REACH_EX=../reach $(call w,exe:reach) -T Main.main
 
 .PHONY: watch-reachc
 watch-reachc: expand
-	@ghcid -c 'stack ghci $(MEVEREST) --main-is=reach:exe:reachc'
+	@$(call w,exe:reachc)
 
 .PHONY: watch-tsa
 watch-tsa: expand
-	@ghcid -c 'stack ghci $(MEVEREST) --main-is=reach:exe:tsa'
+	@$(call w,exe:tsa)
 
 .PHONY: repl-reach-cli
 repl-reach-cli: expand
