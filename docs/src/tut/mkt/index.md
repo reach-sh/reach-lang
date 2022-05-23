@@ -797,10 +797,27 @@ Line 51 `{!rsh} commit`s to the program if line 47 evaluates to `{!rsh} false`.
 Line 54 terminates the program.
 
 #### {#tut-mkt-Interaction-test} Testing
+To test what has been done so far, open two terminals. 
 
-#### {#tut-mkt-Interaction-conclusion} Conclusion
+In the first one, run ` ./reach run index seller` 
+While in the second terminal, run `./reach run index buyer`
 
-### {#tut-mkt-Interaction-report} Report Cancellation
+By the end of the transaction, the output received should look like the following screenshots:
 
-### {#tut-mkt-Interaction-other} Other Reports
+For Seller:
+
+> Screenshot
+
+For Buyer
+
+> Screenshot
+
+
+### {#tut-mkt-Interaction} Reports
+Here, the `{!rsh} Participant`s would be given the ability to choose to cancel a transaction or continue.
+
+To do that, navigate to the backend file.
+
+
+### {#tut-mkt-Interaction-conclusion} Conclusion
 
