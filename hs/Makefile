@@ -142,6 +142,10 @@ watch-reach-cli: expand
 watch-reachc: expand
 	@ghcid -c 'stack ghci $(MEVEREST) --main-is=reach:exe:reachc'
 
+.PHONY: watch-tsa
+watch-tsa: expand
+	@ghcid -c 'stack ghci $(MEVEREST) --main-is=reach:exe:tsa'
+
 .PHONY: repl-reach-cli
 repl-reach-cli: expand
 	@stack ghci app/reach/Main.hs $(MEVEREST) \
