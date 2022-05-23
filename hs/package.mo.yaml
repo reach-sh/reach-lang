@@ -144,6 +144,9 @@ when:
 
 library:
   source-dirs: src
+  when:
+  - condition:           false
+    other-modules:       Paths_reach
 tests:
   reach-test:
     main:                Main.hs
@@ -156,7 +159,10 @@ tests:
     - reach
 
 _std_exe: &std-exe
-  main:                Main.hs
+  main:                  Main.hs
+  when:
+  - condition:           false
+    other-modules:       Paths_reach
   ghc-options:
   - -threaded
   - -rtsopts
@@ -171,6 +177,9 @@ executables:
   reach:
     main:                Main.hs
     source-dirs:         app/reach
+    when:
+    - condition:         false
+      other-modules:     Paths_reach
     ghc-options:
     - -threaded
     - -rtsopts
