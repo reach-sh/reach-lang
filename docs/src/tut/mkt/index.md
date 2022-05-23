@@ -535,6 +535,8 @@ That is the basics of how the `./reach run` command works.
 ### {#tut-mkt-Interaction-basic} Basic Interactive DApp
 In other to make it easy to follow, delete all the codes in the two files.
 
+The codes for this section can be found [here]().
+
 Type the following code in the backend file:
 
 ```reach
@@ -817,6 +819,8 @@ For Buyer
 Now that the `seller` is able to show `products` and the `buyer` can see them,
 the next thing to do is to give the `buyer` the ability to make an order and give the `seller` the ability to sell.
 
+The codes for this section can be found [here]().
+
 To do that, navigate to the backend file. 
 More variables are to be declared.
 
@@ -900,6 +904,249 @@ In the `buyerInteract`, add the following code:
 load: /examples/tuts-mkt-5-interaction-reports/index.mjs
 range: 87 - 87
 ```
+
+* Line 87 defines `confirmPurchase` `{!rsh} function`. 
+It uses the `{!rsh} ask` `{!rsh} Object` to ask the `buyer` to confirm purchase or cancel the transaction.
+
+No more changes would be done to the frontend file. 
+Like always, the frontend has to be connected to the backend file for all these to work.
+Go back to the backend file.
+
+
+#### {#tut-mkt-Interaction-advance-connect} Connect the frontend to the backend
+
+Replace this code:
+
+```reach
+load: /examples/tuts-mkt-4-interaction-basic/index.rsh
+range: 47 - 52
+```
+
+With this:
+
+```reach
+load: /examples/tuts-mkt-5-interaction-reports/index.rsh
+range: 55 - 62
+```
+
+* Line 55 checks if the `prodNum` (i.e. product number) entered doesn't match any product or the `prodAmt` entered is zero (0).
+
+* Line 56 `{!rsh} commit`s if Line 55 is true.
+
+* Line 57 calls the `reportCancellation` `{!rsh} function` on each of the `{!rsh} Participant`.
+
+* Line 58 calls the `reportExit` `{!rsh} function` on each of the `{!rsh} Participant`.
+
+* Line 59 terminates the transaction by calling the `{!rsh} exit` method.
+
+* Line 61 `{!rsh} commit`s if Line 55 is false.
+
+
+Next, type the following code:
+
+```reach
+load: /examples/tuts-mkt-5-interaction-reports/index.rsh
+range: 64 - 73
+```
+
+* Line 64 starts another `seller`'s only block.
+
+* Line 65 calculates the total price to be paid by the `buyer` depending on the `product` selected.
+
+This calculated by multiplying the `price` of the `product` by the quantity that the buyer wants.
+
+* Line 67 publishes the total price.
+
+* Line 68 ends this local step.
+
+* Line 70 starts another `buyer`'s only block.
+
+* Line 71 calls the `confirmPurchase` `{!rsh} function` and passes the `total` from line 65 to it.
+This obtains the `buyer`'s consent and stores it as `willBuy`.
+
+* Line 73 publishes `willBuy`
+
+
+Now enter the code below:
+
+```reach
+load: /examples/tuts-mkt-5-interaction-reports/index.rsh
+range: 75 - 82
+```
+
+
+* Line 75 checks if the `willBuy` is false.
+
+* Line 76 `{!rsh} commit`s if Line 75 is true.
+
+* Line 77 calls the `reportCancellation` `{!rsh} function` on each of the `{!rsh} Participant`.
+
+* Line 78 calls the `reportExit` `{!rsh} function` on each of the `{!rsh} Participant`.
+
+* Line 59 terminates the transaction by calling the `{!rsh} exit` method.
+
+* Line 61 `{!rsh} commit`s if Line 75 is true.
+
+
+Finally, the following code handles payment and delivery if all goes well
+
+```reach
+load: /examples/tuts-mkt-5-interaction-reports/index.rsh
+range: 84 - 90
+```
+
+* Line 84 has the `buyer` pay the `total` into the contract.
+
+* Line 85 calls the `reportPayment` `{!rsh} function` on each of the `{!rsh} Participant`.
+
+* Line 86 transfers the money paid by the `buyer` to the `seller`.
+
+* line 87  calls the `reportTransfer` `{!rsh} function` on each of the `{!rsh} Participant`.
+
+* line 88  calls the `reportFulfillment` `{!rsh} function` on each of the `{!rsh} Participant`.
+
+* line 89  calls the `statusReport` `{!rsh} function` on each of the `{!rsh} Participant`.
+
+* Line 90 `{!rsh} commit` to the program.
+
+And That concludes the application.
+
+Yayeh, You came this far!
+
+You are a rockstar!
+
+Congratulations on this new feat!
+
+#### {#tut-mkt-Interaction-advance-test} Testing the application
+
+Open two terminals. In the first one, 
+run ` ./reach run index seller` 
+and in the second terminal, 
+run `./reach run index buyer`
+
+If transaction is cancelled, the output received should look like:
+
+For Seller:
+
+```reach
+> index
+> node --experimental-modules --unhandled-rejections=strict index.mjs "seller"
+
+Your role is seller
+The consensus network is ALGO.
+The standard unit is ALGO
+The atomic unit is μALGO
+Balance is 1000 ALGO
+Balance is 1000000000 μALGO
+Balance is 1000 ALGO
+Your Balance is 1000 ALGO.
+Welcome to the Market
+Contract info: {"type":"BigNumber","hex":"0xe0"}
+The buyer cancelled the order.
+The buyer cancelled the order.
+Your Balance is 999.997 ALGO.
+```
+
+For Buyer:
+
+```reach
+> index
+> node --experimental-modules --unhandled-rejections=strict index.mjs "buyer"
+
+Your role is buyer
+The consensus network is ALGO.
+The standard unit is ALGO
+The atomic unit is μALGO
+Balance is 1000 ALGO
+Balance is 1000000000 μALGO
+Balance is 1000 ALGO
+Paste contract info: 
+{"type":"BigNumber","hex":"0xe0"}
+Attaching to contract
+...
+Successfully attached
+Your Balance is 1000 ALGO.
+List of products for sale: 
+1. Potatoes at 200 ALGO per unit (bag).
+2. Carrots at 100 ALGO per unit (bunch).
+3. Corn at 50 ALGO per unit (ear).
+Enter 1-3, or 0 to exit:
+2
+Enter number of units, or 0 to exit:
+0
+You are ordering 0 bunches of Carrots at 100 ALGO per bunch.
+You cancelled the order.
+You cancelled the order.
+Your Balance is 999.998 ALGO.
+```
+
+> Attach a video
+
+
+If transaction is successful, the output received should look like:
+
+For Seller:
+
+```reach
+> index
+> node --experimental-modules --unhandled-rejections=strict index.mjs "seller"
+
+Your role is seller
+The consensus network is ALGO.
+The standard unit is ALGO
+The atomic unit is μALGO
+Balance is 1000 ALGO
+Balance is 1000000000 μALGO
+Balance is 1000 ALGO
+Your Balance is 1000 ALGO.
+Welcome to the Market
+Contract info: {"type":"BigNumber","hex":"0xe6"}
+The Buyer paid 200 ALGO to the contract.
+The contract paid 200 ALGO to you.
+You owe the buyer 2 bunches of Carrots.
+Seller passes status report.
+Your Balance is 1199.996 ALGO.
+```
+
+For Buyer:
+
+```reach
+> index
+> node --experimental-modules --unhandled-rejections=strict index.mjs "buyer"
+
+Your role is buyer
+The consensus network is ALGO.
+The standard unit is ALGO
+The atomic unit is μALGO
+Balance is 1000 ALGO
+Balance is 1000000000 μALGO
+Balance is 1000 ALGO
+Paste contract info: 
+{"type":"BigNumber","hex":"0xe6"}
+Attaching to contract
+...
+Successfully attached
+Your Balance is 1000 ALGO.
+List of products for sale: 
+1. Potatoes at 200 ALGO per unit (bag).
+2. Carrots at 100 ALGO per unit (bunch).
+3. Corn at 50 ALGO per unit (ear).
+Enter 1-3, or 0 to exit:
+2
+Enter number of units, or 0 to exit:
+2
+You are ordering 2 bunches of Carrots at 100 ALGO per bunch.
+Do you want to complete the purchase for 200 ALGO?
+y
+You paid 200 ALGO to the contract.
+The contract paid 200 ALGO to the seller.
+The seller owes you 2 bunches of Carrots.
+Buyer passes status report.
+Your Balance is 799.994 ALGO.
+```
+
+> Attach a video
+
 
 ### {#tut-mkt-Interaction-conclusion} Conclusion
 
