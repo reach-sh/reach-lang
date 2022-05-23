@@ -1973,7 +1973,7 @@ load: /examples/raffle/index.rsh
 range: 52 - 57
 ```
 
-On line 54, `{!rsh} implies` would return `{!rsh} true` if `{!rsh} when` is `{!rsh} false` or `isNone(randomsM[this])` evaluates to `{!rsh} true`.
+On line 54, `{!rsh} implies` would return `{!rsh} true` if `{!rsh} when` is `{!rsh} false` or `{!rsh} isNone(randomsM[this])` evaluates to `{!rsh} true`.
 
 ### `ensure`
 
