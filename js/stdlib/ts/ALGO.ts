@@ -1018,7 +1018,7 @@ const getIndexer = async () => {
   p.setIntEncoding(algosdk.IntDecoding.BIGINT);
   return p;
 };
-const nodeCanRead = async () => false; //((await getProvider()).nodeWriteOnly === false);
+const nodeCanRead = async () => ((await getProvider()).nodeWriteOnly === false);
 const ensureNodeCanRead = async () =>
   assert(await nodeCanRead(), "node can read" );
 
