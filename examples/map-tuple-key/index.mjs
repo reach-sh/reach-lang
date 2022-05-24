@@ -3,7 +3,7 @@ import * as backend from './build/index.main.mjs';
 
 const stdlib = await loadStdlib();
 
-if(stdlib.connector == 'ALGO') {
+if(stdlib.connector === 'ALGO') {
   process.exit();
 }
 
@@ -22,6 +22,9 @@ await Promise.all([
     getKey: () => {
       key1++;
       key2 = !key2;
+      return [ bn(key1), key2 ];
+    },
+    lookup: () => {
       return [ bn(key1), key2 ];
     },
     getValue: () => {

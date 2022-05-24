@@ -7,6 +7,7 @@ export const main = Reach.App(() => {
   const A = Participant('A', {
     getKey: Fun([], KEY_TYPE),
     getValue: Fun([], UInt),
+    lookup: Fun([], KEY_TYPE),
     chk: Fun(true, Null),
   });
 
@@ -24,12 +25,13 @@ export const main = Reach.App(() => {
     A.only(() => {
       const k = declassify(interact.getKey());
       const v = declassify(interact.getValue());
+      const l = declassify(interact.lookup());
     });
-    A.publish(k, v);
+    A.publish(k, v, l);
 
     m[k] = v;
 
-    A.interact.chk(m[k]);
+    A.interact.chk(m[l]);
 
     i = i + 1;
     continue;
