@@ -40,7 +40,6 @@ TMP=$(mkdir -p /tmp/reach/cli; mktemp -d "/tmp/reach/cli/$(date -u '+%Y-%m-%dT%H
 CNF="${XDG_CONFIG_HOME:-$HOME/.config}/reach"; CNF="$(mkdir -p "$CNF" && cd "$CNF" && pwd)"
 MD5=md5sum; if [ ! "$(command -v $MD5)" ]; then MD5=md5; fi
 RCI=$(head -n1 /dev/urandom | $MD5 | head -c 30 | tr '[:lower:]' '[:upper:]')
-START_TIME=$(date -u +"%Y-%m-%d")
 export TMP
 
 if [ ! -e "$CNF/env" ]; then
@@ -138,7 +137,7 @@ T19FWFRFTlNJT059fSIsImluaXRpYXRvciI6Int7SU5JVElBVE9SfX0ifQ=="
 
   CALL_HOME_TEMPLATE_DECODED=$(printf '%s' "$CALL_HOME_ENCODED" | base64 -d)
   TRANSLATED_TEMPLATE=$(echo "${CALL_HOME_TEMPLATE_DECODED}" | sed -e "s/{{REACHC_ID}}/$REACHC_ID/g" \
-    -e "s/{{START_TIME}}/${START_TIME}/g" \
+    -e "s/{{START_TIME}}/$(date -u +"%Y-%m-%d")/g" \
     -e "s/{{RESULT}}/$1/g" \
     -e "s/{{REACH_VERSION}}/$2/g" \
     -e "s/{{CONNECTOR_MODE}}/$3/g" \
