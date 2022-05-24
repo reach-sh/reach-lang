@@ -38,8 +38,18 @@ fi
 IMG='reachsh/reach-cli:latest'
 TMP=$(mkdir -p /tmp/reach/cli; mktemp -d "/tmp/reach/cli/$(date -u '+%Y-%m-%dT%H-%M-%SZ')-XXXX")
 CNF="${XDG_CONFIG_HOME:-$HOME/.config}/reach"; CNF="$(mkdir -p "$CNF" && cd "$CNF" && pwd)"
-START_TIME=$(date -u +"%Y-%m-%d")
+MD5=md5sum; if [ ! "$(command -v $MD5)" ]; then MD5=md5; fi
+RCI=$(head -n1 /dev/urandom | $MD5 | head -c 30 | tr '[:lower:]' '[:upper:]')
 export TMP
+
+if [ ! -e "$CNF/env" ]; then
+  echo "# Automatically generated with \`reach\` script at $(date -u '+%Y-%m-%dT%H:%M:%S.%NZ')" > "$CNF/env"
+  echo "export REACHC_ID=$RCI" >> "$CNF/env"
+elif ! grep REACHC_ID "$CNF/env" > /dev/null 2>&1; then
+  mkdir -p "$CNF/_backup"
+  cp "$CNF/env" "$CNF/_backup/env-$(date -u '+%Y-%m-%dT%H:%M:%S.%NZ')"
+  printf '\nexport REACHC_ID=%s\n' "$RCI" >> "$CNF/env"
+fi
 
 if [ -z "$REACH_ENV_PRS" ] && [ -f "$CNF/env" ]; then
   e="$(env |grep '^REACH')"
@@ -116,22 +126,6 @@ run_s () {
   sh -ac "$TMP/out.sh" "$0"
 }
 
-gen_reachc_id () {
-  REACH_ENV_FILE="$CNF/env"
-  MD5_CMD=md5sum
-  if [ ! "$(command -v $MD5_CMD)" ]; then
-    MD5_CMD=md5
-  fi
-  PRE_REACHC_ID=$(head -n1 /dev/urandom | $MD5_CMD | head -c 30 | tr '[:lower:]' '[:upper:]')
-  if [ ! -e "$REACH_ENV_FILE" ]; then
-    echo "export REACHC_ID=$PRE_REACHC_ID" > "$REACH_ENV_FILE"
-  elif ! grep REACHC_ID "$REACH_ENV_FILE" > /dev/null 2>&1; then
-    printf '\nexport REACHC_ID=%s\n' "$PRE_REACHC_ID" >> "$REACH_ENV_FILE"
-  fi
-  # shellcheck disable=SC1090
-  . "$REACH_ENV_FILE"
-}
-
 call_home () {
 CALL_HOME_ENCODED="eyJ1c2VySWQiOiJ7e1JFQUNIQ19JRH19\
 Iiwic3RhcnRUaW1lIjoie3tTVEFSVF9USU1FfX0iLCJy\
@@ -143,7 +137,7 @@ T19FWFRFTlNJT059fSIsImluaXRpYXRvciI6Int7SU5JVElBVE9SfX0ifQ=="
 
   CALL_HOME_TEMPLATE_DECODED=$(printf '%s' "$CALL_HOME_ENCODED" | base64 -d)
   TRANSLATED_TEMPLATE=$(echo "${CALL_HOME_TEMPLATE_DECODED}" | sed -e "s/{{REACHC_ID}}/$REACHC_ID/g" \
-    -e "s/{{START_TIME}}/${START_TIME}/g" \
+    -e "s/{{START_TIME}}/$(date -u +"%Y-%m-%d")/g" \
     -e "s/{{RESULT}}/$1/g" \
     -e "s/{{REACH_VERSION}}/$2/g" \
     -e "s/{{CONNECTOR_MODE}}/$3/g" \
@@ -219,8 +213,6 @@ install_docker () {
   # shellcheck disable=SC2164
   cd "${OPWD}"
 }
-
-gen_reachc_id
 
 for DEP in curl make docker docker-compose; do
   if ! (command -v "${DEP}" >/dev/null 2>&1); then
