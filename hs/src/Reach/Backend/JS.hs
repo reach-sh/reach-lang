@@ -340,6 +340,12 @@ shouldHashMapKey = \case
   T_Object {} -> True
   T_Struct {} -> True
 
+jsMapKey :: DLArg -> App Doc
+jsMapKey k =
+  case shouldHashMapKey $ argTypeOf k of
+    False -> jsArg k
+    True  -> jsDigest [k]
+
 jsExpr :: AppT DLExpr
 jsExpr = \case
   DLE_Arg _ a ->
@@ -455,9 +461,7 @@ jsExpr = \case
         jsArg what
   DLE_MapRef _ mpv fa -> do
     let ctc = jsMapVarCtc mpv
-    fa' <- case shouldHashMapKey $ argTypeOf fa of
-              False -> jsArg fa
-              True  -> jsDigest [fa]
+    fa' <- jsMapKey fa
     (f, args) <-
       (ctxt_mode <$> ask) >>= \case
         JM_Simulate -> return $ ("await stdlib.simMapRef", ["sim_r", jsMapIdx mpv])
@@ -465,7 +469,7 @@ jsExpr = \case
         JM_View -> return $ ("await viewlib.viewMapRef", [jsMapIdx mpv])
     return $ jsProtect_ "null" ctc $ jsApply f $ args <> [fa']
   DLE_MapSet _ mpv fa mna -> do
-    fa' <- jsArg fa
+    fa' <- jsMapKey fa
     na' <- jsArg_m mna
     (ctxt_mode <$> ask) >>= \case
       JM_Simulate ->
