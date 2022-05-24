@@ -989,7 +989,7 @@ const o = {
 You can fix this by using a static string as the key.
 
 ```reach
-load: ./hs/t/y/dynamic_pay.rsh
+load: /hs/t/y/dynamic_pay.rsh
 md5: d2b6bbbbc740d81db1ba2097f250a1b5
 range: 21 - 24
 ```
