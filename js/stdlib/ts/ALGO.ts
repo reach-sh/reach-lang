@@ -249,10 +249,10 @@ type IndexerAppInfoRes = {
   'current-round': bigint,
   'application': AppInfo,
 };
-// type IndexerAccountAppLocalStatesRes = {
-//   'current-round': bigint,
-//   'apps-local-states': Array<AppState>,
-// };
+type IndexerAccountAppLocalStatesRes = {
+  'current-round': bigint,
+  'apps-local-states': Array<AppState>,
+};
 type IndexerAccountAssetsRes = {
   'current-round': bigint,
   'assets': Array<AssetHolding>,
@@ -1018,7 +1018,7 @@ const getIndexer = async () => {
   p.setIntEncoding(algosdk.IntDecoding.BIGINT);
   return p;
 };
-const nodeCanRead = async () => ((await getProvider()).nodeWriteOnly === false);
+const nodeCanRead = async () => false; //((await getProvider()).nodeWriteOnly === false);
 const ensureNodeCanRead = async () =>
   assert(await nodeCanRead(), "node can read" );
 
@@ -1454,6 +1454,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
             // This would fail if the address has local states for over MaxAPIResourcesPerAccount applications.
             // The default indexer MaxAPIResourcesPerAccount is 1000.
+            /*
             const query = indexer
               .lookupAccountByID(addr)
               .exclude("assets,created-assets,created-apps") as unknown as ApiCall<IndexerAccountInfoRes>;
@@ -1462,8 +1463,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             const appLocalStates = accountInfo['account']['apps-local-state'] ?? [];
             const appLocalState = appLocalStates.find(app => app.id == appId);
             return appLocalState?.['key-value'];
+            */
 
-            /*
             // This should work according to the api docs, but apps-local-state always comes back 'null'
             const query = indexer
               .lookupAccountAppLocalStates(addr)
@@ -1472,17 +1473,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             debug(dhead, appLocalStatesM);
             if ('val' in appLocalStatesM) {
               const alsRes = appLocalStatesM['val'];
-              debug(dhead, alsRes);
-              const appsLocalStates = alsRes['apps-local-states'];
-              debug(dhead, appsLocalStates);
-              // const appsLocalStates = appLocalStatesM['val']['apps-local-states'];
+              // As of indexer version 2.11.1 (at least, possibly higher versions too), 
+              // apps-local-states can come back 'null', equivalent to an empty array
+              const appsLocalStates = alsRes['apps-local-states'] ?? [];
               const appLocalState = appsLocalStates.find(app => ApplicationID.eq(app['id']));
-              debug(dhead, appLocalState);
               return appLocalState?.['key-value'];
             } else {
+              // Not certain if this behavior is correct. Can this endpoint ever fail sensibly?
               return undefined;
             }
-            */
           }
         };
 
