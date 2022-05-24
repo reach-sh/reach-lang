@@ -1971,9 +1971,29 @@ can either abstract the arguments into a new `{!rsh} Data` type or make separate
 ## {#RE0109} RE0109
 
 This error indicates that there are multiple `{!rsh} Participant`s or `{!rsh} ParticipantClass`es
-with the same name. Each participant name must be unique.
+with the same name. 
+
+Example:
+
+```reach
+load: /hs/t/n/Err_Part_DuplicatePart.rsh
+range: 4 - 9
+```
+
+Each `{!rsh} Participant` name must be unique.
 
 You can fix this error by renaming the duplicate names.
+
+Example:
+
+```reach
+load: /hs/t/y/Fix_Part_DuplicatePart.rsh
+range: 4 - 9
+```
+
+:::note
+Since `{!rsh} ParticipantClass` is being deprecated, it is preferable to use `{!rsh} API`.
+:::
 
 ## {#RE0110} RE0110
 
