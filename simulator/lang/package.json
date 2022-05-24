@@ -11,7 +11,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@reach-sh/simulator-client": "0.0.51",
+    "@reach-sh/simulator-client": "0.0.52",
     "@reach-sh/stdlib": "0.1.10-rc.5"
   },
   "author": "reach.sh",

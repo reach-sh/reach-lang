@@ -60,27 +60,21 @@ async function interact(method = 'GET', url = '', data = {}) {
   //   0: 0
   //   1: {tag: 'A_Interact', contents: Array(5)}
 const getStates = async () => {
-  const r = await interact(`GET`, `${address}/states`)
-  console.log(r)
-  return r;
+  return await interact(`GET`, `${address}/states`)
 }
 
 // edges of the DAG state graph, represented as a list of pairs
 // of numbers
 // returns: '[[6,7],[5,6],[4,5],[3,4],[2,3],[1,2],[0,1]]'
 const getEdges = async () => {
-  const r = await interact(`GET`, `${address}/edges`)
-  console.log(r)
-  return r;
+  return await interact(`GET`, `${address}/edges`)
 }
 
 // returns the status of the "active" actor
 // "active" means took an action most recently
 // returns: "Initial" or "Running" or "Done"
 const getStatus = async () => {
-  const r = await interact(`GET`, `${address}/status`)
-  console.log(r)
-  return r;
+  return await interact(`GET`, `${address}/status`)
 }
 
 // get the list of available actions
@@ -91,9 +85,8 @@ const getStatus = async () => {
 // 1 is the phase id
 // the structure of each action is different
 async function getActions(s: number,a: number) {
-  const r = await interact(`GET`, `${address}/actions/${s}/${a}`)
-  console.log(JSON.stringify(r))
-  return r;
+  return await interact(`GET`, `${address}/actions/${s}/${a}`)
+
 }
 
 // JSON dump of global Simulator info
@@ -132,9 +125,7 @@ async function getActions(s: number,a: number) {
 //   "e_nwtime": 3
 // }
 async function getStateGlobals(s: number) {
-  const r = await interact(`GET`, `${address}/global/${s}`)
-  console.log(r)
-  return r;
+  return await interact(`GET`, `${address}/global/${s}`)
 }
 
 // JSON dump of local Simulator info
@@ -334,9 +325,7 @@ async function getStateGlobals(s: number) {
 //   "l_curr_actor_id": 1
 // }
 async function getStateLocals(s: number) {
-  const r = await interact(`GET`, `${address}/local/${s}`)
-  console.log(r)
-  return r;
+  return await interact(`GET`, `${address}/local/${s}`)
 }
 
 // returns a ":" delimited string
@@ -346,23 +335,17 @@ async function getStateLocals(s: number) {
 // for actor a (integer)
 // at state s (integer)
 async function getLoc(s: number,a: number) {
-  const r = await interact(`GET`, `${address}/locs/${s}/${a}`)
-  console.log(r)
-  return r;
+  return await interact(`GET`, `${address}/locs/${s}/${a}`)
 }
 
 // load the program (Reach source code)
 const load = async () => {
-  const r = await interact('POST', `${address}/load`)
-  console.log(r)
-  return r;
+  return await interact('POST', `${address}/load`)
 }
 
 // initialize the program for the Consensus
 const init = async () => {
-  const r = await interact('POST', `${address}/init`)
-  console.log(r)
-  return r
+  return await interact('POST', `${address}/init`)
 }
 
 // at state s (integer)
@@ -387,9 +370,7 @@ const init = async () => {
 // but there are numerous examples in ~/reach-lang/examples/simulator-*
 const respondWithVal = async (s: number,a: number,v: any,w: any = false,t='number') => {
   const who = (w || w === 0) ? `&who=${w}` : ``
-  const r = await interact('POST', `${address}/states/${s}/actions/${a}/?data=${v}${who}&type=${t}`)
-  console.log(r)
-  return r
+  return await interact('POST', `${address}/states/${s}/actions/${a}/?data=${v}${who}&type=${t}`);
 }
 
 // initialize the program for
@@ -410,18 +391,14 @@ const initFor = async (s: number,a: string,liv="{}",acc: any = false,blce: any =
   ) {
     livS = JSON.stringify(liv)
   }
-  const r = await interact('POST', `${address}/init/${a}/${s}/?liv=${livS}${accParam}${balance}`)
-  console.log(r)
-  return r
+  return await interact('POST', `${address}/init/${a}/${s}/?liv=${livS}${accParam}${balance}`)
 }
 
 // check if there are initialization interact details needed
 // to run the program
 // for actor a (integer)
 const initDetails = async (a: number) => {
-  const r = await interact('GET', `${address}/init_details/${a}`)
-  console.log(r)
-  return r
+  return await interact('GET', `${address}/init_details/${a}`)
 }
 
 // returns the state category graph for the program
@@ -448,25 +425,19 @@ const catGraph = async () => {
 }
 
 const dotGraph = async () => {
-  const r = await interact('GET', `${address}/dotstategraph`)
-  console.log(r)
-  return r
+  return await interact('GET', `${address}/dotstategraph`)
 }
 
 // create a new account
 // at state s (integer)
 const newAccount = async (s: number) => {
-  const r = await interact('POST', `${address}/accounts/new/${s}`)
-  console.log(r)
-  return r
+  return await interact('POST', `${address}/accounts/new/${s}`)
 }
 
 // create a new currency
 // at state s (integer)
 const newToken = async (s: number) => {
-  const r = await interact('POST', `${address}/tokens/new/${s}`)
-  console.log(r)
-  return r
+  return await interact('POST', `${address}/tokens/new/${s}`)
 }
 
 // perform a funds transfer
@@ -476,70 +447,50 @@ const newToken = async (s: number) => {
 // for currency tok (integer)
 // for amount amt (integer)
 const transfer = async (s: number,fr: number,to: number,tok: number,amt: number) => {
-  const r = await interact('POST', `${address}/transfer/${s}/?from=${fr}&to=${to}&token=${tok}&amount=${amt}`)
-  console.log(r)
-  return r
+  return await interact('POST', `${address}/transfer/${s}/?from=${fr}&to=${to}&token=${tok}&amount=${amt}`);
 }
 
 // resets the Simulator server entirely
 // all state is deleted
 const resetServer = async () => {
-  const r = await interact('POST', `${address}/reset`)
-  console.log(r)
-  return r
+  return await interact('POST', `${address}/reset`)
 }
 
 // get the APIs for the current program
 const getAPIs = async () => {
-  const r = await interact('GET', `${address}/apis`)
-  console.log(r)
-  return r
+  return await interact('GET', `${address}/apis`)
 }
 
 // get the Views for the current program
 // at state s (integer)
 const getViews = async (s: number) => {
-  const r = await interact('GET', `${address}/views/${s}`)
-  console.log(r)
-  return r
+  return await interact('GET', `${address}/views/${s}`)
 }
 
 // get the State Graph for the current program
 const getStateGraph = async () => {
-  const r = await interact('GET', `${address}/graph`)
-  console.log(r)
-  return r
+  return await interact('GET', `${address}/graph`)
 }
 
 const apiCall = async (a: number,s: number,v: any,t='number') => {
-  const r = await interact('POST', `${address}/api_call/${a}/${s}/?data=${v}&type=${t}`)
-  console.log(r)
-  return r
+  return await interact('POST', `${address}/api_call/${a}/${s}/?data=${v}&type=${t}`)
 }
 
 const viewCall = async (a: number,s: number,v: any,t='number') => {
-  const r = await interact('POST', `${address}/view_call/${a}/${s}/?data=${v}&type=${t}`)
-  console.log(r)
-  return r
+  return await interact('POST', `${address}/view_call/${a}/${s}/?data=${v}&type=${t}`)
 }
 
 const passTime = async (s: number,n: number) => {
-  const r = await interact('POST', `${address}/wait/${s}/${n}`)
-  console.log(r)
-  return r
+  return await interact('POST', `${address}/wait/${s}/${n}`)
 }
 
 const forceTimeout = async (s: number) => {
-  const r = await interact('POST', `${address}/timeout/${s}`)
-  console.log(r)
-  return r
+  return await interact('POST', `${address}/timeout/${s}`)
 }
 
 // ping the server for a friendly greeting ^_^
 const ping = async () => {
-  const r = await interact(`GET`, `${address}/ping`)
-  console.log(r)
-  return r;
+  return await interact(`GET`, `${address}/ping`);
 }
 
 // we expose certain methods to be available in a user provided
@@ -568,9 +519,7 @@ const interpCommand = async (comm: any) => {
   const fnstring: string = comm[0];
   const fnparams = comm.slice(1);
   const fn = clientMethods[fnstring];
-  const r = await fn.apply(null, fnparams);
-  console.log(r)
-  return r;
+  return await fn.apply(null, fnparams);
 }
 
 // run an entire JSON list of commands
