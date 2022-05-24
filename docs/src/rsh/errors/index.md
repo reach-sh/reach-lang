@@ -162,6 +162,7 @@ This statement block has a `{!rsh} return` of 1, but it should not have a `{!rsh
 
 ``` reach
 load: /hs/t/n/Err_Block_NotNull.rsh
+md5: 3176239134a51698e6f8ab7e6ec0765c
 range: 3 - 6
 ```
 
@@ -169,6 +170,7 @@ This error can be corrected by putting the `{!rsh} return` inside of a `{!rsh} c
 
 ```reach
 load: /hs/t/y/data_null.rsh
+md5: f5a4d30b4eb5ea8890b3889c5f4f06c6
 range: 5 - 14
 ```
 
