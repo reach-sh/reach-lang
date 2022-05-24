@@ -1024,7 +1024,17 @@ This error indicates that a `{!rsh} UInt` has been used as the key of an
 `{!rsh} Object`. However, only identifiers and values of type `{!rsh} Bytes`
 are valid object keys.
 
+``` reach
+load: /hs/t/n/Err_Obj_IllegalNumberField.rsh
+range: 3 - 3
+```
+
 You can fix this issue by replacing the erroneous key with a static string.
+
+``` reach
+load: /hs/t/y/objects.rsh
+range: 9 - 9
+```
 
 ## {#RE0053} RE0053
 
@@ -2226,7 +2236,7 @@ a `{!rsh} Participant` or `{!rsh} ParticipantClass`.
 For example, the program below erroneously uses `{!rsh} Anybody.publish()` without declaring any `{!rsh} Participant` or `{!rsh} ParticipantClass`:
 
 ```reach
-load: ./hs/t/n/Err_No_Participants.rsh
+load: /hs/t/n/Err_No_Participants.rsh
 range: 3 - 9
 ```
 
