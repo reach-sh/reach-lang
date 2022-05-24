@@ -11,8 +11,8 @@ const main = async () => {
   const b = fs.participants.Bob;
   const consensus = fs.consensus;
   [s, alice] = await s.who(a).init(10,
-    {'wager':{'tag':'V_UInt','contents':10},
-    'deadline':{'tag':'V_UInt','contents':99}}
+    {'wager': new lang.ReachNumber(10).format(),
+    'deadline': new lang.ReachNumber(99).format()}
   );
   [s, bob] = await s.who(b).init(10);
   s = await s.who(consensus).publish(alice);
