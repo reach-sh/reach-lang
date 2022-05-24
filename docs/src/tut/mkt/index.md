@@ -5,17 +5,21 @@ This tutorial is a walk-through on creating a safe application that ensures trus
 
 For the purpose of this tutorial, `seller` and a `buyer` will be the `{!rsh} Participant`s. And [Reach](https://reach.sh/) is the programming to be employed.
 
+:::note
+A `{!rsh} Participant` in this context refers to anyone partaking in a particular transaction.
+:::
+
 The following image is a pictorial description of how the application will work at the end of this tutorial.
 
 > **Insert Image Describing the flow of transactions**
 
-It begins from building a basic DApp and moves to a more advanced one.
-By the end, you will have learnt about the Reach standard library, Participants, Reach Types, variable declaration and definition, steps and so on.
+This tutorial begins from building a basic DApp and moves to a more advanced one.
+By the end, you will have learnt about the Reach standard library, `{!rsh} Participant`, Reach `{!rsh} type`s, variable declaration and definition, steps and so on.
 
 ## {#tut-mkt-prerequisite} Prerequisite
 To make it easy for you to follow through, it is expected that you have installed Reach. If you need help, use the [Quick Start Guide](https://docs.reach.sh/quickstart/#quickstart).
 
-This tutorial builds on the [Wisdom For Sale]() tutorial. We assume you have finished Wisdom for Sale.
+This tutorial builds on the [Wisdom For Sale]() tutorial. It is assumed that you have completed Wisdom for Sale.
 
 ## {#tut-mkt-starter} Starter Code
 In this section, the boiler plate for the project will be created.
@@ -29,11 +33,11 @@ mkdir market
 
 2.  Create 2 files: `index.rsh` and `index.mjs`
 
-* The `index.mjs` is the frontend of the DApp that will be create since it contains the code the `{!rsh} Participant`s will interact with.
-`Reach` requires this file to compile even if it is empty.
+* The `index.mjs` is the frontend of the DApp that will be create since it contains the code that the `{!rsh} Participant`s will interact with.
+`Reach` requires this file even if it is empty.
 
 * The `index.rsh` is the backend which contains the DApp's instructions and ensures security of the DApp.
-This is actually where our `Reach` code will live.
+This is actually where the `Reach` code will live.
 
 
 ### {#tut-mkt-starter-backend} Backend
@@ -44,20 +48,20 @@ Start working in `index.rsh` by typing out the following code:
 load: /examples/tuts-mkt-1-starter/index.rsh
 ```
 
-This code isn't doing anything yet but it is a very important foundation to what we want to build. 
+This code isn't doing anything yet but it is a very important foundation to what is to built in this tutorial. 
 Most `Reach` project begins with this structure.
 
 * Line 1 helps `Reach` to decide how to compile or run the DApp.
-Without it, you will get an error from the editor.
+Without it, you will get an error.
 
 * Line 3 declares a `commonInteract` object. 
-This will hold properties that are common to those participating in this transaction `seller` and `buyer`.
+This would hold properties that are common to those participating in this transaction `seller` and `buyer`.
 
 * Line 5 declares a `sellerInteract` object.
- This will hold all properties accessible by `seller`.
+ This would hold all properties accessible by `seller`.
 
 * Line 7 declares a `buyerInteract` object.
- This will hold all properties concerning the `buyer`.
+ This would hold all properties concerning the `buyer`.
 
 * Lines 9 and 19 are the start and end of the main export from the program. 
 Only the code within this block is compiled by the compiler. 
@@ -72,7 +76,7 @@ Without it, the program will never start.
 
 ### {#tut-mkt-starter-frontend} Frontend
 
-Next, work on the `index.mjs` file. Type the  following code:
+Next, work on the `index.mjs` file. Type the code below:
 
 ```reach
 load: /examples/tuts-mkt-1-starter/index.mjs
@@ -82,7 +86,7 @@ load: /examples/tuts-mkt-1-starter/index.mjs
 
 * Line 2 imports all that is in the `./build/index.main.mjs` file as the project's backend.
 This file doesn't exist yet.
-It will be automatically generated when you run `./reach compile` or `./reach run` in your terminal.
+It will be automatically generated when you run `./reach run` in your terminal.
 
 * Line 3 calls the `loadStdlib` function that was imported on line 1 and the output is stored as `stdlib`.
 
@@ -92,17 +96,17 @@ It will be automatically generated when you run `./reach compile` or `./reach ru
 
 * Lines 8 to 17 is an asynchronous block that is used to execute the whole of the frontend code.
 
-* Lines 9 to 12 executes the `Seller`'s contract on the participant (i.e. `Seller`). 
+* Lines 9 to 12 executes the `Seller`'s contract on the `Seller`. 
 The `Seller` is also given access to `commonInteract` and `sellerInteract` properties. 
 
-* Lines 13 to 16 executes the `Buyer`'s contract on the participant (i.e. `Buyer`). 
-But this time around, give the `Buyer` access to `commonInteract` and `buyerInteract` properties.
+* Lines 13 to 16 executes the `Buyer`'s contract on the `Buyer`. 
+But this time around, the `Buyer` is given access to the `commonInteract` and `buyerInteract` properties.
 
-The code that you have just written forms the basis for the DApp that we want to build
+The code that you have just written forms the basis for the DApp that is to be built.
 
 Notice that `commonInteract`, `buyerInteract` and `sellerInteract` are similar in both the backend and frontend files. 
 This is so because `Reach` is a strongly typed language.
-So these variables are declared at the backend before being used at the frontend. 
+So these variables are declared at the backend before being used in the frontend. 
 
 This might feel like a lot of work especially if you are coming from a language like JavaScript that is weakly typed.
 But we would rather use an application with strong security than one with weak security especially when it has to do with money and trust.
@@ -128,7 +132,7 @@ See full code [here]().
 
 ### {#tut-mkt-basic-declare} Declare Variables
 
-Start by fleshing out the constants that we have declared.
+Start by fleshing out the constants that have already been declared.
 Replace this:
 
 ```reach
@@ -143,24 +147,24 @@ load: /examples/tuts-mkt-2-basic/index.rsh
 range: 3 - 37
 ```
 
-These are just constants. Nothing surprising:
+These are just constants. Nothing surprising.
 
 * Line 3: `choice`. 
-This is an `{!rsh} integer` that would represent the product that the buyer decides to order.
+This is an `{!rsh} integer` that would represent the `product` that the `buyer` decides to order.
 
 :::note
 An integer is represented by `{!rsh} UInt`. 
 :::
 
 * Line 4: `quantity`. 
-This is an `{!rsh} integer` that would represent the quantity of the product that the buyer order.
+This is an `{!rsh} integer` that would represent the quantity of the `product` that the `buyer` order.
 
 * Line 5: `announcement`. 
-This is a `{!rsh} String` that would represent a short advertisement to the buyer. 
+This is a `{!rsh} String` that would represent a short advertisement made by the `seller`. 
 
 :::note
 A string is represented by `{!rsh} Bytes(28)`.
-The integer (28) in braces defines how long the string can be.
+The integer (28) in braces defines how long the string may be.
 :::
 
 * Lines 6 to 11: `product`. 
@@ -194,19 +198,19 @@ This would hold all properties accessible by the `buyer`.
 * Line 36: `shop`.
  This is a `{!rsh} function` that represents the buyer's process in looking through the `seller`'s `products` and making a decision as to which one to pick and how many is needed.
  It takes in an `Object` of the `seller`'s `announcement` and `products`. 
- And then returns an `Object` of the `buyer`'s `choice` and `quantity`.
+ And then returns an `Object` containing the `buyer`'s `choice` and `quantity`.
 
 That is all that needs to be done in the backend for now. It now time to move to the frontend.
 
 ### {#tut-mkt-basic-accounts} Create Accounts
-In the [previous section](##tut-mkt-starter-frontend), contracts were setup for the participants:
+In the [previous section](##tut-mkt-starter-frontend), contracts were setup for the `{!rsh} Participant`s:
 
 ```reach
 load: /examples/tuts-mkt-1-starter/index.mjs
 range: 5 - 6
 ```
 
-These contracts require that each of the `{!rsh} participant`s have an account setup before entering the contract.
+These contracts require that each of the `{!rsh} Participant`s have an account setup before entering the contract.
 
 Just before the contracts, type the following code:
 
@@ -215,16 +219,20 @@ load: /examples/tuts-mkt-2-basic/index.mjs
 range: 5 - 8
 ```
 
-* Line 5 sets up some funds that can be used by each `{!rsh} participant` as starting balance.
+* Line 5 sets up some funds that can be used by each `{!rsh} Participant` as starting balance.
 `{!rsh} parseCurrency` converts the figure passed in to it to an acceptable currency on a DApp.
 
-* Lines 7 and 8 creates an account for each of the `{!rsh} participant`.
+:::note
+Since DApps do not use regular currencies, `{!rsh} parseCurrency` `{!rsh} function` was provided by Reach to help convert regular currencies into currencies acceptable on a DApp
+:::
+
+* Lines 7 and 8 creates an account for each of the `{!rsh} Participant`.
 This is for test purpose. 
 
 With these accounts, the contracts will compile successfully when called upon.
 
 ### {#tut-mkt-basic-define} Define Variables
-Having told the backend how those variables declared are to be used, these variables will now be given their proper functionality.
+Having told the backend how those variables declared are to be used, these variables will now be given their proper functionalities.
 
 Just below the contracts, enter the following code for the `sellerInteract`:
 
@@ -235,21 +243,21 @@ range: 13 - 30
 
 Like have already been pointed out, this code will be made accessible to the `Seller` only.
 
-Line 13 defines `sellerInteract` as an object.
+* Line 13 defines `sellerInteract` as an `{!rsh} Object`.
 
-Lines 14 to 21 defines the `sellerInfo` as an object.
+* Lines 14 to 21 defines the `sellerInfo` as an `{!rsh} Object`.
 
-Line 15 passes a `{!rsh} string` to the `announcement` variable.
+* Line 15 passes a `{!rsh} string` to the `announcement` variable.
 
-Lines 16 - 20: the details of each `product` is passed into the `products` `{!rsh} Array` as `{!rsh} Object`s.
+* Lines 16 to 20: The details of each `product` is passed into the `products` `{!rsh} Array` as `{!rsh} Object`s.
 It is a list of items that the `Seller` puts up for sale with their properties.
 
-Lines 22 to 29 creates a  `{!rsh} function` named `reportReady`. 
+* Lines 22 to 29 creates a  `{!rsh} function` named `reportReady`. 
 The `{!rsh} function` takes in `announcement` and `products` as arguments.
 
-Line 23 logs a `{!rsh} string` to the console.
+* Line 23 logs a `{!rsh} string` to the console.
 
-Lines 24 to 28 obtains the contract information which is an `Object` and logs it to the console as a JSON string.
+* Lines 24 to 28 obtains the contract information which is an `{!rsh} Object` and logs it to the console as a JSON string.
 You can see this as the seller's unique identifier.
 
 That is all that the `Seller` will be needing for this section.
@@ -275,27 +283,28 @@ range: 32 - 47
 
 The `Buyer` would have access to this code.
 
-Line 32 defines `buyerInteract` as an `{!rsh} Object`.
+* Line 32 defines `buyerInteract` as an `{!rsh} Object`.
 
-Line 33 defines `shop` as a `{!rsh} function`. It takes the `sellerInfo` as an argument.
+* Line 33 defines `shop` as a `{!rsh} function`. It takes the `sellerInfo` as an argument.
 
-Line 34 logs the `Seller`'s `announcement` to the console.
+* Line 34 logs the `Seller`'s `announcement` to the console.
 
-Lines 35 to 39 loops through the `Seller`'s `products` and list them out for the `Buyer` to see.
+* Lines 35 to 39 loops through the `Seller`'s `products` and list them out for the `Buyer` to see.
 
-Line 41 gets a random number not more than `4`.
-This number stored as `choice` now represent the position of an item in the `products` array.
-So if the `choice` is `2`, 
-then the `product` chosen will be `{ name: "Corn", unit: "ear", units: "ears", price: "5" }`
+* Line 41 gets a random number not more than `4`.
+This number stored as `choice` represents the position of an item in the `products` array.
+So if the `choice` is `2`, then the `product` chosen will be 
+`{ name: "Corn", unit: "ear", units: "ears", price: "5" }`
 
-Line 41 picks the `quantity` of that `product` the `Buyer` wants.
+* Line 41 picks the `quantity` of that `product` the `Buyer` wants.
 This is also a random number that is not more than `100`.
 
-Line 43 displays the `name` of the product that the `Buyer` wants to order.
+* Line 43 displays the `name` of the product that the `Buyer` wants to order.
 
-Line 45 returns the `decision` (i.e. the `choice` and `quantity`) of the `Buyer`.
+* Line 45 returns the `decision` (i.e. the `choice` and `quantity`) of the `Buyer`.
 
-That completes the `buyerInteract`. The output would look like:
+That completes the `buyerInteract`. 
+The output would look like:
 
 ```reach
 List of products for sale:
@@ -312,13 +321,13 @@ load: /examples/tuts-mkt-2-basic/index.mjs
 range: 49 - 61
 ```
 
-All `{!rsh} participant`s would have access to this code.
+All `{!rsh} Participant`s would have access to this code.
 
-Line 49 defines `commonInteract` as a `{!rsh} function` that takes in `person` as an argument.
+* Line 49 defines `commonInteract` as a `{!rsh} function` that takes in `person` as an argument.
 
-Line 50 defines `showResult` as a `{!rsh} function` that takes in `decision` (returned on line 45) and `sellerInfo` as an argument. 
+* Line 50 defines `showResult` as a `{!rsh} function` that takes in `decision` (returned on line 45) and `sellerInfo` as an argument. 
 
-Lines 51 to 59 logs to the console the details of the `product` that the `Buyer` has decided to purchase.
+* Lines 51 to 59 logs to the console the details of the `product` that the `Buyer` has decided to purchase.
 The same `product` is also logged to the console as the `product` that the `Seller` has decided to sell.
 
 A more detailed breakdown of the code:
@@ -327,7 +336,8 @@ i. `${person === "Seller" ? "sell" : "buy"}` means if the `${person}` is `Seller
 
 ii. `${decision.quantity}` is the `quantity` that the `Buyer` wants out of the original quantity of the `product`.
 
-iii. `${decision.quantity > 1 ? sellerInfo.products[decision.choice].units : sellerInfo.products[decision.choice].unit}` is either the `unit` or `units` of the product the `Buyer` chose. This is dependent on the `quantity` that the `Buyer` wants.
+iii. `${decision.quantity > 1 ? sellerInfo.products[decision.choice].units : sellerInfo.products[decision.choice].unit}` is either the `unit` or `units` of the product the `Buyer` chose. 
+This is dependent on the `quantity` that the `Buyer` wants.
 
 iv. `${sellerInfo.products[decision.choice].name}` is the name of the product that the buyer chose.
 
@@ -338,14 +348,14 @@ Buyer agrees to buy 92 bunches of Carrots
 Seller agrees to sell 92 bunches of Carrots
 ```
 
-That seals the frontend for this project.
+That seals the frontend for this section.
 Just one more step! 
 Go back to the backend file.
 
 
 ### {#tut-mkt-basic-connect} Connect Frontend to Backend
 
-This stage is the last one for the basic DApp. It will make the backend to interact with the frontend and that in turn, will log outputs in the console.
+This stage is the last one for the basic DApp. It will make the backend to `{!rsh} interact` with the frontend and that in turn, will log outputs in the console.
 
 Go back to the backend file. Just below `{!rsh} init();`, type the following code:
 
@@ -356,15 +366,24 @@ range: 50 - 55
 
 This is called a `{!rsh} local step`. 
 
-A local step is an action that happens on the `{!rsh} participant`'s machine. This step is used to execute codes that are only accessible to a particular `{!rsh} participant`.
+:::note
+A local step is an action that happens on the `{!rsh} Participant`'s machine. This step is used to execute codes that are only accessible to a particular `{!rsh} Participant`.
+:::
 
 * Line 50 calls the `{!rsh} only()` method on the `Seller`.
 
 * Line 51 has the `Seller` `{!rsh} interact` with the `sellerInfo` `{!rsh} Object`. 
+
+:::note
 Calling `{!rsh} Interact` on something in Reach is the same thing as calling upon a `{!rsh} function` to execute the code within it.
+:::
 
 After the `{!rsh} Interact`ion is done, the program is then given the permission to share whatsoever the result of that `{!rsh} Interact`ion is with the public. 
-To do this, `declassify()` method is used.
+To do this, `{!rsh} declassify()` method is used.
+
+:::note
+`{!rsh} declassify()` is a Reach method used to make any secret `{!rsh} publish`able or shareable with other `{!rsh} Participant`s.
+:::
 
 * Line 53 now publicizes the `sellerInfo` that has been declassified.
 
@@ -374,7 +393,7 @@ The `reportReady` takes in two arguments (i.e. the `Seller`'s `announcement` and
 * Line 55 concludes the `Seller`'s local step by calling `commit()`.
 
 Now, doing a `./reach run` in the terminal would show some output.
-That concludes concludes the `Seller`'s interaction.
+That concludes the `Seller`'s interaction.
 
 Next, type in the following code for the `Buyer`'s interaction:
 
@@ -390,7 +409,7 @@ This is the `Buyer`'s local step
 * Line 58 has the `Buyer` `{!rsh} interact` with the `shop` `{!rsh} function`. 
 The result of that interaction is also declassified. 
 
-* Line 60 publicizes the `decision` reached on line 58.
+* Line 60 publicizes the `decision` from line 58.
 
 * Line 61 concludes the `Buyer`'s steps with a `commit();`
 
@@ -401,10 +420,10 @@ load: /examples/tuts-mkt-2-basic/index.rsh
 range: 63 - 63
 ```
 
-Line 63 executes the `showResult` `{!rsh} function` on both `{!rsh} participants`.
+* Line 63 executes the `showResult` `{!rsh} function` on both `{!rsh} Participants`.
 
 In the terminal, type `./reach run` and hit `Enter`.
-An output similar to the one below show be displayed:
+An output similar to the ones below should be displayed:
 
 ```
 Welcome to the Market
@@ -446,18 +465,18 @@ Walah!!! You made it.
 You did awesomely.
 
 ### {#tut-mkt-basic-conclusion} Conclusion
-That was a good way to start building the market place application that we just embarked upon. I hope you found it really helpful and easy to follow through. 
+That was a good way to start building the market place application that has just been embarked upon. Hopefully, you found it really helpful and easy to follow through. 
 
 It is important to note that Reach offers flexibility in the way code may be written. 
-Check [here](/examples/tuts-mkt-3-basic-alt) for an optional way that the code may be written.
+Check [here](/examples/tuts-mkt-3-basic-alt) for an optional way that the code for this section may be written.
 
 This tutorial has been able to teach the basics of the Reach language. 
-Concepts that was covered include, variable declaration and definition, 
-the Reach standard library, `{!rsh} Participant`, `{!rsh} Types`, steps and so on.
+Concepts that were covered include: variable declaration and definition, 
+the Reach standard library, `{!rsh} Participant`, `{!rsh} type`s, steps and so on.
 
 Congratulations!!! You just became a `Reach developer`.
 
-In the next section, more will be discussed about how `./reach run` works, `process.argv` will be introduced and so on.
+In the next section, more will be discussed about how `./reach run` works, `process.argv` would be introduced, `{!rsh} Participant`s would be offered autonomy and so on.
 
 ## {#tut-mkt-interaction} Interaction and Independence
 The last section demonstrated what building with Reach feels like. 
@@ -528,12 +547,12 @@ Seller agrees to sell 95 bags of Potatoes
 ```
 
 The first line of the output is the line of interest. 
-That will be leveraged in giving the `{!rsh} Participant`s autonomy as the project for this section is developed.
+That will be leveraged upon in giving the `{!rsh} Participant`s autonomy as the project for this section is developed.
 
 That is the basics of how the `./reach run` command works. 
 
 ### {#tut-mkt-Interaction-basic} Basic Interactive DApp
-In other to make it easy to follow, delete all the codes in the two files.
+In order to make it easy to follow, delete all the codes in the two files.
 
 The codes for this section can be found [here]().
 
@@ -570,20 +589,31 @@ range: 1 - 12
 
 * Line 1 imports the `{!rsh} ask` `{!rsh} Object` alongside `{!rsh} loadStdlib` from the Reach standard library.
 
+:::note
+The `{!rsh} ask` `{!rsh} Object` is used to ask questions and obtain answers from the `{!rsh} Participant`s. 
+:::
+
 * Line 3 calls on the `{!rsh} loadStdlib` `{!rsh} function` and passes the `{!rsh} process.env` as an argument.
 
-* Lines 5 to 8 is a conditional statement that checks if there is no third argument passed to the `./reach run` command or if the third argument passed is `seller` or `buyer`.
+:::note
+`{!rsh} process.env` is used to access the environment variable. You can log it to the console to see the output
+:::
+
+* Lines 5 to 8 is a conditional statement that checks if there is no third argument passed to the `./reach run` command or if the third argument passed is neither `seller` nor `buyer`.
 
 * Line 6 logs a message telling the `{!rsh} Participant` what command to run for the program to work if line 5 evaluates to `{!rsh} true`.
 
 * Line 7 terminates the program.
 
-* Line 10 stores the third argument passed to the `./reach run` command as `role`
+* Line 10 stores the third argument passed to the `./reach run` command as `role`.
 
 * Line 11 reveals the role that the `{!rsh} Participant` chose.
 
 * Line 12 reveals the consensus network that the `{!rsh} Participant` chose. 
 
+:::note
+A consensus network is like a bank that each `{!rsh} Participant` has decided to use to perform a transaction such as saving and transferring of funds.
+:::
 
 After that, type in the following:
 
@@ -606,7 +636,7 @@ For example, the standard unit of `Ethereum` is `ETH`.
 * Line 17 tells the `{!rsh} Participant` what atomic unit is being used.
 
 :::note
-An atomic unit on the other hand, is the smallest unit of measure for the standard unit. 
+An atomic unit is the smallest unit of measure for the standard unit. 
 It cannot be divided into smaller units.
 For example, the atomic unit of `Ethereum` is `WEI`. 
 :::
@@ -625,7 +655,7 @@ For example, the atomic unit of `Ethereum` is `WEI`.
 
 * Line 24 converts the atomic unit balance back to the standard unit balance and displays it to the `{!rsh} Participant`.
 
-* Line 19 is a `{!rsh} function` that returns the account balance of a particular `{!rsh} Participant`.
+* Line 25 is a `{!rsh} function` that returns the account balance of a particular `{!rsh} Participant`.
 
 * Line 27 creates a test account.
 
@@ -647,9 +677,9 @@ range: 32 - 52
 
 * Lines 33 to 47 looks familiar. This block defines the `sellerInteract` `{!rsh} Object`.
 
-* Line 34 destructures the `commonInteract`
+* Line 34 destructures the `commonInteract`.
 
-* Lines 35 - 42 defines the `sellerInfo` `{!rsh} Object`.
+* Lines 35 to 42 defines the `sellerInfo` `{!rsh} Object`.
 
 * Lines 43 to 46 defines the `reportReady` `{!rsh} function`.
 
@@ -713,11 +743,11 @@ Paste contract info:
 ```
 
 
-* Lines 69 and 70 is executed after the `buyer` has pasted the details of the contract in the terminal
+* Lines 69 and 70 is executed after the `buyer` has pasted the details of the contract in the terminal.
 
 * Line 71 attaches the `buyer` to the contract.
 
-* Line 72 displays a success message
+* Line 72 displays a success message.
 
 * Line 73 displays the account balance of the `buyer` before the transaction begins.
 
@@ -728,7 +758,7 @@ It also gives the `seller` access to the `buyerInteract` properties.
 
 * Line 77 ends the usage of the `{!rsh} ask` `{!rsh} Object`.
 
-That ends the buyer's transaction
+That ends the buyer's transaction.
 
 The `buyer`'s output now looks like:
 
@@ -772,7 +802,7 @@ Your Balance is 999.997 ALGO.
 
 #### {#tut-mkt-Interaction-connect} Connect the frontend to the backend
 To bring everything together, head back to the `index.rsh` file.
-Type the following code after the init line for the `seller`:
+Type the following code after the `{!rsh} init` line for the `seller`:
 
 ```reach
 load: /examples/tuts-mkt-4-interaction-basic/index.rsh
@@ -808,16 +838,21 @@ By the end of the transaction, the output received should look like the followin
 
 For Seller:
 
-> Screenshot
+![Seller's output for basic interactive DApp](./tut-mkt-Interaction-test-seller.png)
 
 For Buyer
 
-> Screenshot
+![Buyer's output for basic interactive DApp](./tut-mkt-Interaction-test-seller.png)
+
+
+Full Demonstration
+
+> Video here
 
 
 ### {#tut-mkt-Interaction-advance} Advance
 Now that the `seller` is able to show `products` and the `buyer` can see them,
-the next thing to do is to give the `buyer` the ability to make an order and give the `seller` the ability to sell.
+the final thing to do is to give the `buyer` the ability to make an order and give the `seller` the ability to sell.
 
 The codes for this section can be found [here]().
 
@@ -860,7 +895,7 @@ That's all that is needed for the declaration of variables.
 Proceed to the frontend file.
 
 #### {#tut-mkt-Interaction-advance-define} Define More Variables
-The variables that has just been added in the backend file will now be defined or given their functionalities here.
+The variables that has just been added to the backend file will now be defined or given their functionalities here.
 
 In the frontend file, replace the `commonInteract` `{!rsh} Object` with the following code:
 
@@ -879,7 +914,7 @@ range: 29 - 42
 It takes `payment` as argument and logs to the console a message confirming payment by the `buyer`.
 
 * Line 34 defines the `reportTransfer` `{!rsh} function`. 
-It takes `payment` as argument and logs to the console a message transfer of funds to the `seller`.
+It takes `payment` as argument and logs to the console a message showing that funds have been transfer to the `seller`.
 
 * Lines 35 to 39 defines the `reportFulfillment`. 
 It takes in `p` (i.e. `product`) and `amt` (i.e. quantity requested by the `buyer`).
@@ -888,7 +923,7 @@ It takes in `p` (i.e. `product`) and `amt` (i.e. quantity requested by the `buye
 
 * Line 36 defines the object (`directObject`) of the message to be displayed
 
-* Line 38 logs to the console the details of the product that the `seller` owes the `buyer`.
+* Line 38 logs to the console the details of the `product` that the `seller` now owes the `buyer`.
 
 * Line 40 defines the `reportExit`. It takes in no argument.
 It logs to the console an order cancellation message.
@@ -910,7 +945,7 @@ It uses the `{!rsh} ask` `{!rsh} Object` to ask the `buyer` to confirm purchase 
 
 No more changes would be done to the frontend file. 
 Like always, the frontend has to be connected to the backend file for all these to work.
-Go back to the backend file.
+Head back to the backend file.
 
 
 #### {#tut-mkt-Interaction-advance-connect} Connect the frontend to the backend
@@ -951,9 +986,7 @@ range: 64 - 73
 
 * Line 64 starts another `seller`'s only block.
 
-* Line 65 calculates the total price to be paid by the `buyer` depending on the `product` selected.
-
-This calculated by multiplying the `price` of the `product` by the quantity that the buyer wants.
+* Line 65 calculates the total price to be paid by the `buyer` depending on the `product` selected. This calculated by multiplying the `price` of the `product` by the quantity that the buyer wants.
 
 * Line 67 publishes the total price.
 
@@ -983,12 +1016,12 @@ range: 75 - 82
 
 * Line 78 calls the `reportExit` `{!rsh} function` on each of the `{!rsh} Participant`.
 
-* Line 59 terminates the transaction by calling the `{!rsh} exit` method.
+* Line 79 terminates the transaction by calling the `{!rsh} exit` method.
 
-* Line 61 `{!rsh} commit`s if Line 75 is true.
+* Line 81 `{!rsh} commit`s if Line 75 is true.
 
 
-Finally, the following code handles payment and delivery if all goes well
+Finally, the following code handles payment and delivery if all goes well:
 
 ```reach
 load: /examples/tuts-mkt-5-interaction-reports/index.rsh
@@ -1080,7 +1113,7 @@ You cancelled the order.
 Your Balance is 999.998 ALGO.
 ```
 
-> Attach a video
+![Cancelled Transaction](./Cancelled%20Transaction.gif)
 
 
 If transaction is successful, the output received should look like:
@@ -1145,7 +1178,7 @@ Buyer passes status report.
 Your Balance is 799.994 ALGO.
 ```
 
-> Attach a video
+![Successful Transaction](./Successful%20transaction.gif)
 
 
 ### {#tut-mkt-Interaction-conclusion} Conclusion
