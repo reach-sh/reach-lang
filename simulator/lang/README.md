@@ -17,11 +17,19 @@ It is available on [npm](https://www.npmjs.com/package/@reach-sh/simulator-lang)
   }
 ```
 
+# Preface: Design
+
+Reach does not support a traditional interpreter. Reach programs can only be run by first implementing a frontend and then simulating that frontend, which embeds interaction with the Reach program. This is mostly by design because Reach depends on frontends and a consensus network to operate. However, we have designed a symbolic simulator that operates without either frontend or consensus network. It works by directly executing the linear Reach intermediate language and presents a UI where users can interactively explore a trace of an execution. They specify a linearization of the history of many participants interacting with the Reach program, including the participants coming into existence and attaching.
+
+At every branching point (such as when multiple backends are awaiting interactive decisions from their frontends or when two participants are racing to publish a value), the user can make a choice and explore the resulting behavior. The goal of the simulator is to help Reach programmers better understand the numerous possibilities regarding how their programs may execute under certain variable conditions. This interactive simulator will also, in the future, be integrated with our theorem prover so value choices can be left abstract and only concretized when future choices restrict them. This will mean that we can execute and explore unverified Reach programs and present the results of verification in the same framework as users can experience when manually exploring the behavior of their program.
+
+While the Reach Simulator can be used with a graphical web-based UI, this document focuses on a textual language to specify simulation explorations (SimLang) so they can be iterated throughout development.
+
 # Introduction
 
 The Reach Simulator is a framework for running/experimenting with decentralized applications using an artificial consensus network, and an interactively created synthetic frontend specified by the user as the program executes.
 
-The Reach Programmatic Simulator (Language) is designed to be a testing/debugging/pedagogical tool for new and existing Reach programmers.
+The Reach Programmatic Simulator (SimLang) is designed to be a testing/debugging/pedagogical tool for new and existing Reach programmers.
 
 Because there is no need to deal with the specifics of various actual consensus networks and frontends when using the simulator, the mental effort of executing a Reach program is reduced.
 
@@ -29,7 +37,7 @@ This aids learning of Reach and DApp concepts/semantics in a simplified environm
 
 Additionally, the Reach Simulator is designed to allow users to interactively explore the state of the program in various ways, in order to better enable them to understand the semantics and behavior of their program on the blockchain, and how the actions of various actors and the Consensus may affect global and local program states.
 
-# Documentation
+# Features/Documentation
 This section specifies the relevant objects which are exposed by the SimLang, as well as their attributes, methods and corresponding types.
 
 ## Scenarios
@@ -397,6 +405,17 @@ const main = async () => {
     {'wager':{'tag':'V_UInt','contents':10},
     'deadline':{'tag':'V_UInt','contents':99}}
   );
+  ```
+
+We see here that the `Participant` `init` function returns a list of two values: the new `Scenario` where that `Participant` is now running the DApp, and a reference to the initialized `Participant` which will now include more information such as a `Wallet` and a local `Store`.
+
+__Note__: The `consensus` `Actor` is initialized automatically by the Simulator, because it never has any init values.
+
+__Note__:  `Actor` is the `Participant` superclass. In the Reach Simulator, only the `consensus` object is an `Actor` but not a `Participant`.
+
+__Note__:  When simulating with the the `ImperativeScenario`, the `Participant` `init` function still returns a reference to the new `Scenario`, but since we're tracking it by reference this value can be ignored.
+
+```javascript
   [s, b] = await s.who(bob).init(10);
 
   // we define a play function
@@ -412,7 +431,7 @@ const main = async () => {
     // ...
 ```
 
-You may have noticed that, unlike in the `ImperativeScenario` which modified it's own object reference at every step of the simulation, here with the `FunctionalScenario` we must modify the reference `s` ourselves. This may seem tedious at first, but this also presents us with the opportunity to, at any point, give the scenario reference a unique name, essentially transforming it into a _breakpoint_.
+You may have noticed that, unlike in the `ImperativeScenario` which modified it's own object reference at every step of the simulation, here with the `FunctionalScenario` we must modify the reference `s` ourselves. This may seem tedious at first, but this also presents us with the opportunity to, at any point, give the scenario reference a unique name, essentially transforming it into a simulator _breakpoint_.
 
 ```javascript
 	// ...
@@ -470,7 +489,7 @@ main();
 
 ## rps-7-loops
 
-In order to demonstrate the power of the simulator, we will go about testing the `rps-7-loops` tutorial in a somewhat contrived manner: we simulate the beginning of the program normally, but upon reaching the while loop which tests the `DRAW` condition, rather than running through the full loop, we repeatedly re-run the first iteration of the loop with random inputs, until someone wins.
+In order to demonstrate the power of the simulator, we will go about testing the `rps-7-loops` tutorial in a somewhat contrived manner: we simulate the beginning of the program normally, but upon reaching the while loop which tests the `DRAW` condition, rather than running through the full loop naturally, we repeatedly re-run the original iteration of the loop, restarting the loop each time with random inputs, until someone actually wins.
 
 ```javascript
 import * as lang from '@reach-sh/simulator-lang';
@@ -494,7 +513,7 @@ const main = async () => {
   s = await s.who(bob).receive();
   s = await s.who(consensus).publish(bob);
 
-  // here we define the play function to represent one
+  // here we define the play function to represent an
   // iteration of the while loop
   const play = async (s,alice,bob,consensus) => {
     let aHand = Math.floor(Math.random() * 3);
@@ -513,7 +532,7 @@ const main = async () => {
     s = await s.who(consensus).publish(alice);
 
     let outcome = (await s.who(consensus).getVar('outcome')).contents();
-    // when using the FunctionalScenario, functions need to return
+    // when using the FunctionalScenario, helper functions need to return
     // the final scenario reference
     //     ↓↓
     return [s,outcome];
@@ -540,3 +559,7 @@ const main = async () => {
 main();
 
 ```
+
+# Conclusion
+
+The Reach Programmatic Simulator (SimLang) is a powerful and flexible tool that allows developers to debug and create exhaustive tests for their Reach programs. These tests are connector-agnostic and do not require any specific test network to execute.

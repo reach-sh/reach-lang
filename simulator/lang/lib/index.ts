@@ -22,15 +22,17 @@ const filter = (obj: any, predicate: any) =>
 
 
 class ReachValue {
-  contents: any;
+  o: any;
+  v: any;
   taggedJSON () {};
 
-  constructor(v: any) {
-    this.contents = v
+  constructor(v: any,o:any) {
+    this.v = v;
+    this.o = o;
   }
 
   untaggedJSON() {
-    return JSON.stringify(this);
+    return JSON.stringify(this.o);
   };
 
 }
@@ -39,7 +41,7 @@ class ReachNull extends ReachValue {
   contents: any;
 
   constructor(v: null) {
-    super(stdlib.protect(stdlib.T_Null, v));
+    super(stdlib.protect(stdlib.T_Null, v),v);
   }
 
   taggedJSON() {
@@ -55,7 +57,7 @@ class ReachBool extends ReachValue {
   contents: any;
 
   constructor(v: boolean) {
-    super(stdlib.protect(stdlib.T_Bool, v));
+    super(stdlib.protect(stdlib.T_Bool, v),v);
   }
 
   taggedJSON() {
@@ -71,7 +73,11 @@ class ReachNumber extends ReachValue {
   contents: any;
 
   constructor(v: number) {
-    super(stdlib.protect(stdlib.T_UInt, v));
+    console.log("HNUIFENWVNI")
+    const x: any = stdlib.protect(stdlib.T_UInt, v)
+    const y = x.toNumber();
+    console.log(x);
+    super(y,v);
   }
 
   taggedJSON() {
@@ -81,13 +87,17 @@ class ReachNumber extends ReachValue {
     };
   }
 
+  format(){
+    return this.taggedJSON();
+  }
+
 }
 
 class ReachToken extends ReachValue {
   contents: any;
 
   constructor(v: number) {
-    super(stdlib.protect(stdlib.T_UInt, v));
+    super(stdlib.protect(stdlib.T_UInt, v),v);
   }
 
   taggedJSON() {
@@ -103,7 +113,7 @@ class ReachBytes extends ReachValue {
   contents: any;
 
   constructor(v: string) {
-    super(v);
+    super(v,v);
   }
 
   taggedJSON() {
@@ -119,7 +129,7 @@ class ReachDigest extends ReachValue {
   contents: any;
 
   constructor(v: ReachValue,n:number) {
-    super(stdlib.protect(stdlib.T_Bytes(n), v));
+    super(stdlib.protect(stdlib.T_Bytes(n), v),v);
   }
 
   taggedJSON() {
@@ -135,7 +145,7 @@ class ReachAddress extends ReachValue {
   contents: any;
 
   constructor(v: number) {
-    super(stdlib.protect(stdlib.T_UInt, v));
+    super(stdlib.protect(stdlib.T_UInt, v),v);
   }
 
   taggedJSON() {
@@ -151,7 +161,7 @@ class ReachContract extends ReachValue {
   contents: any;
 
   constructor(v: number) {
-    super(stdlib.protect(stdlib.T_UInt, v));
+    super(stdlib.protect(stdlib.T_UInt, v),v);
   }
 
   taggedJSON() {
@@ -167,7 +177,7 @@ class ReachArray extends ReachValue {
   contents: any;
 
   constructor(v: ReachValue[],t:any) {
-    super(stdlib.protect(t, v));
+    super(stdlib.protect(t, v),v);
   }
 }
 
@@ -175,7 +185,7 @@ class ReachTuple extends ReachValue {
   contents: any;
 
   constructor(v: ReachValue[],t:any) {
-    super(stdlib.protect(t, v));
+    super(stdlib.protect(t, v),v);
   }
 }
 
@@ -183,7 +193,7 @@ class ReachObject extends ReachValue {
   contents: any;
 
   constructor(v: any,t:any) {
-    super(stdlib.protect(t, v));
+    super(stdlib.protect(t, v),v);
   }
 }
 
@@ -191,7 +201,7 @@ class ReachData extends ReachValue {
   contents: any;
 
   constructor(v: any,t:any) {
-    super(stdlib.protect(t, v));
+    super(stdlib.protect(t, v),v);
   }
 }
 
@@ -199,7 +209,7 @@ class ReachStruct extends ReachValue {
   contents: any;
 
   constructor(v: any,t:any) {
-    super(stdlib.protect(t, v));
+    super(stdlib.protect(t, v),v);
   }
 }
 
@@ -659,5 +669,17 @@ export {
   Account,
   Token,
   View,
-  API
+  API,
+  ReachBool,
+  ReachNull,
+  ReachNumber,
+  ReachContract,
+  ReachObject,
+  ReachStruct,
+  ReachData,
+  ReachArray,
+  ReachTuple,
+  ReachToken,
+  ReachBytes,
+  ReachDigest
 };
