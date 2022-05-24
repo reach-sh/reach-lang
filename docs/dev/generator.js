@@ -616,7 +616,7 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     }
   });
 
-  await gatherSearchData({doc, title, here});
+  gatherSearchData({doc, title, here});
   theader.remove();
 
   // Process code snippets.
@@ -940,7 +940,7 @@ const generateRedirects = async () => {
 
 const searchData = [];
 const [ sd_r, sd_t, sd_h, sd_p ] = [ 0, 1, 2, 3 ];
-const gatherSearchData = async ({doc, title, here}) => {
+const gatherSearchData = ({doc, title, here}) => {
   const h = hh(here);
   const mini = (x) => x.replace(/\s+/g, ' ').trim();
   doc.querySelectorAll('.ref').forEach((el) => {
