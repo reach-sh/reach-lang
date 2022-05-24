@@ -1328,8 +1328,22 @@ You can fix this error by deleting one of the branches, ensuring there is only o
 This error indicates that a `{!rsh} switch` statement or `{!rsh} match` expression does not have a case
 for every variant of a `{!rsh} Data` instance.
 
+Example:
+
+```reach
+load: /hs/t/n/Err_Switch_MissingCases.rsh
+range: 9 - 14
+```
+
 You can fix this issue by adding the missing cases listed
 in the error message.
+
+Example:
+
+```reach
+load: /hs/t/y/switch_cases.rsh
+range: 9 - 15
+```
 
 ## {#RE0075} RE0075
 
