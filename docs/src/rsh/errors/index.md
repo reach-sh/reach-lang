@@ -1328,7 +1328,7 @@ Example:
 
 ```reach
 load: /hs/t/n/Err_Switch_MissingCases.rsh
-range: 11 - 13
+range: 9 - 14
 ```
 
 You can fix this issue by adding the missing cases listed
@@ -1337,8 +1337,8 @@ in the error message.
 Example:
 
 ```reach
-load: /hs/t/y/data.rsh
-range: 35 - 38
+load: /hs/t/y/switch_cases.rsh
+range: 9 - 15
 ```
 
 ## {#RE0075} RE0075
