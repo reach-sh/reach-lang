@@ -38,8 +38,19 @@ fi
 IMG='reachsh/reach-cli:latest'
 TMP=$(mkdir -p /tmp/reach/cli; mktemp -d "/tmp/reach/cli/$(date -u '+%Y-%m-%dT%H-%M-%SZ')-XXXX")
 CNF="${XDG_CONFIG_HOME:-$HOME/.config}/reach"; CNF="$(mkdir -p "$CNF" && cd "$CNF" && pwd)"
+MD5=md5sum; if [ ! "$(command -v $MD5)" ]; then MD5=md5; fi
+RCI=$(head -n1 /dev/urandom | $MD5 | head -c 30 | tr '[:lower:]' '[:upper:]')
 START_TIME=$(date -u +"%Y-%m-%d")
 export TMP
+
+if [ ! -e "$CNF/env" ]; then
+  echo "# Automatically generated with \`reach\` script at $(date -u '+%Y-%m-%dT%H:%M:%S.%NZ')" > "$CNF/env"
+  echo "export REACHC_ID=$RCI" >> "$CNF/env"
+elif ! grep REACHC_ID "$CNF/env" > /dev/null 2>&1; then
+  mkdir -p "$CNF/_backup"
+  cp "$CNF/env" "$CNF/_backup/env-$(date -u '+%Y-%m-%dT%H:%M:%S.%NZ')"
+  printf '\nexport REACHC_ID=%s\n' "$RCI" >> "$CNF/env"
+fi
 
 if [ -z "$REACH_ENV_PRS" ] && [ -f "$CNF/env" ]; then
   e="$(env |grep '^REACH')"
@@ -114,22 +125,6 @@ run_d () {
 run_s () {
   chmod 700 "$TMP/out.sh"
   sh -ac "$TMP/out.sh" "$0"
-}
-
-gen_reachc_id () {
-  REACH_ENV_FILE="$CNF/env"
-  MD5_CMD=md5sum
-  if [ ! "$(command -v $MD5_CMD)" ]; then
-    MD5_CMD=md5
-  fi
-  PRE_REACHC_ID=$(head -n1 /dev/urandom | $MD5_CMD | head -c 30 | tr '[:lower:]' '[:upper:]')
-  if [ ! -e "$REACH_ENV_FILE" ]; then
-    echo "export REACHC_ID=$PRE_REACHC_ID" > "$REACH_ENV_FILE"
-  elif ! grep REACHC_ID "$REACH_ENV_FILE" > /dev/null 2>&1; then
-    printf '\nexport REACHC_ID=%s\n' "$PRE_REACHC_ID" >> "$REACH_ENV_FILE"
-  fi
-  # shellcheck disable=SC1090
-  . "$REACH_ENV_FILE"
 }
 
 call_home () {
@@ -219,8 +214,6 @@ install_docker () {
   # shellcheck disable=SC2164
   cd "${OPWD}"
 }
-
-gen_reachc_id
 
 for DEP in curl make docker docker-compose; do
   if ! (command -v "${DEP}" >/dev/null 2>&1); then
