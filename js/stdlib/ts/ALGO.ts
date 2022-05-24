@@ -1451,37 +1451,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             return accAppInfo?.['app-local-state']?.['key-value'];
           } else {
             const indexer = await getIndexer();
-
-            // This would fail if the address has local states for over MaxAPIResourcesPerAccount applications.
-            // The default indexer MaxAPIResourcesPerAccount is 1000.
-            /*
-            const query = indexer
-              .lookupAccountByID(addr)
-              .exclude("assets,created-assets,created-apps") as unknown as ApiCall<IndexerAccountInfoRes>;
-            const accountInfo = await doQuery_(dhead, query);
-            const appId = bigNumberToBigInt(ApplicationID);
-            const appLocalStates = accountInfo['account']['apps-local-state'] ?? [];
-            const appLocalState = appLocalStates.find(app => app.id == appId);
-            return appLocalState?.['key-value'];
-            */
-
-            // This should work according to the api docs, but apps-local-state always comes back 'null'
             const query = indexer
               .lookupAccountAppLocalStates(addr)
               .applicationID(bigNumberToNumber(ApplicationID)) as unknown as ApiCall<IndexerAccountAppLocalStatesRes>;
-            const appLocalStatesM = await doQueryM_(dhead, query);
-            debug(dhead, appLocalStatesM);
-            if ('val' in appLocalStatesM) {
-              const alsRes = appLocalStatesM['val'];
-              // As of indexer version 2.11.1 (at least, possibly higher versions too), 
-              // apps-local-states can come back 'null', equivalent to an empty array
-              const appsLocalStates = alsRes['apps-local-states'] ?? [];
-              const appLocalState = appsLocalStates.find(app => ApplicationID.eq(app['id']));
-              return appLocalState?.['key-value'];
-            } else {
-              // Not certain if this behavior is correct. Can this endpoint ever fail sensibly?
-              return undefined;
-            }
+            const appLocalStatesRes = await doQuery_(dhead, query);
+            // As of indexer version 2.11.1 (at least, possibly higher versions too), 
+            // apps-local-states can come back 'null', equivalent to an empty array
+            const appsLocalStates = appLocalStatesRes['apps-local-states'] ?? [];
+            const appLocalState = appsLocalStates.find(app => ApplicationID.eq(app['id']));
+            return appLocalState?.['key-value'];
           }
         };
 
