@@ -1364,7 +1364,7 @@ You can fix this issue by re-writing your recursive function into an iterative s
 statements, e.g. `{!rsh} while` loop.
 
 ```reach
-load: /hs/t/y/while_preample.rsh
+load: /hs/t/y/while_preamble.rsh
 range: 13 - 17
 ```
 
