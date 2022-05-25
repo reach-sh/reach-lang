@@ -73,21 +73,19 @@ class ReachNumber extends ReachValue {
   contents: any;
 
   constructor(v: number) {
-    console.log("HNUIFENWVNI")
     const x: any = stdlib.protect(stdlib.T_UInt, v)
-    const y = x.toNumber();
-    console.log(x);
-    super(y,v);
+    super(x,v);
   }
 
   taggedJSON() {
     return {
       "tag":"V_UInt",
-      "contents": this.untaggedJSON()
+      "contents": parseInt(this.untaggedJSON())
     };
   }
 
   format(){
+    this.o = this.v.toNumber();
     return this.taggedJSON();
   }
 
@@ -389,8 +387,7 @@ class Variable {
     this.v = v
   }
 
-  assertVar = (t: string,v: any) => {
-    assert.equal(this.v[1].tag,t);
+  assertVar = (v: any) => {
     assert.equal(this.v[1].contents,v);
   }
 
