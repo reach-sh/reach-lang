@@ -13,8 +13,8 @@ const main = async () => {
   const bob = fs.participants.Bob;
   const consensus = fs.consensus;
   [s, a] = await s.who(alice).init(10,
-    {'wager':{'tag':'V_UInt','contents':10},
-    'deadline':{'tag':'V_UInt','contents':99}}
+    {'wager': new lang.ReachNumber(10).format(),
+    'deadline': new lang.ReachNumber(99).format()}
   );
   [s, b] = await s.who(bob).init(10);
 
