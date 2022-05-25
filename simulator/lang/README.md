@@ -566,4 +566,4 @@ The Reach Programmatic Simulator (SimLang) is a powerful and flexible tool that 
 
 These tests are connector-agnostic and do not require any specific test network to execute.
 
-These tests always preserve the entire history of blockchain information for inspection at any point via several tools: including the `Global` ledger, and the `Local` `Participant` information.
+The simulator snapshots/preserves the entire history of blockchain information for inspection: including the `Global` ledger, and the `Local` `Participant` information.
