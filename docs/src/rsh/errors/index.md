@@ -1255,7 +1255,19 @@ const x = 1;
 This error indicates that you are attempting to read the value of `{!rsh} _`. Any binding to `{!rsh} _` is
 ignored and therefore cannot be read from.
 
+Example:
+
+```reach
+load: /hs/t/n/Err_Eval_LookupUnderscore.rsh
+range: 3 - 6
+```
+
 You can fix this by using another identifier and referencing it as usual.
+
+```reach
+load: /hs/t/y/underscore_unread.rsh
+range: 5-6
+```
 
 ## {#RE0070} RE0070
 
@@ -2271,7 +2283,7 @@ a `{!rsh} Participant` or `{!rsh} ParticipantClass`.
 For example, the program below erroneously uses `{!rsh} Anybody.publish()` without declaring any `{!rsh} Participant` or `{!rsh} ParticipantClass`:
 
 ```reach
-load: /hs/t/n/Err_No_Participants.rsh
+load: ./hs/t/n/Err_No_Participants.rsh
 range: 3 - 9
 ```
 
