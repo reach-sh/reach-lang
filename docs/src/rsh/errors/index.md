@@ -1353,8 +1353,20 @@ assert(2 == 2, "5th assertion")
 This error indicates that the depth of recursion for a function call exceeded the limit allowed.
 This issue may indicate that the recursive function does not have a base case.
 
+Example:
+
+```reach
+load: /hs/t/n/Err_RecursionDepthLimit.rsh
+range: 3 - 5
+```
+
 You can fix this issue by re-writing your recursive function into an iterative set of
 statements, e.g. `{!rsh} while` loop.
+
+```reach
+load: /hs/t/y/while_preample.rsh
+range: 13 - 17
+```
 
 ## {#RE0078} RE0078
 
