@@ -1328,7 +1328,20 @@ in the error message.
 This error indicates that a `{!rsh} switch` statement or `{!rsh} match` expression contains cases
 for unknown variants. These erroneous variants are not listed in the `{!rsh} Data` definition.
 
+Example:
+
+```reach
+load: /hs/t/n/Err_Switch_ExtraCases.rsh
+range: 11 - 15
+```
+
+`Mone` is not added to the `{!rsh} Data` field and so is an unknown variant.
 You can fix this issue by adding the unknown variant to the `{!rsh} Data` definition or removing the case.
+
+```reach
+load: /hs/t/y/data.rsh
+range: 19 - 21
+```
 
 ## {#RE0076} RE0076
 
