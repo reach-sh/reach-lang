@@ -1,4 +1,4 @@
-# SimLang V0.0.46
+# SimLang V0.0.49
 
 The Reach Programmatic Simulator is implemented as a TypeScript library.
 
@@ -7,7 +7,7 @@ It is available on [npm](https://www.npmjs.com/package/@reach-sh/simulator-lang)
 ```javascript
 "name": "@reach-sh/simulator-lang",
   "description": "language/library for the Reach Simulator",
-  "version": "0.0.46",
+  "version": "0.0.49",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": {
@@ -347,7 +347,7 @@ After designing and building a multiplayer game such as _Rock, Paper, Scissors_,
 for (let aHand = 0; aHand < 3; aHand++) {
   for (let bHand = 0; bHand < 3; bHand++) {
     const r = await play(s.copy(),aHand,bHand,a,b,consensus);
-    r.assertVar('V_UInt',winner(aHand,bHand));
+    r.assertVar(winner(aHand,bHand));
   }
 }
 ```
@@ -402,8 +402,8 @@ const main = async () => {
   // init alice with a balance of 10
   // also the init values: wager, deadline
   [s, a] = await s.who(alice).init(10,
-    {'wager':{'tag':'V_UInt','contents':10},
-    'deadline':{'tag':'V_UInt','contents':99}}
+    {'wager': new lang.ReachNumber(10).format(),
+    'deadline': new lang.ReachNumber(99).format()}
   );
   ```
 
@@ -505,8 +505,8 @@ const main = async () => {
   const b = fs.participants.Bob;
   const consensus = fs.consensus;
   [s, alice] = await s.who(a).init(10,
-    {'wager':{'tag':'V_UInt','contents':10},
-    'deadline':{'tag':'V_UInt','contents':99}}
+    {'wager': new lang.ReachNumber(10).format(),
+    'deadline': new lang.ReachNumber(99).format()}
   );
   [s, bob] = await s.who(b).init(10);
   s = await s.who(consensus).publish(alice);
@@ -562,4 +562,4 @@ main();
 
 # Conclusion
 
-The Reach Programmatic Simulator (SimLang) is a powerful and flexible tool that allows developers to debug and create exhaustive tests for their Reach programs. These tests are connector-agnostic and do not require any specific test network to execute.
+The Reach Programmatic Simulator (SimLang) is a powerful and flexible tool that allows developers to debug and create exhaustive tests for their Reach programs. These tests are connector-agnostic and do not require any specific test network to execute. These tests always preserve the entire history of blockchain information for inspection at any point via several tools: including the `Global` ledger, and the `Local` `Participant` information.
