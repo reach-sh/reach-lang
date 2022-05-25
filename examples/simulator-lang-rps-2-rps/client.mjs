@@ -32,6 +32,6 @@ const [s, b] = await bob.init();
 for (let aHand = 0; aHand < 3; aHand++) {
   for (let bHand = 0; bHand < 3; bHand++) {
     const r = await play(s.copy(),aHand,bHand,a,b,consensus);
-    r.assertVar('V_UInt',winner(aHand,bHand));
+    r.assertVar(winner(aHand,bHand));
   }
 }

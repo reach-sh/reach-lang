@@ -1,4 +1,4 @@
-import * as lang from '../../simulator/lang/dist/index.js' //'@reach-sh/simulator-lang';
+import * as lang from '@reach-sh/simulator-lang';
 import * as assert from 'assert';
 
 const main = async () => {
