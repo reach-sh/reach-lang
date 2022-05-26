@@ -379,7 +379,7 @@ const play = async (sc,aHand,bHand,alice,bob,consensus) => {
 ```
 
 ## rps-6-timeouts
-In this section of the tutorial, naturally we are inclined to demonstrate exploring timeouts with SimLang. For convenience, rather than having to think about the clock when attempting to test timeout situations, the SimLang library provides a `forceTimout` method with the `Scenario` object.
+In this section of the tutorial, naturally we are inclined to demonstrate exploring timeouts with SimLang. For convenience, rather than having to think about the clock when attempting to test timeout situations, the SimLang library provides a `forceTimeout` method with the `Scenario` object.
 
 ```javascript
 // imports
