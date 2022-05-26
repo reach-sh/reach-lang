@@ -324,27 +324,8 @@ jsArg_m = \case
   Nothing -> return $ "undefined /* Nothing */"
   Just a -> jsArg a
 
-shouldHashMapKey :: DLType -> Bool
-shouldHashMapKey = \case
-  T_Null -> False
-  T_Bool -> False
-  T_UInt {} -> False
-  T_Digest -> False
-  T_Address -> False
-  T_Contract -> False
-  T_Token -> False
-  T_Bytes {} -> True
-  T_Array {} -> True
-  T_Data {} -> True
-  T_Tuple {} -> True
-  T_Object {} -> True
-  T_Struct {} -> True
-
 jsMapKey :: DLArg -> App Doc
-jsMapKey k =
-  case shouldHashMapKey $ argTypeOf k of
-    False -> jsArg k
-    True  -> jsDigest [k]
+jsMapKey k = jsDigest [k]
 
 jsExpr :: AppT DLExpr
 jsExpr = \case
