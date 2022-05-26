@@ -31,6 +31,16 @@ export const main = Reach.App(() => {
 
   commit();
 
-  A.interact.chk(array(Maybe(UInt), [m1[x], m2[b], m3[m]]));
+  A.only(() => {
+    const xp = declassify(interact.x);
+    const bp = declassify(interact.b);
+    const mp = declassify(interact.m);
+  });
+  A.publish(xp, bp, mp);
+
+  commit();
+
+  A.interact.chk(array(Maybe(UInt), [m1[xp], m2[bp], m3[mp]]));
+
 
 });
