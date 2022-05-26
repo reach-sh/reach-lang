@@ -1259,7 +1259,7 @@ You can fix this by using another identifier and referencing it as usual.
 
 ## {#RE0070} RE0070
 
-This error indicates that you are attempting to spread a value as if it were
+This error indicates that you are attempting to spread a value as if it were a
 `{!rsh} Tuple`, `{!rsh} Array`, or `{!rsh} Struct`, but it is not. This issue
 is likely caused by a typo in your code.
 
