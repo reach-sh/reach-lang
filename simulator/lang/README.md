@@ -19,9 +19,13 @@ It is available on [npm](https://www.npmjs.com/package/@reach-sh/simulator-lang)
 
 # Preface: Design
 
-Reach does not support a traditional interpreter. Reach programs can only be run by first implementing a frontend and then simulating that frontend, which embeds interaction with the Reach program. This is mostly by design because Reach depends on frontends and a consensus network to operate. However, we have designed a symbolic simulator that operates without either frontend or consensus network. It works by directly executing the linear Reach intermediate language and presents a UI where users can interactively explore a trace of an execution. They specify a linearization of the history of many participants interacting with the Reach program, including the participants coming into existence and attaching.
+Reach does not support a traditional interpreter. Reach programs can only be run by first implementing a frontend and then simulating that frontend, which embeds interaction with the Reach program. This is by design because Reach depends on frontends and a consensus network to operate.
 
-At every branching point (such as when multiple backends are awaiting interactive decisions from their frontends or when two participants are racing to publish a value), the user can make a choice and explore the resulting behavior. The goal of the simulator is to help Reach programmers better understand the numerous possibilities regarding how their programs may execute under certain variable conditions. This interactive simulator will also, in the future, be integrated with our theorem prover so value choices can be left abstract and only concretized when future choices restrict them. This will mean that we can execute and explore unverified Reach programs and present the results of verification in the same framework as users can experience when manually exploring the behavior of their program.
+However, we have designed a symbolic simulator that operates without either frontend or consensus network. It works by directly executing the linear Reach intermediate language and presents a UI where users can interactively explore a trace of an execution. They specify a linearization of the history of many participants interacting with the Reach program, including the participants coming into existence and attaching.
+
+At every branching point (such as when multiple backends are awaiting interactive decisions from their frontends or when two participants are racing to publish a value), the user can make a choice and explore the resulting behavior. The goal of the simulator is to help Reach programmers better understand the numerous possibilities regarding how their programs may execute under certain variable conditions.
+
+This interactive simulator will also, in the future, be integrated with our theorem prover so value choices can be left abstract and only concretized when future choices restrict them. This will mean that we can execute and explore unverified Reach programs and present the results of verification in the same framework as users can experience when manually exploring the behavior of their program.
 
 While the Reach Simulator can be used with a graphical web-based UI, this document focuses on a textual language to specify simulation explorations (SimLang) so they can be iterated throughout development.
 
@@ -58,7 +62,7 @@ class Scenario {
   // set up
   async init(): Scenario
 
-  // ping the server for a friendly greeting ^_^
+  // ping the server for a friendly greeting
   async pingServer(): string
 
   // reset the server
@@ -379,7 +383,7 @@ const play = async (sc,aHand,bHand,alice,bob,consensus) => {
 ```
 
 ## rps-6-timeouts
-In this section of the tutorial, naturally we are inclined to demonstrate exploring timeouts with SimLang. For convenience, rather than having to think about the clock when attempting to test timeout situations, the SimLang library provides a `forceTimeout` method with the `Scenario` object.
+In this section of the tutorial, naturally we are inclined to demonstrate exploring timeouts with SimLang. For convenience, rather than having to think about the clock when attempting to test timeout situations, the SimLang library provides a `forceTimout` method with the `Scenario` object.
 
 ```javascript
 // imports
@@ -431,7 +435,7 @@ __Note__:  When simulating with the the `ImperativeScenario`, the `Participant` 
     // ...
 ```
 
-You may have noticed that, unlike in the `ImperativeScenario` which modified it's own object reference at every step of the simulation, here with the `FunctionalScenario` we must modify the reference `s` ourselves. This may seem tedious at first, but this also presents us with the opportunity to, at any point, give the scenario reference a unique name, essentially transforming it into a simulator _breakpoint_.
+The reader may have noticed that, unlike in the `ImperativeScenario` which modified its own object reference at every step of the simulation, with the `FunctionalScenario` we must modify the reference `s` ourselves. This presents us with the opportunity to, at any point, give the scenario reference a unique name, essentially transforming it into a simulator _breakpoint_.
 
 ```javascript
 	// ...
@@ -489,7 +493,7 @@ main();
 
 ## rps-7-loops
 
-In order to demonstrate the power of the simulator, we will go about testing the `rps-7-loops` tutorial in a somewhat contrived manner: we simulate the beginning of the program normally, but upon reaching the while loop which tests the `DRAW` condition, rather than running through the full loop naturally, we repeatedly re-run the original iteration of the loop, restarting the loop each time with random inputs, until someone actually wins.
+In order to demonstrate the power of the simulator, we will go about testing the `rps-7-loops` tutorial as follows: we simulate the beginning of the program normally, but upon reaching the while loop which tests the `DRAW` condition, rather than running through the full loop naturally, we repeatedly re-run the original iteration of the loop, restarting the loop each time with random inputs, until someone actually wins.
 
 ```javascript
 import * as lang from '@reach-sh/simulator-lang';
