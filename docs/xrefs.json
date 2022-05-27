@@ -707,10 +707,20 @@
     "title": "RX0000",
     "path": "/rsh/errors/#RX0000"
   },
+<<<<<<< HEAD
   "build": {
     "title": "Reach is for Builders",
     "path": "/build/#build"
   },
+=======
+<<<<<<< HEAD
+=======
+  "build": {
+    "title": "Reach is for Builders",
+    "path": "/why/#build"
+  },
+>>>>>>> b0381ff44 (docs: tiled home)
+>>>>>>> 3b438e6c2 (docs: tiled home)
   "cfx-faq": {
     "title": "FAQ",
     "path": "/networks/#cfx-faq"
