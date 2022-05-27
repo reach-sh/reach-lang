@@ -25,8 +25,8 @@ extra-deps:
   - git: https://github.com/reach-sh/shell-monad.git
     commit: d8465680410807a782920ba8dca040d38da735f8
   - git: https://github.com/reach-sh/stan.git
-    commit: ca66b8dcfe22d1c1afbe81c83274dbc27115bf68
-    # ^ from branch "reach-fork-2"
+    commit: 09c29e16723728fe2a3f1341e2569508c86f4597
+    # ^ from branch "reach-fork"
   - git: https://github.com/reach-sh/language-javascript.git
     commit: f1b4cd7d4a6502c385c64a5d0c80ce325202a48d
     # ^ from branch "reach-1"
