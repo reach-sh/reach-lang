@@ -421,7 +421,7 @@ range: 10-16
 ```
 
 Here, `faucet` is set to the previously coded `ganacheProvider` that has a `{!js} getSigner` method.
-This allows `{!js} connectAccount` to be able connect `faucet` to `{!js} setFaucet` to provide the testing funds.
+This allows `{!js} connectAccount` to be able to connect `faucet` to `{!js} setFaucet` to provide the testing funds.
 
 # Using Account Handles
 
