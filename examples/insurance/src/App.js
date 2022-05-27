@@ -11,8 +11,6 @@ import SignupForm from './components/signup-form';
 import Deployer from './components/deployer';
 import ErrorPage from './components/error';
 
-//const reach = loadStdlib(process.env);
-//const reach = loadStdlib("ALGO");
 const reach = loadStdlib({
   REACH_CONNECTOR_MODE: "ALGO-browser",
   PUBLIC_URL: "https%3A%2F%2Fr.bridge.walletconnect.org"
@@ -30,24 +28,12 @@ reach.setWalletFallback(reach.walletFallback({
   WalletConnect
 }));
 
-//reach.unsafeAllowMultipleStdlibs();
 const SUPABASE_URL = "https://byolfysahovehogqdena.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5b2xmeXNhaG92ZWhvZ3FkZW5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDg3NTcwMTYsImV4cCI6MTk2NDMzMzAxNn0.Q5h8nwP-qy1o5oDa0UCAgj1m7vTXOlhPyoZRC-0CNnk";
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-//REF: https://docs.reach.sh/frontend/#js_setProviderByName
-//reach.setProviderByName('TestNet');
-//reach.setWalletFallback(reach.walletFallback({}));
-//...
-//WalletConnect: enables the Dapp to connect to any wallet
-//REF: https://docs.reach.sh/tut/rps/#p_421
-//reach.setWalletFallback(reach.walletFallback({ providerEnv: 'TestNet', WalletConnect }));
-
-//console.log("connectorFunctions.getConnectorMode()=", reach.getConnectorMode());
-
 function App() {
   const { confirm } = useConfirm();
-
   const [communityGroupName, setCommunityGroupName] = useState("Test group insurance");
   const [mandatoryEntryFee, setMandatoryEntryFee] = useState(0);
   const insurerContract = useRef(null);
@@ -86,7 +72,7 @@ function App() {
     },
     saveNewClaim: async ({ amountRequested, description }) => {
       const deadline = new Date();
-      deadline.setDate(deadline.getDate() + 10); //new claim will expire if it fails to raise 5 approvals in 10 days.
+      deadline.setDate(deadline.getDate() + 10);
 
       const amountSet = amountRequested;
       const sumOfSetAmounts = 0;
@@ -104,7 +90,6 @@ function App() {
           const claimId = newClaimData[0].id;
           const { data: members } = await supabaseClient.from("members").select("memberAddr");
           members.forEach(async ({ memberAddr: notified }) => {
-            // link the new claim with all members in the joining "claimnotifications" table.
             const { error } = await supabaseClient.from("claimnotifications").insert([{ claimId: claimId, member: notified, claimant: addr }]);
             if (error) { console.log(error); }
           });
@@ -152,15 +137,15 @@ function App() {
       console.log("signing out of contract, leaving it running");
     },
     notifyFundedMember: async (address) => {
-      //TODO: update the member's claim status to "funded"
-      console.log("Your claim has been funded. Member address = ", address);
+      const { data, error } = await supabase.from('claims').update({ status: "funded" }).match({ claimant: address });
+      console.log(`Member address ${address} funded.`);
     },
     log: (msg) => {
         console.log(msg);
     }
   });
 
-  //===============================================================
+  //============
   useEffect(() => {
     setConnecting(true);
     async function readFromDb() {
@@ -183,7 +168,7 @@ function App() {
     readFromDb();
   }, []);
 
-  //===============================================================
+  //==========
   function LoginWithMnemonic(e) {
     ConnectWallet(e, true);
   }
@@ -205,7 +190,7 @@ function App() {
         getPromise.then((acc) => {
           setLoginErr("");
           algoAccount.current = acc;
-          console.log("algoAccount.current = ", algoAccount.current);
+          
           if (!deployed) {
             //https://devrecipes.net/custom-confirm-dialog-with-react-hooks-and-the-context-api/
             console.log("Awaiting want to deploy prompt");
@@ -237,7 +222,6 @@ function App() {
               }
               if (isRegisteredMember) {
                 //create a contract handle and assign it to insurerContract
-                
                 insurerContract.current = algoAccount.current.contract(backend, contractInfo.current);
                 
                 setActivePage("DASHBOARD");
@@ -248,19 +232,17 @@ function App() {
             accessDb();
           }
         }).catch((er) => {
-          console.log("Eer: ", er.message);
           setLoginErr(er.message);
         });
 
       } catch (er) {
-        console.log("errr: ", er);
+        console.log("er: ", er);
       }
     }
   }
 
-  //===============================================================
+  //=======
   const deployContract = async (e) => {
-    console.log("deployContract(){...}");
     e.preventDefault();
     setIsSavingContractInfo(true);
 
@@ -268,15 +250,11 @@ function App() {
     //deploy the contract now
     const ctc = insurerAccount.contract(backend);
     insurerContract.current = ctc;
-    console.log("insurerContract.current=", insurerContract.current);
-    //---------
-    // Set deployed contract Init state
-    console.log("Setting the initial state of the contract just deployed");
-    insurerContract.current.p.Insurer(interact.current);
-    //---------
-
-    console.log("getting the contract info ...");
     
+    // Set the deployed contract's initial state
+    insurerContract.current.p.Insurer(interact.current);
+    
+    //getting the contract info
     insurerContract.current.getInfo().then(async (info) => {
         const infoStr = JSON.stringify(info);
         
@@ -295,17 +273,13 @@ function App() {
     
     //deployer will leave the contract running, signout from it
     await reach.withDisconnect(() => {
-        console.log("Deployer disconnecting from the contract...");
         reach.disconnect(null);
     });
     setContractInfoSaved(true);
-    
-    console.log("........................................... OK.");
   };
 
-  //===============================================================
+  //deployer may later decide to stop th contract, but will attach as a special member
   const stopContract = async () => {
-    console.log("stopContract() invoked");
     const insurerAccount = algoAccount.current;
     const insurerContractHandle = insurerAccount.contract(backend, contractInfo.current);
     const ok = await insurerContractHandle.apis.CommunityMember.stopContract();
@@ -316,7 +290,6 @@ function App() {
     setRefreshCount(refreshCount + 1);
   }
 
-  //===============================================================
   return (
     <>
       {(activePage === "LOGIN") ?
@@ -387,3 +360,6 @@ function App() {
 }
 
 export default App;
+
+
+
