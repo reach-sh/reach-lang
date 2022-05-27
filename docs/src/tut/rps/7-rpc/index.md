@@ -22,11 +22,13 @@ We begin by comparing the necessary imports and program body:
 
 ```
 load: /examples/rps-7-loops/index.mjs
+md5: 6af4573c7186ac0f544f46341767cff1
 range: 1-4
 ```
 
 ```
 load: /examples/rps-7-rpc/client-py/index.py
+md5: 5a2e97309d124148464f0cfcb3972a98
 range: 1-10
 ```
 
@@ -54,11 +56,13 @@ starting balance of `10`.
 
 ```
 load: /examples/rps-7-loops/index.mjs
+md5: 6af4573c7186ac0f544f46341767cff1
 range: 5-8
 ```
 
 ```
 load: /examples/rps-7-rpc/client-py/index.py
+md5: 5a2e97309d124148464f0cfcb3972a98
 range: 11-14
 ```
 
@@ -74,11 +78,13 @@ beginning balances:
 
 ```
 load: /examples/rps-7-loops/index.mjs
+md5: 6af4573c7186ac0f544f46341767cff1
 range: 9-13
 ```
 
 ```
 load: /examples/rps-7-rpc/client-py/index.py
+md5: 5a2e97309d124148464f0cfcb3972a98
 range: 15-23
 ```
 
@@ -88,11 +94,13 @@ Deploying and attaching to contracts works slightly differently over RPC:
 
 ```
 load: /examples/rps-7-loops/index.mjs
+md5: 6af4573c7186ac0f544f46341767cff1
 range: 14-16
 ```
 
 ```
 load: /examples/rps-7-rpc/client-py/index.py
+md5: 5a2e97309d124148464f0cfcb3972a98
 range: 24-25
 ```
 
@@ -113,11 +121,13 @@ equivalents:
 
 ```
 load: /examples/rps-7-loops/index.mjs
+md5: 6af4573c7186ac0f544f46341767cff1
 range: 17-18
 ```
 
 ```
 load: /examples/rps-7-rpc/client-py/index.py
+md5: 5a2e97309d124148464f0cfcb3972a98
 range: 26-28
 ```
 
@@ -127,11 +137,13 @@ Even participant interact interface definitions remain largely the same:
 
 ```
 load: /examples/rps-7-loops/index.mjs
+md5: 6af4573c7186ac0f544f46341767cff1
 range: 19-31
 ```
 
 ```
 load: /examples/rps-7-rpc/client-py/index.py
+md5: 5a2e97309d124148464f0cfcb3972a98
 range: 29-34
 ```
 
@@ -160,11 +172,13 @@ accordingly easily to implement in either language:
 
 ```
 load: /examples/rps-7-loops/index.mjs
+md5: 6af4573c7186ac0f544f46341767cff1
 range: 35-37
 ```
 
 ```
 load: /examples/rps-7-rpc/client-py/index.py
+md5: 5a2e97309d124148464f0cfcb3972a98
 range: 35-37
 ```
 
@@ -175,11 +189,13 @@ The same is true of `{!py} seeOutcome`:
 
 ```
 load: /examples/rps-7-loops/index.mjs
+md5: 6af4573c7186ac0f544f46341767cff1
 range: 32-34
 ```
 
 ```
 load: /examples/rps-7-rpc/client-py/index.py
+md5: 5a2e97309d124148464f0cfcb3972a98
 range: 38-47
 ```
 
@@ -198,11 +214,13 @@ code we have built up thus far to actually play a game of _Rock, Paper, Scissors
 
 ```
 load: /examples/rps-7-loops/index.mjs
+md5: 6af4573c7186ac0f544f46341767cff1
 range: 40-59
 ```
 
 ```
 load: /examples/rps-7-rpc/client-py/index.py
+md5: 5a2e97309d124148464f0cfcb3972a98
 range: 48-85
 ```
 

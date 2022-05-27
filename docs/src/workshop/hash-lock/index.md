@@ -228,6 +228,7 @@ Here's what we did:
 
 ```
 load: /examples/workshop-hash-lock/index.rsh
+md5: 0e93e2215a2f36f5be42930a5705549f
 ```
 
 + Lines 11-14 have Alice declassify some of her values.
@@ -267,6 +268,7 @@ Here's the JavaScript frontend we wrote:
 
 ```
 load: /examples/workshop-hash-lock/index.mjs
+md5: 2893dd0e98313a8b5e408aa0f07b32fe
 ```
 
 In this case, Bob learns the password outside of the Reach program by directly sharing memory with Alice.

@@ -50,6 +50,7 @@ Here's what we wrote in our program:
 
 ```
 load: /examples/workshop-trust-fund/index.rsh
+md5: 06f0fa99d67d1d07af76ca83a0c8db3e
 range: 1-21
 ```
 
@@ -145,6 +146,7 @@ Let's look at our whole program now:
 
 ```
 load: /examples/workshop-trust-fund/index.rsh
+md5: 06f0fa99d67d1d07af76ca83a0c8db3e
 ```
 
 + Lines 33 and 34 use `{!rsh} each` to run the same code block `{!rsh} only` in each of the given participants.
@@ -172,6 +174,7 @@ Here's the JavaScript frontend we wrote:
 
 ```
 load: /examples/workshop-trust-fund/index.mjs
+md5: 29f9f977d13d9651062bf18288b6c072
 ```
 
 The most interesting part of this program is on lines 20 through 23 when we optionally cause a delay in the participant after they receive the signal that the account is funded.

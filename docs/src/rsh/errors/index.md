@@ -598,6 +598,7 @@ Example:
 
 ```reach
 load: /hs/t/n/continue.rsh
+md5: 27ee6a16a890c05d6fe16640df03949a
 range: 4 - 9
 ```
 
@@ -608,6 +609,7 @@ Example:
 
 ```reach
 load: /hs/t/y/while_multi_inv.rsh
+md5: ba7262e27a3f5f48720b3fd88dbf16cb
 range: 14 - 24
 ```
 
@@ -990,6 +992,7 @@ You can fix this by using a static string as the key.
 
 ```reach
 load: /hs/t/y/dynamic_pay.rsh
+md5: d2b6bbbbc740d81db1ba2097f250a1b5
 range: 21 - 24
 ```
 
@@ -1034,6 +1037,7 @@ are valid object keys.
 
 ``` reach
 load: /hs/t/n/Err_Obj_IllegalNumberField.rsh
+md5: eece701143d5714f06ba03d48860eae2
 range: 3 - 3
 ```
 
@@ -1041,6 +1045,7 @@ You can fix this issue by replacing the erroneous key with a static string.
 
 ``` reach
 load: /hs/t/y/objects.rsh
+md5: 7ae70fab31a04e51d2150c6507ecd048
 range: 9 - 9
 ```
 
@@ -1259,6 +1264,7 @@ Example:
 
 ```reach
 load: /hs/t/n/Err_Eval_LookupUnderscore.rsh
+md5: 2ccbb40b7b71cfa9ba9213a0c840524f
 range: 3 - 6
 ```
 
@@ -1266,6 +1272,7 @@ You can fix this by using another identifier and referencing it as usual.
 
 ```reach
 load: /hs/t/y/underscore_unread.rsh
+md5: d3ed4b3338138e2f98c68d57d054f023
 range: 5-6
 ```
 
@@ -1344,6 +1351,7 @@ Example:
 
 ```reach
 load: /hs/t/n/Err_Switch_MissingCases.rsh
+md5: bcf5b2427943c6e5b432cf8d8e54bf8d
 range: 9 - 14
 ```
 
@@ -1354,6 +1362,7 @@ Example:
 
 ```reach
 load: /hs/t/y/switch_cases.rsh
+md5: 1442b3c48fa0604f624a312562a2fd2c
 range: 9 - 15
 ```
 
@@ -1366,6 +1375,7 @@ Example:
 
 ```reach
 load: /hs/t/n/Err_Switch_ExtraCases.rsh
+md5: 403e1a9741e81871ecf6b3af69405cd9
 range: 11 - 15
 ```
 
@@ -1374,6 +1384,7 @@ You can fix this issue by adding the unknown variant to the `{!rsh} Data` defini
 
 ```reach
 load: /hs/t/y/data.rsh
+md5: 4e8539b9c12ac8b7f52a3dafd60d5497
 range: 19 - 21
 ```
 
@@ -2204,6 +2215,7 @@ For example, the code below erroneously puts `{!rsh} didPublish()` before `{!rsh
 
 ``` reach
 load: /hs/t/n/Err_NotAfterFirst.rsh
+md5: 46e1eb604c95c16c2c5dcfeeb5e94aa7
 range: 6 - 10
 ```
 
@@ -2211,11 +2223,13 @@ This error can be corrected by placing `{!rsh} publish` before `{!rsh} didPublis
 
 ```reach
 load: /examples/raffle/index.rsh
+md5: b6632a71c54afc8e1da08f2d6c0dbad3
 range: 35 - 35
 ```
 
 ```reach
 load: /examples/raffle/index.rsh
+md5: b6632a71c54afc8e1da08f2d6c0dbad3
 range: 59 - 65
 ```
 
@@ -2296,6 +2310,7 @@ For example, the program below erroneously uses `{!rsh} Anybody.publish()` witho
 
 ```reach
 load: /hs/t/n/Err_No_Participants.rsh
+md5: cdb92dfbbb05b2f6f9eda2d462140e57
 range: 3 - 9
 ```
 
@@ -2303,11 +2318,13 @@ However, the correct thing to do is to declare at least one `{!rsh} Participant`
 
 ```reach
 load: /examples/api-call/index.rsh
+md5: 5bb3b74980f2ba84d75c68edc5b9e4e5
 range: 4 - 7
 ```
 
 ```reach
 load: /examples/api-call/index.rsh
+md5: 5bb3b74980f2ba84d75c68edc5b9e4e5
 range: 47 - 49
 ```
 

@@ -10,11 +10,13 @@ HTTP servers, and networking:
 
 ```
 load: /rpc-client/py/src/reach_rpc/__init__.py
+md5: 6803a3a6da2cbfaa7c410f3f2894e444
 range: 1-9
 ```
 
 ```
 load: /rpc-client/py/src/reach_rpc/__init__.py
+md5: 6803a3a6da2cbfaa7c410f3f2894e444
 range: 11-27
 ```
 
@@ -22,6 +24,7 @@ The library provides a single function, `{!py} mk_rpc`, that accepts the @{secli
 
 ```
 load: /rpc-client/py/src/reach_rpc/__init__.py
+md5: 6803a3a6da2cbfaa7c410f3f2894e444
 range: 28-34
 ```
 
@@ -30,6 +33,7 @@ It displays a warning to users that they should be nervous about using this sett
 
 ```
 load: /rpc-client/py/src/reach_rpc/__init__.py
+md5: 6803a3a6da2cbfaa7c410f3f2894e444
 range: 35-47
 ```
 
@@ -37,6 +41,7 @@ Next, it attempts to connect to the Reach RPC Server and throws an error if it d
 
 ```
 load: /rpc-client/py/src/reach_rpc/__init__.py
+md5: 6803a3a6da2cbfaa7c410f3f2894e444
 range: 52-62
 ```
 
@@ -47,6 +52,7 @@ It prints debugging information for convenience.
 
 ```
 load: /rpc-client/py/src/reach_rpc/__init__.py
+md5: 6803a3a6da2cbfaa7c410f3f2894e444
 range: 63-79
 ```
 
@@ -66,6 +72,7 @@ It replaces the `{!py} p` value with the result of that continuation invocation 
 
 ```
 load: /rpc-client/py/src/reach_rpc/__init__.py
+md5: 6803a3a6da2cbfaa7c410f3f2894e444
 range: 80-80
 ```
 

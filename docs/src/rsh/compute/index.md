@@ -658,16 +658,19 @@ This is demonstrated in the code below:
 
 ```reach
 load: /examples/uint256/index.rsh
+md5: 41cfcbe36ef78fb15097f373bfea3c3e
 range: 79 - 79
 ```
 
 ```reach
 load: /examples/uint256/index.rsh
+md5: 41cfcbe36ef78fb15097f373bfea3c3e
 range: 88 - 88
 ```
 
 ```reach
 load: /examples/uint256/index.rsh
+md5: 41cfcbe36ef78fb15097f373bfea3c3e
 range: 92 - 93
 ```
 
@@ -676,11 +679,13 @@ This is demonstrated in the code below:
 
 ```reach
 load: /hs/t/y/uint256-verify2.rsh
+md5: 698e681595bfaf0704f30a0167f6ddd8
 range: 6 - 6
 ```
 
 ```reach
 load: /hs/t/y/uint256-verify2.rsh
+md5: 698e681595bfaf0704f30a0167f6ddd8
 range: 12 - 12
 ```
 
@@ -746,11 +751,13 @@ The code below shows how `{!rsh} Padding` can be done:
 
 ```reach
 load: /examples/dan-storage/index.rsh
+md5: 10a27da3d0db49a29e29f79b6fd57dad
 range: 5 - 5
 ```
 
 ```reach
 load: /examples/dan-storage/index.rsh
+md5: 10a27da3d0db49a29e29f79b6fd57dad
 range: 9 - 9
 ```
 
@@ -1478,16 +1485,19 @@ The following examples demonstrate different usage of `{!rsh} Maybe`:
 
 ```reach
 load: /hs/t/y/data.rsh
+md5: 4e8539b9c12ac8b7f52a3dafd60d5497
 range: 3 - 3
 ```
 
 ```reach
 load: /hs/t/y/polyEq.rsh
+md5: e9bdf7824a2aa25af8d4665dd15e197f
 range: 36 - 36
 ```
 
 ```reach
 load: /examples/pr-1cc66/index.rsh
+md5: 4eb5b0969481439ffb9634c34215fd5c
 range: 8 - 8
 ```
 
@@ -1539,6 +1549,7 @@ This snippet demonstrates the convenience methods:
 
 ```reach
 load: /hs/t/y/either_stdlib.rsh
+md5: 546453700e69d829a998db424d0e8fc6
 range: 11 - 25
 ```
 
@@ -1638,6 +1649,7 @@ and the next N values are distinct `{!rsh} UInt`s.
 
 ```reach
 load: /examples/secured-loan/index.rsh
+md5: ed788f118c40a77028bf9414e1e2ac13
 range: 13 - 13
 ```
 
@@ -1659,6 +1671,7 @@ assert( claim, [msg] )
 
  ```reach
  load: /examples/rps-8-interact/index.rsh
+ md5: ee287e712cdfe8d91bbb038c383d25d3
  range: 6 - 11
  ```
 
@@ -1688,6 +1701,7 @@ For example, `A` makes the following `{!rsh} check` with a second (optional) arg
 
 ```reach
 load: /examples/map-sender/index.rsh
+md5: 7cdbe84f6a4dfa838fa86806d3008d70
 range: 18 - 22
 ```
 
@@ -1695,6 +1709,7 @@ While the `{!rsh} check` in the following example, takes just the first argument
 
 ```reach
 load: /examples/api-overload/index.rsh
+md5: 8423e5e116edca7b81cd1cdf8d88722a
 range: 61 - 62
 ```
 
@@ -1720,6 +1735,7 @@ The following code sample uses a couple of `{!rsh} forall` arguments to assert t
 
 ```reach
 load: /examples/rps-6-timeouts/index.rsh
+md5: b390a5f23cadf2f5da1533378a83f52f
 range: 13-15
 ```
 
@@ -1735,6 +1751,7 @@ It accepts an optional bytes argument, which is included in any reported violati
 
 ```reach
 load: /examples/algo-try-csp/index.rsh
+md5: 77303319a82af26faaecb2bd3295e644
 range: 30 - 32
 ```
 
@@ -1751,6 +1768,7 @@ The exact algorithm used depends on the connector.
 
 ```reach
 load: /examples/workshop-hash-lock/index.rsh
+md5: 0e93e2215a2f36f5be42930a5705549f
 range: 12 - 14
 ```
 
@@ -1771,6 +1789,7 @@ The example below shows non-network tokens being passed as arguments to the `{!r
 
 ```reach
 load: /examples/abstract-tok/index.rsh
+md5: aec14ab8610b29232a48b12841c09730
 range: 24 - 26
 ```
 
@@ -1778,6 +1797,7 @@ While in the following example, `{!rsh} balance` takes no argument:
 
 ```reach
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 60 - 60
 ```
 
@@ -1793,6 +1813,7 @@ This function may not be called until after the first publication (which creates
 
 ```reach
 load: /examples/remote-rsh/index.rsh
+md5: c7a305584ec5c689a8c61e53b544240b
 range: 26-29
 ```
 
@@ -1811,6 +1832,7 @@ This function may not be called until after the first publication (which creates
 
 ```reach
 load: /examples/ctc-address/index.rsh
+md5: 32318a2e600f0a39a01bd0133e8a83d0
 range: 15-22
 ```
 
@@ -1845,12 +1867,13 @@ This may not be available if there was no such previous publication, such as at 
 
 ```reach
 load: /examples/realtime/index.rsh
+md5: 43c3e16e00ad2ec2be76a16d66a29e45
 range: 12 - 18
 ```
 
-In this code, `{!rsh} lastConsensusTime` is called on line 17 after the publication on line 12. 
-The `entry` function on line 15 takes `step` as an argument and produces an array. 
-The array contains the destructured `step`, `lab` that was passed into the parent function (`aStep`), 
+In this code, `{!rsh} lastConsensusTime` is called on line 17 after the publication on line 12.
+The `entry` function on line 15 takes `step` as an argument and produces an array.
+The array contains the destructured `step`, `lab` that was passed into the parent function (`aStep`),
 `{!rsh} lastConsensusTime()` and `{!rsh} lastConsensusSecs()`.
 
 ---
@@ -1864,6 +1887,7 @@ lastConsensusSecs()
 
 ```reach
 load: /examples/thisConsensusTime/index.rsh
+md5: 41694252bcb7388f2f8cefcc4f10036a
 range: 9 - 15
 ```
 
@@ -1894,6 +1918,7 @@ thisConsensusSecs()
 
 ```reach
 load: /examples/thisConsensusTime/index.rsh
+md5: 41694252bcb7388f2f8cefcc4f10036a
 range: 11-15
 ```
 
@@ -1986,6 +2011,7 @@ This pattern is so common that it can be abbreviated as `{!rsh} .timeRemaining`.
 
 ```reach
 load: /examples/raffle/index.rsh
+md5: b6632a71c54afc8e1da08f2d6c0dbad3
 range: 37-40
 ```
 
@@ -2002,6 +2028,7 @@ implies( x, y )
 
 ```reach
 load: /examples/raffle/index.rsh
+md5: b6632a71c54afc8e1da08f2d6c0dbad3
 range: 52 - 57
 ```
 
@@ -2028,6 +2055,7 @@ hasRandom
 
  ```reach
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 20-24
 ```
 
@@ -2045,11 +2073,13 @@ hasConsoleLogger
 
  ```reach
  load: /examples/log/index.mjs
+ md5: 65e2b563606bbb05a0fb2a378af53519
  range: 11 - 14
  ```
 
  ```reach
  load: /examples/log/index.rsh
+ md5: 2c13063a805c6b3045911962d6906316
  range: 5 - 7
  ```
 
@@ -2083,6 +2113,7 @@ The resulting quotient must be less than `{!rsh} UInt.max`.
 
 ```reach
 load: /examples/pr855/index.rsh
+md5: 16e62b3c050a678808f1024c343a69f5
 range: 26 - 32
 ```
 
@@ -2112,6 +2143,7 @@ When used inside of any other step, it will generate an `{!rsh} assert` claim.
 
 ```reach
 load: /hs/t/y/verifyMuldiv.rsh
+md5: 66b1f803595c8726bceb96bf916a8db1
 range: 36 - 43
 ```
 
@@ -2132,6 +2164,7 @@ sqrt(81)
 
 ```reach
 load: /examples/sqrt/index.rsh
+md5: 77a676f01abbadee2bac90e17139c6e8
 range: 17 - 19
 ```
 
@@ -2387,11 +2420,13 @@ it does not matter who `{!rsh} publish`es, such as in a `{!rsh} timeout`.
 
 ```reach
 load: /examples/multiple-pr-case/index.rsh
+md5: dbe00208f36d738db09efb24caaec2fc
 range: 10 - 13
 ```
 
 ```reach
 load: /examples/multiple-pr-case/index.rsh
+md5: dbe00208f36d738db09efb24caaec2fc
 range: 46 - 49
 ```
 
@@ -2551,6 +2586,7 @@ Example:
 
 ```reach
 load: /examples/getUntrackedFunds3/index.rsh
+md5: 01a0c15c3e3a270e5d3adedc1d9d918f
 range: 28-30
 ```
 
@@ -2570,6 +2606,7 @@ Example:
 
 ```reach
 load: /hs/t/y/many_txns.rsh
+md5: 4bf192eb6742bf011d2d2330556ab77c
 range: 43 - 60
 ```
 
