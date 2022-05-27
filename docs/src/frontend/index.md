@@ -858,6 +858,15 @@ stdlib.getNetworkTime() => Promise<time>
 
 Returns a Promise for the current consensus network time, represented as a `BigNumber`.
 
+```js
+load: /examples/getTimeSecs-demo/index.mjs
+range: 5-15
+```
+
+This example obtains the starting time of the DApp by using `{!js} getNetworkTime`.
+The network time is then written to the console to provide the information to users.
+Then, it is converted to seconds using `{!js} getTimeSecs`, which is also written to the console.
+
 ---
 @{ref("js", "stdlib.getNetworkSecs")}@{ref("js", "getNetworkSecs")}
 ```js
