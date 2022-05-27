@@ -331,7 +331,7 @@ load: /examples/minBalance/index.mjs
 range: 15-15
 ```
 
-`{!js} newTestAccounts` sets up 3 new accounts (`acca`, `accB`, and `accC`) and loads them with the `startingBalance` of tokens so that they are usable for testing.
+`{!js} newTestAccounts` sets up 3 new accounts (`accA`, `accB`, and `accC`) and loads them with the `startingBalance` of tokens so that they are usable for testing.
 
 ---
 
