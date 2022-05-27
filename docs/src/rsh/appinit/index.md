@@ -30,6 +30,7 @@ After which a local step is introduced:
 
 ```reach
 load: /examples/api-twice/index.rsh
+md5: 38ac4eabad2ced3f017a11fc24a72f6f
 range: 4 - 15
 ```
 
@@ -54,6 +55,7 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
   See example below:
   ```reach
   load: /examples/map-simpl/index.rsh
+  md5: 2d6c1487d7b96d41016e067c9cd265ef
   range: 4 - 6
   ```
 
@@ -69,6 +71,7 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
   See example below:
   ```reach
   load: /examples/uint256/index.rsh
+  md5: 41cfcbe36ef78fb15097f373bfea3c3e
   range: 3 - 5
   ```
 
@@ -87,6 +90,7 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
   See example below:
   ```reach
   load: hs/t/y/overflow_con.rsh
+  md5: d3f64764da8d0c2ae1e68f23ca943c0a
   range: 3 - 6
   ```
 
@@ -100,6 +104,7 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
   In the example below, only `ETH` and `ALGO` are chosen:
   ```reach
   load: /examples/popularity-contest/index.rsh
+  md5: ea12cdcd4f262bc0b0a0e0cc74f01e63
   range: 10 - 15
   ```
 
@@ -139,6 +144,7 @@ In the [Rock, Paper, and Scissors](##tut-3) tutorial, Alice and Bob receive the 
 
 ```
 load: /examples/rps-2-rps/index.rsh
+md5: 3ea7718e88c86dd41e97b503d7aa3b67
 range: 1-14
 ```
 
@@ -166,6 +172,7 @@ Each function must occur exactly once in the entire program.
 
 ```
 load: /examples/dominant-assurance/index.rsh
+md5: d327454b582bdfa6f03d71de5ce2dd97
 range: 24-27
 ```
 
@@ -192,12 +199,14 @@ A view is defined with `{!rsh} View(viewName, viewInterface)` or `{!rsh} View(vi
 For example, `{!rsh} View` is used in the code below without a `{!rsh} viewName`:
 ```reach
 load: /examples/remote-rsh/index.rsh
+md5: c7a305584ec5c689a8c61e53b544240b
 range: 16 - 19
 ```
 
 While the `{!rsh} View` in the following code contains a `{!rsh} viewName`:
 ```reach
 load: /examples/view-steps/index.rsh
+md5: 78e1541e01ce0791b4b41d2bcd57aaa2
 range: 11 - 12
 ```
 
@@ -222,12 +231,14 @@ An event is defined with `{!rsh} Events(eventName, eventInterface)` or `{!rsh} E
 For example, the `{!rsh} Events` in the code below has no `{!rsh} eventName`:
 ```reach
 load: /examples/event-monitor/index.rsh
+md5: c40c1da17f2d66d2906192ccfb40f4b5
 range: 10 - 13
 ```
 
 While the `{!rsh} Events` in following example has an `{!rsh} eventName`:
 ```reach
 load: /examples/dominant-assurance/index.rsh
+md5: d327454b582bdfa6f03d71de5ce2dd97
 range: 34 - 35
 ```
 
