@@ -2283,7 +2283,7 @@ a `{!rsh} Participant` or `{!rsh} ParticipantClass`.
 For example, the program below erroneously uses `{!rsh} Anybody.publish()` without declaring any `{!rsh} Participant` or `{!rsh} ParticipantClass`:
 
 ```reach
-load: ./hs/t/n/Err_No_Participants.rsh
+load: /hs/t/n/Err_No_Participants.rsh
 range: 3 - 9
 ```
 
