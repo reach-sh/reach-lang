@@ -43,6 +43,7 @@ The main part of the program looks like this:
 
 ```
 load: /examples/overview/index.rsh
+md5: c3ba149f23c49dec516123979898b14b
 range: 1-15
 ```
 
@@ -60,6 +61,7 @@ The elided lines, 14 through 34, contain the body of the application, which we c
 
 ```
 load: /examples/overview/index.rsh
+md5: c3ba149f23c49dec516123979898b14b
 range: 15-18
 ```
 
@@ -72,6 +74,7 @@ At this point, Bob's backend has learned the value of `{!rsh} request` and can d
 
 ```
 load: /examples/overview/index.rsh
+md5: c3ba149f23c49dec516123979898b14b
 range: 20-23
 ```
 
@@ -84,6 +87,7 @@ It's now Alice's turn again:
 
 ```
 load: /examples/overview/index.rsh
+md5: c3ba149f23c49dec516123979898b14b
 range: 25-29
 ```
 
@@ -96,6 +100,7 @@ The only thing left is for Bob's backend to deliver the information to his front
 
 ```
 load: /examples/overview/index.rsh
+md5: c3ba149f23c49dec516123979898b14b
 range: 31-33
 ```
 
@@ -148,6 +153,7 @@ Let's change the third step to leave a single unit in the balance:
 
 ```
 load: /examples/overview/index-error.rsh
+md5: 0756828e5a4ce18ee4835063706594ae
 range: 25-29
 ```
 
@@ -161,6 +167,7 @@ It will print out a detailed error message showing the violation.
 
 ```
 load: /examples/overview/index-error.txt
+md5: 7e916074ca72431b3520b6fc1996c8df
 range: 2-28
 ```
 
@@ -187,6 +194,7 @@ The program is just a few dozen lines long and the shell of it is quite simple:
 
 ```
 load: /examples/overview/index.mjs
+md5: b0ab403c2babb38238d85d34b318316a
 ```
 
 + Lines 1 and 2 import the Reach standard library loader and the compiled app backend.
@@ -205,6 +213,7 @@ Let's look at initializing and interfacing each participant, starting with Alice
 
 ```
 load: /examples/overview/index.mjs
+md5: b0ab403c2babb38238d85d34b318316a
 range: 13-16
 ```
 
@@ -216,6 +225,7 @@ Let's look at Bob next.
 
 ```
 load: /examples/overview/index.mjs
+md5: b0ab403c2babb38238d85d34b318316a
 range: 17-20
 ```
 
@@ -291,6 +301,7 @@ Let's take a look at some snippets from the React [index.js](@{REPO}/examples/ov
 
 ```
 load: /examples/overview-react/index.js
+md5: 6045f1f418f5096943132afe8db5bbe0
 range: 7-9
 ```
 
@@ -298,6 +309,7 @@ At the top of the file, we import the Reach-generated backend as `{!js} backend`
 
 ```
 load: /examples/overview-react/index.js
+md5: 6045f1f418f5096943132afe8db5bbe0
 range: 27-28
 ```
 
@@ -310,6 +322,7 @@ This is just like how in the Node.js deployment, the Reach programmer does not n
 
 ```
 load: /examples/overview-react/index.js
+md5: 6045f1f418f5096943132afe8db5bbe0
 range: 71-76
 ```
 
@@ -320,6 +333,7 @@ exactly as we did for the Node.js program.
 
 ```
 load: /examples/overview-react/index.js
+md5: 6045f1f418f5096943132afe8db5bbe0
 range: 79-85
 ```
 
@@ -327,6 +341,7 @@ Similarly, we implement a `{!js} runBackend` method that executes the Reach prog
 
 ```
 load: /examples/overview-react/index.js
+md5: 6045f1f418f5096943132afe8db5bbe0
 range: 112-121
 ```
 

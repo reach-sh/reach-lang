@@ -34,6 +34,7 @@ An interaction expression may only occur in a local step.
 
 ``` reach
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 45-48
 ```
 
@@ -55,6 +56,7 @@ If the claim dynamically evaluates to `false`, the frontend will raise an except
 
 ``` reach
 load: /examples/atomic-swap/index.rsh
+md5: 03b8d3534337fd397adb4120ff90a103
 range: 20-22
 ```
 
@@ -80,6 +82,7 @@ The @{defn("declassify")} primitive performs a declassification of the given arg
 
 ``` reach
 load: /examples/rps-7-array/index.rsh
+md5: d38eb05c7dc15d65d60114e7784da358
 range: 67-71
 ```
 
@@ -101,6 +104,7 @@ This is demonstrated in the example below.
 
 ```reach
 load: /examples/object-digest/index.rsh
+md5: 8d7e9f0180b6f53f80b36dcf172f5e73
 range: 16-22
 ```
 
@@ -118,10 +122,12 @@ For example, in the code below, a `{!rsh} didPublish` call is made on line 62 in
 
 ```reach
 load: /examples/raffle/index.rsh
+md5: b6632a71c54afc8e1da08f2d6c0dbad3
 range: 35-35
 ```
 
 ```reach
 load: /examples/raffle/index.rsh
+md5: b6632a71c54afc8e1da08f2d6c0dbad3
 range: 62-62
 ```
