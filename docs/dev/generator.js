@@ -1,5 +1,7 @@
 import { setTimeout } from 'timers/promises';
 import CleanCss from 'clean-css';
+import { createHash } from 'crypto';
+import { readFileSync, writeFileSync } from 'fs';
 import fs from 'fs-extra';
 import * as htmlMinify from 'html-minifier';
 import path from 'path';
@@ -24,7 +26,6 @@ import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { JSDOM } from 'jsdom';
 import githubSlugger from 'github-slugger';
-import { writeFileSync } from 'fs';
 const slugify = githubSlugger.slug;
 const topDoc = new JSDOM("").window.document;
 
@@ -675,11 +676,35 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     if (arr.length > 0) {
       const line1 = arr[0].replace(/\s+/g, '');
       if (line1.slice(0, 5) == 'load:') {
+        const line2 = arr[1].replace(/\s+/g, '');
+        if (line2.startsWith('md5:') === false) {
+          throw new Error(`Whoa! ${
+            arr[0]
+          } does not have a corresponding MD5.`);
+        }
+        const partialProgramPath = line1.slice(5);
+        const programPath = path.join(
+          '../..', partialProgramPath
+        );
+        const hashObject = createHash('md5');
+        hashObject.update(readFileSync(programPath));
+        const actualMD5 = hashObject.digest('hex');
+        const statedMD5 = line2.slice(4);
+        if (actualMD5 !== statedMD5) {
+          throw new Error(`Whoa! ${
+            arr[0]
+          } has an actual MD5 of ${
+            actualMD5
+          } but the docs say it has an MD5 of ${
+            statedMD5
+          }`);
+        }
         spec.load = line1.slice(5);
-        if (arr.length > 1) {
-          const line2 = arr[1].replace(/\s+/g, '');
-          if (line2.slice(0, 6) == 'range:') {
-            spec.range = line2.slice(6);
+        const rangeIsPresent = arr.length > 2;
+        if (rangeIsPresent) {
+          const line3 = arr[2].replace(/\s+/g, '');
+          if (line3.slice(0, 6) == 'range:') {
+            spec.range = line3.slice(6);
           }
         }
       }
