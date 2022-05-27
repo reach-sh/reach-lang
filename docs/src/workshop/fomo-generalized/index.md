@@ -48,6 +48,7 @@ specialize it when we compile.
 
 ```
 load: /examples/workshop-fomo-generalized/index.rsh
+md5: e26e12724da243f13d5838f5281ba615
 range: 5-23
 ```
 
@@ -160,6 +161,7 @@ Let's look at our whole program now:
 
 ```
 load: /examples/workshop-fomo-generalized/index.rsh
+md5: e26e12724da243f13d5838f5281ba615
 ```
 
 ## {#workshop-fomo-generalized-de} Deployment Decisions
@@ -177,6 +179,7 @@ Here's the JavaScript frontend we wrote:
 
 ```
 load: /examples/workshop-fomo-generalized/index.mjs
+md5: 74b6cc410c339ee4ec5d023af5042095
 ```
 
 Let's see what it looks like when we run the program:

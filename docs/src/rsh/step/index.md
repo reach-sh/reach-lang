@@ -441,6 +441,7 @@ It may only occur in a step.
 
 ``` reach
 load: /examples/simple-nft-auction/index.rsh
+md5: 1f95425a9feb9f5bf1e677461a83df4e
 range: 59-65
 ```
 
@@ -470,6 +471,7 @@ See [the guide section on races](##guide-race) to understand the benefits and da
 
 ```reach
 load: /examples/race/index.rsh
+md5: 10cf0e41a9cfa29a6277e0fc5fc147c6
 range: 51-55
 ```
 
@@ -489,6 +491,7 @@ It accepts an optional bytes argument, which is included in any reported violati
 
 ```reach
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 73-73
 ```
 
@@ -521,6 +524,7 @@ The `{!rsh} nonNetPayAmt` parameter should be a pay amount. For example, when cl
 
 ```reach
 load: /examples/secured-loan/index.rsh
+md5: ed788f118c40a77028bf9414e1e2ac13
 range: 55 - 58
 ```
 

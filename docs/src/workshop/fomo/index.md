@@ -83,6 +83,7 @@ Our participant interact interface, with the addition of some handy logging func
 
 ```
 load: /examples/workshop-fomo/index.rsh
+md5: ba9aaf213f98a723ff406ddf9209564f
 range: 4-22
 ```
 
@@ -181,6 +182,7 @@ Let's look at our whole program now:
 
 ```
 load: /examples/workshop-fomo/index.rsh
+md5: ba9aaf213f98a723ff406ddf9209564f
 ```
 
 ## {#workshop-fomo-de} Deployment Decisions
@@ -198,6 +200,7 @@ Here's the JavaScript frontend we wrote:
 
 ```
 load: /examples/workshop-fomo/index.mjs
+md5: f363477bbfe6ce16025fd0e18acab107
 ```
 
 Let's see what it looks like when we run the program:

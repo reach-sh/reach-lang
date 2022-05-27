@@ -65,6 +65,7 @@ Here's what we wrote in our program:
 
 ```
 load: /examples/workshop-relay/index.rsh
+md5: 56b6338c7902247ed5943735e96eed3b
 range: 6-8
 ```
 
@@ -151,6 +152,7 @@ Let's look at our whole program now:
 
 ```
 load: /examples/workshop-relay/index.rsh
+md5: 56b6338c7902247ed5943735e96eed3b
 ```
 
 ## {#workshop-relay-de} Deployment Decisions
@@ -167,6 +169,7 @@ Here's the JavaScript frontend we wrote:
 
 ```
 load: /examples/workshop-relay/index.mjs
+md5: c93d52a2841e3bf6979d8105257e901a
 ```
 
 We do a few sneaky things in this program:

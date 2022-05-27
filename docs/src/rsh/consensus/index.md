@@ -21,6 +21,7 @@ For example, in the code below, the `{!rsh} commit();` on line 79 allows `Alice`
 
 ```reach
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 77 - 84
 ```
 
@@ -48,6 +49,7 @@ For example, consider the following program:
 
 ```
 load: /examples/view-steps/index.rsh
+md5: 78e1541e01ce0791b4b41d2bcd57aaa2
 ```
 
 In this program, the Reach backend calls the frontend `{!rsh} interact` function, `{!rsh} checkView` with the expected value of the views at each point in the program.
@@ -130,6 +132,7 @@ Example:
 
 ```reach
 load: /examples/workshop-relay/index.rsh
+md5: 56b6338c7902247ed5943735e96eed3b
 range: 14 - 17
 ```
 
@@ -173,6 +176,7 @@ Read about finding [loop invariants](##guide-loop-invs) in the Reach guide.
 
 ```reach
 load: /examples/chicken-race/index.rsh
+md5: 2f62423e6b6ea82b9c1c89cba69104a1
 range: 43-64
 ```
 
@@ -230,6 +234,7 @@ When one of them publishes, the `keepGoing` function returns false, and the prog
 
 ```reach
 load: /examples/chicken-race/index.rsh
+md5: 2f62423e6b6ea82b9c1c89cba69104a1
 range: 53-58
 ```
 
@@ -408,6 +413,7 @@ A transfer expression may only occur within a consensus step.
 
 ```reach
 load: /examples/simple-nft-auction/index.rsh
+md5: 1f95425a9feb9f5bf1e677461a83df4e
 range: 59-60
 ```
 
@@ -429,6 +435,7 @@ If a publication would violate the requirement, the consensus network rejects th
 
 ``` reach
 load: /examples/abstract-tok/index.rsh
+md5: aec14ab8610b29232a48b12841c09730
 range: 20-22
 ```
 
@@ -449,11 +456,13 @@ The example below shows `{!rsh} checkCommitment` being used in a consensus step 
 
 ```reach
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 64 - 68
 ```
 
 ```reach
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 85 - 87
 ```
 
@@ -495,11 +504,13 @@ This value is intended to be a digest of a larger metadata document.
 The following examples demonstrate how the details above may be used:
 ```reach
 load: examples/token-decimals/index.rsh
+md5: 0b9ee900d1bd566dcc7383749d770ab1
 range: 14 - 17
 ```
 
 ```reach
 load: examples/mint-basic/index.rsh
+md5: 1ccb4872438f69d9c8af711b08d817a4
 range: 28 - 33
 ```
 
@@ -624,12 +635,14 @@ If `{!rsh} KEY_TYPE_EXPR` is not specified, it will default to `{!rsh} Address`.
 For example the code below contains only the `{!rsh} VAL_TYPE_EXPR`:
 ```reach
 load: /examples/splice1/index.rsh
+md5: 944291e790336dbb2b87784588d60eeb
 range: 7 - 7
 ```
 
 While the following code contains both the `{!rsh} KEY_TYPE_EXPR` and `{!rsh} VAL_TYPE_EXPR`:
 ```reach
 load: /examples/map-arbitrary-key/index.rsh
+md5: eb61fb5172abcedde155c34a21265fd6
 range: 24 - 24
 ```
 
@@ -670,6 +683,7 @@ The following example shows the usage of `{!rsh} s.insert(ADDRESS)`:
 
 ```reach
 load: /hs/t/y/merit-badge.rsh
+md5: 2186c788d7b38a8b4f222960a77586d9
 range: 46 - 48
 ```
 
@@ -677,6 +691,7 @@ While the example below shows the usage of  `{!rsh} s.remove(ADDRESS)`
 
 ```reach
 load: /examples/dominant-assurance/index.rsh
+md5: d327454b582bdfa6f03d71de5ce2dd97
 range: 143 - 143
 ```
 
@@ -686,6 +701,7 @@ The following example shows the usage of `{!rsh} s.member(ADDRESS)`
 
 ```reach
 load: /examples/dominant-assurance/index.rsh
+md5: d327454b582bdfa6f03d71de5ce2dd97
 range: 99 - 99
 ```
 

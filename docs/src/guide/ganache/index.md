@@ -25,12 +25,14 @@ You'll also need to add the `ethers` package, because you'll be directly interac
 After that, you need to import the two packages on the JavaScript side in your `index.mjs` file:
 ```
 load: /examples/ganache/index.mjs
+md5: cca336d85844697eb44884226f9d2ce0
 range: 3-4
 ```
 
 Next, you need to actually create the Ganache-based provider and connect it to Reach:
 ```
 load: /examples/ganache/index.mjs
+md5: cca336d85844697eb44884226f9d2ce0
 range: 9-13
 ```
 
@@ -38,6 +40,7 @@ This will work, but Reach will not consider the network to be "isolated", which 
 You can enable this by setting the Reach faucet:
 ```
 load: /examples/ganache/index.mjs
+md5: cca336d85844697eb44884226f9d2ce0
 range: 15-16
 ```
 

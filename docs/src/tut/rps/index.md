@@ -100,6 +100,7 @@ For example, start off by typing the following into `index.rsh`:
 
 ```
 load: /examples/rps-1-setup/index.rsh
+md5: 31dcf80dd184f4e31efac02cc2c7f66e
 ```
 
 :::note
@@ -132,6 +133,7 @@ Open a new file named `index.mjs` and fill it with this:
 
 ```
 load: /examples/rps-1-setup/index.mjs
+md5: ed82d3f3222714d10cfe0536c19f7e54
 ```
 
 This JavaScript code is similarly schematic and will be consistent across all of your test programs.
@@ -196,6 +198,7 @@ The first step is to change the Reach program to specify that Alice and Bob's fr
 
 ```
 load: /examples/rps-2-rps/index.rsh
+md5: 3ea7718e88c86dd41e97b503d7aa3b67
 range: 1-17
 ```
 
@@ -208,6 +211,7 @@ Before continuing with the Reach application, let's move over to the JavaScript 
 
 ```
 load: /examples/rps-2-rps/index.mjs
+md5: 997ba05e8422c076a3c29cd5bcf427aa
 range: 12-32
 ```
 
@@ -245,6 +249,7 @@ First, the backend for Alice interacts with its frontend, gets Alice's hand, and
 
 ```
 load: /examples/rps-2-rps/index.rsh
+md5: 3ea7718e88c86dd41e97b503d7aa3b67
 range: 17-21
 ```
 
@@ -260,6 +265,7 @@ The next step is similar, in that Bob publishes his hand; however, we don't imme
 
 ```
 load: /examples/rps-2-rps/index.rsh
+md5: 3ea7718e88c86dd41e97b503d7aa3b67
 range: 23-29
 ```
 
@@ -274,6 +280,7 @@ Finally, we use the each form to have each of the participants send the final ou
 
 ```
 load: /examples/rps-2-rps/index.rsh
+md5: 3ea7718e88c86dd41e97b503d7aa3b67
 range: 31-33
 ```
 
@@ -357,6 +364,7 @@ We'll add this code in between account creation and contract deployment.
 
 ```
 load: /examples/rps-3-bets/index.mjs
+md5: fc6187211ecfeacd41be9495aa22deaf
 range: 5-12
 ```
 
@@ -368,6 +376,7 @@ Next, we'll update Alice's interface object to include her wager.
 
 ```
 load: /examples/rps-3-bets/index.mjs
+md5: fc6187211ecfeacd41be9495aa22deaf
 range: 31-34
 ```
 
@@ -379,6 +388,7 @@ For Bob, we'll modify his interface to show the wager and immediately accept it 
 
 ```
 load: /examples/rps-3-bets/index.mjs
+md5: fc6187211ecfeacd41be9495aa22deaf
 range: 35-40
 ```
 
@@ -388,6 +398,7 @@ Finally, after the computation is over, we'll get the balance again and show a m
 
 ```
 load: /examples/rps-3-bets/index.mjs
+md5: fc6187211ecfeacd41be9495aa22deaf
 range: 43-47
 ```
 
@@ -403,6 +414,7 @@ First, we need to update the participant interact interface.
 
 ```
 load: /examples/rps-3-bets/index.rsh
+md5: 4116cbc1247ecc15271aa776eedf1676
 range: 1-19
 ```
 
@@ -414,6 +426,7 @@ Let's look at Alice's first step first.
 
 ```
 load: /examples/rps-3-bets/index.rsh
+md5: 4116cbc1247ecc15271aa776eedf1676
 range: 19-25
 ```
 
@@ -428,6 +441,7 @@ Next, Bob needs to be shown the wager and given the opportunity to accept it and
 
 ```
 load: /examples/rps-3-bets/index.rsh
+md5: 4116cbc1247ecc15271aa776eedf1676
 range: 27-32
 ```
 
@@ -441,6 +455,7 @@ Before, it would compute the outcome and then commit the state; but now, it need
 
 ```
 load: /examples/rps-3-bets/index.rsh
+md5: 4116cbc1247ecc15271aa776eedf1676
 range: 34-41
 ```
 
@@ -561,6 +576,7 @@ If we change Bob's code to the following:
 
 ```
 load: /examples/rps-4-attack/index.rsh
+md5: bd577e73ff25f098ef38106416a3bff1
 range: 27-32
 ```
 
@@ -590,6 +606,7 @@ We can instruct Reach to prove this theorem by adding these lines after computin
 
 ```
 load: /examples/rps-4-attack/index.rsh
+md5: bd577e73ff25f098ef38106416a3bff1
 range: 34-37
 ```
 
@@ -600,6 +617,7 @@ Before we had this line in the file, when we ran `./reach compile`, it would pri
 
 ```
 load: /examples/rps-3-bets/index.txt
+md5: 45ed47e882a4edb92edf2e3d46469863
 range: 2-7
 ```
 
@@ -607,6 +625,7 @@ But now, it prints out
 
 ```
 load: /examples/rps-4-attack/index.txt
+md5: ddc6e13e30d19b2efce40b364614a41f
 range: 2-7
 ```
 
@@ -630,6 +649,7 @@ Let's start by undoing the changes we made earlier by changing
 
 ```
 load: /examples/rps-4-attack/index.rsh
+md5: bd577e73ff25f098ef38106416a3bff1
 range: 29-29
 ```
 
@@ -637,6 +657,7 @@ back to
 
 ```
 load: /examples/rps-4-attack/index-bad.rsh
+md5: c0015df1e967946be01b3bdab70c9c12
 range: 29-29
 ```
 
@@ -644,6 +665,7 @@ and removing
 
 ```
 load: /examples/rps-4-attack/index.rsh
+md5: bd577e73ff25f098ef38106416a3bff1
 range: 35-36
 ```
 
@@ -653,6 +675,7 @@ We should now have something that looks like
 
 ```
 load: /examples/rps-4-attack/index-bad.rsh
+md5: c0015df1e967946be01b3bdab70c9c12
 range: 27-41
 ```
 
@@ -662,6 +685,7 @@ When we run `./reach compile (reachexlink rps-4-attack/index-bad.rsh)`, it gives
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
+md5: 272193fdf327080cc3192dbc90782efa
 range: 4-31
 ```
 
@@ -684,6 +708,7 @@ We'll add a single line to the program after Alice publishes, but before Bob tak
 
 ```
 load: /examples/rps-4-attack/index-fails.rsh
+md5: ee8173e8806e4b9757fe9b9e28a6d4b9
 range: 23-31
 ```
 
@@ -695,6 +720,7 @@ When we run `./reach run`, it reports that this assertion is false:
 
 ```
 load: /examples/rps-4-attack/index-fails.txt
+md5: 10ce8c3d19e7aefc50c8ebd58a858d1b
 range: 2-6
 ```
 
@@ -712,6 +738,7 @@ First, we'll define the rules of _Rock, Paper, Scissors!_ a little bit more abst
 
 ```
 load: /examples/rps-5-trust/index.rsh
+md5: 68fff9bccfaf2c29fba5ad5c1b41af17
 range: 1-7
 ```
 
@@ -726,6 +753,7 @@ However, Reach allows us to write such test cases directly into the Reach progra
 
 ```
 load: /examples/rps-5-trust/index.rsh
+md5: 68fff9bccfaf2c29fba5ad5c1b41af17
 range: 9-11
 ```
 
@@ -736,6 +764,7 @@ For example, we can state that no matter what values are provided for `{!rsh} ha
 
 ```
 load: /examples/rps-5-trust/index.rsh
+md5: 68fff9bccfaf2c29fba5ad5c1b41af17
 range: 13-15
 ```
 
@@ -743,6 +772,7 @@ And we can specify that whenever the same value is provided for both hands, no m
 
 ```
 load: /examples/rps-5-trust/index.rsh
+md5: 68fff9bccfaf2c29fba5ad5c1b41af17
 range: 17-18
 ```
 
@@ -757,6 +787,7 @@ We'll use these later on to protect Alice's hand.
 
 ```
 load: /examples/rps-5-trust/index.rsh
+md5: 68fff9bccfaf2c29fba5ad5c1b41af17
 range: 20-24
 ```
 
@@ -765,6 +796,7 @@ We'll use this to generate a random number to protect Alice's hand.
 
 ```
 load: /examples/rps-5-trust/index.mjs
+md5: d4b76de20d7406b04f2a430fc9c41b18
 range: 19-29
 ```
 
@@ -779,6 +811,7 @@ Next, we'll create the Reach app and the participant interact interface for Alic
 
 ```
 load: /examples/rps-5-trust/index.rsh
+md5: 68fff9bccfaf2c29fba5ad5c1b41af17
 range: 26-35
 ```
 
@@ -790,6 +823,7 @@ Reach's standard library comes with `{!rsh} makeCommitment` to make this easier 
 
 ```
 load: /examples/rps-5-trust/index.rsh
+md5: 68fff9bccfaf2c29fba5ad5c1b41af17
 range: 37-45
 ```
 
@@ -810,6 +844,7 @@ That's why we use a randomly generated salt.
 
 ```
 load: /examples/rps-5-trust/index.rsh
+md5: 68fff9bccfaf2c29fba5ad5c1b41af17
 range: 47-54
 ```
 
@@ -821,6 +856,7 @@ We now return to Alice who can reveal her secrets.
 
 ```
 load: /examples/rps-5-trust/index.rsh
+md5: 68fff9bccfaf2c29fba5ad5c1b41af17
 range: 56-61
 ```
 
@@ -833,6 +869,7 @@ The rest of the program is unchanged from the original version, except that it u
 
 ```
 load: /examples/rps-5-trust/index.rsh
+md5: 68fff9bccfaf2c29fba5ad5c1b41af17
 range: 63-74
 ```
 
@@ -948,6 +985,7 @@ First, we'll modify the participant interact interface to allow the frontend to 
 
 ```
 load: /examples/rps-6-timeouts/index.rsh
+md5: b390a5f23cadf2f5da1533378a83f52f
 range: 20-25
 ```
 
@@ -958,6 +996,7 @@ We'll make a slight tweak to our JavaScript frontend to be able to receive this 
 
 ```
 load: /examples/rps-6-timeouts/index.mjs
+md5: f1852dd1b33b99dcac138ee2c7fab9f2
 range: 19-32
 ```
 
@@ -966,6 +1005,7 @@ Similar to how she provides the wager, we will have Alice also provide the deadl
 
 ```
 load: /examples/rps-6-timeouts/index.rsh
+md5: b390a5f23cadf2f5da1533378a83f52f
 range: 28-32
 ```
 
@@ -978,6 +1018,7 @@ Next, at the start of the Reach application, we'll define a helper function to i
 
 ```
 load: /examples/rps-6-timeouts/index.rsh
+md5: b390a5f23cadf2f5da1533378a83f52f
 range: 39-43
 ```
 
@@ -992,6 +1033,7 @@ if she doesn't start the game, then no one is any worse off.
 
 ```
 load: /examples/rps-6-timeouts/index.rsh
+md5: b390a5f23cadf2f5da1533378a83f52f
 range: 45-54
 ```
 
@@ -1002,6 +1044,7 @@ However, we will adjust Bob's first message, because if he fails to participate,
 
 ```
 load: /examples/rps-6-timeouts/index.rsh
+md5: b390a5f23cadf2f5da1533378a83f52f
 range: 61-64
 ```
 
@@ -1015,6 +1058,7 @@ We will add a similar timeout handler to Alice's second message.
 
 ```
 load: /examples/rps-6-timeouts/index.rsh
+md5: b390a5f23cadf2f5da1533378a83f52f
 range: 70-71
 ```
 
@@ -1032,6 +1076,7 @@ Let's modify the JavaScript frontend to deliberately cause a timeout sometimes w
 
 ```
 load: /examples/rps-6-timeouts/index.mjs
+md5: f1852dd1b33b99dcac138ee2c7fab9f2
 range: 34-53
 ```
 
@@ -1124,6 +1169,7 @@ We'll modify the `{!js} Player` interact object so that it will have a different
 
 ```
 load: /examples/rps-7-loops/index.mjs
+md5: 6af4573c7186ac0f544f46341767cff1
 range: 19-38
 ```
 
@@ -1136,6 +1182,7 @@ It's just a matter of reverting to the simpler version from before.
 
 ```
 load: /examples/rps-7-loops/index.mjs
+md5: 6af4573c7186ac0f544f46341767cff1
 range: 40-52
 ```
 
@@ -1167,6 +1214,7 @@ Let's make these changes now.
 
 ```
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 45-51
 ```
 
@@ -1175,6 +1223,7 @@ range: 45-51
 
 ```
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 53-58
 ```
 
@@ -1200,6 +1249,7 @@ Here's what the structure looks like:
 
 ```
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 59-61
 ```
 
@@ -1211,6 +1261,7 @@ Now, let's look at the body of the loop for the remaining steps, starting with A
 
 ```
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 62-71
 ```
 
@@ -1219,6 +1270,7 @@ range: 62-71
 
 ```
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 73-79
 ```
 
@@ -1226,6 +1278,7 @@ Similarly, Bob's code is almost identical to the prior version, except that he's
 
 ```
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 81-87
 ```
 
@@ -1235,6 +1288,7 @@ Next is the end of the loop.
 
 ```
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 89-91
 ```
 
@@ -1246,6 +1300,7 @@ The rest of the program could be exactly the same as it was before, except now i
 
 ```
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 93-95
 ```
 
@@ -1333,6 +1388,7 @@ You'll see a lot of similarity between this and the last version, but for comple
 
 ```
 load: /examples/rps-8-interact/index.mjs
+md5: 9f824fcd58e5fdda4f4761b99093cfdc
 range: 1-4
 ```
 
@@ -1342,6 +1398,7 @@ We'll see how `ask` is used below.
 
 ```
 load: /examples/rps-8-interact/index.mjs
+md5: 9f824fcd58e5fdda4f4761b99093cfdc
 range: 5-10
 ```
 
@@ -1351,6 +1408,7 @@ range: 5-10
 
 ```
 load: /examples/rps-8-interact/index.mjs
+md5: 9f824fcd58e5fdda4f4761b99093cfdc
 range: 11-27
 ```
 
@@ -1360,6 +1418,7 @@ range: 11-27
 
 ```
 load: /examples/rps-8-interact/index.mjs
+md5: 9f824fcd58e5fdda4f4761b99093cfdc
 range: 28-39
 ```
 
@@ -1369,6 +1428,7 @@ range: 28-39
 
 ```
 load: /examples/rps-8-interact/index.mjs
+md5: 9f824fcd58e5fdda4f4761b99093cfdc
 range: 41-47
 ```
 
@@ -1376,6 +1436,7 @@ Next we define a few helper functions and start the participant interaction inte
 
 ```
 load: /examples/rps-8-interact/index.mjs
+md5: 9f824fcd58e5fdda4f4761b99093cfdc
 range: 49-52
 ```
 
@@ -1383,6 +1444,7 @@ Then we define a timeout handler.
 
 ```
 load: /examples/rps-8-interact/index.mjs
+md5: 9f824fcd58e5fdda4f4761b99093cfdc
 range: 54-71
 ```
 
@@ -1390,6 +1452,7 @@ Next, we request the wager amount or define the `{!js} acceptWager` method, depe
 
 ```
 load: /examples/rps-8-interact/index.mjs
+md5: 9f824fcd58e5fdda4f4761b99093cfdc
 range: 73-90
 ```
 
@@ -1397,6 +1460,7 @@ Next, we define the shared `{!js} getHand` method.
 
 ```
 load: /examples/rps-8-interact/index.mjs
+md5: 9f824fcd58e5fdda4f4761b99093cfdc
 range: 92-95
 ```
 
@@ -1404,6 +1468,7 @@ Finally, the `{!js} seeOutcome` method.
 
 ```
 load: /examples/rps-8-interact/index.mjs
+md5: 9f824fcd58e5fdda4f4761b99093cfdc
 range: 97-103
 ```
 
@@ -1561,6 +1626,7 @@ because [`rps-9-web/index.rsh`](@{REPO}/examples/rps-9-web/index.rsh) is the sam
 
 ```
 load: /examples/rps-9-web/index.js
+md5: 29b1b17df91e1d49053670f72eebc6b4
 range: 1-9
 ```
 
@@ -1576,6 +1642,7 @@ to achieve the desired effect.
 
 ```
 load: /examples/rps-9-web/index.js
+md5: 29b1b17df91e1d49053670f72eebc6b4
 range: 10-14
 ```
 
@@ -1589,11 +1656,13 @@ and tell it what to do once it mounts, which is the React term for starting.
 
 ```
 load: /examples/rps-9-web/index.js
+md5: 29b1b17df91e1d49053670f72eebc6b4
 range: 15-31
 ```
 
 ```
 load: /examples/rps-9-web/index.js
+md5: 29b1b17df91e1d49053670f72eebc6b4
 range: 39-41
 ```
 
@@ -1617,6 +1686,7 @@ Next, we define callbacks on `{!js} App` for what to do when the user clicks cer
 
 ```
 load: /examples/rps-9-web/index.js
+md5: 29b1b17df91e1d49053670f72eebc6b4
 range: 32-36
 ```
 
@@ -1633,6 +1703,7 @@ When we combine this with the view ([rps-9-web/views/AppViews.js](@{REPO}/exampl
 
 ```
 load: /examples/rps-9-web/index.js
+md5: 29b1b17df91e1d49053670f72eebc6b4
 range: 37-38
 ```
 
@@ -1652,6 +1723,7 @@ Our Web frontend needs to implement the participant interact interface for playe
 
 ```
 load: /examples/rps-9-web/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 20-25
 ```
 
@@ -1659,6 +1731,7 @@ We will provide these callbacks via the React component directly.
 
 ```
 load: /examples/rps-9-web/index.js
+md5: 29b1b17df91e1d49053670f72eebc6b4
 range: 42-55
 ```
 
@@ -1702,6 +1775,7 @@ Our Web frontend needs to implement the participant interact interface for Alice
 
 ```
 load: /examples/rps-9-web/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 28-32
 ```
 
@@ -1710,6 +1784,7 @@ and define some button handlers in order to trigger the deployment of the contra
 
 ```
 load: /examples/rps-9-web/index.js
+md5: 29b1b17df91e1d49053670f72eebc6b4
 range: 56-72
 ```
 
@@ -1753,6 +1828,7 @@ Our Web frontend needs to implement the participant interact interface for Bob, 
 
 ```
 load: /examples/rps-9-web/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 33-36
 ```
 
@@ -1761,6 +1837,7 @@ and define some button handlers in order to attach to the deployed contract.
 
 ```
 load: /examples/rps-9-web/index.js
+md5: 29b1b17df91e1d49053670f72eebc6b4
 range: 73-95
 ```
 
@@ -1801,6 +1878,7 @@ The display when waiting for a turn ([rps-9-web/views/AttacherViews.js](@{REPO}/
 
 ```
 load: /examples/rps-9-web/index.js
+md5: 29b1b17df91e1d49053670f72eebc6b4
 range: 96-96
 ```
 
@@ -1942,18 +2020,21 @@ First, let's look at the Reach program:
 
 ```
 load: /examples/rps-8-interact/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 ```
 
 Next, the JavaScript command-line frontend:
 
 ```
 load: /examples/rps-8-interact/index.mjs
+md5: 9f824fcd58e5fdda4f4761b99093cfdc
 ```
 
 And finally, the Web frontend:
 
 ```
 load: /examples/rps-9-web/index.js
+md5: 29b1b17df91e1d49053670f72eebc6b4
 ```
 
 We wrote about a hundred lines of Reach and two different frontends.
