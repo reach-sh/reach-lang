@@ -324,6 +324,15 @@ stdlib.newTestAccounts(howMany:number, balance:UInt) => Promise<Array<acc>>
 
 Returns a Promise for an array of `{!js} howMany` test accounts, using `{!js} stdlib.newTestAccount`.
 
+Example:
+
+```js
+load: /examples/minBalance/index.mjs
+range: 15-15
+```
+
+`{!js} newTestAccounts` sets up 3 new accounts and loads them with the `startingBalance` of tokens so that they are usable for testing.
+
 ---
 
 Reach also provides some low-level tools for creating account handles.
