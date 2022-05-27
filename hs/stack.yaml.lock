@@ -78,13 +78,13 @@ packages:
 - completed:
     name: stan
     pantry-tree:
-      sha256: b3d22df4d35234a76c941608ed98b90026891894259ada486e2146235f712a0f
+      sha256: 05e44bb76ee95ac46ede71d407de2c0b7454f45ed667a6af3a5d8aee3f79a048
       size: 5139
-    commit: ca66b8dcfe22d1c1afbe81c83274dbc27115bf68
+    commit: 09c29e16723728fe2a3f1341e2569508c86f4597
     git: https://github.com/reach-sh/stan.git
     version: 0.0.1.0
   original:
-    commit: ca66b8dcfe22d1c1afbe81c83274dbc27115bf68
+    commit: 09c29e16723728fe2a3f1341e2569508c86f4597
     git: https://github.com/reach-sh/stan.git
 - completed:
     name: language-javascript

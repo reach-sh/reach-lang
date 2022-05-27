@@ -1,5 +1,8 @@
 'reach 0.1';
 
+const make = (cc, isReach = false) => Reach.App(() => {
+});
+
 export const main1 = make({
   ETH: 'child.sol.bin',
   ALGO: {
