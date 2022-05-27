@@ -413,6 +413,16 @@ ETH        => ethers.Wallet
 ALGO       => {addr: string, sk: UInt8Array(64)}
 ```
 
+Example:
+
+```js
+load: /examples/ganache/index.mjs
+range: 10-16
+```
+
+Here, `faucet` is set to the previously coded `ganacheProvider` that has a `{!js} getSigner` method.
+This allows `{!js} connectAccount` to be able connect `faucet` to `{!js} setFaucet` to provide the testing funds.
+
 # Using Account Handles
 
 Once you have an account handle, you can inspect it
