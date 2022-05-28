@@ -1,0 +1,8 @@
+reachc: error[RE0033]: Invalid Reach expression syntax: JSDecimal
+
+  ./ne3.rsh:2:1:const
+
+  2| const x = 1.1E-6.1;
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0033
+

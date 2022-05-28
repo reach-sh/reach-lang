@@ -4134,7 +4134,9 @@ evalExpr e = case e of
   JSIdentifier a x ->
     locAtf (srcloc_jsa "id ref" a) $
       evalId "expression" x
-  JSDecimal a ns ->
+  JSDecimal a ns -> do
+    when ('e' `elem` ns || 'E' `elem` ns) $
+      expect_ $ Err_Eval_IllegalJS e
     case splitOn "." ns of
       [iDigits, fDigits] ->
         let i = iDigits <> fDigits
