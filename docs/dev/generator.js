@@ -1,7 +1,6 @@
 import { setTimeout } from 'timers/promises';
 import CleanCss from 'clean-css';
 import { createHash } from 'crypto';
-import { readFileSync, writeFileSync } from 'fs';
 import fs from 'fs-extra';
 import * as htmlMinify from 'html-minifier';
 import path from 'path';
@@ -295,7 +294,7 @@ const processHtml = async ({iPath, oPath}) => {
 const processJs = async ({iPath, oPath}) => {
   const input = await fs.readFile(iPath, 'utf8');
   const output = false ? { code: input } : new UglifyJS.minify(input, {});
-  if (output.error) throw output.error;
+  if (output.error) { throw output.error };
   await writeFileMkdir(oPath, output.code);
 }
 
@@ -676,28 +675,19 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     if (arr.length > 0) {
       const line1 = arr[0].replace(/\s+/g, '');
       if (line1.slice(0, 5) == 'load:') {
+        const partialProgramPath = line1.slice(5);
+        const programPath = path.join('../..', partialProgramPath);
+        const eprefix = `load ${programPath}`;
         const line2 = arr[1].replace(/\s+/g, '');
         if (line2.startsWith('md5:') === false) {
-          throw new Error(`Whoa! ${
-            arr[0]
-          } does not have a corresponding MD5.`);
+          throw Error(`${eprefix}: No md5`);
         }
-        const partialProgramPath = line1.slice(5);
-        const programPath = path.join(
-          '../..', partialProgramPath
-        );
         const hashObject = createHash('md5');
-        hashObject.update(readFileSync(programPath));
-        const actualMD5 = hashObject.digest('hex');
-        const statedMD5 = line2.slice(4);
-        if (actualMD5 !== statedMD5) {
-          throw new Error(`Whoa! ${
-            arr[0]
-          } has an actual MD5 of ${
-            actualMD5
-          } but the docs say it has an MD5 of ${
-            statedMD5
-          }`);
+        hashObject.update(await fs.readFile(programPath));
+        const sum_actual = hashObject.digest('hex');
+        const sum_expected = line2.slice(4);
+        if (sum_actual !== sum_expected) {
+          throw Error(`${eprefix}: md5 mismatch: got ${sum_actual}, expected ${sum_expected}`);
         }
         spec.load = line1.slice(5);
         const rangeIsPresent = arr.length > 2;
@@ -1036,7 +1026,7 @@ XREF_KEYS_ARRAY.forEach(key => {
   SORTED_XREFS[key] = xrefs.h.xrefs[key];
 });
 
-writeFileSync('/proj/docs/dev/xrefs.json', JSON.stringify(
+await fs.writeFile('/proj/docs/dev/xrefs.json', JSON.stringify(
   SORTED_XREFS, null, 2
 ) + '\n');
 
