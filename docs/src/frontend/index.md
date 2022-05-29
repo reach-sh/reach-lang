@@ -417,6 +417,7 @@ Example:
 
 ```js
 load: /examples/ganache/index.mjs
+md5: cca336d85844697eb44884226f9d2ce0
 range: 10-16
 ```
 
