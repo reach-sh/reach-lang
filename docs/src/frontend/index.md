@@ -860,6 +860,7 @@ Returns a Promise for the current consensus network time, represented as a `BigN
 
 ```js
 load: /examples/getTimeSecs-demo/index.mjs
+md5: bd5f44e95dd7b28b6bd435703ef21596
 range: 5-15
 ```
 
