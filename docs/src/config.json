@@ -1,6 +1,6 @@
 {
   "background": "white",
-  "hasOtp": true,
+  "hasOtp": false,
   "hasPageHeader": true,
   "DISCORD": "https://discord.gg/AZsgcXu",
   "DISCUSSIONS": "https://github.com/reach-sh/reach-lang/discussions",
