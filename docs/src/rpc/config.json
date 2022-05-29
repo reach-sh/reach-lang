@@ -1,3 +1,4 @@
-  { "bookRank": 70,
-    "bookTitle": "RPC Server"
-  }
+{ "bookRank": 70,
+  "bookTitle": "RPC Server",
+  "hasOtp": true
+}

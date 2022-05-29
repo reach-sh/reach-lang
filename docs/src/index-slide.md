@@ -1,9 +1,5 @@
 # {#reach-top} Reach: The Smartest, Fastest, and Safest DApp Programming Language
 
-Reach is an interoperable, high-level, domain-specific language. 
-It is the most advantageous way to build decentralized applications (DApps) for the blockchain. 
-Reach enables full stack developers to become DApp developers in six weeks or less.
-
 <section class="container">
     <div id="carouselCaptions" class="carousel slide" data-bs-ride="carousel">
         <div class="carousel-indicators">
@@ -46,86 +42,68 @@ Reach enables full stack developers to become DApp developers in six weeks or le
 </section>
 
 <div class="container">
-    <section class="row align-items-center g-1">
-        <section class="col p-3">
-            <div class="card text-center">
-                <a href="/why/index.md">
-                <img src="build.png" class="card-img-top" alt="Why builders need Reach">
+    <section class="row g-1">
+        <section class="col card bg-dark text-white p-3">
+            <a href="/why/#build">
+            <img src="build.png" class="card-img img-fluid" alt="Why Builders Need Reach">
+            </a>
+            <div class="card-img">
+                <a href="/why/#build">
+                <h5 class="btn btn-secondary card-title position-absolute bottom-0 end-0">START HERE</h5>
                 </a>
-                <div class="card-body">
-                    <h5 class="card-title" style="color:#fff">Reach is for Builders</h5>
-                    <a href="/why/#build">
-                    <h5 class="btn btn-primary card-title">BUILD WITH US</h5>
-                    </a>
-                </div>
             </div>
         </section>
-        <section class="col p-3">
-            <div class="card text-center">
+        <section class="col card bg-dark text-white p-3">
+            <a href="/quickstart/#quickstart">
+            <img src="./why/download.png" class="card-img img-fluid" alt="Download Reach">
+            </a>
+            <div class="card-img">
                 <a href="/quickstart/#quickstart">
-                <img src="/why/download.png" class="card-img-top" alt="Download Reach">
+                <h5 class="btn btn-secondary card-title position-absolute top-50 end-0 translate-middle-y">DOWNLOAD REACH</h5>
                 </a>
-                <div class="card-body">
-                    <h5 class="card-title" style="color:#fff">New to Reach</h5>
-                    <a href="/quickstart/#quickstart">
-                    <h5 class="btn btn-primary card-title">DOWNLOAD REACH</h5>
-                    </a>
-                </div>
             </div>
         </section>
-        <section class="row align-items-center g-1">
-            <section class="col p-3">
-                <div class="card text-center">
+        <section class="row g-1">
+            <section class="col card bg-dark text-white p-3">
+                <a href="/tut/#tuts">
+                <img src="./why/learn.png" class="card-img-top" alt="Learn Reach with Tutorials">
+                </a>
+                <div class="card-img">
                     <a href="/tut/#tuts">
-                    <img src="/why/learn.png" class="card-img-top" alt="Learn Reach">
+                    <h5 class="btn btn-secondary card-title position-absolute bottom-0 end-0">LEARN REACH</h5>
                     </a>
-                    <div class="card-body">
-                        <h5 class="card-title" style="color:#fff">Learn Reach</h5>
-                        <a href="/tut/#tuts">
-                        <h5 class="btn btn-primary card-title">BEGIN</h5>
-                        </a>
-                    </div>
                 </div>
             </section>
-            <section class="col p-3">
-                <div class="card text-center">
+            <section class="col card bg-dark text-white p-3">
+                <a href="@{DISCORD}">
+                <img src="./why/community.png" class="card-img-top" alt="Join the Discord Community">
+                </a>
+                <div class="card-img">
                     <a href="@{DISCORD}">
-                    <img src="/why/community.png" class="card-img-top" alt="Join the Community">
+                    <h5 class="btn btn-secondary card-title position-absolute bottom-0 end-0">SAY HELLO</h5>
                     </a>
-                    <div class="card-body">
-                        <h5 class="card-title" style="color:#fff">Join the Community</h5>
-                        <a href="@{DISCORD}">
-                        <h5 class="btn btn-primary card-title">CONNECT</h5>
-                        </a>
-                    </div>
                 </div>
             </section>
         </section>
-        <section class="row align-items-center g-1">
-            <section class="col p-3">
-                <div class="card text-center">
+        <section class="row g-1">
+            <section class="col card bg-dark text-white p-3">
+                <a href="@{DISCUSSIONS}">
+                <img src="./why/discussions.png" class="card-img-top" alt="Ask Questions in GitHub Discussions">
+                </a>
+                <div class="card-img">
                     <a href="@{DISCUSSIONS}">
-                    <img src="/why/discussions.png" class="card-img-top" alt="Get Help">
+                    <h5 class="btn btn-secondary card-title position-absolute bottom-0 end-0">GET HELP</h5>
                     </a>
-                    <div class="card-body">
-                        <h5 class="card-title" style="color:#fff">Get Help</h5>
-                        <a href="@{DISCUSSIONS}">
-                        <h5 class="btn btn-primary card-title">DISCUSSIONS</h5>
-                        </a>
-                    </div>
                 </div>
             </section>
-            <section class="col p-3">
-                <div class="card text-center">
+            <section class="col card bg-dark text-white p-3">
+                <a href="@{REPO}">
+                <img src="source.png" class="card-img-top" alt="View and Contribute to the Source Code">
+                </a>
+                <div class="card-img">
                     <a href="@{REPO}">
-                    <img src="source.png" class="card-img-top" alt="Join the Community">
+                    <h5 class="btn btn-secondary card-title position-absolute bottom-0 end-0">CONTRIBUTE</h5>
                     </a>
-                    <div class="card-body">
-                        <h5 class="card-title" style="color:#fff">Contribute</h5>
-                        <a href="@{REPO}">
-                        <h5 class="btn btn-primary card-title">SOURCE CODE</h5>
-                        </a>
-                    </div>
                 </div>
             </section>
         </section>

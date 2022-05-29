@@ -1,4 +1,5 @@
 {
   "bookRank": 5,
-  "bookTitle": "Tutorials"
+  "bookTitle": "Tutorials",
+  "hasOtp": false
 }
