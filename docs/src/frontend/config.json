@@ -1,1 +1,3 @@
-  { "bookRank": 50 }
+{ "bookRank": 50,
+  "hasOtp": true
+}
