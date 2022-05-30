@@ -1,6 +1,7 @@
 module Reach.Optimize (optimize_, optimize, opt_sim, Optimize) where
 
 import Control.Monad.Reader
+import qualified Data.Aeson as AS
 import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -305,6 +306,15 @@ instance Optimize DLRemoteALGO where
     DLRemoteALGO <$> opt x <*> opt y <*> opt z <*> opt w
   gcs _ = return ()
 
+instance Optimize AS.Value where
+  opt = return
+  gcs _ = return ()
+
+instance Optimize DLContractNew where
+  opt (DLContractNew a b) =
+    DLContractNew <$> opt a <*> opt b
+  gcs _ = return ()
+
 unsafeAt :: [a] -> Int -> a
 unsafeAt l i =
   case atMay l i of
@@ -441,6 +451,7 @@ instance Optimize DLExpr where
                 _ -> return $ DLE_Arg at da'
             _ -> meh
         _ -> meh
+    DLE_ContractNew at cns -> DLE_ContractNew at <$> opt cns
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
   gcs _ = return ()

@@ -2290,6 +2290,24 @@ ce = \case
     -- [ Default, Object, Tag ]
     -- [ False, True, Cond ]
     op "select"
+  DLE_ContractNew at _cns -> do
+    block_ "ContractNew" $ do
+      let ct_at = at
+      let ct_mtok = Nothing
+      let ct_amt = DLA_Literal $ minimumBalance_l
+      void $ checkTxn $ CheckTxn {..}
+      itxnNextOrBegin False
+      let vTypeEnum = "appl"
+      output $ TConst vTypeEnum
+      makeTxn1 "TypeEnum"
+      let cr_approval = impossible "XXX cr_approval"
+      cbs cr_approval
+      makeTxn1 "ApprovalProgram"
+      let cr_clearstate = impossible "XXX cr_clearstate"
+      cbs cr_clearstate
+      makeTxn1 "ClearStateProgram"
+      op "itxn_submit"
+      code "itxn" ["CreatedApplicationID"]
   where
     show_stack :: String -> Maybe BS.ByteString -> SrcLoc -> [SLCtxtFrame] -> App ()
     show_stack what msg at fs = do

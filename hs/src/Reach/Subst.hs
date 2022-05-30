@@ -6,6 +6,7 @@ where
 
 import Control.Monad.Identity
 import Control.Monad.Reader
+import qualified Data.Aeson as AS
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Reach.AST.DLBase
@@ -78,6 +79,12 @@ instance Subst DLWithBill where
 instance Subst DLRemoteALGO where
   subst (DLRemoteALGO x y z w) = DLRemoteALGO <$> subst x <*> subst y <*> subst z <*> subst w
 
+instance Subst AS.Value where
+  subst = return
+
+instance Subst DLContractNew where
+  subst (DLContractNew a b) = DLContractNew <$> subst a <*> subst b
+
 instance Subst DLExpr where
   subst = \case
     DLE_Arg at a -> DLE_Arg at <$> subst a
@@ -109,6 +116,7 @@ instance Subst DLExpr where
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mtok tb -> DLE_GetUntrackedFunds at <$> subst mtok <*> subst tb
     DLE_FromSome at mo da -> DLE_FromSome at <$> subst mo <*> subst da
+    DLE_ContractNew at cns -> DLE_ContractNew at <$> subst cns
 
 instance Subst DLStmt where
   subst = \case

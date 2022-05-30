@@ -137,7 +137,6 @@ completionKind v =
         SLPrim_Map -> Just CK_TypeParameter
         SLPrim_Map_new -> Just CK_Method
         SLPrim_Map_reduce -> Just CK_Function
-        SLPrim_ContractCode -> Just CK_Constructor
         SLPrim_Participant -> Just CK_Constructor
         SLPrim_ParticipantClass -> Just CK_Constructor
         SLPrim_View -> Just CK_Constructor
@@ -175,6 +174,8 @@ completionKind v =
         SLPrim_xor -> Just CK_Function
         SLPrim_mod -> Just CK_Function
         SLPrim_castOrTrunc _ -> Just CK_Function
+        SLPrim_ContractCode -> Just CK_Constructor
+        SLPrim_Contract_new -> Just CK_Function
     SLV_Form slf ->
       case slf of
         SLForm_App -> Just CK_Constructor

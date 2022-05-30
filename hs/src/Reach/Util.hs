@@ -106,6 +106,9 @@ dupeIORef r = newIORef =<< readIORef r
 mapWithKeyM :: (Ord k, Monad m) => (k -> a -> m b) -> M.Map k a -> m (M.Map k b)
 mapWithKeyM f m = M.fromList <$> (mapM (\(k, x) -> (,) k <$> f k x) $ M.toAscList m)
 
+forWithKeyM :: (Ord k, Monad m) => M.Map k a -> (k -> a -> m b) -> m (M.Map k b)
+forWithKeyM = flip mapWithKeyM
+
 forWithKeyM_ :: (Monad m) => M.Map k a -> (k -> a -> m ()) -> m ()
 forWithKeyM_ m f = mapM_ (uncurry f) $ M.toAscList m
 

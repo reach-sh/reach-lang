@@ -1,5 +1,6 @@
 module Reach.CollectTypes (cts) where
 
+import qualified Data.Aeson as AS
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -115,6 +116,12 @@ instance CollectsTypes PrimOp where
 instance CollectsTypes DLRemoteALGO where
   cts (DLRemoteALGO x y z w) = cts x <> cts y <> cts z <> cts w
 
+instance CollectsTypes AS.Value where
+  cts = const mempty
+
+instance CollectsTypes DLContractNew where
+  cts (DLContractNew x y) = cts x <> cts y
+
 instance CollectsTypes DLExpr where
   cts = \case
     DLE_Arg _ a -> cts a
@@ -147,6 +154,7 @@ instance CollectsTypes DLExpr where
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ mt tb -> cts mt <> cts tb
     DLE_FromSome _ mo da -> cts mo <> cts da
+    DLE_ContractNew _ cns -> cts cns
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m

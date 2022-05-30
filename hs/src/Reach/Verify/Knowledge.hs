@@ -156,6 +156,9 @@ instance AllPoints DLTokenNew where
       <> all_points dtn_metadata
       <> all_points dtn_supply
 
+instance AllPoints DLContractNew where
+  all_points = const mempty
+
 kgq_a_all :: AllPoints a => KCtxt -> a -> IO ()
 kgq_a_all ctxt a =
   mapM_ (flip (knows ctxt) (all_points a)) $ map P_Part (ctxt_ps ctxt)
@@ -236,8 +239,7 @@ kgq_e ctxt mv = \case
   DLE_Remote _ _ av _ _ pamt as _ _ _ -> do
     kgq_pa ctxt pamt
     kgq_la ctxt mv $ DLLA_Tuple $ av : as
-  DLE_TokenNew _ tns ->
-    kgq_a_all ctxt tns
+  DLE_TokenNew _ tns -> kgq_a_all ctxt tns
   DLE_TokenBurn _ t a ->
     kgq_a_all ctxt [t, a]
   DLE_TokenDestroy _ t ->
@@ -250,6 +252,7 @@ kgq_e ctxt mv = \case
   DLE_FromSome _ mo da -> do
     kgq_a_all ctxt mo
     kgq_a_all ctxt da
+  DLE_ContractNew _ cns -> kgq_a_all ctxt cns
 
 kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case

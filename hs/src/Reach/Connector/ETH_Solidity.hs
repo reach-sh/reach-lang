@@ -374,6 +374,9 @@ instance DepthOf DLTokenNew where
   depthOf (DLTokenNew {..}) =
     depthOf [dtn_name, dtn_sym, dtn_url, dtn_metadata, dtn_supply]
 
+instance DepthOf DLContractNew where
+  depthOf (DLContractNew {}) = return 1
+
 instance DepthOf DLExpr where
   depthOf = \case
     DLE_Arg _ a -> depthOf a
@@ -413,6 +416,7 @@ instance DepthOf DLExpr where
     DLE_setApiDetails {} -> return 0
     DLE_GetUntrackedFunds _ mt tb -> max <$> depthOf mt <*> depthOf tb
     DLE_FromSome _ mo da -> add1 $ depthOf [mo, da]
+    DLE_ContractNew _ cns -> add1 $ depthOf cns
     where
       add1 = addN 1
       addN n m = (+) n <$> m
@@ -706,6 +710,7 @@ solExpr sp = \case
     c <- solEq (mo' <> ".which") (solVariant t vn)
     return $ parens $ c <+> "?" <+> (mo' <> "._" <> pretty vn) <+> ":" <+> da'
   DLE_GetUntrackedFunds {} -> impossible "getUntrackedFunds"
+  DLE_ContractNew {} -> impossible "contractNew"
   where
     spa m = (<> sp) <$> m
 

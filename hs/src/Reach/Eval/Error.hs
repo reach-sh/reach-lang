@@ -15,7 +15,6 @@ import Language.JavaScript.Parser.AST
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.SL
-import Reach.Connector
 import Reach.Eval.Types
 import Reach.Texty (pretty)
 import Reach.Util

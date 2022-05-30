@@ -3,6 +3,7 @@ module Reach.Eval (evalBundle, prepareDAppCompiles) where
 import Control.Monad.Extra
 import Control.Monad.Reader
 import Data.IORef
+import qualified Data.Aeson as AS
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Language.JavaScript.Parser
@@ -122,6 +123,13 @@ instance (Pandemic b) => Pandemic (Either a b) where
 instance Pandemic DLStmts where
   pan = mapM pan
 
+instance Pandemic AS.Value where
+  pan = return
+
+instance Pandemic DLContractNew where
+  pan (DLContractNew {..}) =
+    DLContractNew <$> pan dcn_code <*> pan dcn_mopts
+
 instance Pandemic DLExpr where
   pan = \case
     DLE_Arg at a -> DLE_Arg at <$> pan a
@@ -154,6 +162,7 @@ instance Pandemic DLExpr where
     DLE_setApiDetails at who dom mc info -> return $ DLE_setApiDetails at who dom mc info
     DLE_GetUntrackedFunds at marg a -> DLE_GetUntrackedFunds at <$> pan marg <*> pan a
     DLE_FromSome at mo da -> DLE_FromSome at <$> pan mo <*> pan da
+    DLE_ContractNew at cns -> DLE_ContractNew at <$> pan cns
 
 instance Pandemic DLVar where
   pan (DLVar at m_locvar t i) = do
