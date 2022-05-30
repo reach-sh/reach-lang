@@ -42,7 +42,7 @@ mkdir market
 touch index.rsh index.mjs
 ```
 
-* The `index.mjs` is the frontend of the DApp that will be create since it contains the code that the `{!rsh} Participant`s will interact with.
+* The `index.mjs` is the frontend of the DApp that will be create since it contains the code that the `{!rsh} Participant`s will `{!rsh} interact` with.
 `Reach` requires this file even if it is empty.
 
 * The `index.rsh` is the backend which contains the DApp's instructions and ensures security of the DApp.
@@ -376,7 +376,7 @@ It will make the backend to `{!rsh} interact` with the frontend and that in turn
 To make that happen, all the methods that has just been defined in the fronted, would now be called upon using the `{!rsh} interact` `{!rsh} Object`.
 
 :::note
-Calling `{!rsh} Interact` on something in Reach is the same thing as calling upon a `{!rsh} function` to execute the code within it.
+Calling `{!rsh} interact` on something in Reach is the same thing as calling upon a `{!rsh} function` to execute the code within it.
 :::
 
 Go back to the backend file. Just below `{!rsh} init();`, type the following code:
@@ -396,7 +396,7 @@ A local step is an action that happens on the `{!rsh} Participant`'s machine. Th
 
 * Line 51 has the `Seller` `{!rsh} interact` with the `sellerInfo` `{!rsh} Object`. 
 
-After the `{!rsh} Interact`ion is done, the program is then given the permission to share whatsoever the result of that `{!rsh} Interact`ion is with the public. 
+After the `{!rsh} interact`ion is done, the program is then given the permission to share whatsoever the result of that `{!rsh} interact`ion is with the public. 
 To do this, `{!rsh} declassify()` method is used.
 
 :::note
@@ -405,7 +405,7 @@ To do this, `{!rsh} declassify()` method is used.
 
 * Line 53 now publicizes the `sellerInfo` that has been declassified.
 
-* Line 54 then `{!rsh} Interact`s with the `Seller`'s `reportReady` `{!rsh} function`. 
+* Line 54 then `{!rsh} interact`s with the `Seller`'s `reportReady` `{!rsh} function`. 
 The `reportReady` takes in two arguments (i.e. the `Seller`'s `announcement` and `products`)
 
 * Line 55 concludes the `Seller`'s local step by calling `commit()`.
