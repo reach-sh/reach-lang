@@ -1977,7 +1977,7 @@ Example:
 
 ```reach
 load: /hs/t/n/Err_Part_DuplicatePart.rsh
-range: 4 - 9
+range: 4 - 7
 ```
 
 Each `{!rsh} Participant` name must be unique.
@@ -1988,7 +1988,7 @@ Example:
 
 ```reach
 load: /hs/t/y/Fix_Part_DuplicatePart.rsh
-range: 4 - 9
+range: 4 - 7
 ```
 
 :::note
