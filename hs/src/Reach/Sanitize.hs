@@ -4,6 +4,7 @@ module Reach.Sanitize
   )
 where
 
+import qualified Data.Aeson as AS
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
@@ -61,6 +62,12 @@ instance Sanitize DLWithBill where
 instance Sanitize DLRemoteALGO where
   sani (DLRemoteALGO x y z w) = DLRemoteALGO (sani x) (sani y) (sani z) (sani w)
 
+instance Sanitize AS.Value where
+  sani = id
+
+instance Sanitize DLContractNew where
+  sani (DLContractNew a b) = DLContractNew (sani a) (sani b)
+
 instance Sanitize DLExpr where
   sani = \case
     DLE_Arg _ a -> DLE_Arg sb $ sani a
@@ -92,6 +99,7 @@ instance Sanitize DLExpr where
     DLE_setApiDetails _ w d c f -> DLE_setApiDetails sb w d c f
     DLE_GetUntrackedFunds _ mt tb -> DLE_GetUntrackedFunds sb (sani mt) (sani tb)
     DLE_FromSome _ mo da -> DLE_FromSome sb (sani mo) (sani da)
+    DLE_ContractNew _ cns -> DLE_ContractNew sb (sani cns)
 
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m

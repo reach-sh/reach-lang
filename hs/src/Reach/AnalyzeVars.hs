@@ -5,6 +5,7 @@ module Reach.AnalyzeVars
   )
 where
 
+import qualified Data.Aeson as AS
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Reach.AST.DLBase
@@ -102,6 +103,12 @@ instance FreeVars DLRemoteALGO where
 instance FreeVars DLTokenNew where
   freeVars (DLTokenNew a b c d e f) = freeVars [a, b, c, d, e] <> freeVars f
 
+instance FreeVars AS.Value where
+  freeVars = const mempty
+
+instance FreeVars DLContractNew where
+  freeVars (DLContractNew a b) = freeVars a <> freeVars b
+
 instance FreeVars DLExpr where
   freeVars = \case
     DLE_Arg _ a -> freeVars a
@@ -133,6 +140,7 @@ instance FreeVars DLExpr where
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ a b -> freeVars a <> freeVars b
     DLE_FromSome _ a b -> freeVars [a, b]
+    DLE_ContractNew _ a -> freeVars a
 
 instance FreeVars DLLetVar where
   freeVars = \case

@@ -16,6 +16,7 @@ import Data.Maybe
 import Data.Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
+import qualified Data.Text as T
 import GHC.Stack (HasCallStack)
 import GHC.Generics
 import Reach.AST.Base
@@ -25,6 +26,8 @@ import Reach.Texty
 import Reach.Util
 import Data.Bifunctor
 import Data.Bool (bool)
+
+type ConnectorName = T.Text
 
 type PrettySubstEnv = M.Map DLVar Doc
 
@@ -713,6 +716,26 @@ instance PrettySubst DLRemoteALGO where
           , ("apps", render_das p')
           ]
 
+data DLContractNew = DLContractNew
+  { dcn_code :: Value
+  , dcn_mopts :: Maybe Value
+  }
+  deriving (Eq, Ord, Generic)
+
+instance PrettySubst Value where
+  prettySubst = return . pretty . show
+
+instance PrettySubst DLContractNew where
+  prettySubst (DLContractNew {..}) = do
+    c' <- prettySubst dcn_code
+    o' <- prettySubst dcn_mopts
+    return $
+      render_obj $
+        M.fromList
+        [ ("code" :: String, c')
+        , ("mopts", o')
+        ]
+
 data DLExpr
   = DLE_Arg SrcLoc DLArg
   | DLE_LArg SrcLoc DLLargeArg
@@ -753,6 +776,7 @@ data DLExpr
   | DLE_GetUntrackedFunds SrcLoc (Maybe DLArg) DLArg
   | DLE_FromSome SrcLoc DLArg DLArg
   -- Maybe try to generalize FromSome into a Match
+  | DLE_ContractNew SrcLoc (M.Map ConnectorName DLContractNew)
   deriving (Eq, Ord, Generic)
 
 data LogKind
@@ -780,6 +804,9 @@ instance PrettySubst a => PrettySubst (Maybe a) where
       a' <- prettySubst a
       return $ "Some" <+> a'
     Nothing -> return "None"
+
+instance (Pretty k, PrettySubst a) => PrettySubst (M.Map k a) where
+  prettySubst x = render_obj <$> mapM prettySubst x
 
 instance PrettySubst DLExpr where
   prettySubst = \case
@@ -894,6 +921,9 @@ instance PrettySubst DLExpr where
       mo' <- prettySubst mo
       da' <- prettySubst da
       return $ "fromSome" <> parens (render_das [mo', da'])
+    DLE_ContractNew _ cns -> do
+      cns' <- prettySubst cns
+      return $ "new Contract" <> parens cns'
 
 instance PrettySubst LogKind where
   prettySubst = \case
@@ -943,6 +973,7 @@ instance IsPure DLExpr where
     DLE_setApiDetails {} -> False
     DLE_GetUntrackedFunds {} -> False
     DLE_FromSome {} -> True
+    DLE_ContractNew {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -975,6 +1006,7 @@ instance IsLocal DLExpr where
     DLE_setApiDetails {} -> False
     DLE_GetUntrackedFunds {} -> True
     DLE_FromSome {} -> True
+    DLE_ContractNew {} -> False
 
 instance CanDupe DLExpr where
   canDupe e =
@@ -988,6 +1020,7 @@ instance CanDupe DLExpr where
           DLE_TokenDestroy {} -> False
           DLE_TimeOrder {} -> False
           DLE_EmitLog {} -> False
+          DLE_ContractNew {} -> False
           _ -> True
 
 newtype DLAssignment

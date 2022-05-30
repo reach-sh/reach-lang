@@ -512,25 +512,30 @@ trackVariable el =
 markVarUsed :: (SrcLoc, SLVar) -> App ()
 markVarUsed = envSetInsert e_vars_used
 
--- | The "_" ident may never be looked up.
-env_lookup :: LookupCtx -> SLVar -> SLEnv -> App SLSSVal
-env_lookup _ "_" _ = expect_ $ Err_Eval_LookupUnderscore
-env_lookup ctx x env =
+env_lookup_ :: LookupCtx -> SLVar -> (a -> Bool) -> M.Map SLVar a -> App a
+env_lookup_ _ "_" _ _ = expect_ $ Err_Eval_LookupUnderscore
+env_lookup_ ctx x hide env =
   case M.lookup x env of
-    Just sv -> do
-      markVarUsed (sss_at sv, x)
-      case sv of
-        SLSSVal {sss_val = SLV_Deprecated d v} -> do
-          at <- withAt id
-          liftIO $ emitWarning (Just at) $ W_Deprecated d
-          return $ sv {sss_val = v}
-        v -> return $ v
+    Just v -> return v
     Nothing -> do
-      expect_ $ Err_Eval_UnboundId ctx x $ M.keys $ M.filter (not . isKwd) env
+      expect_ $ Err_Eval_UnboundId ctx x $ M.keys $ M.filter (not . hide) env
 
 isKwd :: SLSSVal -> Bool
-isKwd (SLSSVal _ _ (SLV_Kwd _)) = True
-isKwd _ = False
+isKwd = \case
+  SLSSVal _ _ (SLV_Kwd _) -> True
+  _ -> False
+
+-- | The "_" ident may never be looked up.
+env_lookup :: LookupCtx -> SLVar -> SLEnv -> App SLSSVal
+env_lookup ctx x env = do
+  sv <- env_lookup_ ctx x isKwd env
+  markVarUsed (sss_at sv, x)
+  case sv of
+    SLSSVal {sss_val = SLV_Deprecated d v} -> do
+      at <- withAt id
+      liftIO $ emitWarning (Just at) $ W_Deprecated d
+      return $ sv {sss_val = v}
+    v -> return $ v
 
 m_fromList_public_builtin :: [(SLVar, SLVal)] -> SLEnv
 m_fromList_public_builtin = m_fromList_public sb
@@ -1448,7 +1453,9 @@ evalAsEnvM sv@(lvl, obj) = case obj of
   SLV_Type ST_Contract ->
     return $ Just $
       M.fromList
-        [("addressEq", retV $ public $ SLV_Prim $ SLPrim_op S_CTC_ADDR_EQ)]
+        [ ("addressEq", retV $ public $ SLV_Prim $ SLPrim_op S_CTC_ADDR_EQ)
+        , ("new", retV $ public $ SLV_Prim $ SLPrim_Contract_new)
+        ]
   SLV_Type (ST_UInt UI_Word) ->
     return $ Just $
       M.fromList
@@ -3784,8 +3791,8 @@ evalPrim p sargs =
         (l, r) -> expect_ $ Err_mod_Types l r
     SLPrim_ContractCode -> do
       at <- withAt id
-      cc <- one_arg
-      case cc of
+      ccv <- one_arg
+      case ccv of
         SLV_Object _ _ o -> do
           cns <- readDlo dlo_connectors
           let f cn c = do
@@ -3802,7 +3809,36 @@ evalPrim p sargs =
                   Right x -> return x
                   Left x -> expect_t co $ Err_ContractCode cn x
           public <$> (SLV_ContractCode at <$> mapWithKeyM f cns)
-        _ -> expect_t cc $ Err_Expected "Object or Reach.App"
+        _ -> expect_t ccv $ Err_Expected "Object or Reach.App"
+    SLPrim_Contract_new -> do
+      at <- withAt id
+      ensure_mode SLM_ConsensusStep "new Contract"
+      (ccv, opts) <-
+        case args of
+          [x] -> return (x, mempty)
+          [x, y] -> (,) x <$> mustBeObject y
+          _ -> illegal_args
+      cc <- case ccv of
+              SLV_ContractCode _ cc -> return cc
+              _ -> expect_t ccv $ Err_Expected "ContractCode"
+      let cc' = M.mapKeys t2s cc
+      cns <- readDlo dlo_connectors
+      dcns <- forWithKeyM cns $ \cn _ -> do
+        let cnv = t2s cn
+        let ctx = LC_RefFrom "ContractCode"
+        dcn_code <- env_lookup_ ctx cnv (const False) cc'
+        dcn_mopts <- case M.member cnv opts of
+                True -> do
+                  sv <- sss_val <$> env_lookup ctx cnv opts
+                  jsv <- slToJSON sv
+                  return $ Just jsv
+                False -> return Nothing
+        return $ DLContractNew {..}
+      ctcdv_ <-
+        ctxt_lift_expr (DLVar at Nothing T_Contract) $
+          DLE_ContractNew at dcns
+      ctcdv <- doInternalLog_ Nothing ctcdv_
+      return $ public $ SLV_DLVar ctcdv
     -- END OF evalPrim cases
   where
     lvl = mconcatMap fst sargs

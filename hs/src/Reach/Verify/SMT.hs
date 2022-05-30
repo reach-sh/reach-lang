@@ -1199,6 +1199,7 @@ smt_e at_dv mdv de = do
       let nonep = List [Atom noneCtor, nonev]
       let nonec = List [nonep, da']
       bound at $ smtApply "match" [mo', List [nonec, somec]]
+    DLE_ContractNew at _ -> unbound at
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)

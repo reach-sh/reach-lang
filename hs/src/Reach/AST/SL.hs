@@ -799,6 +799,7 @@ data SLPrimitive
   | SLPrim_mod
   | SLPrim_castOrTrunc UIntTy
   | SLPrim_ContractCode
+  | SLPrim_Contract_new
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where
