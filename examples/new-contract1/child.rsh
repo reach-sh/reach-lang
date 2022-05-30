@@ -15,7 +15,7 @@ export const main = Reach.App(() => {
 
   const x = parallelReduce(0)
     .invariant(balance() == 0)
-    .while(x < 3)
+    .while(x < 2)
     .api_(P.f, (z) => {
       return [ 0, (k) => {
         k(x + y + z);

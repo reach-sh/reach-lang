@@ -5,6 +5,8 @@ module Reach.Eval.Core where
 import Control.Applicative
 import Control.Monad.Extra
 import Control.Monad.Reader
+import qualified Data.Aeson as Aeson
+import Data.Bifunctor
 import Data.Bits
 import Data.Bool (bool)
 import qualified Data.ByteString as B
@@ -20,7 +22,8 @@ import Data.Maybe
 import Data.Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
-import qualified Data.Text as T
+import Data.Tuple.Extra (fst3, snd3, thd3)
+import qualified Data.Vector as Vector
 import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
@@ -28,6 +31,7 @@ import Reach.AST.Base
 import Reach.AST.DL
 import Reach.AST.DLBase
 import Reach.AST.SL
+import Reach.Connector
 import Reach.Counter
 import Reach.Eval.Error
 import Reach.Eval.Types
@@ -37,10 +41,10 @@ import Reach.Texty (pretty)
 import Reach.Util
 import Reach.Warning
 import Safe (atMay)
+import System.Directory
+import System.FilePath
 import Text.ParserCombinators.Parsec.Number (numberValue)
 import Text.RE.TDFA (RE, compileRegex, matched, (?=~))
-import Data.Bifunctor
-import Data.Tuple.Extra (fst3, snd3, thd3)
 
 --- New Types
 
@@ -316,7 +320,7 @@ defaultApp =
         (JSStatementBlock JSNoAnnot [] JSNoAnnot JSSemiAuto)
         (mempty, False)
 
-app_default_opts :: Counter -> Counter -> [T.Text] -> DLOpts
+app_default_opts :: Counter -> Counter -> Connectors -> DLOpts
 app_default_opts idxr dar cns =
   DLOpts
     { dlo_verifyArithmetic = False
@@ -346,10 +350,13 @@ app_options =
         SLV_Tuple _ vs ->
           case traverse f vs of
             Left x -> Left x
-            Right y -> Right $ opts {dlo_connectors = y}
+            Right y -> Right $ opts {dlo_connectors = M.filterWithKey g $ dlo_connectors opts }
+              where
+                g x _ = x `elem` y
           where
-            f (SLV_Connector cn) = Right $ cn
-            f _ = Left $ "expected connector"
+            f = \case
+              SLV_Connector cn -> Right $ cn
+              _ -> Left $ "expected connector"
         _ -> Left $ "expected tuple"
 
 --- Utilities
@@ -556,6 +563,7 @@ base_env_slvals =
   , ("UInt256", SLV_Type $ ST_UInt UI_256)
   , ("Bytes", SLV_Prim SLPrim_Bytes)
   , ("Contract", SLV_Type ST_Contract)
+  , ("ContractCode", SLV_Prim $ SLPrim_ContractCode)
   , ("Address", SLV_Type ST_Address)
   , ("Token", SLV_Type ST_Token)
   , ("forall", SLV_Prim SLPrim_forall)
@@ -733,13 +741,45 @@ slToDLV = \case
   SLV_Form {} -> no
   SLV_Kwd {} -> no
   SLV_Map {} -> no
-  SLV_Deprecated {} -> no
+  SLV_Deprecated _ v -> slToDLV v
+  SLV_ContractCode {} -> no
   where
     recs = mapM slToDLV
     lit at = arg at . DLA_Literal
     arg at = yes . DLV_Arg at
     yes = return . Just
     no = return Nothing
+
+slToJSON :: SLVal -> App Aeson.Value
+slToJSON v =
+  case v of
+    SLV_Null {} -> return $ Aeson.Null
+    SLV_Bool _ b -> return $ Aeson.Bool b
+    SLV_Int _ _ n -> return $ Aeson.Number $ fromIntegral n
+    SLV_Bytes _ bs -> return $ Aeson.String $ b2t bs
+    SLV_Array _ _ vs -> arr vs
+    SLV_Tuple _ vs -> arr vs
+    SLV_Object _ _ oe -> obj $ M.map sss_val oe
+    SLV_Struct _ vs -> obj $ M.fromList vs
+    SLV_Clo {} -> no
+    SLV_Data {} -> no
+    SLV_DLC {} -> no
+    SLV_DLVar {} -> no
+    SLV_Type {} -> no
+    SLV_Connector {} -> no
+    SLV_Participant {} -> no
+    SLV_RaceParticipant {} -> no
+    SLV_Anybody {} -> no
+    SLV_Prim {} -> no
+    SLV_Form {} -> no
+    SLV_Kwd {} -> no
+    SLV_Map {} -> no
+    SLV_Deprecated _ x -> slToJSON x
+    SLV_ContractCode {} -> no
+  where
+    no = expect_t v Err_JSON
+    arr vs = (Aeson.Array . Vector.fromList) <$> mapM slToJSON vs
+    obj m = Aeson.Object <$> (mToKM <$> mapM slToJSON (M.mapKeys s2t m))
 
 getSecurityEnv :: SLVal -> M.Map SLVar SecurityLevel
 getSecurityEnv = \case
@@ -2589,9 +2629,9 @@ typeOfDigest v = do
 verifyNotReserved :: SrcLoc -> String -> App ()
 verifyNotReserved at s = do
   connectors <- readDlo dlo_connectors
-  -- XXX extend `Connector` to convey this info we're checking
-  when ("ETH" `elem` connectors && s `elem` map show solReservedNames) $
-    expect_thrown at $ Err_Sol_Reserved s
+  forM_ connectors $ \cn -> do
+    when (conReserved cn s) $ do
+      expect_thrown at $ Err_Connector_Reserved (conName cn) s
 
 warnInteractType :: SLType -> App ()
 warnInteractType = \case
@@ -3742,7 +3782,28 @@ evalPrim p sargs =
         (T_Bytes {}, T_UInt UI_Word) -> go False
         (T_Digest, T_UInt UI_Word) -> go True
         (l, r) -> expect_ $ Err_mod_Types l r
-    -- END OF evalPrim case
+    SLPrim_ContractCode -> do
+      at <- withAt id
+      cc <- one_arg
+      case cc of
+        SLV_Object _ _ o -> do
+          cns <- readDlo dlo_connectors
+          let f cn c = do
+                let cnv = t2s cn
+                co <- sss_val <$> env_lookup (LC_RefFrom "ContractCode") cnv o
+                let SrcLoc _ _ msrc = srclocOf co
+                dir <-
+                  case msrc of
+                    Just (ReachSourceFile fp) ->
+                      return $ takeDirectory fp
+                    _ -> liftIO $ getCurrentDirectory
+                ov <- slToJSON co
+                (liftIO $ withCurrentDirectory dir $ conCompileCode c ov) >>= \case
+                  Right x -> return x
+                  Left x -> expect_t co $ Err_ContractCode cn x
+          public <$> (SLV_ContractCode at <$> mapWithKeyM f cns)
+        _ -> expect_t cc $ Err_Expected "Object or Reach.App"
+    -- END OF evalPrim cases
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs

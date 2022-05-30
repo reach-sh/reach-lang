@@ -2117,7 +2117,7 @@ This error indicates that a `{!rsh} Struct` contains an invalid field name.
 A field name may be invalid if it is a reserved word in the connector you are targeting.
 
 For example, the code below erroneously uses the field name `{!rsh} "super"`, which is
-reserved in Solidity:
+reserved in the ETH connector:
 
 ```reach
 const A = Participant('A', {
@@ -2571,6 +2571,14 @@ Alternatively, if you want the api `B.setX` to pay into the contract, you can sp
 
 This error indicates that you attempted to create a `{!rsh} Data` instance with no variants.
 This is not allowed.
+
+## {#RE0136} RE0136
+
+This error indicates that you are using a function, like `{!rsh} ContractCode`, that requires representing values as JSON, but giving it a value that cannot be represented as JSON.
+
+## {#RE0137} RE0137
+
+This error indicates that there was an error while parsing or compiling contract code for `{!rsh} ContractCode`.
 
 ## {#REP0000} REP0000
 
