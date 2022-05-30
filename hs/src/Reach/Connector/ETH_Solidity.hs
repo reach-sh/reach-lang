@@ -8,7 +8,6 @@ import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.Trans.Except
 import Data.Aeson as Aeson
-import qualified Data.Aeson.Key as K
 import Data.Aeson.Encode.Pretty
 import Data.Bifunctor (Bifunctor (first))
 import qualified Data.ByteString as BS
@@ -17,6 +16,7 @@ import qualified Data.ByteString.Lazy.Char8 as LB
 import Data.Foldable
 import Data.IORef
 import Data.List (intersperse)
+import Data.List.Extra (splitOn)
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe)
 import qualified Data.Set as S
@@ -38,7 +38,7 @@ import Reach.Warning
 import System.Exit
 import System.FilePath
 import System.IO.Temp
-import System.Process
+import System.Process.ByteString
 import Text.Printf
 import Safe (headMay)
 import Safe.Foldable (maximumMay)
@@ -971,9 +971,29 @@ solCom = \case
     zero <- solArg $ DLA_Literal $ DLL_Int at UI_Word 0
     cnd <- solPrimApply (PLT UI_Word) [actBalV, tb']
     ite <- solPrimApply IF_THEN_ELSE [cnd, zero, sub]
-    return $ vsep [
-        solSet ("uint256" <+> actBalV) bal,
-        solSet (solMemVar dv) ite
+    return $ vsep $
+      [ solSet ("uint256" <+> actBalV) bal
+      , solSet (solMemVar dv) ite
+      ]
+  DL_Let _ (DLV_Eff) (DLE_ContractNew {}) ->
+    return ""
+  DL_Let _ (DLV_Let _ dv) (DLE_ContractNew _at cns) -> do
+    let DLContractNew {..} = cns M.! conName'
+    let (bc :: String) = either impossible id $ aesonParse dcn_code
+    addMemVar dv
+    ctc' <- allocVar
+    bc' <- allocVar
+    let pay' = "0"
+    let p' = bc'
+    let len' = pretty $ (length bc) `div` 2
+    let asm = vsep $
+          [ ctc' <+> ":=" <+> solApply "create" [ pay', p', len' ]
+          ]
+    return $ vsep $
+      [ solSet ("bytes memory" <+> bc') (pretty $ "hex\"" <> bc <> "\"")
+      , "address payable" <+> ctc' <> semi
+      , "assembly" <+> solBraces asm
+      , solSet (solMemVar dv) ctc'
       ]
   DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ (BYTES_ZPAD _) [x]) -> do
     addMemVar dv
@@ -1579,6 +1599,9 @@ baseTypes =
     , (T_Token, "address")
     ]
 
+contractId :: String
+contractId = "ReachContract"
+
 solPLProg :: PLProg -> IO (ConnectorObject, Doc)
 solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at = at, cpp_views = (vs, vi), cpp_apis = ai, cpp_handlers = hs} } = do
   let DLInit {..} = dli
@@ -1704,7 +1727,7 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
             , "fallback () external payable {}"
             ]
     let ctcbody = vsep $ [state_defn, typefsp, api_rng, outputsp, tlfunsp, hs', apidefs, defp]
-    let ctcp = solContract "ReachContract is Stdlib" $ ctcbody
+    let ctcp = solContract (contractId <> " is Stdlib") $ ctcbody
     let cinfo =
           M.fromList $
             [ ("views", aesonObject view_json)
@@ -1716,33 +1739,30 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
             ]
     return $ (cinfo, vsep $ [preamble, solVersion, solStdLib, typedsp, intsp, ctcp])
 
+newtype CompiledSolRecs = CompiledSolRecs (M.Map T.Text CompiledSolRec)
+
+instance FromJSON CompiledSolRecs where
+  parseJSON = withObject "CompiledSolRecs" $ \o -> do
+    ctcs <- o .: "contracts"
+    let ctcs' = kmToM ctcs
+    CompiledSolRecs <$> mapM parseJSON ctcs'
+
 data CompiledSolRec = CompiledSolRec
   { csrAbi :: T.Text
   , csrCode :: T.Text
   }
 
 instance FromJSON CompiledSolRec where
-  parseJSON = withObject "CompiledSolRec" $ \o -> do
-    ctcs <- o .: "contracts"
-    case find (":ReachContract" `T.isSuffixOf`) (M.keys $ kmToM ctcs) of
-      Just ctcKey -> do
-        ctc <- ctcs .: (K.fromText ctcKey)
-        (abio :: Value) <- ctc .: "abi"
-        -- Why are we re-encoding? ethers takes the ABI as a string, not an
-        -- object.
-        let cfg = defConfig {confIndent = Spaces 2, confCompare = compare}
-        let abit = T.pack $ LB.unpack $ encodePretty' cfg abio
-        codebodyt <- ctc .: "bin"
-        return
-          CompiledSolRec
-            { csrAbi = abit
-            , csrCode = codebodyt
-            }
-      Nothing ->
-        impossible "Expected contracts object to have a key with suffix ':ReachContract'"
+  parseJSON = withObject "CompiledSolRec" $ \ctc -> do
+    (abio :: Value) <- ctc .: "abi"
+    -- Why are we re-encoding? ethers takes the ABI as a string, not an object.
+    let cfg = defConfig {confIndent = Spaces 2, confCompare = compare}
+    let csrAbi = T.pack $ LB.unpack $ encodePretty' cfg abio
+    csrCode <- ctc .: "bin"
+    return $ CompiledSolRec {..}
 
-try_compile_sol :: FilePath -> Maybe (Maybe Int) -> IO (Either String (String, CompiledSolRec))
-try_compile_sol solf opt = do
+try_compile_sol :: FilePath -> String -> Maybe (Maybe Int) -> IO (Either String (String, CompiledSolRec))
+try_compile_sol solf cn opt = do
   let o = (<>) ["--optimize"]
   let (me, oargs) =
         case opt of
@@ -1754,31 +1774,38 @@ try_compile_sol solf opt = do
   let fmts = "abi,bin"
   let args = oargs <> ["--combined-json", fmts, solf]
   -- putStrLn $ "solc " <> (show args)
-  (ec, stdout, stderr) <- liftIO $ readProcessWithExitCode "solc" args []
+  (ec, stdout, stderr) <- liftIO $ readProcessWithExitCode "solc" args mempty
   let show_output =
         case stdout == "" of
           True -> stderr
-          False -> "STDOUT:\n" ++ stdout ++ "\nSTDERR:\n" ++ stderr
+          False -> "STDOUT:\n" <> stdout <> "\nSTDERR:\n" <> stderr
   case ec of
-    ExitFailure _ ->
-      return $ Left show_output
-    ExitSuccess ->
-      case eitherDecode (LB.pack stdout) of
-        Left m -> return $ Left $ "It produced invalid JSON output, which failed to decode with the message:\n" <> m
-        Right x -> return $ Right (me, x)
+    ExitFailure _ -> return $ Left $ bunpack show_output
+    ExitSuccess -> return $ fmap ((,) me) $ compile_sol_parse solf cn stdout
+
+compile_sol_parse :: String -> String -> BS.ByteString -> Either String CompiledSolRec
+compile_sol_parse solf cn stdout =
+  case eitherDecodeStrict stdout of
+    Left m -> Left $ "It produced invalid JSON output, which failed to decode with the message:\n" <> m
+    Right (CompiledSolRecs xs) -> do
+      case M.lookup k xs of
+        Nothing -> Left $ "Expected contracts object to have key " <> show k
+        Just x -> Right x
+  where
+    k = s2t $ solf <> ":" <> cn
 
 reachEthBackendVersion :: Int
 reachEthBackendVersion = 7
 
-compile_sol_ :: FilePath -> IO (Either String (String, CompiledSolRec))
-compile_sol_ solf = do
+compile_sol_ :: FilePath -> String -> IO (Either String (String, CompiledSolRec))
+compile_sol_ solf cn = do
   let shortEnough (_, CompiledSolRec {..}) =
         case len <= (2 * maxContractLen) of
           True -> Nothing
           False -> Just len
         where
           len = T.length csrCode
-  let try = try_compile_sol solf
+  let try = try_compile_sol solf cn
   let merr = \case
         Left e -> emitWarning Nothing $ W_SolidityOptimizeFailure e
         Right _ -> return ()
@@ -1816,7 +1843,7 @@ compile_sol_ solf = do
   tryA
 
 compile_sol :: ConnectorObject -> FilePath -> IO ConnectorInfo
-compile_sol cinfo solf = compile_sol_ solf >>= \case
+compile_sol cinfo solf = compile_sol_ solf contractId >>= \case
   Left x -> impossible x
   Right (which, CompiledSolRec {..}) ->
     return $
@@ -1834,21 +1861,26 @@ compile_sol cinfo solf = compile_sol_ solf >>= \case
 ccBin :: BS.ByteString -> String
 ccBin = B.unpack
 
-ccJson :: BS.ByteString -> String
-ccJson = impossible "XXX ccJSON"
+ccJson :: String -> String -> BS.ByteString -> CCApp String
+ccJson x y z = do
+  CompiledSolRec {..} <- except (compile_sol_parse x y z)
+  return $ t2s $ csrCode
 
-ccSol :: FilePath -> CCApp String
-ccSol solf = do
-  (_, CompiledSolRec {..}) <- ExceptT (compile_sol_ solf)
+ccSol :: String -> FilePath -> CCApp String
+ccSol cn solf = do
+  (_, CompiledSolRec {..}) <- ExceptT (compile_sol_ solf cn)
   return $ T.unpack csrCode
 
 ccPath :: String -> CCApp String
-ccPath fp =
-  case takeExtension fp of
-    ".bin" -> ccBin <$> ccRead fp
-    ".json" -> ccJson <$> ccRead fp
-    ".sol" -> ccSol fp
-    x -> throwE $ "Invalid code path: " <> show x
+ccPath fp = do
+  case splitOn ":" fp of
+    [ x ] | takeExtension x == ".bin" ->
+      ccBin <$> ccRead x
+    [ x, y, cn ] | takeExtension x == ".json" ->
+      ccJson y cn =<< ccRead x
+    [ x, cn ] | takeExtension x == ".sol" ->
+      ccSol cn x
+    _ -> throwE $ "Invalid code path: " <> show fp
 
 solReservedNames :: S.Set SLVar
 solReservedNames = S.fromList $
