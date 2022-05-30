@@ -9,7 +9,7 @@ build/%.main.mjs: %.rsh
 	solc --combined-json abi,bin $< > $@
 
 %.sol.bin: %.sol.json
-	jq -r '.contracts["$(patsubst %.sol.json,%.sol,$<):Contract"].bin' $< > $@
+	jq -r '.contracts["$(patsubst %.sol.json,%.sol,$<):Contract"].bin' $< | head -c -1 > $@
 
 %.teal: %.teal.sh
 	sh $< | tee $@
