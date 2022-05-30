@@ -1,25 +1,30 @@
 # {#tut-mkt} Market Place
 
 ## {#tut-mkt-introduction} Introduction
-This tutorial is a walk-through on creating a safe application that ensures trust in transacting businesses between individuals.
-
-For the purpose of this tutorial, `seller` and a `buyer` will be the `{!rsh} Participant`s. And [Reach](https://reach.sh/) is the programming to be employed.
+This tutorial teaches step by step, how to create a safe application that ensures trust in transacting businesses between two `{!rsh} Participant`s, `Seller` and `Buyer`.
 
 :::note
 A `{!rsh} Participant` in this context refers to anyone partaking in a particular transaction.
 :::
+
+For the purpose of this tutorial, [Reach](https://reach.sh/) is the programming to be employed.
 
 The following image is a pictorial description of how the application will work at the end of this tutorial.
 
 > **Insert Image Describing the flow of transactions**
 
 This tutorial begins from building a basic DApp and moves to a more advanced one.
-By the end, you will have learnt about the Reach standard library, `{!rsh} Participant`, Reach `{!rsh} type`s, variable declaration and definition, steps and so on.
+By the end, you will have learnt:
+
+1. How Reach command-line DApp works 
+2. About the Reach standard library.
+3. Concepts such as `{!rsh} Participant`, Reach `{!rsh} type`s, variable declaration and definition, steps.
+4. How a Reach Web App works.
+
 
 ## {#tut-mkt-prerequisite} Prerequisite
-To make it easy for you to follow through, it is expected that you have installed Reach. If you need help, use the [Quick Start Guide](https://docs.reach.sh/quickstart/#quickstart).
+It is assumed that you have installed Reach. If you need help installing Reach, refer to the [Quick Start Guide](https://docs.reach.sh/quickstart/#quickstart).
 
-This tutorial builds on the [Wisdom For Sale]() tutorial. It is assumed that you have completed Wisdom for Sale.
 
 ## {#tut-mkt-starter} Starter Code
 In this section, the boiler plate for the project will be created.
@@ -31,7 +36,11 @@ See full code [here]().
 mkdir market
 ```
 
-2.  Create 2 files: `index.rsh` and `index.mjs`
+2.  Create 2 files: `index.rsh` and `index.mjs`.
+
+```reach
+touch index.rsh index.mjs
+```
 
 * The `index.mjs` is the frontend of the DApp that will be create since it contains the code that the `{!rsh} Participant`s will interact with.
 `Reach` requires this file even if it is empty.
@@ -42,26 +51,27 @@ This is actually where the `Reach` code will live.
 
 ### {#tut-mkt-starter-backend} Backend
 
+
 Start working in `index.rsh` by typing out the following code:
 
 ```reach
 load: /examples/tuts-mkt-1-starter/index.rsh
 ```
 
-This code isn't doing anything yet but it is a very important foundation to what is to built in this tutorial. 
-Most `Reach` project begins with this structure.
+This code isn't doing anything yet but it is an important foundation to what is to built in this tutorial. 
+`Reach` projects begins with this structure.
 
 * Line 1 helps `Reach` to decide how to compile or run the DApp.
 Without it, you will get an error.
 
-* Line 3 declares a `commonInteract` object. 
+* Line 3 declares a `commonInteract` `{!rsh} object`. 
 This would hold properties that are common to those participating in this transaction `seller` and `buyer`.
 
-* Line 5 declares a `sellerInteract` object.
- This would hold all properties accessible by `seller`.
+* Line 5 declares a `sellerInteract` `{!rsh} object`.
+ The `seller` would be given access to all the properties that goes into the `sellerInteract`.
 
-* Line 7 declares a `buyerInteract` object.
- This would hold all properties concerning the `buyer`.
+* Line 7 declares a `buyerInteract` `{!rsh} object`.
+ It contains everything that the `buyer` would be able to do during the course of this transaction.
 
 * Lines 9 and 19 are the start and end of the main export from the program. 
 Only the code within this block is compiled by the compiler. 
@@ -76,6 +86,7 @@ Without it, the program will never start.
 
 ### {#tut-mkt-starter-frontend} Frontend
 
+
 Next, work on the `index.mjs` file. Type the code below:
 
 ```reach
@@ -84,9 +95,9 @@ load: /examples/tuts-mkt-1-starter/index.mjs
 
 * Line 1 imports `{!rsh} loadStdlib` from the Reach standard library.
 
-* Line 2 imports all that is in the `./build/index.main.mjs` file as the project's backend.
+* Line 2 imports the `./build/index.main.mjs` file as the backend.
 This file doesn't exist yet.
-It will be automatically generated when you run `./reach run` in your terminal.
+It would be automatically generated when you run `./reach run` in your terminal.
 
 * Line 3 calls the `loadStdlib` function that was imported on line 1 and the output is stored as `stdlib`.
 
@@ -105,7 +116,8 @@ But this time around, the `Buyer` is given access to the `commonInteract` and `b
 The code that you have just written forms the basis for the DApp that is to be built.
 
 Notice that `commonInteract`, `buyerInteract` and `sellerInteract` are similar in both the backend and frontend files. 
-This is so because `Reach` is a strongly typed language.
+
+This is so because `Reach` need to be sure of how the variables are to be used before being used. This in turn ensures security because if it is not used the ways it was declared, the program will not be executed.
 So these variables are declared at the backend before being used in the frontend. 
 
 This might feel like a lot of work especially if you are coming from a language like JavaScript that is weakly typed.
@@ -124,9 +136,12 @@ If the diagram above wasn't clear enough, this next section would help.
 Time to proceed!
 
 
+
 ## {#tut-mkt-basic} Basic DApp
+
+
 In this section a basic DApp will be created to demonstrate what the finish product would look like. 
-By the end, you will see how a working `Reach` application looks and feels like.
+By the end, you will see how a basic Reach command-line DApp looks and feels like.
 See full code [here]().
 
 
@@ -200,7 +215,8 @@ This would hold all properties accessible by the `buyer`.
  It takes in an `Object` of the `seller`'s `announcement` and `products`. 
  And then returns an `Object` containing the `buyer`'s `choice` and `quantity`.
 
-That is all that needs to be done in the backend for now. It now time to move to the frontend.
+That is all that needs to be done in the backend for now. 
+Attention would be given to the frontend now.
 
 ### {#tut-mkt-basic-accounts} Create Accounts
 In the [previous section](##tut-mkt-starter-frontend), contracts were setup for the `{!rsh} Participant`s:
@@ -241,7 +257,7 @@ load: /examples/tuts-mkt-2-basic/index.mjs
 range: 13 - 30
 ```
 
-Like have already been pointed out, this code will be made accessible to the `Seller` only.
+This code will be made accessible to the `Seller` only.
 
 * Line 13 defines `sellerInteract` as an `{!rsh} Object`.
 
@@ -270,7 +286,7 @@ Contract info: {"type":"BigNumber","hex":"0x06"}
 ```
 
 :::note
-This output is just for visualization purpose. 
+This output is just for visualization purposes. 
 Some output may not show until a section is completed.
 :::
 
@@ -355,7 +371,13 @@ Go back to the backend file.
 
 ### {#tut-mkt-basic-connect} Connect Frontend to Backend
 
-This stage is the last one for the basic DApp. It will make the backend to `{!rsh} interact` with the frontend and that in turn, will log outputs in the console.
+This stage is the last one for the basic DApp. 
+It will make the backend to `{!rsh} interact` with the frontend and that in turn, will log outputs in the console.
+To make that happen, all the methods that has just been defined in the fronted, would now be called upon using the `{!rsh} interact` `{!rsh} Object`.
+
+:::note
+Calling `{!rsh} Interact` on something in Reach is the same thing as calling upon a `{!rsh} function` to execute the code within it.
+:::
 
 Go back to the backend file. Just below `{!rsh} init();`, type the following code:
 
@@ -373,10 +395,6 @@ A local step is an action that happens on the `{!rsh} Participant`'s machine. Th
 * Line 50 calls the `{!rsh} only()` method on the `Seller`.
 
 * Line 51 has the `Seller` `{!rsh} interact` with the `sellerInfo` `{!rsh} Object`. 
-
-:::note
-Calling `{!rsh} Interact` on something in Reach is the same thing as calling upon a `{!rsh} function` to execute the code within it.
-:::
 
 After the `{!rsh} Interact`ion is done, the program is then given the permission to share whatsoever the result of that `{!rsh} Interact`ion is with the public. 
 To do this, `{!rsh} declassify()` method is used.
@@ -462,21 +480,19 @@ Seller agrees to sell 81 bunches of Carrots
 ```
 
 Walah!!! You made it.
-You did awesomely.
+You have done well.
 
 ### {#tut-mkt-basic-conclusion} Conclusion
-That was a good way to start building the market place application that has just been embarked upon. Hopefully, you found it really helpful and easy to follow through. 
+This section taught the basics of the Reach language and demonstrated how the final DApp to be built would work. That was a good way to start building the market place application that has just been embarked upon. Hopefully, you found it really helpful and easy to follow through. 
 
 It is important to note that Reach offers flexibility in the way code may be written. 
 Check [here](/examples/tuts-mkt-3-basic-alt) for an optional way that the code for this section may be written.
 
 This tutorial has been able to teach the basics of the Reach language. 
 Concepts that were covered include: variable declaration and definition, 
-the Reach standard library, `{!rsh} Participant`, `{!rsh} type`s, steps and so on.
+the Reach standard library, `{!rsh} Participant`, `{!rsh} type`s, local steps, `{!rsh} interact` and `{!rsh} function`. 
 
-Congratulations!!! You just became a `Reach developer`.
-
-In the next section, more will be discussed about how `./reach run` works, `process.argv` would be introduced, `{!rsh} Participant`s would be offered autonomy and so on.
+In the next section, more would be discussed about how `./reach run` works, `process.argv` would be introduced, `{!rsh} Participant`s would be given autonomy and how to manage money and currency would be demonstrated.
 
 ## {#tut-mkt-interaction} Interaction and Independence
 The last section demonstrated what building with Reach feels like. 
@@ -552,9 +568,9 @@ That will be leveraged upon in giving the `{!rsh} Participant`s autonomy as the 
 That is the basics of how the `./reach run` command works. 
 
 ### {#tut-mkt-Interaction-basic} Basic Interactive DApp
-In order to make it easy to follow, delete all the codes in the two files.
+In order to make it easy to follow, delete all the code in the two files.
 
-The codes for this section can be found [here]().
+The code for this section can be found [here]().
 
 Type the following code in the backend file:
 
