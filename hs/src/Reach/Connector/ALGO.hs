@@ -2290,22 +2290,24 @@ ce = \case
     -- [ Default, Object, Tag ]
     -- [ False, True, Cond ]
     op "select"
-  DLE_ContractNew at _cns -> do
+  DLE_ContractNew at cns -> do
     block_ "ContractNew" $ do
+      let DLContractNew {..} = cns M.! conName'
+      let ALGOCode {..} = either impossible id $ aesonParse dcn_code
       let ct_at = at
       let ct_mtok = Nothing
+      -- XXX make accurate
       let ct_amt = DLA_Literal $ minimumBalance_l
       void $ checkTxn $ CheckTxn {..}
       itxnNextOrBegin False
       let vTypeEnum = "appl"
       output $ TConst vTypeEnum
       makeTxn1 "TypeEnum"
-      let cr_approval = impossible "XXX cr_approval"
-      cbs cr_approval
+      cbs $ B.pack ac_approval
       makeTxn1 "ApprovalProgram"
-      let cr_clearstate = impossible "XXX cr_clearstate"
-      cbs cr_clearstate
+      cbs $ B.pack ac_clearState
       makeTxn1 "ClearStateProgram"
+      -- XXX look at opts
       op "itxn_submit"
       code "itxn" ["CreatedApplicationID"]
   where
