@@ -1129,7 +1129,7 @@ jsMaps ms = do
 reachBackendVersion :: Int
 reachBackendVersion = 16
 
-jsPIProg :: ConnectorResult -> PLProg -> App Doc
+jsPIProg :: ConnectorObject -> PLProg -> App Doc
 jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do
   let DLInit {..} = plp_init
   let preamble =

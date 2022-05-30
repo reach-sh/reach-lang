@@ -6,10 +6,12 @@ module Reach.Connector.ETH_Solidity (connect_eth) where
 
 import Control.Monad
 import Control.Monad.Reader
+import Control.Monad.Trans.Except
 import Data.Aeson as Aeson
 import qualified Data.Aeson.Key as K
 import Data.Aeson.Encode.Pretty
 import Data.Bifunctor (Bifunctor (first))
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
 import Data.Foldable
@@ -1572,7 +1574,7 @@ baseTypes =
     , (T_Token, "address")
     ]
 
-solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
+solPLProg :: PLProg -> IO (ConnectorObject, Doc)
 solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at = at, cpp_views = (vs, vi), cpp_apis = ai, cpp_handlers = hs} } = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
@@ -1763,8 +1765,8 @@ try_compile_sol solf opt = do
 reachEthBackendVersion :: Int
 reachEthBackendVersion = 7
 
-compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorInfo
-compile_sol cinfo solf = do
+compile_sol_ :: FilePath -> IO (Either String (String, CompiledSolRec))
+compile_sol_ solf = do
   let shortEnough (_, CompiledSolRec {..}) =
         case len <= (2 * maxContractLen) of
           True -> Nothing
@@ -1776,52 +1778,139 @@ compile_sol cinfo solf = do
         Left e -> emitWarning Nothing $ W_SolidityOptimizeFailure e
         Right _ -> return ()
   let desperate = \case
-        Right x -> \_ _ -> return $ x
+        Right x -> \_ _ -> return $ Right x
         e@(Left bado) -> \case
-          Right y -> \_ -> merr e >> return y
+          Right y -> \_ -> merr e >> return (Right y)
           Left _ -> \case
-            Right z -> merr e >> return z
-            Left _ ->
-              impossible $ "The Solidity compiler failed with the message:\n" <> bado
+            Right z -> merr e >> return (Right z)
+            Left _ -> return $ Left $ "The Solidity compiler failed with the message:\n" <> bado
   let tryN eA e1 =
         try Nothing >>= \case
-          Right oN ->
+          Right oN -> do
+            let roN = Right oN
             case shortEnough oN of
-              Nothing -> merr eA >> return oN
-              Just _lenN -> desperate eA e1 (Right oN)
+              Nothing -> merr eA >> return roN
+              Just _lenN -> desperate eA e1 roN
           Left rN -> desperate eA e1 (Left rN)
   let try1 eA =
         try (Just $ Just 1) >>= \case
-          Right o1 ->
+          Right o1 -> do
+            let ro1 = Right o1
             case shortEnough o1 of
-              Nothing -> merr eA >> return o1
-              Just _len1 -> tryN eA (Right o1)
+              Nothing -> merr eA >> return ro1
+              Just _len1 -> tryN eA ro1
           Left r1 -> tryN eA (Left r1)
   let tryA =
         try (Just Nothing) >>= \case
-          Right oA ->
+          Right oA -> do
+            let roA = Right oA
             case shortEnough oA of
-              Nothing -> return $ oA
-              Just _lenA -> try1 $ Right oA
+              Nothing -> return roA
+              Just _lenA -> try1 roA
           Left rA -> try1 $ Left rA
-  (which, CompiledSolRec {..}) <- tryA
-  return $
-    Aeson.Object $
-      mToKM $
-        M.union cinfo $
-          M.fromList $
-            [ ("ABI", Aeson.String csrAbi)
-            , ("Bytecode", Aeson.String $ "0x" <> csrCode)
-            , ("Which", Aeson.String $ T.pack which)
-            , ("BytecodeLen", Aeson.Number $ (fromIntegral $ T.length csrCode) / 2)
-            , ("version", Aeson.Number $ fromIntegral reachEthBackendVersion)
-            ]
+  tryA
+
+compile_sol :: ConnectorObject -> FilePath -> IO ConnectorInfo
+compile_sol cinfo solf = compile_sol_ solf >>= \case
+  Left x -> impossible x
+  Right (which, CompiledSolRec {..}) ->
+    return $
+      Aeson.Object $
+        mToKM $
+          M.union cinfo $
+            M.fromList $
+              [ ("ABI", Aeson.String csrAbi)
+              , ("Bytecode", Aeson.String $ "0x" <> csrCode)
+              , ("Which", Aeson.String $ T.pack which)
+              , ("BytecodeLen", Aeson.Number $ (fromIntegral $ T.length csrCode) / 2)
+              , ("version", Aeson.Number $ fromIntegral reachEthBackendVersion)
+              ]
+
+ccBin :: BS.ByteString -> String
+ccBin = B.unpack
+
+ccJson :: BS.ByteString -> String
+ccJson = impossible "XXX ccJSON"
+
+ccSol :: FilePath -> CCApp String
+ccSol solf = do
+  (_, CompiledSolRec {..}) <- ExceptT (compile_sol_ solf)
+  return $ T.unpack csrCode
+
+ccPath :: String -> CCApp String
+ccPath fp =
+  case takeExtension fp of
+    ".bin" -> ccBin <$> ccRead fp
+    ".json" -> ccJson <$> ccRead fp
+    ".sol" -> ccSol fp
+    x -> throwE $ "Invalid code path: " <> show x
+
+solReservedNames :: S.Set SLVar
+solReservedNames = S.fromList $
+  [ "address"
+  , "after"
+  , "alias"
+  , "anonymous"
+  , "apply"
+  , "auto"
+  , "callStatic"
+  , "case"
+  , "constant"
+  , "copyof"
+  , "default"
+  , "define"
+  , "delete"
+  , "estimateGas"
+  , "external"
+  , "filters"
+  , "final"
+  , "functions"
+  , "immutable"
+  , "implements"
+  , "in"
+  , "indexed"
+  , "inline"
+  , "interface"
+  , "internal"
+  , "let"
+  , "macro"
+  , "match"
+  , "mutable"
+  , "null"
+  , "of"
+  , "override"
+  , "partial"
+  , "payable"
+  , "populateTransaction"
+  , "private"
+  , "promise"
+  , "provider"
+  , "public"
+  , "pure"
+  , "reference"
+  , "relocatable"
+  , "resolvedAddress"
+  , "sealed"
+  , "sizeof"
+  , "signer"
+  , "static"
+  , "super"
+  , "supports"
+  , "switch"
+  , "this"
+  , "typedef"
+  , "typeof"
+  , "unchecked"
+  , "view"
+  , "virtual"
+  ]
 
 connect_eth :: CompilerToolEnv -> Connector
 connect_eth _ = Connector {..}
   where
     conName = conName'
     conCons = conCons'
+    conReserved = flip S.member solReservedNames
     conGen moutn pl = case moutn of
       Just outn -> go (outn "sol")
       Nothing -> withSystemTempDirectory "reachc-sol" $ \dir ->
@@ -1833,3 +1922,6 @@ connect_eth _ = Connector {..}
           unless dontWriteSol $ do
             LTIO.writeFile solf $ render sol
           compile_sol cinfo solf
+    conCompileCode v = runExceptT $ do
+      (c::String) <- ccPath =<< aesonParse' v
+      return $ toJSON c

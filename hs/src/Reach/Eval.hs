@@ -313,7 +313,7 @@ makeEnv cns = do
   e_exn <- newIORef $ ExnEnv False Nothing Nothing SLM_Module
   e_mape <- makeMapEnv
   e_droppedAsserts <- newCounter 0
-  let e_appr = Left $ app_default_opts e_id e_droppedAsserts $ M.keys cns
+  let e_appr = Left $ app_default_opts e_id e_droppedAsserts cns
   return (Env {..})
 
 checkUnusedVars :: App a -> App a

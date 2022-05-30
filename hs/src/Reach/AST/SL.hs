@@ -13,6 +13,7 @@ import Generics.Deriving (conNameOf)
 import Language.JavaScript.Parser
 import Reach.AST.Base
 import Reach.AST.DLBase
+import Reach.Connector
 import Reach.JSOrphans ()
 import Reach.Texty
 import Reach.Warning (Deprecation (..))
@@ -163,6 +164,7 @@ data SLVal
   | SLV_Kwd SLKwd
   | SLV_Map DLMVar
   | SLV_Deprecated Deprecation SLVal
+  | SLV_ContractCode SrcLoc ConnectorObject
   deriving (Eq, Generic)
 
 uintTyM :: SLVal -> Maybe UIntTy
@@ -409,6 +411,7 @@ instance Pretty SLVal where
     SLV_Map mv -> "<map: " <> pretty mv <> ">"
     SLV_Anybody -> "Anybody"
     SLV_Deprecated d s -> "<deprecated: " <> viaShow d <> ">(" <> pretty s <> ")"
+    SLV_ContractCode {} -> "<contractCode>"
 
 instance SrcLocOf SLVal where
   srclocOf = \case
@@ -434,13 +437,15 @@ instance SrcLocOf SLVal where
     SLV_Kwd _ -> sb
     SLV_Map _ -> sb
     SLV_Deprecated _ v -> srclocOf v
+    SLV_ContractCode a _ -> a
 
 isSmallLiteralArray :: SLVal -> Bool
-isSmallLiteralArray (SLV_Array _ _ _l) =
-  True
-  -- Why this number!?
-  -- length l <= 2
-isSmallLiteralArray _ = False
+isSmallLiteralArray = \case
+  SLV_Array _ _ _l ->
+    True
+    -- Why this number!?
+    -- length l <= 2
+  _ -> False
 
 newtype SLInterface = SLInterface (M.Map SLVar (SrcLoc, SLType))
   deriving (Eq, Generic)
@@ -793,6 +798,7 @@ data SLPrimitive
   | SLPrim_xor
   | SLPrim_mod
   | SLPrim_castOrTrunc UIntTy
+  | SLPrim_ContractCode
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

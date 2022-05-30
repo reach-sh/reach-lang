@@ -75,6 +75,7 @@ completionKind v =
     SLV_Participant _ _ _ _ -> Just CK_Constant
     SLV_Map _ -> Just CK_Variable
     SLV_Deprecated _ _ -> Nothing
+    SLV_ContractCode {} -> Just CK_Constant
     SLV_Type _ -> Just CK_TypeParameter
     SLV_Kwd _ -> Just CK_Keyword
     SLV_DLVar _ -> Just CK_Variable
@@ -136,6 +137,7 @@ completionKind v =
         SLPrim_Map -> Just CK_TypeParameter
         SLPrim_Map_new -> Just CK_Method
         SLPrim_Map_reduce -> Just CK_Function
+        SLPrim_ContractCode -> Just CK_Constructor
         SLPrim_Participant -> Just CK_Constructor
         SLPrim_ParticipantClass -> Just CK_Constructor
         SLPrim_View -> Just CK_Constructor

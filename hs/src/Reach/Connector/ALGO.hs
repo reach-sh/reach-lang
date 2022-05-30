@@ -2,8 +2,10 @@ module Reach.Connector.ALGO (connect_algo, AlgoError (..)) where
 
 import Control.Monad.Extra
 import Control.Monad.Reader
+import Control.Monad.Trans.Except
 import Crypto.Hash
-import qualified Data.Aeson as Aeson
+import Data.Aeson ((.:), (.=))
+import qualified Data.Aeson as AS
 import Data.Bits (shiftL, shiftR, (.|.))
 import qualified Data.ByteArray as BA
 import qualified Data.ByteString as BS
@@ -212,10 +214,10 @@ ensureAllPaths rlab g s e getc = checkFrom 0 mempty s
         Just x -> return $ Just x
         Nothing -> my
 
-aarray :: [Aeson.Value] -> Aeson.Value
-aarray = Aeson.Array . Vector.fromList
+aarray :: [AS.Value] -> AS.Value
+aarray = AS.Array . Vector.fromList
 
-aobject :: M.Map T.Text Aeson.Value -> Aeson.Value
+aobject :: M.Map T.Text AS.Value -> AS.Value
 aobject = aesonObject . M.toAscList
 
 mergeIORef :: IORef a -> (a -> a -> a) -> IORef a -> IO ()
@@ -3021,23 +3023,28 @@ cStateSlice size iw = do
   let k = algoMaxAppBytesValueLen_usable
   csubstring (k * i) (min size $ k * (i + 1))
 
-compileTEAL :: String -> IO BS.ByteString
-compileTEAL tealf = do
+compileTEAL_ :: String -> IO (Either BS.ByteString BS.ByteString)
+compileTEAL_ tealf = do
   (ec, stdout, stderr) <- readProcessWithExitCode "goal" ["clerk", "compile", tealf, "-o", "-"] mempty
   case ec of
-    ExitFailure _ -> do
-      let failed = impossible $ "The TEAL compiler failed with the message:\n" <> show stderr
-      let tooBig = bpack tealf <> ": app program size too large: "
-      case BS.isPrefixOf tooBig stderr of
-        True -> do
-          let notSpace = (32 /=)
-          let sz_bs = BS.takeWhile notSpace $ BS.drop (BS.length tooBig) stderr
-          let mlen :: Maybe Int = readMaybe $ bunpack sz_bs
-          case mlen of
-            Nothing -> failed
-            Just sz -> return $ BS.replicate sz 0
-        False -> failed
-    ExitSuccess -> return stdout
+    ExitFailure _ -> return $ Left stderr
+    ExitSuccess -> return $ Right stdout
+
+compileTEAL :: String -> IO BS.ByteString
+compileTEAL tealf = compileTEAL_ tealf >>= \case
+  Left stderr -> do
+    let failed = impossible $ "The TEAL compiler failed with the message:\n" <> show stderr
+    let tooBig = bpack tealf <> ": app program size too large: "
+    case BS.isPrefixOf tooBig stderr of
+      True -> do
+        let notSpace = (32 /=)
+        let sz_bs = BS.takeWhile notSpace $ BS.drop (BS.length tooBig) stderr
+        let mlen :: Maybe Int = readMaybe $ bunpack sz_bs
+        case mlen of
+          Nothing -> failed
+          Just sz -> return $ BS.replicate sz 0
+      False -> failed
+  Right stdout -> return stdout
 
 data CMeth
   = CApi
@@ -3285,7 +3292,7 @@ compile_algo env disp pl = do
         tbs <- compileProg lab ts'
         modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
         let tc = LT.toStrict $ encodeBase64 tbs
-        modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String tc
+        modifyIORef resr $ M.insert (T.pack lab) $ AS.String tc
         return tbs
   -- Clear state is never allowed
   cr_clearstate <- addProg "appClear" []
@@ -3328,14 +3335,14 @@ compile_algo env disp pl = do
   let recordSize prefix size = do
         modifyIORef resr $
           M.insert (prefix <> "Size") $
-            Aeson.Number $ fromIntegral size
+            AS.Number $ fromIntegral size
   let recordSizeAndKeys :: NotifyF -> T.Text -> Integer -> Integer -> IO [Word8]
       recordSizeAndKeys badx prefix size limit = do
         (keys, keysl) <- computeStateSizeAndKeys badx (LT.fromStrict prefix) size limit
         recordSize prefix size
         modifyIORef resr $
           M.insert (prefix <> "Keys") $
-            Aeson.Number $ fromIntegral keys
+            AS.Number $ fromIntegral keys
         return $ keysl
   eMapKeysl <- recordSizeAndKeys gbad "mapData" eMapDataSize algoMaxLocalSchemaEntries_usable
   unless (plo_untrustworthyMaps || null eMapKeysl) $ do
@@ -3411,7 +3418,7 @@ compile_algo env disp pl = do
                     True -> do
                       finalize
                       when showCost $ putStr msg
-                      modifyIORef resr $ M.insert "companionInfo" (Aeson.toJSON ci)
+                      modifyIORef resr $ M.insert "companionInfo" (AS.toJSON ci)
                       return ts'
         ts' <- rec (0::Integer) False Nothing
         void $ addProg lab ts'
@@ -3574,18 +3581,18 @@ compile_algo env disp pl = do
   let extraPages :: Integer = ceiling ((fromIntegral totalLen :: Double) / fromIntegral algoMaxAppProgramLen) - 1
   modifyIORef resr $
     M.insert "extraPages" $
-      Aeson.Number $ fromIntegral $ extraPages
+      AS.Number $ fromIntegral $ extraPages
   gFailures <- readIORef gFailuresR
   gWarnings <- readIORef gWarningsR
   let wss w lab ss = do
         unless (null ss) $
           emitWarning Nothing $ w $ S.toAscList $ S.map LT.unpack ss
         modifyIORef resr $ M.insert lab $
-          aarray $ S.toAscList $ S.map (Aeson.String . LT.toStrict) ss
+          aarray $ S.toAscList $ S.map (AS.String . LT.toStrict) ss
   wss W_ALGOConservative "warnings" gWarnings
   wss W_ALGOUnsupported "unsupported" gFailures
   meth_sm <- readIORef meth_sm_r
-  let apiEntry lab f = (lab, aarray $ map (Aeson.String . s2t) $ M.keys $ M.filter f meth_sm)
+  let apiEntry lab f = (lab, aarray $ map (AS.String . s2t) $ M.keys $ M.filter f meth_sm)
   modifyIORef resr $
     M.insert "ABI" $
       aobject $
@@ -3596,7 +3603,7 @@ compile_algo env disp pl = do
           ]
   modifyIORef resr $
     M.insert "version" $
-      Aeson.Number $ fromIntegral $ reachAlgoBackendVersion
+      AS.Number $ fromIntegral $ reachAlgoBackendVersion
   res <- readIORef resr
   return $ aobject res
 
@@ -3605,6 +3612,39 @@ verifyMapTypes badx = mapM $ \ DLMapInfo {..} -> do
     unless (dlmi_kt == T_Address) $ do
       badx $ LT.pack $ "Cannot use '" <> show dlmi_kt <> "' as Map key. Only 'Address' keys are allowed."
     return $ DLMapInfo {..}
+
+data ALGOCode = ALGOCode
+  { ac_approval :: String
+  , ac_clearState :: String
+  }
+  deriving (Show)
+
+instance AS.ToJSON ALGOCode where
+  toJSON (ALGOCode {..}) = AS.object $
+    [ "approval" .= ac_approval
+    , "clearState" .= ac_clearState
+    ]
+
+instance AS.FromJSON ALGOCode where
+  parseJSON = AS.withObject "ALGOCode" $ \obj -> do
+    ac_approval <- obj .: "approval"
+    ac_clearState <- obj .: "clearState"
+    return $ ALGOCode {..}
+
+ccTEAL :: String -> CCApp BS.ByteString
+ccTEAL tealf = liftIO (compileTEAL_ tealf) >>= \case
+  Right x -> return x
+  Left x -> throwE $ B.unpack x
+
+ccTok :: BS.ByteString -> String
+ccTok = B.unpack
+
+ccPath :: String -> CCApp String
+ccPath fp =
+  case takeExtension fp of
+    ".tok" -> ccTok <$> ccRead fp
+    ".teal" -> ccTok <$> ccTEAL fp
+    x -> throwE $ "Invalid code path: " <> show x
 
 connect_algo :: CompilerToolEnv -> Connector
 connect_algo env = Connector {..}
@@ -3625,3 +3665,9 @@ connect_algo env = Connector {..}
           let f = outn oit
           conWrite (Just outn) oit c
           return f
+    conReserved = const False
+    conCompileCode v = runExceptT $ do
+      ALGOCode {..} <- aesonParse' v
+      a' <- ccPath ac_approval
+      cs' <- ccPath ac_clearState
+      return $ AS.toJSON $ ALGOCode a' cs'

@@ -15,6 +15,7 @@ import Language.JavaScript.Parser.AST
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.SL
+import Reach.Connector
 import Reach.Eval.Types
 import Reach.Texty (pretty)
 import Reach.Util
@@ -141,7 +142,7 @@ data EvalError
   | Err_View_CannotExpose SLValTy
   | Err_View_UDFun
   | Err_Part_DuplicatePart SLPart
-  | Err_Sol_Reserved String
+  | Err_Connector_Reserved ConnectorName String
   | Err_TokenNew_InvalidKey String
   | Err_Token_NotCreated String
   | Err_ParallelReduce_DefineBlock
@@ -165,6 +166,8 @@ data EvalError
   | Err_ExpectedThunk
   | Err_Api_Return_Type
   | Err_Eval_EmptyData
+  | Err_JSON SLValTy
+  | Err_ContractCode ConnectorName String SLValTy
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -285,7 +288,7 @@ instance HasErrorCode EvalError where
     Err_View_CannotExpose {} -> 107
     Err_View_UDFun {} -> 108
     Err_Part_DuplicatePart {} -> 109
-    Err_Sol_Reserved {} -> 110
+    Err_Connector_Reserved {} -> 110
     Err_TokenNew_InvalidKey {} -> 111
     Err_Token_NotCreated {} -> 112
     Err_ParallelReduce_DefineBlock {} -> 113
@@ -311,6 +314,8 @@ instance HasErrorCode EvalError where
     Err_ExpectedThunk {} -> 133
     Err_Api_Return_Type {} -> 134
     Err_Eval_EmptyData -> 135
+    Err_JSON {} -> 136
+    Err_ContractCode {} -> 137
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -719,8 +724,8 @@ instance Show EvalError where
       "Value cannot be exposed to view: " <> show_sv sv
     Err_View_UDFun ->
       "View functions cannot have unconstrained domains."
-    Err_Sol_Reserved field ->
-      "`" <> field <> "` is not a valid field name because it is reserved in Solidity."
+    Err_Connector_Reserved con field ->
+      "`" <> field <> "` is not a valid field name because it is reserved by connector " <> show con <> "."
     Err_TokenNew_InvalidKey f ->
       "`" <> f <> "` is not an expected key of a `new Token` operation"
     Err_Token_NotCreated lab ->
@@ -769,5 +774,9 @@ instance Show EvalError where
       "Expected this function to end in a syntactic `return [ PAY_AMT, API_CONSENSUS_EXPR ]` or `return [ API_CONSENSUS_EXPR ]`"
     Err_Eval_EmptyData ->
       "Data instances may not be empty"
+    Err_JSON sv ->
+      "Cannot convert value to JSON: " <> show_sv sv
+    Err_ContractCode cn msg sv ->
+      "Failed to compile or parse contract code for " <> show cn <> ": " <> msg <> ": " <> show_sv sv
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

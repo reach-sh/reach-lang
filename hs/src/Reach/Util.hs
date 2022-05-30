@@ -1,45 +1,12 @@
-module Reach.Util
-  ( bpack
-  , bunpack
-  , lbpack
-  , lbunpack
-  , b2t
-  , s2t
-  , s2lt
-  , impossible
-  , possible
-  , saferMaybe
-  , trimQuotes
-  , fromIntegerMay
-  , maybeDie
-  , redactAbs
-  , redactAbsStr
-  , safeInit
-  , dupeIORef
-  , mapWithKeyM
-  , forWithKeyM_
-  , hdDie
-  , justValues
-  , Top (..)
-  , uncurry3
-  , uncurry4
-  , uncurry5
-  , listDirectoriesRecursive
-  , leftPad
-  , makeErrCode
-  , arraySet
-  , allEqual
-  , maybeAt
-  , isqrt
-  , kmToM
-  , mToKM
-  , aesonObject
-  )
-where
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
+
+module Reach.Util where
 
 import Control.Monad
 import Control.Monad.Extra
-import Data.Aeson as Aeson
+import Control.Monad.Trans.Except
+import qualified Data.Aeson as AS
+import qualified Data.Aeson.Types as AS
 import qualified Data.Aeson.Key as K
 import qualified Data.Aeson.KeyMap as KM
 import Data.Bifunctor (Bifunctor (first))
@@ -63,6 +30,9 @@ bpack = TE.encodeUtf8 . s2t
 
 s2t :: String -> T.Text
 s2t = T.pack
+
+t2s :: T.Text -> String
+t2s = T.unpack
 
 s2lt :: String -> LT.Text
 s2lt = LT.pack
@@ -197,5 +167,20 @@ kmToM = M.fromList . map (\(k,v) -> (K.toText k, v)) . KM.toList
 mToKM :: M.Map T.Text a -> KM.KeyMap a
 mToKM = KM.fromList . map (\(k,v) -> (K.fromText k, v)) . M.toList
 
-aesonObject :: [(T.Text, Aeson.Value)] -> Aeson.Value
-aesonObject = Aeson.object . map (first K.fromText)
+aesonObject :: [(T.Text, AS.Value)] -> AS.Value
+aesonObject = AS.object . map (first K.fromText)
+
+aesonParse :: AS.FromJSON a => AS.Value -> Either String a
+aesonParse = AS.parseEither AS.parseJSON
+
+aesonParse' :: (Monad m, AS.FromJSON a) => AS.Value -> ExceptT String m a
+aesonParse' = except . aesonParse
+
+eitherGo :: (Monad m) => Either a b -> (b -> m c) -> m (Either a c)
+eitherGo e f =
+  case e of
+    Left x -> return $ Left x
+    Right y -> Right <$> f y
+
+eitherP :: (Monad m) => (x -> Either a b) -> (b -> m c) -> x -> m (Either a c)
+eitherP p f e = eitherGo (p e) f
