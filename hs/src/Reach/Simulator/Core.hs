@@ -94,6 +94,7 @@ instance ToJSON ReachView
 
 data Global = Global
   { e_ledger :: Ledger
+  , e_nctc :: Account
   , e_ntok :: Token
   , e_linstate :: LinearState
   , e_nwtime :: Integer
@@ -146,6 +147,7 @@ initGlobal :: Global
 initGlobal =
   Global
     { e_ledger = M.singleton simContract (M.singleton nwToken simContractAmt)
+    , e_nctc = simContract
     , e_ntok = 0
     , e_linstate = mempty
     , e_nwtime = 0
@@ -268,7 +270,7 @@ initAppFromStep step st = runApp st $ interp step
 runWithState :: (Interp a) => a -> State -> PartState
 runWithState k st = runApp st $ interp k
 
-ledgerNewTokenRefs :: Integer -> DLTokenNew -> App (Token)
+ledgerNewTokenRefs :: Integer -> DLTokenNew -> App Token
 ledgerNewTokenRefs n tk = do
   (e, _) <- getState
   let tokId = e_ntok e
@@ -677,6 +679,11 @@ instance Interp DLExpr where
       case k of
         "Some" -> return v
         _ -> interp da
+    DLE_ContractNew _at _ -> do
+      (g, _) <- getState
+      let ctcId = e_nctc g - 1
+      setGlobal $ g {e_nctc = ctcId}
+      return $ V_Contract $ fromIntegral ctcId
 
 instance Interp DLStmt where
   interp = \case

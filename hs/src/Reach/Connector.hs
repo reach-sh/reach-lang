@@ -31,8 +31,6 @@ import Reach.Texty
 import Reach.Util
 import System.Directory
 
-type ConnectorName = T.Text
-
 type ConnectorObject = M.Map ConnectorName Value
 
 type ConnectorInfo = Value

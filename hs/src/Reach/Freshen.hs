@@ -7,6 +7,7 @@ module Reach.Freshen
 where
 
 import Control.Monad.Reader
+import qualified Data.Aeson as AS
 import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -129,6 +130,12 @@ instance Freshen a => Freshen (DLInvariant a) where
 instance Freshen DLRemoteALGO where
   fu (DLRemoteALGO x y z w) = DLRemoteALGO <$> fu x <*> fu y <*> fu z <*> fu w
 
+instance Freshen AS.Value where
+  fu = return
+
+instance Freshen DLContractNew where
+  fu (DLContractNew x y) = DLContractNew <$> fu x <*> fu y
+
 instance Freshen DLExpr where
   fu = \case
     DLE_Arg at a -> DLE_Arg at <$> fu a
@@ -160,6 +167,7 @@ instance Freshen DLExpr where
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mt tb -> DLE_GetUntrackedFunds at <$> fu mt <*> fu tb
     DLE_FromSome at mo da -> DLE_FromSome at <$> fu mo <*> fu da
+    DLE_ContractNew at tns -> DLE_ContractNew at <$> fu tns
 
 instance {-# OVERLAPS #-} Freshen k => Freshen (SwitchCases k) where
   fu = mapM (\(vn, vnu, k) -> (,,) <$> fu_v vn <*> pure vnu <*> fu k)

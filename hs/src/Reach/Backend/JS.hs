@@ -1,7 +1,7 @@
 module Reach.Backend.JS (backend_js) where
 
 import Control.Monad.Reader
-import qualified Data.Aeson as Aeson
+import qualified Data.Aeson as AS
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Foldable as Foldable
 import Data.IORef
@@ -318,10 +318,13 @@ jsPrimApply = \case
     r f = return . f
     jsApply_ui t f = jsApply $ f <> (if (t == UI_256) then "256" else "")
 
-jsArg_m :: AppT (Maybe DLArg)
-jsArg_m = \case
+jsMaybe :: AppT a -> AppT (Maybe a)
+jsMaybe f = \case
   Nothing -> return $ "undefined /* Nothing */"
-  Just a -> jsArg a
+  Just a -> f a
+
+jsArg_m :: AppT (Maybe DLArg)
+jsArg_m = jsMaybe jsArg
 
 shouldHashMapKey :: DLType -> Bool
 shouldHashMapKey = \case
@@ -571,6 +574,19 @@ jsExpr = \case
     mo' <- jsArg mo
     da' <- jsArg da
     return $ jsApply "stdlib.fromSome" [mo', da']
+  DLE_ContractNew _ cns -> do
+    (ctxt_mode <$> ask) >>= \case
+      JM_Backend -> return "undefined /* ContractNew */"
+      JM_View -> impossible "view ContractNew"
+      JM_Simulate -> do
+        cns' <- forM cns $ \DLContractNew {..} -> do
+          c' <- jsJSON dcn_code
+          o' <- jsMaybe jsJSON dcn_mopts
+          return $ jsObject $ M.fromList
+            [ ("code"::String, c')
+            , ("opts", o')
+            ]
+        return $ jsApply "stdlib.simContractNew" ["sim_r", jsObject cns', "getSimTokCtr()"]
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
@@ -973,21 +989,21 @@ jsPart dli (p, m_api_which) (EPProg { epp_isApi=ctxt_isAPI, epp_tail }) = do
             ]
     return $ "export" <+> jsFunction (pretty who) ["ctcTop", "interact"] bodyp'
 
-jsConnInfo :: ConnectorInfo -> App Doc
-jsConnInfo = \case
-  Aeson.Null -> jsCon DLL_Null
-  Aeson.Bool b -> jsCon $ DLL_Bool b
+jsJSON :: AS.Value -> App Doc
+jsJSON = \case
+  AS.Null -> jsCon DLL_Null
+  AS.Bool b -> jsCon $ DLL_Bool b
   -- Note: only integers are supported.
   -- TODO: throw error if non-integer detected,
   -- or alernatively, support non-integers
-  Aeson.Number i -> return $ pretty $ Sci.formatScientific Sci.Fixed (Just 0) i
-  Aeson.String t -> return $ jsBacktickText t
-  Aeson.Array a -> jsArray <$> (mapM jsConnInfo $ Foldable.toList a)
-  Aeson.Object m -> jsObject <$> (mapM jsConnInfo $ kmToM m)
+  AS.Number i -> return $ pretty $ Sci.formatScientific Sci.Fixed (Just 0) i
+  AS.String t -> return $ jsBacktickText t
+  AS.Array a -> jsArray <$> (mapM jsJSON $ Foldable.toList a)
+  AS.Object m -> jsObject <$> (mapM jsJSON $ kmToM m)
 
 jsCnp :: T.Text -> ConnectorInfo -> App Doc
 jsCnp name cnp = do
-  cnp' <- jsConnInfo cnp
+  cnp' <- jsJSON cnp
   return $ "const" <+> "_" <> pretty name <+> "=" <+> cnp' <> semi
 
 jsObjectDef :: Pretty k => Doc -> M.Map k Doc -> Doc

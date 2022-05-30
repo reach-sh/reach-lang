@@ -13,6 +13,7 @@ module Reach.CollectCounts
   )
 where
 
+import qualified Data.Aeson as AS
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Set as S
@@ -130,6 +131,13 @@ instance Countable DLWithBill where
 instance Countable DLRemoteALGO where
   counts (DLRemoteALGO x y z w) = counts x <> counts y <> counts z <> counts w
 
+instance Countable AS.Value where
+  counts = const mempty
+
+instance Countable DLContractNew where
+  counts (DLContractNew a b) =
+    counts a <> counts b
+
 instance Countable DLExpr where
   counts = \case
     DLE_Arg _ a -> counts a
@@ -161,6 +169,7 @@ instance Countable DLExpr where
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ mt tb -> counts mt <> counts tb
     DLE_FromSome _ mo da -> counts mo <> counts da
+    DLE_ContractNew _ cns -> counts cns
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m

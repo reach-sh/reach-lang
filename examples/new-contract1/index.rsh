@@ -2,6 +2,7 @@
 
 const make = (cc, isReach = false) => Reach.App(() => {
   const A = Participant('A', {
+    ...hasConsoleLogger,
   });
   const ChildCode = ContractCode(cc);
   init();
@@ -20,6 +21,7 @@ const make = (cc, isReach = false) => Reach.App(() => {
 
   const go = (isLast = false) => {
     A.publish();
+    const { f } = childo;
     const x = ((isLast && isReach) ? f.ALGO({
     }) : f)(1);
     A.interact.log(x);
