@@ -1,7 +1,7 @@
 module Reach.Connector
-  ( ConnectorInfoMap
+  ( ConnectorName
+  , ConnectorObject
   , ConnectorInfo
-  , ConnectorResult
   , Connector (..)
   , Connectors
   , checkIntLiteral
@@ -9,10 +9,16 @@ module Reach.Connector
   , conWrite
   , conShowP
   , ConnectorError (..)
+  , CCApp
+  , ccRead
   )
 where
 
+import Control.Monad
+import Control.Monad.Reader
+import Control.Monad.Trans.Except
 import Data.Aeson (Value)
+import qualified Data.ByteString as BS
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -23,14 +29,11 @@ import Reach.AST.DLBase
 import Reach.AST.PL
 import Reach.Texty
 import Reach.Util
+import System.Directory
 
 type ConnectorName = T.Text
 
-type Object = M.Map ConnectorName Value
-
-type ConnectorInfoMap = Object
-
-type ConnectorResult = Object
+type ConnectorObject = M.Map ConnectorName Value
 
 type ConnectorInfo = Value
 
@@ -38,6 +41,8 @@ data Connector = Connector
   { conName :: ConnectorName
   , conCons :: DLConstant -> DLLiteral
   , conGen :: Maybe (T.Text -> String) -> PLProg -> IO ConnectorInfo
+  , conReserved :: SLVar -> Bool
+  , conCompileCode :: Value -> IO (Either String Value)
   }
 
 instance Eq Connector where
@@ -61,8 +66,9 @@ instance HasErrorCode ConnectorError where
     Err_IntLiteralRange {} -> 0
 
 instance Show ConnectorError where
-  show (Err_IntLiteralRange con rmin x rmax) =
-    "integer literal out of range for " <> T.unpack con <> ": " <> show x <> " not in [" <> show rmin <> "," <> show rmax <> "]"
+  show = \case
+    Err_IntLiteralRange con rmin x rmax ->
+      "integer literal out of range for " <> T.unpack con <> ": " <> show x <> " not in [" <> show rmin <> "," <> show rmax <> "]"
 
 conWriteH :: (String -> a -> IO ()) -> Maybe (T.Text -> String) -> T.Text -> a -> IO ()
 conWriteH doWrite moutn which c =
@@ -94,3 +100,14 @@ checkIntLiteralC at conName conCons =
 
 type Connectors =
   M.Map T.Text Connector
+
+-- conCompileCode helpers
+
+type CCApp = ExceptT String IO
+
+ccRead :: FilePath -> CCApp BS.ByteString
+ccRead fp = do
+  fpe <- liftIO $ doesFileExist fp
+  unless fpe $
+    throwE $ "File does not exist: " <> show fp
+  liftIO $ BS.readFile fp

@@ -10,7 +10,7 @@ import Reach.Counter
 
 data VerifyOpts = VerifyOpts
   { vo_out :: Maybe (T.Text -> String)
-  , vo_mvcs :: Maybe [Connector]
+  , vo_mvcs :: Maybe Connectors
   , vo_timeout :: Integer
   , vo_dir :: FilePath
   , vo_first_fail_quit :: Bool

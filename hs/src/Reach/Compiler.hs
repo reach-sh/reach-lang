@@ -81,7 +81,6 @@ compile env (CompilerOpts {..}) = do
       -- showp "bundle.js" $ render $ pretty djp
       dl <- compileDApp which
       let DLProg { dlp_opts = DLOpts {..} } = dl
-      let connectors = map (all_connectors M.!) dlo_connectors
       showp "dl" dl
       unless co_stopAfterEval $ do
         ll <- linearize showp dl
@@ -90,7 +89,7 @@ compile env (CompilerOpts {..}) = do
         -- ol <- optimize ll
         showp "ol" ol
         let vo_out = woutnMay
-        let vo_mvcs = doIf connectors dlo_verifyPerConnector
+        let vo_mvcs = doIf dlo_connectors dlo_verifyPerConnector
         let vo_timeout = co_verifyTimeout
         let vo_dir = dirDotReach'
         let vo_first_fail_quit = co_verifyFirstFailQuit
@@ -114,8 +113,8 @@ compile env (CompilerOpts {..}) = do
         let runConnector c = do
               let n = conName c
               loud $ "running connector " <> show n
-              (,) n <$> conGen c woutnMay pl
-        crs <- M.fromList <$> mapM runConnector connectors
+              conGen c woutnMay pl
+        crs <- mapM runConnector dlo_connectors
         loud $ "running backend js"
         backend_js woutn crs pl
         return ()

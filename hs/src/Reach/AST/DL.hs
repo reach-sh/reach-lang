@@ -5,10 +5,10 @@ module Reach.AST.DL where
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
-import qualified Data.Text as T
 import GHC.Generics
 import Reach.AST.Base
 import Reach.AST.DLBase
+import Reach.Connector
 import Reach.Counter
 import Reach.Pretty
 import Reach.Texty
@@ -275,7 +275,7 @@ data DLOpts = DLOpts
   { dlo_verifyArithmetic :: Bool
   , dlo_untrustworthyMaps :: Bool
   , dlo_verifyPerConnector :: Bool
-  , dlo_connectors :: [T.Text]
+  , dlo_connectors :: Connectors
   , dlo_counter :: Counter
   , dlo_bals :: Int
   , dlo_droppedAsserts :: Counter
