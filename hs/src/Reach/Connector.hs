@@ -41,6 +41,7 @@ data Connector = Connector
   , conGen :: Maybe (T.Text -> String) -> PLProg -> IO ConnectorInfo
   , conReserved :: SLVar -> Bool
   , conCompileCode :: Value -> IO (Either String Value)
+  , conContractNewOpts :: Maybe Value -> Either String Value
   }
 
 instance Eq Connector where

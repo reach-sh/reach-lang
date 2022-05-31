@@ -581,7 +581,7 @@ jsExpr = \case
       JM_Simulate -> do
         cns' <- forM cns $ \DLContractNew {..} -> do
           c' <- jsJSON dcn_code
-          o' <- jsMaybe jsJSON dcn_mopts
+          o' <- jsJSON dcn_opts
           return $ jsObject $ M.fromList
             [ ("code"::String, c')
             , ("opts", o')
@@ -1143,7 +1143,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 16
+reachBackendVersion = 17
 
 jsPIProg :: ConnectorObject -> PLProg -> App Doc
 jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do

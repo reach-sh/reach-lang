@@ -718,7 +718,7 @@ instance PrettySubst DLRemoteALGO where
 
 data DLContractNew = DLContractNew
   { dcn_code :: Value
-  , dcn_mopts :: Maybe Value
+  , dcn_opts :: Value
   }
   deriving (Eq, Ord, Generic)
 
@@ -728,7 +728,7 @@ instance PrettySubst Value where
 instance PrettySubst DLContractNew where
   prettySubst (DLContractNew {..}) = do
     c' <- prettySubst dcn_code
-    o' <- prettySubst dcn_mopts
+    o' <- prettySubst dcn_opts
     return $
       render_obj $
         M.fromList

@@ -158,7 +158,7 @@ export type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 16;
+const reachBackendVersion = 17;
 const reachAlgoBackendVersion = 10;
 export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
@@ -624,6 +624,7 @@ function must_be_supported(bin: Backend) {
 export const MinTxnFee = 1000;
 const MaxAppTxnAccounts = 4;
 const MinBalance = 100000;
+const MaxAppProgramLen = 2048
 
 const SchemaMinBalancePerEntry = 25000
 const SchemaBytesMinBalance = 25000
@@ -1785,7 +1786,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           let whichApi : string|undefined;
           const processSimTxn = (t: SimTxn) => {
             let txn;
-            if ( t.kind === 'tokenNew' ) {
+            if ( t.kind === 'contractNew' ) {
+              // XXX
+              processSimTxn({
+                kind: 'to',
+                amt: minimumBalance_app_create(t.cns[connector]),
+                tok: undefined,
+              });
+              howManyMoreFees++; return;
+            } else if ( t.kind === 'tokenNew' ) {
               processSimTxn({
                 kind: 'to',
                 amt: minimumBalance,
@@ -2412,6 +2421,15 @@ const schemaBytesMinBalance: BigNumber = bigNumberify(SchemaBytesMinBalance)
 const schemaUintMinBalance: BigNumber = bigNumberify(SchemaUintMinBalance)
 const appFlatParamsMinBalance: BigNumber = bigNumberify(AppFlatParamsMinBalance)
 const appFlatOptInMinBalance: BigNumber = bigNumberify(AppFlatOptInMinBalance)
+
+const minimumBalance_app_create = (cns:any): BigNumber => {
+  const { code, opts } = cns;
+  const { approval, clearState } = code;
+  const totalLen = approval.length + clearState.length;
+  const ai_ExtraProgramPages = Math.ceil(totalLen / MaxAppProgramLen) - 1;
+  const { globalBytes: ai_GlobalNumByteSlice, globalUints: ai_GlobalNumUint } = opts;
+  return bigNumberify(100000*(1+ai_ExtraProgramPages) + (25000+3500)*ai_GlobalNumUint + (25000+25000)*ai_GlobalNumByteSlice);
+};
 
 /**
  * @description  Format currency by network

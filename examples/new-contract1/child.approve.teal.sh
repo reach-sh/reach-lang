@@ -37,7 +37,7 @@ int 0
 app_global_put
 
 byte ${K_y}
-txna ApplicationArgs 1
+txna ApplicationArgs 0
 btoi
 app_global_put
 
