@@ -128,7 +128,7 @@ instance Pandemic AS.Value where
 
 instance Pandemic DLContractNew where
   pan (DLContractNew {..}) =
-    DLContractNew <$> pan dcn_code <*> pan dcn_mopts
+    DLContractNew <$> pan dcn_code <*> pan dcn_opts
 
 instance Pandemic DLExpr where
   pan = \case

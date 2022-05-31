@@ -3,12 +3,13 @@
 Below is a list of changes to Reach.
 Versions and changes-within-versions are listed in reverse-chronological order: newest things first.
 
-## 0.1.11: 2022/05 - present
+## 0.1.11: 2022/06 - present
 
 @{verCur("0.1.11")}
 
-+ 2022/05/18: Added @{seclink("ref-programs-consensus-new-contract")} support.
-+ 2022/05/18: Added @{seclink("ref-programs-appinit-contractcode")} support.
++ 2022/06/01: Added @{seclink("ref-programs-consensus-new-contract")} support.
++ 2022/06/01: Added @{seclink("ref-programs-appinit-contractcode")} support.
++ 2022/06/01: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 
 ## 0.1.10: 2022/04 - 2022/05
 

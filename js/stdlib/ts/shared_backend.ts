@@ -289,6 +289,12 @@ export const simTokenNew = (sim_r:any, n:any, s:any, u:any, m:any, p:any, d:any,
   return ctr;
 };
 
+export const simContractNew = (sim_r:any, cns:any, ctr:any): any => {
+  sim_r.txns.push({kind: 'contractNew', cns });
+  // XXX This is a hack... it is assumed that `ctr` is unique across tokens in a simulation block
+  return ctr;
+};
+
 export const simTokenBurn = (sim_r:any, tok:any, amt:any): void => {
   sim_r.txns.push({kind: 'tokenBurn', tok, amt});
 };

@@ -6,6 +6,7 @@ import * as main3 from './build/index.main3.mjs';
 const stdlib = loadStdlib();
 const startingBalance = stdlib.parseCurrency(100);
 const accA = await stdlib.newTestAccount(startingBalance);
+accA.setGasLimit(5_000_000);
 
 const go = async (backend) => {
   const ctcA = accA.contract(backend);

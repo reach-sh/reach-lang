@@ -4,7 +4,7 @@ import Control.Monad.Extra
 import Control.Monad.Reader
 import Control.Monad.Trans.Except
 import Crypto.Hash
-import Data.Aeson ((.:), (.=))
+import Data.Aeson ((.:), (.=), (.:?))
 import qualified Data.Aeson as AS
 import Data.Bits (shiftL, shiftR, (.|.))
 import qualified Data.ByteArray as BA
@@ -318,6 +318,28 @@ tealVersionPragma :: LT.Text
 tealVersionPragma = "#pragma version 6"
 
 -- Algo specific stuff
+
+extraPages :: Integral a => a -> Integer
+extraPages totalLen = ceiling ((fromIntegral totalLen :: Double) / fromIntegral algoMaxAppProgramLen) - 1
+
+data AppInfo = AppInfo
+  { ai_GlobalNumUint :: Integer
+  , ai_GlobalNumByteSlice :: Integer
+  , ai_LocalNumUint :: Integer
+  , ai_LocalNumByteSlice :: Integer
+  , ai_ExtraProgramPages :: Integer
+  }
+
+data ApplTxnType
+  = ApplTxn_Create
+  | ApplTxn_OptIn
+
+minimumBalance_app :: AppInfo -> ApplTxnType -> Integer
+minimumBalance_app (AppInfo {..}) = \case
+  ApplTxn_Create ->
+    100000*(1+ai_ExtraProgramPages) + (25000+3500)*ai_GlobalNumUint + (25000+25000)*ai_GlobalNumByteSlice
+  ApplTxn_OptIn ->
+    100000 + (25000+3500)*ai_LocalNumUint + (25000+25000)*ai_LocalNumByteSlice
 
 maxTypeSize :: M.Map a DLType -> Integer
 maxTypeSize m = fromMaybe 0 $ maximumMay $ map typeSizeOf $ M.elems m
@@ -2294,10 +2316,17 @@ ce = \case
     block_ "ContractNew" $ do
       let DLContractNew {..} = cns M.! conName'
       let ALGOCode {..} = either impossible id $ aesonParse dcn_code
+      let ALGOCodeOpts {..} = either impossible id $ aesonParse dcn_opts
+      let ai_GlobalNumUint = aco_globalUints
+      let ai_GlobalNumByteSlice = aco_globalBytes
+      let ai_LocalNumUint = aco_localUints
+      let ai_LocalNumByteSlice = aco_localBytes
+      let ai_ExtraProgramPages =
+            extraPages $ length ac_approval + length ac_clearState
+      let appInfo = AppInfo {..}
       let ct_at = at
       let ct_mtok = Nothing
-      -- XXX make accurate
-      let ct_amt = DLA_Literal $ minimumBalance_l
+      let ct_amt = DLA_Literal $ DLL_Int at UI_Word $ minimumBalance_app appInfo ApplTxn_Create
       void $ checkTxn $ CheckTxn {..}
       itxnNextOrBegin False
       let vTypeEnum = "appl"
@@ -2307,7 +2336,12 @@ ce = \case
       makeTxn1 "ApprovalProgram"
       cbs $ B.pack ac_clearState
       makeTxn1 "ClearStateProgram"
-      -- XXX look at opts
+      let unz f n = unless (n == 0) $ cint n >> makeTxn1 f
+      unz "GlobalNumUint" $ ai_GlobalNumUint
+      unz "GlobalNumByteSlice" $ ai_GlobalNumByteSlice
+      unz "LocalNumUint" $ ai_LocalNumUint
+      unz "LocalNumByteSlice" $ ai_LocalNumByteSlice
+      unz "ExtraProgramPages" $ ai_ExtraProgramPages
       op "itxn_submit"
       code "itxn" ["CreatedApplicationID"]
   where
@@ -3598,10 +3632,9 @@ compile_algo env disp pl = do
     putStrLn $ "The program is " <> show totalLen <> " bytes."
   unless (totalLen <= algoMaxAppProgramLen_really) $ do
     gbad $ LT.pack $ "The program is too long; its length is " <> show totalLen <> ", but the maximum possible length is " <> show algoMaxAppProgramLen_really
-  let extraPages :: Integer = ceiling ((fromIntegral totalLen :: Double) / fromIntegral algoMaxAppProgramLen) - 1
   modifyIORef resr $
     M.insert "extraPages" $
-      AS.Number $ fromIntegral $ extraPages
+      AS.Number $ fromIntegral $ extraPages totalLen
   gFailures <- readIORef gFailuresR
   gWarnings <- readIORef gWarningsR
   let wss w lab ss = do
@@ -3651,6 +3684,30 @@ instance AS.FromJSON ALGOCode where
     ac_clearState <- obj .: "clearState"
     return $ ALGOCode {..}
 
+data ALGOCodeOpts = ALGOCodeOpts
+  { aco_globalUints :: Integer
+  , aco_globalBytes :: Integer
+  , aco_localUints :: Integer
+  , aco_localBytes :: Integer
+  }
+  deriving (Show)
+
+instance AS.ToJSON ALGOCodeOpts where
+  toJSON (ALGOCodeOpts {..}) = AS.object $
+    [ "globalUints" .= aco_globalUints
+    , "globalBytes" .= aco_globalBytes
+    , "localUints" .= aco_localUints
+    , "localBytes" .= aco_localBytes
+    ]
+
+instance AS.FromJSON ALGOCodeOpts where
+  parseJSON = AS.withObject "ALGOCodeOpts" $ \obj -> do
+    aco_globalUints <- fromMaybe 0 <$> obj .:? "globalUints"
+    aco_globalBytes <- fromMaybe 0 <$> obj .:? "globalBytes"
+    aco_localUints <- fromMaybe 0 <$> obj .:? "localUints"
+    aco_localBytes <- fromMaybe 0 <$> obj .:? "localBytes"
+    return $ ALGOCodeOpts {..}
+
 ccTEAL :: String -> CCApp BS.ByteString
 ccTEAL tealf = liftIO (compileTEAL_ tealf) >>= \case
   Right x -> return x
@@ -3691,3 +3748,8 @@ connect_algo env = Connector {..}
       a' <- ccPath ac_approval
       cs' <- ccPath ac_clearState
       return $ AS.toJSON $ ALGOCode a' cs'
+    conContractNewOpts :: Maybe AS.Value -> Either String AS.Value
+    conContractNewOpts mv = do
+      (aco :: ALGOCodeOpts) <- aesonParse $ fromMaybe (AS.object mempty) mv
+      return $ AS.toJSON aco
+

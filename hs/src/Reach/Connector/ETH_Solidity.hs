@@ -8,6 +8,7 @@ import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.Trans.Except
 import Data.Aeson as Aeson
+import qualified Data.Aeson as AS
 import Data.Aeson.Encode.Pretty
 import Data.Bifunctor (Bifunctor (first))
 import qualified Data.ByteString as BS
@@ -1739,7 +1740,9 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
             ]
     return $ (cinfo, vsep $ [preamble, solVersion, solStdLib, typedsp, intsp, ctcp])
 
-newtype CompiledSolRecs = CompiledSolRecs (M.Map T.Text CompiledSolRec)
+newtype CompiledSolRecs = CompiledSolRecs CompiledSolRecsM
+
+type CompiledSolRecsM = M.Map T.Text CompiledSolRec
 
 instance FromJSON CompiledSolRecs where
   parseJSON = withObject "CompiledSolRecs" $ \o -> do
@@ -1781,18 +1784,24 @@ try_compile_sol solf cn opt = do
           False -> "STDOUT:\n" <> stdout <> "\nSTDERR:\n" <> stderr
   case ec of
     ExitFailure _ -> return $ Left $ bunpack show_output
-    ExitSuccess -> return $ fmap ((,) me) $ compile_sol_parse solf cn stdout
+    ExitSuccess -> return $ fmap ((,) me) $ compile_sol_extract solf cn stdout
 
-compile_sol_parse :: String -> String -> BS.ByteString -> Either String CompiledSolRec
-compile_sol_parse solf cn stdout =
+compile_sol_parse :: BS.ByteString -> Either String CompiledSolRecsM
+compile_sol_parse stdout =
   case eitherDecodeStrict stdout of
     Left m -> Left $ "It produced invalid JSON output, which failed to decode with the message:\n" <> m
-    Right (CompiledSolRecs xs) -> do
-      case M.lookup k xs of
-        Nothing -> Left $ "Expected contracts object to have key " <> show k
-        Just x -> Right x
-  where
-    k = s2t $ solf <> ":" <> cn
+    Right (CompiledSolRecs xs) ->
+      return xs
+
+compile_sol_extract :: String -> String -> BS.ByteString -> Either String CompiledSolRec
+compile_sol_extract solf cn stdout = do
+  xs <- compile_sol_parse stdout
+  let k = s2t $ solf <> ":" <> cn
+  let ks = M.keys xs
+  let xs' = M.filterWithKey (\k' _ -> T.isSuffixOf k' k) xs
+  case M.toAscList xs' of
+    [ (_, x) ] -> Right x
+    _ -> Left $ "Expected contracts object to have unique key " <> show k <> " but had " <> show ks
 
 reachEthBackendVersion :: Int
 reachEthBackendVersion = 7
@@ -1863,7 +1872,7 @@ ccBin = B.unpack
 
 ccJson :: String -> String -> BS.ByteString -> CCApp String
 ccJson x y z = do
-  CompiledSolRec {..} <- except (compile_sol_parse x y z)
+  CompiledSolRec {..} <- except (compile_sol_extract x y z)
   return $ t2s $ csrCode
 
 ccSol :: String -> FilePath -> CCApp String
@@ -1962,3 +1971,7 @@ connect_eth _ = Connector {..}
     conCompileCode v = runExceptT $ do
       (c::String) <- ccPath =<< aesonParse' v
       return $ toJSON c
+    conContractNewOpts :: Maybe AS.Value -> Either String AS.Value
+    conContractNewOpts mv = do
+      (x :: ()) <- aesonParse $ fromMaybe AS.Null mv
+      return $ AS.toJSON x
