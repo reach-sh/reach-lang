@@ -5,6 +5,12 @@ export REACH="${ROOT}/reach"
 export REACH_DOCKER=0
 ${REACH} -h
 
+gf () {
+  echo gf "$@"
+  ${ROOT}/scripts/gen-test-output.sh "$@"
+}
+
+
 c () {
   echo c "$@"
   ${REACH} compile --intermediate-files "$@"
