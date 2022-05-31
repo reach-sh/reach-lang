@@ -28,7 +28,11 @@ jobs:
 
             ${{ github.event.issue.body }}
           fields: | # as a textual representation of json because reasons
-            {"assignee": "${{ secrets.CORE_DEFAULT_JIRA_ASSIGNEE }}"}
+            {
+              "assignee": {
+                "name": "${{ secrets.CORE_DEFAULT_JIRA_ASSIGNEE }}"
+              }
+            }
       - name: Log created issue
         run: echo "Issue ${{ steps.create.outputs.issue }} was created"
 
@@ -37,6 +41,7 @@ jobs:
 # Re: Jira Actions
 # https://github.com/marketplace/actions/jira-login
 # https://github.com/marketplace/actions/jira-create-issue
+# https://docs.atlassian.com/software/jira/docs/api/REST/7.6.1/#api/2/issue-createIssue
 
 # Re: triggering gh actions on issue activity
 # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#issues
