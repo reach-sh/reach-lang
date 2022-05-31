@@ -1973,6 +1973,7 @@ Example:
 
 ```reach
 load: /hs/t/n/Err_Throw_No_Catch.rsh
+md5: d21f3eba7c606b04750a14b7bfcb04a0
 range: 7 - 9
 ```
 
@@ -1983,6 +1984,7 @@ Example:
 
 ```reach
 load: /hs/t/y/Fix_Throw_No_Catch.rsh
+md5: 180f5cbb25c207ae7107b1b2783cd302
 range: 7 - 13
 ```
 
