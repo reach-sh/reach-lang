@@ -34,13 +34,11 @@ const establishDisplay = () => {
     const bookBtn = doc.querySelector('div.show-book-col');
     if (winWidth == 'xl' || winWidth == 'lg' || winWidth == 'md') {
       bookCol.style.maxWidth = maxColWidth;
-      bookCol.style.display = 'block';
-      bookBtn.style.display = 'none';
     } else if (winWidth == 'sm' || winWidth == 'xs') {
       bookCol.style.maxWidth = 'none';
-      bookCol.style.display = 'none';
-      bookBtn.style.display = 'block';
     }
+    bookCol.style.display = 'none';
+    bookBtn.style.display = 'block';
   }
 
   if (currentPage.hasOtp) {
