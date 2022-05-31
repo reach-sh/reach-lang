@@ -1,0 +1,45 @@
+name: GitHub issue to Jira issue
+on:
+  issues:
+    types: [ opened ]
+jobs:
+  gh2jira:
+    runs-on: ubuntu-latest
+    name: Github Issue To Jira Issue
+    steps:
+      - name: Login
+        uses: atlassian/gajira-login@master
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      - name: Create
+        id: create
+        if: ${{ !github.event.issue.pull_request }}
+        uses: atlassian/gajira-create@master
+        with:
+          project: CORE
+          issuetype: Problem
+          summary: |
+            GH #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
+          description: |
+            Reported by GitHub user: ${{ github.event.issue.user.login }}.
+            ${{ github.event.issue.html_url }}
+
+            ${{ github.event.issue.body }}
+          fields: | # as a textual representation of json because reasons
+            {"assignee": "${{ secrets.CORE_DEFAULT_JIRA_ASSIGNEE }}"}
+      - name: Log created issue
+        run: echo "Issue ${{ steps.create.outputs.issue }} was created"
+
+# Notes:
+
+# Re: Jira Actions
+# https://github.com/marketplace/actions/jira-login
+# https://github.com/marketplace/actions/jira-create-issue
+
+# Re: triggering gh actions on issue activity
+# https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#issues
+
+# Re: issue fields
+# https://docs.github.com/en/rest/issues/issues#get-an-issue
