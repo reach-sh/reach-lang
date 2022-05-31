@@ -9,7 +9,6 @@ const role = process.argv[2];
 console.log(`Your role is ${role}`);
 
 const stdlib = loadStdlib(process.env);
-console.log(`The consensus network is ${stdlib.connector}.`);
 const suStr = stdlib.standardUnit;
 const toAU = (su) => stdlib.parseCurrency(su);
 const toSU = (au) => stdlib.formatCurrency(au, 4);
