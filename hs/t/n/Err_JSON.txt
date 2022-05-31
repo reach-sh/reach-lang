@@ -1,0 +1,8 @@
+reachc: error[RE0136]: Cannot convert value to JSON: <SLV_Prim>
+
+  ./Err_JSON.rsh:5:26:application
+
+  5|   const CC = ContractCode({ ETH: Participant });
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0136
+
