@@ -1340,7 +1340,23 @@ f(Maybe(UInt).Some(1));
 This error indicates that there are multiple cases for the same variant in a `{!rsh} switch` statement or
 `{!rsh} match` expression.
 
+Example:
+
+```reach
+load: /hs/t/n/Err_Switch_DoubleCase.rsh
+md5: 0cf84c9f7a8802c527196b14bce8092c
+range: 10 - 16
+```
+
 You can fix this error by deleting one of the branches, ensuring there is only one branch per variant.
+
+Example:
+
+```reach
+load: /hs/t/y/Fix_Switch_DoubleCase.rsh
+md5: 80c1e033cdc7da09d32bc1fa8f126478
+range: 10 - 15
+```
 
 ## {#RE0074} RE0074
 
