@@ -823,6 +823,10 @@
     "title": "Using Reach on Windows",
     "path": "/guide/windows/#guide-windows"
   },
+  "nft": {
+    "title": "Build an NFT Auction with Reach",
+    "path": "/tut/nft/#nft"
+  },
   "over-compile": {
     "title": "Compile",
     "path": "/tut/overview/#over-compile"
