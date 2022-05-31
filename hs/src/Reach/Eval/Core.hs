@@ -3812,7 +3812,8 @@ evalPrim p sargs =
         _ -> expect_t ccv $ Err_Expected "Object or Reach.App"
     SLPrim_Contract_new -> do
       at <- withAt id
-      ensure_mode SLM_ConsensusStep "new Contract"
+      let lab = "new Contract"
+      ensure_mode SLM_ConsensusStep lab
       (ccv, opts) <-
         case args of
           [x] -> return (x, mempty)
@@ -3823,16 +3824,23 @@ evalPrim p sargs =
               _ -> expect_t ccv $ Err_Expected "ContractCode"
       let cc' = M.mapKeys t2s cc
       cns <- readDlo dlo_connectors
-      dcns <- forWithKeyM cns $ \cn _ -> do
+      dcns <- forWithKeyM cns $ \cn c -> do
         let cnv = t2s cn
-        let ctx = LC_RefFrom "ContractCode"
+        let ctx = LC_RefFrom lab
         dcn_code <- env_lookup_ ctx cnv (const False) cc'
-        dcn_mopts <- case M.member cnv opts of
-                True -> do
-                  sv <- sss_val <$> env_lookup ctx cnv opts
-                  jsv <- slToJSON sv
-                  return $ Just jsv
-                False -> return Nothing
+        moptsv <-
+          case M.member cnv opts of
+            True -> do
+              sv <- sss_val <$> env_lookup ctx cnv opts
+              return $ Just sv
+            False -> return Nothing
+        mopts <- traverse slToJSON moptsv
+        dcn_opts <-
+          case conContractNewOpts c mopts of
+            Right x -> return x
+            Left x -> do
+              let opts' = fromMaybe (SLV_Null at lab) moptsv
+              expect_t opts' $ Err_ContractCode cn x
         return $ DLContractNew {..}
       ctcdv_ <-
         ctxt_lift_expr (DLVar at Nothing T_Contract) $
