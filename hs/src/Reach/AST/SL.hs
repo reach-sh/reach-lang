@@ -768,7 +768,7 @@ data SLPrimitive
   | SLPrim_Foldable
   | SLPrim_is
   | SLPrim_remote
-  | SLPrim_remotef SrcLoc DLArg String SLTypeFun (Maybe SLVal) (Maybe (Either SLVal SLVal)) (Maybe DLRemoteALGO) (Maybe RemoteFunMode) (Maybe String)
+  | SLPrim_remotef SrcLoc DLArg (Maybe String) SLTypeFun (Maybe SLVal) (Maybe (Either SLVal SLVal)) (Maybe DLRemoteALGO) (Maybe RemoteFunMode)
   | SLPrim_balance
   | SLPrim_Token_supply
   | SLPrim_viewis SrcLoc (Maybe SLPart) SLVar SLType
@@ -800,6 +800,7 @@ data SLPrimitive
   | SLPrim_castOrTrunc UIntTy
   | SLPrim_ContractCode
   | SLPrim_Contract_new
+  | SLPrim_Contract_new_ctor DLContractNews
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

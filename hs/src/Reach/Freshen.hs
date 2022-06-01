@@ -136,6 +136,9 @@ instance Freshen AS.Value where
 instance Freshen DLContractNew where
   fu (DLContractNew x y) = DLContractNew <$> fu x <*> fu y
 
+instance Freshen DLRemote where
+  fu (DLRemote m pamt as wbill malgo) = DLRemote <$> pure m <*> fu pamt <*> fu as <*> fu wbill <*> fu malgo
+
 instance Freshen DLExpr where
   fu = \case
     DLE_Arg at a -> DLE_Arg at <$> fu a
@@ -158,7 +161,7 @@ instance Freshen DLExpr where
     DLE_PartSet at x y -> DLE_PartSet at x <$> fu y
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> fu fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> fu fa <*> fu na
-    DLE_Remote at fs av rt m pamt as wbill malgo ma -> DLE_Remote at fs <$> fu av <*> pure rt <*> pure m <*> fu pamt <*> fu as <*> fu wbill <*> fu malgo <*> pure ma
+    DLE_Remote at fs av rt dr -> DLE_Remote at fs <$> fu av <*> pure rt <*> fu dr
     DLE_TokenNew at tns -> DLE_TokenNew at <$> fu tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> fu tok <*> fu amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> fu tok
@@ -167,7 +170,7 @@ instance Freshen DLExpr where
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mt tb -> DLE_GetUntrackedFunds at <$> fu mt <*> fu tb
     DLE_FromSome at mo da -> DLE_FromSome at <$> fu mo <*> fu da
-    DLE_ContractNew at tns -> DLE_ContractNew at <$> fu tns
+    DLE_ContractNew at tns dr -> DLE_ContractNew at <$> fu tns <*> fu dr
 
 instance {-# OVERLAPS #-} Freshen k => Freshen (SwitchCases k) where
   fu = mapM (\(vn, vnu, k) -> (,,) <$> fu_v vn <*> pure vnu <*> fu k)

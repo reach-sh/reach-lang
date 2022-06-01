@@ -122,6 +122,10 @@ instance CollectsTypes AS.Value where
 instance CollectsTypes DLContractNew where
   cts (DLContractNew x y) = cts x <> cts y
 
+instance CollectsTypes DLRemote where
+  cts (DLRemote _ pamt as y z) =
+    cts as <> cts pamt <> cts y <> cts z
+
 instance CollectsTypes DLExpr where
   cts = \case
     DLE_Arg _ a -> cts a
@@ -144,8 +148,8 @@ instance CollectsTypes DLExpr where
     DLE_PartSet _ _ a -> cts a
     DLE_MapRef _ _ fa -> cts fa
     DLE_MapSet _ _ fa na -> cts fa <> cts na
-    DLE_Remote _ _ av rt _ pamt as y z _ ->
-      cts (av : as) <> cts pamt <> cts y <> cts z <> cts rt
+    DLE_Remote _ _ av rt dr ->
+      cts av <> cts rt <> cts dr
     DLE_TokenNew _ tns -> cts tns
     DLE_TokenBurn _ a b -> cts [a, b]
     DLE_TokenDestroy _ a -> cts a
@@ -154,7 +158,7 @@ instance CollectsTypes DLExpr where
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ mt tb -> cts mt <> cts tb
     DLE_FromSome _ mo da -> cts mo <> cts da
-    DLE_ContractNew _ cns -> cts cns
+    DLE_ContractNew _ cns dr -> cts cns <> cts dr
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m

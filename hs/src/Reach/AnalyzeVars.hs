@@ -109,6 +109,9 @@ instance FreeVars AS.Value where
 instance FreeVars DLContractNew where
   freeVars (DLContractNew a b) = freeVars a <> freeVars b
 
+instance FreeVars DLRemote where
+  freeVars (DLRemote _ b c d e) = freeVars b <> freeVars c <> freeVars d <> freeVars e
+
 instance FreeVars DLExpr where
   freeVars = \case
     DLE_Arg _ a -> freeVars a
@@ -131,7 +134,7 @@ instance FreeVars DLExpr where
     DLE_PartSet _ _ a -> freeVars a
     DLE_MapRef _ _ a -> freeVars a
     DLE_MapSet _ _ a b -> freeVars a <> freeVars b
-    DLE_Remote _ _ a _ _ b c d e _ -> freeVars a <> freeVars b <> freeVars c <> freeVars d <> freeVars e
+    DLE_Remote _ _ a _ dr -> freeVars a <> freeVars dr
     DLE_TokenNew _ a -> freeVars a
     DLE_TokenBurn _ a b -> freeVars [a, b]
     DLE_TokenDestroy _ a -> freeVars a
@@ -140,7 +143,7 @@ instance FreeVars DLExpr where
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ a b -> freeVars a <> freeVars b
     DLE_FromSome _ a b -> freeVars [a, b]
-    DLE_ContractNew _ a -> freeVars a
+    DLE_ContractNew _ a dr -> freeVars a <> freeVars dr
 
 instance FreeVars DLLetVar where
   freeVars = \case

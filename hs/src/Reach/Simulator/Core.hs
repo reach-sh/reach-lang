@@ -636,9 +636,9 @@ instance Interp DLExpr where
       let m = f acc m''
       setGlobal $ e {e_linstate = M.insert dlmvar m linst}
       return V_Null
-    DLE_Remote at fs ra _rt f' pa as (DLWithBill {..}) _ ma -> do
+    DLE_Remote at fs ra _rt (DLRemote mf pa as (DLWithBill {..}) _) -> do
       who <- whoAmI
-      let f = fromMaybe f' ma
+      let f = fromMaybe (impossible "XXX") mf
       case who of
         Participant _ -> return V_Null
         Consensus -> do
@@ -679,10 +679,11 @@ instance Interp DLExpr where
       case k of
         "Some" -> return v
         _ -> interp da
-    DLE_ContractNew _at _ -> do
+    DLE_ContractNew _at _ _dr -> do
       (g, _) <- getState
       let ctcId = e_nctc g - 1
       setGlobal $ g {e_nctc = ctcId}
+      -- XXX make an interact point with dr
       return $ V_Contract $ fromIntegral ctcId
 
 instance Interp DLStmt where
