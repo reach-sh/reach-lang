@@ -463,6 +463,18 @@ acc.getAddress() => string
 
 Returns the account's address as a string. The format of this string varies across connectors.
 
+Example:
+
+```js
+load: /examples/interact-this/index.mjs
+md5: 34eaa215660697ce8c5ba87387c8f0f1
+range: 14-19
+```
+
+In this code snippet, `{!js} getAddress` is being called in order to obtain the individual addresses of `Alice` and `Bob` that were created with the `{!js} newTestAccounts` code.
+The addresses are then written to the console so that each participant can see both addresses.
+This can be useful to verify that the address receiving the payment is the correct address.
+
 ---
 @{ref("js", "setDebugLabel")}
 ```js
