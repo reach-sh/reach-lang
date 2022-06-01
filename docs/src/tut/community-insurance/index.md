@@ -4,6 +4,7 @@ This tutorial walks through the creation of a Reach decentralized application wi
 It demonstrates how you can use Reach together with React to build a real-world community insurance application.
 To follow along, you are expected to have already gone through [the most basic tutorial](https://docs.reach.sh/tut/) and you have already
 learnt how to develop and test with a command-line frontend. 
+
 We highly encourage you to read about [the Reach architecture](https://docs.reach.sh/rsh/#ref-programs) as well, 
 as it's an excellent resource to help you understand the different modes/states of any Reach program.
 
@@ -15,84 +16,81 @@ This tutorial assumes that you already
  * have working knowledge of React hooks. You can checkout [the basics](https://reactjs.org/docs/hooks-overview.html#:~:text=Hooks%20are%20functions%20that%20let,if%20you'd%20like.) in case this is new to you.
  * installed Reach successfully by following the [installation process](https://docs.reach.sh/tut/) from the basic tutorial. 
 
-Since this is a real-world application, we want to style it professionally using [Tailwind CSS](https://tailwindcss.com/). You don't have to be familiar with this framework to follow along, though. 
-We'll provide a step by step configuration process to enable this styling framework.
+Note that the complete code of the community insurance application we intend to learn how to build is already 
+available on github and you don't have to re-write the entire code all over again. 
+Simply clone the repository to your computer and use this tutorial to understand all the key parts of the code base.
+I will explain the code line-by-line so be sure to follow this tutorial to the end. 
 
-In case you want to first have some background knowledge on the insurance business, checkout [this pdf doc](https://ira.go.ug/cp/uploads/English%20Handbook%20final.pdf).
+By the end of this tutorial, you will have enough confidence that you can even decide to re-develop it from scratch by yourself.
+You will even have a bonus advantage to learn or to better understand some other concepts in React, Supabase and Tailwind CSS, 
+so you will have comprehensive knowledge of how Reach fits together with these popular frontend technologies.
+
+Since this is a real-world application, we want to style it professionally using [Tailwind CSS](https://tailwindcss.com/). 
+You don't have to be familiar with this framework to follow along, though. 
+The code you have cloned already has it all well configured. 
+If you want to learn how to configure Tailwind CSS by yourself from scratch, 
+checkout this documentation on [how to configure it with React](https://tailwindcss.com/docs/guides/create-react-app)
+
+In case you want to first have some background knowledge on the insurance business, 
+checkout [this pdf doc](https://ira.go.ug/cp/uploads/English%20Handbook%20final.pdf).
 
 ## Preparation
 * Complete the most [basic tutorial](https://docs.reach.sh/tut/), finish the installation of Reach and all related configuration such as Docker.
-* Initialize a React application (using [`create-react-app`](https://tailwindcss.com/docs/guides/create-react-app)) and configure Tailwind CSS.
-
-## Initialize the application
-Go to the directory where you wish to create your project and open a new terminal from there.
-
+* Clone the reference code from [my github repository](https://github.com/Reach-Insurance/react) to your local machine 
+by running the following command.
 Run these commands to initialise the project
 ```cmd
-$ npx create-react-app community-insurance-dapp
-$ cd community-insurance-dapp
+$ git clone https://github.com/Reach-Insurance/react.git
 ```
+In case you get an error such as "git: command not found", then you need to 
+first [install git](https://github.com/git-guides/install-git#:~:text=To%20install%20Git%2C%20navigate%20to,installation%20by%20typing%3A%20git%20version%20.).
+If you are using windows, I recommend installing [git bash](https://www.atlassian.com/git/tutorials/git-bash) to your machine
 
-To install Tailwind CSS,
-```cmd
-$ npm install -D tailwindcss postcss autoprefixer
-$ npx tailwindcss init -p
-```
-
-To configure Tailwind CSS, open the file called `tailwind.config.js` at the root and paste in the following code.
-```
-load: /examples/insurance/tailwind.config.js
-```
-Open your `src/index.css` file and paste the code below, overwriting everything inside.
-```
-load: /examples/insurance/src/index.css
-```
 
 At the root of your application code, there is a `package.json` file that contains all of the configuration for React 
 and it is responsible for keeping track of all of the dependencies required to run this application.
-Open it and paste the code below, overwriting everything inside.
+If you open it, you will find there code that looks like this below.
 
 ```
 load: /examples/insurance/package.json
 ```
 
-Now run the command below and wait for `npm` to finish installing all React dependencies.
+Now open your terminal at the root of the cloned code directory and run the command below. 
+Wait for `npm` to finish installing all React dependencies.
 ```cmd
 $ npm install
 ```
-You have now finished preparing your frontend React application. What about the Reach backend? 
-Well, if you had successfully completed [the basic tutorial](https://docs.reach.sh/tut/), by now you know that at the root of 
-the Reach project there is a file named `index.rsh`,
-as well as the `reach` script, which allows you to run commands like `reach compile` and `reach run`. 
-To integrate both Reach and React, all you need is to make sure that the output file generated after compiling the `.rsh` 
-file resides inside the React project so that it can be imported at the top of React code. 
-To achieve this, create a folder inside the src/ folder of the React app where the Reach compilation output will go. 
-While you can name it whatever you want, I suggest `reach-build`. The Reach compiled output should be placed inside 
-`community-insurance-dapp/src/reach-build`. By the way, you can direct the output to go there at the time of running your 
-compilation command. By default `./reach compile` command places the output in a `build` folder at the root of the Reach app.
-You can change the destination of the output by specifying the `-o` flag like so: 
+## The Reach code and compilation outputs
+If you had successfully completed [the basic tutorial](https://docs.reach.sh/tut/), by now you know that at the root of 
+the project where there is a file named `index.rsh`, there should be a `reach` executable script which allows you to 
+run commands like `reach compile` and `reach run`. However, the code you cloned does not have the `reach` executable script 
+because the Reach code was already compiled and the output file `main.mjs` is already placed in the right place inside the code.
+It is located inside the `src/reach-build/` directory. In case you want to compile the Reach code again, you need to include 
+the executable script. By default `./reach compile` command places the output file(s) in a `build` folder at the root of the application,
+but you can change the destination of the output by specifying the `-o` flag like so: 
 ```cmd
-$ REACH_CONNECTOR_MODE="ALGO-browser" ./reach compile -o community-insurance-dapp/src/reach-build
+$ REACH_CONNECTOR_MODE="ALGO-browser" ./reach compile -o ./src/reach-build
 ```
-The above command assumes that your `index.rsh` file is in the same directory with the `community-insurance-dapp` folder.
-If that's not your case, you will have to adjust the command accordingly.
 
-The preparation is done. Now lets start writing our Reach application code.
-
-## Create your Reach program file for the Community Insurance DApp
+## The Reach program (index.rsh file) for the Community Insurance DApp
 ```
 load: /examples/insurance/index.rsh
-range: 1-60
+range: 1-32
 ```
 RECALL: Every reach program behaves like a state machine. It keeps changing "states", 
 and in each state there are valid and invalid opearations. 
-The states are called steps such as "step", "consensus step" and "local step".
+The states are called `steps` such as "step", "consensus step" and "local step".
 In the code above, We have included comments to let you know when the program changes to a different state.
 
 + Lines 7 through 31 specify the participant who will deploy the contract, and acts as the Insurance provider. 
 After deploying the contract, this "Insurer" participant will disconnect from it and leave it running for the 
 community members to attach to it and interact with it to perform certain tasks such as paying monthly fees, 
 raising insurance claims, approving claims, etc.
+
+```
+load: /examples/insurance/index.rsh
+range: 32-60
+```
 + Lines 33 through 52 specify the Community Member API. An API is similar to a class of participants that can 
 be doing many different things with the contract at the  same time by calling the specified API functions. 
 Please read more about APIs and [see how to define them](https://docs.reach.sh/rsh/appinit/#rsh_API) and 
@@ -109,7 +107,7 @@ may or may not switch the program state to another state. Forexample, calling `.
 Let's contnue with writing our reach program code.
 ```
 load: /examples/insurance/index.rsh
-range: 56-94
+range: 56-74
 ```
 
 + Line 61 through 66 specifies the Insurer participant's local step operations.
@@ -131,6 +129,10 @@ Remember, calling the `commit()` while in the consensus step changes the program
 The next steps in our program require us to be in a consensus step mode, but we are now in "step" mode after calling `commit()`.
 + On Line 71 we are calling `Insurer.publish()` in order to switch back to a consensus step.
 
+```
+load: /examples/insurance/index.rsh
+range: 74-94
+```
 + Line 75 defines a [Set](https://docs.reach.sh/rsh/consensus/#rsh_Set) of items called `registeredMembers`, which will keep a linear list of all community members knonwn to this 
 insurance application. It only keeps their addresses, more info about the members is kept away from the blockchain (off-chain). 
 + Line 78 through 81 defines a [Map](https://docs.reach.sh/rsh/consensus/#rsh_Map) which will keep all open insurance claims. 
@@ -205,10 +207,13 @@ when set explicitly in future. If we never set it to false explicitly, then the 
 
 Our reach program is now complete and ready to communicate with a frontend. 
 
+
+## The frontend in React, styled with Tailwind CSS
 Next, let's write our React frontend code. 
 In your `src` folder of the React app, find and open a file named `App.js`. Overwrite everything inside with the code below.
 ```
 load: /examples/insurance/src/App.js
+range: 1-18
 ```
 Let's walk through the above code to understand what's going on. 
 + Line 1 imports React library and it's standard "Hooks" such as `useState`, `useEffect` and `useRef`.
@@ -227,6 +232,10 @@ For example, `Dashboard`, `SignupForm`, `ErrorPage` and `Connect` are all compon
 + Line 15 sets `REACH_CONNECTOR_MODE` to `ALGO-browser`, which means that the frontend should expect the Reach contract to be deployed on Algorand test network (testnet). 
 + Line 16 sets `PUBLIC_URL` to `https%3A%2F%2Fr.bridge.walletconnect.org`, which is the required public URL for WalletConnect to connect our app to the Algorand network.
 
+```
+load: /examples/insurance/src/App.js
+range: 18-55
+```
 + Line 19 calls the `reach.setWalletFallback` function, to set a provider fallback for users who may not have a wallet in their browser.
 Read more about setting the [provider fallback](https://docs.reach.sh/frontend/#js_setWalletFallback).
 + Lines 20 through 27 has the basic configuration to set the fallback.

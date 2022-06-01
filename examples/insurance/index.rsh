@@ -1,7 +1,5 @@
 'reach 0.1';
 
-//REF: REACH ARCHITECTURE: https://docs.reach.sh/rsh/#ref-programs
-
 export const main = Reach.App(() => {
     const Insurer = Participant('Insurer', {
         mandatoryEntryFee: UInt,
@@ -68,38 +66,24 @@ export const main = Reach.App(() => {
     Insurer.publish();
 
     //keep a list of all members' Addresses,
-    //more info about the members is kept away (in the db).
     const registeredMembers = new Set();
 
-    //claim shape
     const insuranceClaims = new Map(Struct([
       ["amountRequested", UInt], ["amountSet", UInt], ["accepted", Bool],
       ["approvalsCount", UInt], ["sumOfSetAmounts", UInt]
     ]));
 
-    //details of members with open claims are kept close, 
-    //other members are kept away from here (in the db)
     const claimOwners = new Map(Struct([
-        //["fullName", Bytes(60)],
-        //["physicalAddress", Bytes(100)],
-        //dateJoined, Bytes(30),
         ["insrPackageId", UInt],
         ["amountDue", UInt],
       ["matureBalance", UInt]
     ]));
-
 
     const [
         membersCount,
         claimsCount
     ] = parallelReduce([1, 1])
         .define(() => {
-            //the "readFromMap" function below can be passed to maybe(...) function to 
-            //get the value from a mayBe which is returned by a Map of objects
-            //Example:   maybe(myMapOfObjects[forWho], 0, readFromMap(objectKey) )
-            //will return the value of the specified object key if the map contains 
-            // an object at its "forWho" key. if the key doesnt exist in 
-            // the map, it will return 0 
             const readFromMap = (key) => {
                 return (objectInMapInstance) => {
                     return objectInMapInstance[key];
@@ -108,12 +92,6 @@ export const main = Reach.App(() => {
         })
         .invariant(invariantCondition)
         .while(contractIsRunning)
-        //.case(Insurer,                  //PART_EXPR
-        //    () => {const _ = true},     //PUBLISH_EXPR
-        //    (_) => 0,                   //PAY_EXPR
-        //    ()=>{
-        //                                //CONSENSUS_EXPR
-        //    })
         .api(CommunityMember.registerMembership,
             (_) => { const _ = true; },
             (_) => mandatoryEntryFee,
@@ -171,6 +149,7 @@ export const main = Reach.App(() => {
 
                 //change mode from "concensus step" to "step"
                 commit();
+                
                 //now change mode back to "concensus step" and pay for the claimant.
                 Insurer.pay(claimAmount);
 
@@ -221,8 +200,7 @@ export const main = Reach.App(() => {
                 const who = this;
                 sendResponse(true);
 
-                //take the funds that the insurer had put on the table (paid), 
-                //back into the treasury
+                //take the funds that the insurer had put on the table (paid), back into the treasury
                 const memberRequestedAmount = maybe(insuranceClaims[who], 0, readFromMap("amountRequested"));
                 //transfer(memberRequestedAmount).to(Insurer);
 
@@ -240,13 +218,11 @@ export const main = Reach.App(() => {
             ((sendResponse) => {
                 //this must be done by the deployer of the contract only.
                 const who = this;
-                //TODO: require(who == Insurer, "You are not allowed to take this action.");
+                //TODO: require(addressOf(who) == addressOf(Insurer), "You are not allowed to take this action.");
                 Insurer.interact.stopContract();
-
+                
+                //send response to the API caller (ie, community member participant)
                 sendResponse(true);
-                //FUTURE IMPROVEMENT: ensure that the deployer/Insurer does not have authority 
-                //over the platform. Ensure that he first gets permission from members to stop the contract.
-                //ensure there are clearly agreed rules for non participation on this matter.
 
                 return [membersCount, claimsCount];
             })
