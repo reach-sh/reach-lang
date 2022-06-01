@@ -2080,7 +2080,7 @@ ce = \case
           cMapLoad
           cla $ mdaToMaybeLA mt mva
           cTupleSet at mdt $ fromIntegral i
-  DLE_Remote at fs ro rng_ty rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo ma -> do
+  DLE_Remote at fs ro rng_ty (DLRemote rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo) -> do
     let DLRemoteALGO _fees r_assets r_addr2acc r_apps = malgo
     warn_lab <- asks eWhich >>= \case
       Just which -> return $ "Step " <> show which
@@ -2088,7 +2088,7 @@ ce = \case
     warn $ LT.pack $
       warn_lab <> " calls a remote object at " <> show at <> ". This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object. Furthermore, the remote object may require special transaction parameters which are not expressed in the Reach API or the Algorand ABI standards."
     let ts = map argTypeOf as
-    let rm = fromMaybe rm' ma
+    let rm = fromMaybe (impossible "XXX") rm'
     let sig = signatureStr r_addr2acc rm ts (Just rng_ty)
     remoteTxns <- liftIO $ newCounter 0
     let mayIncTxn m = do
@@ -2312,7 +2312,7 @@ ce = \case
     -- [ Default, Object, Tag ]
     -- [ False, True, Cond ]
     op "select"
-  DLE_ContractNew at cns -> do
+  DLE_ContractNew at cns _drXXX -> do
     block_ "ContractNew" $ do
       let DLContractNew {..} = cns M.! conName'
       let ALGOCode {..} = either impossible id $ aesonParse dcn_code

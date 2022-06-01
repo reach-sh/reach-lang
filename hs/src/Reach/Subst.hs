@@ -85,6 +85,9 @@ instance Subst AS.Value where
 instance Subst DLContractNew where
   subst (DLContractNew a b) = DLContractNew <$> subst a <*> subst b
 
+instance Subst DLRemote where
+  subst (DLRemote m pamt as wbill malgo) = DLRemote <$> pure m <*> subst pamt <*> subst as <*> subst wbill <*> subst malgo
+
 instance Subst DLExpr where
   subst = \case
     DLE_Arg at a -> DLE_Arg at <$> subst a
@@ -107,7 +110,7 @@ instance Subst DLExpr where
     DLE_PartSet at x y -> DLE_PartSet at x <$> subst y
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> subst fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> subst fa <*> subst na
-    DLE_Remote at fs av rt m pamt as wbill malgo ma -> DLE_Remote at fs <$> subst av <*> pure rt <*> pure m <*> subst pamt <*> subst as <*> subst wbill <*> subst malgo <*> pure ma
+    DLE_Remote at fs av rt dr -> DLE_Remote at fs <$> subst av <*> pure rt <*> subst dr
     DLE_TokenNew at tns -> DLE_TokenNew at <$> subst tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> subst tok <*> subst amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> subst tok
@@ -116,7 +119,7 @@ instance Subst DLExpr where
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mtok tb -> DLE_GetUntrackedFunds at <$> subst mtok <*> subst tb
     DLE_FromSome at mo da -> DLE_FromSome at <$> subst mo <*> subst da
-    DLE_ContractNew at cns -> DLE_ContractNew at <$> subst cns
+    DLE_ContractNew at cns dr -> DLE_ContractNew at <$> subst cns <*> subst dr
 
 instance Subst DLStmt where
   subst = \case

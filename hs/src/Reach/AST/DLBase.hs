@@ -341,6 +341,9 @@ instance PrettySubst DLArg where
     DLA_Constant x -> return $ pretty x
     DLA_Literal x -> return $ pretty x
 
+argLitZero :: DLArg
+argLitZero = DLA_Literal $ DLL_Int sb UI_Word 0
+
 staticZero :: DLArg -> Bool
 staticZero = \case
   DLA_Literal (DLL_Int _ _ 0) -> True
@@ -701,6 +704,9 @@ data DLRemoteALGO = DLRemoteALGO
   }
   deriving (Eq, Ord)
 
+zDLRemoteALGO :: DLRemoteALGO
+zDLRemoteALGO = DLRemoteALGO argLitZero mempty False mempty
+
 instance PrettySubst DLRemoteALGO where
   prettySubst (DLRemoteALGO {..}) = do
     f' <- prettySubst ralgo_fees
@@ -736,6 +742,12 @@ instance PrettySubst DLContractNew where
         , ("mopts", o')
         ]
 
+type DLContractNews = M.Map ConnectorName DLContractNew
+
+data DLRemote
+  = DLRemote (Maybe String) DLPayAmt [DLArg] DLWithBill DLRemoteALGO
+  deriving (Eq, Ord, Generic)
+
 data DLExpr
   = DLE_Arg SrcLoc DLArg
   | DLE_LArg SrcLoc DLLargeArg
@@ -757,7 +769,7 @@ data DLExpr
   | DLE_PartSet SrcLoc SLPart DLArg
   | DLE_MapRef SrcLoc DLMVar DLArg
   | DLE_MapSet SrcLoc DLMVar DLArg (Maybe DLArg)
-  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg DLType String DLPayAmt [DLArg] DLWithBill DLRemoteALGO (Maybe String)
+  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg DLType DLRemote
   | DLE_TokenNew SrcLoc DLTokenNew
   | DLE_TokenBurn SrcLoc DLArg DLArg
   | DLE_TokenDestroy SrcLoc DLArg
@@ -776,7 +788,7 @@ data DLExpr
   | DLE_GetUntrackedFunds SrcLoc (Maybe DLArg) DLArg
   | DLE_FromSome SrcLoc DLArg DLArg
   -- Maybe try to generalize FromSome into a Match
-  | DLE_ContractNew SrcLoc (M.Map ConnectorName DLContractNew)
+  | DLE_ContractNew SrcLoc DLContractNews DLRemote
   deriving (Eq, Ord, Generic)
 
 data LogKind
@@ -807,6 +819,19 @@ instance PrettySubst a => PrettySubst (Maybe a) where
 
 instance (Pretty k, PrettySubst a) => PrettySubst (M.Map k a) where
   prettySubst x = render_obj <$> mapM prettySubst x
+
+instance PrettySubst DLRemote where
+  prettySubst (DLRemote ma amta as wb ra) = do
+      amta' <- prettySubst amta
+      as' <- render_dasM as
+      wb' <- prettySubst wb
+      ra' <- prettySubst ra
+      return $ viaShow ma <> ".pay" <> parens amta'
+        <> parens as'
+        <> ".withBill"
+        <> parens wb'
+        <> ".ALGO"
+        <> parens ra'
 
 instance PrettySubst DLExpr where
   prettySubst = \case
@@ -878,19 +903,10 @@ instance PrettySubst DLExpr where
     DLE_MapSet _ mv i Nothing -> do
       i' <- prettySubst i
       return $ "delete" <+> pretty mv <> brackets i'
-    DLE_Remote _ _ av _ m amta as wb ra ma -> do
+    DLE_Remote _ _ av _ dr -> do
       av' <- prettySubst av
-      amta' <- prettySubst amta
-      as' <- render_dasM as
-      wb' <- prettySubst wb
-      ra' <- prettySubst ra
-      return $
-        "remote(" <> av' <> ")." <> viaShow m  <> "/" <> viaShow ma <> ".pay" <> parens amta'
-          <> parens as'
-          <> ".withBill"
-          <> parens wb'
-          <> ".ALGO"
-          <> parens ra'
+      dr' <- prettySubst dr
+      return $ "remote(" <> av' <> ")." <> dr'
     DLE_TokenNew _ tns -> do
       tns' <- prettySubst tns
       return $ "new Token" <> parens tns'
@@ -921,9 +937,10 @@ instance PrettySubst DLExpr where
       mo' <- prettySubst mo
       da' <- prettySubst da
       return $ "fromSome" <> parens (render_das [mo', da'])
-    DLE_ContractNew _ cns -> do
+    DLE_ContractNew _ cns dr -> do
       cns' <- prettySubst cns
-      return $ "new Contract" <> parens cns'
+      dr' <- prettySubst dr
+      return $ "new Contract" <> parens cns' <> "." <> dr'
 
 instance PrettySubst LogKind where
   prettySubst = \case

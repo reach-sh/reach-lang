@@ -138,6 +138,10 @@ instance Countable DLContractNew where
   counts (DLContractNew a b) =
     counts a <> counts b
 
+instance Countable DLRemote where
+  counts (DLRemote _ pamt as x y) =
+    counts as <> counts pamt <> counts x <> counts y
+
 instance Countable DLExpr where
   counts = \case
     DLE_Arg _ a -> counts a
@@ -160,7 +164,7 @@ instance Countable DLExpr where
     DLE_PartSet _ _ a -> counts a
     DLE_MapRef _ _ fa -> counts fa
     DLE_MapSet _ _ fa na -> counts fa <> counts na
-    DLE_Remote _ _ av _ _ pamt as x y _ -> counts (av : as) <> counts pamt <> counts x <> counts y
+    DLE_Remote _ _ av _ dr -> counts av <> counts dr
     DLE_TokenNew _ tns -> counts tns
     DLE_TokenBurn _ tok amt -> counts [tok, amt]
     DLE_TokenDestroy _ tok -> counts tok
@@ -169,7 +173,7 @@ instance Countable DLExpr where
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ mt tb -> counts mt <> counts tb
     DLE_FromSome _ mo da -> counts mo <> counts da
-    DLE_ContractNew _ cns -> counts cns
+    DLE_ContractNew _ cns dr -> counts cns <> counts dr
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m

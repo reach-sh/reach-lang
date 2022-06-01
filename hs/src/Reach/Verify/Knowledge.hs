@@ -159,6 +159,15 @@ instance AllPoints DLTokenNew where
 instance AllPoints DLContractNew where
   all_points = const mempty
 
+instance AllPoints DLPayAmt where
+  all_points (DLPayAmt {..}) =
+    all_points pa_net
+    <> foldMap (all_points . fst) pa_ks
+
+instance AllPoints DLRemote where
+  all_points (DLRemote _ pamt as _ _) =
+    all_points pamt <> all_points as
+
 kgq_a_all :: AllPoints a => KCtxt -> a -> IO ()
 kgq_a_all ctxt a =
   mapM_ (flip (knows ctxt) (all_points a)) $ map P_Part (ctxt_ps ctxt)
@@ -236,9 +245,9 @@ kgq_e ctxt mv = \case
     kgq_v_onlym ctxt mv $ S.singleton $ P_Map mpv
   DLE_MapSet _ mpv _ mva ->
     knows ctxt (P_Map mpv) $ maybe mempty all_points mva
-  DLE_Remote _ _ av _ _ pamt as _ _ _ -> do
-    kgq_pa ctxt pamt
-    kgq_la ctxt mv $ DLLA_Tuple $ av : as
+  DLE_Remote _ _ av _ dr -> do
+    kgq_a_all ctxt av
+    kgq_a_all ctxt dr
   DLE_TokenNew _ tns -> kgq_a_all ctxt tns
   DLE_TokenBurn _ t a ->
     kgq_a_all ctxt [t, a]
@@ -252,7 +261,9 @@ kgq_e ctxt mv = \case
   DLE_FromSome _ mo da -> do
     kgq_a_all ctxt mo
     kgq_a_all ctxt da
-  DLE_ContractNew _ cns -> kgq_a_all ctxt cns
+  DLE_ContractNew _ cns dr -> do
+    kgq_a_all ctxt cns
+    kgq_a_all ctxt dr
 
 kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case
@@ -334,12 +345,6 @@ kgq_n ctxt = \case
   LLC_ViewIs _ _ _ _ k ->
     kgq_n ctxt k
 
-kgq_pa :: KCtxt -> DLPayAmt -> IO ()
-kgq_pa ctxt (DLPayAmt {..}) = do
-  let one = kgq_a_all ctxt
-  one pa_net
-  mapM_ (one . fst) pa_ks
-
 kgq_s :: KCtxt -> LLStep -> IO ()
 kgq_s ctxt = \case
   LLS_Com m k -> kgq_m ctxt m >> kgq_s ctxt k
@@ -359,7 +364,7 @@ kgq_s ctxt = \case
           >> kgq_n ctxt next_n
       go (_, DLSend _ msgas amta whena) = do
         mapM_ (uncurry (kgq_a_only ctxt)) (zip msgvs msgas)
-          >> kgq_pa ctxt amta
+          >> kgq_a_all ctxt amta
           -- This is a bit suspicious: we can't necessarily know what the value
           -- of this is just because of things being published, because they
           -- might be dishonest
