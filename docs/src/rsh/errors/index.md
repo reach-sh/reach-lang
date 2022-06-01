@@ -1071,9 +1071,27 @@ for the function you are attempting to use and provide it with the correct argum
 ## {#RE0056} RE0056
 
 This error indicates that you are attempting to create a variable, although another
-variable in the scope uses the same name. In Reach, identifier shadowing is
+variable in the scope uses the same name. 
+
+Example:
+
+```reach
+load: /hs/t/n/Err_Shadowed.rsh
+md5: 87f19538850309dc0a0093898a961b8d
+range: 3 - 8
+```
+
+In Reach, identifier shadowing is
 not allowed. You can fix this issue by renaming your variable or moving one of the
 variable declarations to another scope where it does not conflict with the other.
+
+Example:
+
+```reach
+load: /hs/t/y/Fix_Shadowed.rsh
+md5: 1c5e96ed4c3b89234f94d4a9b7e9649a
+range: 3 - 8
+```
 
 ## {#RE0057} RE0057
 
