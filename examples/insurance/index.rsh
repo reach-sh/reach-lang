@@ -1,11 +1,13 @@
 'reach 0.1';
 
 export const main = Reach.App(() => {
+    
+    //NOTE: The reach program starts in a "step" mode
+    
     const Insurer = Participant('Insurer', {
         mandatoryEntryFee: UInt,
         communityGroupName: Bytes(60),
         contractIsRunning: Bool,
-        //approveNewMembership: Fun([Address], Null),
         createInvoices: Fun([], Null),
         moveMaturedPayments: Fun([], Null),
         saveNewMemberDetails: Fun([Struct([
@@ -25,9 +27,9 @@ export const main = Reach.App(() => {
         signout: Fun([], Null),
         notifyFundedMember: Fun([Address], Null),
         stopContract: Fun([], Null),
-        log: Fun(true, Null) //REF: https://docs.reach.sh/guide/logging/
+        log: Fun(true, Null)
     });
-
+    
     const CommunityMember = API('CommunityMember', {
         registerMembership: Fun([Struct([
             ["fullName", Bytes(60)], ["phone", Bytes(20)],
@@ -45,38 +47,44 @@ export const main = Reach.App(() => {
            ["claimant", Address], ["accepted", Bool], ["setAmount", UInt]
         ])], Bool),
         withDrawClaim: Fun([], Bool),
-        //changePackage: Fun([Bytes(60)], Bool),
         stopContract: Fun([], Bool)
     });
+    
+    //NOTE: we are still in "step" mode
     setOptions({ untrustworthyMaps: true });
+    
     init();
-
-
-    //REF: REACH ARCHITECTURE: https://docs.reach.sh/rsh/#ref-programs
+    
+    //NOTE: we switched to "consensus step" by calling init() function above
 
     Insurer.only(() => {
+        //NOTE: we switched to "local step" by calling .only() function. This is the body of .only()
         const mandatoryEntryFee = declassify(interact.mandatoryEntryFee);
         const contractIsRunning = declassify(interact.contractIsRunning);
         interact.seeFeedback();
     });
+    //NOTE: we switched to "concensus step" because this is the "continuation" of .only() function.
     Insurer.publish(mandatoryEntryFee, contractIsRunning);
     const invariantCondition = true;
-    Insurer.interact.log("backend: starting...");
     commit();
     Insurer.publish();
 
-    //keep a list of all members' Addresses,
+    //keep a list of all community members' Addresses,
+    //more info about the community members is kept away (in the db).
     const registeredMembers = new Set();
 
+    //claim shape
     const insuranceClaims = new Map(Struct([
       ["amountRequested", UInt], ["amountSet", UInt], ["accepted", Bool],
       ["approvalsCount", UInt], ["sumOfSetAmounts", UInt]
     ]));
 
+    //details of members with open claims are kept close, 
+    //other members are kept away from here (off-chain)
     const claimOwners = new Map(Struct([
         ["insrPackageId", UInt],
         ["amountDue", UInt],
-      ["matureBalance", UInt]
+        ["matureBalance", UInt]
     ]));
 
     const [
@@ -98,8 +106,6 @@ export const main = Reach.App(() => {
             ((newMemberDetails, sendResponse) => {
                 const who = this;
                 sendResponse(true);
-                Insurer.interact.log("backend: API.CommunityMember.registerMembership ...");
-                Insurer.interact.log("backend: Insurer.interact.saveNewMemberDetails invoked ...");
                 Insurer.interact.saveNewMemberDetails(newMemberDetails);
                 Insurer.interact.log("backend: done.");
                 transfer(mandatoryEntryFee).to(Insurer);
@@ -149,7 +155,6 @@ export const main = Reach.App(() => {
 
                 //change mode from "concensus step" to "step"
                 commit();
-                
                 //now change mode back to "concensus step" and pay for the claimant.
                 Insurer.pay(claimAmount);
 
@@ -200,7 +205,7 @@ export const main = Reach.App(() => {
                 const who = this;
                 sendResponse(true);
 
-                //take the funds that the insurer had put on the table (paid), back into the treasury
+                //take the funds that the insurer had put on the table (paid), //back into the treasury
                 const memberRequestedAmount = maybe(insuranceClaims[who], 0, readFromMap("amountRequested"));
                 //transfer(memberRequestedAmount).to(Insurer);
 
@@ -220,8 +225,7 @@ export const main = Reach.App(() => {
                 const who = this;
                 //TODO: require(addressOf(who) == addressOf(Insurer), "You are not allowed to take this action.");
                 Insurer.interact.stopContract();
-                
-                //send response to the API caller (ie, community member participant)
+
                 sendResponse(true);
 
                 return [membersCount, claimsCount];
