@@ -151,6 +151,13 @@ and the initial values of these values are 1 and 1 respectively as they are the 
 The array `[1, 1]` input into parallelReduce([1, 1]) match the left side of the call to this function `[membersCount, claimsCount]`. `membersCount`=1 and `claimsCount`=1.
 Later these values will be changed by call to API functions in case a certain API function returns an 
 array with different values from the these initial ones. 
++ Lines 94 through 100, we are calling the `.define()` and defineing a function we will need later.
++ On lines 95 through 99, the defined `readFromMap()` function will be passed to `maybe(...)` function to 
+get the value from a `mayBe` which is returned by a `Map` of `Structs`.
+
+For example `maybe(myMapOfObjects[forWho], 0, readFromMap(objectKey) )`
+will return the value of the specified object key if the `Map` contains an object at its "forWho" key. 
+If the key doesnt exist in the `Map`, it will return `0`. 
 
 ```
 load: /examples/insurance/index.rsh
