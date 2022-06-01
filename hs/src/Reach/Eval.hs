@@ -111,6 +111,12 @@ verifyAliases m = do
 class Pandemic a where
   pan :: a -> App a
 
+instance Pandemic Char where
+  pan = return
+
+instance Pandemic DLType where
+  pan = return
+
 instance Pandemic a => Pandemic [a] where
   pan = mapM pan
 
@@ -129,6 +135,10 @@ instance Pandemic AS.Value where
 instance Pandemic DLContractNew where
   pan (DLContractNew {..}) =
     DLContractNew <$> pan dcn_code <*> pan dcn_opts
+
+instance Pandemic DLRemote where
+  pan (DLRemote s amt as bill malgo) =
+    DLRemote <$> pan s <*> pan amt <*> pan as <*> pan bill <*> pan malgo
 
 instance Pandemic DLExpr where
   pan = \case
@@ -152,8 +162,7 @@ instance Pandemic DLExpr where
     DLE_PartSet at slp a -> DLE_PartSet at slp <$> pan a
     DLE_MapRef at mv a -> DLE_MapRef at mv <$> pan a
     DLE_MapSet at mv a marg -> DLE_MapSet at mv <$> pan a <*> pan marg
-    DLE_Remote at cxt a ty s amt as bill malgo ma -> do
-      DLE_Remote at cxt <$> pan a <*> pure ty <*> pure s <*> pan amt <*> pan as <*> pan bill <*> pan malgo <*> pure ma
+    DLE_Remote at cxt a ty dr -> DLE_Remote at cxt <$> pan a <*> pan ty <*> pan dr
     DLE_TokenNew at tns -> DLE_TokenNew at <$> pan tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> pan tok <*> pan amt
     DLE_TokenDestroy at a -> DLE_TokenDestroy at <$> pan a
@@ -162,7 +171,7 @@ instance Pandemic DLExpr where
     DLE_setApiDetails at who dom mc info -> return $ DLE_setApiDetails at who dom mc info
     DLE_GetUntrackedFunds at marg a -> DLE_GetUntrackedFunds at <$> pan marg <*> pan a
     DLE_FromSome at mo da -> DLE_FromSome at <$> pan mo <*> pan da
-    DLE_ContractNew at cns -> DLE_ContractNew at <$> pan cns
+    DLE_ContractNew at cns dr -> DLE_ContractNew at <$> pan cns <*> pan dr
 
 instance Pandemic DLVar where
   pan (DLVar at m_locvar t i) = do

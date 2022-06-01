@@ -329,6 +329,10 @@ isAnEqual = \case
   TOKEN_EQ -> True
   _ -> False
 
+instance Optimize DLRemote where
+  opt (DLRemote m amta as wbill malgo) = DLRemote <$> pure m <*> opt amta <*> opt as <*> opt wbill <*> opt malgo
+  gcs _ = return ()
+
 instance Optimize DLExpr where
   opt = \case
     DLE_Arg at a -> DLE_Arg at <$> opt a
@@ -430,7 +434,7 @@ instance Optimize DLExpr where
     DLE_PartSet at who a -> DLE_PartSet at who <$> opt a
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> opt fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> opt fa <*> opt na
-    DLE_Remote at fs av rt m amta as wbill malgo ma -> DLE_Remote at fs <$> opt av <*> pure rt <*> pure m <*> opt amta <*> opt as <*> opt wbill <*> opt malgo <*> pure ma
+    DLE_Remote at fs av rt dr -> DLE_Remote at fs <$> opt av <*> pure rt <*> opt dr
     DLE_TokenNew at tns -> DLE_TokenNew at <$> opt tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> opt tok <*> opt amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> opt tok
@@ -451,7 +455,7 @@ instance Optimize DLExpr where
                 _ -> return $ DLE_Arg at da'
             _ -> meh
         _ -> meh
-    DLE_ContractNew at cns -> DLE_ContractNew at <$> opt cns
+    DLE_ContractNew at cns dr -> DLE_ContractNew at <$> opt cns <*> opt dr
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
   gcs _ = return ()

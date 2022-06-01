@@ -68,6 +68,9 @@ instance Sanitize AS.Value where
 instance Sanitize DLContractNew where
   sani (DLContractNew a b) = DLContractNew (sani a) (sani b)
 
+instance Sanitize DLRemote where
+  sani (DLRemote m amta as wbill malgo) = DLRemote m (sani amta) (sani as) (sani wbill) (sani malgo)
+
 instance Sanitize DLExpr where
   sani = \case
     DLE_Arg _ a -> DLE_Arg sb $ sani a
@@ -90,7 +93,7 @@ instance Sanitize DLExpr where
     DLE_PartSet _ p x -> DLE_PartSet sb p (sani x)
     DLE_MapRef _ mv fa -> DLE_MapRef sb mv (sani fa)
     DLE_MapSet _ mv fa na -> DLE_MapSet sb mv (sani fa) (sani na)
-    DLE_Remote _ fs av rt m amta as wbill malgo ma -> DLE_Remote sb fs (sani av) rt m (sani amta) (sani as) (sani wbill) (sani malgo) ma
+    DLE_Remote _ fs av rt dr -> DLE_Remote sb fs (sani av) rt (sani dr)
     DLE_TokenNew _ tns -> DLE_TokenNew sb (sani tns)
     DLE_TokenBurn _ tok amt -> DLE_TokenBurn sb (sani tok) (sani amt)
     DLE_TokenDestroy _ tok -> DLE_TokenDestroy sb (sani tok)
@@ -99,7 +102,7 @@ instance Sanitize DLExpr where
     DLE_setApiDetails _ w d c f -> DLE_setApiDetails sb w d c f
     DLE_GetUntrackedFunds _ mt tb -> DLE_GetUntrackedFunds sb (sani mt) (sani tb)
     DLE_FromSome _ mo da -> DLE_FromSome sb (sani mo) (sani da)
-    DLE_ContractNew _ cns -> DLE_ContractNew sb (sani cns)
+    DLE_ContractNew _ cns dr -> DLE_ContractNew sb (sani cns) (sani dr)
 
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m

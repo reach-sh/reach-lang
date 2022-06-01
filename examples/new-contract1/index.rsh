@@ -7,13 +7,14 @@ const make = (cc, isReach = false) => Reach.App(() => {
   const ChildCode = ContractCode(cc);
   init();
   A.publish();
-  const child = new Contract(ChildCode, {
+  const childNew = Contract(ChildCode, {
     ALGO: isReach ? {
       globalBytes: 1
     } : {
       globalUints: 2,
     }
-  });
+  }).new;
+  const child = isReach ? childNew() : childNew(2);
   const childo = remote(child, {
     'f': Fun([UInt], UInt),
   });

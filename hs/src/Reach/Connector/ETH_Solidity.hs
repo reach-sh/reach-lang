@@ -378,6 +378,16 @@ instance DepthOf DLTokenNew where
 instance DepthOf DLContractNew where
   depthOf (DLContractNew {}) = return 1
 
+
+instance DepthOf DLRemote where
+  depthOf (DLRemote _ (DLPayAmt net ks) as (DLWithBill _ nr nz) _) =
+    add1 $
+      depthOf $ net : pairList ks <> as <> nr <> nz
+    where
+      add1 = addN 1
+      addN n m = (+) n <$> m
+      pairList = concatMap (\(a, b) -> [a, b])
+
 instance DepthOf DLExpr where
   depthOf = \case
     DLE_Arg _ a -> depthOf a
@@ -400,15 +410,8 @@ instance DepthOf DLExpr where
     DLE_PartSet _ _ x -> depthOf x
     DLE_MapRef _ _ x -> add1 $ depthOf x
     DLE_MapSet _ _ x y -> max <$> depthOf x <*> depthOf y
-    DLE_Remote _ _ av _ _ (DLPayAmt net ks) as (DLWithBill _ nr nz) _ _ ->
-      add1 $
-        depthOf $
-          av
-          : net
-          : pairList ks
-          <> as
-          <> nr
-          <> nz
+    DLE_Remote _ _ av _ dr ->
+      add1 $ max <$> depthOf av <*> depthOf dr
     DLE_TokenNew _ tns -> add1 $ depthOf tns
     DLE_TokenBurn _ t a -> add1 $ depthOf [t, a]
     DLE_TokenDestroy _ t -> add1 $ depthOf t
@@ -417,11 +420,10 @@ instance DepthOf DLExpr where
     DLE_setApiDetails {} -> return 0
     DLE_GetUntrackedFunds _ mt tb -> max <$> depthOf mt <*> depthOf tb
     DLE_FromSome _ mo da -> add1 $ depthOf [mo, da]
-    DLE_ContractNew _ cns -> add1 $ depthOf cns
+    DLE_ContractNew _ cns dr -> add1 $ max <$> depthOf cns <*> depthOf dr
     where
       add1 = addN 1
       addN n m = (+) n <$> m
-      pairList = concatMap (\(a, b) -> [a, b])
 
 solVar :: AppT DLVar
 solVar v = do
@@ -819,8 +821,8 @@ getBalance tok = solApply "tokenBalanceOf" [tok, "address(this)"]
 solCom :: AppT DLStmt
 solCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ pv (DLE_Remote at fs av rng_ty f_ (DLPayAmt net ks) as (DLWithBill _nRecv nonNetTokRecv nnTokRecvZero) _ ma) -> do
-    let f = fromMaybe f_ ma
+  DL_Let _ pv (DLE_Remote at fs av rng_ty (DLRemote mf (DLPayAmt net ks) as (DLWithBill _nRecv nonNetTokRecv nnTokRecvZero) _)) -> do
+    let f = fromMaybe (impossible "remote no fun") mf
     -- XXX make this not rely on pv
     av' <- solArg av
     as' <- mapM solArg as
@@ -978,7 +980,7 @@ solCom = \case
       ]
   DL_Let _ (DLV_Eff) (DLE_ContractNew {}) ->
     return ""
-  DL_Let _ (DLV_Let _ dv) (DLE_ContractNew _at cns) -> do
+  DL_Let _ (DLV_Let _ dv) (DLE_ContractNew _at cns _drXXX) -> do
     let DLContractNew {..} = cns M.! conName'
     let (bc :: String) = either impossible id $ aesonParse dcn_code
     addMemVar dv
