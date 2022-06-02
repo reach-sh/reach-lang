@@ -1585,6 +1585,22 @@ Please refer to the documentation of `{!rsh} parallelReduce` to see the required
 
 You can fix this error by adding any components the compiler has listed.
 
+Example of the issue:
+
+```reach
+load: /hs/t/n/Err_ParallelReduceIncomplete.rsh
+md5: a50e4be09db057a73abc83446c33b4bf
+range: 8 - 10
+```
+
+To fix this, make sure the `{!rsh} parallelReduce` has all required elements.
+
+```reach
+load: /hs/t/y/throw_timeout.rsh
+md5: 90656b6c80dca044b5723aa02428e138
+range: 26 - 40
+```
+
 ## {#RE0084} RE0084
 
 This error indicates that you have provided the wrong number of arguments to a component of
