@@ -1944,7 +1944,26 @@ or wrapping the necessary code into a `{!rsh} try/catch` block.
 This error indicates that you are attempting to `{!rsh} pay` on the first publication.
 This is not possible, because the contract will not yet exist, and receiving tokens depends on knowing the address of a contract first on those networks.
 
+Example:
+
+``` reach
+load: /hs/t/n/Err_Token_DynamicRef.rsh
+md5: c753ac8153539f825cd480f9a9e4a518
+range: 21 - 25
+```
+
 You can fix this by paying into the contract after the first publication.
+
+Example:
+
+``` reach
+load: /examples/chicken-race/index.rsh
+md5: 2f62423e6b6ea82b9c1c89cba69104a1
+range: 28 - 34
+```
+
+Alice creates the `wager` and the `deadline`, then declassifies them in the `{!rsh} interact` object to create the contract.
+Alice is then able to `{!rsh} publish` both `wager` and `deadline`, and pay the `wager` because the contract has already been created.
 
 ## {#RE0103} RE0103
 
