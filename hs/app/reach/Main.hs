@@ -1912,7 +1912,7 @@ remoteDockerAssocFor tmpC tmpH img mtag h = go
   where
     (go, itp) = case h of
       DockerHub ->
-        ( fetch 0 7 "hub.docker.com" dh_next dh_results uDockerHub >>= assoc aDH
+        ( fetch 0 8 "hub.docker.com" dh_next dh_results uDockerHub >>= assoc aDH
         , \x p -> imageThirdPartyDockerHubRoot p <> x <> unpack (T.toLower $ packs p)
         )
 
