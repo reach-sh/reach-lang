@@ -1412,14 +1412,18 @@ not match the expected `{!rsh} Type`.
 For example, the code below erroneously provides a number as the second argument to `{!rsh} assert`:
 
 ```reach
-assert(2 == 2, 5);
+load: /hs/t/n/Err_Expected.rsh
+md5: 9f0b04d6b134b00294080d9e783241ff
+range: 10-10
 ```
 
 However, the second argument of `{!rsh} assert` is expected to be of type `{!rsh} Bytes`.
 You can fix this issue by providing a value of the correct type:
 
 ```reach
-assert(2 == 2, "5th assertion")
+load: /hs/t/y/shared_checks_api_call.rsh
+md5: 360d86d0c94bb43c7f51cba6565aa913
+range: 23-23
 ```
 
 ## {#RE0077} RE0077
