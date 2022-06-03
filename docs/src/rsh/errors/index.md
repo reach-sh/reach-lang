@@ -1091,7 +1091,7 @@ range: 13 - 20
 The `{!rsh} return` statement on line 19 will never be executed. 
 The `{!rsh} return` statement in the `{!rsh} if ... else ...` block already handled what is needed for the `g` `{!rsh} function`.
 
-To fix the code remove line 19.
+To fix the code remove line 19:
 
 ```reach
 load: /hs/t/y/Fix_Return_MustBeTail.rsh
