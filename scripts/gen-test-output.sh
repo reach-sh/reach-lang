@@ -2,7 +2,7 @@
 # this script replicates the behavior of testCompileOut in /hs/test/Reach/Test_Compiler.hs
 case "$1" in
   *.rsh) RSH="$1" ;;
-  *) if [ -f "index.rsh" ]; then 
+  *) if [ -f "index.rsh" ]; then
        RSH="index.rsh"
      else
        echo "pass a .rsh file as the first arg"
@@ -31,7 +31,11 @@ fi
 
 # stderr comes after stdout
 # callstack is removed
-sed --quiet "/CallStack (from HasCallStack):/q;p " "$STDERR_F" >> "$OUTPUT_F"
+SED_COMMAND="gsed"
+if [ "$(which gsed)" = "" ]; then
+  SED_COMMAND="sed"
+fi
+$SED_COMMAND --quiet "/CallStack (from HasCallStack):/q;p " "$STDERR_F" >> "$OUTPUT_F"
 
 # full directory paths are replaced with "."
 ESCAPED="$(echo "$DIRNAME" | sed 's/\./\\\./g')"
