@@ -3229,8 +3229,7 @@ cmeth sigi = \case
 bindFromArgs :: [DLVarLet] -> App a -> App a
 bindFromArgs vs m = do
   let goSingle (v, i) = sallocVarLet v False (code "txna" ["ApplicationArgs", texty i] >> cfrombs (varLetType v))
-  let goSingles singles k =
-        foldl' (flip goSingle) k (zip singles [(1 :: Integer) ..])
+  let goSingles singles k = foldl' (flip goSingle) k (zip singles [(1 :: Integer) ..])
   case splitArgs vs of
     (vs', Nothing) -> do
       goSingles vs' m
