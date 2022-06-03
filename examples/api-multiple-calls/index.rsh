@@ -40,11 +40,9 @@ export const main = Reach.App(() => {
   const B = API(I);
   init();
   A.publish();
+  commit();
   A.interact.deployed();
-  commit();
 
-  A.publish();
-  commit();
 
   const [ [x1], k1 ] = call(B.go).assume((x) => { check(x == 1); });
   check(x1 == 1);
