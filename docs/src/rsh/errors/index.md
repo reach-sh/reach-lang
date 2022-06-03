@@ -2376,8 +2376,24 @@ Since `{!rsh} ParticipantClass` is being deprecated, it is preferable to use `{!
 This error indicates that an `{!rsh} API` is explicitly attempting to make a publication, e.g. `{!rsh} api.publish()`.
 An API may only make a publication through a `{!rsh} fork`, `{!rsh} parallelReduce`, or `{!rsh} call`.
 
+Example:
+
+```reach
+load: /hs/t/n/Err_Api_Publish.rsh
+md5: 6ef69e7389dd90d7dc3646e832524326
+range: 3 - 11
+```
+
 Depending on your program, you can fix this error by performing a `{!rsh} call` or adding an `{!rsh} .api`
 case to your `{!rsh} fork` or `{!rsh} parallelReduce` statement.
+
+```reach
+load: /hs/t/y/obj_view_api.rsh
+md5: f64aaa770eb9d6fe07c5074fda861b90
+range: 8 - 17
+```
+
+This snippet `{!rsh} call`s the `{!rsh} API` instead of publishing. 
 
 ## {#RE0126} RE0126
 
