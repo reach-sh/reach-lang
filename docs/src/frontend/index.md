@@ -284,8 +284,7 @@ The second thing you should do in a frontend is create an account handle.
 
 ---
 
-@{ref("js", "getDefaultAccount")}
-@{ref("js", "stdlib.getDefaultAccount")}
+@{ref("js", "getDefaultAccount")}@{ref("js", "stdlib.getDefaultAccount")}
 In real applications, you will use access the user's account via their wallet with
 
 ```js
@@ -299,8 +298,7 @@ This promise will be rejected with an exception if no sensible default account c
 
 ---
 
-@{ref("js", "newTestAccount")}
-@{ref("js", "stdlib.newTestAccount")}
+@{ref("js", "newTestAccount")}@{ref("js", "stdlib.newTestAccount")}
 But, when you are testing, you will use
 
 ```js
@@ -569,8 +567,7 @@ The `{!js} setStorageLimit` function allows you to choose a different storage li
 
 # {#ref-frontends-js-ctc} Creating a Contract Handle
 
-@{ref("js","ctc")}
-@{ref("js", "contract")}
+@{ref("js","ctc")}@{ref("js", "contract")}
 The third thing you should do in a frontend is create a contract handle, so you can actually interact with your Reach program.
 
 ---
@@ -651,8 +648,7 @@ This deprecated function is an abbreviation of `{!js} acc.contract(bin, info)`.
 Contract handles provide access to the `{!rsh} Participant`s of the compiled backend, `{!js} bin`, that they were constructed with.
 
 ---
-@{ref("js", "ctc.participants")}
-@{ref("js", "ctc.p")}
+@{ref("js", "ctc.participants")}@{ref("js", "ctc.p")}
 ```js
 ctc.participants // {[name: string]: (interact:Object) => Promise}
 ctc.p
@@ -669,10 +665,7 @@ An object where the keys are the participant names and the values are functions 
 When you run a participant, you may want to run it up until a particular `{!rsh} interact` function and then disconnect.
 If so, then you should use
 
-@{ref("js", "withDisconnect")}
-@{ref("js", "stdlib.withDisconnect")}
-@{ref("js", "disconnect")}
-@{ref("js", "stdlib.disconnect")}
+@{ref("js", "withDisconnect")}@{ref("js", "stdlib.withDisconnect")}@{ref("js", "disconnect")}@{ref("js", "stdlib.disconnect")}
 ```js
 stdlib.withDisconnect<T>(f: () => Promise<T>) => Promise<T>
 stdlib.disconnect(t: any) => void
@@ -699,8 +692,7 @@ Once an account disconnects from the contract, they cannot rejoin as the same pa
 
 Contract handles provide access to the `{!rsh} API`s of the compiled backend, `{!js} bin`, that they were constructed with.
 
-@{ref("js", "ctc.apis")}
-@{ref("js", "ctc.a")}
+@{ref("js", "ctc.apis")}@{ref("js", "ctc.a")}
 ```js
 ctc.apis // {[name: string]: {[fun:string]: (...args) => Promise<res>}}
 ctc.apis // {[name: string]: (...args) => Promise<result>}
@@ -741,8 +733,7 @@ Views are [defined in application initialization](##ref-programs-appinit-view) a
 
 ---
 
-@{ref("js", "ctc.views")}
-@{ref("js", "ctc.v")}
+@{ref("js", "ctc.views")}@{ref("js", "ctc.v")}
 ```js
 ctc.views // {[name: string]: {[fun:string]: (...args) => Promise<res>}}
 ctc.views // {[name: string]: (...args) => Promise<res>}
@@ -774,8 +765,7 @@ If a view is set, the value will be returned as is, without being wrapped in `{!
 If a view is not set, an error will be thrown.
 
 ---
-@{ref("js", "ctc.getViews")}
-@{ref("js", "getViews")}
+@{ref("js", "ctc.getViews")}@{ref("js", "getViews")}
 ```js
 ctc.getViews() => Object
 ```
@@ -786,8 +776,7 @@ This deprecated function is an abbreviation of `{!js} ctc.views`.
 
 Contract handles provide access to the `{!rsh} Events` of the compiled backend, `{!js} bin`, that they were constructed with.
 
-@{ref("js", "ctc.events")}
-@{ref("js", "ctc.e")}
+@{ref("js", "ctc.events")}@{ref("js", "ctc.e")}
 ```js
 ctc.events // { [name: string]: EventStream }
 ctc.e      // { [name: string]: EventStream }
