@@ -982,6 +982,18 @@ stdlib.protect(t, x) => x
 
 Asserts that value `{!js} x` has Reach type `{!js} t`. An exception is thrown if this is not the case.
 
+Example:
+
+```reach
+load: /examples/js-tests/index.mjs
+md5: 389bd098127db61d413f7586e81b561f
+range: 349 -352
+```
+
+This code tests to see if variables that are supposed to be `null` returns `null`.
+Line 350 `{!rsh} asserts` that `null` must return a result that is of type `T_Null`.
+Line 351 `{!rsh} asserts` that type `T_Null` must be returned by`undefined`.
+
 ---
 @{ref("js", "T_Null")}@{ref("js", "T_Bool")}@{ref("js", "T_UInt")}@{ref("js", "T_Bytes")}@{ref("js", "T_Address")}@{ref("js", "T_Array")}@{ref("js", "T_Tuple")}@{ref("js", "T_Object")}
 ```js
