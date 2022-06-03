@@ -2316,7 +2316,6 @@ splitArgs l =
     False -> (l, Nothing)
     True -> (before, Just after) where (before, after) = splitAt 14 l
 
-
 signatureStr :: Bool -> String -> [DLType] -> Maybe DLType -> String
 signatureStr addr2acc f args mret = sig
   where
