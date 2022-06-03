@@ -652,12 +652,12 @@ bidders.member(Alice); // false
 bidders.Map.size(); // 0
 ```
 
-A `{!rsh} Set` is another container for linear state. It is simply a type alias of `{!rsh} Map(Null)`;
-it is only useful for tracking `{!rsh} Address`es. Because a `{!rsh} Set` is internally a `{!rsh} Map`, it may
-only be constructed in a consensus step.
+A `{!rsh} Set` is another container for linear state. 
+It is simply a type alias of `{!rsh} Map(Null)`; 
+it is only useful for tracking `{!rsh} Address`es. 
+Because a `{!rsh} Set` is internally a `{!rsh} Map`, it may only be constructed in a consensus step.
 
-A `{!rsh} Set` may be modified by writing `{!rsh} s.insert(ADDRESS)` to install `{!rsh} ADDRESS` in the
-set, `{!rsh} s`, or `{!rsh} s.remove(ADDRESS)` to remove the `{!rsh} ADDRESS` from the set.
+A `{!rsh} Set` may be modified by writing `{!rsh} s.insert(ADDRESS)` to install `{!rsh} ADDRESS` in the set, `{!rsh} s`, or `{!rsh} s.remove(ADDRESS)` to remove the `{!rsh} ADDRESS` from the set.
 Such modifications may only occur in a consensus step.
 
 The following example shows the usage of `{!rsh} s.insert(ADDRESS)`:
@@ -668,23 +668,29 @@ md5: 2186c788d7b38a8b4f222960a77586d9
 range: 46 - 48
 ```
 
-While the example below shows the usage of  `{!rsh} s.remove(ADDRESS)`
+While the example below shows the usage of `{!rsh} s.remove(ADDRESS)`
 
 ```reach
 load: /examples/dominant-assurance/index.rsh
 md5: d327454b582bdfa6f03d71de5ce2dd97
-range: 143 - 143
+range: 136 - 138
 ```
 
-To check whether an address is in the set, `{!rsh} s.member(ADDRESS)` is used.
-
-The following example shows the usage of `{!rsh} s.member(ADDRESS)`
+To check whether an address is in the set, use `{!rsh} s.member(ADDRESS)`, as in the example below:
 
 ```reach
 load: /examples/dominant-assurance/index.rsh
 md5: d327454b582bdfa6f03d71de5ce2dd97
-range: 99 - 99
+range: 134 - 135
 ```
 
-`{!rsh} s.Map` will return the underlying `{!rsh} Map`, so you can use foldable
-instance methods.
+`{!rsh} s.Map` returns the underlying `{!rsh} Map` so that foldable
+instance methods may be used. 
+
+In the following snippet, the `{!rsh} invariant` ensures that the value of `investors.Map.size()` will equal the number of investors before and after entering the `{!rsh} while` loop.
+
+```reach
+load: /examples/dominant-assurance/index.rsh
+md5: d327454b582bdfa6f03d71de5ce2dd97
+range: 93 - 93
+```
