@@ -1435,14 +1435,16 @@ Example:
 
 ```reach
 load: /hs/t/n/Err_RecursionDepthLimit.rsh
+md5: 6a77966576b13f80288c1bb40c96fa2f
 range: 3 - 5
 ```
 
 You can fix this issue by re-writing your recursive function into an iterative set of
-statements, e.g. `{!rsh} while` loop.
+statements, e.g. a `{!rsh} while` loop.
 
 ```reach
 load: /hs/t/y/while_preamble.rsh
+md5: 6876b2cb3443237b8594c8100a2124ab
 range: 13 - 17
 ```
 
