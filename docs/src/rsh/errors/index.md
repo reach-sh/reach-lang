@@ -1438,7 +1438,7 @@ md5: 6a77966576b13f80288c1bb40c96fa2f
 range: 3 - 5
 ```
 
-You can fix this issue by re-writing your recursive function into an iterative set of statements, e.g. a `{!rsh} while` loop.
+You can fix this issue by rewriting the recursive function as an iterative set of statements, e.g. a `{!rsh} while` loop.
 
 ```reach
 load: /hs/t/y/while_preamble.rsh
