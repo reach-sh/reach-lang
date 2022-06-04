@@ -3502,7 +3502,7 @@ evalPrim p sargs =
       metam <- mustBeObject =<< one_arg
       metam' <- mapM (ensure_public . sss_sls) metam
       let actual = M.keysSet metam'
-      let valid = S.fromList $ [ "fees", "assets", "addressToAccount", "apps" ]
+      let valid = S.fromList $ [ "fees", "assets", "addressToAccount", "apps", "onCompletion" ]
       unless (actual `S.isSubsetOf` valid) $ do
         expect_ $ Err_Remote_ALGO_extra $ S.toAscList $
           actual `S.difference` valid
@@ -3525,6 +3525,15 @@ evalPrim p sargs =
         Nothing -> return $ False
         Just (SLV_Bool _ b) -> return $ b
         Just _ -> expect_ $ Err_Remote_ALGO_extra $ [ "addressToAccount with non-compile value" ]
+      ralgo_onCompletion <- metal "onCompletion" $ \case
+        Nothing -> return $ RA_NoOp
+        Just (SLV_Bytes _ "NoOp") -> return $ RA_NoOp
+        Just (SLV_Bytes _ "OptIn") -> return $ RA_OptIn
+        Just (SLV_Bytes _ "CloseOut") -> return $ RA_CloseOut
+        Just (SLV_Bytes _ "ClearState") -> return $ RA_ClearState
+        Just (SLV_Bytes _ "UpdateApplication") -> return $ RA_UpdateApplication
+        Just (SLV_Bytes _ "DeleteApplication") -> return $ RA_DeleteApplication
+        Just _ -> expect_ $ Err_Remote_ALGO_extra $ [ "illegal value for onCompletion" ]
       let malgo = Just $ DLRemoteALGO {..}
       return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa ma stf mpay mbill malgo Nothing)
     SLPrim_remotef rat aa ma stf mpay mbill malgo Nothing -> do

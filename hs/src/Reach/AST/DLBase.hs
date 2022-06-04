@@ -696,16 +696,26 @@ instance Pretty PrimOp where
         UI_256 -> "b"
         UI_Word -> ""
 
+data DLRemoteALGOOC
+  = RA_NoOp
+  | RA_OptIn
+  | RA_CloseOut
+  | RA_ClearState
+  | RA_UpdateApplication --- XXX need the fields
+  | RA_DeleteApplication
+  deriving (Eq, Ord)
+
 data DLRemoteALGO = DLRemoteALGO
   { ralgo_fees :: DLArg
   , ralgo_assets :: [DLArg]
   , ralgo_addr2acc :: Bool
   , ralgo_apps :: [DLArg]
+  , ralgo_onCompletion :: DLRemoteALGOOC
   }
   deriving (Eq, Ord)
 
 zDLRemoteALGO :: DLRemoteALGO
-zDLRemoteALGO = DLRemoteALGO argLitZero mempty False mempty
+zDLRemoteALGO = DLRemoteALGO argLitZero mempty False mempty RA_NoOp
 
 instance PrettySubst DLRemoteALGO where
   prettySubst (DLRemoteALGO {..}) = do

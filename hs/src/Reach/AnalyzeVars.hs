@@ -97,8 +97,11 @@ instance FreeVars DLWithBill where
 instance FreeVars Bool where
   freeVars = const mempty
 
+instance FreeVars DLRemoteALGOOC where
+  freeVars = const mempty
+
 instance FreeVars DLRemoteALGO where
-  freeVars (DLRemoteALGO a b z w) = freeVars a <> freeVars b <> freeVars z <> freeVars w
+  freeVars (DLRemoteALGO a b z w v) = freeVars a <> freeVars b <> freeVars z <> freeVars w <> freeVars v
 
 instance FreeVars DLTokenNew where
   freeVars (DLTokenNew a b c d e f) = freeVars [a, b, c, d, e] <> freeVars f
