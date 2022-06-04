@@ -38,7 +38,7 @@ import {
   IAccount, IContract, IRecv,
   ISetupArgs, ISetupViewArgs, ISetupRes,
   // ISimRes,
-  ISimTxn,
+  ISimTxn, ISimRemote,
   stdContract, stdVerifyContract,
   stdABIFilter,
   stdAccount,
@@ -183,6 +183,7 @@ type RecvArgs = IRecvArgs<AnyALGO_Ty>;
 type Recv = IRecv<Address>
 export type Contract = IContract<ContractInfo, Address, Token, AnyALGO_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
+type SimRemote = ISimRemote<Token, ContractInfo>
 type SimTxn = ISimTxn<Token, ContractInfo>
 type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
 type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
@@ -1784,16 +1785,27 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const txnExtraTxns: Array<Transaction> = [];
           let sim_i = 0;
           let whichApi : string|undefined;
+          const processRemote = (dr: SimRemote) => {
+            dr.toks.map(recordAsset);
+            dr.accs.map(recordAccount);
+            dr.apps.map(recordApp);
+            howManyMoreFees +=
+              1
+              + bigNumberToNumber(dr.pays)
+              + bigNumberToNumber(dr.bills)
+              + bigNumberToNumber(dr.fees);
+            return;
+          }
           const processSimTxn = (t: SimTxn) => {
             let txn;
             if ( t.kind === 'contractNew' ) {
-              // XXX
               processSimTxn({
                 kind: 'to',
                 amt: minimumBalance_app_create(t.cns[connector]),
                 tok: undefined,
               });
-              howManyMoreFees++; return;
+              processRemote(t.remote);
+              return;
             } else if ( t.kind === 'tokenNew' ) {
               processSimTxn({
                 kind: 'to',
@@ -1809,14 +1821,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               howManyMoreFees++; return;
             } else if ( t.kind === 'remote' ) {
               recordApp(t.obj);
-              t.toks.map(recordAsset);
-              t.accs.map(recordAccount);
-              t.apps.map(recordApp);
-              howManyMoreFees +=
-                1
-                + bigNumberToNumber(t.pays)
-                + bigNumberToNumber(t.bills)
-                + bigNumberToNumber(t.fees);
+              processRemote(t.remote);
               return;
             }  else if ( t.kind === 'api' ) {
               whichApi = t.who;

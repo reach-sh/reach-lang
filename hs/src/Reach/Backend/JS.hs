@@ -348,6 +348,29 @@ jsMapKey k =
     False -> jsArg k
     True  -> jsDigest [k]
 
+jsRemote :: SrcLoc -> DLRemote -> App Doc
+jsRemote at (DLRemote _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv _nnZero) malgo) = do
+  let DLRemoteALGO r_fees r_assets _r_addr2acc r_apps = malgo
+  fees' <- jsArg r_fees
+  let notStaticZero = not . staticZero
+  let pay_ks_nz = filter (notStaticZero . fst) pay_ks
+  let l2n x = jsCon $ DLL_Int at UI_Word $ fromIntegral $ length $ x
+  pays' <- l2n $ filter notStaticZero $ pay_net : map fst pay_ks_nz
+  let nRecvCount = if nRecv then [r_fees] else []
+  bills' <- l2n $ nRecvCount <> nnRecv
+  toks' <- mapM jsArg $ nnRecv <> map snd pay_ks_nz <> r_assets
+  let isAddress = (==) T_Address . argTypeOf
+  accs' <- mapM jsArg $ filter isAddress as
+  apps' <- mapM jsArg r_apps
+  return $ parens $ jsObject $ M.fromList $
+    [ (("pays"::String), pays')
+    , ("bills", bills')
+    , ("toks", jsArray toks')
+    , ("accs", jsArray accs')
+    , ("apps", jsArray apps')
+    , ("fees", fees')
+    ]
+
 jsExpr :: AppT DLExpr
 jsExpr = \case
   DLE_Arg _ a ->
@@ -479,34 +502,18 @@ jsExpr = \case
       JM_Backend ->
         return $ jsApply "await stdlib.mapSet" [jsMapVar mpv, fa', na']
       JM_View -> impossible "view mapset"
-  DLE_Remote at _fs ro _rng_ty (DLRemote _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv _nnZero) malgo) -> do
+  DLE_Remote at _fs ro _rng_ty dr -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> return "undefined /* Remote */"
       JM_View -> impossible "view Remote"
       JM_Simulate -> do
-        let DLRemoteALGO r_fees r_assets _r_addr2acc r_apps = malgo
-        -- These are totally made up and could be totally busted
+        dr' <- jsRemote at dr
         obj' <- jsArg ro
-        fees' <- jsArg r_fees
-        let notStaticZero = not . staticZero
-        let pay_ks_nz = filter (notStaticZero . fst) pay_ks
-        let l2n x = jsCon $ DLL_Int at UI_Word $ fromIntegral $ length $ x
-        pays' <- l2n $ filter notStaticZero $ pay_net : map fst pay_ks_nz
-        let nRecvCount = if nRecv then [ro] else []
-        bills' <- l2n $ nRecvCount <> nnRecv
-        toks' <- mapM jsArg $ nnRecv <> map snd pay_ks_nz <> r_assets
-        let isAddress = (==) T_Address . argTypeOf
-        accs' <- mapM jsArg $ filter isAddress as
-        apps' <- mapM jsArg r_apps
         let res' = parens $ jsSimTxn "remote" $
               [ ("obj", obj')
-              , ("pays", pays')
-              , ("bills", bills')
-              , ("toks", jsArray toks')
-              , ("accs", jsArray accs')
-              , ("apps", jsArray apps')
-              , ("fees", fees')
+              , ("remote", dr')
               ]
+        let nnRecv = dwb_tok_billed $ dr_bills dr
         net' <- jsCon $ DLL_Int at UI_Word 0
         let bill' = jsArray $ map (const net') nnRecv
         let bill'' = if null nnRecv then [] else [bill']
@@ -574,11 +581,12 @@ jsExpr = \case
     mo' <- jsArg mo
     da' <- jsArg da
     return $ jsApply "stdlib.fromSome" [mo', da']
-  DLE_ContractNew _ cns dr -> do
+  DLE_ContractNew at cns dr -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> return "undefined /* ContractNew */"
       JM_View -> impossible "view ContractNew"
       JM_Simulate -> do
+        dr' <- jsRemote at dr
         cns' <- forM cns $ \DLContractNew {..} -> do
           c' <- jsJSON dcn_code
           o' <- jsJSON dcn_opts
@@ -586,7 +594,7 @@ jsExpr = \case
             [ ("code"::String, c')
             , ("opts", o')
             ]
-        return $ jsApply "stdlib.simContractNew" ["sim_r", jsObject cns', "getSimTokCtr()"]
+        return $ jsApply "stdlib.simContractNew" ["sim_r", jsObject cns', dr', "getSimTokCtr()"]
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do

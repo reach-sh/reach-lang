@@ -744,8 +744,13 @@ instance PrettySubst DLContractNew where
 
 type DLContractNews = M.Map ConnectorName DLContractNew
 
-data DLRemote
-  = DLRemote (Maybe String) DLPayAmt [DLArg] DLWithBill DLRemoteALGO
+data DLRemote = DLRemote
+  { dr_mfun :: Maybe String
+  , dr_pay :: DLPayAmt
+  , dr_args :: [DLArg]
+  , dr_bills :: DLWithBill
+  , dr_ralgo :: DLRemoteALGO
+  }
   deriving (Eq, Ord, Generic)
 
 data DLExpr

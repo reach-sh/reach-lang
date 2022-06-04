@@ -556,6 +556,14 @@ export type ISimRes<Token, ContractInfo> = {
 };
 
 // XXX Add Address
+export type ISimRemote<Token, ContractInfo> = {
+  pays: BigNumber,
+  bills: BigNumber,
+  toks: Array<Token>,
+  accs: Array<string>,
+  apps: Array<ContractInfo>,
+  fees: BigNumber,
+}
 export type ISimTxn<Token, ContractInfo> = {
   kind: 'to'|'init',
   amt: BigNumber,
@@ -585,12 +593,7 @@ export type ISimTxn<Token, ContractInfo> = {
 } | {
   kind: 'remote',
   obj: ContractInfo,
-  pays: BigNumber,
-  bills: BigNumber,
-  toks: Array<Token>,
-  accs: Array<string>,
-  apps: Array<ContractInfo>,
-  fees: BigNumber,
+  remote: ISimRemote<Token, ContractInfo>,
 } | {
   kind: 'info',
   tok: Token,
@@ -600,6 +603,7 @@ export type ISimTxn<Token, ContractInfo> = {
 } | {
   kind: 'contractNew',
   cns: any,
+  remote: ISimRemote<Token, ContractInfo>,
 } ;
 
 /**
