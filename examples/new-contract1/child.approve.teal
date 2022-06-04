@@ -17,7 +17,7 @@ int 0
 app_global_put
 
 byte 0x01
-txna ApplicationArgs 1
+txna ApplicationArgs 0
 btoi
 app_global_put
 

@@ -2312,7 +2312,8 @@ ce = \case
     -- [ Default, Object, Tag ]
     -- [ False, True, Cond ]
     op "select"
-  DLE_ContractNew at cns _drXXX -> do
+  DLE_ContractNew at cns (DLRemote _ _ as _ _) -> do
+    -- XXX support all of the DLRemote options
     block_ "ContractNew" $ do
       let DLContractNew {..} = cns M.! conName'
       let ALGOCode {..} = either impossible id $ aesonParse dcn_code
@@ -2342,6 +2343,11 @@ ce = \case
       unz "LocalNumUint" $ ai_LocalNumUint
       unz "LocalNumByteSlice" $ ai_LocalNumByteSlice
       unz "ExtraProgramPages" $ ai_ExtraProgramPages
+      forM_ as $ \a -> do
+        ca a
+        let t = argTypeOf a
+        ctobs t
+        makeTxn1 "ApplicationArgs"
       op "itxn_submit"
       code "itxn" ["CreatedApplicationID"]
   where
