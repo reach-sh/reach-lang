@@ -289,8 +289,8 @@ export const simTokenNew = (sim_r:any, n:any, s:any, u:any, m:any, p:any, d:any,
   return ctr;
 };
 
-export const simContractNew = (sim_r:any, cns:any, ctr:any): any => {
-  sim_r.txns.push({kind: 'contractNew', cns });
+export const simContractNew = (sim_r:any, cns:any, remote:any, ctr:any): any => {
+  sim_r.txns.push({kind: 'contractNew', cns, remote });
   // XXX This is a hack... it is assumed that `ctr` is unique across tokens in a simulation block
   return ctr;
 };
