@@ -7,6 +7,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verCur("0.1.11")}
 
++ 2022/06/01: Added `onCompletion` field to `{!rsh} remote.ALGO`.
 + 2022/06/01: Added @{seclink("ref-programs-consensus-new-contract")} support.
 + 2022/06/01: Added @{seclink("ref-programs-appinit-contractcode")} support.
 + 2022/06/01: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.

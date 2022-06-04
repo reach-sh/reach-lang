@@ -23,7 +23,8 @@ const make = (cc, isReach = false) => Reach.App(() => {
   const go = (isLast = false) => {
     A.publish();
     const { f } = childo;
-    const x = ((isLast && isReach) ? f.ALGO({
+    const x = (isLast ? f.ALGO({
+      onCompletion: 'DeleteApplication',
     }) : f)(1);
     A.interact.log(x);
     commit();
