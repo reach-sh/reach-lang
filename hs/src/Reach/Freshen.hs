@@ -127,8 +127,11 @@ instance Freshen Bool where
 instance Freshen a => Freshen (DLInvariant a) where
   fu (DLInvariant inv lab) = DLInvariant <$> fu inv <*> pure lab
 
+instance Freshen DLRemoteALGOOC where
+  fu = return
+
 instance Freshen DLRemoteALGO where
-  fu (DLRemoteALGO x y z w) = DLRemoteALGO <$> fu x <*> fu y <*> fu z <*> fu w
+  fu (DLRemoteALGO x y z w v) = DLRemoteALGO <$> fu x <*> fu y <*> fu z <*> fu w <*> fu v
 
 instance Freshen AS.Value where
   fu = return

@@ -76,8 +76,11 @@ instance Subst DLWithBill where
   subst (DLWithBill x y z) =
     DLWithBill x <$> subst y <*> subst z
 
+instance Subst DLRemoteALGOOC where
+  subst = return
+
 instance Subst DLRemoteALGO where
-  subst (DLRemoteALGO x y z w) = DLRemoteALGO <$> subst x <*> subst y <*> subst z <*> subst w
+  subst (DLRemoteALGO x y z w v) = DLRemoteALGO <$> subst x <*> subst y <*> subst z <*> subst w <*> subst v
 
 instance Subst AS.Value where
   subst = return

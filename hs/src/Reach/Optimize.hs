@@ -301,9 +301,13 @@ instance Optimize DLWithBill where
     DLWithBill x <$> opt y <*> opt z
   gcs _ = return ()
 
+instance Optimize DLRemoteALGOOC where
+  opt = return
+  gcs _ = return ()
+
 instance Optimize DLRemoteALGO where
-  opt (DLRemoteALGO x y z w) =
-    DLRemoteALGO <$> opt x <*> opt y <*> opt z <*> opt w
+  opt (DLRemoteALGO x y z w v) =
+    DLRemoteALGO <$> opt x <*> opt y <*> opt z <*> opt w <*> opt v
   gcs _ = return ()
 
 instance Optimize AS.Value where

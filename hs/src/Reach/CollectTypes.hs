@@ -113,8 +113,11 @@ instance CollectsTypes PrimOp where
     BYTES_ZPAD l -> S.singleton $ T_Bytes l
     _ -> mempty
 
+instance CollectsTypes DLRemoteALGOOC where
+  cts = const mempty
+
 instance CollectsTypes DLRemoteALGO where
-  cts (DLRemoteALGO x y z w) = cts x <> cts y <> cts z <> cts w
+  cts (DLRemoteALGO x y z w v) = cts x <> cts y <> cts z <> cts w <> cts v
 
 instance CollectsTypes AS.Value where
   cts = const mempty

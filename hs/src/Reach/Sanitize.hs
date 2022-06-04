@@ -59,8 +59,11 @@ instance Sanitize DLTokenNew where
 instance Sanitize DLWithBill where
   sani (DLWithBill x y z) = DLWithBill x (sani y) (sani z)
 
+instance Sanitize DLRemoteALGOOC where
+  sani = id
+
 instance Sanitize DLRemoteALGO where
-  sani (DLRemoteALGO x y z w) = DLRemoteALGO (sani x) (sani y) (sani z) (sani w)
+  sani (DLRemoteALGO x y z w v) = DLRemoteALGO (sani x) (sani y) (sani z) (sani w) (sani v)
 
 instance Sanitize AS.Value where
   sani = id
