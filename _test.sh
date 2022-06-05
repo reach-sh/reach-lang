@@ -7,7 +7,7 @@ ${REACH} -h
 
 gf () {
   echo gf "$@"
-  ${ROOT}/scripts/gen-test-output.sh "$@"
+  "${ROOT}"/scripts/gen-test-output.sh "$@"
 }
 
 
