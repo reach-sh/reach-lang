@@ -43,10 +43,12 @@ read_seller
 read_seller
 read_seller
 read_seller
+read_seller
 CTC_INFO="$(echo "$REPLY" | awk --field-separator="Contract info: " '{print $2}')"
 
 while [ "$REPLY" != "Paste contract info:" ]; do read_buyer; done
 write_buyer "$CTC_INFO"
+read_buyer
 read_buyer
 read_buyer
 write_buyer y
