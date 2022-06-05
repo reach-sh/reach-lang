@@ -378,7 +378,6 @@ instance DepthOf DLTokenNew where
 instance DepthOf DLContractNew where
   depthOf (DLContractNew {}) = return 1
 
-
 instance DepthOf DLRemote where
   depthOf (DLRemote _ (DLPayAmt net ks) as (DLWithBill _ nr nz) _) =
     add1 $
