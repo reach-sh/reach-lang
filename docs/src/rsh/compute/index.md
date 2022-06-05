@@ -397,10 +397,7 @@ A @{defn("function application")}, written `{!rsh} EXPR_rator(EXPR_rand_0, ..., 
 A spread expression (`{!rsh} ...expr`) may appear in the list of operands to a function application, in which case the elements of the expr are spliced in place.
 `{!rsh} EXPR_rator` and `{!rsh} EXPR_rand_n` are evaluated in left-to-right order, starting with `{!rsh} EXPR_rator`, then `{!rsh} EXPR_rand_0`, `{!rsh} EXPR_rand_1`, etc.
 
-@{ref("rsh", "new")}
-@{ref("rsh", "Map.new")}
-@{ref("rsh", "Set.new")}
-@{ref("rsh", "Token.new")}
+@{ref("rsh", "new")}@{ref("rsh", "Map.new")}@{ref("rsh", "Set.new")}@{ref("rsh", "Token.new")}
 `{!rsh} new f(a)` is equivalent to `{!rsh} f.new(a)` and is a convenient short-hand for writing class-oriented programs.
 
 ### {#ref-programs-types} Types
@@ -809,9 +806,7 @@ If `{!rsh} REF_EXPR` is a mapping and `{!rsh} IDX_EXPR` evaluates to an address,
 
 ### Array & tuple length: `Tuple.length`, `Array.length`, and `.length`
 
-@{ref("rsh", "Tuple.length")}
-@{ref("rsh", "Array.length")}
-@{ref("rsh", "length")}
+@{ref("rsh", "Tuple.length")}@{ref("rsh", "Array.length")}@{ref("rsh", "length")}
 ```reach
 Tuple.length(tup);
 tup.length;
@@ -827,9 +822,7 @@ Both may be abbreviated as `{!rsh} expr.length` where `{!rsh} expr` evaluates to
 
 ### Array & tuple update: `Tuple.set`, `Array.set`, and `.set`
 
-@{ref("rsh", "Tuple.set")}
-@{ref("rsh", "Array.set")}
-@{ref("rsh", "set")}
+@{ref("rsh", "Tuple.set")}@{ref("rsh", "Array.set")}@{ref("rsh", "set")}
 ```reach
 Tuple.set(tup, idx, val);
 tup.set(idx, val);
@@ -847,8 +840,7 @@ Both may be abbreviated as `{!rsh} expr.set(idx, val)` where `{!rsh} expr` evalu
 
 ### Array element type: `Array.elemType` and `.elemType`
 
-@{ref("rsh", "Array.elemType")}
-@{ref("rsh", "elemType")}
+@{ref("rsh", "Array.elemType")}@{ref("rsh", "elemType")}
 ```reach
 Array.elemType(arr)
 arr.elemType
@@ -862,10 +854,7 @@ The following methods are available on any @{ref("rsh", "Foldable")}`{!rsh} Fold
 
 ####  `Foldable.forEach` && `.forEach`
 
-@{ref("rsh", "Foldable.forEach")}
-@{ref("rsh", "Map.forEach")}
-@{ref("rsh", "Array.forEach")}
-@{ref("rsh", "forEach")}
+@{ref("rsh", "Foldable.forEach")}@{ref("rsh", "Map.forEach")}@{ref("rsh", "Array.forEach")}@{ref("rsh", "forEach")}
 ```reach
 c.forEach(f)
 Foldable.forEach(c, f)
@@ -878,10 +867,7 @@ This may be abbreviated as `{!rsh} c.forEach(f)`.
 
 #### `Foldable.all` && `.all`
 
-@{ref("rsh", "Foldable.all")}
-@{ref("rsh", "Map.all")}
-@{ref("rsh", "Array.all")}
-@{ref("rsh", "all")}
+@{ref("rsh", "Foldable.all")}@{ref("rsh", "Map.all")}@{ref("rsh", "Array.all")}@{ref("rsh", "all")}
 ```reach
 Foldable.all(c, f)
 Array.all(c, f)
@@ -894,10 +880,7 @@ by every element of the container, `c`.
 
 #### `Foldable.any` && `.any`
 
-@{ref("rsh", "Foldable.any")}
-@{ref("rsh", "Map.any")}
-@{ref("rsh", "Array.any")}
-@{ref("rsh", "any")}
+@{ref("rsh", "Foldable.any")}@{ref("rsh", "Map.any")}@{ref("rsh", "Array.any")}@{ref("rsh", "any")}
 ```reach
 Foldable.any(c, f)
 Array.any(c, f)
@@ -910,10 +893,7 @@ by at least one element of the container, `c`.
 
 #### `Foldable.or` && `.or`
 
-@{ref("rsh", "Foldable.or")}
-@{ref("rsh", "Map.or")}
-@{ref("rsh", "Array.or")}
-@{ref("rsh", "or")}
+@{ref("rsh", "Foldable.or")}@{ref("rsh", "Map.or")}@{ref("rsh", "Array.or")}@{ref("rsh", "or")}
 ```reach
 Foldable.or(c)
 Array.or(c)
@@ -925,10 +905,7 @@ c.or()
 
 #### `Foldable.and` && `.and`
 
-@{ref("rsh", "Array.and")}
-@{ref("rsh", "Foldable.and")}
-@{ref("rsh", "Map.and")}
-@{ref("rsh", "and")}
+@{ref("rsh", "Array.and")}@{ref("rsh", "Foldable.and")}@{ref("rsh", "Map.and")}@{ref("rsh", "and")}
 ```reach
 Foldable.and(c)
 Array.and(c)
@@ -940,10 +917,7 @@ c.and()
 
 #### `Foldable.includes` && `.includes`
 
-@{ref("rsh", "Foldable.includes")}
-@{ref("rsh", "Map.includes")}
-@{ref("rsh", "Array.includes")}
-@{ref("rsh", "includes")}
+@{ref("rsh", "Foldable.includes")}@{ref("rsh", "Map.includes")}@{ref("rsh", "Array.includes")}@{ref("rsh", "includes")}
 ```reach
 Foldable.includes(c, x)
 Array.includes(c, x)
@@ -956,10 +930,7 @@ the element, `x`.
 
 #### `Foldable.count` && `.count`
 
-@{ref("rsh", "Foldable.count")}
-@{ref("rsh", "Map.count")}
-@{ref("rsh", "Array.count")}
-@{ref("rsh", "count")}
+@{ref("rsh", "Foldable.count")}@{ref("rsh", "Map.count")}@{ref("rsh", "Array.count")}@{ref("rsh", "count")}
 ```reach
 Foldable.count(c, f)
 Array.count(c, f)
@@ -972,10 +943,7 @@ satisfy the predicate, `f`.
 
 #### `Foldable.size` && `.size`
 
-@{ref("rsh", "Foldable.size")}
-@{ref("rsh", "Map.size")}
-@{ref("rsh", "Array.size")}
-@{ref("rsh", "size")}
+@{ref("rsh", "Foldable.size")}@{ref("rsh", "Map.size")}@{ref("rsh", "Array.size")}@{ref("rsh", "size")}
 ```reach
 Foldable.size(c)
 Array.size(c)
@@ -987,10 +955,7 @@ c.size()
 
 #### `Foldable.min` && `.min`
 
-@{ref("rsh", "Foldable.min")}
-@{ref("rsh", "Map.min")}
-@{ref("rsh", "Array.min")}
-@{ref("rsh", "min")}
+@{ref("rsh", "Foldable.min")}@{ref("rsh", "Map.min")}@{ref("rsh", "Array.min")}@{ref("rsh", "min")}
 ```reach
 Foldable.min(c)
 Array.min(c)
@@ -1002,10 +967,7 @@ c.min()
 
 #### `Foldable.max` && `.max`
 
-@{ref("rsh", "Foldable.max")}
-@{ref("rsh", "Map.max")}
-@{ref("rsh", "Array.max")}
-@{ref("rsh", "max")}
+@{ref("rsh", "Foldable.max")}@{ref("rsh", "Map.max")}@{ref("rsh", "Array.max")}@{ref("rsh", "max")}
 ```reach
 Foldable.max(c)
 Array.max(c)
@@ -1017,10 +979,7 @@ c.max()
 
 #### `Foldable.sum` && `.sum`
 
-@{ref("rsh", "Foldable.sum")}
-@{ref("rsh", "Map.sum")}
-@{ref("rsh", "Array.sum")}
-@{ref("rsh", "sum")}
+@{ref("rsh", "Foldable.sum")}@{ref("rsh", "Map.sum")}@{ref("rsh", "Array.sum")}@{ref("rsh", "sum")}
 ```reach
 Foldable.sum(c)
 Array.sum(c)
@@ -1032,10 +991,7 @@ c.sum()
 
 #### `Foldable.product` && `.product`
 
-@{ref("rsh", "Foldable.product")}
-@{ref("rsh", "Map.product")}
-@{ref("rsh", "Array.product")}
-@{ref("rsh", "product")}
+@{ref("rsh", "Foldable.product")}@{ref("rsh", "Map.product")}@{ref("rsh", "Array.product")}@{ref("rsh", "product")}
 ```reach
 Foldable.product(c)
 Array.product(c)
@@ -1047,10 +1003,7 @@ c.product()
 
 #### `Foldable.average` && `.average`
 
-@{ref("rsh", "Foldable.average")}
-@{ref("rsh", "Map.average")}
-@{ref("rsh", "Array.average")}
-@{ref("rsh", "average")}
+@{ref("rsh", "Foldable.average")}@{ref("rsh", "Map.average")}@{ref("rsh", "Array.average")}@{ref("rsh", "average")}
 ```reach
 Foldable.average(c)
 Array.average(c)
@@ -1063,12 +1016,7 @@ c.average()
 
 #### `Foldable.imin` && `Foldable.imax`
 
-@{ref("rsh", "Foldable.imin")}
-@{ref("rsh", "Foldable.imax")}
-@{ref("rsh", "Array.imin")}
-@{ref("rsh", "Array.imax")}
-@{ref("rsh", "Map.imin")}
-@{ref("rsh", "Map.imax")}
+@{ref("rsh", "Foldable.imin")}@{ref("rsh", "Foldable.imax")}@{ref("rsh", "Array.imin")}@{ref("rsh", "Array.imax")}@{ref("rsh", "Map.imin")}@{ref("rsh", "Map.imax")}
 ```reach
 Foldable.imin(c)
 Foldable.imax(c)
@@ -1112,8 +1060,7 @@ The given `{!rsh} len` must evaluate to an integer at compile-time.
 
 #### `Array.concat` && `.concat`
 
-@{ref("rsh", "Array.concat")}
-@{ref("rsh", "concat")}
+@{ref("rsh", "Array.concat")}@{ref("rsh", "concat")}
 ```reach
 Array.concat(x, y)
 x.concat(y)
@@ -1136,8 +1083,7 @@ It may also be written `{!rsh} Array_empty`.
 
 #### `Array.zip` && `.zip`
 
-@{ref("rsh", "Array.zip")}
-@{ref("rsh", "zip")}
+@{ref("rsh", "Array.zip")}@{ref("rsh", "zip")}
 ```reach
 Array.zip(x, y)
 x.zip(y)
@@ -1149,8 +1095,7 @@ This function is generalized to an arbitrary number of arrays of the same size.
 
 #### `Array.map` && `.map`
 
-@{ref("rsh", "Array.map")}
-@{ref("rsh", "map")}
+@{ref("rsh", "Array.map")}@{ref("rsh", "map")}
 ```reach
 Array.map(arr, f)
 arr.map(f)
@@ -1165,8 +1110,7 @@ For example, `{!rsh} Array.iota(4).map(Array.iota(4), add)` returns `{!rsh} [0, 
 
 #### `Array.mapWithIndex` && `.mapWithIndex`
 
-@{ref("rsh", "Array.mapWithIndex")}
-@{ref("rsh", "mapWithIndex")}
+@{ref("rsh", "Array.mapWithIndex")}@{ref("rsh", "mapWithIndex")}
 ```reach
 Array.mapWithIndex(arr, f)
 arr.mapWithIndex(f)
@@ -1178,8 +1122,7 @@ The index argument is the last argument of the given function `{!rsh} f`.
 
 #### `Array.forEachWithIndex` && `.forEachWithIndex`
 
-@{ref("rsh", "Array.forEachWithIndex")}
-@{ref("rsh", "forEachWithIndex")}
+@{ref("rsh", "Array.forEachWithIndex")}@{ref("rsh", "forEachWithIndex")}
 ```reach
 Array.forEachWithIndex(arr, f)
 arr.forEachWithIndex(f)
@@ -1191,8 +1134,7 @@ Unlike `{!rsh} Array.forEach`, this function is not generalized to an arbitrary 
 
 #### `Array.reduce` && `.reduce`
 
-@{ref("rsh", "Array.reduce")}
-@{ref("rsh", "reduce")}
+@{ref("rsh", "Array.reduce")}@{ref("rsh", "reduce")}
 ```reach
 Array.reduce(arr, z, f)
 arr.reduce(z, f)
@@ -1210,8 +1152,7 @@ In the example `{!rsh} a1.reduce(a2, a3, 0, (accum, v1, v2, v3) => 0)`, the `{!r
 
 #### `Array.reduceWithIndex` && `.reduceWithIndex`
 
-@{ref("rsh", "Array.reduceWithIndex")}
-@{ref("rsh", "reduceWithIndex")}
+@{ref("rsh", "Array.reduceWithIndex")}@{ref("rsh", "reduceWithIndex")}
 ```reach
 Array.reduceWithIndex(arr, z, f)
 arr.reduceWithIndex(z, f)
@@ -1223,8 +1164,7 @@ The index argument is the last argument of the given function `{!rsh} f`.
 
 #### `Array.indexOf` && `.indexOf`
 
-@{ref("rsh", "Array.indexOf")}
-@{ref("rsh", "indexOf")}
+@{ref("rsh", "Array.indexOf")}@{ref("rsh", "indexOf")}
 ```reach
 Array.indexOf(arr, x)
 arr.indexOf(x)
@@ -1236,8 +1176,7 @@ the value is not present in the array, `{!rsh} None` is returned.
 
 #### `Array.findIndex` && `.findIndex`
 
-@{ref("rsh", "Array.findIndex")}
-@{ref("rsh", "findIndex")}
+@{ref("rsh", "Array.findIndex")}@{ref("rsh", "findIndex")}
 ```reach
 Array.findIndex(arr, f)
 arr.findIndex(f)
@@ -1249,8 +1188,7 @@ no value in the array satisfies the predicate, `{!rsh} None` is returned.
 
 #### `Array.find` && `.find`
 
-@{ref("rsh", "Array.find")}
-@{ref("rsh", "find")}
+@{ref("rsh", "Array.find")}@{ref("rsh", "find")}
 ```reach
 Array.find(arr, f)
 arr.find(f)
@@ -1262,8 +1200,7 @@ array satisfies the predicate, `{!rsh} None` is returned.
 
 #### `Array.withIndex` && `.withIndex`
 
-@{ref("rsh", "Array.withIndex")}
-@{ref("rsh", "withIndex")}
+@{ref("rsh", "Array.withIndex")}@{ref("rsh", "withIndex")}
 ```reach
 Array.withIndex(arr)
 arr.withIndex()
@@ -1275,8 +1212,7 @@ is paired with its index. For example, `{!rsh} array(Bool, [false, true]).withIn
 
 #### `Array.slice` && `.slice`
 
-@{ref("rsh", "Array.slice")}
-@{ref("rsh", "slice")}
+@{ref("rsh", "Array.slice")}@{ref("rsh", "slice")}
 ```reach
 Array.slice(arr, start, length)
 arr.slice(start, length)
@@ -1337,8 +1273,7 @@ Shorthand for `{!rsh} { x: x, z: 5}`, where `{!rsh} x` is any bound identifier.
 
 ### {#ref-programs-structs} Structs
 
-@{ref("rsh", "Struct.toObject")}
-@{ref("rsh", "Struct.toTuple")}
+@{ref("rsh", "Struct.toObject")}@{ref("rsh", "Struct.toTuple")}
 ```reach
 const Posn = Struct([["x", UInt], ["y", UInt]]);
 const p1 = Posn.fromObject({x: 1, y: 2});
@@ -1376,8 +1311,7 @@ accesses the `FIELD` @{defn("field")} of object OBJ.
 
 ### `Object.set`
 
-@{ref("rsh", "Object.set")}
-@{ref("rsh", "Object_set")}
+@{ref("rsh", "Object.set")}@{ref("rsh", "Object_set")}
 ```reach
 Object.set(obj, fld, val);
 Object_set(obj, fld, val);
@@ -1389,8 +1323,7 @@ except that field `{!rsh} fld` is replaced with `{!rsh} val`.
 
 ### `Object.setIfUnset`
 
-@{ref("rsh", "Object.setIfUnset")}
-@{ref("rsh", "Object_setIfUnset")}
+@{ref("rsh", "Object.setIfUnset")}@{ref("rsh", "Object_setIfUnset")}
 ```reach
 Object.setIfUnset(obj, fld, val);
 Object_setIfUnset(obj, fld, val);
@@ -1505,9 +1438,7 @@ range: 8 - 8
 
 ### `Either`
 
-@{ref("rsh", "Either")}
-@{ref("rsh", "Either.Left")}
-@{ref("rsh", "Either.Right")}
+@{ref("rsh", "Either")}@{ref("rsh", "Either.Left")}@{ref("rsh", "Either.Right")}
 `{!rsh} Either` is defined by
 ```reach
 export const Either = (A, B) => Data({Left: A, Right: B});
@@ -2047,8 +1978,7 @@ ensure( pred, x )
 
 ### `hasRandom`
 
-@{ref("rsh", "hasRandom")}
-@{ref("rsh", "hasRandom.random")}
+@{ref("rsh", "hasRandom")}@{ref("rsh", "hasRandom.random")}
 ```reach
 hasRandom
 ```
@@ -2065,28 +1995,28 @@ This code section gives the `{!rsh} Player` object the method `{!rsh} hasRandom`
 
 ### `hasConsoleLogger`
 
-@{ref("rsh", "hasConsoleLogger")}
-@{ref("rsh", "hasConsoleLogger.log")}
+@{ref("rsh", "hasConsoleLogger")}@{ref("rsh", "hasConsoleLogger.log")}
 ```reach
 hasConsoleLogger
 ```
 
- A participant interact interface which specifies `log` with an unconstrained domain function type that returns `{!rsh} Null`. Reach provides a default frontend implementation via hasConsoleLogger (Frontend).
+A participant interact interface which specifies `log` with an unconstrained domain function type that returns `{!rsh} Null`.
+Reach provides a default frontend implementation via `{!js} stdlib.hasConsoleLogger`.
 
- ```reach
- load: /examples/log/index.mjs
- md5: 65e2b563606bbb05a0fb2a378af53519
- range: 11 - 14
- ```
+```reach
+load: /examples/log/index.mjs
+md5: dfb07f5ac535d9289f54949be017b4f6
+range: 8
+```
 
- ```reach
- load: /examples/log/index.rsh
- md5: 2c13063a805c6b3045911962d6906316
- range: 5 - 7
- ```
+```reach
+load: /examples/log/index.rsh
+md5: 2c13063a805c6b3045911962d6906316
+range: 5 - 7
+```
 
- In this project, notice how `{!rsh} hasConsoleLogger` is accessed through the standard library on line 13 of the frontend.
- It is then passed to the backend on line 6.
+In this project, notice how `{!rsh} hasConsoleLogger` is accessed through the standard library on line 8 of the frontend.
+It is then passed to the backend on line 6.
 
 ### `compose`
 
@@ -2442,18 +2372,14 @@ In an application without any participant classes, `{!rsh} Anybody` instead woul
 
 An `{!rsh} Interval` is defined by
 
-@{ref("rsh", "Interval")}
-@{ref("rsh", "isInterval")}
+@{ref("rsh", "Interval")}@{ref("rsh", "isInterval")}
 ```reach
 export const Interval = Tuple(IntervalType, Int, Int, IntervalType);
 ```
 
 where `{!rsh} IntervalType` is defined by
 
-@{ref("rsh", "IntervalType")}
-@{ref("rsh", "isIntervalType")}
-@{ref("rsh", "Closed")}
-@{ref("rsh", "Open")}
+@{ref("rsh", "IntervalType")}@{ref("rsh", "isIntervalType")}@{ref("rsh", "Closed")}@{ref("rsh", "Open")}
 ```reach
 export const [ isIntervalType, Closed, Open ] = mkEnum(2);
 export const IntervalType = Refine(UInt, isIntervalType);
@@ -2472,11 +2398,7 @@ const i3 = intervalCO(-10, +10);
 
 For convenience, Reach provides a number of functions for constructing intervals:
 
-@{ref("rsh", "interval")}
-@{ref("rsh", "intervalCC")}
-@{ref("rsh", "intervalCO")}
-@{ref("rsh", "intervalOC")}
-@{ref("rsh", "intervalOO")}
+@{ref("rsh", "interval")}@{ref("rsh", "intervalCC")}@{ref("rsh", "intervalCO")}@{ref("rsh", "intervalOC")}@{ref("rsh", "intervalOO")}
  `{!rsh} interval(IntervalType, Int, Int, IntervalType)` constructs an interval where the first and second argument
 represent the left endpoint and whether it's open or closed; the third and fourth argument represent the right endpoint and whether it's open or closed.
 
@@ -2490,20 +2412,14 @@ represent the left endpoint and whether it's open or closed; the third and fourt
 
 #### Accessors
 
-@{ref("rsh", "leftEndpoint")}
-@{ref("rsh", "rightEndpoint")}
+@{ref("rsh", "leftEndpoint")}@{ref("rsh", "rightEndpoint")}
  `{!rsh} leftEndpoint(i)` will return the `{!rsh} Int` that represents the left endpoint of an interval.
 
  `{!rsh} rightEndpoint(i)` will return the `{!rsh} Int` that represents the right endpoint of an interval.
 
 #### Relational Operations
 
-@{ref("rsh", "intervalEq")}
-@{ref("rsh", "intervalNeq")}
-@{ref("rsh", "intervalLt")}
-@{ref("rsh", "intervalLte")}
-@{ref("rsh", "intervalGt")}
-@{ref("rsh", "intervalGte")}
+@{ref("rsh", "intervalEq")}@{ref("rsh", "intervalNeq")}@{ref("rsh", "intervalLt")}@{ref("rsh", "intervalLte")}@{ref("rsh", "intervalGt")}@{ref("rsh", "intervalGte")}
 Intervals may be compared with the following functions:
 
  `{!rsh} intervalEq(l, r)` tests whether the intervals are equal.
@@ -2520,17 +2436,15 @@ Intervals may be compared with the following functions:
 
 #### Arithmetic Operations
 
-@{ref("rsh", "intervalAdd")}
-@{ref("rsh", "intervalSub")}
-@{ref("rsh", "intervalMul")}
-@{ref("rsh", "intervalDiv")}
- `{!rsh} intervalAdd(l, r)` adds the two intervals.
+@{ref("rsh", "intervalAdd")}@{ref("rsh", "intervalSub")}@{ref("rsh", "intervalMul")}@{ref("rsh", "intervalDiv")}
 
- `{!rsh} intervalSub(l, r)` subtracts the two intervals.
+`{!rsh} intervalAdd(l, r)` adds the two intervals.
 
- `{!rsh} intervalMul(l, r)` multiplies the two intervals.
+`{!rsh} intervalSub(l, r)` subtracts the two intervals.
 
- `{!rsh} intervalDiv(l, r)` divides the two intervals.
+`{!rsh} intervalMul(l, r)` multiplies the two intervals.
+
+`{!rsh} intervalDiv(l, r)` divides the two intervals.
 
 #### Other Operations
 
