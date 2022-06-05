@@ -15,4 +15,3 @@ contract Contract {
     w = _x++ + _y + z;
   }
 }
-
