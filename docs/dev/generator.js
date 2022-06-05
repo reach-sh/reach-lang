@@ -681,7 +681,7 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
       if (line1.slice(0, 5) == 'load:') {
         const partialProgramPath = line1.slice(5);
         const programPath = path.join('../..', partialProgramPath);
-        const eprefix = `load ${programPath}`;
+        const eprefix = `${iPath}: load ${programPath}`;
         const line2 = arr[1].replace(/\s+/g, '');
         if (line2.startsWith('md5:') === false) {
           throw Error(`${eprefix}: No md5`);
