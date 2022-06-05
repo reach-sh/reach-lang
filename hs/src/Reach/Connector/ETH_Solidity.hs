@@ -821,7 +821,8 @@ getBalance tok = solApply "tokenBalanceOf" [tok, "address(this)"]
 solCom :: AppT DLStmt
 solCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ pv (DLE_Remote at fs av rng_ty (DLRemote mf (DLPayAmt net ks) as (DLWithBill _nRecv nonNetTokRecv nnTokRecvZero) _)) -> do
+  DL_Let _ pv (DLE_Remote at fs av rng_ty dr) -> do
+    let DLRemote mf (DLPayAmt net ks) as (DLWithBill _nRecv nonNetTokRecv nnTokRecvZero) _ = dr
     let f = fromMaybe (impossible "remote no fun") mf
     -- XXX make this not rely on pv
     av' <- solArg av
@@ -980,23 +981,32 @@ solCom = \case
       ]
   DL_Let _ (DLV_Eff) (DLE_ContractNew {}) ->
     return ""
-  DL_Let _ (DLV_Let _ dv) (DLE_ContractNew _at cns _drXXX) -> do
+  DL_Let _ (DLV_Let _ dv) (DLE_ContractNew _at cns dr) -> do
+    let DLRemote _ _ as _ _ = dr
     let DLContractNew {..} = cns M.! conName'
     let (bc :: String) = either impossible id $ aesonParse dcn_code
     addMemVar dv
-    ctc' <- allocVar
     bc' <- allocVar
+    as'bs <- allocVar
+    bc'' <- allocVar
+    ctc' <- allocVar
     let pay' = "0"
-    let p' = bc'
-    let len' = pretty $ (length bc) `div` 2
+    let p' = solApply "add" [ bc'', "0x20" ]
+    let len' = solApply "mload" [ bc'' ]
     let asm = vsep $
           [ ctc' <+> ":=" <+> solApply "create" [ pay', p', len' ]
           ]
+    --- XXX support payment and bills
+    as' <- mapM solArg as
+    chk' <- solRequire "new contract not zero" $ ctc' <+> "!= address(0)"
     return $ vsep $
       [ solSet ("bytes memory" <+> bc') (pretty $ "hex\"" <> bc <> "\"")
+      , solSet ("bytes memory" <+> as'bs) (solApply "abi.encode" as')
+      , solSet ("bytes memory" <+> bc'') (solApply "bytes.concat" [ bc', as'bs ])
       , "address payable" <+> ctc' <> semi
       , "assembly" <+> solBraces asm
       , solSet (solMemVar dv) ctc'
+      , chk' <> semi
       ]
   DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ (BYTES_ZPAD _) [x]) -> do
     addMemVar dv

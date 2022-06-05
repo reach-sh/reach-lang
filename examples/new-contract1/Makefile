@@ -6,7 +6,10 @@ build/%.main.mjs: %.rsh
 	$(REACH) compile $<
 
 %.sol.json: %.sol
-	solc --combined-json abi,bin $< > $@
+	solc --optimize --combined-json abi,bin $< > $@
+
+%.sol.yul: %.sol
+	solc --optimize --ir $< > $@
 
 %.sol.bin: %.sol.json
 	jq -r '.contracts["$(patsubst %.sol.json,%.sol,$<):Contract"].bin' $< | head -c -1 > $@
