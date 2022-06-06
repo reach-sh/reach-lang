@@ -12,7 +12,7 @@ export const main = Reach.App(() => {
   P.publish();
   commit();
 
-  const [o2d,, k] = call(A.o2);
+  const [o2d, k] = call(A.o2);
   k(null);
   commit();
 
