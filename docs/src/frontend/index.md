@@ -1132,6 +1132,17 @@ stdlib.randomUInt() => UInt
 Generates random bits as a `{!rsh} UInt`.
 The number of bits generated depends on the particular consensus network.
 
+Example:
+
+```js
+load: /examples/nft-auction/index.mjs
+md5: e3dbe19654f83958921c964264c9d6b3
+range: 91 - 94
+```
+
+This code is used to generate random bits as a `{!rsh} UInt` as the unique identifier of `Alice` stored as `id` on line 92.
+Line 93 reveals the `id` in the console and line 94 returns the `id`.
+
 ---
 @{ref("js", "hasRandom")}@{ref("js", "stdlib.hasRandom")}
 ```js
