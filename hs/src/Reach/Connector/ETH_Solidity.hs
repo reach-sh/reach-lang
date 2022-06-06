@@ -909,7 +909,7 @@ solCom = \case
     err_msg <- solRequireMsg $ show (at, fs, ("remote " <> f <> " failed"))
     -- XXX we could assert that the balances of all our tokens is the same as
     -- it was before
-    return $
+    return $ solBraces $
       vsep $
         nonNetTokApprovals
           <> getDynamicNonNetTokBals
@@ -974,7 +974,7 @@ solCom = \case
     zero <- solArg $ DLA_Literal $ DLL_Int at UI_Word 0
     cnd <- solPrimApply (PLT UI_Word) [actBalV, tb']
     ite <- solPrimApply IF_THEN_ELSE [cnd, zero, sub]
-    return $ vsep $
+    return $ solBraces $ vsep $
       [ solSet ("uint256" <+> actBalV) bal
       , solSet (solMemVar dv) ite
       ]
@@ -998,7 +998,7 @@ solCom = \case
     --- XXX support payment and bills
     as' <- mapM solArg as
     chk' <- solRequire "new contract not zero" $ ctc' <+> "!= address(0)"
-    return $ vsep $
+    return $ solBraces $ vsep $
       [ solSet ("bytes memory" <+> bc') (pretty $ "hex\"" <> bc <> "\"")
       , solSet ("bytes memory" <+> as'bs) (solApply "abi.encode" as')
       , solSet ("bytes memory" <+> bc'') (solApply "bytes.concat" [ bc', as'bs ])
