@@ -244,6 +244,18 @@ conCons' = \case
   DLC_UInt_max  -> DLL_Int sb UI_Word $ 2 ^ (64 :: Integer) - 1
   DLC_Token_zero -> DLL_Int sb UI_Word $ 0
 
+appLocalStateNumUInt :: Integer
+appLocalStateNumUInt = 0
+
+appLocalStateNumBytes :: Integer
+appLocalStateNumBytes = 0
+
+appGlobalStateNumUInt :: Integer
+appGlobalStateNumUInt = 0
+
+appGlobalStateNumBytes :: Integer
+appGlobalStateNumBytes = 1
+
 algoMinTxnFee :: Integer
 algoMinTxnFee = 1000
 
@@ -251,13 +263,13 @@ algoMaxLocalSchemaEntries :: Integer
 algoMaxLocalSchemaEntries = 16
 
 algoMaxLocalSchemaEntries_usable :: Integer
-algoMaxLocalSchemaEntries_usable = algoMaxLocalSchemaEntries
+algoMaxLocalSchemaEntries_usable = algoMaxLocalSchemaEntries - appLocalStateNumBytes
 
 algoMaxGlobalSchemaEntries :: Integer
 algoMaxGlobalSchemaEntries = 64
 
 algoMaxGlobalSchemaEntries_usable :: Integer
-algoMaxGlobalSchemaEntries_usable = algoMaxGlobalSchemaEntries - 1
+algoMaxGlobalSchemaEntries_usable = algoMaxGlobalSchemaEntries - appGlobalStateNumBytes
 
 algoMaxAppBytesValueLen :: Integer
 algoMaxAppBytesValueLen = 128
@@ -934,6 +946,7 @@ data Env = Env
   , eCompanionRec :: CompanionRec
   , eLibrary :: IORef (M.Map LibFun (Label, App ()))
   , eApiCalls :: M.Map SLPart Int
+  , eGetStateKeys :: IO Int
   }
 
 type App = ReaderT Env IO
@@ -3427,6 +3440,7 @@ compile_algo env disp pl = do
             AS.Number $ fromIntegral keys
         return $ keysl
   eMapKeysl <- recordSizeAndKeys gbad "mapData" eMapDataSize algoMaxLocalSchemaEntries_usable
+  let mapDataKeys = length eMapKeysl
   unless (plo_untrustworthyMaps || null eMapKeysl) $ do
     gwarn $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
   let h2lr = \case
@@ -3471,11 +3485,14 @@ compile_algo env disp pl = do
         cr_rv <- allocDLVar_ eCounter at T_Contract
         eCompanionRec <- companionMaker cr_rv
         eLibrary <- newIORef mempty
+        let eGetStateKeys = do
+              stateSize <- readIORef eStateSizeR
+              l <- recordSizeAndKeys lbad "state" stateSize algoMaxGlobalSchemaEntries_usable
+              return $ length l
         flip runReaderT (Env {..}) $
           store_let cr_rv True (gvLoad GV_companion) $
             m
-        stateSize <- readIORef eStateSizeR
-        void $ recordSizeAndKeys lbad "state" stateSize algoMaxGlobalSchemaEntries_usable
+        void $ eGetStateKeys
         ts <- readIORef eOutputR
         let notify b = if b then lbad else lwarn
         return (ts, notify, finalize)
@@ -3649,6 +3666,15 @@ compile_algo env disp pl = do
     output $ TCheckOnCompletion
     code "b" [ "apiReturn_noCheck" ]
     label "alloc"
+    let ctf f x = do
+          cint x
+          code "txn" [f]
+          asserteq
+    ctf "GlobalNumUint" $ appGlobalStateNumUInt
+    stateKeys <- liftIO =<< (asks eGetStateKeys)
+    ctf "GlobalNumByteSlice" $ appGlobalStateNumBytes + fromIntegral stateKeys
+    ctf "LocalNumUint" $ appLocalStateNumUInt
+    ctf "LocalNumByteSlice" $ appLocalStateNumBytes + fromIntegral mapDataKeys
     forM_ keyState_gvs $ \gv -> do
       ctzero $ gvType gv
       gvStore gv
