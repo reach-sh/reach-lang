@@ -236,6 +236,12 @@
   "Contract.addressEq": {
     "CompletionItemKind": "Operator"
   },
+  "Contract.new": {
+    "CompletionItemKind": "Function"
+  },
+  "ContractCode": {
+    "CompletionItemKind": "Constructor"
+  },
   "Data": {
     "CompletionItemKind": "TypeParameter"
   },
