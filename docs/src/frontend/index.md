@@ -1123,6 +1123,16 @@ stdlib.parseInt(Int) => number
 
 Parses a signed `{!rsh} Int` into a JavaScript number.
 
+Example:
+
+```js
+load: /examples/programmer-art/src/index.mjs
+md5: 0779cd5bfb7d45de6a7f46b9cd6c7164
+range: 394 - 402
+```
+
+This code parses `enter` into a JavaScript number on line 399 if line 398 evaluates to `{!rsh} true`.
+
 ---
 @{ref("js", "numberToInt")}
 ```js
