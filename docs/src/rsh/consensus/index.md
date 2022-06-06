@@ -566,6 +566,7 @@ In this example, the random oracle contract has an overloaded method, `random`.
 This `random` method accepts 0 or 1 parameters.
 We explicitly specify that `getRandom` refers to calling the `random` function with no arguments, and `getRandom1` refers to calling the `random` function with 1 argument.
 
+@{ref("rsh", "REMOTE_FUN")}
 Once constructed, the fields of a remote object represent those remote contract interactions, referred to as @{defn("remote functions")}.
 For example, `{!rsh} randomOracle.getRandom`, `{!rsh} token.balanceOf`, and `{!rsh} token.transferTo` are remote functions in the example.
 
@@ -693,4 +694,39 @@ instance methods.
 
 ### {#ref-programs-consensus-new-contract} Contract creation
 
-XXX
+@{ref("rsh", "new Contract")}@{ref("rsh", "Contract.new")}
+Reach programs can create new child contracts based on predetermined, static code during compile time.
+This code is specified with `{!rsh} ContractCode`, which you can read about in @{seclink("ref-programs-appinit-contractcode")}.
+
+Given some child contract code, indicated by the variable `{!rsh} cc`, you can create a constructor function with
+
+```reach
+const ctor = new Contract(cc, opts?)
+```
+
+where `opts` is an optional object.
+Each enabled connector accepts its own options in a field with the name of the connector.
+
+The `{!rsh} ETH` connector accepts no options.
+
+The `{!rsh} ALGO` connector accepts the keys:
+  + `{!rsh} opts.globalUints` --- The number of unsigned integers in the global storage of the contract.
+  + `{!rsh} opts.globalBytes` --- The number of byte strings in the global storage of the contract.
+  + `{!rsh} opts.localUints` --- The number of unsigned integers in the local storage of the contract.
+  + `{!rsh} opts.localBytes` --- The number of byte strings in the local storage of the contract.
+
+If these options are required, but not present, then the contract will behave incorrectly.
+
+The constructor function must be called to actually create the contract.
+It is like a `{!rsh} REMOTE_FUN}`, but it cannot be augmented, nor can it receive payment.
+It returns a `{!rsh} Contract` value for the newly created contract.
+
+:::note
+Why can't you augment constructor calls?
+
+Some constructor augmentations, like those specific for a particular network, could work, but are not supported by Reach presently.
+Others, such as token payments, cannot work at all, because given that the contract doesn't exist yet, there's no way to know where to send the tokens to.
+:::
+
+On some connectors, like `{!rsh} ALGO`, it is necessary to delete child contracts before the parent exits.
+Reach does not yet enforce this property during verification, so if you fail to obey it, then your program will not be able to finish.
