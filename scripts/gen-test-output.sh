@@ -38,7 +38,7 @@ fi
 $SED_COMMAND --quiet "/CallStack (from HasCallStack):/q;p " "$STDERR_F" >> "$OUTPUT_F"
 
 # full directory paths are replaced with "."
-ESCAPED="$(echo "$DIRNAME" | sed 's/\./\\\./g')"
-sed --in-place "s#$ESCAPED#.#g" "$OUTPUT_F"
+ESCAPED="$(echo "$DIRNAME" | $SED_COMMAND 's/\./\\\./g')"
+$SED_COMMAND --in-place "s#$ESCAPED#.#g" "$OUTPUT_F"
 
 cat "$OUTPUT_F"
