@@ -1207,6 +1207,24 @@ stdlib.btoiLast8(Bytes) => UInt
 ```
 
 Converts the last 8 bytes of a string to an `{!rsh} UInt`.
+
+Example:
+
+```js
+load: /examples/bytes-mod/index.mjs
+md5: be92a6fe101d3f22bf3dd463aa618f80
+range: 14 -17
+```
+
+```js
+load: /examples/bytes-mod/index.mjs
+md5: be92a6fe101d3f22bf3dd463aa618f80
+range: 22 -25
+```
+
+This code converts the last 8 bytes of `b1`, `b2`, `b3` and `b4` to an `{!rsh} UInt` on lines 22, 23, 24 and 25.
+After which, `{!js} mod` method is called on the results.
+
 If the string is less than 8 bytes long, this function will convert the entire string to an `{!rsh} UInt`.
 
 ---
