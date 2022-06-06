@@ -145,6 +145,18 @@ By the end, you will see how a basic Reach command-line DApp looks and feels lik
 See full code [here]().
 
 
+### {#tut-mkt-basic-why} Why Build This Basic DApp
+A `seller` relocates to an area where there is high demand for the goods he sells and he enjoys a monopoly in the market.
+He soon realizes that he has more `buyer`s than he can handle.
+Also, the method he has been using to transact business isn't secure enough as the business grows.
+
+He then decides to build an application that would make it easy for him to transact business with little or no supervision. 
+Since he is new to this technology and enjoys a monopoly, he decides to build a simple DApp that gives no autonomy to him or the `buyer`. 
+Once he and a `buyer` agree to transact business, the DApp picks a good that both parties must agree to transact upon.
+
+A Reach developer was contracted to build this application and the following are the steps that lead the developer to successfully build the application:
+
+
 ### {#tut-mkt-basic-declare} Declare Variables
 
 Start by fleshing out the constants that have already been declared.
@@ -495,7 +507,7 @@ the Reach standard library, `{!rsh} Participant`, `{!rsh} type`s, local steps, `
 In the next section, more would be discussed about how `./reach run` works, `process.argv` would be introduced, `{!rsh} Participant`s would be given autonomy and how to manage money and currency would be demonstrated.
 
 ## {#tut-mkt-interaction} Interaction and Independence
-The last section demonstrated what building with Reach feels like. 
+The previous section demonstrated what building with Reach feels like. 
 But more can be done with Reach than that. 
 
 Reach offers autonomy to `{!rsh} Participant`s in a transaction.
@@ -566,6 +578,16 @@ The first line of the output is the line of interest.
 That will be leveraged upon in giving the `{!rsh} Participant`s autonomy as the project for this section is developed.
 
 That is the basics of how the `./reach run` command works. 
+
+
+### {#tut-mkt-interaction-why} Why Build An Interactive DApp
+The Basic DApp has been working fine and the business has grown but the `seller` no longer enjoys a monopoly - he now has competitors. 
+The `buyer`s have complained of either not getting what they want or not getting the quantity they want.
+
+He realizes that for him to compete favorably, he has to make transactions more flexible for the `buyer`s. 
+To do this, the application that was built has to be improved upon such that the `buyer`s can now pick what they want and how many they want.
+
+Another Reach developer was contracted to build the new application. Following the steps below, the application was completed:
 
 ### {#tut-mkt-Interaction-basic} Basic Interactive DApp
 In order to make it easy to follow, delete all the code in the two files.
