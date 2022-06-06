@@ -991,8 +991,8 @@ range: 349 -352
 ```
 
 This code tests to see if variables that are supposed to be `null` return `null`. 
-Line 350 `{!rsh} asserts` that `null` has Reach type `T_Null`. 
-Line 351 `{!rsh} asserts` that `undefined` has Reach type `T_Null`. 
+Line 350 `{!js} asserts` that `null` has Reach type `T_Null`. 
+Line 351 `{!js} asserts` that `undefined` has Reach type `T_Null`. 
 
 ---
 @{ref("js", "T_Null")}@{ref("js", "T_Bool")}@{ref("js", "T_UInt")}@{ref("js", "T_Bytes")}@{ref("js", "T_Address")}@{ref("js", "T_Array")}@{ref("js", "T_Tuple")}@{ref("js", "T_Object")}
