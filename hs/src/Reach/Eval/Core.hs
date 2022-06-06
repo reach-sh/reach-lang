@@ -3476,7 +3476,8 @@ evalPrim p sargs =
       let go k = \case
             ST_Fun stf -> do
               m_alias <- mapM (return . bunpack <=< mustBeBytes . sss_val) $ M.lookup k ae
-              let k' = m_alias <> Just k
+              -- XXX support raw calls
+              let k' = Just $ fromMaybe k m_alias
               return $
                 SLSSVal at Public $
                   SLV_Prim $
