@@ -29,7 +29,7 @@ At the micro-level, your testing outlook should be that tests either:
 In order to build a large number of these tests succinctly, you should build a simple "library" that can succinctly initialize your DApp and then run a scenario.
 Like this:
 ```js
-const runScenario = async (run) => {
+const runScenario = async (go) => {
   // Set up the DApp
   const tok = ....;
   const ctc = ....;
