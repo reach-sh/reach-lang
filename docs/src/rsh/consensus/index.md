@@ -590,6 +590,8 @@ In addition, a remote function may be augmented with one of the following operat
     If this is needed, and not included, then the consensus transfer to the current consensus step will fail because an incorrectly typed argument was provided to the remote object.
   + `{!rsh} opts.onCompletion` sets the `OnCompletion` field of the transaction.
     The value is a string for the field value; e.g., `{!rsh} 'DeleteApplication'`.
+    It is dangerous to call this with `OptIn`, because the minimum balance of the calling contract will increase and Reach cannot track that, because it is not statically available.
+    The minimum balance will decrease on a `CloseOut` or `ClearState` transaction.
 
 If the remote contract is not expected to return non-network tokens then a pair is returned, where the amount of network tokens received is the first element, and the original result is the second element.
 
