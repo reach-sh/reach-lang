@@ -247,4 +247,36 @@ In the DApp, the result of this application argument is referred to as an event 
 
 ### {#ref-programs-appinit-contractcode} Contract code definition
 
-XXX
+@{ref("rsh", "ContractCode")}
+Reach programs can create new child contracts based on predetermined, static code during compile time.
+This code is specified with `{!rsh} ContractCode`, documented below, but is actually deployed with `{!rsh} new Contract` (`{!rsh} Contract.new`), which you can read about in @{seclink("ref-programs-consensus-new-contract")}.
+
+As part of an application's specification, you can indicate some child contracts that may be created with:
+
+```reach
+const cc = Contract(connectors)
+```
+
+where `connectors` is an object with one field for each enabled connector.
+Each connector expects the code for the child to be specified in a different way.
+
+The `{!rsh} ETH` connector accepts:
++ A literal string of the shape `${BASE}.bin`, where `${BASE}.bin` is a file that contains the ASCII hexadecimal encoding of the EVM bytecode.
++ A literal string of the shape `${BASE}.json:${FILE}:${CONTRACT}`, where `${BASE}.json` is a file that contains the JSON output of the Solidity compiler and `${FILE}:${CONTRACT}` is a key in the `contracts` object therein.
++ A literal string of the shape `${BASE}.sol:${CONTRACT}`, where `${BASE}.sol` is a Solidity file that defines the contract `${CONTRACT}`.
+  Reach will call the Solidity compiler it uses internally to compile the file.
+
+The `{!rsh} ALGO` connector accepts an object with the keys `approval` and `clearState` that may be:
++ A literal string of the shape `${BASE}.tok`, where `${BASE}.tok` is a file that contains the binary encoding of the AVM bytecode (as produced by `{!cmd} goal clerk compile`.)
++ A literal string of the shape `${BASE}.teal`, where `${BASE}.teal` is a TEAL
+file that defines the program.
+  Reach will call the TEAL compiler it uses internally to compile the file.
+
+The value returned (`cc`) can be used with `{!rsh} new Contract` to actually deploy the child contracts.
+It embeds the actual bytecode of the child contracts, so it can (potentially drastically) expand the size (and thus cost) of deploying the parent contract.
+
+:::note
+How do I get valid input to `{!rsh} ContractCode` from Reach?
+
+A future version of Reach will accept `{!rsh} Reach.App` values as arguments to `{!rsh} ContractCode`, but until then, the best way to get the necessary files is to use `{!cmd} reach compile --intermediate-files` and inspect the `build` directory, which contains the necessary input for each connector.
+:::

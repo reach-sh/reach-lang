@@ -417,7 +417,6 @@ Bytes of different lengths are not compatible; however the shorter bytes may be 
 + @{ref("rsh", "Digest")} `{!rsh} Digest`, which denotes a digest.
 + @{ref("rsh", "Address")} `{!rsh} Address`, which denotes an account address.
 + @{ref("rsh", "Contract")} `{!rsh} Contract`, which denotes the identifying information of a contract.
-+ @{ref("rsh", "ContractCode")} `{!rsh} ContractCode`, which denotes the executable code for a contract.
 
 :::note
 Reach has different representations of contracts across connectors.
