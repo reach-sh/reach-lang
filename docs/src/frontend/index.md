@@ -998,17 +998,17 @@ Throws an exception if not given `{!js} true`.
 
 Example:
 
-```reach
+```js
 load: /examples/argz/index.mjs
 md5: d98c02ebf76e5ce55b6dec475c82539e
 range: 4 - 7
 ```
 
-This code checks the argument variables passed alongside the `./reach run` command.
+This code checks the argument variables passed alongside the `./reach run` cmd.
 Lines 6 and 7 would not throw an exception if `./reach run index hello "Mr. Postman"` is run in the terminal.
 This is because `process.argv` would return the following array:
 
-```reach
+```js
 [ '/usr/local/bin/node', '/app/index.mjs', 'hello', 'Mr. Postman' ]
 ```
 
