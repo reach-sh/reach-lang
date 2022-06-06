@@ -698,7 +698,7 @@ instance methods.
 Reach programs can create new child contracts based on predetermined, static code during compile time.
 This code is specified with `{!rsh} ContractCode`, which you can read about in @{seclink("ref-programs-appinit-contractcode")}.
 
-Given some child contract code, indicated by the variable `{!rsh} cc`, you can create a constructor function with
+Given some child contract code, indicated by the variable `{!rsh} cc`, you can create a constructor function with:
 
 ```reach
 const ctor = new Contract(cc, opts?)
