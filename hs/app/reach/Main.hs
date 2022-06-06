@@ -1134,6 +1134,7 @@ compile = command "compile" $ info f d
             -u "$(id -ru):$(id -rg)" \
             -e REACH_CONNECTOR_MODE \
             -e REACH_IDE \
+            -e REACH_DEBUG \
             -e "REACHC_ID=$whoami'" \
             -e "CI=$ci'" \
             "$$cid" reachc $args
