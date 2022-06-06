@@ -1012,7 +1012,7 @@ This is because `process.argv` would return the following array:
 [ '/usr/local/bin/node', '/app/index.mjs', 'hello', 'Mr. Postman' ]
 ```
 
-Thereby making `process.argv[2] === 'Hello'` and `process.argv[3] === 'Mr. Postman'` to evaluate to `{!rsh} true`.
+Thereby making `process.argv[2] === 'Hello'` and `process.argv[3] === 'Mr. Postman'` to evaluate to `{!js} true`.
 
 ---
 @{ref("js", "Array_set")}
