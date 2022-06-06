@@ -38,17 +38,10 @@ write_buyer() {
     echo "$@" >&5
 }
 
-while [ "$REPLY" != "Your role is seller" ]; do read_seller; done
-read_seller
-read_seller
-read_seller
-read_seller
-read_seller
+while ! (echo "$REPLY" | grep -q "Contract info:"); do read_seller; done
 CTC_INFO="$(echo "$REPLY" | awk --field-separator="Contract info: " '{print $2}')"
-
 while [ "$REPLY" != "Paste contract info:" ]; do read_buyer; done
 write_buyer "$CTC_INFO"
-read_buyer
 read_buyer
 read_buyer
 write_buyer y
