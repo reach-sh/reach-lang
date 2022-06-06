@@ -29,7 +29,7 @@ The orange text represents functions that cause transitions between modes.
 
 ### {#wfs-4} Init Mode
 
-Application Initialization defines participants and views (see [View the contract](##wfs-19) later in the tutorial).
+Application Initialization defines participants and views (see [View the contract](##wfs-20) later in the tutorial).
 It also, optionally, overrides default compile options.
 Lines 2 and 3 below occur in the `App Init` section of the program:
 
@@ -88,7 +88,7 @@ Wisdom for Sale requirements:
 1. The `buyer` needs to be able to decide to NOT purchase the wisdom, so we need to create a function for cancelling the sale.
 1. If the `buyer` does decide to buy the wisdom, then there needs to be a function that reports the payment to both the `seller` and the `buyer`.
 
-# {#wfs-8} Examine the transaction
+# {#wfs-9} Examine the transaction
 
 The following diagram represents the wisdom-for-sale transaction:
 
@@ -100,7 +100,7 @@ As indicated by the final balances in the diagram, the `seller` received 0.006 A
 These expenses represent `fees`, the cost of doing business on a consensus network.
 The `seller` paid a little more fees than the `buyer` because the `seller` paid a small fee to deploy the contract.
 
-# {#wfs-9} Create the files
+# {#wfs-10} Create the files
 
 1. Create a project folder and `{!cmd} cd` into it via the command line.
 
@@ -112,7 +112,7 @@ The `seller` paid a little more fees than the `buyer` because the `seller` paid 
 
     ![Open VSCode](/tut/wfs/vscode-open.png)
 
-## {#wfs-10} Create frontend starter
+## {#wfs-11} Create frontend starter
 
 Type the following code into the file named `index.mjs`.
 
@@ -139,7 +139,7 @@ Below is a line-by-line description of this JavaScript(JS) code:
 * Line 23: Code for when you run this app as the `buyer`.
 * Line 24 and 25: Define empty (for now) object.
 
-## {#wfs-11} Create backend starter
+## {#wfs-12} Create backend starter
 
 Type the following into `index.rsh`:
 
@@ -159,7 +159,7 @@ Below is a line-by-line description of this `reach` code:
 * Line 14: Finalize participant and other options, and proceed to a Reach step.
 * Line 16: Terminate computation.
 
-# {#wfs-12} Run the DApp
+# {#wfs-13} Run the DApp
 
 Reach can currently compile the DApp to run on any of the following consensus network types:
 
@@ -194,12 +194,12 @@ Open a command prompt, and run the following command:
     ```
 
     :::note
-	The three different ways to set the `{!cmd} REACH_CONNECTOR_MODE` have different use case:
+	The three different ways to set the `{!cmd} REACH_CONNECTOR_MODE` have different use cases:
     
     Setting the `{!cmd} REACH_CONNECTOR_MODE` using the `{!cmd} ./reach config` command is a one-time setting, and is useful when developing either mostly or completely for a single network.
 
     Setting the `{!cmd} REACH_CONNECTOR_MODE` inside the command line with `{!cmd} ./reach run` allows you to switch to a different consensus network for a single test.
-    This is useful when you mostly develop for a single network, but want to do a sanity verification test on a different consensus network.
+    This is useful when developing for a single network, but want to perform a sanity verification test.
 
     Setting the `{!cmd} REACH_CONNECTOR_MODE` using the `{!cmd} export` method is useful if you develop for multiple consensus networks, but infrequently switch.
 
@@ -220,7 +220,7 @@ Open a command prompt, and run the following command:
     Your role is seller.
     ```
 
-# {#wfs-13} Pass an argument
+# {#wfs-14} Pass an argument
 
 This section shows you how to tell your DApp whether to run as the `seller` or the `buyer`.
 You do this by passing `role` as a command-line argument (e.g. `{!cmd} reach run index seller`).
@@ -281,7 +281,7 @@ Follow these directions to pass `role` as a command-line argument:
     Your role is buyer.
     ```
 
-# {#wfs-14} Explore units and balances
+# {#wfs-15} Explore units and balances
 
 This section helps you explore standard and atomic units using the [JavaScript Standard Library](/en/essentials/frontend-programming/javascript-frontends/).
 Regarding tokens, each consensus network has a (divisible) standard unit and an (indivisible) atomic unit.
@@ -293,8 +293,8 @@ We use the commands `{!js} parseCurrency` and `{!js} formatCurrency` to do the c
 `{!js} parseCurrency` converts from standard to atomic.
 `{!js} formatCurrency` converts from atomic to standard.
 
-`{!js} parseCurrency` is often used when setting a contract price, paying the contract, wagers, staking, and other items where a user will either set the amount, or use the amount.
-`{!js} formatCurrency` is more frequently used with wallets and amounts that are affected in small ways, such as paying fees, making sure the contract balance is zero, or showing wallet balances after contracts complete.
+`{!js} parseCurrency` is often used for human interactions: setting a contract price, paying the contract, wagers, staking, and other items where a user will either set the amount, or use the amount.
+`{!js} formatCurrency` is more frequently used with computer interactions or with small costs: such as paying fees, making sure the contract balance is zero, or showing wallet balances after contracts complete.
 
 1. In `index.mjs`, find the following line:
 
@@ -384,7 +384,7 @@ We use the commands `{!js} parseCurrency` and `{!js} formatCurrency` to do the c
 
     The second balance is now poised to reflect the results of the transactions you will implement below.
 
-# {#wfs-15} Deploy the contract (seller)
+# {#wfs-16} Deploy the contract (seller)
 
 This section shows you how to have the `seller` (1) deploy the contract and (2) return the contract information to be used later by the `buyer` to attach to the contract.
 The format of contract information varies depending on the consensus network but can always be a JSON.
@@ -471,22 +471,22 @@ Follow these directions to have the `seller` deploy the contract and return the 
     Your balance is 999.996 ALGO.
     ```
 
-    The `seller` creates the contract, retrieves the contract information, and makes it available to the `buyer` who will (shortly) use the information to attach to the contract.
-    Deploying the contract cost the `seller` a fee.
+    The `seller` creates the contract, retrieves the contract information, and makes it available to the `buyer` who will use the information to attach to the contract.
+    Deploying the contract costs the `seller` a fee.
     Here, you can see that the balance after creating the contract is displayed using atomic units, because `acc` references `iBalance` which takes the input of 1000 standard units and turns it into the atomic units using `{!js} parseCurrency`.
 
 The interact objects introduced in this section facilitate communication between the frontend (e.g. `index.mjs`) and backend (e.g. `index.main.mjs`) of Reach applications, (remembering that `index.rsh` is the pre-compiled version of `index.main.mjs`).
 
-# {#wfs-16} Attach to the contract (buyer)
+# {#wfs-17} Attach to the contract (buyer)
 
-This section shows you how to have the `buyer` attach to the contact.
+This section demonstrates how the `buyer` attaches to the contact.
 It also introduces `@reach-sh/stdlib/ask.mjs`, a minimal Reach Node.js package for command-line input.
 
-It is often necessary to have interaction between the DApp and the participants.
+Interaction is often necessary between the DApp and the participants.
 `{!rsh} ask` is a convenient way to allow interaction in a variety of different ways, each with a specific use.
 `{!rsh} ask.yesno` is used to ask a question where the answer is either yes or no, and accepts a single letter response (`y` for yes and `n` for no).
-`{!rsh} ask.ask` is valuable for being able to ask questions where the expected response is a string, such as "What is your name?".
-`{!rsh} ask.done` has the DApp end for both participants.
+`{!rsh} ask.ask` is valuable for queries where the expected response is a string, such as "What is your name?".
+`{!rsh} ask.done` is used when there are no more questions.
 
 1. In `index.mjs`, add the following near the top of the file:
 
@@ -589,7 +589,7 @@ It is often necessary to have interaction between the DApp and the participants.
     :::
     ::::
 
-# {#wfs-17} Cancel a transaction
+# {#wfs-18} Cancel a transaction
 
 This section shows you how to cancel a transaction.
 
@@ -680,7 +680,7 @@ This section shows you how to cancel a transaction.
     :::
     ::::
 
-# {#wfs-18} Complete a transaction
+# {#wfs-19} Complete a transaction
 
 This section shows you how to get wisdom from the `seller` on the frontend, and swap it for tokens on the backend.
 
@@ -801,7 +801,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
     :::
     ::::
 
-# {#wfs-19} View the contract
+# {#wfs-20} View the contract
 
 This section shows you how to have the `buyer` (before attaching) peek into the deployed contract to view the price, and explains why viewing contract data before attaching is sometimes advantageous.
 
@@ -860,7 +860,28 @@ The following directions show you how to obtain `price` from the contract before
 
 The `buyer` is able to obtain `price` before attaching to the contract by using a view.
 
-# {#wfs-21} Self Assessment
+# {#wfs-22} Review and further learning
+
+Let's review the subjects learned in this tutorial:
+
++ In section [one](##wfs-2), we learned the different modes of a Reach program: Init, Step, Local Step, and Consensus Step.
++ In section [two](##wfs-8), we learned how to pre-code, increasing coding accuracy and speed.
++ In section [three](##wfs-10), we created the initial Reach files so we could start coding our DApp.
++ In section [four](##wfs-13), we examined the different ways to set `REACH_CONNECTOR_MODE` and when each is used, and how to run a Reach program.
++ In section [five](##wfs-15), we explored `{!rsh} formatCurrency` and `{!rsh} parseCurrency`, their uses, and how to convert between them.
++ In section [six](##wfs-16), we learned how to deploy a contract to the devnet.
++ In section [seven](##wfs-17), we learned how to attach to a contract.
++ In section [eight](##wfs-18), we learned how to allow users to cancel a contract.
++ In section [nine](##wfs-19), we completed the transaction and saw the results of the contract.
++ And finally, in section [ten](##wfs-20), we utilized Bootstrap to allow buyers to see the contract prior to attaching.
+
+Congratulations!
+A great next step is to check out the next [tutorial](##tut) to continue your learning, or visit one of our [guide topics](##guide) or [workshops](##workshop) for self-guided exploration of Reach.
+
+We also hope you'll join us on [the Discord community](@{DISCORD}).
+Once you join, message `@team, I just completed the Wisdom For Sale tutorial!` and we'll give you the `tutorial veteran` role, so you can more easily help others work through it!
+
+# {#wfs-23} Self Assessment
 
 Click on the question to view the answer.
 
@@ -868,7 +889,7 @@ Click on the question to view the answer.
 Do smart contracts use standard or atomic units?
 
 ::::testA
-Smart contracts use atomic (indivisible) units. User interfaces, on the other hand, often use standard units to present cryptocurrency amounts to users. Therefore, Reach frontends frequently need to convert between the two. The Reach JS Stdlib function parseCurrency converts from standard to atomic, and the function formatCurrency converts from atomic to standard.
+Smart contracts use atomic (indivisible) units. User interfaces, on the other hand, often use standard units to present cryptocurrency amounts to users. Therefore, Reach frontends frequently need to convert between the two. The Reach JS Stdlib function `{!rsh} parseCurrency converts from standard to atomic, and the function `{!rsh} formatCurrency` converts from atomic to standard.
 :::
 
 ::::
