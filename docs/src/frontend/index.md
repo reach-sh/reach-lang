@@ -406,7 +406,7 @@ range: 25 - 34
 ```
 
 This React frontend from the [Rock, Paper, Scissors](##tut) tutorial checks if the account can be funded from a faucet using `{!js} canFundFromFaucet`.
-If the vaulue returns true, the account is then funded by `{!js} fundFromFaucet`.
+If the value returns true, then the account is funded by `{!js} fundFromFaucet`.
 
 ---
 @{ref("js", "connectAccount")}
