@@ -1207,6 +1207,18 @@ Formats the address in the way the user would expect to see it.
 + On Ethereum, it is a hex-encoded string starting with `{!js} '0x'`.
 + On Algorand, it is a base32-encoded string, ending with the checksum.
 
+Example:
+
+```js
+load: /examples/getUntrackedFunds1/index.mjs
+md5: d743dd6357719dfd1ba3fcd540ab4e49
+range: 32 - 37
+```
+
+This code is a `{!rsh} function` that takes in `addr` on line 32.
+Line 33 formats `addr` based on the consensus network, in the way the user would expect to see it.
+On line 35, the formatted `addr` (now stored as `address`) is revealed to the user in the console.
+
 There is no corresponding `{!js} parseAddress` function because
 the user-friendly form is also accepted from the frontend
 in all places that Reach expects an address.
