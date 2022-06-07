@@ -1222,8 +1222,8 @@ md5: be92a6fe101d3f22bf3dd463aa618f80
 range: 22 -25
 ```
 
-This code converts the last 8 bytes of `b1`, `b2`, `b3` and `b4` to an `{!rsh} UInt` on lines 22, 23, 24 and 25.
-After which, `{!js} mod` method is called on the results.
+This code converts the last 8 bytes of `b1`, `b2`, `b3` and `b4` to an `{!rsh} UInt` on lines 22, 23, 24 and 25, respectively. 
+After which, the `{!js} mod` method is called on the respective results.
 
 If the string is less than 8 bytes long, this function will convert the entire string to an `{!rsh} UInt`.
 
