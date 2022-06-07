@@ -7,6 +7,7 @@ const hh = (x) => x === '' ? '/' : `/${x}/`;
 
 const searchClient = algoliasearch('M53HHHS0ZW', '0cfd8f1c1a0e3cb7b2abd77b831614dc');
 const searchIndex = searchClient.initIndex('docs');
+const discSearchIndex = searchClient.initIndex('discussions');
 
 const currentPage = {
   folder: null,
@@ -178,7 +179,9 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
     searchInput.focus();
     const searchResultsList = doc.getElementById('search-results-list');
     searchInput.addEventListener('keyup', async (evt) => {
-      const { hits } = await searchIndex.search(searchInput.value);
+      const { hits: searchHits } = await searchIndex.search(searchInput.value);
+      const { hits: discussionHits } = await discSearchIndex.search(searchInput.value);
+      const hits = [ ...searchHits, ...discussionHits ];
       if ( ! hits.length ) { return; }
       searchResultsList.innerHTML = '';
       hits.forEach((hit) => {
