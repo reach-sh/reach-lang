@@ -377,16 +377,6 @@ stdlib.createAccount() => Promise<acc>
 Returns a Promise for a Reach account abstraction for a new account on the consensus network.
 The account will have an empty balance of network tokens.
 
-Example:
-
-```js
-load: /examples/minBalance/index.mjs
-md5: 3c4457da0579671f1455423d0b44016b
-range: 16 - 16
-```
-
-This code creates an account for `accD` without a starting balance.
-
 ---
 @{ref("js", "fundFromFaucet")}
 ```js
@@ -400,7 +390,7 @@ You can use `{!js} canFundFromFaucet` to check if `{!js} fundFromFaucet` can be 
 Example:
 
 ```js
-load: /examples/js-tests/index.mjs
+load: /examples/rps-8-interact/index.mjs
 md5: 389bd098127db61d413f7586e81b561f
 range: 324 - 325
 ```
@@ -415,17 +405,6 @@ stdlib.canFundFromFaucet() => Promise<boolean>
 ```
 
 A Promise that resolves to `{!js} true` if `{!js} fundFromFaucet` can be used, `{!js} false` if not.
-
-Example:
-
-```js
-load: /examples/rps-9-web/index.js
-md5: 29b1b17df91e1d49053670f72eebc6b4
-range: 25 - 34
-```
-
-This React frontend from the [Rock, Paper, Scissors](##tut) tutorial checks if the account can be funded from a faucet using `{!js} canFundFromFaucet`.
-If the value returns true, then the account is funded by `{!js} fundFromFaucet`.
 
 ---
 @{ref("js", "connectAccount")}
@@ -471,18 +450,6 @@ acc.getAddress() => string
 ```
 
 Returns the account's address as a string. The format of this string varies across connectors.
-
-Example:
-
-```js
-load: /examples/interact-this/index.mjs
-md5: 34eaa215660697ce8c5ba87387c8f0f1
-range: 14-19
-```
-
-In this snippet, `{!js} getAddress` obtains the addresses of `Alice` and `Bob` that were created with the `{!js} newTestAccounts` code.
-Next, each address is logged so that each participant can see both addresses.
-This can be useful to verify that the address receiving the payment is the correct address.
 
 ---
 @{ref("js", "setDebugLabel")}
@@ -561,16 +528,6 @@ which are accounts, such as those returned by `{!js} connectAccount`.
 If `{!js} token` is not provided, then the transfer is of network tokens;
 otherwise, it is of the designated non-network token.
 The returned `{!js} Promise` will only be resolved after the transfer completes.
-
-Example:
-
-```js
-load: /examples/transfer-from-zero/index.mjs
-md5: e85c5362951c9e7c5d1c727d3f3e7dac
-range: 24-25
-```
-
-This transfers one (1) unit of the network token from Alice's account `accAlice`, to Bob's account `accBob`.
 
 ## {#ref-frontends-js-acc-eth} EVM-specific (Ethereum and Conflux)
 
@@ -1022,18 +979,6 @@ stdlib.protect(t, x) => x
 ```
 
 Asserts that value `{!js} x` has Reach type `{!js} t`. An exception is thrown if this is not the case.
-
-Example:
-
-```reach
-load: /examples/js-tests/index.mjs
-md5: 389bd098127db61d413f7586e81b561f
-range: 349 -352
-```
-
-This code tests to see if variables that are supposed to be `null` return `null`. 
-Line 350 `{!js} asserts` that `null` has Reach type `T_Null`. 
-Line 351 `{!js} asserts` that `undefined` has Reach type `T_Null`. 
 
 ---
 @{ref("js", "T_Null")}@{ref("js", "T_Bool")}@{ref("js", "T_UInt")}@{ref("js", "T_Bytes")}@{ref("js", "T_Address")}@{ref("js", "T_Array")}@{ref("js", "T_Tuple")}@{ref("js", "T_Object")}
