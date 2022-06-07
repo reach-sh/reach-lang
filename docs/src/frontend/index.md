@@ -397,6 +397,17 @@ stdlib.canFundFromFaucet() => Promise<boolean>
 
 A Promise that resolves to `{!js} true` if `{!js} fundFromFaucet` can be used, `{!js} false` if not.
 
+Example:
+
+```js
+load: /examples/rps-9-web/index.js
+md5: 29b1b17df91e1d49053670f72eebc6b4
+range: 25 - 34
+```
+
+This React frontend from the [Rock, Paper, Scissors](##tut) tutorial checks if the account can be funded from a faucet using `{!js} canFundFromFaucet`.
+If the vaulue returns true, the account is then funded by `{!js} fundFromFaucet`.
+
 ---
 @{ref("js", "connectAccount")}
 ```js
