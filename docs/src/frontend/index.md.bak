@@ -390,7 +390,7 @@ You can use `{!js} canFundFromFaucet` to check if `{!js} fundFromFaucet` can be 
 Example:
 
 ```js
-load: /examples/js-tests/index.mjs
+load: /examples/rps-8-interact/index.mjs
 md5: 389bd098127db61d413f7586e81b561f
 range: 324 - 325
 ```
