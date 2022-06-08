@@ -6,7 +6,9 @@ module Reach.CommandLine
   , getCompilerArgs
   , getCompilerEnv
   , truthyEnv
-  )
+  , SupportToolArgs(..)
+  , SupportOpts(..)
+  , supportFromCommandLineHs)
 where
 
 import Data.Char
@@ -33,6 +35,18 @@ data CompilerOpts = CompilerOpts
   , co_sim :: Bool
   , co_verifyFirstFailQuit :: Bool
   }
+
+newtype SupportToolArgs = SupportToolArgs {sta_so :: SupportOpts}
+
+data SupportOpts = SupportOpts
+  { so_filesToUpload :: [FilePath]
+  }
+
+supportFromCommandLineHs :: Parser SupportToolArgs
+supportFromCommandLineHs =
+  SupportToolArgs
+    <$> (SupportOpts
+           <$> (many (strArgument (metavar "path/to/files..."))))
 
 compiler :: Parser CompilerToolArgs
 compiler =
