@@ -107,8 +107,8 @@ The `seller` paid a little more fees than the `buyer` because the `seller` paid 
 Type the following code into the file named `index.mjs`.
 
 ``` js
-load: /examples/docs-wisdom-1/index.mjs
-md5: bc703e20446c21e4806a2d0719de31c8
+load: /examples/wisdom-1/index.mjs
+md5: 9524e0ed23e4dc40c04219998f6538ba
 range: 1-8
 ```
 
@@ -120,16 +120,16 @@ range: 1-8
 * Line 8: Display the consensus network type.
 
 ``` js
-load: /examples/docs-wisdom-1/index.mjs
-md5: bc703e20446c21e4806a2d0719de31c8
+load: /examples/wisdom-1/index.mjs
+md5: 9524e0ed23e4dc40c04219998f6538ba
 range: 10-10
 ```
 
 * Line 10: Enable enclosed code to await the fulfillment of promises.
 
 ``` js
-load: /examples/docs-wisdom-1/index.mjs
-md5: bc703e20446c21e4806a2d0719de31c8
+load: /examples/wisdom-1/index.mjs
+md5: 9524e0ed23e4dc40c04219998f6538ba
 range: 12-16
 ```
 
@@ -137,8 +137,8 @@ range: 12-16
 * Line 15: Code for when you run this app as the `seller`.
 
 ``` js
-load: /examples/docs-wisdom-1/index.mjs
-md5: bc703e20446c21e4806a2d0719de31c8
+load: /examples/wisdom-1/index.mjs
+md5: 9524e0ed23e4dc40c04219998f6538ba
 range: 18-20
 ```
 
@@ -147,8 +147,8 @@ range: 18-20
 * Line 20: Initiate interaction with contract for `seller`.
 
 ``` js
-load: /examples/docs-wisdom-1/index.mjs
-md5: bc703e20446c21e4806a2d0719de31c8
+load: /examples/wisdom-1/index.mjs
+md5: 9524e0ed23e4dc40c04219998f6538ba
 range: 22-28
 ```
 
@@ -160,8 +160,8 @@ range: 22-28
 Type the following into `index.rsh`:
 
 ``` reach
-load: /examples/docs-wisdom-1/index.rsh
-md5: 94716b0192ec5b060a7a9efb2d2ad292
+load: /examples/wisdom-1/index.rsh
+md5: 1dea3914b27556b7d43bf576b11feb01
 range: 1-9
 ```
 
@@ -169,8 +169,8 @@ range: 1-9
 * Lines 3-9: Define empty (for now) objects.
 
 ``` reach
-load: /examples/docs-wisdom-1/index.rsh
-md5: 94716b0192ec5b060a7a9efb2d2ad292
+load: /examples/wisdom-1/index.rsh
+md5: 1dea3914b27556b7d43bf576b11feb01
 range: 11-16
 ```
 
@@ -228,16 +228,16 @@ Follow these directions to pass `role` as a command-line argument:
 1. In `index.mjs`, find the following line:
 
     ``` js
-    load: /examples/docs-wisdom-1/index.mjs
-    md5: bc703e20446c21e4806a2d0719de31c8
+    load: /examples/wisdom-1/index.mjs
+    md5: 9524e0ed23e4dc40c04219998f6538ba
     range: 4-4
     ```
 
 1. Replace it with the following to be able to set the role in the command line arguments, and save the file:
 
     ``` js
-    load: /examples/docs-wisdom-2/index.mjs
-    md5: cdf57aff18996701e70adda28051884b
+    load: /examples/wisdom-2/index.mjs
+    md5: 1e8a83f63335949a40cd1be621ffd7cb
     range: 4-8
     ```
 
@@ -297,16 +297,16 @@ As mentioned, `{!js} parseCurrency` is often used for human interactions: settin
 1. In `index.mjs`, find the `{!js} console.log` statement below:
 
     ``` js
-    load: /examples/docs-wisdom-2/index.mjs
-    md5: cdf57aff18996701e70adda28051884b
+    load: /examples/wisdom-2/index.mjs
+    md5: 1e8a83f63335949a40cd1be621ffd7cb
     range: 12-12
     ```
 
 1. Add the following two `{!js} console.log` statements that utilize the `{!js} stdlib.standardUnit` and `{!js} stdlib.atomicUnit` below it, and run your DApp as the `seller` to view the standard and atomic units for your network:
 
     ``` js
-    load: /examples/docs-wisdom-3/index.mjs
-	md5: 8eb46a5c122fc4918051d232107525e4
+    load: /examples/wisdom-3/index.mjs
+	md5: 030fac8d7cfa86da042b46c84f771b0b
     range: 13-14
     ```
 
@@ -323,9 +323,9 @@ Set `suStr` to `{!js} standardUnit`, and `auStr` to `{!js} atomicUnit`.
 Replace the `{!js} stdlib` statements with the corresponding `{!js} const` statements:
 
     ``` js
-    load: /examples/docs-wisdom-4/index.mjs
-    md5: 5121a47ef5a6c398f889c02c9c7e4e82
-    range: 13-16
+    load: /examples/wisdom-4/index.mjs
+    md5: 9da677b2ef4331a5d16902d9d022565a
+    range: 12-15
     ```
 
     The output should be the same.
@@ -336,9 +336,9 @@ We will also create a `suBal` to add 1000 standard units of funds, then utilize 
 Let's write a couple of statements to the console to make sure it works as we expect, and then run again:
 
     ``` js
-    load: /examples/docs-wisdom-5/index.mjs
-    md5: dc4e3122ac1cfe316019e29386a2f42b
-    range: 13-21
+    load: /examples/wisdom-5/index.mjs
+    md5: b2cf4f1e78d9b4f9a7b1c8470b36be99
+    range: 12-20
     ```
 
     The output should resemble the following:
@@ -357,9 +357,9 @@ We want to display the account balance to the console, as well as test wrapping 
 Your new code should look like the following:
 
     ``` js
-    load: /examples/docs-wisdom-6/index.mjs
-    md5: 004964fd0a232734424092a489ac8f61
-    range: 13-17
+    load: /examples/wisdom-6/index.mjs
+    md5: a78e3f5afc8f67a2ccab8a33f18d0426
+    range: 13-16
     ```
 
     You use `iBalance` and `showBalance` in the next steps.
@@ -367,17 +367,17 @@ Your new code should look like the following:
 1. In `index.mjs`, find the line below and replace `stdlib.parseCurrency(1000)` with `iBalance`:
 
     ``` js
-    load: /examples/docs-wisdom-6/index.mjs
-    md5: 004964fd0a232734424092a489ac8f61
-    range: 28-28
+    load: /examples/wisdom-6/index.mjs
+    md5: a78e3f5afc8f67a2ccab8a33f18d0426
+    range: 26-26
     ```
 
 1. In `index.mjs`, insert `showBalance` in the two places shown below to show the account balance before and after contract deployment:
 
     ``` js
-    load: /examples/docs-wisdom-7/index.mjs
-    md5: 360eebf329ef0728927b4d5b109193df
-    range: 28-32
+    load: /examples/wisdom-7/index.mjs
+    md5: a2a1ea9fb258179cca5a7353fe00a8ec
+    range: 26-30
     ```
 
 1. Run your DApp again. Output should resemble the following:
@@ -412,17 +412,17 @@ Follow these directions to have the `seller` deploy the contract and return the 
 1. In `index.mjs`, find the `sellerInteract` code:
 
     ``` js
-    load: /examples/docs-wisdom-7/index.mjs
-    md5: 360eebf329ef0728927b4d5b109193df
-    range: 23-24
+    load: /examples/wisdom-7/index.mjs
+    md5: a2a1ea9fb258179cca5a7353fe00a8ec
+    range: 20-23
     ```
 
 1. Add `price` and `reportReady` methods to it:
 
     ``` js
-    load: /examples/docs-wisdom-8/index.mjs
-    md5: b857aedf873265990a152cfb84af0c70
-    range: 23-28
+    load: /examples/wisdom-8/index.mjs
+    md5: a10f29bc5d0f0ba29e6ff7cef1ec536a
+    range: 20-25
     ```
 
     You will add a `wisdom` property to the `sellerInteract` later in the tutorial.
@@ -430,16 +430,16 @@ Follow these directions to have the `seller` deploy the contract and return the 
 1. In `index.rsh`, find the `sellerInteract` code:
 
     ``` reach
-    load: /examples/docs-wisdom-8/index.rsh
-    md5: 20172556274eb9b0ab067b657a74d977
+    load: /examples/wisdom-8/index.rsh
+    md5: fffefb27ee974b5803a00bb8a25f5c22
     range: 4-5
     ```
 
 1. Add `price` and `reportReady` that was added in the `index.mjs` file to the `index.rsh` code:
 
     ``` reach
-    load: /examples/docs-wisdom-8/index.rsh
-    md5: 20172556274eb9b0ab067b657a74d977
+    load: /examples/wisdom-8/index.rsh
+    md5: fffefb27ee974b5803a00bb8a25f5c22
     range: 4-8
     ```
     
@@ -451,8 +451,8 @@ Follow these directions to have the `seller` deploy the contract and return the 
 1. In `index.rsh`, add the following code between `{!rsh} init` and `{!rsh} exit`:
 
     ``` reach
-    load: /examples/docs-wisdom-8/index.rsh
-    md5: 20172556274eb9b0ab067b657a74d977
+    load: /examples/wisdom-8/index.rsh
+    md5: fffefb27ee974b5803a00bb8a25f5c22
     range: 16-23
     ```
 
@@ -495,28 +495,28 @@ Interaction is often necessary between the DApp and the participants.
 `{!rsh} ask.ask` is valuable for queries where the expected response is a string, such as "What is your name?".
 `{!rsh} ask.done` is used when there are no more questions.
 
-1. In `index.mjs`, import `ask` from the Reach standard library:
+1. In `index.mjs`, add `ask` to the imports from the Reach standard library:
 
     ``` js
-    load: /examples/docs-wisdom-9/index.mjs
-    md5: ac157c038b19b682ac3cd93518be5400
-    range: 3-3
+    load: /examples/wisdom-9/index.mjs
+    md5: e5073e68954a189f6ad69d3650e3e548
+    range: 1 - 2
     ```
 
 1. In `index.mjs`, find the `buyerInteract` code:
 
     ``` js
-    load: /examples/docs-wisdom-8/index.mjs
-    md5: b857aedf873265990a152cfb84af0c70
-    range: 40-42
+    load: /examples/wisdom-8/index.mjs
+    md5: a10f29bc5d0f0ba29e6ff7cef1ec536a
+    range: 38-40
     ```
 
 1. Replace it with the following:
 
     ``` js
-    load: /examples/docs-wisdom-9/index.mjs
-    md5: ac157c038b19b682ac3cd93518be5400
-    range: 42-51
+    load: /examples/wisdom-9/index.mjs
+    md5: e5073e68954a189f6ad69d3650e3e548
+    range: 38-49
     ```
 
     * Line 44: `{!rsh} ask.ask` and `{!rsh} ask.yesno` are functions in `@reach-sh/stdlib`.
@@ -527,9 +527,9 @@ Interaction is often necessary between the DApp and the participants.
 1. And, add `{!rsh} ask.done();` at the bottom of the file. 
 
     ``` js
-    load: /examples/docs-wisdom-9/index.mjs
-    md5: ac157c038b19b682ac3cd93518be5400
-    range: 54-54
+    load: /examples/wisdom-9/index.mjs
+    md5: e5073e68954a189f6ad69d3650e3e548
+    range: 51-51
     ```
 	
 	`{!rsh} ask.done();` needs to be after `};` so that it is accessible by both the `Seller` and the `Buyer`
@@ -537,16 +537,16 @@ Interaction is often necessary between the DApp and the participants.
 1. In `index.rsh`, find the `buyerInteract` code:
 
     ``` reach
-    load: /examples/docs-wisdom-8/index.rsh
-    md5: 20172556274eb9b0ab067b657a74d977
+    load: /examples/wisdom-8/index.rsh
+    md5: fffefb27ee974b5803a00bb8a25f5c22
     range: 9-11
     ```
 
 1. Add a `confirmPurchase` method as shown below:
 
     ``` reach
-    load: /examples/docs-wisdom-9/index.rsh
-    md5: 93e1fa791a16c88d3d44d1b8cc6cce09
+    load: /examples/wisdom-9/index.rsh
+    md5: 2e08d180cf98e0e19ef1806bc971438e
     range: 9-12
     ```
 	
@@ -560,8 +560,8 @@ Interaction is often necessary between the DApp and the participants.
 1. In `index.rsh`, add the following before `{!rsh} exit()` to utilize `confirmPurchase`:
 
     ``` reach
-    load: /examples/docs-wisdom-9/index.rsh
-    md5: 93e1fa791a16c88d3d44d1b8cc6cce09
+    load: /examples/wisdom-9/index.rsh
+    md5: 2e08d180cf98e0e19ef1806bc971438e
     range: 24-30
     ```
 
@@ -601,40 +601,40 @@ This section shows you how to display that a transaction is cancelled.
 1. In `index.mjs`, find the following line:
 
     ``` js
-    load: /examples/docs-wisdom-9/index.mjs
-    md5: ac157c038b19b682ac3cd93518be5400
-    range: 20-20
+    load: /examples/wisdom-9/index.mjs
+    md5: e5073e68954a189f6ad69d3650e3e548
+    range: 18-18
     ```
 
 1. Replace it with the following:
 
     ``` js
-    load: /examples/docs-wisdom-10/index.mjs
-    md5: 81e70e8f2850a2dc9ce5f74da360f47a
-    range: 20-22
+    load: /examples/wisdom-10/index.mjs
+    md5: 264c91fed23e3dc8a650d2ad61784041
+    range: 18-20
     ```
 
 1. In `index.rsh`, find the following line:
 
     ``` reach
-    load: /examples/docs-wisdom-9/index.rsh
-    md5: 93e1fa791a16c88d3d44d1b8cc6cce09
+    load: /examples/wisdom-9/index.rsh
+    md5: 2e08d180cf98e0e19ef1806bc971438e
     range: 3-3
     ```
 
 1. Replace it with the following:
 
     ``` reach
-    load: /examples/docs-wisdom-10/index.rsh
-    md5: 94e3cb037a01cdc6b85ac3fc1a29f728
+    load: /examples/wisdom-10/index.rsh
+    md5: 0dccaa07ff2b1c9534fc75c6f5fade22
     range: 3-5
     ```
 
 1. In `index.rsh`, add Lines 3 and 4 to existing code:
 
     ``` reach
-    load: /examples/docs-wisdom-10/index.rsh
-    md5: 94e3cb037a01cdc6b85ac3fc1a29f728
+    load: /examples/wisdom-10/index.rsh
+    md5: 0dccaa07ff2b1c9534fc75c6f5fade22
     range: 28-34
     ```
 
@@ -658,17 +658,17 @@ This section shows you how to display that a transaction is cancelled.
 1. In `index.mjs`, modify `commonInteract`:
 
     ``` js
-    load: /examples/docs-wisdom-11/index.mjs
-    md5: 9d9d78f5ebdcbbabc579d4151111c9a6
-    range: 20-22
+    load: /examples/wisdom-11/index.mjs
+    md5: d07895f6c4d1f96c8ba75afa2d2001c1
+    range: 18-20
     ```
 
 1. In `index.mjs`, modify both `sellerInteract` and `buyerInteract` to pass `role` to `commonInteract`:
 
     ``` js
-    load: /examples/docs-wisdom-11/index.mjs
-    md5: 9d9d78f5ebdcbbabc579d4151111c9a6
-    range: 27-27
+    load: /examples/wisdom-11/index.mjs
+    md5: d07895f6c4d1f96c8ba75afa2d2001c1
+    range: 25-25
     ```
 
 1. Rerun your DApp as the `seller` and `buyer`.
@@ -692,48 +692,48 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 1. In `index.mjs`, add a `wisdom` property to `sellerInteract` right after the `price` property:
 
     ``` js
-    load: /examples/docs-wisdom-12/index.mjs
-    md5: df58628318ef3bbdd3a89b61815a4b50
-    range: 31-35
+    load: /examples/wisdom-12/index.mjs
+    md5: 0e24e181298531e2a4126685d0666269
+    range: 26-33
     ```
 
 1. In `index.rsh`, add a `wisdom` property to `sellerInteract` right after the `price` property:
 
     ``` reach
-    load: /examples/docs-wisdom-12/index.rsh
-    md5: 7fad2a5a2019cb7594c3c9ee63c77930
-    range: 10-10
+    load: /examples/wisdom-12/index.rsh
+    md5: d5a8799fe458d53f078995faee0baa77
+    range: 7-10
     ```
 	
 1. In `index.rsh`, add a `reportPayment` property to `commonInteract` right after the `reportCancellation` property:
 
     ``` reach
-    load: /examples/docs-wisdom-12/index.rsh
-    md5: 7fad2a5a2019cb7594c3c9ee63c77930
+    load: /examples/wisdom-12/index.rsh
+    md5: d5a8799fe458d53f078995faee0baa77
     range: 3-6
     ```
 
 1. In `index.mjs`, add `reportWisdom` to `buyerInteract` after `confirmPurchase`:
 
     ``` js
-    load: /examples/docs-wisdom-12/index.mjs
-    md5: df58628318ef3bbdd3a89b61815a4b50
-    range: 50-53
+    load: /examples/wisdom-12/index.mjs
+    md5: 0e24e181298531e2a4126685d0666269
+    range: 48-52
     ```
 
 1. In `index.rsh`, add `reportWisdom` to `buyerInteract`:
 
     ``` reach
-    load: /examples/docs-wisdom-12/index.rsh
-    md5: 7fad2a5a2019cb7594c3c9ee63c77930
-    range: 15-16
+    load: /examples/wisdom-12/index.rsh
+    md5: d5a8799fe458d53f078995faee0baa77
+    range: 13-17
     ```
 
 1. In `index.rsh`, add the following before `{!rsh} exit()`:
 
     ``` reach
-    load: /examples/docs-wisdom-12/index.rsh
-    md5: 7fad2a5a2019cb7594c3c9ee63c77930
+    load: /examples/wisdom-12/index.rsh
+    md5: d5a8799fe458d53f078995faee0baa77
     range: 39-48
     ```
 
@@ -746,27 +746,27 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
     It might be nice to inform the `seller` and the `buyer` when the `{!rsh} pay` and `{!rsh} transfer` actions take place.
 	The next steps add these improvements.
 
-1. In `index.mjs`, add the following to `commonInteract`:
+1. In `index.mjs`, add `reportCancellation` to `commonInteract`:
 
     ``` js
-    load: /examples/docs-wisdom-12/index.mjs
-    md5: df58628318ef3bbdd3a89b61815a4b50
-    range: 21-22
+    load: /examples/wisdom-12/index.mjs
+    md5: 0e24e181298531e2a4126685d0666269
+    range: 21-21
     ```
 
-1. In `index.rsh`, add the following to `commonInteract`:
+1. In `index.rsh`, add `reportPayment` to `commonInteract`:
 
     ``` reach
-    load: /examples/docs-wisdom-12/index.rsh
-    md5: 7fad2a5a2019cb7594c3c9ee63c77930
+    load: /examples/wisdom-12/index.rsh
+    md5: d5a8799fe458d53f078995faee0baa77
     range: 5-5
     ```
 
 1. In `index.rsh`, add Lines 2 and 10 to existing code:
 
     ``` reach
-    load: /examples/docs-wisdom-12/index.rsh
-    md5: 7fad2a5a2019cb7594c3c9ee63c77930
+    load: /examples/wisdom-12/index.rsh
+    md5: d5a8799fe458d53f078995faee0baa77
     range: 40-50
     ```
 
@@ -813,15 +813,15 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
     Let's take a look at the final Reach code: 
 
     ```
-    load: /examples/docs-wisdom-12/index.rsh
-    md5: 7fad2a5a2019cb7594c3c9ee63c77930
+    load: /examples/wisdom-12/index.rsh
+    md5: d5a8799fe458d53f078995faee0baa77
     ```
 
     And the final frontend code:
 
     ```
-    load: /examples/docs-wisdom-12/index.mjs
-    md5: df58628318ef3bbdd3a89b61815a4b50
+    load: /examples/wisdom-12/index.mjs
+    md5: 0e24e181298531e2a4126685d0666269
     ```
 
 # {#wfs-20} View the contract
@@ -833,11 +833,11 @@ Allowing a `buyer` to view the contract before attaching is a better user experi
 
 Review the the `index.mjs` version of `confirmPurchase` from the `buyerInteract` object:
 
-    ``` js
-    load: /examples/docs-wisdom-9/index.mjs
-    md5: ac157c038b19b682ac3cd93518be5400
-    range: 44-44
-    ```
+``` js
+load: /examples/wisdom-9/index.mjs
+md5: e5073e68954a189f6ad69d3650e3e548
+range: 41 - 41
+```
 
 Currently, the backend calls the function passing the `price` of the contract, and the frontend displays `price` to the `buyer`, asks for a decision, waits for the answer, and returns `true` or `false` to the backend.
 This approach doesn't work well for a Web-app which might use a modal (an informative pop-up) in place of `{!rsh} ask-yesno`:
@@ -862,17 +862,17 @@ The following directions show you how to obtain `price` from the contract before
 1. In `index.rsh`, add Lines 46 and 51:
 
     ``` reach
-    load: /examples/docs-wisdom-14/index.rsh
-    md5: 7a27a075e65a459366170170e279fafc
+    load: /examples/wisdom-14/index.rsh
+    md5: d0a24024a2375946d161b60fd34971c2
     range: 42-52
     ```
 
-1. In `index.mjs`, add Lines 59 and 60 (in the `buyer` section):
+1. In `index.mjs`, add Lines 57 and 58 (in the `buyer` section):
 
     ``` js
-    load: /examples/docs-wisdom-14/index.mjs
-    md5: aa049c760920fcd43838fe11fbbb6541
-    range: 56-64
+    load: /examples/wisdom-14/index.mjs
+    md5: 38cf95302ec490bc5709ca9b375118fb
+    range: 54-61
     ```
 
 1. Run your DApp as the `seller` and the `buyer`.
