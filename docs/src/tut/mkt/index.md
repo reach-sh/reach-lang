@@ -55,7 +55,7 @@ This is actually where the `Reach` code will live.
 Start working in `index.rsh` by typing out the following code:
 
 ```reach
-load: /examples/tuts-mkt-1-starter/index.rsh
+load: /examples/mkt-1-starter/index.rsh
 ```
 
 This code isn't doing anything yet but it is an important foundation to what is to built in this tutorial. 
@@ -90,7 +90,7 @@ Without it, the program will never start.
 Next, work on the `index.mjs` file. Type the code below:
 
 ```reach
-load: /examples/tuts-mkt-1-starter/index.mjs
+load: /examples/mkt-1-starter/index.mjs
 ```
 
 * Line 1 imports `{!rsh} loadStdlib` from the Reach standard library.
@@ -163,14 +163,14 @@ Start by fleshing out the constants that have already been declared.
 Replace this:
 
 ```reach
-load: /examples/tuts-mkt-1-starter/index.rsh
+load: /examples/mkt-1-starter/index.rsh
 range: 3 - 7
 ```
 
 with:
 
 ```reach
-load: /examples/tuts-mkt-2-basic/index.rsh
+load: /examples/mkt-2-basic/index.rsh
 range: 3 - 37
 ```
 
@@ -234,7 +234,7 @@ Attention would be given to the frontend now.
 In the [previous section](##tut-mkt-starter-frontend), contracts were setup for the `{!rsh} Participant`s:
 
 ```reach
-load: /examples/tuts-mkt-1-starter/index.mjs
+load: /examples/mkt-1-starter/index.mjs
 range: 5 - 6
 ```
 
@@ -243,7 +243,7 @@ These contracts require that each of the `{!rsh} Participant`s have an account s
 Just before the contracts, type the following code:
 
 ```reach
-load: /examples/tuts-mkt-2-basic/index.mjs
+load: /examples/mkt-2-basic/index.mjs
 range: 5 - 8
 ```
 
@@ -265,7 +265,7 @@ Having told the backend how those variables declared are to be used, these varia
 Just below the contracts, enter the following code for the `sellerInteract`:
 
 ```reach
-load: /examples/tuts-mkt-2-basic/index.mjs
+load: /examples/mkt-2-basic/index.mjs
 range: 13 - 30
 ```
 
@@ -305,7 +305,7 @@ Some output may not show until a section is completed.
 The next code is for the `buyerInteract`:
 
 ```reach
-load: /examples/tuts-mkt-2-basic/index.mjs
+load: /examples/mkt-2-basic/index.mjs
 range: 32 - 47
 ```
 
@@ -345,7 +345,7 @@ Buyer wants Carrots
 Finally, the type the code below for `commonInteract`:
 
 ```reach
-load: /examples/tuts-mkt-2-basic/index.mjs
+load: /examples/mkt-2-basic/index.mjs
 range: 49 - 61
 ```
 
@@ -394,7 +394,7 @@ Calling `{!rsh} interact` on something in Reach is the same thing as calling upo
 Go back to the backend file. Just below `{!rsh} init();`, type the following code:
 
 ```reach
-load: /examples/tuts-mkt-2-basic/index.rsh
+load: /examples/mkt-2-basic/index.rsh
 range: 50 - 55
 ```
 
@@ -428,7 +428,7 @@ That concludes the `Seller`'s interaction.
 Next, type in the following code for the `Buyer`'s interaction:
 
 ```reach
-load: /examples/tuts-mkt-2-basic/index.rsh
+load: /examples/mkt-2-basic/index.rsh
 range: 57 - 61
 ```
 
@@ -446,7 +446,7 @@ The result of that interaction is also declassified.
 Finally, the result of the program is shown with the following code:
 
 ```reach
-load: /examples/tuts-mkt-2-basic/index.rsh
+load: /examples/mkt-2-basic/index.rsh
 range: 63 - 63
 ```
 
@@ -498,7 +498,7 @@ You have done well.
 This section taught the basics of the Reach language and demonstrated how the final DApp to be built would work. That was a good way to start building the market place application that has just been embarked upon. Hopefully, you found it really helpful and easy to follow through. 
 
 It is important to note that Reach offers flexibility in the way code may be written. 
-Check [here](/examples/tuts-mkt-3-basic-alt) for an optional way that the code for this section may be written.
+Check [here](/examples/mkt-3-basic-alt) for an optional way that the code for this section may be written.
 
 This tutorial has been able to teach the basics of the Reach language. 
 Concepts that were covered include: variable declaration and definition, 
@@ -597,7 +597,7 @@ The code for this section can be found [here]().
 Type the following code in the backend file:
 
 ```reach
-load: /examples/tuts-mkt-4-interaction-basic/index.rsh
+load: /examples/mkt-4-interaction-basic/index.rsh
 range: 1 - 34
 ```
 
@@ -621,7 +621,7 @@ That's all for the backend for now. Go to the frontend.
 In the `index.mjs` file, type the code below:
 
 ```reach
-load: /examples/tuts-mkt-4-interaction-basic/index.mjs
+load: /examples/mkt-4-interaction-basic/index.mjs
 range: 1 - 12
 ```
 
@@ -656,7 +656,7 @@ A consensus network is like a bank that each `{!rsh} Participant` has decided to
 After that, type in the following:
 
 ```reach
-load: /examples/tuts-mkt-4-interaction-basic/index.mjs
+load: /examples/mkt-4-interaction-basic/index.mjs
 range: 14 - 29
 ```
 
@@ -707,7 +707,7 @@ The next thing to do is to utilize these utilities in defining what happens if t
 The code below would be executed if the `{!rsh} Participant` is the `seller`:
 
 ```reach
-load: /examples/tuts-mkt-4-interaction-basic/index.mjs
+load: /examples/mkt-4-interaction-basic/index.mjs
 range: 32 - 52
 ```
 
@@ -752,7 +752,7 @@ If the `{!rsh} Participant` is not a `seller`, then the following code would be 
 Type the following:
 
 ```reach
-load: /examples/tuts-mkt-4-interaction-basic/index.mjs
+load: /examples/mkt-4-interaction-basic/index.mjs
 range: 55 - 78
 ```
 
@@ -843,7 +843,7 @@ To bring everything together, head back to the `index.rsh` file.
 Type the following code after the `{!rsh} init` line for the `seller`:
 
 ```reach
-load: /examples/tuts-mkt-4-interaction-basic/index.rsh
+load: /examples/mkt-4-interaction-basic/index.rsh
 range: 36 - 41
 ```
 The only difference here is that `Seller` has been changed to `S`. 
@@ -852,7 +852,7 @@ Every other thing remains the same.
 Type the code below for the `buyer`:
 
 ```reach
-load: /examples/tuts-mkt-4-interaction-basic/index.rsh
+load: /examples/mkt-4-interaction-basic/index.rsh
 range: 43 - 55
 ```
 
@@ -902,7 +902,7 @@ More variables are to be declared.
 Replace the `commonInteract` `{!rsh} Object` with the following code:
 
 ```reach
-load: /examples/tuts-mkt-5-interaction-reports/index.rsh
+load: /examples/mkt-5-interaction-reports/index.rsh
 range: 12 - 19
 ```
 
@@ -923,7 +923,7 @@ range: 12 - 19
 In the `buyerInteract` `{!rsh} Object`, add the following `{!rsh} function`:
 
 ```reach
-load: /examples/tuts-mkt-5-interaction-reports/index.rsh
+load: /examples/mkt-5-interaction-reports/index.rsh
 range: 36 - 36
 ```
 
@@ -938,7 +938,7 @@ The variables that has just been added to the backend file will now be defined o
 In the frontend file, replace the `commonInteract` `{!rsh} Object` with the following code:
 
 ```reach
-load: /examples/tuts-mkt-5-interaction-reports/index.mjs
+load: /examples/mkt-5-interaction-reports/index.mjs
 range: 29 - 42
 ```
 
@@ -974,7 +974,7 @@ That concludes the definition of the `commonInteract`.
 In the `buyerInteract`, add the following code:
 
 ```reach
-load: /examples/tuts-mkt-5-interaction-reports/index.mjs
+load: /examples/mkt-5-interaction-reports/index.mjs
 range: 87 - 87
 ```
 
@@ -991,14 +991,14 @@ Head back to the backend file.
 Replace this code:
 
 ```reach
-load: /examples/tuts-mkt-4-interaction-basic/index.rsh
+load: /examples/mkt-4-interaction-basic/index.rsh
 range: 47 - 52
 ```
 
 With this:
 
 ```reach
-load: /examples/tuts-mkt-5-interaction-reports/index.rsh
+load: /examples/mkt-5-interaction-reports/index.rsh
 range: 55 - 62
 ```
 
@@ -1018,7 +1018,7 @@ range: 55 - 62
 Next, type the following code:
 
 ```reach
-load: /examples/tuts-mkt-5-interaction-reports/index.rsh
+load: /examples/mkt-5-interaction-reports/index.rsh
 range: 64 - 73
 ```
 
@@ -1041,7 +1041,7 @@ This obtains the `buyer`'s consent and stores it as `willBuy`.
 Now enter the code below:
 
 ```reach
-load: /examples/tuts-mkt-5-interaction-reports/index.rsh
+load: /examples/mkt-5-interaction-reports/index.rsh
 range: 75 - 82
 ```
 
@@ -1062,7 +1062,7 @@ range: 75 - 82
 Finally, the following code handles payment and delivery if all goes well:
 
 ```reach
-load: /examples/tuts-mkt-5-interaction-reports/index.rsh
+load: /examples/mkt-5-interaction-reports/index.rsh
 range: 84 - 90
 ```
 
