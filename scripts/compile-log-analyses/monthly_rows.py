@@ -40,7 +40,7 @@ def display_counts(ymcounts):
       count = mcounts[m]
       tot += count
       mstr = f'0{m}' if m < 10 else f'{m}'
-      print(f'{yk}-{m}, {count}, {tot}')
+      print(f'{yk}-{mstr}, {count}, {tot}')
 
 
 def main():
