@@ -16,7 +16,6 @@ const toAU = (su) => stdlib.parseCurrency(su);
 const toSU = (au) => stdlib.formatCurrency(au, 4);
 const iBalance = toAU(1000);
 const showBalance = async (acc) => console.log(`Your balance is ${toSU(await stdlib.balanceOf(acc))} ${suStr}.`);
-console.log(`The atomic unit is ${stdlib.atomicUnit}`);
 
 const commonInteract = {
   reportCancellation: () => { console.log(`The buyer cancelled the order.`); }

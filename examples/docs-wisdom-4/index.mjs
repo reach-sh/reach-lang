@@ -14,7 +14,6 @@ const suStr = stdlib.standardUnit;
 const auStr = stdlib.atomicUnit;
 console.log(`The standard unit is ${suStr}`);
 console.log(`The atomic unit is ${auStr}`);
-console.log(`The atomic unit is ${stdlib.atomicUnit}`);
 
 const commonInteract = {};
 
