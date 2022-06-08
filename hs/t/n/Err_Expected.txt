@@ -1,8 +1,0 @@
-reachc: error[RE0076]: Expected bytes, got something else: UInt
-
-  ./Err_Expected.rsh:10:13:application
-
-  10|       assert(x == 1, 4);
-
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0076
-
