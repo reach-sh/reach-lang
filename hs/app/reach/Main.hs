@@ -2494,9 +2494,29 @@ instance FromJSON GitHubGistResponse where
   parseJSON = withObject "GitHubGistResponse" $ \o -> GitHubGistResponse <$> o .: "html_url"
 
 support :: Subcommand
-support = command "support" $ info (pure g) d
+support = command "support" $ info h d
   where
-    d = progDesc "Create GitHub gist of index.rsh and index.mjs"
+    d = progDesc "Create a GitHub gist of index.rsh and index.mjs (default), or specify your own files to upload!"
+    h = go <$> supportFromCommandLineHs
+    go SupportToolArgs {sta_so = SupportOpts {}} = do
+      rawArgs <- liftIO getArgs
+      let rawArgs' = dropWhile (/= "support") rawArgs
+      let actualArgs = tailMay rawArgs'
+      case actualArgs of
+        Nothing -> impossible $ "support args do not start with 'support': " <> show rawArgs
+        Just [] -> g -- no arguments? default behavior!
+        Just xs -> validate xs
+    validate :: [FilePath] -> App
+    validate actualArguments = liftIO $ do
+      arrayOfPairs <- mapM z actualArguments
+      let pairs = zip arrayOfPairs actualArguments
+      let invalidPaths = map snd $ filter (null . fst) pairs
+      case invalidPaths of
+        [] -> upload arrayOfPairs
+        _ -> do
+          putStrLn "Couldn't find the following files:\n"
+          mapM_ putStrLn invalidPaths
+          putStrLn "\nNothing uploaded"
     f i c = i .= object
       [ "content" .= if T.null (T.strip $ pack c) then "// (Empty source file)" else c
       , "language" .= ("JavaScript" :: String)
@@ -2504,7 +2524,8 @@ support = command "support" $ info (pure g) d
       ]
     z i = doesFileExist i >>= \case
       False -> pure []
-      True -> (\a -> [f (K.fromString i) a]) <$> readFile i
+      -- "Contents files can't be in subdirectories or include '/' in the name"
+      True -> (\a -> [f (K.fromText $ T.replace "/" "\\" $ pack i) a]) <$> readFile i
     clientId = "c4bfe74cc8be5bbaf00e" :: String
     is l = maybe False (== pack l) . headMay
     by a x = maybe (putStrLn ("Missing field `" <> x <> "`.") >> exitWith (ExitFailure 1)) pure
@@ -2519,6 +2540,10 @@ support = command "support" $ info (pure g) d
       when (null rsh && null mjs) $ do
         putStrLn "Neither index.rsh nor index.mjs exist in the current directory; aborting."
         exitWith ExitSuccess
+      when (null rsh) $ putStrLn "\nDidn't find index.rsh in the current directory; skipping..."
+      when (null mjs) $ putStrLn "\nDidn't find index.mjs in the current directory; skipping..."
+      upload [ rsh, mjs ]
+    upload arrayOfPairs = liftIO $ do
       a <- req "https://github.com/login/device/code"
         [ "client_id" .= clientId
         , "scope" .= ("gist" :: String)
@@ -2528,7 +2553,7 @@ support = command "support" $ info (pure g) d
       T.putStrLn [N.text|
         Please enter $userCode at https://github.com/login/device.
 
-        Type 'y' after successful authorization to upload index.mjs, index.rsh, or both:
+        Type 'y' after successful authorization to upload your files:
       |]
       hFlush stdout >> getChar >>= \c -> unless (toUpper c == 'Y') $ do
         putStrLn "\nNo files were uploaded. Run `reach support` again to retry."
@@ -2546,15 +2571,14 @@ support = command "support" $ info (pure g) d
           Just _ -> t `by` "error" >>= T.putStrLn . (pack "\nError while acquiring access token:\n" <>)
         exitWith $ ExitFailure 1
       gat <- unpack <$> t `by` "access_token"
-      when (null rsh) $ putStrLn "\nDidn't find index.rsh in the current directory; skipping..."
-      when (null mjs) $ putStrLn "\nDidn't find index.mjs in the current directory; skipping..."
+      let flattenedPairs = L.foldl' (<>) [] arrayOfPairs
       -- @TODO: Also add output of reach hashes!
       parseRequest "POST https://api.github.com/gists"
         >>= httpBS
           . setRequestHeader "User-Agent" [ BSI.packChars "reach" ]
           . setRequestHeader "Authorization" [ BSI.packChars ("token " <> gat) ]
           . setRequestHeader "Accept" [ BSI.packChars "application/vnd.github.v3+json" ]
-          . setRequestBodyJSON (object [ "files" .= object (rsh <> mjs) ])
+          . setRequestBodyJSON (object [ "files" .= object flattenedPairs ])
         >>= Y.decodeThrow . getResponseBody
         >>= \(GitHubGistResponse r) -> T.putStrLn $ "\n" <> [N.text|
               Your gist is viewable at:
