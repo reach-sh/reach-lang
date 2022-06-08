@@ -14,7 +14,7 @@ At the end of this tutorial you will be able to:
 1. Build a Reach command-line DApp.
 1. Convert the command-line DApp into a vanilla Web-app.
 
-## {#wfs-2} Reach Mode Diagram
+# {#wfs-2} Reach Modes
 
 Reach programs (the `index.rsh` portion of your Reach DApp) are organized into four modes: `Init Mode`, `Step Mode`, `Local Step Mode`, and `Consensus Step Mode`.
 Consider this diagram:
@@ -31,24 +31,10 @@ The orange text represents functions that cause transitions between modes.
 
 Application Initialization defines participants and views (see [View the contract](##wfs-20) later in the tutorial).
 
-:::note
-It also, optionally, overrides default compile options.
-:::
-
 Lines 2 and 3 below occur in the `App Init` section of the program:
 
 ``` js
 export const main = Reach.App(() => {
-  const S = Participant('Seller', sellerInteract);
-  const B = Participant('Buyer', buyerInteract);
-  init();
-```
-
-You can also override compile options (Line 2 below) in the `App Init` mode:
-
-``` js
-export const main = Reach.App(() => {
-  setOptions({ verifyArithmetic: true, connectors: [ ETH, ALGO ] });
   const S = Participant('Seller', sellerInteract);
   const B = Participant('Buyer', buyerInteract);
   init();
@@ -116,17 +102,15 @@ The `seller` paid a little more fees than the `buyer` because the `seller` paid 
 
     ![Open VSCode](/tut/wfs/vscode-open.png)
 
-## {#wfs-11} Create frontend starter
+## {#wfs-11} Create the Frontend
 
 Type the following code into the file named `index.mjs`.
 
 ``` js
 load: /examples/docs-wisdom-1/index.mjs
 md5: bc703e20446c21e4806a2d0719de31c8
-range: 1-28
+range: 1-8
 ```
-
-Below is a line-by-line description of this JavaScript(JS) code:
 
 * Line 1: Import the Reach JS Standard Library loader.
 * Line 2: Import the JS backend compiled from `index.rsh`.
@@ -134,29 +118,62 @@ Below is a line-by-line description of this JavaScript(JS) code:
 * Line 5: Display the role.
 * Line 7: Load the Reach JS Stdlib for the consensus network specified by `{!cmd} REACH_CONNECTOR_MODE` env var.
 * Line 8: Display the consensus network type.
+
+``` js
+load: /examples/docs-wisdom-1/index.mjs
+md5: bc703e20446c21e4806a2d0719de31c8
+range: 10-10
+```
+
 * Line 10: Enable enclosed code to await the fulfillment of promises.
+
+``` js
+load: /examples/docs-wisdom-1/index.mjs
+md5: bc703e20446c21e4806a2d0719de31c8
+range: 12-16
+```
+
 * Line 14: Define an empty (for now) Seller interaction object.
 * Line 15: Code for when you run this app as the `seller`.
+
+``` js
+load: /examples/docs-wisdom-1/index.mjs
+md5: bc703e20446c21e4806a2d0719de31c8
+range: 18-20
+```
+
 * Line 18: Create an account for the `seller`. `{!js} parseCurrency` transforms units from standard to atomic.
 * Line 19: Get a reference to the contract.
 * Line 20: Initiate interaction with contract for `seller`.
+
+``` js
+load: /examples/docs-wisdom-1/index.mjs
+md5: bc703e20446c21e4806a2d0719de31c8
+range: 22-28
+```
+
 * Line 23: Code for when you run this app as the `buyer`.
 * Line 24 and 25: Define empty (for now) object.
 
-## {#wfs-12} Create backend starter
+## {#wfs-12} Create the Backened
 
 Type the following into `index.rsh`:
 
 ``` reach
 load: /examples/docs-wisdom-1/index.rsh
 md5: 94716b0192ec5b060a7a9efb2d2ad292
-range: 1-17
+range: 1-9
 ```
-
-Below is a line-by-line description of this `reach` code:
 
 * Line 1: Instruction to the compiler.
 * Lines 3-9: Define empty (for now) objects.
+
+``` reach
+load: /examples/docs-wisdom-1/index.rsh
+md5: 94716b0192ec5b060a7a9efb2d2ad292
+range: 11-16
+```
+
 * Line 11: Reach standard application initialization.
 * Line 12: Define a constant to represent the `seller`.
 * Line 13: Define a constant to represent the `buyer`.
@@ -303,7 +320,7 @@ As mentioned, `{!js} parseCurrency` is often used for human interactions: settin
 
 1. Remove the two `{!js} console.log` additions and then create `suStr` and `auStr`.
 Set `suStr` to `{!js} standardUnit`, and `auStr` to `{!js} atomicUnit`.
-Put the two new `{!js} const` in for the corresponding `{!js} stdlib` statements and run again:
+Replace the `{!js} stdlib` statements with the corresponding `{!js} const` statements:
 
     ``` js
     load: /examples/docs-wisdom-4/index.mjs
@@ -312,18 +329,16 @@ Put the two new `{!js} const` in for the corresponding `{!js} stdlib` statements
     ```
 
     The output should be the same.
-    The new `{!js} console.log` statements 
 
 1. Now, let's create a way to go back and forth between the two unit types.
-Instead of two `{!js} const` statements, let's just create one.
-We will then utilize `{!js} parseCurrency` and `{!js} formatCurrency` to go change unit types.
+We will then utilize `{!js} parseCurrency` and `{!js} formatCurrency` to change unit types.
 We will also create a `suBal` to add 1000 standard units of funds, then utilize the `toAU` method to change the unit type of `suBal` to atomic units.
 Let's write a couple of statements to the console to make sure it works as we expect, and then run again:
 
     ``` js
     load: /examples/docs-wisdom-5/index.mjs
     md5: dc4e3122ac1cfe316019e29386a2f42b
-    range: 14-21
+    range: 13-21
     ```
 
     The output should resemble the following:
@@ -480,7 +495,7 @@ Interaction is often necessary between the DApp and the participants.
 `{!rsh} ask.ask` is valuable for queries where the expected response is a string, such as "What is your name?".
 `{!rsh} ask.done` is used when there are no more questions.
 
-1. In `index.mjs`, import `ask` near the top of the file:
+1. In `index.mjs`, import `ask` from the Reach standard library:
 
     ``` js
     load: /examples/docs-wisdom-9/index.mjs
@@ -793,23 +808,39 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     Congratulations on completing the contract!
     So far, you have learned how to create a contract, attach to the contract, cancel the contract, and complete the contract.
-    These are all important steps in becoming proficient in Reach.
-    Take a little time to recognize this achievement and celebrate before moving on to the next section.
+    These are some of the most common interactions participants will experience after deploying or attaching to a Reach DApp.
+
+    Let's take a look at the final Reach code: 
+
+    ```
+    load: /examples/docs-wisdom-12/index.rsh
+    md5: 7fad2a5a2019cb7594c3c9ee63c77930
+    ```
+
+    And the final frontend code:
+
+    ```
+    load: /examples/docs-wisdom-12/index.mjs
+    md5: df58628318ef3bbdd3a89b61815a4b50
+    ```
 
 # {#wfs-20} View the contract
 
 You have learned about command-line DApps, but customers prefer to use a GUI DApp.
+GUI stands for "graphical user interface" and uses buttons, pop-ups, or other graphical elements to make the interface more user-friendly.
 This section gives a taste of using a GUI to have the `buyer` peek into the deployed contract before attaching to view the price.
 Allowing a `buyer` to view the contract before attaching is a better user experience, and better user experiences generally lead to more users.
 
-Below is the `index.mjs` version of `confirmPurchase` from the `buyerInteract` object:
+Review the the `index.mjs` version of `confirmPurchase` from the `buyerInteract` object:
 
-``` js
-confirmPurchase: async (price) => await ask.ask(`Do you want to purchase wisdom for ${toSU(price)} ${suStr}?`, ask.yesno
-```
+    ``` js
+    load: /examples/docs-wisdom-9/index.mjs
+    md5: ac157c038b19b682ac3cd93518be5400
+    range: 44-44
+    ```
 
 Currently, the backend calls the function passing the `price` of the contract, and the frontend displays `price` to the `buyer`, asks for a decision, waits for the answer, and returns `true` or `false` to the backend.
-This approach doesn't work well for a Web-app which might use a modal in place of `{!rsh} ask-yesno`:
+This approach doesn't work well for a Web-app which might use a modal (an informative pop-up) in place of `{!rsh} ask-yesno`:
 
 <div><img src="modal.png" class="img-fluid my-4 d-block" width=400 loading="lazy"></div>
 
@@ -852,29 +883,30 @@ The following directions show you how to obtain `price` from the contract before
     ```
 
 The `buyer` is able to obtain `price` before attaching to the contract by using a view.
-If the `buyer` decides not to buy, he did not pay the cost of connecting to the contract, as he did in section [seventeen]{##wfs-17).
-This saves the `buyer` money and frustration from paying a fee and getting nothing in return, and greatly improves the user experience.
+Now, if the `buyer` decides not to buy, he did not pay the cost of connecting to the contract, as he did in [Attach to the contract]{##wfs-17).
+This saves the `buyer` money and frustration from paying a fee while getting nothing in return, and greatly improves the user experience.
 If you want to learn more about GUI Dapps, see our next tutorial.
 
 # {#wfs-21} Review and further learning
 
 Let's review the subjects learned in this tutorial:
 
-+ In section [two](##wfs-2), we learned the different modes of a Reach program: Init, Step, Local Step, and Consensus Step.
-+ In section [eight](##wfs-8), we learned how to pre-code, increasing coding accuracy and speed.
-+ In section [ten](##wfs-10), we created the initial Reach files so we could start coding our DApp.
-+ In section [thirteen](##wfs-13), we examined the different ways to set `REACH_CONNECTOR_MODE` and when each is used, and how to run a Reach program.
-+ In section [fifteen](##wfs-15), we explored `{!rsh} formatCurrency` and `{!rsh} parseCurrency`, their uses, and how to convert between them.
-+ In section [sixteen](##wfs-16), we learned how to deploy a contract to the devnet.
-+ In section [seventeen](##wfs-17), we learned how to attach to a contract.
-+ In section [eighteen](##wfs-18), we learned how to allow users to cancel a contract.
-+ In section [nineteen](##wfs-19), we completed the transaction and saw the results of the contract.
-+ And finally, in section [twenty](##wfs-20), we utilized Bootstrap to allow buyers to see the contract prior to attaching.
++ In [Reach Modes](##wfs-2), we learned the different modes of a Reach program: Init, Step, Local Step, and Consensus Step.
++ [Pre-coding preparation](##wfs-8) helped us learn how to pre-code, increasing coding accuracy and speed.
++ In [Create the files](##wfs-10), we created the initial Reach files so we could start coding our DApp.
++ [Run the DApp](##wfs-13) showed us how to run a Reach program.
++ We explored `{!rsh} formatCurrency` and `{!rsh} parseCurrency`, their uses, and how to convert between them in [Explore units and balances](##wfs-15).
++ In [Deploy the contract](##wfs-16), we learned how to deploy a contract to the devnet.
++ We learned about attaching to a contract in [Attach to the contract](##wfs-17).
++ We figured out how to tell participants that the contract was cancelled in [Cancel a transaction](##wfs-18).
++ In [Complete a transaction](##wfs-19), we completed the transaction and saw the results of the contract.
++ And finally, in [View the contract](##wfs-20), we utilized Bootstrap to allow buyers to see the contract prior to attaching.
 
 Congratulations!
 A great next step is to check out the next [tutorial](##tut) to continue your learning, or visit one of our [guide topics](##guide) or [workshops](##workshop) for self-guided exploration of Reach.
 
-Now that you have finished Wisdom for Sale, join us on Discord [the Discord community](@{DISCORD}) and message `@team, I just completed the Wisdom For Sale tutorial!` and we'll give you the `tutorial veteran` role, so you can more easily help others work through it!
+Join us on Discord [the Discord community](@{DISCORD}) and message `@team, I just completed the Wisdom For Sale tutorial!`.
+We will give you the `tutorial veteran` role, so you can more easily help others work through it!
 
 # {#wfs-22} Self Assessment
 
