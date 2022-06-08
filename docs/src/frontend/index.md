@@ -1266,7 +1266,7 @@ in the token's atomic unit.
 stdlib.formatAddress(acc) => string
 ```
 
-Formats the address in the way the user would expect to see it.
+Formats the address in the way the user would expect to see it:
 
 + On Ethereum, it is a hex-encoded string starting with `{!js} '0x'`.
 + On Algorand, it is a base32-encoded string, ending with the checksum.
@@ -1280,7 +1280,7 @@ range: 32 - 37
 ```
 
 This code is a `{!rsh} function` that takes in `addr` on line 32.
-Line 33 formats `addr` based on the consensus network, in the way the user would expect to see it.
+Line 33 formats `addr` based on the consensus network's encoding.
 On line 35, the formatted `addr` (now stored as `address`) is revealed to the user in the console.
 
 There is no corresponding `{!js} parseAddress` function because
