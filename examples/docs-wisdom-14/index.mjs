@@ -1,6 +1,5 @@
-import { loadStdlib } from '@reach-sh/stdlib';
+import { loadStdlib, ask } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
-import {ask} from '@reach-sh/stdlib';
 
 if (process.argv.length < 3 || ['seller', 'buyer'].includes(process.argv[2]) == false) {
   console.log('Usage: reach run index [seller|buyer]');
