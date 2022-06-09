@@ -101,12 +101,12 @@ Click the `Settings` (gear) icon along the top of the Docker app.
 
 ![Settings icon in Docker`](/quickstart/settings-icon.png)
 
-Verify that `WSL 2.0` is checked, as well as `Use Docker Compose V2`.
+Verify that `WSL 2.0` and `Use Docker Compose V2` are checked.
 
 ![WSL 2 settings in Docker`](/quickstart/wsl-2.png)
 ![Docker Compose in Docker`](/quickstart/docker-compose.png)
 
-Click `Resources` in the left-hand menu, and make sure that that `Enable integration with additional distros` is checked, and that `Ubuntu` is selected.
+Click `Resources` in the left-hand menu, and make sure that `Enable integration with additional distros` is checked, and that `Ubuntu` is selected.
 
 ![WSL integration in Docker`](/quickstart/wsl-integrate.png)
 
@@ -155,7 +155,7 @@ Check the [Docker Engine](https://docs.docker.com/engine/install/) page for supp
 
 Follow the [Docker Engine](https://docs.docker.com/engine/install/) instructions for installing on your version of Linux.
 Check the commands required for completing the tasks below for your distro.
-The following instructions, from
+The following instructions from
 [Docker](https://docs.docker.com/engine/install/ubuntu/) assume that Ubuntu is the installed distro.
 
 In the terminal, run the following to install `make`:
@@ -176,13 +176,13 @@ Docker will be installed by adding a package repository from Docker; this requir
 $ sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 ```
 
-And then, run:
+Then run:
 
 ```cmd
 $ sudo echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \ $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 ```
 
-After this, run:
+And then run:
 
 ```cmd
 $ sudo apt-get update
