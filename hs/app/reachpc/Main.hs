@@ -35,13 +35,13 @@ main = do
   
   -- Exec command
   case fst co_command of
-    "help" -> TIO.putStrLn helpMessage
+    "internal help" -> TIO.putStrLn helpMessage
+    "version" -> version
     "config" -> config
     "auth" -> auth
     "local-down" -> localDown
     "local-install" -> localInstall
     "local-up" -> localUp
-    "version" -> version
     _ -> execRemote environment co_command
 
   return ()
@@ -92,11 +92,11 @@ parseCliOptions = flip go emptyCliOptions <$> getArgs
   go args opts = case args of
     ("-h":args')         -> go ("--help" : args') opts
     ("-e":args')         -> go ("--env"  : args') opts
-    ("--help":_)         -> go ["help"] opts
+    ("--help":_)         -> go ["internal help"] opts
     ("--env":list:args') -> go args' opts{ co_envVars = Just $ splitOn "," list }
     (arg@('-':_):_)      -> opts{ co_error = Just $ "Unknown or bad use of argument " <> arg }
     (cmd:args')          -> opts{ co_command = (cmd, args') }
-    []                   -> opts{ co_error = Just "No command was specified" }
+    []                   -> opts{ co_error = Just "No command was specified.\nRun with -h to see local commands, or run with the `help` command to see remote commands." }
 
 version :: IO ()
 version = putStrLn "reachpc version todo"
