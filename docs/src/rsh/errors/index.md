@@ -1423,20 +1423,23 @@ range: 19 - 21
 
 ## {#RE0076} RE0076
 
-This error indicates that the `{!rsh} Type` of a value you provided to a function or operation does
-not match the expected `{!rsh} Type`.
+This error indicates that the `{!rsh} Type` of a value you provided to a function or operation does not match the expected `{!rsh} Type`.
 
 For example, the code below erroneously provides a number as the second argument to `{!rsh} assert`:
 
 ```reach
-assert(2 == 2, 5);
+load: /hs/t/n/Err_Expected.rsh
+md5: 9f0b04d6b134b00294080d9e783241ff
+range: 10-10
 ```
 
 However, the second argument of `{!rsh} assert` is expected to be of type `{!rsh} Bytes`.
 You can fix this issue by providing a value of the correct type:
 
 ```reach
-assert(2 == 2, "5th assertion")
+load: /hs/t/y/shared_checks_api_call.rsh
+md5: 360d86d0c94bb43c7f51cba6565aa913
+range: 23-23
 ```
 
 ## {#RE0077} RE0077
@@ -1444,8 +1447,21 @@ assert(2 == 2, "5th assertion")
 This error indicates that the depth of recursion for a function call exceeded the limit allowed.
 This issue may indicate that the recursive function does not have a base case.
 
-You can fix this issue by re-writing your recursive function into an iterative set of
-statements, e.g. `{!rsh} while` loop.
+Example:
+
+```reach
+load: /hs/t/n/Err_RecursionDepthLimit.rsh
+md5: 6a77966576b13f80288c1bb40c96fa2f
+range: 3 - 5
+```
+
+You can fix this issue by rewriting the recursive function as an iterative set of statements, e.g. a `{!rsh} while` loop.
+
+```reach
+load: /hs/t/y/while_preamble.rsh
+md5: 6876b2cb3443237b8594c8100a2124ab
+range: 13 - 17
+```
 
 ## {#RE0078} RE0078
 
