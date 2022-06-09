@@ -377,6 +377,16 @@ stdlib.createAccount() => Promise<acc>
 Returns a Promise for a Reach account abstraction for a new account on the consensus network.
 The account will have an empty balance of network tokens.
 
+Example:
+
+```js
+load: /examples/miBalance/index.mjs
+md5: 3c4457da0579671f1455423d0b44016b
+range: 16 - 16
+```
+
+This code creates an account for `accD` without a starting balance.
+
 ---
 @{ref("js", "fundFromFaucet")}
 ```js
