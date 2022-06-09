@@ -158,6 +158,10 @@ watch-proto-stub: expand
 watch-proto-test: expand
 	@$(call w,test:reach-test) -T Reach.Test_Proto.main
 
+.PHONY: watch-reachpc
+watch-reachpc: expand
+	@$(call w,exe:reachpc)
+
 .PHONY: repl-reach-cli
 repl-reach-cli: expand
 	@stack ghci app/reach/Main.hs $(MEVEREST) \
