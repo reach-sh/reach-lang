@@ -2106,6 +2106,8 @@ can either abstract the arguments into a new `{!rsh} Data` type or make separate
 
 ## {#RE0109} RE0109
 
+@{errver(false, "v0.1")}
+
 This error indicates that there are multiple `{!rsh} API`s, `{!rsh} Participant`s or `{!rsh} ParticipantClass`es with the same name. 
 
 Example:
