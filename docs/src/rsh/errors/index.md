@@ -1978,7 +1978,7 @@ range: 7 - 9
 ```
 
 You can fix this error by moving your `{!rsh} throw` statement inside the appropriate block of code
-or wrapping the necessary code into a `{!rsh} try/catch` block.
+or wrapping the necessary code into a `{!rsh} try`/`{!rsh} catch` block.
 
 Example:
 
