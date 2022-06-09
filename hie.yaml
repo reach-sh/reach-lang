@@ -17,6 +17,8 @@ cradle:
               component: "reach:exe:reachc"
             - path: "./hs/app/reach"
               component: "reach:exe:reach"
+            - path: "./hs/app/reachpc"
+              component: "reach:exe:reachpc"
 
 # XXX Once hie-bios is upgraded to 0.7.0
 # cradle:

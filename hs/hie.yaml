@@ -8,3 +8,5 @@ cradle:
       component: "reach:exe:reachc"
     - path: "./app/reach"
       component: "reach:exe:reach"
+    - path: "./app/reachpc"
+      component: "reach:exe:reachpc"
