@@ -63,10 +63,9 @@ After setting up the default version, we will finally install our WSL distributi
 $ wsl --install -d Ubuntu
 ```
 
-::: note
+:::note
 When the installation is finished, a terminal called `Ubuntu` should open on your screen. It will request that you setup a user and password. Make sure you don't skip this step.
 :::
-
 
 ## {#qs-installing-docker} Installing Docker:
 
@@ -90,7 +89,6 @@ After installing docker you should reboot:
 ``` cmd
 shutdown -r -t 0
 ```
-
 
 ## {#qs-win-conf-docker} Configuring docker:
 
