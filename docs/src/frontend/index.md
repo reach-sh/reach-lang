@@ -539,7 +539,7 @@ md5: e85c5362951c9e7c5d1c727d3f3e7dac
 range: 24-25
 ```
 
-This transfers 1 unit of the network token from Alice's account `accAlice`, to Bob's account `accBob`.
+This transfers one (1) unit of the network token from Alice's account `accAlice`, to Bob's account `accBob`.
 
 ## {#ref-frontends-js-acc-eth} EVM-specific (Ethereum and Conflux)
 
