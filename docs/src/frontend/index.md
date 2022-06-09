@@ -531,6 +531,16 @@ If `{!js} token` is not provided, then the transfer is of network tokens;
 otherwise, it is of the designated non-network token.
 The returned `{!js} Promise` will only be resolved after the transfer completes.
 
+Example:
+
+```js
+load: /examples/transfer-from-zero/index.mjs
+md5: e85c5362951c9e7c5d1c727d3f3e7dac
+range: 24-25
+```
+
+This transfers 1 unit of the network token from Alice's account `accAlice`, to Bob's account `accBob`.
+
 ## {#ref-frontends-js-acc-eth} EVM-specific (Ethereum and Conflux)
 
 When connected to an EVM-based consensus network, the standard library provides additional functionality.
