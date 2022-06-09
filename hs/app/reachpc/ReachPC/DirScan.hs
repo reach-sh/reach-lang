@@ -8,11 +8,10 @@ import System.FilePath (addTrailingPathSeparator, (</>))
 import System.FilePath.Glob as G
 import qualified Data.Map as M
 import Data.List (partition)
-import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BS
 import Data.Char (isSpace)
-import Crypto.Hash (hash, SHA1, Digest) 
 
-type Hash = Digest SHA1
+type Hash = ()
 
 data FileHash 
   = FH_File Hash
@@ -20,7 +19,7 @@ data FileHash
   | FH_Deleted
   deriving (Show, Eq)
 
-data FileData
+data FileData 
   = FD_File BS.ByteString
   | FD_Directory
   | FD_Deleted
@@ -55,33 +54,32 @@ compareHashTrees localHashes remoteHashes = M.union updatedFiles deletedFiles
   hasChanged l r = if l == r then Nothing else Just l
 
 hashFile :: FilePath -> IO Hash
-hashFile = fmap hash . BS.readFile
+hashFile _path = return ()
 
 -- Takes a directory and walks it recursively. Hashes each file encountered,
 -- records directories encountered, and ignores symlinks. Special files ???
 -- Reads ".reachignore" if it exists and ignores files that match patterns in it
 hashDirectory :: FilePath -> IO FileHashTree
-hashDirectory root = M.mapKeys dropRootPrefix <$> doScan [] [root] M.empty
+hashDirectory root = do
+  -- Read ignores file, if it exists
+  let ignoresPath = root </> ".reachignore"
+  haveIgnores <- doesFileExist ignoresPath
+  isIgnored <- case haveIgnores of
+    False -> return $ const False
+    True -> do
+      ignoresFile <- readFile ignoresPath
+      let patternChar c = not $ isSpace c || c == '#' 
+      let ignoresPatterns = filter (not . null) $ map (takeWhile patternChar) $ lines ignoresFile
+      let ignores = map (G.compile . (root </>)) ignoresPatterns
+      let isIgnored path = any (`G.match` path) ignores
+      return isIgnored
+
+  -- Do the scan
+  M.mapKeys dropRootPrefix <$> go isIgnored M.empty [root]
  where
   dropRootPrefix = drop $ length $ addTrailingPathSeparator root
-  isIgnored ignores path = any (`G.match` path) ignores
-  readIgnores dir = do
-    let path = dir </> ".reachignore"
-    haveIgnores <- doesFileExist path
-    case haveIgnores of
-      False -> return []
-      True -> do
-        ignoresFile <- readFile path
-        let patternChar c = not $ isSpace c || c == '#'
-        let ignoresPatterns = filter (not . null) $ map (takeWhile patternChar) $ lines ignoresFile
-        let ignores = map (G.compile . (dir </>)) ignoresPatterns
-        return ignores
-  doScan _ [] hashTree = return hashTree
-  doScan ignores (dir:dirStack) hashTree = do
-    -- Read .reachignore in this directory
-    newIgnores <- readIgnores dir
-    let ignores' = newIgnores <> ignores
-    
+  go _ fht [] = return fht
+  go isIgnored fht (dir:dirstk) = do
     -- Walk current dir
     paths <- listDirectory dir
     let paths' = map (dir </>) paths
@@ -90,7 +88,7 @@ hashDirectory root = M.mapKeys dropRootPrefix <$> doScan [] [root] M.empty
     let pathTypes = zip3 paths' pathsAreFile pathsAreSymlink
     let pathTypes' = [(p, isFile) | (p, isFile, isSymlink) <- pathTypes, 
                                     not isSymlink, 
-                                    not $ isIgnored ignores' p]
+                                    not $ isIgnored p]
     let (files, dirs) = partition snd pathTypes'
     let files' = map fst files
     let dirs' = map fst dirs
@@ -101,8 +99,8 @@ hashDirectory root = M.mapKeys dropRootPrefix <$> doScan [] [root] M.empty
     let newFilesMap = M.fromList fileHashes'
 
     -- Add remaining dirs to stack and hashes map
-    let dirStack' = dirs' <> dirStack
+    let dirstk' = dirs' <> dirstk
     let newDirsMap = M.fromList (map (, FH_Directory) dirs')
     
-    let hashTree' = M.unions [hashTree, newFilesMap, newDirsMap]
-    doScan ignores' dirStack' hashTree'
+    let fht' = M.unions [fht, newFilesMap, newDirsMap]
+    go isIgnored fht' dirstk'

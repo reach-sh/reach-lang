@@ -154,10 +154,6 @@ watch-tsa: expand
 watch-proto-stub: expand
 	@$(call w,exe:proto-stub) -T Main.main
 
-.PHONY: watch-proto-test
-watch-proto-test: expand
-	@$(call w,test:reach-test) -T Reach.Test_Proto.main
-
 .PHONY: watch-reachpc
 watch-reachpc: expand
 	@$(call w,exe:reachpc)

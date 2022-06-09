@@ -99,7 +99,6 @@ dependencies:
 - base16
 - attoparsec
 - Glob
-- split
 
 default-extensions:
 - BangPatterns
