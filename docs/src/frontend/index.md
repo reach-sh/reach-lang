@@ -380,7 +380,7 @@ The account will have an empty balance of network tokens.
 Example:
 
 ```js
-load: /examples/miBalance/index.mjs
+load: /examples/minBalance/index.mjs
 md5: 3c4457da0579671f1455423d0b44016b
 range: 16 - 16
 ```
