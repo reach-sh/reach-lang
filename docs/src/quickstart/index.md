@@ -96,7 +96,7 @@ shutdown -r -t 0
 
 ## {#qs-win-conf-docker} Configuring Docker:
 
-Open Docker and wait until it is fully started.
+Open Docker and wait for it to initialize.
 Click the `Settings` (gear) icon along the top of the Docker app.
 
 ![Settings icon in Docker`](/quickstart/settings-icon.png)
