@@ -108,7 +108,7 @@ Type the following code into the file named `index.mjs`.
 
 ``` js
 load: /examples/wisdom-1-starter/index.mjs
-md5: 9524e0ed23e4dc40c04219998f6538ba
+md5: bc703e20446c21e4806a2d0719de31c8
 range: 1-8
 ```
 
@@ -121,7 +121,7 @@ range: 1-8
 
 ``` js
 load: /examples/wisdom-1-starter/index.mjs
-md5: 9524e0ed23e4dc40c04219998f6538ba
+md5: bc703e20446c21e4806a2d0719de31c8
 range: 10-10
 ```
 
@@ -129,7 +129,7 @@ range: 10-10
 
 ``` js
 load: /examples/wisdom-1-starter/index.mjs
-md5: 9524e0ed23e4dc40c04219998f6538ba
+md5: bc703e20446c21e4806a2d0719de31c8
 range: 12-16
 ```
 
@@ -138,7 +138,7 @@ range: 12-16
 
 ``` js
 load: /examples/wisdom-1-starter/index.mjs
-md5: 9524e0ed23e4dc40c04219998f6538ba
+md5: bc703e20446c21e4806a2d0719de31c8
 range: 18-20
 ```
 
@@ -148,7 +148,7 @@ range: 18-20
 
 ``` js
 load: /examples/wisdom-1-starter/index.mjs
-md5: 9524e0ed23e4dc40c04219998f6538ba
+md5: bc703e20446c21e4806a2d0719de31c8
 range: 22-28
 ```
 
@@ -161,7 +161,7 @@ Type the following into `index.rsh`:
 
 ``` reach
 load: /examples/wisdom-1-starter/index.rsh
-md5: 1dea3914b27556b7d43bf576b11feb01
+md5: 94716b0192ec5b060a7a9efb2d2ad292
 range: 1-9
 ```
 
@@ -170,7 +170,7 @@ range: 1-9
 
 ``` reach
 load: /examples/wisdom-1-starter/index.rsh
-md5: 1dea3914b27556b7d43bf576b11feb01
+md5: 94716b0192ec5b060a7a9efb2d2ad292
 range: 11-16
 ```
 
@@ -229,7 +229,7 @@ Follow these directions to pass `role` as a command-line argument:
 
     ``` js
     load: /examples/wisdom-1-starter/index.mjs
-    md5: 9524e0ed23e4dc40c04219998f6538ba
+    md5: bc703e20446c21e4806a2d0719de31c8
     range: 4-4
     ```
 
@@ -237,7 +237,7 @@ Follow these directions to pass `role` as a command-line argument:
 
     ``` js
     load: /examples/wisdom-2-roles/index.mjs
-    md5: 1e8a83f63335949a40cd1be621ffd7cb
+    md5: cdf57aff18996701e70adda28051884b
     range: 4-8
     ```
 
@@ -298,7 +298,7 @@ As mentioned, `{!js} parseCurrency` is often used for human interactions: settin
 
     ``` js
     load: /examples/wisdom-2-roles/index.mjs
-    md5: 1e8a83f63335949a40cd1be621ffd7cb
+    md5: cdf57aff18996701e70adda28051884b
     range: 12-12
     ```
 
@@ -306,7 +306,7 @@ As mentioned, `{!js} parseCurrency` is often used for human interactions: settin
 
     ``` js
     load: /examples/wisdom-3-units1/index.mjs
-	md5: 030fac8d7cfa86da042b46c84f771b0b
+	md5: 8eb46a5c122fc4918051d232107525e4
     range: 13-14
     ```
 
@@ -324,7 +324,7 @@ Replace the `{!js} stdlib` statements with the corresponding `{!js} const` state
 
     ``` js
     load: /examples/wisdom-4-units2/index.mjs
-    md5: 9da677b2ef4331a5d16902d9d022565a
+    md5: 024ad58ffa212fdaa97670e8aff98427
     range: 12-15
     ```
 
@@ -337,7 +337,7 @@ Let's write a couple of statements to the console to make sure it works as we ex
 
     ``` js
     load: /examples/wisdom-5-swap-units/index.mjs
-    md5: b2cf4f1e78d9b4f9a7b1c8470b36be99
+    md5: d24a74598045ee59f26c326e3fc0625b
     range: 12-20
     ```
 
@@ -358,7 +358,7 @@ Your new code should look like the following:
 
     ``` js
     load: /examples/wisdom-6-swap-refined/index.mjs
-    md5: a78e3f5afc8f67a2ccab8a33f18d0426
+    md5: f7bff28b1f3ec4d8d990589f8de409c1 
     range: 13-16
     ```
 
@@ -368,7 +368,7 @@ Your new code should look like the following:
 
     ``` js
     load: /examples/wisdom-6-swap-refined/index.mjs
-    md5: a78e3f5afc8f67a2ccab8a33f18d0426
+    md5: f7bff28b1f3ec4d8d990589f8de409c1 
     range: 26-26
     ```
 
@@ -376,7 +376,7 @@ Your new code should look like the following:
 
     ``` js
     load: /examples/wisdom-7-display-balance/index.mjs
-    md5: a2a1ea9fb258179cca5a7353fe00a8ec
+    md5: 9cbfb5ee83639fe1c76b9b93389eb359 
     range: 26-30
     ```
 
@@ -413,7 +413,7 @@ Follow these directions to have the `seller` deploy the contract and return the 
 
     ``` js
     load: /examples/wisdom-7-display-balance/index.mjs
-    md5: a2a1ea9fb258179cca5a7353fe00a8ec
+    md5: 9cbfb5ee83639fe1c76b9b93389eb359 
     range: 20-23
     ```
 
@@ -421,7 +421,7 @@ Follow these directions to have the `seller` deploy the contract and return the 
 
     ``` js
     load: /examples/wisdom-8-pricing/index.mjs
-    md5: a10f29bc5d0f0ba29e6ff7cef1ec536a
+    md5: 4781b9352b48537622c274eeba1395b7
     range: 20-25
     ```
 
@@ -431,7 +431,7 @@ Follow these directions to have the `seller` deploy the contract and return the 
 
     ``` reach
     load: /examples/wisdom-8-pricing/index.rsh
-    md5: fffefb27ee974b5803a00bb8a25f5c22
+    md5: 94716b0192ec5b060a7a9efb2d2ad292 
     range: 4-5
     ```
 
@@ -439,7 +439,7 @@ Follow these directions to have the `seller` deploy the contract and return the 
 
     ``` reach
     load: /examples/wisdom-8-pricing/index.rsh
-    md5: fffefb27ee974b5803a00bb8a25f5c22
+    md5: 20172556274eb9b0ab067b657a74d977
     range: 4-8
     ```
     
@@ -452,7 +452,7 @@ Follow these directions to have the `seller` deploy the contract and return the 
 
     ``` reach
     load: /examples/wisdom-8-pricing/index.rsh
-    md5: fffefb27ee974b5803a00bb8a25f5c22
+    md5: 20172556274eb9b0ab067b657a74d977
     range: 16-23
     ```
 
@@ -499,7 +499,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: e5073e68954a189f6ad69d3650e3e548
+    md5: 10a0761bdc9ce377240d2b75695e95f9 
     range: 1 - 2
     ```
 
@@ -507,7 +507,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` js
     load: /examples/wisdom-8-pricing/index.mjs
-    md5: a10f29bc5d0f0ba29e6ff7cef1ec536a
+    md5: 4781b9352b48537622c274eeba1395b7
     range: 38-40
     ```
 
@@ -515,7 +515,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: e5073e68954a189f6ad69d3650e3e548
+    md5: 10a0761bdc9ce377240d2b75695e95f9 
     range: 38-49
     ```
 
@@ -528,7 +528,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: e5073e68954a189f6ad69d3650e3e548
+    md5: 10a0761bdc9ce377240d2b75695e95f9 
     range: 51-51
     ```
 	
@@ -538,7 +538,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` reach
     load: /examples/wisdom-8-pricing/index.rsh
-    md5: fffefb27ee974b5803a00bb8a25f5c22
+    md5: 20172556274eb9b0ab067b657a74d977
     range: 9-11
     ```
 
@@ -546,7 +546,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` reach
     load: /examples/wisdom-9-interaction/index.rsh
-    md5: 2e08d180cf98e0e19ef1806bc971438e
+    md5: 93e1fa791a16c88d3d44d1b8cc6cce09 
     range: 9-12
     ```
 	
@@ -561,7 +561,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` reach
     load: /examples/wisdom-9-interaction/index.rsh
-    md5: 2e08d180cf98e0e19ef1806bc971438e
+    md5: 93e1fa791a16c88d3d44d1b8cc6cce09 
     range: 24-30
     ```
 
@@ -602,7 +602,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: e5073e68954a189f6ad69d3650e3e548
+    md5: 10a0761bdc9ce377240d2b75695e95f9 
     range: 18-18
     ```
 
@@ -610,7 +610,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` js
     load: /examples/wisdom-10-cancel1/index.mjs
-    md5: 264c91fed23e3dc8a650d2ad61784041
+    md5: fca9a7f14400d80663ba9a9e3ac11d0b 
     range: 18-20
     ```
 
@@ -618,7 +618,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` reach
     load: /examples/wisdom-9-interaction/index.rsh
-    md5: 2e08d180cf98e0e19ef1806bc971438e
+    md5: 93e1fa791a16c88d3d44d1b8cc6cce09 
     range: 3-3
     ```
 
@@ -626,7 +626,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` reach
     load: /examples/wisdom-10-cancel1/index.rsh
-    md5: 0dccaa07ff2b1c9534fc75c6f5fade22
+    md5: 94e3cb037a01cdc6b85ac3fc1a29f728
     range: 3-5
     ```
 
@@ -634,7 +634,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` reach
     load: /examples/wisdom-10-cancel1/index.rsh
-    md5: 0dccaa07ff2b1c9534fc75c6f5fade22
+    md5: 94e3cb037a01cdc6b85ac3fc1a29f728
     range: 28-34
     ```
 
@@ -659,7 +659,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` js
     load: /examples/wisdom-11-cancel2/index.mjs
-    md5: d07895f6c4d1f96c8ba75afa2d2001c1
+    md5: 2ba94b9f56ca29a79a1b77d2965868a5
     range: 18-20
     ```
 
@@ -667,7 +667,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` js
     load: /examples/wisdom-11-cancel2/index.mjs
-    md5: d07895f6c4d1f96c8ba75afa2d2001c1
+    md5: 2ba94b9f56ca29a79a1b77d2965868a5
     range: 25-25
     ```
 
@@ -693,7 +693,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
-    md5: 0e24e181298531e2a4126685d0666269
+    md5: 09fc9b4da83ecc670bb970dc043e1c44
     range: 26-33
     ```
 
@@ -701,7 +701,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: d5a8799fe458d53f078995faee0baa77
+    md5: 7fad2a5a2019cb7594c3c9ee63c77930
     range: 7-10
     ```
 	
@@ -709,7 +709,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: d5a8799fe458d53f078995faee0baa77
+    md5: 7fad2a5a2019cb7594c3c9ee63c77930
     range: 3-6
     ```
 
@@ -717,7 +717,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
-    md5: 0e24e181298531e2a4126685d0666269
+    md5: 09fc9b4da83ecc670bb970dc043e1c44
     range: 48-52
     ```
 
@@ -725,7 +725,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: d5a8799fe458d53f078995faee0baa77
+    md5: 7fad2a5a2019cb7594c3c9ee63c77930
     range: 13-17
     ```
 
@@ -733,7 +733,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: d5a8799fe458d53f078995faee0baa77
+    md5: 7fad2a5a2019cb7594c3c9ee63c77930
     range: 39-48
     ```
 
@@ -750,7 +750,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
-    md5: 0e24e181298531e2a4126685d0666269
+    md5: 09fc9b4da83ecc670bb970dc043e1c44
     range: 21-21
     ```
 
@@ -758,7 +758,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: d5a8799fe458d53f078995faee0baa77
+    md5: 7fad2a5a2019cb7594c3c9ee63c77930
     range: 5-5
     ```
 
@@ -766,7 +766,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: d5a8799fe458d53f078995faee0baa77
+    md5: 7fad2a5a2019cb7594c3c9ee63c77930
     range: 40-50
     ```
 
@@ -814,14 +814,14 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ```
     load: /examples/wisdom-12-complete/index.rsh
-    md5: d5a8799fe458d53f078995faee0baa77
+    md5: 7fad2a5a2019cb7594c3c9ee63c77930
     ```
 
     And the final frontend code:
 
     ```
     load: /examples/wisdom-12-complete/index.mjs
-    md5: 0e24e181298531e2a4126685d0666269
+    md5: 09fc9b4da83ecc670bb970dc043e1c44
     ```
 
 # {#wfs-20} View the contract
@@ -835,7 +835,7 @@ Review the the `index.mjs` version of `confirmPurchase` from the `buyerInteract`
 
 ``` js
 load: /examples/wisdom-9-interaction/index.mjs
-md5: e5073e68954a189f6ad69d3650e3e548
+md5: 10a0761bdc9ce377240d2b75695e95f9 
 range: 41 - 41
 ```
 
@@ -863,7 +863,7 @@ The following directions show you how to obtain `price` from the contract before
 
     ``` reach
     load: /examples/wisdom-14-modal/index.rsh
-    md5: d0a24024a2375946d161b60fd34971c2
+    md5: 7a27a075e65a459366170170e279fafc
     range: 42-52
     ```
 
@@ -871,7 +871,7 @@ The following directions show you how to obtain `price` from the contract before
 
     ``` js
     load: /examples/wisdom-14-modal/index.mjs
-    md5: 38cf95302ec490bc5709ca9b375118fb
+    md5: 7e286b3486de3f29f033cd42fba047cd
     range: 54-61
     ```
 
