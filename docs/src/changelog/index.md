@@ -14,7 +14,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 ## 0.1.10: 2022/04 - 2022/05
 
-@{verCur("0.1.10")}
+@{verOld("0.1.10")}
 
 + 2022/05/14: Added `{!cmd} reach support` sub-command.
 + 2022/05/13: Support custom violation messages for `{!rsh} invariant`s.
