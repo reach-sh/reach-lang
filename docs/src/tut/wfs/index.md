@@ -499,7 +499,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: 10a0761bdc9ce377240d2b75695e95f9
+    md5: fd42a0ea2902ec1be81027e6b2b9dcd1
     range: 1 - 2
     ```
 
@@ -515,7 +515,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: 10a0761bdc9ce377240d2b75695e95f9
+    md5: fd42a0ea2902ec1be81027e6b2b9dcd1
     range: 38-49
     ```
 
@@ -528,7 +528,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: 10a0761bdc9ce377240d2b75695e95f9
+    md5: fd42a0ea2902ec1be81027e6b2b9dcd1
     range: 51-51
     ```
 	
@@ -602,7 +602,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: 10a0761bdc9ce377240d2b75695e95f9
+    md5: fd42a0ea2902ec1be81027e6b2b9dcd1
     range: 18-18
     ```
 
@@ -835,7 +835,7 @@ Review the the `index.mjs` version of `confirmPurchase` from the `buyerInteract`
 
 ``` js
 load: /examples/wisdom-9-interaction/index.mjs
-md5: 10a0761bdc9ce377240d2b75695e95f9
+md5: fd42a0ea2902ec1be81027e6b2b9dcd1
 range: 41 - 41
 ```
 
