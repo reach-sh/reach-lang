@@ -431,7 +431,7 @@ Follow these directions to have the `seller` deploy the contract and return the 
 
     ``` reach
     load: /examples/wisdom-8-pricing/index.rsh
-    md5: 94716b0192ec5b060a7a9efb2d2ad292
+    md5: 20172556274eb9b0ab067b657a74d977
     range: 4-5
     ```
 
