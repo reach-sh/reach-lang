@@ -376,7 +376,7 @@ Your new code should look like the following:
 
     ``` js
     load: /examples/wisdom-7-display-balance/index.mjs
-    md5: 9cbfb5ee83639fe1c76b9b93389eb359
+    md5: bef72d9247314789ae4b937fe3e7198b
     range: 26-30
     ```
 
@@ -413,7 +413,7 @@ Follow these directions to have the `seller` deploy the contract and return the 
 
     ``` js
     load: /examples/wisdom-7-display-balance/index.mjs
-    md5: 9cbfb5ee83639fe1c76b9b93389eb359
+    md5: bef72d9247314789ae4b937fe3e7198b
     range: 20-23
     ```
 
