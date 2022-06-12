@@ -6,4 +6,4 @@ alias reach="../../reach"
 reach run index seller
 reach run index buyer
 
-# Does nothing yet.. keep going through the tutorial!
+# Does nothing yet.. keep going through the tutorial! 
