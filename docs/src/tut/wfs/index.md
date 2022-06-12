@@ -871,7 +871,7 @@ The following directions show you how to obtain `price` from the contract before
 
     ``` js
     load: /examples/wisdom-14-modal/index.mjs
-    md5: 7e286b3486de3f29f033cd42fba047cd
+    md5: 8d4179720778e72a73a6ee7e9b28da71
     range: 54-61
     ```
 
