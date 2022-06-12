@@ -358,7 +358,7 @@ Your new code should look like the following:
 
     ``` js
     load: /examples/wisdom-6-swap-refined/index.mjs
-    md5: f7bff28b1f3ec4d8d990589f8de409c1 
+    md5: dde0f50ca1bd5e9e25c4040cd998a01d
     range: 13-16
     ```
 
@@ -368,7 +368,7 @@ Your new code should look like the following:
 
     ``` js
     load: /examples/wisdom-6-swap-refined/index.mjs
-    md5: f7bff28b1f3ec4d8d990589f8de409c1 
+    md5: dde0f50ca1bd5e9e25c4040cd998a01d
     range: 26-26
     ```
 
@@ -376,7 +376,7 @@ Your new code should look like the following:
 
     ``` js
     load: /examples/wisdom-7-display-balance/index.mjs
-    md5: 9cbfb5ee83639fe1c76b9b93389eb359 
+    md5: 9cbfb5ee83639fe1c76b9b93389eb359
     range: 26-30
     ```
 
@@ -413,7 +413,7 @@ Follow these directions to have the `seller` deploy the contract and return the 
 
     ``` js
     load: /examples/wisdom-7-display-balance/index.mjs
-    md5: 9cbfb5ee83639fe1c76b9b93389eb359 
+    md5: 9cbfb5ee83639fe1c76b9b93389eb359
     range: 20-23
     ```
 
@@ -431,7 +431,7 @@ Follow these directions to have the `seller` deploy the contract and return the 
 
     ``` reach
     load: /examples/wisdom-8-pricing/index.rsh
-    md5: 94716b0192ec5b060a7a9efb2d2ad292 
+    md5: 94716b0192ec5b060a7a9efb2d2ad292
     range: 4-5
     ```
 
@@ -499,7 +499,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: 10a0761bdc9ce377240d2b75695e95f9 
+    md5: 10a0761bdc9ce377240d2b75695e95f9
     range: 1 - 2
     ```
 
@@ -515,7 +515,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: 10a0761bdc9ce377240d2b75695e95f9 
+    md5: 10a0761bdc9ce377240d2b75695e95f9
     range: 38-49
     ```
 
@@ -528,7 +528,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: 10a0761bdc9ce377240d2b75695e95f9 
+    md5: 10a0761bdc9ce377240d2b75695e95f9
     range: 51-51
     ```
 	
@@ -546,7 +546,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` reach
     load: /examples/wisdom-9-interaction/index.rsh
-    md5: 93e1fa791a16c88d3d44d1b8cc6cce09 
+    md5: 93e1fa791a16c88d3d44d1b8cc6cce09
     range: 9-12
     ```
 	
@@ -561,7 +561,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` reach
     load: /examples/wisdom-9-interaction/index.rsh
-    md5: 93e1fa791a16c88d3d44d1b8cc6cce09 
+    md5: 93e1fa791a16c88d3d44d1b8cc6cce09
     range: 24-30
     ```
 
@@ -602,7 +602,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: 10a0761bdc9ce377240d2b75695e95f9 
+    md5: 10a0761bdc9ce377240d2b75695e95f9
     range: 18-18
     ```
 
@@ -610,7 +610,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` js
     load: /examples/wisdom-10-cancel1/index.mjs
-    md5: fca9a7f14400d80663ba9a9e3ac11d0b 
+    md5: fca9a7f14400d80663ba9a9e3ac11d0b
     range: 18-20
     ```
 
@@ -618,7 +618,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` reach
     load: /examples/wisdom-9-interaction/index.rsh
-    md5: 93e1fa791a16c88d3d44d1b8cc6cce09 
+    md5: 93e1fa791a16c88d3d44d1b8cc6cce09
     range: 3-3
     ```
 
@@ -835,7 +835,7 @@ Review the the `index.mjs` version of `confirmPurchase` from the `buyerInteract`
 
 ``` js
 load: /examples/wisdom-9-interaction/index.mjs
-md5: 10a0761bdc9ce377240d2b75695e95f9 
+md5: 10a0761bdc9ce377240d2b75695e95f9
 range: 41 - 41
 ```
 
