@@ -337,7 +337,7 @@ Let's write a couple of statements to the console to make sure it works as we ex
 
     ``` js
     load: /examples/wisdom-5-swap-units/index.mjs
-    md5: d24a74598045ee59f26c326e3fc0625b
+    md5: 4f10810300288c5fd21e6a06b7c1432a
     range: 12-20
     ```
 
