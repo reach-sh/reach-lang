@@ -659,7 +659,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` js
     load: /examples/wisdom-11-cancel2/index.mjs
-    md5: 2ba94b9f56ca29a79a1b77d2965868a5
+    md5: c2c6cca9471e971e0ea2aba7114d1e63
     range: 18-20
     ```
 
@@ -667,7 +667,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` js
     load: /examples/wisdom-11-cancel2/index.mjs
-    md5: 2ba94b9f56ca29a79a1b77d2965868a5
+    md5: c2c6cca9471e971e0ea2aba7114d1e63
     range: 25-25
     ```
 
