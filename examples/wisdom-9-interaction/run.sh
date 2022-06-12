@@ -48,4 +48,4 @@ write_buyer y
 read_buyer
 read_seller
 
-wait 
+wait
