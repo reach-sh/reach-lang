@@ -324,7 +324,7 @@ Replace the `{!js} stdlib` statements with the corresponding `{!js} const` state
 
     ``` js
     load: /examples/wisdom-4-units2/index.mjs
-    md5: 024ad58ffa212fdaa97670e8aff98427
+    md5: 1a17087a0ec35888f0b65828d672c472
     range: 12-15
     ```
 
