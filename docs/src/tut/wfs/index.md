@@ -693,7 +693,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
-    md5: 09fc9b4da83ecc670bb970dc043e1c44
+    md5: c27c72685eba929d0a9bcbd1367394c9
     range: 26-33
     ```
 
@@ -717,7 +717,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
-    md5: 09fc9b4da83ecc670bb970dc043e1c44
+    md5: c27c72685eba929d0a9bcbd1367394c9
     range: 48-52
     ```
 
@@ -750,7 +750,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
-    md5: 09fc9b4da83ecc670bb970dc043e1c44
+    md5: c27c72685eba929d0a9bcbd1367394c9
     range: 21-21
     ```
 
@@ -821,7 +821,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ```
     load: /examples/wisdom-12-complete/index.mjs
-    md5: 09fc9b4da83ecc670bb970dc043e1c44
+    md5: c27c72685eba929d0a9bcbd1367394c9
     ```
 
 # {#wfs-20} View the contract
