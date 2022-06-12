@@ -421,7 +421,7 @@ Follow these directions to have the `seller` deploy the contract and return the 
 
     ``` js
     load: /examples/wisdom-8-pricing/index.mjs
-    md5: 4781b9352b48537622c274eeba1395b7
+    md5: d0fa66157c30a44f0128ce2af5b26181
     range: 20-25
     ```
 
@@ -507,7 +507,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` js
     load: /examples/wisdom-8-pricing/index.mjs
-    md5: 4781b9352b48537622c274eeba1395b7
+    md5: d0fa66157c30a44f0128ce2af5b26181
     range: 38-40
     ```
 
