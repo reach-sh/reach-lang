@@ -1,6 +1,7 @@
-# {#tut-mkt} Market Place
+# {#tut-mkt} Marketplace
 
 ## {#tut-mkt-introduction} Introduction
+
 This tutorial teaches how to create a safe application for two `{!rsh} Participant`s, `Seller` and `Buyer`, to transact business.
 
 :::note
@@ -8,7 +9,7 @@ A `{!rsh} Participant` in this context refers to anyone partaking in a particula
 In other words, a `{!rsh} Participant` is a user.
 :::
 
-[Reach](https://reach.sh/) programming language will be used in this tutorial. 
+The [Reach](https://reach.sh/) programming language will be used in this tutorial. 
 Reach is a development platform for launching smarter blockchain projects in less time.
 
 The following image is a pictorial description of how the application will work at the end of this tutorial.
@@ -19,19 +20,20 @@ This tutorial begins with building a basic DApp, grows into an interactive comma
 
 By the end, you will have learned:
 
-1. How `Reach` command-line DApp work.
+1. How `Reach` command-line DApps work.
 2. How to use the `Reach` standard library.
-3. Concepts such as `{!rsh} Participant`, Reach `{!rsh} type`s, variable declaration, variable definition, and steps.
+3. Concepts such as `{!rsh} Participant`s, Reach `{!rsh} type`s, variable declaration, variable definition, and steps.
 4. How a Reach Web App works.
 
-
 ## {#tut-mkt-prerequisites} Prerequisites
-It is assumed that you have installed Reach. If you need help installing Reach, refer to the [Quick Start Guide](https://docs.reach.sh/quickstart/#quickstart).
+
+It is assumed that you have installed Reach. 
+If you need help installing Reach, refer to the [Quick Start Guide](https://docs.reach.sh/quickstart/#quickstart).
 
 
 ## {#tut-mkt-starter} Starter Code
 
-This section will guide you on how to create the boilerplate for this project.
+This section will guide you on how to create the basic code for this project.
 
 1. Create a folder named `market` in your `Reach` directory:
 
@@ -39,13 +41,13 @@ This section will guide you on how to create the boilerplate for this project.
 mkdir market
 ```
 
-2. Change your working directory into the `market`.
+2. Change the working directory into the `market`.
 
 ```reach
 cd market
 ```
 
-3.  Create 2 files: `index.rsh` and `index.mjs`.
+3. Create 2 files: `index.rsh` and `index.mjs`.
 
 ```reach
 touch index.rsh index.mjs
@@ -56,9 +58,7 @@ touch index.rsh index.mjs
 * The `index.rsh` is the backend that contains the DApp's instructions and ensures the security of the DApp.
 This is actually where the `Reach` code will live.
 
-
 ### {#tut-mkt-starter-backend} Backend
-
 
 Start working in `index.rsh` by typing out the following code:
 
@@ -66,36 +66,35 @@ Start working in `index.rsh` by typing out the following code:
 load: /examples/mkt-1-starter/index.rsh
 ```
 
-This code isn't doing anything yet but it is an important foundation for what is to be built in this tutorial. 
+This code doesn't do anything yet, but it is an important foundation for code later in the tutorial. 
 `Reach` projects begin with this structure.
 
-* Line 1 helps `Reach` to decide how to compile or run the DApp.
+* Line 1 tells `Reach` how to compile or run the DApp.
 Without it, you will get an error.
 
 * Line 3 declares a `commonInteract` `{!rsh} object`. 
-This will hold properties that are common to those participating in this transaction `seller` and `buyer`.
+This will hold properties that are common to the `seller` and `buyer`.
 
 * Line 5 declares a `sellerInteract` `{!rsh} object`.
- The `seller` will be given access to all the properties that go into the `sellerInteract`.
+ The `seller` can access all the properties that go into the `sellerInteract`.
 
 * Line 7 declares a `buyerInteract` `{!rsh} object`.
- It contains everything that the `buyer` will be able to do during this transaction.
+ It contains everything that the `buyer` can do during this transaction.
 
 * Lines 9 and 19 are the start and end of the main export from the program. 
-Only the code within this block is compiled by the compiler. 
+Only the code within this block is compiled. 
 
-* Lines 10 to 13 defines a `{!rsh} Participant` (i.e. `Seller`) and gives the `{!rsh} Participant` access to the `commonInteract` and `sellerInteract` properties.
+* Lines 10 to 13 define a `{!rsh} Participant` (i.e. `Seller`) and give the `{!rsh} Participant` access to the `commonInteract` and `sellerInteract` properties.
 
-* Lines 14 to 17 defines another `{!rsh} Participant` (i.e. `Buyer`) and gives the `{!rsh} Participant` access to the `commonInteract` and `buyerInteract` properties.
+* Lines 14 to 17 define another `{!rsh} Participant` (i.e. `Buyer`) and give the `{!rsh} Participant` access to the `commonInteract` and `buyerInteract` properties.
 
-* Line 18 is used to start executing the program.
+* Line 18 is used to execute the program.
 Without it, the program will never start.
-
 
 ### {#tut-mkt-starter-frontend} Frontend
 
-
-Next, work on the `index.mjs` file. Type the code below:
+Next, work on the `index.mjs` file. 
+Type the code below:
 
 ```reach
 load: /examples/mkt-1-starter/index.mjs
@@ -125,34 +124,33 @@ The code that you have just written forms the basis for the DApp that is to be b
 
 Notice that `commonInteract`, `buyerInteract`, and `sellerInteract` are similar in both the backend and frontend files. 
 
-This is so because `Reach` needs to be sure of how the variables are to be used before being used. 
-The program will not be executed if those variables are not used the way they were declared.
+This is because `Reach` requires knowing how the variables will be used before they are referenced. 
+he program exits with an error if those variables are not used the way they were declared.
 So these variables are declared at the backend before being defined in the frontend. 
 
 This might feel like a lot of work especially if you are coming from a language like JavaScript that is weakly typed.
-But we will rather use an application with strong security than one with weak security especially when it has to do with money and trust.
-
+However, it is better to use a language with stronger security, especially when dealing with money and trust.
 
 ### {#tut-mkt-starter-Review} Review
 
-In this section, we created the boilerplate for the application that this tutorial plans to build.
+In this section, we created the basic code for the application that this tutorial plans to build.
 
-Two (2) important files were created. And the necessary code was added. 
+Two (2) important files were created and the necessary code was added. 
 See full code [here]().
 
-Next, a simple DApp will be built. This will help to visualize what the finished product will look and feel like.
+Next, a simple DApp will be built. 
+This will help to visualize what the finished product will look and feel like.
 If the diagram above wasn't clear enough, this next section will help.
 
 Time to proceed!
 
-
-
 ## {#tut-mkt-basic} Basic DApp
 
 In this section, a basic DApp will be created to demonstrate what the finished product will look like. 
-By the end, you will see what a basic Reach command-line DApp works.
+By the end, you will see how a basic Reach command-line DApp works.
 
 ### {#tut-mkt-basic-why} Why Build This Basic DApp
+
 A `seller` relocates to an area where there is high demand for the goods he sells. 
 He enjoys a monopoly in the market and soon realizes that he has more `buyer`s than he can handle.
 He also finds out that the method he has been using to transact business isn't secure enough as the business grows.
@@ -173,17 +171,17 @@ load: /examples/mkt-2-basic/index.rsh
 range: 3 - 11
 ```
 
-These are just constants that will help in building the `commonInteract`, `sellerInteract` and `buyerInteract` `{!rsh} Object`. Nothing surprising.
+These are constants that will help in building the `commonInteract`, `sellerInteract` and `buyerInteract` `{!rsh} Object`. 
 
 * Line 3: `choice`. 
-This is an `{!rsh} integer` that will represent the `product` that the `buyer` decides to order.
+This is an `{!rsh} integer` that represents the `product` that the `buyer` decides to order.
 
 :::note
 An integer is represented by `{!rsh} UInt`. 
 :::
 
 * Line 4: `quantity`. 
-This is an `{!rsh} integer` that will represent the quantity of the `product` that the `buyer` order.
+This is an `{!rsh} integer` that represents the quantity of the `product` that the `buyer` order.
 
 * Line 5: `announcement`. 
 This is a `{!rsh} String` that will represent a short advertisement made by the `seller`. 
@@ -200,7 +198,7 @@ This is an `{!rsh} Object` that contains the properties (i.e. key-value pair) of
 This is an `{!rsh} Array` of `product`. 
 
 
-Now that those variables have been declared, flesh out the `commonInteract`, `sellerInteract` and `buyerInteract` `{!rsh} Object`.
+Now that those variables have been declared, flesh out the `commonInteract`, `sellerInteract` and `buyerInteract` `{!rsh} Object`s.
 These are the steps:
 
 For the `commonInteract` `{!rsh} Object`, replace this code:
@@ -221,7 +219,7 @@ range: 14 - 25
 This will hold properties that will be accessible to both the `seller` and `buyer`.
 
 * Lines 15 to 24: `showResult`.
- This is a  `{!rsh} function` that takes in 2 `Object`s and returns nothing.
+ This is a  `{!rsh} function` that takes in 2 `{!rsh} Object`s and returns nothing.
 
 :::note
 A `{!rsh} function` in Reach is defined as `{!rsh} Fun([input], output)`.
@@ -243,10 +241,10 @@ range: 27 - 33
 ```
 
 * Lines 27 to 33: `sellerInteract`.
- This will hold all properties accessible by the `seller`.
+ This will hold all properties accessible to the `seller`.
 
 * Lines 28 to 31: `sellerInfo`.
- This is an `Object` that will contain the `announcement` and `products` that were declared on lines 5 and 13 respectively.
+ This is an `{!rsh} Object` that will contain the `announcement` and `products` that were declared on lines 5 and 13 respectively.
 
 * Line 32: `reportReady`.
  This is a `{!rsh} function` that takes in the `announcement` and `products` and returns nothing.
@@ -267,12 +265,12 @@ range: 35 - 37
 ```
 
 * Lines 35 to 37: `buyerInteract`.
-This will hold all properties accessible by the `buyer`. 
+This will hold all properties accessible to the `buyer`. 
 
 * Line 36: `shop`.
  This is a `{!rsh} function` that represents the buyer's process in looking through the `seller`'s `products` and deciding which one to pick and how many are needed.
  It takes in an `Object` of the `seller`'s `announcement` and `products`. 
- And then returns an `Object` containing the `buyer`'s `choice` and `quantity`.
+ It then returns an `Object` containing the `buyer`'s `choice` and `quantity`.
 
 That is all that needs to be done in the backend for now. 
 Attention will be given to the frontend now.
@@ -292,7 +290,7 @@ Deploying a contract is the act of creating the terms of participation.
 This is done by the `{!rsh} Participant` who initiates the transaction.
 
 Attaching to a contract is agreeing to the terms of participation. 
-It is just like signing a physical contract paper that was handed over to you.
+It is just like signing a physical paper contract that was handed over to you.
 
 This project will have the `seller` deploy the contract while the `buyer` will attach to it.
 :::
@@ -301,10 +299,10 @@ These contracts require that each of the `{!rsh} Participant`s have an account s
 
 :::note
 Having an account is like having a book that keeps track of the activities of a particular user. 
-It holds information such as name, remaining money, and history of transaction.
+It holds information such as name, remaining money, and history of transactions.
 The DApp uses that record to manage the user while using the application.
 
-For example, a user's account balance would help the DApp to decide if the user is eligible to complete a transaction or not
+For example, a user's account balance would help the DApp know if the user is eligible to complete a transaction or not.
 :::
 
 Just before the contracts, type the following code:
@@ -314,20 +312,21 @@ load: /examples/mkt-2-basic/index.mjs
 range: 5 - 8
 ```
 
-* Line 5 sets up some funds that can be used by each `{!rsh} Participant`s as starting balance.
+* Line 5 sets up some funds that can be used by each `{!rsh} Participant` as starting balance.
 `{!rsh} parseCurrency` converts the figure passed into it to an acceptable currency on a DApp.
 
 :::note
-`{!rsh} parseCurrency` `{!rsh} function` is an in-built method for converting regular currencies into currencies acceptable on a DApp.
+`{!rsh} parseCurrency` `{!rsh} function` is an in-built method that transform regular currencies (such as USD, EUR and Naira) into currencies used to transact on a DApp.
+Currencies used in a DApp include ETH and ALGO.
 :::
 
-* Lines 7 and 8 create an account for each of the `{!rsh} Participant`.
+* Lines 7 and 8 create an account for each of the `{!rsh} Participant`s.
 This is for test purposes. 
 
-With these accounts, the contracts will compile successfully when called upon.
+With these accounts, the contracts will now work as expected.
 
 ### {#tut-mkt-basic-define} Define Variables
-Having told the backend how those variables declared are to be used, these variables will now be given their proper functionalities.
+Now that the uses of the variables are declared, these variables will now be given their proper functionalities.
 
 Just below the contracts, enter the following code for the `sellerInteract`:
 
@@ -336,7 +335,7 @@ load: /examples/mkt-2-basic/index.mjs
 range: 13 - 30
 ```
 
-This code will be made accessible to the `Seller` only.
+This code will be accessible to the `Seller` only.
 
 * Line 13 defines `sellerInteract` as an `{!rsh} Object`.
 
@@ -344,7 +343,7 @@ This code will be made accessible to the `Seller` only.
 
 * Line 15 passes a `{!rsh} string` to the `announcement` variable.
 
-* Lines 16 to 20: The details of each `product` is passed into the `products` `{!rsh} Array` as `{!rsh} Object`s.
+* Lines 16 to 20: The details of each `product` are passed into the `products` `{!rsh} Array` as `{!rsh} Object`s.
 It is a list of items that the `Seller` puts up for sale with their properties.
 
 * Lines 22 to 29 creates a  `{!rsh} function` named `reportReady`. 
@@ -421,7 +420,6 @@ That seals the frontend for this section.
 Just one more step! 
 
 Go back to the backend file.
-
 
 ### {#tut-mkt-basic-connect} Connect Frontend to Backend
 
@@ -593,7 +591,6 @@ Things to look out for in this section are:
 
 * How to handle money and currency.
 
-
 ### {#tut-mkt-interaction-reach-run} How `./reach run` Works
 
 The `{!cmd} ./reach run` command is used to execute whatever is in the `index.rsh` file because in the background, `index.rsh` is added to the command.
@@ -654,6 +651,7 @@ That is the basics of how the `{!cmd} ./reach run` command works.
 
 
 ### {#tut-mkt-interaction-why} Why Build An Interactive DApp
+
 The Basic DApp has been working fine and the business has grown but the `seller` no longer enjoys a monopoly - he now has competitors. 
 The `buyer`s have complained of either not getting what they want or not getting the quantity they want.
 
@@ -663,6 +661,7 @@ To do this, the application must be improved.
 You're being commissioned once again to improve the DApp. Following the steps below, the application was completed:
 
 ### {#tut-mkt-Interaction-basic} Basic Interactive DApp
+
 To make it easy to follow, we'll begin with new files. 
 
 Type the following code in the backend file:
@@ -774,8 +773,8 @@ For example, the atomic unit of `Ethereum` is `WEI`.
 The code so far has defined utilities for the DApp. 
 The next thing to do is to utilize these utilities in defining what happens if the `{!rsh} Participant` is a `seller` or a `buyer`.
 
-
 #### {#tut-mkt-Interaction-basic-seller} Seller
+
 The code below will be executed if the `{!rsh} Participant` is the `seller`:
 
 ```reach
@@ -820,6 +819,7 @@ Contract info: {"type":"BigNumber","hex":"0xc2"}
 ```
 
 #### {#tut-mkt-Interaction-basic-buyer} Buyer
+
 If the `{!rsh} Participant` is not a `seller`, then the following code will be executed.
 Type the following:
 
@@ -909,8 +909,8 @@ Contract info: {"type":"BigNumber","hex":"0xc2"}
 Your Balance is 999.997 ALGO.
 ```
 
-
 #### {#tut-mkt-Interaction-connect} Connect the frontend to the backend
+
 To bring everything together, head back to the `index.rsh` file.
 Type the following code after the `{!rsh} init` line for the `seller`:
 
@@ -939,6 +939,7 @@ Line 51 `{!rsh} commit`s to the program if line 47 evaluates to `{!rsh} false`.
 Line 54 terminates the program.
 
 #### {#tut-mkt-Interaction-test} Testing
+
 To test what has been done so far, open two terminals. 
 
 In the first one, run `{!cmd} ./reach run index seller` 
@@ -959,8 +960,8 @@ Full Demonstration
 
 > Video here
 
-
 ### {#tut-mkt-Interaction-advance} Advanced
+
 Now that the `seller` can show `products` and the `buyer` can see them,
 the final thing to do is to give the `buyer` the ability to make an order and give the `seller` the ability to sell.
 
@@ -1003,6 +1004,7 @@ That's all that is needed for the declaration of variables.
 Proceed to the frontend file.
 
 #### {#tut-mkt-Interaction-advance-define} Define More Variables
+
 The variables that have just been added to the backend file will now be defined or given their functionalities here.
 
 In the frontend file, replace the `commonInteract` `{!rsh} Object` with the following code:
@@ -1054,7 +1056,6 @@ It uses the `{!rsh} ask` `{!rsh} Object` to ask the `buyer` to confirm the purch
 No more changes will be done to the frontend file. 
 Like always, the frontend has to be connected to the backend file for all these to work.
 Head back to the backend file.
-
 
 #### {#tut-mkt-Interaction-advance-connect} Connect the frontend to the backend
 
@@ -1154,7 +1155,6 @@ And That concludes the application.
 
 You have successfully completed an interactive command-line DApp.
 Congratulations on this new feat! 
-
 
 #### {#tut-mkt-Interaction-advance-test} Testing the application
 
@@ -1285,7 +1285,6 @@ Your Balance is 799.994 ALGO.
 ```
 
 > Video or GIF here
-
 
 ### {#tut-mkt-Interaction-Review} Review
 
