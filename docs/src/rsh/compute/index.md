@@ -1904,7 +1904,7 @@ md5: 43c3e16e00ad2ec2be76a16d66a29e45
 range: 40 - 40
 ```
 
-The `{!rsh} relativeTime` and `{!rsh} relativeSecs` functions add `{!rsh} baseWaitTime` and `{!rsh} baseWaitSecs` to their arguments before tagging with the appropriate variant:
+The `{!rsh} relativeTime` and `{!rsh} relativeSecs` functions add `{!rsh} baseWaitTime` and `{!rsh} baseWaitSecs` to their arguments before tagging with the appropriate variant.
 
 Example:
 
