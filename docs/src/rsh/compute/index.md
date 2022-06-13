@@ -1892,6 +1892,7 @@ Example:
 
 ```reach
 load: /examples/nft-auction-api/index.rsh
+md5: aba879d62803fb298b7ce92187d6a489
 range: 48 - 52
 ```
 
@@ -1899,6 +1900,7 @@ This code takes `{!rsh} absoluteTime` as the `{!rsh} Left` variant tag or the fi
 
 ```reach
 load: /examples/realtime/index.rsh
+md5: 43c3e16e00ad2ec2be76a16d66a29e45
 range: 40 - 40
 ```
 
@@ -1908,6 +1910,7 @@ Example:
 
 ```reach
 load: /examples/rps-7-loops/index.rsh
+md5: ee287e712cdfe8d91bbb038c383d25d3
 range: 56 - 57
 ```
 
@@ -1915,6 +1918,7 @@ This code adds `deadline` (i.e `{!rsh} baseWaitTime`) to the `{!rsh} timeout` me
 
 ```reach
 load: /hs/t/y/pr_private.rsh
+md5: 98aa851444a33665cc7cd94c2d8ff013
 range: 32 - 36
 ```
 
