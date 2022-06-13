@@ -29,43 +29,62 @@ const maxColWidth = '280px';
 let winWidth = getWinWidthStr();
 
 const establishDisplay = () => {
-  const { bookPath, hasOtp } = currentPage;
-  establishDisplayFor('book-col', 'div.show-book-col', bookPath);
-  establishDisplayFor('otp-col', 'button.show-otp-col', hasOtp);
-};
+  const bookCol = doc.getElementById('book-col');
+  if (currentPage.bookPath !== undefined) {
+    const bookBtn = doc.querySelector('div.show-book-col');
+    if (winWidth == 'xl' || winWidth == 'lg' || winWidth == 'md') {
+      bookCol.style.maxWidth = maxColWidth;
+    } else if (winWidth == 'sm' || winWidth == 'xs') {
+      bookCol.style.maxWidth = 'none';
+    }
+    const prev = localStorage.getItem('book-col');
+    switch (prev) {
+      case 'block':
+        bookCol.style.display = 'block';
+        bookBtn.style.display = 'none';
+        break;
 
-const establishDisplayFor = (id, selector, property) => {
-  if (property === undefined || property === false) {
-    return;
+      case 'none':
+        bookCol.style.display = 'none';
+        bookBtn.style.display = 'block';
+        break;
+
+      default:
+        const { display } = bookCol.style;
+        localStorage.setItem('book-col', display);
+        break;
+    }
   }
-  const element = doc.getElementById(id);
-  const button = doc.querySelector(selector);
-  if (winWidth == 'xl' || winWidth == 'lg' || winWidth == 'md') {
-    element.style.maxWidth = maxColWidth;
-    element.style.display = 'block';
-    button.style.display = 'none';
-  } else if (winWidth == 'sm' || winWidth == 'xs') {
-    element.style.maxWidth = 'none';
-    element.style.display = 'none';
-    button.style.display = 'block';
-  }
 
-  const prev = localStorage.getItem(id);
-  switch (prev) {
-    case 'block':
-      element.style.display = 'block';
-      button.style.display = 'none';
-      break;
+  if (currentPage.hasOtp) {
+    const otpCol = doc.getElementById('otp-col');
+    const otpBtn = doc.querySelector('button.show-otp-col');
+    if (winWidth == 'xl' || winWidth == 'lg' || winWidth == 'md') {
+      otpCol.style.maxWidth = maxColWidth;
+      otpCol.style.display = 'block';
+      otpBtn.style.display = 'none';
+    } else if (winWidth == 'sm' || winWidth == 'xs') {
+      otpCol.style.maxWidth = 'none';
+      otpCol.style.display = 'none';
+      otpBtn.style.display = 'block';
+    }
+    const prev = localStorage.getItem('otp-col');
+    switch (prev) {
+      case 'block':
+        otpCol.style.display = 'block';
+        otpBtn.style.display = 'none';
+        break;
 
-    case 'none':
-      element.style.display = 'none';
-      button.style.display = 'block';
-      break;
+      case 'none':
+        otpCol.style.display = 'none';
+        otpBtn.style.display = 'block';
+        break;
 
-    default:
-      const { display } = element.style;
-      localStorage.setItem(id, display);
-      break;
+      default:
+        const { display } = otpCol.style;
+        localStorage.setItem('otp-col', display);
+        break;
+    }
   }
 };
 
