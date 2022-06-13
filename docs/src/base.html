@@ -19,6 +19,22 @@
         document.getElementById("search-icon").click();
       }
     });
+
+    const setDisplayStyleFor = (id) => {
+      const displayStyle = localStorage.getItem(id);
+      document.getElementById(id).style.display = displayStyle;
+    };
+    window.onload = (_event) => {
+      setDisplayStyleFor("book-col");
+      setDisplayStyleFor("otp-col");
+    };
+
+    const setItemToBlock = (_event, item) => {
+      localStorage.setItem(item, "block");
+    };
+    const setItemToNone = (_event, item) => {
+      localStorage.setItem(item, "none");
+    };
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/png" href="/assets/favicon.png">
@@ -75,7 +91,12 @@
     <!--BOOK COLUMN-->
     <div id="book-col" class="col display" style="display:none;">
       <div class="col-auto x-icon-col" style="float: right; display: flex;">
-        <button class="btn btn-outline-secondary btn-sm hide-book-icon"><i class="fas fa-times"></i></button>
+        <button
+          class="btn btn-outline-secondary btn-sm hide-book-icon"
+          onclick="setItemToNone(event, 'book-col')"
+        >
+          <i class="fas fa-times"></i>
+        </button>
       </div>
     </div>
     <!--END BOOK COLUMN-->
@@ -86,7 +107,12 @@
         <div id="hh-page-header">
           <div class="row">
             <div class="col-auto show-book-col pe-0">
-              <button class="btn btn-outline-secondary btn-sm show-book-col"><i class="fas fa-bars"></i></button>
+              <button
+                class="btn btn-outline-secondary btn-sm show-book-col"
+                onclick="setItemToBlock(event, 'book-col')"
+              >
+                <i class="fas fa-bars"></i>
+              </button>
             </div>
 
             <div class="col">
@@ -95,7 +121,12 @@
                 <div class="col-auto">
                   <div class="btn-group btn-group-sm" role="group" aria-label="">
                     <a id="edit-btn" class="btn btn-outline-secondary btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                    <button class="btn btn-outline-secondary btn-sm show-otp-col"><i class="fas fa-bars"></i></button>
+                    <button
+                      class="btn btn-outline-secondary btn-sm show-otp-col"
+                      onclick="setItemToBlock(event, 'otp-col')"
+                    >
+                      <i class="fas fa-bars"></i>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -119,7 +150,12 @@
           <div class="row">
             <div class="col my-auto"><a href="#on-this-page" class="active otp-link">On This Page</a></div>
             <div class="col-auto my-auto">
-              <button class="btn btn-outline-secondary btn-sm hide-otp-icon"><i class="fas fa-times"></i></button>
+              <button
+                class="btn btn-outline-secondary btn-sm hide-otp-icon"
+                onclick="setItemToNone(event, 'otp-col')"
+              >
+                <i class="fas fa-times"></i>
+              </button>
             </div>
           </div>
         </li>

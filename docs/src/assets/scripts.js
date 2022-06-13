@@ -41,6 +41,23 @@ const establishDisplay = () => {
       bookCol.style.display = 'none';
       bookBtn.style.display = 'block';
     }
+    const prev = localStorage.getItem('book-col');
+    switch (prev) {
+      case 'block':
+        bookCol.style.display = 'block';
+        bookBtn.style.display = 'none';
+        break;
+
+      case 'none':
+        bookCol.style.display = 'none';
+        bookBtn.style.display = 'block';
+        break;
+
+      default:
+        const { display } = bookCol.style;
+        localStorage.setItem('book-col', display);
+        break;
+    }
   }
 
   if (currentPage.hasOtp) {
@@ -54,6 +71,23 @@ const establishDisplay = () => {
       otpCol.style.maxWidth = 'none';
       otpCol.style.display = 'none';
       otpBtn.style.display = 'block';
+    }
+    const prev = localStorage.getItem('otp-col');
+    switch (prev) {
+      case 'block':
+        otpCol.style.display = 'block';
+        otpBtn.style.display = 'none';
+        break;
+
+      case 'none':
+        otpCol.style.display = 'none';
+        otpBtn.style.display = 'block';
+        break;
+
+      default:
+        const { display } = otpCol.style;
+        localStorage.setItem('otp-col', display);
+        break;
     }
   }
 }
