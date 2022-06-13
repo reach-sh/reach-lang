@@ -1005,11 +1005,10 @@ range: 4 - 7
 ```
 
 This code checks the arguments passed to the `{!cmd} ./reach run` command.
-Lines 6 and 7 would not throw an exception if `{!cmd} ./reach run index hello "Mr. Postman"` is run in the terminal.
-This is because `{!js} process.argv` would return the following `{!rsh} array`:
+Lines 6 and 7 will not throw an exception if `{!cmd} ./reach run index hello "Mr. Postman"` is run in the terminal, because `{!js} process.argv` will return the following `{!rsh} array`:
 
 ```js
-[ '/usr/local/bin/node', '/app/index.mjs', 'hello', 'Mr. Postman' ]
+[ '/usr/local/bin/node', '/app/index.mjs', 'Hello', 'Mr. Postman' ]
 ```
 
 Thereby making `{!js} process.argv[2] === 'Hello'` and `{!js} process.argv[3] === 'Mr. Postman'` to evaluate to `{!rsh} true`.
