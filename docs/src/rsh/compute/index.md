@@ -2451,11 +2451,51 @@ Intervals may be compared with the following functions:
 
 `{!rsh} intervalAdd(l, r)` adds the two intervals.
 
+ Example:
+
+ ```reach
+  load: /hs/t/y/intervals.rsh
+  md5: ffe47f0f2fa52a9e950fda9cad200006
+  range: 37 - 42
+ ```
+
+ This code `{!rsh} assert`s that `ex` is equivalent to the sum of `i1` and `i2`.
+
 `{!rsh} intervalSub(l, r)` subtracts the two intervals.
+
+ Example:
+
+ ```reach
+  load: /hs/t/y/intervals.rsh
+  md5: ffe47f0f2fa52a9e950fda9cad200006
+  range: 44 - 49
+ ```
+
+ This code `{!rsh} assert`s that `ex` is equivalent to the difference of `i1` and `i2`.
 
 `{!rsh} intervalMul(l, r)` multiplies the two intervals.
 
+ Example:
+
+ ```reach
+  load: /hs/t/y/intervals.rsh
+  md5: ffe47f0f2fa52a9e950fda9cad200006
+  range: 51 - 56
+ ```
+
+ This code `{!rsh} assert`s that `ex` is equivalent to the product of `i1` and `i2`.
+
 `{!rsh} intervalDiv(l, r)` divides the two intervals.
+
+ Example:
+
+ ```reach
+  load: /hs/t/y/intervals.rsh
+  md5: ffe47f0f2fa52a9e950fda9cad200006
+  range: 58 - 63
+ ```
+
+ This code `{!rsh} assert`s that `ex` is equivalent to the outcome of the division of `i1` and `i2`.
 
 #### Other Operations
 
