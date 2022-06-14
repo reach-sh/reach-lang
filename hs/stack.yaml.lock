@@ -6,111 +6,111 @@
 packages:
 - completed:
     name: hexstring
-    pantry-tree:
-      sha256: 9ecf67856f59dfb382b283eceb42e4fc1865935d1a7e59111556ed381c6a2ffd
-      size: 687
-    commit: 085c16fb21b9f856a435a3faab980e7e0b319341
-    git: https://github.com/reach-sh/haskell-hexstring.git
     version: 0.11.1
-  original:
-    commit: 085c16fb21b9f856a435a3faab980e7e0b319341
     git: https://github.com/reach-sh/haskell-hexstring.git
-- completed:
     pantry-tree:
-      sha256: adc2503a2241a275ec80ef8030d7ab4c524f4481232eceb80ac3aea931d7eb95
+      size: 687
+      sha256: 9ecf67856f59dfb382b283eceb42e4fc1865935d1a7e59111556ed381c6a2ffd
+    commit: 085c16fb21b9f856a435a3faab980e7e0b319341
+  original:
+    git: https://github.com/reach-sh/haskell-hexstring.git
+    commit: 085c16fb21b9f856a435a3faab980e7e0b319341
+- completed:
+    hackage: tomland-1.3.3.0@sha256:49871fb5c34ca11d73dabd31f4058ec3d2aac270eabd791d1473bb1e0a916527,8597
+    pantry-tree:
       size: 6430
-    hackage: tomland-1.3.3.0@sha256:49871fb5c34ca11d73dabd31f4058ec3d2aac270eabd791d1473bb1e0a916527,8597
+      sha256: adc2503a2241a275ec80ef8030d7ab4c524f4481232eceb80ac3aea931d7eb95
   original:
     hackage: tomland-1.3.3.0@sha256:49871fb5c34ca11d73dabd31f4058ec3d2aac270eabd791d1473bb1e0a916527,8597
 - completed:
+    hackage: megaparsec-9.0.1@sha256:2244ab77521a52a0083966c5405b3151f149e1db50b1a5b104cd9b1e56617203,3248
     pantry-tree:
-      sha256: 0e2df0d318e48e352b3d766c46cdabc3abb5dcc3dfcb062bdd0a8d44f34a975c
       size: 1447
-    hackage: megaparsec-9.0.1@sha256:2244ab77521a52a0083966c5405b3151f149e1db50b1a5b104cd9b1e56617203,3248
+      sha256: 0e2df0d318e48e352b3d766c46cdabc3abb5dcc3dfcb062bdd0a8d44f34a975c
   original:
     hackage: megaparsec-9.0.1@sha256:2244ab77521a52a0083966c5405b3151f149e1db50b1a5b104cd9b1e56617203,3248
 - completed:
+    hackage: streaming-bytestring-0.1.7@sha256:5b53960c1c5f8352d46a4f1a604d04340a08dcf7ff27ca3ed31253e02c01fd03,2968
     pantry-tree:
-      sha256: dd905b22e9b56d03aa8f994f1509ab2cde99d649712089dfd957daddeb6e1220
       size: 888
-    hackage: streaming-bytestring-0.1.7@sha256:5b53960c1c5f8352d46a4f1a604d04340a08dcf7ff27ca3ed31253e02c01fd03,2968
+      sha256: dd905b22e9b56d03aa8f994f1509ab2cde99d649712089dfd957daddeb6e1220
   original:
     hackage: streaming-bytestring-0.1.7@sha256:5b53960c1c5f8352d46a4f1a604d04340a08dcf7ff27ca3ed31253e02c01fd03,2968
 - completed:
+    hackage: validation-selective-0.1.0.1@sha256:9a5aa8b801efc6a4ffb120e1b28e80c5f7d090043be56bba11222cd20c393044,3621
     pantry-tree:
-      sha256: bf72fe4304690da4b5bc6e5218b0f90b5613e7d658f3ce31731816a423fcbca6
       size: 696
-    hackage: validation-selective-0.1.0.1@sha256:9a5aa8b801efc6a4ffb120e1b28e80c5f7d090043be56bba11222cd20c393044,3621
+      sha256: bf72fe4304690da4b5bc6e5218b0f90b5613e7d658f3ce31731816a423fcbca6
   original:
     hackage: validation-selective-0.1.0.1@sha256:9a5aa8b801efc6a4ffb120e1b28e80c5f7d090043be56bba11222cd20c393044,3621
 - completed:
+    hackage: selective-0.4.2@sha256:d223434ba4545a09b02dbdc7a4d63bd41ef40cc3d3d82883ccc6daea9d2b2dd5,3507
     pantry-tree:
-      sha256: 38f9abe506185137433e9620f702efc40aae7aaab8d3797ceb0b31fc3342ec32
       size: 1160
-    hackage: selective-0.4.2@sha256:d223434ba4545a09b02dbdc7a4d63bd41ef40cc3d3d82883ccc6daea9d2b2dd5,3507
+      sha256: 38f9abe506185137433e9620f702efc40aae7aaab8d3797ceb0b31fc3342ec32
   original:
     hackage: selective-0.4.2@sha256:d223434ba4545a09b02dbdc7a4d63bd41ef40cc3d3d82883ccc6daea9d2b2dd5,3507
 - completed:
+    hackage: io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
     pantry-tree:
-      sha256: 65849cbd4749744033f0e23c317a4cb12b7a24eb0ca9d2610c95b6dc72b3f470
       size: 273
-    hackage: io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
+      sha256: 65849cbd4749744033f0e23c317a4cb12b7a24eb0ca9d2610c95b6dc72b3f470
   original:
     hackage: io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
 - completed:
-    pantry-tree:
-      sha256: 2c3dc6abc101832026902feb1f4d0cfd227dc0cddf9db857c30da38c80ac387c
-      size: 253
     hackage: simple-smt-0.9.5@sha256:70e6f694d401d23783b6f5c62774262a01cc7c305a64a13690ab7664a4f98ebf,736
+    pantry-tree:
+      size: 253
+      sha256: 2c3dc6abc101832026902feb1f4d0cfd227dc0cddf9db857c30da38c80ac387c
   original:
     hackage: simple-smt-0.9.5@sha256:70e6f694d401d23783b6f5c62774262a01cc7c305a64a13690ab7664a4f98ebf,736
 - completed:
     name: shell-monad
-    pantry-tree:
-      sha256: aa71086fe3d90e9f93c437004668a94bfa3193a9af2d286b0485b59a55ee70b2
-      size: 612
-    commit: d8465680410807a782920ba8dca040d38da735f8
-    git: https://github.com/reach-sh/shell-monad.git
     version: 0.6.9
-  original:
-    commit: d8465680410807a782920ba8dca040d38da735f8
     git: https://github.com/reach-sh/shell-monad.git
+    pantry-tree:
+      size: 612
+      sha256: aa71086fe3d90e9f93c437004668a94bfa3193a9af2d286b0485b59a55ee70b2
+    commit: d8465680410807a782920ba8dca040d38da735f8
+  original:
+    git: https://github.com/reach-sh/shell-monad.git
+    commit: d8465680410807a782920ba8dca040d38da735f8
 - completed:
     name: stan
-    pantry-tree:
-      sha256: 05e44bb76ee95ac46ede71d407de2c0b7454f45ed667a6af3a5d8aee3f79a048
-      size: 5139
-    commit: 09c29e16723728fe2a3f1341e2569508c86f4597
-    git: https://github.com/reach-sh/stan.git
     version: 0.0.1.0
-  original:
-    commit: 09c29e16723728fe2a3f1341e2569508c86f4597
     git: https://github.com/reach-sh/stan.git
+    pantry-tree:
+      size: 5139
+      sha256: 05e44bb76ee95ac46ede71d407de2c0b7454f45ed667a6af3a5d8aee3f79a048
+    commit: 09c29e16723728fe2a3f1341e2569508c86f4597
+  original:
+    git: https://github.com/reach-sh/stan.git
+    commit: 09c29e16723728fe2a3f1341e2569508c86f4597
 - completed:
     name: language-javascript
-    pantry-tree:
-      sha256: 90e2a4e8f79e764418c6735d02ff1239c71060ac682d646e676f7c54ed650efa
-      size: 3233
-    commit: f1b4cd7d4a6502c385c64a5d0c80ce325202a48d
-    git: https://github.com/reach-sh/language-javascript.git
     version: 0.7.1.1
-  original:
-    commit: f1b4cd7d4a6502c385c64a5d0c80ce325202a48d
     git: https://github.com/reach-sh/language-javascript.git
+    pantry-tree:
+      size: 3233
+      sha256: 90e2a4e8f79e764418c6735d02ff1239c71060ac682d646e676f7c54ed650efa
+    commit: f1b4cd7d4a6502c385c64a5d0c80ce325202a48d
+  original:
+    git: https://github.com/reach-sh/language-javascript.git
+    commit: f1b4cd7d4a6502c385c64a5d0c80ce325202a48d
 - completed:
     name: ormolu
-    pantry-tree:
-      sha256: e022d2c07cee18b2d280dd490ad687be6d8b5152a9d8eb27c42b21d827177a77
-      size: 80957
-    commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0
-    git: https://github.com/google/ormolu.git
     version: 0.1.4.1
-  original:
-    commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0
     git: https://github.com/google/ormolu.git
+    pantry-tree:
+      size: 80957
+      sha256: e022d2c07cee18b2d280dd490ad687be6d8b5152a9d8eb27c42b21d827177a77
+    commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0
+  original:
+    git: https://github.com/google/ormolu.git
+    commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0
 snapshots:
 - completed:
-    sha256: 57d4ce67cc097fea2058446927987bc1f7408890e3a6df0da74e5e318f051c20
     size: 618884
     url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/19/7.yaml
+    sha256: 57d4ce67cc097fea2058446927987bc1f7408890e3a6df0da74e5e318f051c20
   original: lts-19.7

@@ -103,8 +103,8 @@ version = putStrLn "reachpc version todo"
 
 config :: IO ()
 config = do
-  localOrCloud <- askUser "Will you use Reach Cloud or Reach Local?" ["cloud", "local"]
-  connector <- askUser "What connector will you use?" ["algo", "cfx", "eth"]
+  _localOrCloud <- askUser "Will you use Reach Cloud or Reach Local?" ["cloud", "local"]
+  _connector <- askUser "What connector will you use?" ["algo", "cfx", "eth"]
   return ()
  where
   askUser prompt answers = do
