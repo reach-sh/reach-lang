@@ -1896,7 +1896,7 @@ md5: aba879d62803fb298b7ce92187d6a489
 range: 48 - 52
 ```
 
-This code takes `{!rsh} absoluteTime` as the `{!rsh} Left` variant tag or the first argument for the `{!rsh} timeout` method while `{!rsh} absoluteSecs` is taken as the `{!rsh} Right` variant tag or the second argument in the code below:
+This code takes `{!rsh} absoluteTime` as the `{!rsh} Left` variant tag or the first argument for the `{!rsh} timeout` method while `{!rsh} absoluteSecs` is used in the anonymous `{!rsh} function` called on the `{!rsh} Right` side of the `aStep` `{!rsh} function` in the code below:
 
 ```reach
 load: /examples/realtime/index.rsh
