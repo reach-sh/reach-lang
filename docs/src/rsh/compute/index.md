@@ -2447,11 +2447,53 @@ represent the left endpoint and whether it's open or closed; the third and fourt
 
  `{!rsh} intervalCC(l, r)` constructs a closed interval from two endpoints of type `{!rsh} Int`.
 
+  Example:
+
+ ```reach
+  load: /hs/t/y/intervals.rsh
+  md5: ffe47f0f2fa52a9e950fda9cad200006
+  range: 37 - 42
+ ```
+
+ This code creates an interval that is closed on both sides using `+43` and `+14` for the left and right endpoints respectively on line 39.
+
  `{!rsh} intervalCO(l, r)` constructs a half-open interval from two endpoints of type `{!rsh} Int` where the left endpoint is closed and the right endpoint is open.
+
+ Example:
+
+ ```reach
+  load: /hs/t/y/intervals.rsh
+  md5: ffe47f0f2fa52a9e950fda9cad200006
+  range: 13 - 18
+ ```
+
+ This code creates an interval that is closed on the left and opened on the right.
+ It uses `+7` and `+9` for the left and right endpoints respectively on line 15.
 
  `{!rsh} intervalOC(l, r)` constructs a half-open interval from two endpoints of type `{!rsh} Int` where the left endpoint is open and the right endpoint is closed.
 
+  Example:
+
+ ```reach
+  load: /hs/t/y/intervals.rsh
+  md5: ffe47f0f2fa52a9e950fda9cad200006
+  range: 20 - 25
+ ```
+
+ This code creates an interval that is opened on the left and closed on the right.
+ It uses `+3` and `+11` for the left and right endpoints respectively on line 23.
+
  `{!rsh} intervalOO(l, r)` constructs an open interval from two endpoints of type `{!rsh} Int`.
+
+  Example:
+
+ ```reach
+  load: /hs/t/y/intervals.rsh
+  md5: ffe47f0f2fa52a9e950fda9cad200006
+  range: 27 - 30
+ ```
+
+ This code creates an interval that is opened on both sides using `+4` and `+45` for the left and right endpoints respectively on line 28.
 
 #### Accessors
 
