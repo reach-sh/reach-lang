@@ -2456,6 +2456,16 @@ intervalIntersection(i1, i2);   // [+7, +11)
 
  `{!rsh} intervalIntersection(x, y)` returns the intersection of two intervals.
 
+ Example:
+
+ ```reach
+  load: /hs/t/y/intervals.rsh
+  md5: ffe47f0f2fa52a9e950fda9cad200006
+  range: 13 - 18
+ ```
+
+ This code `{!rsh} assert`s that `ii` is equivalent to the intersection of `i1` and `i2`.
+
 @{ref("rsh", "intervalUnion")}
 ```reach
 const i1 = intervalOO(+3, +9);  // (+3, +9)
@@ -2465,6 +2475,16 @@ intervalUnion(i1, i2);          // (+3, +11]
 
  `{!rsh} intervalUnion(x, y)` returns the union of two intervals.
 
+Example:
+
+ ```reach
+  load: /hs/t/y/intervals.rsh
+  md5: ffe47f0f2fa52a9e950fda9cad200006
+  range: 20 - 25
+ ```
+
+ This code `{!rsh} assert`s that `iu` is equivalent to the union of `i1` and `i2`.
+
 @{ref("rsh", "intervalWidth")}
 ```reach
 intervalWidth(intervalCC(+4, +45)); // +41
@@ -2472,12 +2492,32 @@ intervalWidth(intervalCC(+4, +45)); // +41
 
  `{!rsh} intervalWidth(i)` returns the width of an interval.
 
+ Example:
+
+ ```reach
+  load: /hs/t/y/intervals.rsh
+  md5: ffe47f0f2fa52a9e950fda9cad200006
+  range: 27 - 30
+ ```
+
+  This code `{!rsh} assert`s that `+41` is equivalent to the width of interval `i`.
+
 @{ref("rsh", "intervalAbs")}
 ```reach
 intervalAbs(intervalCC(+1, +10)); // +10
 ```
 
  `{!rsh} intervalAbs(i)` returns the absolute value of an interval.
+
+ Example:
+
+ ```reach
+  load: /hs/t/y/intervals.rsh
+  md5: ffe47f0f2fa52a9e950fda9cad200006
+  range: 32 - 35
+ ```
+
+   This code `{!rsh} assert`s that `+10` is equivalent to the absolute value of interval `i`.
 
 ### `getUntrackedFunds`
 
