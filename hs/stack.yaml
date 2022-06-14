@@ -3,6 +3,8 @@ resolver: lts-19.7
 ghc-options:
   "$everything": -haddock
 
+system-ghc: true
+
 extra-deps:
   - git: https://github.com/reach-sh/haskell-hexstring.git
     commit: 085c16fb21b9f856a435a3faab980e7e0b319341
