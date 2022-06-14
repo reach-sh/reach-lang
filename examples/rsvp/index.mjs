@@ -1,7 +1,7 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-const stdlib = loadStdlib();
+const stdlib = loadStdlib({ REACH_NO_WARN: 'Y' });
 const sbal = stdlib.parseCurrency(100);
 const accD = await stdlib.newTestAccount(sbal);
 
@@ -9,20 +9,13 @@ const deadline = stdlib.connector === 'CFX' ? 500 : 250;
 
 const ctcD = accD.contract(backend);
 
-try {
-  await ctcD.p.Admin({
+await stdlib.withDisconnect(() =>
+  ctcD.p.Admin({
     deadline,
     price: stdlib.parseCurrency(25),
-    ready: () => {
-      console.log('The contract is ready');
-      throw 42;
-    }
-  });
-} catch (e) {
-  if ( e !== 42) {
-    throw e;
-  }
-}
+    ready: stdlib.disconnect
+  })
+);
 
 const users = await stdlib.newTestAccounts(5, sbal);
 
