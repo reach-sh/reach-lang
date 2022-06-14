@@ -3189,6 +3189,16 @@ absoluteSecs(t) // references network seconds
 lastConsensusSecs() // references network seconds
 ```
 
+### Correct code:
+
+``` reach 
+load: /hs/t/y/Fix_LoopVariableLength.rsh
+md5: a7450399a78f1da3e595dbdbdf7035e9
+range: 24 - 24
+```
+
+This code uses `{!rsh} relativeTime` instead of `{!rsh} relativeSecs` to use real time instead of network time.
+
 ## {#RV0000} RV0000
 
 This error indicates your program has failed verification.
