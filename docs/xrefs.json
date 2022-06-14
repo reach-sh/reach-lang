@@ -904,7 +904,7 @@
     "path": "/quickstart/#qs-win"
   },
   "qs-win-conf-docker": {
-    "title": "Configuring docker:",
+    "title": "Configuring Docker:",
     "path": "/quickstart/#qs-win-conf-docker"
   },
   "qs-win-install": {
