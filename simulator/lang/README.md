@@ -435,7 +435,7 @@ __Note__:  When simulating with the the `ImperativeScenario`, the `Participant` 
     // ...
 ```
 
-The reader may have noticed that, unlike in the `ImperativeScenario` which modified its own object reference at every step of the simulation, with the `FunctionalScenario` we must modify the reference `s` ourselves. This presents us with the opportunity to, at any point, give the scenario reference a unique name, essentially transforming it into a simulator _breakpoint_.
+The reader may have noticed that, unlike in the `ImperativeScenario` which modified its own object reference at every step of the simulation, with the `FunctionalScenario` we must modify the reference `s` ourselves. This presents us with the opportunity to, at any point, give the scenario reference a unique name, essentially transforming it into a simulator _breakpoint_. Because we can return to this breakpoint at any time, as long as the scenario reference is in scope, the SimLang is essentially a _time-traveling debugger_.
 
 ```javascript
 	// ...
@@ -563,6 +563,30 @@ const main = async () => {
 main();
 
 ```
+
+# Order of Operations (OOO)
+When performing a simulation, we're constructing a global decentralized store (ledger) via the `Consensus` and syncing with the local stores of each `Participant`. Naturally, because this is essentially a series of _read_ and _write_ operations amongst several decentralized acting parties, the order of operations matters. This section describes the intended order of operations in the SimLang, which follows standard blockchain and Reach semantics. We also describe the errors that the user can expect when they erroneously perform actions out of order.
+
+__Note__:  After receiving an OOO (order of operations) error when scripting in SimLang, rather than restarting the entire simulation, the user may elect to instead use the time-traveling breakpoint feature to return to a previous state and try a different OOO.
+
+The OOO in SimLang must always be (relatively) as follows. Note that each consensus step is represented distinctly by its `Phase` id:
+
+ 1. Initialization of the `Scenario` (which also performs initialization of the `Consensus` implicitly).
+ 2. Initialization of each `Participant` involved in the DApp.
+ 3. At this point any `interact` actions may occur for any `Participant`s when scheduled.
+ 4.  `publish` action by the `Consensus` for `Phase` id `n=0`.
+ 5. `receive` action by each participant for `Phase` id `n=0`.
+ 6. Steps `4-5` repeat for monotonically incremented by `1` values of `n`, with step `3` interleaved as necessary.
+
+
+## OOO Errors
+The OOO errors and their reasons are documented below (error wording is subject to change):
+
+ - `Phase N hasn't been reached by any Participants.` This error occurs when a `publish` action is attempted for a phase that no participants have reached.
+ - `Message not yet seen from actor ID: A
+ for Phase N` This error occurs when a `publish` action is attempted for a phase that the race winner participant has not yet reached.
+- `Expected Fixed Message` This error occurs when step `5` occurs before step `4`.                     
+
 
 # Conclusion
 
