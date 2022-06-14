@@ -5,7 +5,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 ## 0.1.11: 2022/06 - present
 
-@{verCur("0.1.11")}
+@{verRC("0.1.11")}
 
 + 2022/06/01: Added `onCompletion` field to `{!rsh} remote.ALGO`.
 + 2022/06/01: Added @{seclink("ref-programs-consensus-new-contract")} support.
@@ -14,7 +14,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 ## 0.1.10: 2022/04 - 2022/05
 
-@{verOld("0.1.10")}
+@{verCur("0.1.10")}
 
 + 2022/05/14: Added `{!cmd} reach support` sub-command.
 + 2022/05/13: Support custom violation messages for `{!rsh} invariant`s.

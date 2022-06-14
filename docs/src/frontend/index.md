@@ -406,7 +406,7 @@ range: 324 - 325
 ```
 
 This code creates an account, and then funds that account with 100000 units from a private faucet.
-This is used in cases where funding from a normal faucet is difficult or impossible, such as testing large token quantities.
+This is used in cases where funding from a normal faucet is difficult or impossible, such as when using large token quantities.
 
 ---
 @{ref("js", "canFundFromFaucet")}
@@ -1028,12 +1028,12 @@ Example:
 ```reach
 load: /examples/js-tests/index.mjs
 md5: 389bd098127db61d413f7586e81b561f
-range: 349 -352
+range: 349 - 352
 ```
 
-This code tests to see if variables that are supposed to be `null` return `null`. 
-Line 350 `{!js} asserts` that `null` has Reach type `T_Null`. 
-Line 351 `{!js} asserts` that `undefined` has Reach type `T_Null`. 
+This code tests to see if variables that are supposed to be `{!js} null` return `{!js} null`.
+Line 350 asserts that `{!js} null` has Reach type `{!js} T_Null`. 
+Line 351 asserts that `{!js} undefined` has Reach type `{!js} T_Null`. 
 
 ---
 @{ref("js", "T_Null")}@{ref("js", "T_Bool")}@{ref("js", "T_UInt")}@{ref("js", "T_Bytes")}@{ref("js", "T_Address")}@{ref("js", "T_Array")}@{ref("js", "T_Tuple")}@{ref("js", "T_Object")}
