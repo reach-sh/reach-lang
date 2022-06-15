@@ -1126,15 +1126,9 @@ Parses a signed `{!rsh} Int` into a JavaScript number.
 Example:
 
 ```js
-import { loadStdlib } from "@reach-sh/stdlib";
-
-const stdlib = loadStdlib();
-const object = {
-  sign: true,
-  i: 42
-};
-const result = stdlib.parseInt(object);
-console.log(result); // 42
+load: /examples/js-tests/index.mjs
+md5: 37407fb9463932050a086fa8f03cb58c
+range: 424 - 428
 ```
 
 `{!js} stdlib`'s `{!js} parseInt` property is a function that takes an object as its parameter, and returns a number.
