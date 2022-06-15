@@ -71,6 +71,17 @@ fail()
 
 is a convenience method equivalent to `{!rsh} assume(false)`. This may only appear in a local step.
 
+Example:
+
+```reach
+load: /hs/t/y/fail.rsh
+md5: 3be6dfe7a8cce9030cc121e0572ccdee
+range: 14 - 19
+```
+
+This code calls `{!rsh} fail` inside of `A`'s `{!rsh} only` block on line 16.
+It evaluates to `{!rsh} assume(false)`.
+
 ### `declassify`
 
 @{ref("rsh", "declassify")}
