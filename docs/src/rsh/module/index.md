@@ -214,6 +214,17 @@ expressions:
 
 ---
 
+Example:
+
+```reach
+load: /examples/pkg/index.rsh
+md5: f8acb18109d40008438fec679bdaffca
+range: 6 - 11
+```
+
+This code imports `bestNumber` from `@reach-sh/reach-example-package:index.rsh` package and renames it to `bn` on line 6. 
+Line 11 `{!rsh} assert`s that `bn` is equivalent to `1742`.
+
 Since `git` repositories evolve and change over time, Reach takes extra
 steps in order to pin a given module import's version to the specific `SHA` hash of the specified revision at the time the package is first installed.
 These pins are stored in a lockfile, which should be included in your source control system.
