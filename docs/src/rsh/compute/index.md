@@ -2126,6 +2126,18 @@ pow (2, 40, 10) // => 1,099,511,627,776
  `{!rsh} pow(base, power, precision)` calculates the approximate value of raising base to power.
 The third argument must be a `{!rsh} UInt` whose value is known at compile time, which represents the number
 of iterations the algorithm should perform.
+
+Example:
+
+```reach
+load: /hs/t/y/pow.rsh
+md5: 2c13099a264f42f5d9fe0bc80a70a1ce
+range: 28 - 34
+```
+
+This code computes the `finalOutcome` of the `Rock, Paper, Scissors` game using the `{!rsh} pow` method. 
+It takes `outcome` as the `base`, the sum of `handAlice` and `handBob` as the `power`, and `10` as the `precision`.
+
 For reference, `6` iterations provides enough accuracy to calculate up to `2^64 - 1`, so the largest power it can compute is `2^63`.
 If the number of iterations is not large enough to compute the power, then the result is completely inaccurate.
 It is recommended to create `{!rsh} assert` tests to ensure the possible values your program can compute are accurate.
