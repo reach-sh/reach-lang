@@ -100,6 +100,16 @@ The path given to an import may **not** include `..` to specify files outside th
 
 It **must** be a relative path, which is resolved relative to the parent directory of the source file in which they appear.
 
+Example:
+
+```reach
+load: /hs/t/y/imports.rsh
+md5: fcdf093fe4404f25bd4ba103f9ad1afa
+range: 3 - 9
+```
+
+This code imports all the contents of `lib.rsh` and renames it to `lib` on line 3 while line 4 imports only a few of `lib.rsh`'s contents.
+
 #### {#ref-programs-import-package} Package imports
 ```reach
 import * as func from
