@@ -351,7 +351,7 @@ The `{!rsh} function` takes in `announcement` and `products` as arguments.
 
 * Line 23 logs a `{!rsh} string` to the console.
 
-* Lines 24 to 28 obtain the contract information which is an `{!rsh} Object` and log it to the console as a JSON string.
+* Lines 24 to 28 obtain the contract information, which is an `{!rsh} Object`, and log it to the console as a JSON string.
 You can see this as the seller's unique identifier.
 
 That is all that the `Seller` needs for this section.
@@ -372,17 +372,17 @@ The `Buyer` will have access to this code.
 
 * Line 34 logs the `Seller`'s `announcement` to the console.
 
-* Lines 35 to 39 loop through the `Seller`'s `products` and list them out for the `Buyer` to see.
+* Lines 35 to 39 loop through the `Seller`'s `products` and list them for the `Buyer`.
 
 * Line 41 gets a random number not more than `4`.
-This number stored as `choice` represents the position of an item in the `products` array.
+This number, stored as `choice`, represents the position of an item in the `products` array.
 So if the `choice` is `2`, then the `product` chosen will be 
 `{ name: "Corn", unit: "ear", units: "ears", price: "5" }`
 
-* Line 41 picks the `quantity` of that `product` the `Buyer` wants.
+* Line 41 picks the `quantity` of that `product` for the `Buyer`.
 This is also a random number that is not more than `100`.
 
-* Line 43 displays the `name` of the product that the `Buyer` wants to order.
+* Line 43 displays the `name` of the selected product.
 
 * Line 45 returns the `decision` (i.e. the `choice` and `quantity`) of the `Buyer`.
 
@@ -407,7 +407,7 @@ The same `product` is also logged to the console as the `product` that the `Sell
 
 A more detailed breakdown of the code:
 
-i. `${person === "Seller" ? "sell" : "buy"}` means if the `${person}` is `Seller`, log `sell` else log `buy` to the console.
+i. `${person === "Seller" ? "sell" : "buy"}` means if the `${person}` is `Seller`, display `sell` else display `buy`.
 
 ii. `${decision.quantity}` is the `quantity` that the `Buyer` wants out of the original quantity of the `product`.
 
@@ -552,7 +552,7 @@ The integer (x) in braces defines how long the string may be.
 
 * A `{!rsh} function` in Reach is defined as `{!rsh} Fun([input], output)`.
 
-* `{!rsh} parseCurrency` `{!rsh} function` was provided by Reach to help convert regular currencies into currencies acceptable on a DApp.
+* `{!rsh} parseCurrency` `{!rsh} function` was provided by Reach to help convert regular currencies (such as USD, CAD and Naira) into currencies acceptable on a DApp (such as ETH and ALGO).
 
 * Calling `{!rsh} interact` on something in Reach is the same thing as calling upon a `{!rsh} function` to execute the code within it.
 
@@ -560,27 +560,28 @@ The integer (x) in braces defines how long the string may be.
 
 * `{!rsh} declassify()` is used to make any secret `{!rsh} publish`able or shareable with other `{!rsh} Participant`s.
 
-* A contract is the same as a written agreement that must be signed by all `{!rsh} Participant`s before any transaction can take place. The `{!rsh} Participant` that initiates the transaction deploys or creates the contract while the other `{!rsh} Participant`(s) will be attached to it.
+* A contract is the same as a written agreement that must be signed by all `{!rsh} Participant`s before any transaction can take place. 
+The `{!rsh} Participant` that initiates the transaction deploys the contract, while the other `{!rsh} Participant`(s) attach to it.
 
-* Having an account is like having a book that keeps track of the activities of a particular user. 
+* An account is like a book that keeps track of the activities of a particular user. 
 It holds information that helps the DApp manage a `{!rsh} Participant`.
 
-That was a good way to start building the marketplace application that has just been embarked upon. Hopefully, you found it helpful and easy to follow through. 
+That was a good way to start building the marketplace application that has just been embarked upon. Hopefully, you found it helpful and easy to follow. 
 
 It is important to note that Reach offers flexibility in the way code may be written. 
 Check [here](../../../examples/mkt-3-basic-alt) for an optional way that the code for this section may be written.
 
-See full code for this section [here]().
+See full code for this section [here](../../../examples/mkt-3-basic).
 
 The next section will show how `{!cmd} ./reach run` works, how to use `process.argv`, how `{!rsh} Participant`s can interact with the DApp and how to manage money and currency.
 
 ## {#tut-mkt-interaction} Interaction and Independence
-The previous section demonstrated what building with Reach feels like. 
+The previous section demonstrated how to build a basic Reach program. 
 But more can be done with Reach than that. 
 
 Reach offers autonomy to `{!rsh} Participant`s in a transaction.
 This means that the `Seller` and the `Buyer` can decide whether or not to proceed with the transaction. 
-They can also decide how they will like the transaction to take place. 
+They can also decide how they prefer that the transaction takes place.
 
 This section will a DApp that will offer more flexibility to the `{!rsh} Participant`s.
 
@@ -593,8 +594,8 @@ Things to look out for in this section are:
 
 ### {#tut-mkt-interaction-reach-run} How `./reach run` Works
 
-The `{!cmd} ./reach run` command is used to execute whatever is in the `index.rsh` file because in the background, `index.rsh` is added to the command.
-So running `{!cmd} ./reach run` in the terminal will behave in the same way just as `{!cmd} ./reach run index`.
+The `{!cmd} ./reach run` command is used to execute whatever is in the `index.rsh` file because `index.rsh` is added to the command in the background.
+Running `{!cmd} ./reach run` in the terminal will behave in the same way just as `{!cmd} ./reach run index`.
 
 :::note
 `{!cmd} ./reach run index.rsh` will throw the following error:
@@ -658,11 +659,12 @@ The `buyer`s have complained of either not getting what they want or not getting
 He realizes that for him to compete, he has to make transactions more flexible for the `buyer`s. 
 To do this, the application must be improved.
 
-You're being commissioned once again to improve the DApp. Following the steps below, the application was completed:
+You are being commissioned once again to improve the DApp. 
+Following the steps below, the application was completed:
 
 ### {#tut-mkt-Interaction-basic} Basic Interactive DApp
 
-To make it easy to follow, we'll begin with new files. 
+We will begin with new files to make it easy to follow. 
 
 Type the following code in the backend file:
 
@@ -673,7 +675,7 @@ range: 1 - 34
 
 This code looks familiar. A few changes were made:
 
-* `choice` and `quantity` has been removed.
+* `choice` and `quantity` have been removed.
 
 * `commonInteract` is currently empty. 
 It has also been destructured into the `sellerInteract` and `buyerInteract` `{!rsh} Object`.
@@ -686,7 +688,7 @@ This will produce the same result as before when it was destructured inside of t
 
 * Finally, `Seller` and `buyer` has been changed to `S` and `B`.
 
-That's all for the backend for now. Go to the frontend.
+That's all for the backend for now.
 
 In the `index.mjs` file, type the code below:
 
@@ -731,7 +733,7 @@ load: /examples/mkt-4-interaction-basic/index.mjs
 range: 14 - 29
 ```
 
-* Line 14 accesses the standard unit through the standard library based on the consensus network and stores it as stored as `suStr`.
+* Line 14 accesses the standard unit through the standard library based on the consensus network and stores it as `suStr`.
 
 * Line 15 tells the `{!rsh} Participant` what standard unit is being used.
 
@@ -740,7 +742,7 @@ A standard unit is the network token unit most commonly associated with a networ
 For example, the standard unit of `Ethereum` is `ETH`. 
 :::
 
-* Line 16 accesses the atomic unit through the standard library based on the consensus network and stores it as stored as `auStr`.
+* Line 16 accesses the atomic unit through the standard library based on the consensus network and stores it as `auStr`.
 
 * Line 17 tells the `{!rsh} Participant` what atomic unit is being used.
 
@@ -771,11 +773,11 @@ For example, the atomic unit of `Ethereum` is `WEI`.
 * Line 29 defines the `commonInteract` `{!rsh} Object`.
 
 The code so far has defined utilities for the DApp. 
-The next thing to do is to utilize these utilities in defining what happens if the `{!rsh} Participant` is a `seller` or a `buyer`.
+These will be helpful as we build the `seller`'s and `buyer`'s properties.
 
 #### {#tut-mkt-Interaction-basic-seller} Seller
 
-The code below will be executed if the `{!rsh} Participant` is the `seller`:
+The code below executes if the `{!rsh} Participant` is the `seller`:
 
 ```reach
 load: /examples/mkt-4-interaction-basic/index.mjs
@@ -820,7 +822,8 @@ Contract info: {"type":"BigNumber","hex":"0xc2"}
 
 #### {#tut-mkt-Interaction-basic-buyer} Buyer
 
-If the `{!rsh} Participant` is not a `seller`, then the following code will be executed.
+The code below executes if the `{!rsh} Participant` is not a `seller`.
+
 Type the following:
 
 ```reach
@@ -962,8 +965,7 @@ Full Demonstration
 
 ### {#tut-mkt-Interaction-advance} Advanced
 
-Now that the `seller` can show `products` and the `buyer` can see them,
-the final thing to do is to give the `buyer` the ability to make an order and give the `seller` the ability to sell.
+Now that the `seller` can show `products` and the `buyer` can see them, we need to give the `buyer` the ability to purchase and the `seller` the ability to sell.
 
 To do that, navigate to the backend file. 
 More variables are to be declared.
@@ -1005,7 +1007,7 @@ Proceed to the frontend file.
 
 #### {#tut-mkt-Interaction-advance-define} Define More Variables
 
-The variables that have just been added to the backend file will now be defined or given their functionalities here.
+The variables that have just been added to the backend file will now be defined here.
 
 In the frontend file, replace the `commonInteract` `{!rsh} Object` with the following code:
 
@@ -1018,13 +1020,13 @@ range: 29 - 42
 
 * Lines 30 - 32 define the `reportCancellation`. It takes in no argument.
 
-* Line 31 logs to the console an order cancellation message.
+* Line 31 logs a cancellation message to the console.
 
 * Line 33 defines the `reportPayment` `{!rsh} function`. 
-It takes `payment` as an argument and logs to the console a message confirming payment by the `buyer`.
+It takes `payment` as an argument and logs a message to the console confirming payment by the `buyer`.
 
 * Line 34 defines the `reportTransfer` `{!rsh} function`. 
-It takes `payment` as an argument and logs to the console a message showing that funds have been transferred to the `seller`.
+It takes `payment` as an argument and logs a message to the console showing that funds have been transferred to the `seller`.
 
 * Lines 35 to 39 define the `reportFulfillment`. 
 It takes in `p` (i.e. `product`) and `amt` (i.e. quantity requested by the `buyer`).
@@ -1033,10 +1035,10 @@ It takes in `p` (i.e. `product`) and `amt` (i.e. quantity requested by the `buye
 
 * Line 36 defines the object (`directObject`) of the message to be displayed
 
-* Line 38 logs to the console the details of the `product` that the `seller` now owes the `buyer`.
+* Line 38 logs the details of the `product` that the `seller` now owes the `buyer` to the console.
 
 * Line 40 defines the `reportExit`. It takes in no argument.
-It logs to the console an order cancellation message.
+It logs a cancellation message to the console.
 
 * Line 41 defines the `statusReport`. It takes in no argument.
 It reveals who passed the status report.
@@ -1130,7 +1132,7 @@ range: 75 - 82
 * Line 81 `{!rsh} commit`s if Line 75 is true.
 
 
-Finally, the following code handles payment and delivery if all goes well:
+Finally, the following code handles the payment and delivery if all goes well:
 
 ```reach
 load: /examples/mkt-5-interaction-reports/index.rsh
@@ -1139,19 +1141,19 @@ range: 84 - 90
 
 * Line 84 has the `buyer` pay the `total` into the contract.
 
-* Line 85 calls the `reportPayment` `{!rsh} function` on each of the `{!rsh} Participant`.
+* Line 85 calls the `reportPayment` `{!rsh} function` on each of the `{!rsh} Participant`s.
 
 * Line 86 transfers the money paid by the `buyer` to the `seller`.
 
-* line 87  calls the `reportTransfer` `{!rsh} function` on each of the `{!rsh} Participant`.
+* line 87  calls the `reportTransfer` `{!rsh} function` on each of the `{!rsh} Participant`s.
 
-* line 88  calls the `reportFulfillment` `{!rsh} function` on each of the `{!rsh} Participant`.
+* line 88  calls the `reportFulfillment` `{!rsh} function` on each of the `{!rsh} Participant`s.
 
-* line 89  calls the `statusReport` `{!rsh} function` on each of the `{!rsh} Participant`.
+* line 89  calls the `statusReport` `{!rsh} function` on each of the `{!rsh} Participant`s.
 
 * Line 90 `{!rsh} commit` to the program.
 
-And That concludes the application.
+And that concludes the application.
 
 You have successfully completed an interactive command-line DApp.
 Congratulations on this new feat! 
@@ -1163,7 +1165,7 @@ run `{!cmd} ./reach run index seller`
 and in the second terminal, 
 run `{!cmd} ./reach run index buyer`
 
-If the transaction is canceled, the output received should look like this:
+If the transaction is cancelled, the output received should look like this:
 
 For Seller:
 
