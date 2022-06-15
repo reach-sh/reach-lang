@@ -133,6 +133,8 @@ const mkCommon = async (lib, extra) => {
     mod,
     mul,
     sub,
+
+    parseInt,
   } = lib;
 
   describe('exposes a `bigNumberToHex` function that', () => {
@@ -417,6 +419,14 @@ const mkCommon = async (lib, extra) => {
    , CFX:  mkCurrencySpec(amtDrip,       'Drip',       '0.000000000000000789')
    , ETH:  mkCurrencySpec(amtWei,        'WEI',        '0.000000000000000789')
    }[lib.connector])();
+
+   describe('exposes a `parseInt` function that', () => {
+    const object = { sign: true, i: 42 };
+
+    it('correctly parses a positive integer', () =>
+      expect(parseInt(object).toBe(42))
+    );
+  });
 
   await (!!extra && extra());
 };
