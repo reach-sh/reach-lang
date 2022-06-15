@@ -1126,12 +1126,13 @@ Parses a signed `{!rsh} Int` into a JavaScript number.
 Example:
 
 ```js
-load: /examples/programmer-art/src/index.mjs
-md5: 0779cd5bfb7d45de6a7f46b9cd6c7164
-range: 394 - 402
+load: /examples/js-tests/index.mjs
+md5: 37407fb9463932050a086fa8f03cb58c
+range: 424 - 428
 ```
 
-This code parses `enter` into a JavaScript number on line 399 if line 398 evaluates to `{!rsh} true`.
+`{!js} stdlib`'s `{!js} parseInt` property is a function that takes an object as its parameter, and returns a number.
+That object has a `{!js} sign` property, and an `{!js} i` property, which is the number to parse.
 
 ---
 @{ref("js", "numberToInt")}
