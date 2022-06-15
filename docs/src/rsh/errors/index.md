@@ -2504,7 +2504,19 @@ This snippet `{!rsh} call`s the `{!rsh} API` instead of publishing.
 This error indicates that there is a `{!rsh} fork` or `{!rsh} parallelReduce` in the program that does not specify a `{!rsh} .case` or `{!rsh} .api` component.
 At least one of these components must be specified.
 
+```reach
+load: /hs/t/n/Err_ForkNoCases.rsh
+md5: 2c6e793910f37eb74baa13e85c65cb0e
+range: 7 - 9
+```
+
 You can fix this error by adding a `{!rsh} .case` or `{!rsh} .api` component to your statement.
+
+```reach
+load: /hs/t/y/parallelReduce_no_timeout.rsh
+md5: a30b3a95795b87042c7529ad64af3ce2
+range: 15 - 24
+```
 
 ## {#RE0127} RE0127
 
