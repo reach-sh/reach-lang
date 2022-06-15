@@ -1011,7 +1011,7 @@ Lines 6 and 7 will not throw an exception if `{!cmd} ./reach run index hello "Mr
 [ '/usr/local/bin/node', '/app/index.mjs', 'Hello', 'Mr. Postman' ]
 ```
 
-Thereby making `{!js} process.argv[2] === 'Hello'` and `{!js} process.argv[3] === 'Mr. Postman'` to evaluate to `{!rsh} true`.
+Thereby making `{!js} process.argv[2] === 'Hello'` and `{!js} process.argv[3] === 'Mr. Postman'` to evaluate to `{!js} true`.
 
 ---
 @{ref("js", "Array_set")}
