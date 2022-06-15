@@ -2614,8 +2614,22 @@ Refer to the `{!rsh} mod` documentation to see what types are supported.
 
 This error indicates that you are attempting to overload a method with multiple functions that have the same domain.
 
+```reach
+load: /hs/t/n/Err_Alias_Type_Clash.rsh
+md5: 9400699b8ccac8f5d1cd1d2e2aa2631f
+range: 6 - 15
+```
+
+This code overloads `c` by setting `a`, `b`, and `d` all to `c`.
+
 You can fix this issue by either removing one of the overloads or changing one of the domains.
 You can change the domain of a function by altering the type of its parameters or adding/removing parameters.
+
+```reach
+load: /hs/t/y/Fix_Alias_Type_Clash.rsh
+md5: 471eaca7a21dd2c0a94c48fb840537ed
+range: 6 - 12
+```
 
 ## {#RE0132} RE0132
 
