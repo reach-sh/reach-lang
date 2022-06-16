@@ -5,9 +5,13 @@ export const main =
     {},
     [Participant('A', {})],
     (A) => {
+      A.publish();
+      commit();
       try {
         throw 10;
       } catch (error) {
+        A.publish();
+        commit();
         exit();
       }
     });
