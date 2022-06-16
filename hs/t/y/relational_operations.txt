@@ -1,0 +1,13 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 13 theorems; No failures!
+warning[RW0004]: There are no publications in the application.
+
+  ./relational_operations.rsh:34:12:application
+
+  34|   Reach.App(
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0004
+
