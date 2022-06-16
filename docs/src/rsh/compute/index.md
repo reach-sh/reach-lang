@@ -2443,7 +2443,7 @@ Intervals may be compared with the following functions:
   range: 8 - 11
  ```
 
- This code `{!rsh} assert`s that the result of testing whether `intervalCC(+1, +2)`and `intervalCC(+4, +5)` are not eqaul, must evaluate to `{!rsh} true` on line 10.
+ This code `{!rsh} assert`s that the result of testing whether `{!rsh} intervalCC(+1, +2)`and `{!rsh} intervalCC(+4, +5)` are not eqaul, must evaluate to `{!rsh} true` on line 10.
 
  `{!rsh} intervalLt(l, r)` tests whether the left interval is less than the right interval.
 
