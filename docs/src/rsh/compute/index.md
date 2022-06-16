@@ -2491,7 +2491,7 @@ Intervals may be compared with the following functions:
   range: 28 - 31
  ```
 
- This code `{!rsh} assert`s that the result of testing whether `intervalCC(+2, +2)`is greater than or equal to `intervalCC(+2, +2)`, must evaluate to `{!rsh} true` on line 30.
+ This code `{!rsh} assert`s that the result of testing whether `{!rsh} intervalCC(+2, +2)`is greater than or equal to `{!rsh} intervalCC(+2, +2)`, must evaluate to `{!rsh} true` on line 30.
 
 #### Arithmetic Operations
 
