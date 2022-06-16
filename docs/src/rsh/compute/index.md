@@ -2414,7 +2414,27 @@ represent the left endpoint and whether it's open or closed; the third and fourt
 @{ref("rsh", "leftEndpoint")}@{ref("rsh", "rightEndpoint")}
  `{!rsh} leftEndpoint(i)` will return the `{!rsh} Int` that represents the left endpoint of an interval.
 
+Example:
+
+ ```reach
+  load: /hs/t/y/interval_accessors.rsh
+  md5: 82337da8b58952020eab8d0cf29cf5b0
+  range: 3 - 7
+ ```
+
+ This code `{!rsh} assert`s that the `{!rsh} leftEndpoint` of `y` is equivalent to `+2` on line 6.
+
  `{!rsh} rightEndpoint(i)` will return the `{!rsh} Int` that represents the right endpoint of an interval.
+
+ Example:
+
+ ```reach
+  load: /hs/t/y/interval_accessors.rsh
+  md5: 82337da8b58952020eab8d0cf29cf5b0
+  range: 9 - 13
+ ```
+
+ This code `{!rsh} assert`s that the `{!rsh} rightEndpoint` of `x` is not equivalent to `{!rsh} rightEndpoint` of `y` on line 12.
 
 #### Relational Operations
 
