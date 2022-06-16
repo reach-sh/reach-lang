@@ -2455,7 +2455,7 @@ Intervals may be compared with the following functions:
   range: 13 - 16
  ```
 
- This code `{!rsh} assert`s that the result of testing whether `intervalCC(+1, +2)`is less than `intervalCC(+3, +5)`, must evaluate to `{!rsh} true` on line 15.
+ This code `{!rsh} assert`s that the result of testing whether `{!rsh} intervalCC(+1, +2)`is less than `{!rsh} intervalCC(+3, +5)`, must evaluate to `{!rsh} true` on line 15.
 
  `{!rsh} intervalLte(l, r)` tests whether the left interval is less than or equal to the right interval.
 
