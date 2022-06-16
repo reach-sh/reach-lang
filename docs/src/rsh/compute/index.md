@@ -2431,7 +2431,7 @@ Intervals may be compared with the following functions:
   range: 3 - 6
  ```
 
- This code `{!rsh} assert`s that the result of testing whether `intervalOO(+1, +1)` and `intervalOO(+1, +1)` are eqaul, must evaluate to `{!rsh} true` on line 4.
+ This code `{!rsh} assert`s that the result of testing whether `{!rsh} intervalOO(+1, +1)` and `{!rsh} intervalOO(+1, +1)` are eqaul, must evaluate to `{!rsh} true` on line 4.
 
  `{!rsh} intervalNeq(l, r)` tests whether the intervals are not equal.
 
