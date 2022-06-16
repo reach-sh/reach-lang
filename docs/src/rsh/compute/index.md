@@ -2467,7 +2467,7 @@ Intervals may be compared with the following functions:
   range: 18 - 21
  ```
 
- This code `{!rsh} assert`s that the result of testing whether `intervalOO(+3, +4)`is less than or equal to `intervalOO(+5, +7)`, must evaluate to `{!rsh} true` on line 19.
+ This code `{!rsh} assert`s that the result of testing whether `{!rsh} intervalOO(+3, +4)`is less than or equal to `{!rsh} intervalOO(+5, +7)`, must evaluate to `{!rsh} true` on line 19.
 
  `{!rsh} intervalGt(l, r)` tests whether the left interval is greater than the right interval.
 
