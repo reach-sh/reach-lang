@@ -2565,7 +2565,7 @@ Intervals may be compared with the following functions:
   range: 23 - 26
  ```
 
- This code `{!rsh} assert`s that the result of testing whether `intervalCC(+5, +7)`is greater than `intervalCC(+3, +4)`, must evaluate to `{!rsh} true` on line 25.
+ This code `{!rsh} assert`s that the result of testing whether `{!rsh} intervalCC(+5, +7)`is greater than `{!rsh} intervalCC(+3, +4)`, must evaluate to `{!rsh} true` on line 25.
 
  `{!rsh} intervalGte(l, r)` tests whether the left interval is greater than or equal to the right interval.
 
