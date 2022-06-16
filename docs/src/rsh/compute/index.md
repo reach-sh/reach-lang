@@ -2423,15 +2423,75 @@ Intervals may be compared with the following functions:
 
  `{!rsh} intervalEq(l, r)` tests whether the intervals are equal.
 
- `{!rsh} intervalNe(l, r)` tests whether the intervals are not equal.
+ Example:
+
+ ```reach
+  load: /hs/t/y/relational_operations.rsh
+  md5: b4b514862424886c8080551bc31ecc54
+  range: 3 - 6
+ ```
+
+ This code `{!rsh} assert`s that the result of testing whether `intervalOO(+1, +1)` and `intervalOO(+1, +1)` are eqaul, must evaluate to `{!rsh} true` on line 4.
+
+ `{!rsh} intervalNeq(l, r)` tests whether the intervals are not equal.
+
+ Example:
+
+ ```reach
+  load: /hs/t/y/relational_operations.rsh
+  md5: b4b514862424886c8080551bc31ecc54
+  range: 8 - 11
+ ```
+
+ This code `{!rsh} assert`s that the result of testing whether `intervalCC(+1, +2)`and `intervalCC(+4, +5)` are not eqaul, must evaluate to `{!rsh} true` on line 10.
 
  `{!rsh} intervalLt(l, r)` tests whether the left interval is less than the right interval.
 
+ Example:
+
+ ```reach
+  load: /hs/t/y/relational_operations.rsh
+  md5: b4b514862424886c8080551bc31ecc54
+  range: 13 - 16
+ ```
+
+ This code `{!rsh} assert`s that the result of testing whether `intervalCC(+1, +2)`is less than `intervalCC(+3, +5)`, must evaluate to `{!rsh} true` on line 15.
+
  `{!rsh} intervalLte(l, r)` tests whether the left interval is less than or equal to the right interval.
+
+ Example:
+
+ ```reach
+  load: /hs/t/y/relational_operations.rsh
+  md5: b4b514862424886c8080551bc31ecc54
+  range: 18 - 21
+ ```
+
+ This code `{!rsh} assert`s that the result of testing whether `intervalOO(+3, +4)`is less than or equal to `intervalOO(+5, +7)`, must evaluate to `{!rsh} true` on line 19.
 
  `{!rsh} intervalGt(l, r)` tests whether the left interval is greater than the right interval.
 
+ Example:
+
+ ```reach
+  load: /hs/t/y/relational_operations.rsh
+  md5: b4b514862424886c8080551bc31ecc54
+  range: 23 - 26
+ ```
+
+ This code `{!rsh} assert`s that the result of testing whether `intervalCC(+5, +7)`is greater than `intervalCC(+3, +4)`, must evaluate to `{!rsh} true` on line 25.
+
  `{!rsh} intervalGte(l, r)` tests whether the left interval is greater than or equal to the right interval.
+
+ Example:
+
+ ```reach
+  load: /hs/t/y/relational_operations.rsh
+  md5: b4b514862424886c8080551bc31ecc54
+  range: 28 - 31
+ ```
+
+ This code `{!rsh} assert`s that the result of testing whether `intervalCC(+2, +2)`is greater than or equal to `intervalCC(+2, +2)`, must evaluate to `{!rsh} true` on line 30.
 
 #### Arithmetic Operations
 
