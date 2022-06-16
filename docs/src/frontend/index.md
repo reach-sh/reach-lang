@@ -401,7 +401,7 @@ Example:
 
 ```js
 load: /examples/js-tests/index.mjs
-md5: 389bd098127db61d413f7586e81b561f
+md5: 4357830c321b3f9b768041586629786d
 range: 324 - 325
 ```
 
@@ -1027,7 +1027,7 @@ Example:
 
 ```reach
 load: /examples/js-tests/index.mjs
-md5: 389bd098127db61d413f7586e81b561f
+md5: 4357830c321b3f9b768041586629786d
 range: 349 - 352
 ```
 
@@ -1208,7 +1208,7 @@ Example:
 
 ```js
 load: /examples/js-tests/index.mjs
-md5: 37407fb9463932050a086fa8f03cb58c
+md5: 4357830c321b3f9b768041586629786d
 range: 424 - 428
 ```
 
