@@ -424,7 +424,7 @@ const mkCommon = async (lib, extra) => {
     const object = { sign: true, i: 42 };
 
     it('correctly parses a positive integer', () =>
-      expect(parseInt(object).toBe(42))
+      expect(parseInt(object)).toBe(42)
     );
   });
 
