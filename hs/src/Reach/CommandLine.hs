@@ -8,7 +8,8 @@ module Reach.CommandLine
   , truthyEnv
   , SupportToolArgs(..)
   , SupportOpts(..)
-  , supportFromCommandLineHs)
+  , supportFromCommandLineHs
+  )
 where
 
 import Data.Char
