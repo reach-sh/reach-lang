@@ -412,6 +412,15 @@ This `env` file exports environment variable settings and is intended to be `sou
 
 If an `env` file already exists, `{!cmd} reach config` offers to back it up before proceeding.
 
+```cmd
+reach config           
+Reach detected an existing configuration file at /Users/yourUsername/.config/reach/env.
+Would you like to back it up before creating a new one? (Type 'y' if so):
+```
+
+Type `y` to back up your current `env` file, or type `n` to overwrite it.
+You can also abort the process without making any changes by pressing `ctrl+c`.
+
 # {#ref-usage-arg-disable-reporting} @{ref("cmd", "reach --disable-reporting")} `reach --disable-reporting`
 The Reach command-line tool collects anonymous usage data by default, but this can be skipped by prepending `--disable-reporting` before any given sub-command, e.g.:
 
