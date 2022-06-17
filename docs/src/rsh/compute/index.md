@@ -1882,11 +1882,11 @@ absoluteSecs(secs, ?claim)
 These functions return @{defn("time arguments")}, which are instances of the type `{!rsh} Either(UInt, UInt)`, where `{!rsh} Left` variants refer to absolute network time and `{!rsh} Right` variants refer to absolute network seconds.
 
 These functions take an optional function argument, `claim`, which will be used to verify arithmetic when necessary.
-In most cases, one would pass `{!rsh} assume`, `{!rsh} require`, or `{!rsh} assert`.
+In most cases, one would pass `{!rsh} check` or `{!rsh} assert`.
 This argument is only needed when `verifyArithmetic` is enabled.
 The default value of this argument is a no-op.
 
-The `{!rsh} absoluteTime` and `{!rsh} absoluteSecs` are equivalent to `{!rsh} Left` and `{!rsh} Right` variant tags.
+The `{!rsh} absoluteTime` and `{!rsh} absoluteSecs` are equivalent to `{!rsh} Left` and `{!rsh} Right` variant tags, respectively.
 
 Example:
 
@@ -1896,7 +1896,8 @@ md5: aba879d62803fb298b7ce92187d6a489
 range: 48 - 52
 ```
 
-This code takes `{!rsh} absoluteTime` as the `{!rsh} Left` variant tag or the first argument for the `{!rsh} timeout` method while `{!rsh} absoluteSecs` is used in the anonymous `{!rsh} function` called on the `{!rsh} Right` hand side of the `aStep` `{!rsh} function` in the code below:
+This code takes `{!rsh} absoluteTime` as the `{!rsh} Left` variant tag in the `{!rsh} timeout` method. 
+In the following sample, `{!rsh} absoluteSecs` is used in the anonymous `{!rsh} function` as the `{!rsh} Right` variant tag:
 
 ```reach
 load: /examples/realtime/index.rsh
@@ -1934,12 +1935,12 @@ verifyRelativeSecs(amt, claim)
 verifyAbsoluteSecs(secs, claim)
 ```
 
-When using `verifyArithmetic` and a dynamic timeout argument, it will be necessary to verify that the timeout calculation will not overflow. When producing the interact timeout value, you will want to use these functions to make `assume` and `require` claims about the value. For example:
+When using `verifyArithmetic` and a dynamic timeout argument, it will be necessary to verify that the timeout calculation will not overflow. When producing the interact timeout value, you will want to use these functions to make `{!rsh} check` claims about the value. For example:
 
 ```reach
 A.only(() => {
   const t = declassify(interact.getTimeout());
-  verifyAbsoluteTime(t, assume);
+  verifyAbsoluteTime(t, check);
 });
 A.publish(t);
 verifyAbsoluteTime(t, require);
