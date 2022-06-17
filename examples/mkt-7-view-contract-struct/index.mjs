@@ -70,10 +70,6 @@ if (role === 'seller') {
     const buyerInteract = {
         ...commonInteract,
         shop: async (sellerInfo) => {
-            console.log(sellerInfo.announcement);
-            sellerInfo.products.forEach((p, i) => {
-                console.log(`${i + 1}. ${p.name} at ${toSU(p.price)} ${suStr} per unit (${p.unit}).`);
-            });
             const order = { prodNum: 0, prodAmt: 0 };
             const prodNum = await ask.ask(`Enter 1-${sellerInfo.products.length}, or 0 to exit:`, (x => x));
             if (1 <= prodNum && prodNum <= sellerInfo.products.length ) {
@@ -92,12 +88,16 @@ if (role === 'seller') {
     console.log(`Attaching to contract`);
     console.log(`...`);
     const ctc = acc.contract(backend, info);
+
+    console.log('List of products for sale:');
+
     console.log('Begin View Section');
     const sellerInfo = await ctc.views.Main.sellerInfo();
     sellerInfo[1].products.forEach((p, i) => {
         console.log(`${i + 1}. ${p.name} at ${toSU(p.price)} ${suStr} per unit (${p.unit}).`);
     });
     console.log('End View Section');
+
     console.log(`Successfully attached`);
     await showBalance(acc);
     await ctc.p.Buyer(buyerInteract);
