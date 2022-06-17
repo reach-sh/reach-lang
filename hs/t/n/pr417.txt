@@ -28,16 +28,7 @@ Verification failed:
   msg: "balance zero at application exit"
   at ./pr417.rsh:30:7:application
 
-  // Violation Witness
-
-  const UInt.max = 20;
-
-
-  // Theorem Formalization
-
-  const v318 = 0 == ((10 + 10) - 10);
-  //    ^ would be false
-  assert(v318);
+  assert(false);
 
 Verification failed:
   when NO participants are honest
@@ -77,4 +68,4 @@ Verification failed:
   //    ^ would be false
   assert(v398);
 
-Checked 41 theorems; 4 failures (and 1 omitted repeats) :'(
+Checked 40 theorems; 4 failures (and 1 omitted repeats) :'(

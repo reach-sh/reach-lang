@@ -6,14 +6,7 @@ Verification failed:
   of theorem: assert
   at ./pr175.rsh:9:9:application
 
-  // Violation Witness
-
-
-  // Theorem Formalization
-
-  const v32 = 1 == 0;
-  //    ^ would be false
-  assert(v32);
+  assert(false);
 
   Verifying when NO participants are honest
 Checked 3 theorems; 2 failures (and 1 omitted repeats) :'(
