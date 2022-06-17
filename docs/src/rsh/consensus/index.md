@@ -586,6 +586,8 @@ In addition, a remote function may be augmented with one of the following operat
     If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an insufficient fee error.
   + `{!rsh} opts.assets` records extra assets.
     If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an invalid asset reference.
+  + `{!rsh} opts.apps` records extra applications.
+    If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an invalid application reference.
   + `{!rsh} opts.addressToAccount` changes `{!rsh} Address` arguments to `Account` array references.
     If this is needed, and not included, then the consensus transfer to the current consensus step will fail because an incorrectly typed argument was provided to the remote object.
   + `{!rsh} opts.onCompletion` sets the `OnCompletion` field of the transaction.
