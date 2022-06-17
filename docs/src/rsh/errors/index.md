@@ -2635,6 +2635,22 @@ range: 6 - 12
 
 This error indicates you had extra fields in `{!rsh} REMOTE_FUN.ALGO` that are not supported.
 
+In this code, `foo` is an illegal field:
+
+```reach
+load: /hs/t/n/Err_Remote_ALGO_extra.rsh
+md5: 0bdaf10698fd93941e8e4592ba02f2a4
+range: 10 - 10
+```
+
+Remove `foo` to fix the error code:
+
+```reach
+load: /hs/t/y/Fix_Remote_ALGO_extra.rsh
+md5: e7e58888f151cdd04f0340e4c5d013dc
+range: 10 - 10
+```
+
 ## {#RE0133} RE0133
 
 This error indicates that a thunk, or function with no parameters, was expected but something else was provided.
