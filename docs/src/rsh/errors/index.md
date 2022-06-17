@@ -2869,7 +2869,7 @@ You can fix this by specifying the needed flag with your command.
 
 This error indicates that the syntax you used to specify your import is incorrect.
 
-You can fix this by using the correct syntax. Please view the documentation for package imports.
+You can fix this by using the correct syntax. Please view the documentation for [package imports](##ref-programs-import-package).
 
 ## {#RL0000} RL0000
 
