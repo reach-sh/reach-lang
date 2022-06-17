@@ -9,7 +9,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 118 theorems; No failures!
+Checked 52 theorems; No failures!
 Compiling "trapS"...
 Verifying knowledge assertions
 Verifying for generic connector

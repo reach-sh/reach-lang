@@ -349,7 +349,19 @@ instance Optimize DLExpr where
       as' <- opt as
       let meh = return $ DLE_PrimOp at p as'
       let zero t = DLA_Literal $ DLL_Int at t 0
+      let staticN t n = return $ DLE_Arg at $ DLA_Literal $ DLL_Int at t n
+      let staticB b = return $ DLE_Arg at $ DLA_Literal $ DLL_Bool b
       case (p, as') of
+        (ADD t, [(DLA_Literal (DLL_Int _ _ lhs)), (DLA_Literal (DLL_Int _ _ rhs))]) -> staticN t $ (+) lhs rhs
+        (SUB t, [(DLA_Literal (DLL_Int _ _ lhs)), (DLA_Literal (DLL_Int _ _ rhs))]) -> staticN t $ (-) lhs rhs
+        (MUL t, [(DLA_Literal (DLL_Int _ _ lhs)), (DLA_Literal (DLL_Int _ _ rhs))]) -> staticN t $ (*) lhs rhs
+        (DIV t, [(DLA_Literal (DLL_Int _ _ lhs)), (DLA_Literal (DLL_Int _ _ rhs))]) -> staticN t $ (div) lhs rhs
+        (MOD t, [(DLA_Literal (DLL_Int _ _ lhs)), (DLA_Literal (DLL_Int _ _ rhs))]) -> staticN t $ (mod) lhs rhs
+        (PLT _, [(DLA_Literal (DLL_Int _ _ lhs)), (DLA_Literal (DLL_Int _ _ rhs))]) -> staticB $ (<) lhs rhs
+        (PLE _, [(DLA_Literal (DLL_Int _ _ lhs)), (DLA_Literal (DLL_Int _ _ rhs))]) -> staticB $ (<=) lhs rhs
+        (PEQ _, [(DLA_Literal (DLL_Int _ _ lhs)), (DLA_Literal (DLL_Int _ _ rhs))]) -> staticB $ (==) lhs rhs
+        (PGE _, [(DLA_Literal (DLL_Int _ _ lhs)), (DLA_Literal (DLL_Int _ _ rhs))]) -> staticB $ (>=) lhs rhs
+        (PGT _, [(DLA_Literal (DLL_Int _ _ lhs)), (DLA_Literal (DLL_Int _ _ rhs))]) -> staticB $ (>) lhs rhs
         (ADD _, [(DLA_Literal (DLL_Int _ _ 0)), rhs]) ->
           return $ DLE_Arg at rhs
         (ADD _, [lhs, (DLA_Literal (DLL_Int _ _ 0))]) ->
