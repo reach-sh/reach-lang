@@ -691,6 +691,13 @@ img {
 #search-results-list li a.pt {
   margin-right: 1em;
 }
+
+#search-results-list li.discussionsClass span.p::after {
+  content: "\f09b";
+  font-family: "Font Awesome 5 Brands";
+  margin-left: 1em;
+}
+
 #search-results-list li.sdRef {
 }
 #search-results-list li.sdRef span.symbol {
