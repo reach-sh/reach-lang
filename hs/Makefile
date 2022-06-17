@@ -150,8 +150,24 @@ watch-reachc: expand
 watch-tsa: expand
 	@$(call w,exe:tsa)
 
+.PHONY: watch-proto-stub
+watch-proto-stub: expand
+	@$(call w,exe:proto-stub) -T Main.main
+
 .PHONY: repl-reach-cli
 repl-reach-cli: expand
 	@stack ghci app/reach/Main.hs $(MEVEREST) \
 	  --package pretty-simple \
 	  --ghci-options "-interactive-print=Text.Pretty.Simple.pPrint"
+
+.PHONY: proto-stub-serve
+proto-stub-serve: hs-build
+	@stack exec -- proto-stub serve
+
+.PHONY: proto-stub-client
+proto-stub-client: hs-build
+	@stack exec -- proto-stub cmd help
+	@stack exec -- proto-stub cmd compile --verify-fail-once
+	@stack exec -- proto-stub cmd run examples/ttt foo bar baz
+	@stack exec -- proto-stub say
+	@stack exec -- proto-stub listen
