@@ -1,14 +1,12 @@
 module Main (main) where
 
 import Network.HTTP.Client
+import Reach.Proto
 import Safe
 import Servant.Client
 import System.Environment
 import System.Exit
-
 import qualified Data.Text as T
-
-import Reach.Proto
 
 main :: IO ()
 main = do
