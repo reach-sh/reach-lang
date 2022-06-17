@@ -183,7 +183,13 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
       if ( ! hits.length ) { return; }
       searchResultsList.innerHTML = '';
       hits.forEach((hit) => {
-        const sdClasses = [ 'sdRef', 'sdTerm', 'sdHeader', 'sdPara' ];
+        const sdClasses = [
+          'sdRef',
+          'sdTerm',
+          'sdHeader',
+          'sdPara',
+          'discussionsClass',
+        ];
         const c = sdClasses[hit.t];
         const e = doc.createElement('li');
         e.classList.add(c);
@@ -206,6 +212,8 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
         } else if ( c === 'sdHeader' ) {
           h('h', hit.c);
         } else if ( c === 'sdPara' ) {
+          h('p', hit.c);
+        } else if ( c === 'discussionsClass' ) {
           h('p', hit.c);
         }
         searchResultsList.append(e);
