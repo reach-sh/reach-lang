@@ -190,9 +190,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
     searchInput.focus();
     const searchResultsList = doc.getElementById('search-results-list');
     searchInput.addEventListener('keyup', async (evt) => {
-      const { hits: searchHits } = await searchIndex.search(searchInput.value);
-      const { hits: discussionHits } = await discSearchIndex.search(searchInput.value);
-      const hits = [ ...searchHits, ...discussionHits ];
+      const { hits } = await searchIndex.search(searchInput.value);
       if ( ! hits.length ) { return; }
       searchResultsList.innerHTML = '';
       hits.forEach((hit) => {
