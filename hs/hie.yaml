@@ -2,6 +2,8 @@ cradle:
   stack:
     - path: "./src"
       component: "reach:lib"
+    - path: "./reach-everest/hs/src"
+      component: "reach:lib"
     - path: "./test"
       component: "reach:reach-test"
     - path: "./app/reachc"

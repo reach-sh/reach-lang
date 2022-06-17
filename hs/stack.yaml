@@ -33,3 +33,16 @@ extra-deps:
   - git: https://github.com/google/ormolu.git
     commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0
     # ^ from branch "gfork"
+  - git: https://github.com/chrisnevers/OTP
+    commit: f929a9a2b758fc3e33752513ae1dd8f4ccfa3ad3
+    # ^ from branch "master"
+  - github: brendanhay/amazonka
+    commit: 0ccede621e56fb6f240e4850e205cde82d0e4a4b
+    subdirs:
+    - lib/amazonka
+    - lib/amazonka-core
+    - lib/services/amazonka-sts
+    - lib/services/amazonka-pinpoint
+    - lib/services/amazonka-pinpoint-email
+    - lib/services/amazonka-pinpoint-sms-voice
+  - servant-typescript-0.1.0.2@sha256:92cfd7f7d96de7a01d3834ef50daec181c54b94b1daa3f5a497d5561b86ea7d3,3030
