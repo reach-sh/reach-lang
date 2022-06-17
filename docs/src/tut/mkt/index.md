@@ -1322,3 +1322,110 @@ Since regular transactions happen on a GUI and not on a terminal, how can Reach 
 
 The next section has been designed to teach everything that you need to know about building a web application using Reach.
 
+
+## {#tut-mkt-view-contract} View the Contract
+
+This section teaches what `{!rsh} View`s are, how to use them and why they are important. 
+It will build upon the [last section](##tut-mkt-interaction).
+
+### {#tut-mkt-view-contract-what} What are Views?
+
+`{!rsh} View`s are used to know the state of a DApp in Reach. 
+They are read-only functions that can be called by other contracts, as well as off-chain.
+They are set in consensus steps during application initialization, and accessed by the frontend by using the Reach standard library of the frontend language, such as JavaScript.
+
+### {#tut-mkt-view-contract-how} How to use Views
+
+`{!rsh} View`s are defined using the following syntax:
+
+```reach
+View(<viewName>, <viewBody>)
+```
+
+Where `viewName` is optional.
+
+We will now add `{!rsh} View` to the program we already created to help make the concept clearer. 
+It will be used to change how the `buyer` finds out about the `product`s that the `seller` puts up for sale.
+Initially, we just console logged the `product`s in the terminal but we will access the `product`s from the `{!rsh} View`s method this time.
+
+This can be done using the `{!rsh} Object` or `{!rsh} Struct` literal.
+You will see reasons to use `{!rsh} Struct` as this tutorial progresses.
+
+### {#tut-mkt-view-contract-how-object} Using Object
+
+We will add `{!rsh} View` here using the `{!rsh} Object` literal.
+
+#### {#tut-mkt-view-contract-how-object-backend} Backend
+
+1. Add the following code just before the `{!rsh} init()` line:
+
+```reach
+load: /examples/mkt-6-view-contract-object/index.rsh
+range: 42 - 42
+```
+
+This code defines the `{!rsh} View`, where the first parameter (i.e. `{!rsh} View` Name) is `Main` and the second parameter (i.e. `{!rsh} View` body) is the `sellerInfo` `{!rsh} Object`.
+
+This means that the `sellerInfo` `{!rsh} Object` will be accessible through a `{!rsh} View` named `Main`.
+
+2. Just below this line:
+
+```reach
+load: /examples/mkt-6-view-contract-object/index.rsh
+range: 49 - 49
+```
+
+Add:
+
+```reach
+load: /examples/mkt-6-view-contract-object/index.rsh
+range: 50 - 50
+```
+
+This code adds the `sellerInfo` that was declassified on line 46 to the `{!rsh} View` that was defined on line 42.
+
+That's all for the backend file.
+
+#### {#tut-mkt-view-contract-how-object-frontend} Frontend
+
+All changes in this file will be in the `buyerInteract` `{!rsh} Object`.
+
+1. Remove the following code:
+
+```js
+load: /examples/mkt-5-interaction-reports/index.mjs
+range: 72 - 75
+```
+
+2. Between
+
+```js
+load: /examples/mkt-6-view-contract-object/index.mjs
+range: 90 - 90
+```
+
+and 
+
+```js
+load: /examples/mkt-6-view-contract-object/index.mjs
+range: 100 - 100
+```
+
+Enter the following code:
+
+```js
+load: /examples/mkt-6-view-contract-object/index.mjs
+range: 91 - 99
+```
+
+* Line 92 logs a message to the console saying: `'List of products for sale:'`
+
+* Line 93 logs a message to the console indicating where the `{!rsh} View` starts taking effect.
+
+* Line 94 accesses the `sellerInfo` from the `Main` `{!rsh} View`.
+
+* Line 95 to 97 loop through the `sellerInfo` and logs each `product`'s details to the console.
+
+* Line 98 logs a message to the console indicating where the `{!rsh} View` ends.
+
+That is all the change that needs to be done both in the frontend and in the code generally.
