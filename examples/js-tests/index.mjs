@@ -324,18 +324,18 @@ const mkCommon = async (lib, extra) => {
   await describe('exposes a `fundFromFaucet` function which', async () => {
     await it('can fund testnet accounts with `BigNumber` values', async () => {
       const a = await createAccount();
-      await fundFromFaucet(a, bigNumberify(100000));
+      await fundFromFaucet(a, bigNumberify(100_000));
 
       expect(await balanceOf(a))
-        .toEq(100000);
+        .toEq(100_000);
     });
 
     await it('can fund testnet accounts with JavaScript `Number` values', async () => {
       const a = await createAccount();
-      await fundFromFaucet(a, 100000);
+      await fundFromFaucet(a, 100_000);
 
       expect(await balanceOf(a))
-        .toEq(100000);
+        .toEq(100_000);
     });
   });
 
