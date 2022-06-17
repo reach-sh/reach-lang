@@ -306,7 +306,7 @@ stdlib.newTestAccount(bal:UInt) => Promise<acc>
 ```
 
 Returns a Promise for a Reach account abstraction for a new account on the consensus network with a given balance of network tokens.
-This can only be used in private testing scenarios, as it uses a private faucet to issue network tokens.
+This can only be used in private testing scenarios, because it uses a private faucet to issue network tokens.
 
 ```js
 load: /examples/workshop-trust-fund/index.mjs
@@ -401,11 +401,11 @@ Example:
 
 ```js
 load: /examples/js-tests/index.mjs
-md5: 4357830c321b3f9b768041586629786d
-range: 324 - 325
+md5: 580bfc156974144e2c6505b75fe4a440
+range: 326 - 327
 ```
 
-This code creates an account, and then funds that account with 100000 units from a private faucet.
+This code creates an account and then funds that account with 100,000 network tokens from a private faucet.
 This is used in cases where funding from a normal faucet is difficult or impossible, such as when using large token quantities.
 
 ---
@@ -480,8 +480,8 @@ md5: 34eaa215660697ce8c5ba87387c8f0f1
 range: 14-19
 ```
 
-In this snippet, `{!js} getAddress` obtains the addresses of `Alice` and `Bob` that were created with the `{!js} newTestAccounts` code.
-Next, each address is logged so that each participant can see both addresses.
+In this snippet, `{!js} getAddress` obtains the addresses of `Alice` and `Bob`, which were created with the `{!js} newTestAccounts` method.
+Next, each address is logged so that participants can see both addresses.
 This can be useful to verify that the address receiving the payment is the correct address.
 
 ---
@@ -1027,13 +1027,13 @@ Example:
 
 ```reach
 load: /examples/js-tests/index.mjs
-md5: 4357830c321b3f9b768041586629786d
-range: 349 - 352
+md5: 580bfc156974144e2c6505b75fe4a440
+range: 351 - 354
 ```
 
 This code tests to see if variables that are supposed to be `{!js} null` return `{!js} null`.
-Line 350 asserts that `{!js} null` has Reach type `{!js} T_Null`. 
-Line 351 asserts that `{!js} undefined` has Reach type `{!js} T_Null`. 
+The first `expect` asserts that `{!js} null` has Reach type `{!js} T_Null`. 
+The next `expect` asserts that `{!js} undefined` has Reach type `{!js} T_Null`. 
 
 ---
 @{ref("js", "T_Null")}@{ref("js", "T_Bool")}@{ref("js", "T_UInt")}@{ref("js", "T_Bytes")}@{ref("js", "T_Address")}@{ref("js", "T_Array")}@{ref("js", "T_Tuple")}@{ref("js", "T_Object")}
@@ -1208,12 +1208,12 @@ Example:
 
 ```js
 load: /examples/js-tests/index.mjs
-md5: 4357830c321b3f9b768041586629786d
+md5: 580bfc156974144e2c6505b75fe4a440
 range: 424 - 428
 ```
 
-`{!js} stdlib`'s `{!js} parseInt` property is a function that takes an object as its parameter, and returns a number.
-That object has a `{!js} sign` property, and an `{!js} i` property, which is the number to parse.
+In this example, `{!js} stdlib`'s `{!js} parseInt` takes an object as its parameter and returns a number.
+The object in this snippet has a `{!js} sign` property, and an `{!js} i` property, which contains the number to parse.
 
 ---
 @{ref("js", "numberToInt")}
