@@ -1,6 +1,6 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
-import {ask} from '@reach-sh/stdlib';
+import { ask } from '@reach-sh/stdlib';
 
 if (process.argv.length < 3 || ['seller', 'buyer'].includes(process.argv[2]) == false) {
   console.log('Usage: reach run index [seller|buyer]');
@@ -21,26 +21,26 @@ const commonInteract = {};
 
 // Seller
 if (role === 'seller') {
-  const sellerInteract = { 
+  const sellerInteract = {
     ...commonInteract,
     price: toAU(5),
     reportReady: async (price) => {
       console.log(`Your wisdom is for sale at ${toSU(price)} ${suStr}.`);
       console.log(`Contract info: ${JSON.stringify(await ctc.getInfo())}`);
-    }
+    },
   };
-		
+
   const acc = await stdlib.newTestAccount(iBalance);
   await showBalance(acc);
   const ctc = acc.contract(backend);
   await ctc.participants.Seller(sellerInteract);
   await showBalance(acc);
-	
+
 // Buyer
 } else {
   const buyerInteract = {
     ...commonInteract,
-    confirmPurchase: async (price) => await ask.ask(`Do you want to purchase wisdom for ${toSU(price)} ${suStr}?`, ask.yesno)
+    confirmPurchase: async (price) => await ask.ask(`Do you want to purchase wisdom for ${toSU(price)} ${suStr}?`, ask.yesno),
   };
   const acc = await stdlib.newTestAccount(iBalance);
   const info = await ask.ask('Paste contract info:', (s) => JSON.parse(s));

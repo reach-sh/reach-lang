@@ -23,26 +23,26 @@ const commonInteract = (role) => ({
 
 // Seller
 if (role === 'seller') {
-  const sellerInteract = { 
+  const sellerInteract = {
     ...commonInteract(role),
     price: toAU(5),
     reportReady: async (price) => {
       console.log(`Your wisdom is for sale at ${toSU(price)} ${suStr}.`);
       console.log(`Contract info: ${JSON.stringify(await ctc.getInfo())}`);
-    }
+    },
   };
-		
+
   const acc = await stdlib.newTestAccount(iBalance);
   await showBalance(acc);
   const ctc = acc.contract(backend);
   await ctc.participants.Seller(sellerInteract);
   await showBalance(acc);
-	
+
 // Buyer
 } else {
   const buyerInteract = {
     ...commonInteract(role),
-    confirmPurchase: async (price) => await ask.ask(`Do you want to purchase wisdom for ${toSU(price)} ${suStr}?`, ask.yesno)
+    confirmPurchase: async (price) => await ask.ask(`Do you want to purchase wisdom for ${toSU(price)} ${suStr}?`, ask.yesno),
   };
   const acc = await stdlib.newTestAccount(iBalance);
   const info = await ask.ask('Paste contract info:', (s) => JSON.parse(s));

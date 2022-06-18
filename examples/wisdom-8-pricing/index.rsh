@@ -14,7 +14,7 @@ export const main = Reach.App(() => {
   const S = Participant('Seller', sellerInteract);
   const B = Participant('Buyer', buyerInteract);
   init();
-  
+
   S.only(() => { const price = declassify(interact.price); });
   S.publish(price);
   S.interact.reportReady(price);
