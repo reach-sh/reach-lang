@@ -50,13 +50,13 @@ const retriveAllGitHubDiscussions = () => {
 };
 const rawDiscussions = await retriveAllGitHubDiscussions();
 
-const numberIndicatingDiscussionsClass = 4;
+const sd_ghd = 4;
 const discussions = rawDiscussions.map(({ node }) => {
   const { url, title } = node;
   return {
     objectID: url,
     pt: title,
-    t: numberIndicatingDiscussionsClass,
+    t: sd_ghd,
     c: title,
   };
 });
