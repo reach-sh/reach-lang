@@ -23,13 +23,17 @@ Consider this diagram:
 
 The dark blue boxes in the diagram represent modes.
 The light blue boxes represent actions (functions) permitted within the mode.
-The orange text represents functions that cause transitions between modes. 
+The red text represents functions that cause transitions between modes.
 
 ## {#wfs-3} Reach Mode Definitions
 
 ### {#wfs-4} Init Mode
 
-Application Initialization defines participants and views (see [View the contract](##wfs-20) later in the tutorial).
+Application Initialization defines participants and views.
+
+:::note
+If you want to see the entire program from the start, skip to the section [View the contract](##wfs-20) later in this tutorial.
+:::
 
 Lines 2 and 3 below occur in the `App Init` section of the program:
 
@@ -40,7 +44,7 @@ export const main = Reach.App(() => {
   init();
 ```
 
-The `{!rsh} init` function transitions the program from `App Init` to `Step`. 
+The `{!rsh} init` function transitions the program from `App Init` to `Step`.
 
 ### {#wfs-5} Step Mode
 
@@ -50,7 +54,7 @@ A `Step` specifies actions taken by each and every participant.
 ### {#wfs-6} Local Step Mode
 
 A `Local Step` specifies actions taken by a single participant.
-Local steps must occur within the body of `only` or `each` statements.
+Local steps must occur within the body of `{!rsh} only` or `{!rsh} each` statements.
 Here is an example:
 
 ``` js
@@ -66,13 +70,13 @@ Later in this tutorial, the contract calls `{!rsh} transfer` to transfer funds f
 
 # {#wfs-8} Pre-coding preparation
 
-Before you start to code, it is a good idea to think about the application that you want to create and write down a map of the actions.
-This makes it easier to code the app, add in all of the functionality, and be more accurate.
+Before you start to code, it is a good idea to think about the application that you want to create and write down a plan for the actions.
+This makes it easier to code the app, add in all of the functionality, and be less likely to make a mistake.
 
 Wisdom for Sale requirements:
 
 1. Wisdom for Sale requires two participants, a `Buyer` and a `Seller`.
-1. The `buyer` will need a pay function and a function that states the wisdom.
+1. The `buyer` will need a pay function and a function that displays the wisdom.
 1. The `seller` will need a function to input the wisdom, and to put it up for sale.
 1. Both participants will be publishing information: the seller will publish the wisdom and the price, the buyer will publish their decision to purchase.
 1. The `buyer` needs to be able to decide to NOT purchase the wisdom, so we need to create a function for cancelling the sale.
@@ -80,7 +84,7 @@ Wisdom for Sale requirements:
 
 # {#wfs-9} Examine the transaction
 
-The following diagram represents the wisdom-for-sale transaction:
+The following diagram represents the Wisdom for Sale application flow:
 
 ![Seller and buyer roles](/tut/wfs/seller-buyer.png)
 
@@ -108,7 +112,7 @@ Type the following code into the file named `index.mjs`.
 
 ``` js
 load: /examples/wisdom-1-starter/index.mjs
-md5: bc703e20446c21e4806a2d0719de31c8
+md5: 77f7503ee58c2459f3793262212ca702
 range: 1-8
 ```
 
@@ -121,24 +125,24 @@ range: 1-8
 
 ``` js
 load: /examples/wisdom-1-starter/index.mjs
-md5: bc703e20446c21e4806a2d0719de31c8
+md5: 77f7503ee58c2459f3793262212ca702
 range: 10-10
 ```
 
-* Line 10: Enable enclosed code to await the fulfillment of promises.
+* Line 10: Define an empty (for now) common interaction object.
 
 ``` js
 load: /examples/wisdom-1-starter/index.mjs
-md5: bc703e20446c21e4806a2d0719de31c8
+md5: 77f7503ee58c2459f3793262212ca702
 range: 12-16
 ```
 
+* Line 13: Code for when you run this app as the `seller`.
 * Line 14: Define an empty (for now) Seller interaction object.
-* Line 15: Code for when you run this app as the `seller`.
 
 ``` js
 load: /examples/wisdom-1-starter/index.mjs
-md5: bc703e20446c21e4806a2d0719de31c8
+md5: 77f7503ee58c2459f3793262212ca702
 range: 18-20
 ```
 
@@ -148,12 +152,12 @@ range: 18-20
 
 ``` js
 load: /examples/wisdom-1-starter/index.mjs
-md5: bc703e20446c21e4806a2d0719de31c8
+md5: 77f7503ee58c2459f3793262212ca702
 range: 22-28
 ```
 
 * Line 23: Code for when you run this app as the `buyer`.
-* Line 24 and 25: Define empty (for now) object.
+* Line 24 and 25: Define empty (for now) Buyer interaction object.
 
 ## {#wfs-12} Create the Backened
 
@@ -166,7 +170,7 @@ range: 1-9
 ```
 
 * Line 1: Instruction to the compiler.
-* Lines 3-9: Define empty (for now) objects.
+* Lines 3-9: Define empty (for now) participant interaction interface objects.
 
 ``` reach
 load: /examples/wisdom-1-starter/index.rsh
@@ -184,9 +188,9 @@ range: 11-16
 
 Reach can currently compile the DApp to run on any of the following consensus network types:
 
-* `ALGO`
-* `CFX`
-* `ETH`
+* `ALGO` -- Algorand
+* `CFX` -- Conflux
+* `ETH` -- Ethereum (and other EVM-based networks)
 
 1. Instruct the Reach compiler to connect to a network by setting the `{!cmd} REACH_CONNECTOR_MODE` environment variable.
 Open a command prompt, and run the following command:
@@ -206,8 +210,8 @@ Open a command prompt, and run the following command:
     > For consistency, output in this tutorial reflects `{!cmd} REACH_CONNECTOR_MODE=ALGO`.
 
     :::note
-	Where does the DApp run?
-    In a local "devnet" environment, the Reach Compiler, the consensus network devnets, your application, and the smart contract run on your computer in Docker containers instantiated from Reach Docker images.
+    Where does the DApp run?
+    In a local "devnet" environment, the Reach compiler, the consensus network devnets, your application, and the smart contract run on your computer in Docker containers instantiated from Reach Docker images.
     A devnet refers to Reach's Dockerized developer network that allows developers to rapidly test their DApp.
     :::
 
@@ -222,14 +226,14 @@ Open a command prompt, and run the following command:
 
 This section shows you how to tell your DApp whether to run as the `seller` or the `buyer`.
 You do this by passing `role` as a command-line argument (e.g. `{!cmd} reach run index seller`).
-You cannot do this by passing `role` as a custom environment variable (e.g. `{!cmd} ROLE=seller reach run`) because in order to protect you, the [reach](https://github.com/reach-sh/reach-lang/blob/master/reach) script exports only a pre-determined list of environment variables (including `{!cmd} REACH_CONNECTOR_MODE`) within the Docker container where it runs your DApp.
+You cannot do this by passing `role` as a custom environment variable (e.g. `{!cmd} ROLE=seller reach run`) because in order to protect you, the `{!cmd} reach` tool exports only a pre-determined list of environment variables (including `{!cmd} REACH_CONNECTOR_MODE`) within the Docker container where it runs your DApp.
 Follow these directions to pass `role` as a command-line argument:
 
 1. In `index.mjs`, find the following line:
 
     ``` js
     load: /examples/wisdom-1-starter/index.mjs
-    md5: bc703e20446c21e4806a2d0719de31c8
+    md5: 77f7503ee58c2459f3793262212ca702
     range: 4-4
     ```
 
@@ -237,7 +241,7 @@ Follow these directions to pass `role` as a command-line argument:
 
     ``` js
     load: /examples/wisdom-2-roles/index.mjs
-    md5: cdf57aff18996701e70adda28051884b
+    md5: 1c1a401485c7053388922bbcac4eb14c
     range: 4-8
     ```
 
@@ -257,8 +261,8 @@ Follow these directions to pass `role` as a command-line argument:
     $ ./reach run index seller
     ```
 
-    When you pass arguments to `{!cmd} ./reach run`, the first one must be the name of the `rsh` file without the extension (i.e. `index`) as seen above. 
-    
+    When you pass arguments to `{!cmd} ./reach run`, the first one must be the name of the `rsh` file without the extension (i.e. `index`) as seen above.
+
     Application output should resemble the following:
 
     ```
@@ -298,7 +302,7 @@ As mentioned, `{!js} parseCurrency` is often used for human interactions: settin
 
     ``` js
     load: /examples/wisdom-2-roles/index.mjs
-    md5: cdf57aff18996701e70adda28051884b
+    md5: 1c1a401485c7053388922bbcac4eb14c
     range: 12-12
     ```
 
@@ -306,7 +310,7 @@ As mentioned, `{!js} parseCurrency` is often used for human interactions: settin
 
     ``` js
     load: /examples/wisdom-3-units1/index.mjs
-	md5: 8eb46a5c122fc4918051d232107525e4
+    md5: ddea8b4f2eabe22280ca769fe27dec1e
     range: 13-14
     ```
 
@@ -324,7 +328,7 @@ Replace the `{!js} stdlib` statements with the corresponding `{!js} const` state
 
     ``` js
     load: /examples/wisdom-4-units2/index.mjs
-    md5: 1a17087a0ec35888f0b65828d672c472
+    md5: 0a8d31fecdf9a62e0f3f82757eaa88a9
     range: 12-15
     ```
 
@@ -337,7 +341,7 @@ Let's write a couple of statements to the console to make sure it works as we ex
 
     ``` js
     load: /examples/wisdom-5-swap-units/index.mjs
-    md5: 4f10810300288c5fd21e6a06b7c1432a
+    md5: 36609a212f1cfe6b51743e1fd580176d
     range: 12-20
     ```
 
@@ -358,7 +362,7 @@ Your new code should look like the following:
 
     ``` js
     load: /examples/wisdom-6-swap-refined/index.mjs
-    md5: dde0f50ca1bd5e9e25c4040cd998a01d
+    md5: 262be1cf2a189096986b250eefa4f777
     range: 13-16
     ```
 
@@ -368,7 +372,7 @@ Your new code should look like the following:
 
     ``` js
     load: /examples/wisdom-6-swap-refined/index.mjs
-    md5: dde0f50ca1bd5e9e25c4040cd998a01d
+    md5: 262be1cf2a189096986b250eefa4f777
     range: 26-26
     ```
 
@@ -376,7 +380,7 @@ Your new code should look like the following:
 
     ``` js
     load: /examples/wisdom-7-display-balance/index.mjs
-    md5: bef72d9247314789ae4b937fe3e7198b
+    md5: 95b219c1d1332827d54aef69fbbe5144
     range: 26-30
     ```
 
@@ -394,8 +398,7 @@ Your new code should look like the following:
 # {#wfs-16} Deploy the contract (seller)
 
 This section shows you how to have the `seller` (1) deploy the contract and (2) return the contract information to be used later by the `buyer` to attach to the contract.
-The format of contract information varies depending on the consensus network but can always be a JSON string.
-You can make it into JSON format and change it from JSON format without losing information.
+The format of contract information varies depending on the consensus network but can always be serialized to and from JSON without losing information.
 The following are examples of contract information written in JSON:
 
 |Consensus Network|Contract Information Example|
@@ -405,7 +408,7 @@ The following are examples of contract information written in JSON:
 |Ethereum|`"0x403372276F841d7451E6417Cc7B17fDD159FE34C"`|
 
 In this tutorial, the `seller` outputs the contract information to the Seller Terminal, and the `buyer` copies & pastes the contract information from the Seller Terminal to the Buyer Terminal (including the quotation marks if present).
-In an actual deployment, the `seller` would need to search for a contract name and its associated contract information in some repository. 
+In an actual deployment, the `seller` would need to search for a contract name and its associated contract information in some repository, or receive it in the form of something like a QR code.
 
 Follow these directions to have the `seller` deploy the contract and return the contract information:
 
@@ -413,7 +416,7 @@ Follow these directions to have the `seller` deploy the contract and return the 
 
     ``` js
     load: /examples/wisdom-7-display-balance/index.mjs
-    md5: bef72d9247314789ae4b937fe3e7198b
+    md5: 95b219c1d1332827d54aef69fbbe5144
     range: 20-23
     ```
 
@@ -421,7 +424,7 @@ Follow these directions to have the `seller` deploy the contract and return the 
 
     ``` js
     load: /examples/wisdom-8-pricing/index.mjs
-    md5: d0fa66157c30a44f0128ce2af5b26181
+    md5: 8669f708a34c09e769615516ed89d727
     range: 20-25
     ```
 
@@ -431,7 +434,7 @@ Follow these directions to have the `seller` deploy the contract and return the 
 
     ``` reach
     load: /examples/wisdom-8-pricing/index.rsh
-    md5: 20172556274eb9b0ab067b657a74d977
+    md5: ce20f5ed8b89dd0d4671989972e692a9
     range: 4-5
     ```
 
@@ -439,32 +442,32 @@ Follow these directions to have the `seller` deploy the contract and return the 
 
     ``` reach
     load: /examples/wisdom-8-pricing/index.rsh
-    md5: 20172556274eb9b0ab067b657a74d977
+    md5: ce20f5ed8b89dd0d4671989972e692a9
     range: 4-8
     ```
-    
+
     * Line 4: `sellerInteract` is a user-defined Reach object.
     * Line 5: The spread syntax `...` adds all `commonInteract` properties (none yet) to the object.
-    * Line 6: `price ` is a `UInt`, a Reach-defined unsigned integer. 
-    * Line 7: `reportReady` is a function that takes a `UInt` as an argument and returns nothing.
+    * Line 6: `price` is a `{!rsh} UInt`, a Reach-defined unsigned integer.
+    * Line 7: `reportReady` is a function that takes a `{!rsh} UInt` as an argument and returns nothing.
 
 1. In `index.rsh`, add the following code between `{!rsh} init` and `{!rsh} exit`:
 
     ``` reach
     load: /examples/wisdom-8-pricing/index.rsh
-    md5: 20172556274eb9b0ab067b657a74d977
+    md5: ce20f5ed8b89dd0d4671989972e692a9
     range: 16-23
     ```
 
-    * Line 16: `init` initializes the DApp, and transitions to a step.
-    * Line 18: `S.only()` transitions to a local step in which `seller` gets `price`.
-    * Line 19: `S.publish()` transitions to a consensus step.
-    * Line 20: `S.interact` transitions to a local step in which `seller` passes `price` to frontend.
-    * Line 21: `commit()` transitions to a step.
-    * Line 23: `exit()` halts the contract forever.
+    * Line 16: `{!rsh} init` initializes the DApp, and transitions to a step.
+    * Line 18: `{!rsh} S.only()` transitions to a local step in which `seller` gets `price`.
+    * Line 19: `{!rsh} S.publish()` transitions to a consensus step.
+    * Line 20: `{!rsh} S.interact` transitions to a local step in which `seller` passes `price` to frontend.
+    * Line 21: `{!rsh} commit()` transitions to a step.
+    * Line 23: `{!rsh} exit()` halts the contract forever.
 
     The next section explains these functions in more detail.
-	For now, know that Reach programs (the `index.rsh` portion of your Reach DApp) are organized into four modes, and that `{!rsh} init`, `{!rsh} only`, `{!rsh} publish`, `{!rsh} commit`, and `{!rsh} exit` cause mode transitions.
+    For now, know that Reach programs (the `index.rsh` portion of your Reach DApp) are organized into four modes, and that `{!rsh} init`, `{!rsh} only`, `{!rsh} publish`, `{!rsh} commit`, and `{!rsh} exit` cause mode transitions.
 
 1. Run your DApp as the `seller`.
    The output should resemble the following:
@@ -490,24 +493,24 @@ This section demonstrates how the `buyer` attaches to the contact.
 It also introduces `@reach-sh/stdlib/ask.mjs`, a minimal Reach Node.js package for command-line input.
 
 Interaction is often necessary between the DApp and the participants.
-`{!rsh} ask` is a convenient way to allow interaction in a variety of different ways, each with a specific use.
-`{!rsh} ask.yesno` is used to ask a question where the answer is either yes or no, and accepts a single letter response (`y` for yes and `n` for no).
-`{!rsh} ask.ask` is valuable for queries where the expected response is a string, such as "What is your name?".
-`{!rsh} ask.done` is used when there are no more questions.
+`{!js} ask` is a convenient way to allow interaction in a variety of different ways, each with a specific use.
+`{!js} ask.yesno` is used to ask a question where the answer is either yes or no, and accepts a single letter response (`y` for yes and `n` for no).
+`{!js} ask.ask` is valuable for queries where the expected response is a string, such as "What is your name?".
+`{!js} ask.done` is used when there are no more questions.
 
 1. In `index.mjs`, add `ask` to the imports from the Reach standard library:
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: fd42a0ea2902ec1be81027e6b2b9dcd1
-    range: 1 - 2
+    md5: c07daef24eed633d510f2469b8dbe1ba
+    range: 1 - 3
     ```
 
 1. In `index.mjs`, find the `buyerInteract` code:
 
     ``` js
     load: /examples/wisdom-8-pricing/index.mjs
-    md5: d0fa66157c30a44f0128ce2af5b26181
+    md5: 8669f708a34c09e769615516ed89d727
     range: 38-40
     ```
 
@@ -515,30 +518,30 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: fd42a0ea2902ec1be81027e6b2b9dcd1
+    md5: c07daef24eed633d510f2469b8dbe1ba
     range: 38-49
     ```
 
-    * Line 44: `{!rsh} ask.ask` and `{!rsh} ask.yesno` are functions in `@reach-sh/stdlib`.
-	`{!rsh} ask.yesno` accepts only `y` or `n`.
+    * Line 44: `{!js} ask.ask` and `{!js} ask.yesno` are functions in `@reach-sh/stdlib`.
+      `{!js} ask.yesno` accepts only `y` or `n`.
     * Line 48: You must parse contract information (so, it must be parsable).
     * Line 51: You can substitute `participants` for `p`.
 
-1. And, add `{!rsh} ask.done();` at the bottom of the file. 
+1. And, add `{!js} ask.done();` at the bottom of the file.
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: fd42a0ea2902ec1be81027e6b2b9dcd1
+    md5: c07daef24eed633d510f2469b8dbe1ba
     range: 51-51
     ```
-	
-	`{!rsh} ask.done();` needs to be after `};` so that it is accessible by both the `Seller` and the `Buyer`
+
+    `{!js} ask.done();` needs to be after `};` so that it is accessible by both the `Seller` and the `Buyer`
 
 1. In `index.rsh`, find the `buyerInteract` code:
 
     ``` reach
     load: /examples/wisdom-8-pricing/index.rsh
-    md5: 20172556274eb9b0ab067b657a74d977
+    md5: ce20f5ed8b89dd0d4671989972e692a9
     range: 9-11
     ```
 
@@ -546,12 +549,12 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` reach
     load: /examples/wisdom-9-interaction/index.rsh
-    md5: 93e1fa791a16c88d3d44d1b8cc6cce09
+    md5: c01d2793ba9dc53f3d00900b075007b1
     range: 9-12
     ```
-	
-	After the `...commonInteract`, there needs to be a comma.
-	When you add a property, all properties above the final property require a comma at the end of the line.
+
+    After the `...commonInteract`, there needs to be a comma.
+    When you add a property, all properties above the final property require a comma at the end of the line.
 
     * Line 9: `buyerInteract` is a user-defined Reach object.
     * Line 10: The spread syntax `...` adds all `commonInteract` properties (none yet) to the object.
@@ -561,7 +564,7 @@ Interaction is often necessary between the DApp and the participants.
 
     ``` reach
     load: /examples/wisdom-9-interaction/index.rsh
-    md5: 93e1fa791a16c88d3d44d1b8cc6cce09
+    md5: c01d2793ba9dc53f3d00900b075007b1
     range: 24-30
     ```
 
@@ -575,22 +578,26 @@ Interaction is often necessary between the DApp and the participants.
 
     ::::alongside
     :::alongsideColumn
+    ```
     Your role is seller.
-	The consensus network is ALGO.
-	Your balance is 1000 ALGO.
-	Your wisdom is for sale at 5 ALGO.
-	Contract info: {"type":"BigNumber","hex":"0xa6"}
-	Your balance is 999.997 ALGO.
+    The consensus network is ALGO.
+    Your balance is 1000 ALGO.
+    Your wisdom is for sale at 5 ALGO.
+    Contract info: {"type":"BigNumber","hex":"0xa6"}
+    Your balance is 999.997 ALGO.
+    ```
     :::
     :::alongsideColumn
+    ```
     Your role is buyer.
-	The consensus network is ALGO.
-	Paste contract info:
-	{"type":"BigNumber","hex":"0xa6"}
-	Your balance is 1000 ALGO.
-	Do you want to purchase wisdom for 5 ALGO?
-	n
-	Your balance is 999.998 ALGO.
+    The consensus network is ALGO.
+    Paste contract info:
+    {"type":"BigNumber","hex":"0xa6"}
+    Your balance is 1000 ALGO.
+    Do you want to purchase wisdom for 5 ALGO?
+    n
+    Your balance is 999.998 ALGO.
+    ```
     :::
     ::::
 
@@ -602,7 +609,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
-    md5: fd42a0ea2902ec1be81027e6b2b9dcd1
+    md5: c07daef24eed633d510f2469b8dbe1ba
     range: 18-18
     ```
 
@@ -610,7 +617,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` js
     load: /examples/wisdom-10-cancel1/index.mjs
-    md5: c17360b641a422f0f4dc57c1b12f0fbb
+    md5: cf4d87c4c5ac17a8c95bddbb9eedf47b
     range: 18-20
     ```
 
@@ -618,7 +625,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` reach
     load: /examples/wisdom-9-interaction/index.rsh
-    md5: 93e1fa791a16c88d3d44d1b8cc6cce09
+    md5: c01d2793ba9dc53f3d00900b075007b1
     range: 3-3
     ```
 
@@ -626,7 +633,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` reach
     load: /examples/wisdom-10-cancel1/index.rsh
-    md5: 94e3cb037a01cdc6b85ac3fc1a29f728
+    md5: e3eee2862c1aecc78e2e04aaa8d873a5
     range: 3-5
     ```
 
@@ -634,7 +641,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` reach
     load: /examples/wisdom-10-cancel1/index.rsh
-    md5: 94e3cb037a01cdc6b85ac3fc1a29f728
+    md5: e3eee2862c1aecc78e2e04aaa8d873a5
     range: 28-34
     ```
 
@@ -643,23 +650,27 @@ This section shows you how to display that a transaction is cancelled.
 
     ::::alongside
     :::alongsideColumn
+    ```
     Your role is seller.
-	The buyer cancelled the order.
+    The buyer cancelled the order.
+    ```
     :::
     :::alongsideColumn
+    ```
     Your role is buyer.
-	The buyer cancelled the order.
+    The buyer cancelled the order.
+    ```
     :::
     ::::
 
     In the Buyer Terminal, it might be more consistent to output `You cancelled the order` instead of `The buyer cancelled the order`.
-	The following steps implement this slight change.
+    The following steps implement this slight change.
 
 1. In `index.mjs`, modify `commonInteract`:
 
     ``` js
     load: /examples/wisdom-11-cancel2/index.mjs
-    md5: c2c6cca9471e971e0ea2aba7114d1e63
+    md5: 3cff8f0b9c48ff6e3cf12aaa4e0cce33
     range: 18-20
     ```
 
@@ -667,7 +678,7 @@ This section shows you how to display that a transaction is cancelled.
 
     ``` js
     load: /examples/wisdom-11-cancel2/index.mjs
-    md5: c2c6cca9471e971e0ea2aba7114d1e63
+    md5: 3cff8f0b9c48ff6e3cf12aaa4e0cce33
     range: 25-25
     ```
 
@@ -676,12 +687,16 @@ This section shows you how to display that a transaction is cancelled.
 
     ::::alongside
     :::alongsideColumn
+    ```
     Your role is seller.
-	The buyer cancelled the order.
+    The buyer cancelled the order.
+    ```
     :::
     :::alongsideColumn
+    ```
     Your role is buyer.
-	You cancelled the order.
+    You cancelled the order.
+    ```
     :::
     ::::
 
@@ -693,7 +708,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
-    md5: c27c72685eba929d0a9bcbd1367394c9
+    md5: a8f7083fadc2f568146297185aff3211
     range: 26-33
     ```
 
@@ -701,15 +716,15 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 7fad2a5a2019cb7594c3c9ee63c77930
+    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
     range: 7-10
     ```
-	
+
 1. In `index.rsh`, add a `reportPayment` property to `commonInteract` right after the `reportCancellation` property:
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 7fad2a5a2019cb7594c3c9ee63c77930
+    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
     range: 3-6
     ```
 
@@ -717,7 +732,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
-    md5: c27c72685eba929d0a9bcbd1367394c9
+    md5: a8f7083fadc2f568146297185aff3211
     range: 48-52
     ```
 
@@ -725,7 +740,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 7fad2a5a2019cb7594c3c9ee63c77930
+    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
     range: 13-17
     ```
 
@@ -733,7 +748,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 7fad2a5a2019cb7594c3c9ee63c77930
+    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
     range: 39-48
     ```
 
@@ -744,13 +759,13 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
     * Line 47: The `buyer` sends the new wisdom to the frontend for the user.
 
     It might be nice to inform the `seller` and the `buyer` when the `{!rsh} pay` and `{!rsh} transfer` actions take place.
-	The next steps add these improvements.
+    The next steps add these improvements.
 
 1. In `index.mjs`, add `reportCancellation` to `commonInteract`:
 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
-    md5: c27c72685eba929d0a9bcbd1367394c9
+    md5: a8f7083fadc2f568146297185aff3211
     range: 21-21
     ```
 
@@ -758,7 +773,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 7fad2a5a2019cb7594c3c9ee63c77930
+    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
     range: 5-5
     ```
 
@@ -766,12 +781,12 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 7fad2a5a2019cb7594c3c9ee63c77930
+    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
     range: 40-50
     ```
 
-    * Line 41: `each` calls `interact.reportPayment` for each participant in the array.
-    * Line 49: `each` calls `interact.reportTransfer` for each participant in the array.
+    * Line 41: `{!rsh} each` calls `{!rsh} interact.reportPayment` for each participant in the array.
+    * Line 49: `{!rsh} each` calls `{!rsh} interact.reportTransfer` for each participant in the array.
 
 1. Run your DApp as the `seller` and the `buyer`.
    Answer `y` when asked to buy wisdom.
@@ -779,10 +794,11 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ::::alongside
     :::alongsideColumn
+    ```
     Your role is seller.
     The consensus network is ALGO.
     Enter a wise phrase, or press Enter for default:
-    
+
     Build healthy communities.
     Your balance is 1000 ALGO.
     Your wisdom is for sale at 5 ALGO.
@@ -790,8 +806,10 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
     The buyer paid 5 ALGO to the contract.
     The contract paid 5 ALGO to you.
     Your balance is 1004.994 ALGO.
+    ```
     :::
     :::alongsideColumn
+    ```
     Your role is buyer.
     The consensus network is ALGO.
     Paste contract info:
@@ -803,6 +821,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
     The contract paid 5 ALGO to the seller.
     Your new wisdom is "Build healthy communities."
     Your balance is 994.997 ALGO.
+    ```
     :::
     ::::
 
@@ -810,18 +829,18 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
     So far, you have learned how to create a contract, attach to the contract, cancel the contract, and complete the contract.
     These are some of the most common interactions participants will experience after deploying or attaching to a Reach DApp.
 
-    Let's take a look at the final Reach code: 
+    Let's take a look at the final Reach code:
 
     ```
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 7fad2a5a2019cb7594c3c9ee63c77930
+    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
     ```
 
     And the final frontend code:
 
     ```
     load: /examples/wisdom-12-complete/index.mjs
-    md5: c27c72685eba929d0a9bcbd1367394c9
+    md5: a8f7083fadc2f568146297185aff3211
     ```
 
 # {#wfs-20} View the contract
@@ -835,12 +854,12 @@ Review the the `index.mjs` version of `confirmPurchase` from the `buyerInteract`
 
 ``` js
 load: /examples/wisdom-9-interaction/index.mjs
-md5: fd42a0ea2902ec1be81027e6b2b9dcd1
+md5: c07daef24eed633d510f2469b8dbe1ba
 range: 41 - 41
 ```
 
 Currently, the backend calls the function passing the `price` of the contract, and the frontend displays `price` to the `buyer`, asks for a decision, waits for the answer, and returns `true` or `false` to the backend.
-This approach doesn't work well for a Web-app which might use a modal (an informative pop-up) in place of `{!rsh} ask-yesno`:
+This approach doesn't work well for a Web-app which might use a modal (an informative pop-up) in place of `{!js} ask.yesno`:
 
 <div><img src="modal.png" class="img-fluid my-4 d-block" width=400 loading="lazy"></div>
 
@@ -863,7 +882,7 @@ The following directions show you how to obtain `price` from the contract before
 
     ``` reach
     load: /examples/wisdom-14-modal/index.rsh
-    md5: 7a27a075e65a459366170170e279fafc
+    md5: ba3a13f791cd8b66554d685957ea1d9d
     range: 42-52
     ```
 
@@ -871,7 +890,7 @@ The following directions show you how to obtain `price` from the contract before
 
     ``` js
     load: /examples/wisdom-14-modal/index.mjs
-    md5: 8d4179720778e72a73a6ee7e9b28da71
+    md5: 3199de6edbb580ccdc95e57212b1577d
     range: 54-61
     ```
 
@@ -883,7 +902,7 @@ The following directions show you how to obtain `price` from the contract before
     ```
 
 The `buyer` is able to obtain `price` before attaching to the contract by using a view.
-Now, if the `buyer` decides not to buy, he did not pay the cost of connecting to the contract, as he did in [Attach to the contract]{##wfs-17).
+Now, if the `buyer` decides not to buy, he did not pay the cost of connecting to the contract, as he did in [Attach to the contract](##wfs-17).
 This saves the `buyer` money and frustration from paying a fee while getting nothing in return, and greatly improves the user experience.
 If you want to learn more about GUI Dapps, see our next tutorial.
 
@@ -979,13 +998,13 @@ Yes. Running Reach DApps on local Dockerized devnets is a convenient way to deve
 Name the environment variable used by Reach to determine the target consensus network.
 
 ::::testA
-`REACH_CONNECTOR_MODE`
+`{!cmd} REACH_CONNECTOR_MODE`
 :::
 
 ::::
 
 ::::testQ
-Name the `reach` command that stops and removes all Reach Docker containers.
+Name the `{!cmd} reach` command that stops and removes all Reach Docker containers.
 
 ::::testA
 `./reach down`
@@ -997,7 +1016,7 @@ Name the `reach` command that stops and removes all Reach Docker containers.
 Name the Reach object that allows frontends to peak into a contract without attaching.
 
 ::::testA
-`View`
+`{!rsh} View`
 :::
 
 ::::

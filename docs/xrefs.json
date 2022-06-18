@@ -1483,6 +1483,98 @@
     "title": "Tutorials",
     "path": "/tut/#tuts"
   },
+  "wfs": {
+    "title": "Wisdom For Sale",
+    "path": "/tut/wfs/#wfs"
+  },
+  "wfs-1": {
+    "title": "Learning Objectives",
+    "path": "/tut/wfs/#wfs-1"
+  },
+  "wfs-10": {
+    "title": "Create the files",
+    "path": "/tut/wfs/#wfs-10"
+  },
+  "wfs-11": {
+    "title": "Create the Frontend",
+    "path": "/tut/wfs/#wfs-11"
+  },
+  "wfs-12": {
+    "title": "Create the Backened",
+    "path": "/tut/wfs/#wfs-12"
+  },
+  "wfs-13": {
+    "title": "Run the DApp",
+    "path": "/tut/wfs/#wfs-13"
+  },
+  "wfs-14": {
+    "title": "Pass an argument",
+    "path": "/tut/wfs/#wfs-14"
+  },
+  "wfs-15": {
+    "title": "Explore units and balances",
+    "path": "/tut/wfs/#wfs-15"
+  },
+  "wfs-16": {
+    "title": "Deploy the contract (seller)",
+    "path": "/tut/wfs/#wfs-16"
+  },
+  "wfs-17": {
+    "title": "Attach to the contract (buyer)",
+    "path": "/tut/wfs/#wfs-17"
+  },
+  "wfs-18": {
+    "title": "Cancel a transaction",
+    "path": "/tut/wfs/#wfs-18"
+  },
+  "wfs-19": {
+    "title": "Complete a transaction",
+    "path": "/tut/wfs/#wfs-19"
+  },
+  "wfs-2": {
+    "title": "Reach Modes",
+    "path": "/tut/wfs/#wfs-2"
+  },
+  "wfs-20": {
+    "title": "View the contract",
+    "path": "/tut/wfs/#wfs-20"
+  },
+  "wfs-21": {
+    "title": "Review and further learning",
+    "path": "/tut/wfs/#wfs-21"
+  },
+  "wfs-22": {
+    "title": "Self Assessment",
+    "path": "/tut/wfs/#wfs-22"
+  },
+  "wfs-3": {
+    "title": "Reach Mode Definitions",
+    "path": "/tut/wfs/#wfs-3"
+  },
+  "wfs-4": {
+    "title": "Init Mode",
+    "path": "/tut/wfs/#wfs-4"
+  },
+  "wfs-5": {
+    "title": "Step Mode",
+    "path": "/tut/wfs/#wfs-5"
+  },
+  "wfs-6": {
+    "title": "Local Step Mode",
+    "path": "/tut/wfs/#wfs-6"
+  },
+  "wfs-7": {
+    "title": "Consensus Step Mode",
+    "path": "/tut/wfs/#wfs-7"
+  },
+  "wfs-8": {
+    "title": "Pre-coding preparation",
+    "path": "/tut/wfs/#wfs-8"
+  },
+  "wfs-9": {
+    "title": "Examine the transaction",
+    "path": "/tut/wfs/#wfs-9"
+  },
   "workshop": {
     "title": "Workshop",
     "path": "/workshop/#workshop"

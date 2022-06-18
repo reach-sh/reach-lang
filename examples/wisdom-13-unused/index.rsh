@@ -1,6 +1,6 @@
 'reach 0.1';
 
-const commonInteract = {  
+const commonInteract = {
   reportCancellation: Fun([], Null),
   reportPayment: Fun([UInt], Null),
   reportTransfer: Fun([UInt], Null)
@@ -21,7 +21,7 @@ export const main = Reach.App(() => {
   const S = Participant('Seller', sellerInteract);
   const B = Participant('Buyer', buyerInteract);
   init();
-  
+
   S.only(() => { const price = declassify(interact.price); });
   S.publish(price);
   S.interact.reportReady(price);
@@ -36,18 +36,18 @@ export const main = Reach.App(() => {
   } else {
     commit();
   }
-  
-    B.pay(price);
-    each([S, B], () => interact.reportPayment(price));
-    commit();
 
-    S.only(() => { const wisdom = declassify(interact.wisdom); });
-    S.publish(wisdom);
-    transfer(price).to(S);
-    commit();
+  B.pay(price);
+  each([S, B], () => interact.reportPayment(price));
+  commit();
 
-    each([S, B], () => interact.reportTransfer(price));
-    B.interact.reportWisdom(wisdom);
+  S.only(() => { const wisdom = declassify(interact.wisdom); });
+  S.publish(wisdom);
+  transfer(price).to(S);
+  commit();
+
+  each([S, B], () => interact.reportTransfer(price));
+  B.interact.reportWisdom(wisdom);
 
   exit();
 });
