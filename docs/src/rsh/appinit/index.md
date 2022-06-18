@@ -164,11 +164,17 @@ API({ add2: Fun([UInt, UInt], UInt), add1: Fun([UInt], UInt) }, { add1: "add", a
 APIs are functions that can be called by other contracts, as well as off-chain.
 
 An API is defined with `{!rsh} API(apiName, apiInterface, ?apiAlias)` or `{!rsh} API(apiInterface, ?apiAlias)`, where `{!rsh} apiName` is a string that labels the API, `{!rsh} apiInterface` is an object where each field indicates the type of a function provided by the contract as an API, and `{!rsh} apiAlias` is an optional object that maps function names from the `{!rsh} apiInterface` to an alias.
-This @{defn("function alias")} allows overloaded methods to be created.
+
+The @{defn("function alias")} allows overloaded methods to be created.
 Many functions may map to the same alias as long as each function domain is unique.
-These APIs are available in frontends via the `{!js} ctc.apis` object, wherein fields are the members of `{!rsh} apiInterface` and may be used in `{!rsh} .api` components of `{!rsh} fork` and `{!rsh} parallelReduce` to specify the behavior of the corresponding call.
+
+These APIs are available in frontends via the `{!js} ctc.apis` object.
+
+These APIs are available on-chain by using the appropriate network's ABI and are named `apiName_f` or `f` is there is no `apiName`, where `f` is the name of the field or the alias (if there is one).
+
+In backends, the `{!rsh} API` value is an object wherein fields are the members of `{!rsh} apiInterface` and may be used in `{!rsh} .api` components of `{!rsh} fork` and `{!rsh} parallelReduce` to specify the behavior of the corresponding call.
 These are called @{defn("API member function")}s.
-Each function must occur exactly once in the entire program.
+Each function must occur in the entire program and may only appear once in each consensus step.
 
 ```
 load: /examples/dominant-assurance/index.rsh
@@ -196,6 +202,12 @@ Views are read-only functions that can be called by other contracts, as well as 
 
 A view is defined with `{!rsh} View(viewName, viewInterface)` or `{!rsh} View(viewInterface)`, where `{!rsh} viewName` is a string that labels the view and `{!rsh} viewInterface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp.
 
+These views are available in frontends via the `{!js} ctc.views` object.
+
+These views are available on-chain by using the appropriate network's ABI and are named `viewName_f` or `f` is there is no `viewName`, where `v` is the name of the field.
+
+In backends, the `{!rsh} View` object as a view object.
+
 For example, `{!rsh} View` is used in the code below without a `{!rsh} viewName`:
 ```reach
 load: /examples/remote-rsh/index.rsh
@@ -209,9 +221,6 @@ load: /examples/view-steps/index.rsh
 md5: 78e1541e01ce0791b4b41d2bcd57aaa2
 range: 11 - 12
 ```
-
-These views are available in frontends via the `{!js} ctc.views` object.
-In the DApp, the result of this application argument is referred to as a view object.
 
 ### {#ref-programs-appinit-events} Events Definition
 
