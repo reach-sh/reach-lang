@@ -38,7 +38,8 @@
     "node-fetch": "^2.6.1",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
-    "react-scripts": "^5.0.0",
+    "react-scripts": "^5.0.1",
+    "nth-check": "^2.0.1",
     "wait-port": "^0.2.9"
   },
   "author": "reach.sh",
