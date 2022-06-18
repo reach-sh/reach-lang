@@ -198,7 +198,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
           'sdTerm',
           'sdHeader',
           'sdPara',
-          'discussionsClass',
+          'sdGHDis',
         ];
         const c = sdClasses[hit.t];
         const e = doc.createElement('li');
