@@ -28,10 +28,7 @@ const retriveAllGitHubDiscussions = () => {
           data
         ).data.repository.discussions.edges;
 
-        console.info();
-        console.info('Successfully retrieved discussions');
-        console.info(discussions);
-        console.info();
+        console.info('Discussions', discussions);
 
         resolve(discussions);
       });
