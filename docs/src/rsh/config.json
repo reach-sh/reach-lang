@@ -1,6 +1,5 @@
 {
   "bookRank": 50,
-  "hasOtp": true,
   "ignored": [
     "StepDiagramSource"
   ]
