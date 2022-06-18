@@ -1,7 +1,6 @@
 import { setTimeout } from 'timers/promises';
 import CleanCss from 'clean-css';
 import { createHash } from 'crypto';
-import discussionsArray from './discussions.js';
 import fs from 'fs-extra';
 import * as htmlMinify from 'html-minifier';
 import path from 'path';
@@ -959,13 +958,7 @@ const generateRedirects = async () => {
 };
 
 const searchData = [];
-const [
-  sd_r,
-  sd_t,
-  sd_h,
-  sd_p,
-  discussionsClass,
-] = [ 0, 1, 2, 3, 4 ];
+const [ sd_r, sd_t, sd_h, sd_p ] = [ 0, 1, 2, 3, 4 ];
 const gatherSearchData = async ({doc, title, here}) => {
   const h = hh(here);
   const mini = (x) => x.replace(/\s+/g, ' ').trim();
@@ -1009,23 +1002,6 @@ const generateSearch = async () => {
   await fs.writeFile(`${rootDir}/searchData.json`, JSON.stringify(searchData,null,2));
 };
 
-const discussionsData = [];
-discussionsArray.forEach(({ node }) => {
-  const { url, title } = node;
-  discussionsData.push({
-    objectID: url,
-    pt: title,
-    t: discussionsClass,
-    c: title,
-  });
-});
-const generateDiscussions = async () => {
-  await fs.writeFile(
-    `${rootDir}/discussionsData.json`,
-    JSON.stringify(discussionsData, null, 2) + '\n'
-  );
-};
-
 const doTop = () =>
   processAll(`base.html`, process.env, srcDir);
 
@@ -1043,7 +1019,6 @@ await Promise.all([
 ]);
 // This depends on the actual content being complete
 await Promise.all([
-  generateDiscussions(),
   generateSearch(),
 ]);
 

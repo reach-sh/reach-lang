@@ -21,5 +21,4 @@ COPY --from=dev /proj/docs/build ./build/
 COPY --from=dev /proj/docs/dev/log ./dev.log
 COPY --from=dev /proj/docs/dev/xrefs.json ./xrefs.json
 COPY --from=dev /proj/docs/dev/searchData.json ./search/index.json
-COPY --from=dev /proj/docs/dev/discussionsData.json ./search/discussions.json
 COPY reach ./build/
