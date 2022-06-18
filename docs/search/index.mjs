@@ -27,7 +27,6 @@ const retriveAllGitHubDiscussions = () => {
         const discussions = JSON.parse(
           data
         ).data.repository.discussions.edges;
-
         console.info('Discussions', discussions);
 
         resolve(discussions);
