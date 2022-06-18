@@ -69,15 +69,6 @@ if ( ! key ) { throw Error(`No key!`); }
 const client = algoliasearch('M53HHHS0ZW', key);
 const index = client.initIndex('docs');
 
-const addDataToAlgoliaBackend = (someIndex, dataToAdd) => {
-  someIndex.saveObjects(dataToAdd).then(({ objectIDs }) => {
-    console.log(objectIDs);
-  }).catch(error => {
-    console.log(error);
-  });
-};
-addDataToAlgoliaBackend(index, discussions);
-
 const now = Date.now();
 const indexJson_lu = indexJson.map((x) => ({ ...x, lu: now }));
 
