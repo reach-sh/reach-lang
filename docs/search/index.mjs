@@ -31,7 +31,6 @@ const retriveAllGitHubDiscussions = () => {
         resolve(discussions);
       });
     }).on('error', (error) => {
-      console.log(error.message);
       reject(error);
     });
 
