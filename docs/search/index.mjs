@@ -2,7 +2,7 @@ import algoliasearch from 'algoliasearch';
 import fs from 'fs/promises';
 import https from 'https';
 
-const retriveAllGitHubDiscussions = () => {
+const retriveAllGitHubDiscussions = (lastCursor) => {
   const options = {
     hostname: 'api.github.com',
     path: '/graphql',
@@ -24,31 +24,53 @@ const retriveAllGitHubDiscussions = () => {
       });
 
       response.on('end', async () => {
-        const discussions = JSON.parse(
+        const { edges } = JSON.parse(
           data
-        ).data.repository.discussions.edges;
-        console.info('Discussions', discussions);
-        resolve(discussions);
+        ).data.repository.discussions;
+        console.info('Discussions', edges);
+        const cursorOfLastDiscussion = edges[
+          edges.length - 1
+        ]?.cursor;
+        resolve([ edges, cursorOfLastDiscussion ]);
       });
     }).on('error', (error) => {
       reject(error);
     });
 
+    if (lastCursor) {
+      lastCursor = `"${lastCursor}"`;
+    }
     const query = `query {
       repository(name: "reach-lang", owner: "reach-sh") {
-        discussions(first: 100) {
-          edges {
-            node {
-              objectID: title
-              url: url
-              title: title
-            }}}}}`;
+        discussions(
+          first: 100
+          after: ${lastCursor}
+          orderBy: {field: CREATED_AT, direction: ASC}) {
+            edges {
+              node {
+                objectID: title
+                url: url
+                title: title
+              }
+              cursor
+            }}}}`;
 
     request.write(JSON.stringify({ query }));
     request.end();
   });
 };
-const rawDiscussions = await retriveAllGitHubDiscussions();
+const rawDiscussions = [];
+let [
+  nextDiscussions,
+  cursor,
+] = await retriveAllGitHubDiscussions(null);
+while (nextDiscussions.length) {
+  rawDiscussions.push(...nextDiscussions);
+  [
+    nextDiscussions,
+    cursor,
+  ] = await retriveAllGitHubDiscussions(cursor);
+}
 
 const sd_ghd = 4;
 const discussions = rawDiscussions.map(({ node }) => {
