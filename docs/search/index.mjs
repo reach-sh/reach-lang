@@ -28,7 +28,6 @@ const retriveAllGitHubDiscussions = () => {
           data
         ).data.repository.discussions.edges;
         console.info('Discussions', discussions);
-
         resolve(discussions);
       });
     }).on('error', (error) => {
