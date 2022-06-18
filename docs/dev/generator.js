@@ -958,7 +958,7 @@ const generateRedirects = async () => {
 };
 
 const searchData = [];
-const [ sd_r, sd_t, sd_h, sd_p ] = [ 0, 1, 2, 3, 4 ];
+const [ sd_r, sd_t, sd_h, sd_p, sd_ghd ] = [ 0, 1, 2, 3, 4 ];
 const gatherSearchData = async ({doc, title, here}) => {
   const h = hh(here);
   const mini = (x) => x.replace(/\s+/g, ' ').trim();
