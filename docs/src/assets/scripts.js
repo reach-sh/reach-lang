@@ -7,7 +7,6 @@ const hh = (x) => x === '' ? '/' : `/${x}/`;
 
 const searchClient = algoliasearch('M53HHHS0ZW', '0cfd8f1c1a0e3cb7b2abd77b831614dc');
 const searchIndex = searchClient.initIndex('docs');
-const discSearchIndex = searchClient.initIndex('discussions');
 
 const currentPage = {
   folder: null,
