@@ -35,8 +35,7 @@ const retriveAllGitHubDiscussions = () => {
       reject(error);
     });
 
-    const query = `
-    query {
+    const query = `query {
       repository(name: "reach-lang", owner: "reach-sh") {
         discussions(first: 100) {
           edges {
@@ -44,12 +43,7 @@ const retriveAllGitHubDiscussions = () => {
               objectID: title
               url: url
               title: title
-            }
-          }
-        }
-      }
-    }
-    `;
+            }}}}}`;
 
     request.write(JSON.stringify({ query }));
     request.end();
