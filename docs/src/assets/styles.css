@@ -692,7 +692,7 @@ img {
   margin-right: 1em;
 }
 
-#search-results-list li.discussionsClass span.p::after {
+#search-results-list li.sdGHDis span.p::after {
   content: "\f09b";
   font-family: "Font Awesome 5 Brands";
   margin-left: 1em;
