@@ -5,6 +5,7 @@ module Reach.Connector.ETH_Solidity (connect_eth) where
 -- https://github.com/reach-sh/reach-lang/blob/8d912e0/hs/src/Reach/Connector/ETH_EVM.hs.dead
 
 import Control.Monad
+import Control.Monad.Extra
 import Control.Monad.Reader
 import Control.Monad.Trans.Except
 import Data.Aeson as Aeson
@@ -1347,8 +1348,8 @@ funRetSig ret_ty = do
   let ret_ty'' = ret_ty' <+> withArgLoc ret_ty
   return $ "external payable returns" <+> parens ret_ty''
 
-apiArgs :: ApiInfo -> App (Doc, [Doc], [Doc], [Doc], Doc)
-apiArgs ApiInfo {..} = do
+apiArgs :: Doc -> ApiInfo -> App ([Doc], [Doc], [Doc], Doc)
+apiArgs tyMsg (ApiInfo {..}) = do
   which_msg <- (liftIO . readIORef) =<< asks ctxt_which_msg
   ai_msg_vs <- case M.lookup ai_which which_msg of
     Just vs -> return vs
@@ -1362,76 +1363,60 @@ apiArgs ApiInfo {..} = do
                       let decl = solDecl name (sol_ty <> withArgLoc ty)
                       return (name, decl))
                   indexedTypes
-  -- Creates the tuple needed to call the consensus function
-  let makeConsensusArg args = do
-        case ai_msg_vs of
-          [] -> return "false"
-          _ -> do
-            tc_args <-
-              case (ai_msg_vs, ai_msg_tys) of
-                ([DLVar _ _ (T_Tuple []) _], _) ->
-                  return $ ["false"]
-                -- If the argument to the exported function
-                -- is the same type that the consensus msg's
-                -- type constructor takes, apply it directly
-                ([v], [T_Tuple [t]]) | varType v == t -> do
-                  return $ args
-                ([v], _) -> do
-                  tc' <- solType_ $ varType v
-                  return $ [solApply tc' args]
-                _ -> return args
-            tc <- solType_ $ vsToType ai_msg_vs
-            return $ solApply tc tc_args
+  let makeT1 :: Doc -> (Int, Doc) -> App [ Doc ]
+      makeT1 n (i, a) = return $ [ n <> ".elem" <> pretty i <> " = " <> a <> ";" ]
+      makeT :: Doc -> [Doc] -> App [Doc]
+      makeT n as = concatMapM (makeT1 n) $ zip ([0 ..]::[Int]) as
+      makeTV :: DLVar -> Doc
+      makeTV tv = tyMsg <> "." <> solRawVar tv
   let go = \case
         AIC_Case -> do
           let c_id_s = fromMaybe (impossible "Expected case id") ai_mcase_id
           let c_id = pretty c_id_s
           -- Construct product of data variant
-          (data_t, con_t, argDefns, args) <-
-            case ai_msg_tys of
-              [dt@(T_Data env)] ->
+          (tv, data_t, argDefns, args) <-
+            case (ai_msg_vs, ai_msg_tys) of
+              ([v], [dt@(T_Data env)]) ->
                 case M.lookup c_id_s env of
-                  Just (T_Tuple []) -> return (dt, "false", [], [])
+                  Just (T_Tuple []) -> return (v, dt, [], [])
                   Just (T_Tuple ts) -> do
                     (args, argDefns) <- mkArgDefns ts
-                    t <- solType_ $ T_Tuple ts
-                    let ct = solApply t args
-                    return $ (dt, ct, argDefns, args)
+                    return $ (v, dt, argDefns, args)
                   _ -> impossible "apiDef: Constructor not in Data"
               _ -> impossible "apiDef: Expected one `Data` arg"
           dt <- solType_ data_t
-          let lifts =
-                [ dt <+> "memory _vt;"
-                , "_vt._" <> c_id <> " = " <> con_t <> semi
-                , "_vt.which = _enum_" <> dt <> "." <> c_id <> semi
-                ]
-          tc <- solType_ $ vsToType ai_msg_vs
-          let ty = solApply tc ["_vt"]
-          return $ (ty, argDefns, lifts, args, m_arg_ty)
+          let lifts1 = [ makeTV tv <> ".which = _enum_" <> dt <> "." <> c_id <> semi ]
+          lifts2 <- makeT (makeTV tv <> "._" <> c_id) args
+          let lifts = lifts1 <> lifts2
+          return $ (argDefns, lifts, args, m_arg_ty)
         AIC_SpreadArg -> do
-          (args, argDefns) <-
-            case ai_msg_tys of
-              [T_Tuple ts] -> mkArgDefns ts
-              _ -> impossible "apiDef: Expected one tuple arg"
-          ty <- makeConsensusArg args
-          return $ (ty, argDefns, [], args, m_arg_ty)
+          case (ai_msg_vs, ai_msg_tys) of
+            ([tv], [T_Tuple ts]) -> do
+              (args, argDefns) <- mkArgDefns ts
+              lifts <-
+                case ts of
+                  [] -> return [ (makeTV tv) <> " = false;" ]
+                  _ -> makeT (makeTV tv) args
+              return $ (argDefns, lifts, args, m_arg_ty)
+            _ -> impossible "apiDef: Expected one tuple arg"
   go ai_compile
 
 apiDef :: SLPart -> Bool -> ApiInfo -> App Doc
 apiDef who qualify ApiInfo {..} = do
   let who_s = adjustApiName (bunpack who) ai_which qualify
   let mf = solMsg_fun ai_which
-  (ty, argDefns, tyLifts, args, m_arg_ty) <- apiArgs $ ApiInfo {..}
+  (argDefns, tyLifts, args, m_arg_ty) <- apiArgs "_t.msg" $ ApiInfo {..}
   let body =
         vsep $
-          [ "ApiRng memory _r;"
-          , m_arg_ty <+> "memory _t;"
+          [ m_arg_ty <+> "memory _t;"
+          ] <>
+          tyLifts <>
+          [ solBraces (vsep $
+            [ "ApiRng memory _r;"
+            , solApply mf ["_t", "_r"] <> semi
+            , pretty ("return _r." <> who_s) <> semi
+            ])
           ]
-            <> tyLifts
-            <> [ "_t.msg =" <+> ty <> semi
-               , solApply mf ["_t", "_r"] <> semi
-               , pretty ("return _r." <> who_s) <> semi
-               ]
   ret <- funRetSig ai_ret_ty
   let mk w = solFunction (pretty w) argDefns ret
   let alias = case bunpack <$> ai_alias of
@@ -1445,7 +1430,7 @@ genApiJump :: SLPart -> M.Map Int ApiInfo -> App Doc
 genApiJump p ms = do
   let who = pretty $ bunpack p
   let ai = fromMaybe (impossible "genApiJump") $ headMay $ M.elems ms
-  (_, argDefns, _, args, _) <- apiArgs ai
+  (argDefns, _, args, _) <- apiArgs (impossible "ty") ai
   let whichs = map ai_which $ M.elems ms
   let chk_which w = solBinOp "==" "current_step" $ pretty w
   let chk_st = concatWith (\ l r -> l <> " || " <> r) $ map chk_which whichs
