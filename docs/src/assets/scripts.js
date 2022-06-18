@@ -223,7 +223,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
           h('h', hit.c);
         } else if ( c === 'sdPara' ) {
           h('p', hit.c);
-        } else if ( c === 'discussionsClass' ) {
+        } else if ( c === 'sdGHDis' ) {
           h('p', hit.c);
         }
         searchResultsList.append(e);
