@@ -1,3 +1,5 @@
-  { "bookRank": 100,
+  { 
+    "bookRank": 100,
+    "hasOtp": true, 
     "bookTitle": "Workshops"
   }
