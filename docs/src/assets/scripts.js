@@ -386,4 +386,3 @@ makeShowHide('button.hide-otp-icon', 'button.show-otp-col', 'otp-col');
 doc.getElementById('page-col').addEventListener('scroll', scrollHandler);
 
 getWebpage(window.location.pathname, window.location.hash, true);
-
