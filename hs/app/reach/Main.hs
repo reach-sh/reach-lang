@@ -2505,25 +2505,22 @@ support = command "support" $ info h d
       case actualArgs of
         Nothing -> impossible $ "support args do not start with 'support': " <> show rawArgs
         Just [] -> g -- no arguments? default behavior!
-        Just xs -> validate xs
-    validate :: [FilePath] -> App
-    validate actualArguments = liftIO $ do
-      arrayOfPairs <- mapM z actualArguments
-      let pairs = zip arrayOfPairs actualArguments
-      let invalidPaths = map snd $ filter (null . fst) pairs
-      case invalidPaths of
-        [] -> upload arrayOfPairs
-        _ -> do
-          putStrLn "Couldn't find the following files:\n"
-          mapM_ putStrLn invalidPaths
-          putStrLn "\nNothing uploaded"
+        Just xs -> liftIO $ do
+          arrayOfPairs <- mapM z xs
+          case [] `elem` arrayOfPairs of
+            False -> upload arrayOfPairs
+            True -> do
+              putStrLn "\nNothing uploaded"
+              exitWith $ ExitFailure 1
     f i c = i .= object
       [ "content" .= if T.null (T.strip $ pack c) then "// (Empty source file)" else c
       , "language" .= ("JavaScript" :: String)
       , "type" .= ("application/javascript" :: String)
       ]
     z i = doesFileExist i >>= \case
-      False -> pure []
+      False -> do
+          putStrLn $ "Couldn't find the following file: " ++ i
+          pure []
       -- "Contents files can't be in subdirectories or include '/' in the name"
       True -> (\a -> [f (K.fromText $ T.replace "/" "\\" $ pack i) a]) <$> readFile i
     clientId = "c4bfe74cc8be5bbaf00e" :: String
