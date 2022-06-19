@@ -644,9 +644,6 @@
   "checkCommitment": {
     "CompletionItemKind": "Function"
   },
-  "checked": {
-    "CompletionItemKind": "Function"
-  },
   "class": {
     "CompletionItemKind": "Keyword"
   },
@@ -706,6 +703,9 @@
   },
   "else": {
     "CompletionItemKind": "Keyword"
+  },
+  "enforce": {
+    "CompletionItemKind": "Function"
   },
   "ensure": {
     "CompletionItemKind": "Function"

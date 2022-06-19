@@ -48,12 +48,12 @@ export function ensure(f, x) {
 
 export const check = (...args) => {
   currentMode().match({
-    Module: () => checked,
-    AppInit: () => checked,
-    Step: () => checked,
+    Module: () => enforce,
+    AppInit: () => enforce,
+    Step: () => enforce,
     Local: () => assume,
     Consensus: () => require,
-    Export: () => checked,
+    Export: () => enforce,
   })(...args);
 };
 

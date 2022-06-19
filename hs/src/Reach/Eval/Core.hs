@@ -549,7 +549,7 @@ base_env_slvals =
   , ("transfer", SLV_Prim SLPrim_transfer)
   , ("assert", SLV_Prim $ SLPrim_claim CT_Assert)
   , ("assume", SLV_Prim $ SLPrim_claim $ CT_Assume)
-  , ("checked", SLV_Prim $ SLPrim_claim $ CT_Checked)
+  , ("enforce", SLV_Prim $ SLPrim_claim $ CT_Enforce)
   , ("require", SLV_Prim $ SLPrim_claim CT_Require)
   , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
   , ("currentMode", SLV_Prim SLPrim_currentMode)
@@ -3166,7 +3166,7 @@ evalPrim p sargs =
       let some_good ems = ensure_modes ems ("assert " <> show ct) >> good
       case ct of
         CT_Assume -> some_good [SLM_LocalStep, SLM_LocalPure, SLM_Export]
-        CT_Checked -> good
+        CT_Enforce -> good
         CT_Require -> some_good [SLM_ConsensusStep, SLM_ConsensusPure, SLM_Export]
         CT_Assert -> good
         CT_Possible -> good
@@ -3583,7 +3583,7 @@ evalPrim p sargs =
           (Left stf')
           SLM_ConsensusStep
           "remote"
-          CT_Checked
+          CT_Enforce
           (\_ fs _ dargs -> do
             let dr = DLRemote ma payAmt dargs withBill ralgo
             rr <- ctxt_lift_expr (DLVar at Nothing drng) $ DLE_Remote at fs aa rt dr
@@ -3616,7 +3616,7 @@ evalPrim p sargs =
           -- Ensure we're paid expected network tokens
           cmp_v <- evalApplyVals' (SLV_Prim $ SLPrim_op S_PEQ) [public sv, public apdvv]
           void $
-            evalApplyVals' (SLV_Prim $ SLPrim_claim $ CT_Checked) $
+            evalApplyVals' (SLV_Prim $ SLPrim_claim $ CT_Enforce) $
               [cmp_v, public $ SLV_Bytes at "remote bill check"]
           return $ public res
     SLPrim_viewis _vat vn vk st -> do
@@ -3675,7 +3675,7 @@ evalPrim p sargs =
       args' <- mapM (compileCheckType $ T_UInt UI_Word) [x, y, z]
       m <- readSt st_mode
       cl <- case m of
-        SLM_Export -> return $ CT_Checked
+        SLM_Export -> return $ CT_Enforce
         mode
           | isLocalStep mode -> return $ CT_Assume
           | isConsensusStep mode -> return $ CT_Require

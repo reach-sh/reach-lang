@@ -1209,7 +1209,7 @@ smt_e at_dv mdv de = do
       case ct of
         CT_Assert -> check_m >> assert_m
         CT_Assume -> assert_m
-        CT_Checked -> assert_m
+        CT_Enforce -> assert_m
         CT_Require ->
           ctxt_mode >>= \case
             VM_Honest -> check_m >> assert_m

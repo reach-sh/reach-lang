@@ -2066,7 +2066,7 @@ ce = \case
     case t of
       CT_Assert -> impossible "assert"
       CT_Assume -> check
-      CT_Checked -> check
+      CT_Enforce -> check
       CT_Require -> check
       CT_Possible -> impossible "possible"
       CT_Unknowable {} -> impossible "unknowable"

@@ -503,7 +503,7 @@ data ClaimType
   = --- Verified on all paths
     CT_Assert
   | --- Checked at runtime
-    CT_Checked
+    CT_Enforce
   | --- Assume true in verification, but check at runtime
     CT_Assume
   | --- Verified in honest, assumed in dishonest. (This may sound
@@ -521,7 +521,7 @@ data ClaimType
 instance Pretty ClaimType where
   pretty = \case
     CT_Assert -> "assert"
-    CT_Checked -> "checked"
+    CT_Enforce -> "enforce"
     CT_Assume -> "assume"
     CT_Require -> "require"
     CT_Possible -> "possible"

@@ -223,7 +223,7 @@ kgq_e ctxt mv = \case
       this =
         case ct of
           CT_Assert -> mempty
-          CT_Checked -> mempty
+          CT_Enforce -> mempty
           CT_Assume -> mempty
           CT_Require -> mempty
           CT_Possible -> mempty

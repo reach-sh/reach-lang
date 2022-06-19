@@ -290,7 +290,7 @@ instance Equiv DLType where
 instance Equiv ClaimType where
   equiv a b = case (a, b) of
     (CT_Assert, CT_Assert) -> True
-    (CT_Checked, CT_Checked) -> True
+    (CT_Enforce, CT_Enforce) -> True
     (CT_Assume, CT_Assume) -> True
     (CT_Require, CT_Require) -> True
     (CT_Possible, CT_Possible) -> True
