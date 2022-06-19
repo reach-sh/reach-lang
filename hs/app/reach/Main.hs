@@ -2571,14 +2571,13 @@ support = command "support" $ info h d
           Just _ -> t `by` "error" >>= T.putStrLn . (pack "\nError while acquiring access token:\n" <>)
         exitWith $ ExitFailure 1
       gat <- unpack <$> t `by` "access_token"
-      let flattenedPairs = L.foldl' (<>) [] arrayOfPairs
       -- @TODO: Also add output of reach hashes!
       parseRequest "POST https://api.github.com/gists"
         >>= httpBS
           . setRequestHeader "User-Agent" [ BSI.packChars "reach" ]
           . setRequestHeader "Authorization" [ BSI.packChars ("token " <> gat) ]
           . setRequestHeader "Accept" [ BSI.packChars "application/vnd.github.v3+json" ]
-          . setRequestBodyJSON (object [ "files" .= object flattenedPairs ])
+          . setRequestBodyJSON (object [ "files" .= object (concat arrayOfPairs) ])
         >>= Y.decodeThrow . getResponseBody
         >>= \(GitHubGistResponse r) -> T.putStrLn $ "\n" <> [N.text|
               Your gist is viewable at:
