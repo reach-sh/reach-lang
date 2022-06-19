@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-  { 
-    "bookRank": 30,
-    "hasOtp": true  
-  }
-=======
-{ "bookRank": 30,
-  "hasOtp": true
+{ 
+  "bookRank": 30,
+  "hasOtp": true  
 }
->>>>>>> 12b2913ef (DCT-432 delete trailing whitespace in `docs/src/`)
