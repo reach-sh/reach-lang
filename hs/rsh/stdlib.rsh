@@ -46,6 +46,17 @@ export function ensure(f, x) {
   assert(f(x));
   return x; }
 
+export const check = (...args) => {
+  currentMode().match({
+    Module: () => checked,
+    AppInit: () => checked,
+    Step: () => checked,
+    Local: () => assume,
+    Consensus: () => require,
+    Export: () => checked,
+  })(...args);
+};
+
 export const hasRandom = {
   random: Fun([], UInt) };
 

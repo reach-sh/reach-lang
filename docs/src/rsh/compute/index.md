@@ -2773,3 +2773,12 @@ range: 43 - 60
 ```
 
 This code makes an assumption that all the `{!rsh} token`s passed into the `{!rsh} distinct` method are clearly different from each other.
+
+### `currentMode`
+
+@{ref("rsh", "currentMode")}
+```reach
+currentMode();
+```
+
+`{!rsh} currentMode()` evaluates to a `{!rsh} Data` instance with variants `Module`, `AppInit`, `Step`, `Local`, `Consensus`, and `Export`, corresponding to the current mode of the Reach application.

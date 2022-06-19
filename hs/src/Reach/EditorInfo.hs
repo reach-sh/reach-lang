@@ -169,7 +169,7 @@ completionKind v =
         SLPrim_verifyMuldiv -> Just CK_Function
         SLPrim_getUntrackedFunds -> Just CK_Function
         SLPrim_fromSome -> Just CK_Function
-        SLPrim_check -> Just CK_Function
+        SLPrim_currentMode -> Just CK_Function
         SLPrim_distinct -> Just CK_Function
         SLPrim_xor -> Just CK_Function
         SLPrim_mod -> Just CK_Function
