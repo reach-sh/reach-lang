@@ -1,4 +1,4 @@
-reachc: error[RE0031]: Invalid operation. `assert CT_Assume False` cannot be used in context: module, must be in local step or export. You must create a `Reach.App` first.
+reachc: error[RE0031]: Invalid operation. `assert CT_Assume` cannot be used in context: module, must be in local step or local pure or export. You must create a `Reach.App` first.
 
   ./module_assume.rsh:4:9:application
 

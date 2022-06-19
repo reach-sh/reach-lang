@@ -644,6 +644,9 @@
   "checkCommitment": {
     "CompletionItemKind": "Function"
   },
+  "checked": {
+    "CompletionItemKind": "Function"
+  },
   "class": {
     "CompletionItemKind": "Keyword"
   },
@@ -661,6 +664,9 @@
   },
   "continue": {
     "CompletionItemKind": "Keyword"
+  },
+  "currentMode": {
+    "CompletionItemKind": "Function"
   },
   "debugger": {
     "CompletionItemKind": "Keyword"
