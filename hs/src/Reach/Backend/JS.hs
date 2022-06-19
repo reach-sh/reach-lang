@@ -417,7 +417,8 @@ jsExpr = \case
     where
       check = case ct of
         CT_Assert -> impossible "assert"
-        CT_Assume _ -> require
+        CT_Checked -> require
+        CT_Assume -> require
         CT_Require -> require
         CT_Possible -> impossible "possible"
         CT_Unknowable {} -> impossible "unknowable"

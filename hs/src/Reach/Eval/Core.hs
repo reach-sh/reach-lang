@@ -548,10 +548,11 @@ base_env_slvals =
   , ("digest", SLV_Prim SLPrim_digest)
   , ("transfer", SLV_Prim SLPrim_transfer)
   , ("assert", SLV_Prim $ SLPrim_claim CT_Assert)
-  , ("assume", SLV_Prim $ SLPrim_claim $ CT_Assume False)
+  , ("assume", SLV_Prim $ SLPrim_claim $ CT_Assume)
+  , ("checked", SLV_Prim $ SLPrim_claim $ CT_Checked)
   , ("require", SLV_Prim $ SLPrim_claim CT_Require)
   , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
-  , ("check", SLV_Prim $ SLPrim_check)
+  , ("currentMode", SLV_Prim SLPrim_currentMode)
   , ("unknowable", SLV_Form $ SLForm_unknowable)
   , ("balance", SLV_Prim $ SLPrim_balance)
   , ("lastConsensusTime", SLV_Prim $ SLPrim_fluid_read_canWait FV_lastConsensusTime)
@@ -1617,7 +1618,7 @@ makeInteract who (SLInterface spec) = do
               )
           t -> do
             t' <- st2dte t
-            isv <- secret <$> compileInteractResult (CT_Assume False) "interact" t (\dt -> return $ DLE_Arg i_at $ DLA_Interact who k dt)
+            isv <- secret <$> compileInteractResult CT_Assume "interact" t (\dt -> return $ DLE_Arg i_at $ DLA_Interact who k dt)
             return $ (sls_sss i_at isv, IT_Val t')
   (lifts, spec') <- captureLifts $ mapWithKeyM wrap_ty spec
   let io = SLSSVal at Secret $ SLV_Object at lab $ M.map fst spec'
@@ -2500,7 +2501,7 @@ assumeOp :: B.ByteString -> SPrimOp -> DLVar -> SLVal -> App ()
 assumeOp lab op v bound = do
   cmp <- evalPrimOp op [public $ SLV_DLVar v, public bound]
   cmp_v <- compileCheckType T_Bool $ snd cmp
-  doClaim (CT_Assume True) cmp_v $ Just ("assume " <> lab)
+  doClaim CT_Assume cmp_v $ Just ("assume " <> lab)
 
 assumeGtZero :: DLVar -> App ()
 assumeGtZero v = do
@@ -2737,7 +2738,7 @@ evalPrim p sargs =
       st <- readSt id
       let existingToks = st_toks st
       tokIsUniq <- tokIsUnique (map DLA_Var existingToks) $ DLA_Var tokdv
-      doClaim (CT_Assume True) tokIsUniq $ Just "New token is unique"
+      doClaim CT_Assume tokIsUniq $ Just "New token is unique"
       setSt $
         st
           { st_toks = existingToks <> [tokdv]
@@ -3112,7 +3113,7 @@ evalPrim p sargs =
         _ -> illegal_args
     SLPrim_App_Delay {} -> expect_t rator $ Err_Eval_NotApplicable
     SLPrim_localf iat who m stf ->
-      secret <$> doInteractiveCall sargs iat stf SLM_LocalStep "interact" (CT_Assume False) (\at fs drng dargs -> return $ DLE_Interact at fs who m drng dargs)
+      secret <$> doInteractiveCall sargs iat stf SLM_LocalStep "interact" CT_Assume (\at fs drng dargs -> return $ DLE_Interact at fs who m drng dargs)
     SLPrim_declassify -> do
       val <- one_arg
       ensure_level Secret lvl
@@ -3128,21 +3129,28 @@ evalPrim p sargs =
       at <- withAt id
       dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_Digest at dargs)
       return $ (lvl, SLV_DLVar dv)
-    SLPrim_check -> do
+    SLPrim_currentMode -> do
       am <- readSt st_mode
-      let ass = CT_Assume False
-      let req = CT_Require
-      let other = CT_Assume True
-      let ct = case am of
-            SLM_Module -> other
-            SLM_AppInit -> other
-            SLM_Step -> other
-            SLM_LocalStep -> ass
-            SLM_LocalPure -> other
-            SLM_ConsensusStep -> req
-            SLM_ConsensusPure -> req
-            SLM_Export -> ass
-      evalPrim (SLPrim_claim ct) sargs
+      let vn = case am of
+            SLM_Module -> "Module"
+            SLM_AppInit -> "AppInit"
+            SLM_Step -> "Step"
+            SLM_LocalStep -> "Local"
+            SLM_LocalPure -> "Local"
+            SLM_ConsensusStep -> "Consensus"
+            SLM_ConsensusPure -> "Consensus"
+            SLM_Export -> "Export"
+      at <- withAt id
+      let dt = M.fromList $
+            [ ("Module", T_Null)
+            , ("AppInit", T_Null)
+            , ("Step", T_Null)
+            , ("Local", T_Null)
+            , ("Consensus", T_Null)
+            , ("Export", T_Null)
+            ]
+      let sv = SLV_Null at "currentMode"
+      return $ (lvl, SLV_Data at dt vn sv)
     SLPrim_claim ct -> do
       let barg = compileCheckType T_Bool
       (dargm, mmsg) <- case map snd sargs of
@@ -3157,8 +3165,8 @@ evalPrim p sargs =
       let good = return $ public $ SLV_Null at "claim"
       let some_good ems = ensure_modes ems ("assert " <> show ct) >> good
       case ct of
-        CT_Assume False -> some_good [SLM_LocalStep, SLM_Export]
-        CT_Assume True -> good
+        CT_Assume -> some_good [SLM_LocalStep, SLM_LocalPure, SLM_Export]
+        CT_Checked -> good
         CT_Require -> some_good [SLM_ConsensusStep, SLM_ConsensusPure, SLM_Export]
         CT_Assert -> good
         CT_Possible -> good
@@ -3575,7 +3583,7 @@ evalPrim p sargs =
           (Left stf')
           SLM_ConsensusStep
           "remote"
-          (CT_Assume True)
+          CT_Checked
           (\_ fs _ dargs -> do
             let dr = DLRemote ma payAmt dargs withBill ralgo
             rr <- ctxt_lift_expr (DLVar at Nothing drng) $ DLE_Remote at fs aa rt dr
@@ -3608,7 +3616,7 @@ evalPrim p sargs =
           -- Ensure we're paid expected network tokens
           cmp_v <- evalApplyVals' (SLV_Prim $ SLPrim_op S_PEQ) [public sv, public apdvv]
           void $
-            evalApplyVals' (SLV_Prim $ SLPrim_claim $ CT_Assume True) $
+            evalApplyVals' (SLV_Prim $ SLPrim_claim $ CT_Checked) $
               [cmp_v, public $ SLV_Bytes at "remote bill check"]
           return $ public res
     SLPrim_viewis _vat vn vk st -> do
@@ -3667,9 +3675,9 @@ evalPrim p sargs =
       args' <- mapM (compileCheckType $ T_UInt UI_Word) [x, y, z]
       m <- readSt st_mode
       cl <- case m of
-        SLM_Export -> return $ CT_Assume True
+        SLM_Export -> return $ CT_Checked
         mode
-          | isLocalStep mode -> return $ CT_Assume True
+          | isLocalStep mode -> return $ CT_Assume
           | isConsensusStep mode -> return $ CT_Require
           | otherwise -> return $ CT_Assert
       let err = Err_Impossible_Inspect "verifyMulDiv"
@@ -4159,7 +4167,7 @@ evalApplyValsAux assumePrecondition rator randvs =
       evalApplyClosureVals clo_at sc randvs
     SLV_Clo clo_at (Just tf) sc -> do
       at <- withAt id
-      let ct = if assumePrecondition then CT_Assume True else CT_Assert
+      let ct = if assumePrecondition then CT_Assume else CT_Assert
       (dom_tupv, _) <- assertRefinedArgs ct randvs at tf
       res@(SLAppRes _ (_, ret_v)) <- evalApplyClosureVals clo_at sc randvs
       forM_ (stf_post tf) $ \rngp ->

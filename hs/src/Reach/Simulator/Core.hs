@@ -580,7 +580,8 @@ instance Interp DLExpr where
     DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
       CT_Assert -> interp dlarg
-      CT_Assume _bool -> interp dlarg
+      CT_Checked -> interp dlarg
+      CT_Assume -> interp dlarg
       CT_Require -> interp dlarg
       CT_Possible -> interp dlarg
       CT_Unknowable _slpart dlargs -> do

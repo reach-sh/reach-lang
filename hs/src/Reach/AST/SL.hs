@@ -290,7 +290,8 @@ instance Equiv DLType where
 instance Equiv ClaimType where
   equiv a b = case (a, b) of
     (CT_Assert, CT_Assert) -> True
-    (CT_Assume b1, CT_Assume b2) -> equiv b1 b2
+    (CT_Checked, CT_Checked) -> True
+    (CT_Assume, CT_Assume) -> True
     (CT_Require, CT_Require) -> True
     (CT_Possible, CT_Possible) -> True
     (CT_Unknowable part1 args1, CT_Unknowable part2 args2) -> equiv args1 args2 && equiv part1 part2
@@ -793,7 +794,7 @@ data SLPrimitive
   | SLPrim_verifyMuldiv
   | SLPrim_getUntrackedFunds
   | SLPrim_fromSome
-  | SLPrim_check
+  | SLPrim_currentMode
   | SLPrim_distinct
   | SLPrim_xor
   | SLPrim_mod

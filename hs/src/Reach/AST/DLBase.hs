@@ -502,9 +502,10 @@ argExprTypeOf menv = \case
 data ClaimType
   = --- Verified on all paths
     CT_Assert
+  | --- Checked at runtime
+    CT_Checked
   | --- Assume true in verification, but check at runtime
-    --- Bool means it is internally generated, rather than specified by user
-    CT_Assume Bool
+    CT_Assume
   | --- Verified in honest, assumed in dishonest. (This may sound
     --- backwards, but by verifying it in honest mode, then we are
     --- checking that the other participants fulfill the promise when
@@ -520,7 +521,8 @@ data ClaimType
 instance Pretty ClaimType where
   pretty = \case
     CT_Assert -> "assert"
-    CT_Assume _ -> "assume"
+    CT_Checked -> "checked"
+    CT_Assume -> "assume"
     CT_Require -> "require"
     CT_Possible -> "possible"
     CT_Unknowable p as -> "unknowable" <> parens (pretty p <> render_das as)
