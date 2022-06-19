@@ -4,25 +4,26 @@ Verifying for generic connector
 Verification failed:
   when ALL participants are honest
   of theorem: require
-  at ./uint_map_array.rsh:20:8:application
+  at reach standard library:57:5:application
+  at ./uint_map_array.rsh:20:8:application call to "check" (defined at: reach standard library:49:32:function exp)
 
   // Violation Witness
 
   const UInt.max = 2;
 
-  const v58 = "A".interact.t;
+  const v73 = "A".interact.t;
   //    ^ could = [2, 1 ]
   //      from: ./uint_map_array.rsh:8:6:property binding
 
   // Theorem Formalization
 
-  const map0_1/92 = new Map()[0 <- Some v58[0]];
+  const map0_1/108 = new Map()[0 <- Some v73[0]];
   //    ^ would be <map: (None(null ))>[0 <- Some(2 )]
-  const map0_2/93 = map0_1/92[1 <- Some v58[1]];
+  const map0_2/109 = map0_1/108[1 <- Some v73[1]];
   //    ^ would be <map: (None(null ))>[0 <- Some(2 )][1 <- Some(1 )]
-  const v83 = digest(map0_2/93[v58[0]] ) == digest(<Some v58[1]> );
+  const v98 = digest(map0_2/109[v73[0]] ) == digest(<Some v73[1]> );
   //    ^ would be false
-  require(v83);
+  require(v98);
 
   Verifying when NO participants are honest
 Checked 5 theorems; 1 failures :'(

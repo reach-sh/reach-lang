@@ -7,6 +7,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verRC("0.1.11")}
 
++ 2022/06/18: Added `{!rsh} checked`.
 + 2022/06/18: Added `{!rsh} currentMode`.
 + 2022/06/01: Added `onCompletion` field to `{!rsh} remote.ALGO`.
 + 2022/06/01: Added @{seclink("ref-programs-consensus-new-contract")} support.

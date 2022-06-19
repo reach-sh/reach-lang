@@ -5,7 +5,7 @@ Verifying for generic connector
 Checked 25 theorems; No failures!
 warning[RW0006]: This program uses network seconds, which are unreliable on most consensus networks. You should read the article about this warning to ensure that you understand the risks of building on them.
 
-  reach standard library:576:12:application
+  reach standard library:587:12:application
 
   
 

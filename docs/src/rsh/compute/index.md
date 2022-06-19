@@ -1645,6 +1645,17 @@ md5: 8423e5e116edca7b81cd1cdf8d88722a
 range: 61 - 62
 ```
 
+### `checked`
+
+@{ref("rsh", "checked")}
+```reach
+checked( claim, [msg] )
+```
+
+A dynamic assertion that `{!rsh} claim` evaluates to `{!rsh} true`.
+Since this is neither `{!rsh} assume` or `{!rsh} require` it is not part of Reach's rely-guarantee reasoning analysis.
+It accepts an optional bytes argument, which is included in any reported violation.
+
 ### `forall`
 
 @{ref("rsh", "forall")}

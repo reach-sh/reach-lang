@@ -2065,7 +2065,7 @@ ce = \case
     let check = ca a >> assert
     case t of
       CT_Assert -> impossible "assert"
-      CT_Assume -> impossible "assume"
+      CT_Assume -> check
       CT_Checked -> check
       CT_Require -> check
       CT_Possible -> impossible "possible"

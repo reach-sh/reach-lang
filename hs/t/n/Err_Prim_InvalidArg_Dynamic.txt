@@ -1,11 +1,11 @@
 reachc: error[RE0054]: Invalid arg for Array_iota. The argument must be computable at compile time
 
-  reach standard library:198:13:application
+  reach standard library:209:13:application
 
   
 
 Trace:
-  in "sqrtApprox" from (reach standard library:197:34:function exp) at (./Err_Prim_InvalidArg_Dynamic.rsh:9:26:application)
+  in "sqrtApprox" from (reach standard library:208:34:function exp) at (./Err_Prim_InvalidArg_Dynamic.rsh:9:26:application)
   in [unknown function] from (./Err_Prim_InvalidArg_Dynamic.rsh:8:17:function exp) at (./Err_Prim_InvalidArg_Dynamic.rsh:8:13:application)
 
 For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0054
