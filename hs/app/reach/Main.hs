@@ -1555,13 +1555,13 @@ info' = command "info" $ info f d
   where
     d = progDesc "List available updates"
     f = g <$> switchInteractiveAUs
-    g i = versionCompare' (not i) False False
+    g i = versionCompare' (not i) False False True
 
 update :: Subcommand
 update = command "update" $ info (pure f) d
   where
     d = progDesc "Perform available updates"
-    f = versionCompare' True False True
+    f = versionCompare' True False True True
 
 dockerReset :: Subcommand
 dockerReset = command "docker-reset" $ info f d
@@ -1981,8 +1981,8 @@ remoteDockerAssocFor tmpC tmpH img mtag h = go
             maybe (pure $ Right []) (fetch c t fqdn nextPage results . parseRequest_) (nextPage r')
               >>= either (pure . Left) (pure . Right . (results r' <>))
 
-remoteUpdates :: [Image] -> AppT (Text, DockerAssoc)
-remoteUpdates imgs = do
+remoteUpdates :: Bool -> [Image] -> AppT (Text, DockerAssoc)
+remoteUpdates psb imgs = do
   Env {..} <- ask
 
   let mtag = \case
@@ -1990,9 +1990,16 @@ remoteUpdates imgs = do
         Right "reach-cli" -> Just . unpack $ tagFor TFReachCLI
         _ -> Nothing
 
+  let d = threadDelay 2500000 *> putStr "." *> hFlush stdout *> d
+  pdots <- liftIO . forkIO . when psb $ putStr "Please stand-by..." *> hFlush stdout *> d
+
   (sh, ts) <- liftIO . concurrently (httpLBS uriReachScript)
     $ forConcurrently imgs $ \i ->
       remoteDockerAssocFor e_dirTmpContainer e_dirTmpHost i (mtag i) $ imageHost e_var
+
+  liftIO $ do
+    killThread pdots
+    when psb $ putStrLn ""
 
   let rn = "reach.new"
   liftIO $ case getResponseStatusCode sh of
@@ -2037,13 +2044,15 @@ remoteUpdates imgs = do
 imgTxt :: Image' -> Text
 imgTxt (Image' x) = either (T.toLower . packs) id x
 
-versionCompare' :: Bool -> Bool -> Bool -> App
-versionCompare' i' j' u' = scriptWithConnectorModeOptional $ do
+versionCompare' :: Bool -> Bool -> Bool -> Bool -> App
+versionCompare' i' j' u' p' = scriptWithConnectorModeOptional $ do
   now <- zulu
   Env {e_var = Var {..}, ..} <- ask
-  let i = if i' then " --non-interactive" else ""
-  let j = if j' then " --json" else ""
-  let u = if u' then " --update" else ""
+  let x l s = if l then " --" <> s else ""
+  let i = x i' "non-interactive"
+  let j = x j' "json"
+  let u = x u' "update"
+  let p = x (p' && not j') "print-stand-by"
   let confE = "_docker" </> "ils-" <> now <> ".json"
   let confC = pack $ e_dirConfigContainer </> confE
   let confH = pack $ e_dirConfigHost </> confE
@@ -2058,7 +2067,7 @@ versionCompare' i' j' u' = scriptWithConnectorModeOptional $ do
     {/g' >> $confH
     echo ']' >> $confH
 
-    $reachEx version-compare2$i$j$u --rm-ils --ils="$confC"
+    $reachEx version-compare2$i$j$u$p --rm-ils --ils="$confC"
   |]
  where
   t = mappend ("docker image ls --digests --format "
@@ -2074,6 +2083,7 @@ versionCompare = command "version-compare" $ info f mempty
       <$> switchNonInteractiveAUs
       <*> switchJSONAUs
       <*> switch (long "update")
+      <*> pure False
 
 versionCompare2 :: Subcommand
 versionCompare2 = command "version-compare2" $ info f mempty
@@ -2086,7 +2096,8 @@ versionCompare2 = command "version-compare2" $ info f mempty
       <*> strOption (long "stub-remote" <> value "")
       <*> strOption (long "stub-script" <> value "")
       <*> switch (long "update")
-    g ni j l rl mr ms up = do
+      <*> switch (long "print-stand-by")
+    g ni j l rl mr ms up psb = do
       Env {e_var = Var {..}, ..} <- ask
       assocL <- (liftIO $ A.eitherDecodeFileStrict' l) >>= \case
         Left e -> liftIO $ do
@@ -2129,7 +2140,7 @@ versionCompare2 = command "version-compare2" $ info f mempty
 
       (latestScript, assocR) <- case (ms, mr) of
         _ | ms /= "" && mr /= "" -> (pack ms, ) . maybe mempty id <$> (liftIO $ A.decodeFileStrict' mr)
-        _ -> remoteUpdates imagesAll
+        _ -> remoteUpdates psb imagesAll
 
       -- Treat remote tags as unique and authoritative, but local tags might be
       -- repeated due to Docker manifest strangeness
