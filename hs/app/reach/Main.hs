@@ -17,6 +17,7 @@ import Data.Bits
 import qualified Data.ByteString.Internal as BSI
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSLC8
+import Data.ByteString.UTF8 (toString)
 import Data.Char
 import Data.Either
 import Data.Functor
@@ -35,6 +36,7 @@ import Data.Text.Lazy.Encoding
 import Data.Time
 import Data.Time.Format.ISO8601
 import Data.Tuple.Extra (first)
+import Data.UnixTime
 import qualified Data.Yaml as Y
 import GHC.Float
 import GHC.Generics
@@ -1913,6 +1915,8 @@ remoteDockerAssocFor :: FilePath -> FilePath -> Image -> Maybe String -> ImageHo
 remoteDockerAssocFor tmpC tmpH img mtag h = go
   where
     (go, itp) = case h of
+      -- https://docs.docker.com/docker-hub/api/latest/#tag/rate-limiting
+      -- https://docs.docker.com/docker-hub/download-rate-limit/#other-limits
       DockerHub ->
         ( fetch 0 8 "hub.docker.com" dh_next dh_results uDockerHub >>= assoc aDH
         , \x p -> imageThirdPartyDockerHubRoot p <> x <> unpack (T.toLower $ packs p)
@@ -1933,7 +1937,6 @@ remoteDockerAssocFor tmpC tmpH img mtag h = go
       guard $ d /= "" && t /= []
       Just $ M.insertWith (<>) d t a
 
-
     uDockerHub = parseRequest_
       $ "https://hub.docker.com/v2/repositories/" <> img' <> "/tags?page_size=100&ordering=last_updated"
      <> maybe "" ("&name=" <>) mtag
@@ -1941,6 +1944,8 @@ remoteDockerAssocFor tmpC tmpH img mtag h = go
     assoc f = either (pure . Left) $ pure . Right . M.singleton img'' . L.foldl' f mempty
 
     -- Exponential back-off with `c` rate-limit events + max `t` tries
+    --  *OR* max `t` tries using API's `X-Retry-After` header if available
+    -- Note: DockerHub API's header is inconsistent with their own docs, dropping `X-` prefix
     fetch c t fqdn nextPage results u = do
       r <- httpJSONEither u
       if getResponseStatusCode r == 429
@@ -1948,7 +1953,12 @@ remoteDockerAssocFor tmpC tmpH img mtag h = go
           if c > t
             then pure . Left . IHAFRetriesExhausted (pack img') $ float2Int t
             else do
-              let ms = (2 :: Float) ** c * 100000
+              n <- getUnixTime
+              ms <- pure . (* 100000) . maybe (2 ** c) id $ do
+                x <- getResponseHeader "X-Retry-After" r `atMay` 0
+                 <|> getResponseHeader   "Retry-After" r `atMay` 0
+                a <- readMay $ toString x
+                readMay . show . udtSeconds $ UnixTime a 0 `diffUnixTime` n
               threadDelay $ float2Int ms
               fetch (c + 1) t fqdn nextPage results u
         else case getResponseBody r of
