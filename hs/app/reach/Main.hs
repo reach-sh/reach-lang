@@ -2504,7 +2504,7 @@ support = command "support" $ info h d
       let actualArgs = tailMay rawArgs'
       case actualArgs of
         Nothing -> impossible $ "support args do not start with 'support': " <> show rawArgs
-        Just [] -> g -- no arguments? default behavior!
+        Just [] -> doDefaultBehavior
         Just xs -> liftIO $ do
           arrayOfPairs <- mapM z xs
           case [] `elem` arrayOfPairs of
@@ -2531,7 +2531,7 @@ support = command "support" $ info h d
         $ setRequestBodyJSON (object x)
       <$> parseRequest ("POST " <> u)
       >>= httpLBS
-    g = liftIO $ do
+    doDefaultBehavior = liftIO $ do
       rsh <- z "index.rsh"
       mjs <- z "index.mjs"
       when (null rsh && null mjs) $ do
