@@ -2032,6 +2032,8 @@ remoteUpdates psb imgs = do
           <> " attempts."
         | (i, n) <- rs
         ]
+      putStrLn "\nPlease wait awhile and try again, or, if the issue persists, reply to the following thread:"
+      putStrLn " https://github.com/reach-sh/reach-lang/discussions/1030#discussioncomment-2940142\n"
     when (length us > 0) $ do
       mapM_ T.putStrLn us
       T.putStrLn $
