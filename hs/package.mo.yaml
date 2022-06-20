@@ -197,6 +197,7 @@ executables:
     - parsec
     - safe
     - unix
+    - unix-time
     - reach
   proto-stub:
     <<: *std-exe
