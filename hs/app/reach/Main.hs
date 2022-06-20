@@ -1944,17 +1944,23 @@ remoteDockerAssocFor tmpC tmpH img mtag h = go
     assoc f = either (pure . Left) $ pure . Right . M.singleton img'' . L.foldl' f mempty
 
     -- Exponential back-off with `c` rate-limit events + max `t` tries
-    --  *OR* max `t` tries using API's `X-Retry-After` header if available
-    -- Note: DockerHub API's header is inconsistent with their own docs, dropping `X-` prefix
+    --  *OR*  max `t` tries using API's `X-Retry-After` header if available
+    --  *AND* voluntarily easing off when rate-limit is nearly exhausted
+    -- Note: DockerHub API's headers are sometimes inconsistent with their own docs, dropping `X-` prefix
     fetch c t fqdn nextPage results u = do
       r <- httpJSONEither u
+      threadDelay . (* 100000) . maybe 0 id $ do
+        l <- getResponseHeader "X-RateLimit-Remaining" r `atMay` 0
+         <|> getResponseHeader   "RateLimit-Remaining" r `atMay` 0
+        m <- readMay $ toString l
+        pure $ if (m :: Int) < length imagesAll then 1 else 0
       if getResponseStatusCode r == 429
         then do
           if c > t
             then pure . Left . IHAFRetriesExhausted (pack img') $ float2Int t
             else do
               n <- getUnixTime
-              ms <- pure . (* 100000) . maybe (2 ** c) id $ do
+              ms <- pure . (* 1000000) . maybe (2 ** c) id $ do
                 x <- getResponseHeader "X-Retry-After" r `atMay` 0
                  <|> getResponseHeader   "Retry-After" r `atMay` 0
                 a <- readMay $ toString x
