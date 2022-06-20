@@ -329,7 +329,7 @@ Replace the `{!js} stdlib` statements with the corresponding `{!js} const` state
     ``` js
     load: /examples/wisdom-4-units2/index.mjs
     md5: 0a8d31fecdf9a62e0f3f82757eaa88a9
-    range: 12-15
+    range: 13-16
     ```
 
     The output should be the same.
@@ -342,7 +342,7 @@ Let's write a couple of statements to the console to make sure it works as we ex
     ``` js
     load: /examples/wisdom-5-swap-units/index.mjs
     md5: 36609a212f1cfe6b51743e1fd580176d
-    range: 12-20
+    range: 13-21
     ```
 
     The output should resemble the following:
@@ -363,7 +363,7 @@ Your new code should look like the following:
     ``` js
     load: /examples/wisdom-6-swap-refined/index.mjs
     md5: 262be1cf2a189096986b250eefa4f777
-    range: 13-16
+    range: 14-17
     ```
 
     You use `iBalance` and `showBalance` in the next steps.
@@ -373,7 +373,7 @@ Your new code should look like the following:
     ``` js
     load: /examples/wisdom-6-swap-refined/index.mjs
     md5: 262be1cf2a189096986b250eefa4f777
-    range: 26-26
+    range: 27-27
     ```
 
 1. In `index.mjs`, insert `showBalance` in the two places shown below to show the account balance before and after contract deployment:
@@ -381,7 +381,7 @@ Your new code should look like the following:
     ``` js
     load: /examples/wisdom-7-display-balance/index.mjs
     md5: 95b219c1d1332827d54aef69fbbe5144
-    range: 26-30
+    range: 27-31
     ```
 
 1. Run your DApp again. Output should resemble the following:
@@ -417,7 +417,7 @@ Follow these directions to have the `seller` deploy the contract and return the 
     ``` js
     load: /examples/wisdom-7-display-balance/index.mjs
     md5: 95b219c1d1332827d54aef69fbbe5144
-    range: 20-23
+    range: 21-25
     ```
 
 1. Add `price` and `reportReady` methods to it:
@@ -425,7 +425,7 @@ Follow these directions to have the `seller` deploy the contract and return the 
     ``` js
     load: /examples/wisdom-8-pricing/index.mjs
     md5: 8669f708a34c09e769615516ed89d727
-    range: 20-25
+    range: 21-30
     ```
 
     You will add a `wisdom` property to the `sellerInteract` later in the tutorial.
@@ -511,7 +511,7 @@ Interaction is often necessary between the DApp and the participants.
     ``` js
     load: /examples/wisdom-8-pricing/index.mjs
     md5: 8669f708a34c09e769615516ed89d727
-    range: 38-40
+    range: 38-42
     ```
 
 1. Replace it with the following:
@@ -519,7 +519,7 @@ Interaction is often necessary between the DApp and the participants.
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
     md5: c07daef24eed633d510f2469b8dbe1ba
-    range: 38-49
+    range: 39-51
     ```
 
     * Line 44: `{!js} ask.ask` and `{!js} ask.yesno` are functions in `@reach-sh/stdlib`.
@@ -532,7 +532,7 @@ Interaction is often necessary between the DApp and the participants.
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
     md5: c07daef24eed633d510f2469b8dbe1ba
-    range: 51-51
+    range: 53-53
     ```
 
     `{!js} ask.done();` needs to be after `};` so that it is accessible by both the `Seller` and the `Buyer`
@@ -610,7 +610,7 @@ This section shows you how to display that a transaction is cancelled.
     ``` js
     load: /examples/wisdom-9-interaction/index.mjs
     md5: c07daef24eed633d510f2469b8dbe1ba
-    range: 18-18
+    range: 20-20
     ```
 
 1. Replace it with the following:
@@ -618,7 +618,7 @@ This section shows you how to display that a transaction is cancelled.
     ``` js
     load: /examples/wisdom-10-cancel1/index.mjs
     md5: cf4d87c4c5ac17a8c95bddbb9eedf47b
-    range: 18-20
+    range: 20-22
     ```
 
 1. In `index.rsh`, find the following line:
@@ -671,7 +671,7 @@ This section shows you how to display that a transaction is cancelled.
     ``` js
     load: /examples/wisdom-11-cancel2/index.mjs
     md5: 3cff8f0b9c48ff6e3cf12aaa4e0cce33
-    range: 18-20
+    range: 20-22
     ```
 
 1. In `index.mjs`, modify both `sellerInteract` and `buyerInteract` to pass `role` to `commonInteract`:
@@ -679,7 +679,7 @@ This section shows you how to display that a transaction is cancelled.
     ``` js
     load: /examples/wisdom-11-cancel2/index.mjs
     md5: 3cff8f0b9c48ff6e3cf12aaa4e0cce33
-    range: 25-25
+    range: 27-27
     ```
 
 1. Rerun your DApp as the `seller` and `buyer`.
@@ -709,7 +709,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
     md5: a8f7083fadc2f568146297185aff3211
-    range: 26-33
+    range: 26-35
     ```
 
 1. In `index.rsh`, add a `wisdom` property to `sellerInteract` right after the `price` property:
@@ -733,7 +733,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
     md5: a8f7083fadc2f568146297185aff3211
-    range: 48-52
+    range: 48-54
     ```
 
 1. In `index.rsh`, add `reportWisdom` to `buyerInteract`:
@@ -766,7 +766,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
     md5: a8f7083fadc2f568146297185aff3211
-    range: 21-21
+    range: 23-23
     ```
 
 1. In `index.rsh`, add `reportPayment` to `commonInteract`:
@@ -855,7 +855,7 @@ Review the the `index.mjs` version of `confirmPurchase` from the `buyerInteract`
 ``` js
 load: /examples/wisdom-9-interaction/index.mjs
 md5: c07daef24eed633d510f2469b8dbe1ba
-range: 41 - 41
+range: 43 - 43
 ```
 
 Currently, the backend calls the function passing the `price` of the contract, and the frontend displays `price` to the `buyer`, asks for a decision, waits for the answer, and returns `true` or `false` to the backend.
@@ -886,12 +886,12 @@ The following directions show you how to obtain `price` from the contract before
     range: 42-52
     ```
 
-1. In `index.mjs`, add Lines 57 and 58 (in the `buyer` section):
+1. In `index.mjs`, add Lines 59 and 60 (in the `buyer` section):
 
     ``` js
     load: /examples/wisdom-14-modal/index.mjs
     md5: 3199de6edbb580ccdc95e57212b1577d
-    range: 54-61
+    range: 56-63
     ```
 
 1. Run your DApp as the `seller` and the `buyer`.
