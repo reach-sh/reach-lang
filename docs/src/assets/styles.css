@@ -692,7 +692,7 @@ img {
   margin-right: 1em;
 }
 
-#search-results-list li.sdGHDis span.p::before {
+#search-results-list li.sdGHDis a.pt::before {
   content: "\f09b";
   font-family: "Font Awesome 5 Brands";
   margin-right: 1em;
