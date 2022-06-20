@@ -1943,6 +1943,9 @@ remoteDockerAssocFor tmpC tmpH img mtag h = go
 
     assoc f = either (pure . Left) $ pure . Right . M.singleton img'' . L.foldl' f mempty
 
+    grh r l = readMay . toString
+      =<< getResponseHeader ("X-" <> l) r `atMay` 0 <|> getResponseHeader l r `atMay` 0
+
     -- Exponential back-off with `c` rate-limit events + max `t` tries
     --  *OR*  max `t` tries using API's `X-Retry-After` header if available
     --  *AND* voluntarily easing off when rate-limit is nearly exhausted
@@ -1950,10 +1953,8 @@ remoteDockerAssocFor tmpC tmpH img mtag h = go
     fetch c t fqdn nextPage results u = do
       r <- httpJSONEither u
       threadDelay . (* 100000) . maybe 0 id $ do
-        l <- getResponseHeader "X-RateLimit-Remaining" r `atMay` 0
-         <|> getResponseHeader   "RateLimit-Remaining" r `atMay` 0
-        m <- readMay $ toString l
-        pure $ if (m :: Int) < length imagesAll then 1 else 0
+        l <- grh r "RateLimit-Remaining"
+        pure $ if (l :: Int) < length imagesAll then 1 else 0
       if getResponseStatusCode r == 429
         then do
           if c > t
@@ -1961,9 +1962,7 @@ remoteDockerAssocFor tmpC tmpH img mtag h = go
             else do
               n <- getUnixTime
               ms <- pure . (* 1000000) . maybe (2 ** c) id $ do
-                x <- getResponseHeader "X-Retry-After" r `atMay` 0
-                 <|> getResponseHeader   "Retry-After" r `atMay` 0
-                a <- readMay $ toString x
+                a <- grh r "Retry-After"
                 readMay . show . udtSeconds $ UnixTime a 0 `diffUnixTime` n
               threadDelay $ float2Int ms
               fetch (c + 1) t fqdn nextPage results u
