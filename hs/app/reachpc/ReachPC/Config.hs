@@ -1,5 +1,5 @@
 {- HLINT ignore "Use newtype instead of data" -}
-{-# LANGUAGE QuasiQuotes  #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module ReachPC.Config
   ( readOrCreateGlobalReachToml
@@ -10,12 +10,9 @@ module ReachPC.Config
 
 import System.Directory (getXdgDirectory, XdgDirectory(XdgConfig), doesFileExist, getCurrentDirectory)
 import System.FilePath ((</>))
-import Data.Text (Text)
 import Data.List.Split (splitOn, split, onSublist, keepDelimsR)
 import Data.Maybe (fromMaybe)
-import qualified Data.Text.IO as TextIO
 import qualified Toml as T
-import NeatInterpolation (text)
 import Control.Monad (when)
 import System.Environment (getEnvironment)
 import Data.Char (toLower, toUpper)
@@ -23,6 +20,8 @@ import Text.Read (readMaybe)
 import qualified ReachPC.CommandLine as Cli
 import Control.Applicative ((<|>))
 import Data.List (intercalate)
+import Data.ByteString as BS (writeFile, ByteString)
+import Data.FileEmbed (embedFile, makeRelativeToProject)
 
 data CloudOrLocal = Cloud | Local deriving (Show, Read, Enum, Bounded)
 data Connector = ALGO | CFX | ETH deriving (Show, Read, Enum, Bounded)
@@ -134,7 +133,7 @@ readOrCreateGlobalReachToml = do
   when configTomlMissing $ do
     putStrLn $ "Generated global reach.toml at \"" <> configTomlPath <> "\""
     putStrLn "You may want to run `reach config` or edit it yourself."
-    TextIO.writeFile configTomlPath defaultReachToml
+    BS.writeFile configTomlPath defaultReachToml
   inConfigDir "reach.toml" >>= readReachToml
 
 readOrErrorProjectReachToml :: IO RchToml
@@ -167,14 +166,5 @@ reachTomlCodec = RchToml
   <*> T.dioptional (T.string "organization") T..= rtml_organization
 
 -- TODO: put into separate file and include at compile time
-defaultReachToml :: Text
-defaultReachToml = [text|
-# This config file contains default settings for Reach
-# They can be overridden with environment variables
-
-# Whether to use Reach Cloud or Reach Local. Can be "Cloud" or "Local"
-cloud-or-local = "Cloud"
-
-# Which connector to use. Can be "ALGO" or "CFX" or "ETH"
-connector = "ALGO"
-|]
+defaultReachToml :: ByteString
+defaultReachToml = $(makeRelativeToProject "app/reachpc/ReachPC/default_reach.toml" >>= embedFile)
