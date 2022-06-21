@@ -22,9 +22,11 @@ main = do
   env m = mkClientEnv m $ BaseUrl Http "localhost" stubPort ""
 
   msg = \case
-    Stdout n m -> "id# " <> show n <> " (stdout): " <> show m
-    Stderr n m -> "id# " <> show n <> " (stderr): " <> show m
-    Keepalive  -> "(keepalive)"
+    Stdout n m -> putStrLn $ "id# " <> show n <> " (stdout): " <> show m
+    Stderr n m -> putStrLn $ "id# " <> show n <> " (stderr): " <> show m
+    Keepalive  -> putStrLn $ "(keepalive)"
+    ExitCode' n m -> putStrLn ("id# " <> show n <> " (exit code): " <> show m)
+      *> exitWith (if m == 0 then ExitSuccess else ExitFailure m)
 
   say' m = do
     putStrLn $ "Say `hello` to PID# " <> T.unpack pid <> " at stub server on port: " <> show stubPort <> "..."
@@ -32,7 +34,7 @@ main = do
 
   listen' m = do
     putStrLn $ "Listening to stub server on port: " <> show stubPort <> "..."
-    listen (env m) err (putStrLn . msg) pid Stdboth'
+    listen (env m) err msg pid Stdboth'
 
   cmd' m c r = do
     putStrLn $ "`reach " <> c <> "` to stub server on port: " <> show stubPort <> "..."
