@@ -40,10 +40,12 @@ data CliOptions = CliOptions
   , cli_forwardedEnvVars :: Maybe [String]
   , cli_cloudOrLocal :: Maybe Bool -- True = cloud, False = local
   , cli_connector :: Maybe String
+  , cli_project :: Maybe String
+  , cli_organization :: Maybe String
   }
 
 emptyCliOptions :: CliOptions
-emptyCliOptions = CliOptions ("", []) Nothing Nothing Nothing Nothing
+emptyCliOptions = CliOptions ("", []) Nothing Nothing Nothing Nothing Nothing Nothing
 
 parseCliOptions :: IO CliOptions
 parseCliOptions = flip go emptyCliOptions <$> getArgs
@@ -56,6 +58,8 @@ parseCliOptions = flip go emptyCliOptions <$> getArgs
     ("--cloud":args')       -> go args' opts{ cli_cloudOrLocal = Just True }
     ("--local":args')       -> go args' opts{ cli_cloudOrLocal = Just False }
     ("--connector":c:args') -> go args' opts{ cli_connector = Just c }
+    ("--project":p:args')   -> go args' opts{ cli_project = Just p }
+    ("--organization":o:args') -> go args' opts{ cli_organization = Just o }
     (arg@('-':_):_)         -> opts{ cli_error = Just $ "Unknown or bad use of argument " <> arg }
     (cmd:args')             -> opts{ cli_command = (cmd, args') }
     []                      -> opts{ cli_error = Just "No command was specified.\nRun with -h to see local commands, or run with the `help` command to see remote commands." }
