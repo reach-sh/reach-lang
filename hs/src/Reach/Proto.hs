@@ -71,6 +71,7 @@ data FDescOut
   = Stdout Integer BL.ByteString
   | Stderr Integer BL.ByteString
   | Keepalive
+  | ExitCode' Integer Int
 
 type Project = M.Map FilePath Text -- path:hash
 
@@ -88,38 +89,39 @@ type Pid = Text
 instance Accept EventStream where
   contentType _ = "text" H.// "event-stream"
 
-class ToSSE a where
-  toSSE :: a -> BL.ByteString
-
 toSSE' :: Show a => BL.ByteString -> a -> BL.ByteString -> BL.ByteString
 toSSE' e n m
   = "id: " <> BL.fromString (show n) <> "\n"
  <> "event: " <> e <> "\n"
  <> "data: " <> m <> "\n\n"
 
-instance ToSSE FDescOut where
-  toSSE = \case
+instance MimeRender EventStream FDescOut where
+  mimeRender _ = \case
     Stdout n m -> toSSE' "stdout" n m
     Stderr n m -> toSSE' "stderr" n m
     Keepalive  -> ": keepalive\n\n"
-
-instance ToSSE a => MimeRender EventStream a where
-  mimeRender _ = toSSE
+    ExitCode' n m -> toSSE' "exit" n . BL.fromString $ show m
 
 pFDescOut :: Parsec String () FDescOut
-pFDescOut = pka <|> pout where
+pFDescOut = pka <|> try pout <|> pexit where
   TokenParser {..} = makeTokenParser emptyDef
   pka = (string ": keepalive\n\n" *> pure Keepalive) <* eof
+  pnum = (try $ char '0' *> pure 0 <* newline <* try newline) <|> natural
+  pid = string "id: " *> pnum
+  pdata x = string "data: " *> x <* eof
   pout = do
-    i <- string "id: " *> ((try $ char '0' *> pure 0 <* newline) <|> natural)
+    i <- pid
     e <- string "event: "
       *> ((try $ string "stdout" *> pure Stdout') <|> (string "stderr" *> pure Stderr'))
       <* newline
-    m <- BL.fromString <$> (string "data: " *> manyTill anyChar (try $ string "\n\n") <* eof)
+    m <- BL.fromString <$> pdata (manyTill anyChar (try $ string "\n\n"))
     case e of
       Stdout' -> pure $ Stdout i m
       Stderr' -> pure $ Stderr i m
       _ -> fail "Event was neither `stdout` nor `stderr`"
+  pexit = ExitCode'
+    <$> (pid <* string "event: exit" <* newline)
+    <*> (fromIntegral <$> pdata pnum)
 
 instance MimeUnrender EventStream FDescOut where
   mimeUnrender _ = either (Left . show) Right . runParser pFDescOut () "" . BL.toString
@@ -158,7 +160,7 @@ runStubServer = Warp.run stubPort $ serve (Proxy @Proto) ((r :<|> pin) :<|> pout
       Stdboth' -> fromStepT . Effect $ stdb 0
 
   stdb n
-    | n == 500 = pure Stop
+    | n == 100 = pure $ Yield (ExitCode' n 3) Stop
     | n /= 0 && n `rem` 7 == 0 = do
       pure . Yield (Stderr n "Multiple of 7 detected") . Effect $ stdb (n + 1)
     | n `rem` 15 == 0 = do
