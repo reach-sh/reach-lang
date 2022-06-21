@@ -50,6 +50,8 @@ data Config = Config
   { cfg_cloudOrLocal :: CloudOrLocal
   , cfg_connector :: Connector
   , cfg_forwardEnvVars :: [String]
+  , cfg_project :: String
+  , cfg_organization :: String
   } deriving (Show)
 
 -- Represents a reach.toml file; Same fields as Config, except every field is optional (because they
@@ -58,6 +60,8 @@ data RchToml = RchToml
   { rtml_cloudOrLocal :: !(Maybe CloudOrLocal)
   , rtml_connector :: !(Maybe Connector)
   , rtml_forwardEnvVars :: !(Maybe [String])
+  , rtml_project :: !(Maybe String)
+  , rtml_organization :: !(Maybe String)
   } deriving (Show)
 
 -- Generates a Config by reading various sources. If a project reach.toml isn't found, crash. 
@@ -97,6 +101,24 @@ getProjectConfig cliOpts = do
   let prj_forwardEnvVars = fromMaybe [] $ rtml_forwardEnvVars projectRchToml
   let gbl_forwardEnvVars = fromMaybe [] $ rtml_forwardEnvVars globalRchToml
   let cfg_forwardEnvVars = env_forwardEnvVars <> cli_forwardEnvVars <> prj_forwardEnvVars <> gbl_forwardEnvVars
+  
+  -- Remote project identifer
+  -- REACH_PROJECT / --project=.. / project = ".."
+  let env_project = envVar "REACH_PROJECT"
+  let cli_project = Cli.cli_project cliOpts
+  let prj_project = rtml_project projectRchToml
+  let glb_project = rtml_project globalRchToml
+  let cfg_project = unwrapConfigOption "Unspecified remote project identifier." $
+                    env_project <|> cli_project <|> prj_project <|> glb_project
+
+  -- Remote organization
+  -- REACH_ORGANIZATION / --organization=... / organization = ".."
+  let env_organization = envVar "REACH_ORGANIZATION"
+  let cli_organization = Cli.cli_organization cliOpts
+  let prj_organization = rtml_organization projectRchToml
+  let glb_organization = rtml_organization globalRchToml
+  let cfg_organization = unwrapConfigOption "Unspecified remote organization." $
+                         env_organization <|> cli_organization <|> prj_organization <|> glb_organization
 
   print Config{..}
 
@@ -141,6 +163,8 @@ reachTomlCodec = RchToml
   <$> T.dioptional (T.enumBounded "cloud-or-local") T..= rtml_cloudOrLocal
   <*> T.dioptional (T.enumBounded "connector") T..= rtml_connector
   <*> T.dioptional (T.arrayOf T._String "forward-env-vars") T..= rtml_forwardEnvVars
+  <*> T.dioptional (T.string "project") T..= rtml_project
+  <*> T.dioptional (T.string "organization") T..= rtml_organization
 
 -- TODO: put into separate file and include at compile time
 defaultReachToml :: Text
