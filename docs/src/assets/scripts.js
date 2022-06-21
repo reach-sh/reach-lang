@@ -309,6 +309,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
 const clickFollowLink = async (evt) => {
   if ( evt.shiftKey || evt.ctrlKey || evt.metaKey ) { return; }
   const t = evt.target.closest('a');
+  if (t === null) { return; }
   if ( t.classList && t.classList.contains("copyBtn") ) {
     evt.preventDefault();
     await navigator.clipboard.writeText(t.getAttribute('data-clipboard-text'));
