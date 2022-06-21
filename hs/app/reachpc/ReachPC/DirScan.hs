@@ -20,7 +20,7 @@ data FileHash
   | FH_Deleted
   deriving (Show, Eq)
 
-data FileData 
+data FileData
   = FD_File BS.ByteString
   | FD_Directory
   | FD_Deleted
