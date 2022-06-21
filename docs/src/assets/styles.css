@@ -43,59 +43,59 @@ main {height: calc(100% - 56px);}
  color constants
 ************************************************/
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --body-color: var(--bs-body-color);
-    --soft0: #d9d9d9;
-    --soft1: #e6e6e6;
-    --soft2: #f2f2f2;
-    --soft3: #f4f4f4;
-    --soft4: #f7f7f7;
-    --soft5: #f9f9f9;
-    --soft6: #f8f8f8;
-    --soft7: azure;
-    --snippet: #f6f8fa;
-    --snippet-border: #c5d2df;
-    --button-border: rgba(0, 0, 0, 0.1);
-    --button-color: #6c757d;
-    --header-nav-hover: white;
-    --nav-bar-fg: white;
-    --light-mode-white: white;
-    --light-mode-black: black;
-    --otp-col-background: #1a1c23;
-    --otp-col-list-a: #404040;
-    --link-no-hover: steelblue;
-    --link-hover: #2b506e;
-    --img-hh-shadow: #cccccc;
-    --punch-span: #F45747;
-    --page-col-p-q-and-a: steelblue;
-    --blockquote-background: #fff6e6;
-    --blockquote-border-left: orange;
-    --page-col-div-hh-viewer-table: #ddd;
-    --page-col-div-card: #cce7ff;
-    --page-col-div-card-small: #00294d;
-    --page-col-div-card-focus: #7ec2ff;
-    --angellist-jobs-tags: #333333;
-    --social-icons: #595959;
-    --div-note-bg: #F5F5DC;
-    --div-q-and-a-bg: #F5DCDC;
-    --page-col-a-pid: #C8A8FF;
-    --reach-red: #F45747;
-    --reach-red-hover: #B62B1B;
+:root, :root.day {
+  --body-color: var(--bs-body-color);
+  --soft0: #d9d9d9;
+  --soft1: #e6e6e6;
+  --soft2: #f2f2f2;
+  --soft3: #f4f4f4;
+  --soft4: #f7f7f7;
+  --soft5: #f9f9f9;
+  --soft6: #f8f8f8;
+  --soft7: azure;
+  --snippet: #f6f8fa;
+  --snippet-border: #c5d2df;
+  --button-border: rgba(0, 0, 0, 0.1);
+  --button-color: #6c757d;
+  --header-nav-hover: white;
+  --nav-bar-fg: white;
+  --light-mode-white: white;
+  --light-mode-black: black;
+  --otp-col-background: #1a1c23;
+  --otp-col-list-a: #404040;
+  --link-no-hover: steelblue;
+  --link-hover: #2b506e;
+  --img-hh-shadow: #cccccc;
+  --punch-span: #F45747;
+  --page-col-p-q-and-a: steelblue;
+  --blockquote-background: #fff6e6;
+  --blockquote-border-left: orange;
+  --page-col-div-hh-viewer-table: #ddd;
+  --page-col-div-card: #cce7ff;
+  --page-col-div-card-small: #00294d;
+  --page-col-div-card-focus: #7ec2ff;
+  --angellist-jobs-tags: #333333;
+  --social-icons: #595959;
+  --div-note-bg: #F5F5DC;
+  --div-q-and-a-bg: #F5DCDC;
+  --page-col-a-pid: #C8A8FF;
+  --reach-red: #F45747;
+  --reach-red-hover: #B62B1B;
 
-    --shiki-color-text: #24292E;
-    --shiki-color-background: var(--snippet);
-    --shiki-token-constant: #005CC5;
-    --shiki-token-string: #770000;
-    --shiki-token-comment: #6A737D;
-    --shiki-token-keyword: #D73A49;
-    --shiki-token-parameter: #AA5000;
-    --shiki-token-function: #6F42C1;
-    --shiki-token-string-expression: #032F62;
-    --shiki-token-punctuation: #24292E;
-    --shiki-token-link: #EE0000;
-  }
+  --shiki-color-text: #24292E;
+  --shiki-color-background: var(--snippet);
+  --shiki-token-constant: #005CC5;
+  --shiki-token-string: #770000;
+  --shiki-token-comment: #6A737D;
+  --shiki-token-keyword: #D73A49;
+  --shiki-token-parameter: #AA5000;
+  --shiki-token-function: #6F42C1;
+  --shiki-token-string-expression: #032F62;
+  --shiki-token-punctuation: #24292E;
+  --shiki-token-link: #EE0000;
 }
+
+/* Must match :root.night */
 @media (prefers-color-scheme: dark) {
   :root{
     --body-color: #d0d0d0;
@@ -148,6 +148,59 @@ main {height: calc(100% - 56px);}
     --shiki-token-punctuation: #b0b0b0;
     --shiki-token-link: #EE0000;
   }
+}
+
+/* Must match @media (prefers-color-scheme: dark) */
+:root.night {
+  --body-color: #d0d0d0;
+  --soft0: #292929;
+  --soft1: #161616;
+  --soft2: #020202;
+  --soft3: #040404;
+  --soft4: #070707;
+  --soft5: #090909;
+  --soft6: #080808;
+  --soft7: azure;
+  --snippet: #0f0f0f;
+  --snippet-border: #515151;
+  --button-border: rgba(0, 0, 0, 0.1);
+  --button-color: #6c757d;
+  --header-nav-hover: black;
+  --nav-bar-fg: white;
+  --light-mode-white: black;
+  --light-mode-black: white;
+  --otp-col-background: #999999;
+  --otp-col-list-a: #909090;
+  --link-no-hover: steelblue;
+  --link-hover: #2b506e;
+  --img-hh-shadow: #cccccc;
+  --punch-span: #F45747;
+  --page-col-p-q-and-a: steelblue;
+  --blockquote-background: #fff6e6;
+  --blockquote-border-left: orange;
+  --page-col-div-hh-viewer-table: #ddd;
+  --page-col-div-card: #cce7ff;
+  --page-col-div-card-small: #00294d;
+  --page-col-div-card-focus: #7ec2ff;
+  --angellist-jobs-tags: #333333;
+  --social-icons: #595959;
+  --div-note-bg: #201500;
+  --div-q-and-a-bg: #210700;
+  --page-col-a-pid: #38287F;
+  --reach-red: #F45747;
+  --reach-red-hover: #B62B1B;
+
+  --shiki-color-text: #d0d0d0;
+  --shiki-color-background: var(--snippet);
+  --shiki-token-constant: #508Cc5;
+  --shiki-token-string: #770000;
+  --shiki-token-comment: #6A737D;
+  --shiki-token-keyword: #D73A49;
+  --shiki-token-parameter: #AA5000;
+  --shiki-token-function: #8F62c1;
+  --shiki-token-string-expression: #23b0b2;
+  --shiki-token-punctuation: #b0b0b0;
+  --shiki-token-link: #EE0000;
 }
 
 body {
