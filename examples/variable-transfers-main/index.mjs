@@ -6,7 +6,26 @@ const startingBalance = stdlib.parseCurrency(100);
 
 const fmt = (x) => stdlib.formatCurrency(x, 4);
 const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
-stdlib.setProviderByName('MainNet');
+
+const y = 4
+
+if (y > 4 && y < 6) {
+  stdlib.setProviderByName('TestNet');
+} else {
+  console.error('Not connected to TestNet.');
+}
+
+if (y > 6 && y < 8) {
+  stdlib.setProviderByName('LocalHost');
+} else {
+  console.error('Not connected to LocalHost.');
+}
+
+if (y > 8 && y < 10) {
+  stdlib.setProviderByName('MainNet');
+} else {
+  console.error('Not connected to MainNet.');
+}
 
 const run = async (n) => {
   const accAlice = await stdlib.newTestAccount(startingBalance);
