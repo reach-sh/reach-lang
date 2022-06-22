@@ -168,6 +168,32 @@ Multiple free API providers are used behind the scenes, [as implemented by ether
 On Algorand, `{!js} 'MainNet'` will connect to MainNet, and `{!js} 'TestNet'` to TestNet.
 The free RandLabs API provider is used ([https://algoexplorerapi.io](https://algoexplorerapi.io)).
 
+Provider connections are created with the code below:
+
+`{!js} MainNet`
+
+``` js
+load: /examples/variable-transfers-main/index.mjs
+md5: bbce792cc0b1bf45a3a77d5d50dc4e6a
+range: 9-9
+```
+
+`{!js} TestNet`
+
+``` js
+load: /examples/variable-transfers-test/index.mjs
+md5: 1be299bf098a9fd5f34481ef45e5e7db
+range: 9-9
+```
+
+`{!js} LocalHost`
+
+``` js
+load: /examples/variable-transfers-local/index.mjs
+md5: f3f211212921fcc573d0bcd99bda23f3
+range: 9-9
+```
+
 ---
 @{ref("js", "providerEnvByName")}
 ```js
