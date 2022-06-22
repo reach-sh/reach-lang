@@ -1,5 +1,8 @@
 ROOT = ..
 
+# "use ../DEPS to select the node docker image"
+include $(ROOT)/DEPS
+
 # We can derive the extension's version number using
 # the VERSION file from the appropriate directory.
 include $(ROOT)/VERSION
@@ -23,10 +26,13 @@ package.json: base.package.json
 	node build.package.json.js
 
 publish:
+	@echo
 	@echo "Now attempting to publish version $(VSCE_VER)"
-	@echo "of our extension..."
+	@echo "of the extension using $(NODE_IMAGE)..."
+	@echo
 # Give the extension version to the script, so it can,
 # in turn, give the appropriate version number to Docker.
 # This is easier than passing the VERSION file from this
 # directory's parent directory to Docker.
-	VER=$(VSCE_VER) ./extensionPublishingHelper.sh
+	NODE_IMAGE=${NODE_IMAGE} VER=$(VSCE_VER) \
+	./extensionPublishingHelper.sh
