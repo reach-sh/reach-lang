@@ -15,7 +15,6 @@ WORKDIR /stdlib
 RUN apk update && apk add git make python3 libc-dev gcc g++ curl bash
 COPY .docker-root ./.docker-root
 COPY Makefile.docker ./Makefile
-RUN make ROOT=.docker-root install-mo
 COPY package.mo.json .
 RUN make ROOT=.docker-root package.json
 COPY --from=js-deps /js-deps/node_modules ./node_modules

@@ -6,7 +6,6 @@ FROM reachsh/runner:latest
 RUN apk add make curl bash
 COPY Makefile.docker ./Makefile
 COPY .docker-root ./.docker-root
-RUN make ROOT=.docker-root install-mo
 COPY package.mo.json .
 RUN make ROOT=.docker-root package.json
 

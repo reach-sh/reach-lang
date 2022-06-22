@@ -22,4 +22,3 @@ DOTNET_SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_VERSION}
 DOTNET_RUNTIME_IMAGE=mcr.microsoft.com/dotnet/runtime:${DOTNET_SDK_VERSION}
 PYTHON_IMAGE_VERSION=3.8-alpine3.15
 PYTHON_IMAGE=python:${PYTHON_IMAGE_VERSION}
-MO_URL=https://raw.githubusercontent.com/tests-always-included/mo/master/mo

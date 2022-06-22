@@ -1,11 +1,5 @@
 include $(ROOT)/DEPS
 
-.PHONY: install-mo
-install-mo:
-	curl -sSL $(MO_URL) -o mo
-	chmod +x mo
-	mv mo /usr/local/bin
-
 OPENZEP=4.5.0
 OPENZEP_URL=https://github.com/OpenZeppelin/openzeppelin-contracts/archive/refs/tags/v$(OPENZEP).tar.gz
 sol/v$(OPENZEP).tar.gz:
@@ -28,10 +22,10 @@ sol/stdlib.json: sol/stdlib.sol
 CLOSED_YAML := package.closed.yaml
 
 package.yaml: package.mo.yaml $(ROOT)/VERSION
-	(. $(ROOT)/VERSION && export VERSION && ( mo $< ; (if [ -f "$(CLOSED_YAML)" ] ; then cat "$(CLOSED_YAML)" ; else echo ; fi) ) > $@)
+	(. $(ROOT)/VERSION && export VERSION && ( $(ROOT)/scripts/mo $< ; (if [ -f "$(CLOSED_YAML)" ] ; then cat "$(CLOSED_YAML)" ; else echo ; fi) ) > $@)
 
 src/Reach/Version.hs: src/Reach/Version.mo.hs $(ROOT)/VERSION $(ROOT)/DEPS
-	(. $(ROOT)/VERSION && export MAJOR MINOR PATCH && . $(ROOT)/DEPS && export SOLC_VERSION && mo $< > $@)
+	(. $(ROOT)/VERSION && export MAJOR MINOR PATCH && . $(ROOT)/DEPS && export SOLC_VERSION && $(ROOT)/scripts/mo $< > $@)
 
 .PHONY: docker-test-xml
 docker-test-xml:

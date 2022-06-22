@@ -17,7 +17,6 @@ If you want to work on the Reach compiler, you'll need:
 - stack v2.7.5
 - z3 v4.8.14
 - solidity v0.8.12
-- [mo](https://github.com/tests-always-included/mo) v2.2.0
 
 The versions of our dependencies are specified in `DEPS`.
 
@@ -25,7 +24,6 @@ Installation on macOS:
 ```
 $ brew tap ethereum/ethereum
 $ brew install haskell-stack z3 solidity
-$ curl -sSL https://git.io/get-mo -o mo && chmod +x mo && sudo mv mo /usr/local/bin/
 ```
 
 Installation on Ubuntu:
@@ -34,7 +32,6 @@ $ sudo apt update
 $ sudo apt install z3
 $ sudo snap install solc
 $ curl -sSL https://get.haskellstack.org/ | sh
-$ curl -sSL https://git.io/get-mo -o mo && chmod +x mo && sudo mv mo /usr/local/bin/
 ```
 
 These instructions may not install the exactly correct versions, and that may

@@ -50,7 +50,7 @@ WORKDIR /tmp/hs
 COPY .docker-root ./.docker-root
 COPY Makefile.docker ./Makefile
 COPY package.mo.yaml ./
-RUN make ROOT=.docker-root install-mo package.yaml
+RUN make ROOT=.docker-root package.yaml
 
 # stack.yaml.lock intentionally omitted
 COPY stack.yaml ./

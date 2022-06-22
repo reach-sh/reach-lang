@@ -1,11 +1,5 @@
 include $(ROOT)/VERSION
 include $(ROOT)/DEPS
 
-.PHONY: install-mo
-install-mo:
-	curl -sSL $(MO_URL) -o mo
-	chmod +x mo
-	mv mo /usr/local/bin
-
 package.json: package.mo.json $(ROOT)/VERSION
-	REACH_VERSION=$(VERSION) mo $< > $@
+	REACH_VERSION=$(VERSION) $(ROOT)/scripts/mo $< > $@
