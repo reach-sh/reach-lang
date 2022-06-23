@@ -13,16 +13,22 @@ module Reach.Proto
   ) where
 
 import Control.Concurrent
+import Control.Concurrent.Async
+import Control.Concurrent.STM
+import Control.Exception (catch)
 import Control.Monad.IO.Class
 import Data.Aeson
+import Data.IORef
 import Data.Proxy
 import Data.Text
 import Data.Time.Clock
-import Data.Typeable
 import GHC.Generics
 import Servant
 import Servant.Client
 import Servant.Types.SourceT
+import System.Exit
+import System.IO
+import System.Process (CreateProcess(..), StdStream(..), createProcess, waitForProcess, shell)
 import Text.Parsec
 import Text.Parsec.Language
 import Text.Parsec.Token
@@ -40,13 +46,12 @@ import qualified Servant.Client.Streaming as S
 --
 -- TODO much of the following ought to be renamed
 -- TODO "AppT" over `say`, `listen`, and `cmd` request helpers
--- TODO easy thread-safety
 -- TODO prolong client timeouts
 
 stubPort :: Int
 stubPort = 8123
 
-data EventStream deriving Typeable
+data EventStream
 
 data FDescOut'
   = Stdout'
@@ -89,6 +94,7 @@ type Pid = Text
 instance Accept EventStream where
   contentType _ = "text" H.// "event-stream"
 
+-- TODO handle truncation of long `data` lines: CORE-1995
 toSSE' :: Show a => BL.ByteString -> a -> BL.ByteString -> BL.ByteString
 toSSE' e n m
   = "id: " <> BL.fromString (show n) <> "\n"
@@ -138,6 +144,50 @@ type V0_Stream = "v0"
 
 type Proto = V0_Sync :<|> V0_Stream
 
+withKeepalives :: ((FDescOut -> IO ()) -> IO ()) -> StepT IO FDescOut
+withKeepalives f = Effect $ do
+  q <- newTQueueIO
+  let tk' = atomically (writeTQueue q Keepalive) *> threadDelay 2500000 *> tk'
+  let tf' = f (atomically . writeTQueue q)
+  tk <- forkIO tk'
+  tf <- forkIO tf'
+  let go = atomically (readTQueue q) >>= \case
+        ExitCode' n m -> do
+          killThread tf
+          killThread tk
+          pure $ Yield (ExitCode' n m) Stop
+        v -> pure . Yield v $ Effect go
+  go
+
+-- "stub" because in real life these processes will live in remote cloud
+-- containers and their output-tracking will be more reliable + sophisticated.
+-- This design is useful for demonstration but not robust enough for our
+-- purposes in production.
+stubUnixProc :: String -> (FDescOut -> IO ()) -> IO ()
+stubUnixProc c f = do
+  (_, Just o, Just e, ph) <- createProcess (shell c) { std_out = CreatePipe, std_err = CreatePipe }
+  i' <- newIORef 0 -- Represents message ID
+  let onEOF = \(_ :: IOError) -> modifyIORef i' (+ (-1))
+  let i = do
+        n <- readIORef i'
+        writeIORef i' $ n + 1
+        pure n
+  let both = do
+        n <- i
+        l <- (BL.fromString <$> hGetLine e) `race` (BL.fromString <$> hGetLine o)
+        f $ either (Stderr n) (Stdout n) l
+        both
+  -- std(out|err) reach EOF independently of one another; fully exhaust both before terminating
+  let mkS t s = f =<< t <$> i <*> (BL.fromString <$> hGetLine s)
+  let fo = mkS Stdout o *> fo
+  let fe = mkS Stderr e *> fe
+  both `catch` onEOF
+  fo `catch` onEOF
+  fe `catch` onEOF
+  waitForProcess ph >>= \case
+    ExitSuccess -> i >>= f . flip ExitCode' 0
+    ExitFailure x -> i >>= f . flip ExitCode' x
+
 runStubServer :: IO ()
 runStubServer = Warp.run stubPort $ serve (Proxy @Proto) ((r :<|> pin) :<|> pout) where
   r c Req {..} = do
@@ -157,21 +207,7 @@ runStubServer = Warp.run stubPort $ serve (Proxy @Proto) ((r :<|> pin) :<|> pout
     pure $ case fd of
       Stdout'  -> source [Stdout 0 "first", Keepalive, Stdout 1 "second"]
       Stderr'  -> source []
-      Stdboth' -> fromStepT . Effect $ stdb 0
-
-  stdb n
-    | n == 100 = pure $ Yield (ExitCode' n 3) Stop
-    | n /= 0 && n `rem` 7 == 0 = do
-      pure . Yield (Stderr n "Multiple of 7 detected") . Effect $ stdb (n + 1)
-    | n `rem` 15 == 0 = do
-      pure . Yield Keepalive . Effect $ stdb (n + 1) -- Obviously we won't skip IDs in real life
-    | n `rem` 100 == 0 = do
-      threadDelay 10000
-      pure . Yield (Stdout n "reach.sh") . Effect $ stdb (n + 1)
-    | otherwise = do
-      threadDelay 1000000
-      utc <- getCurrentTime
-      pure . Yield (Stdout n . BL.fromString $ show utc) . Effect $ stdb (n + 1)
+      Stdboth' -> fromStepT . withKeepalives $ stubUnixProc "ls -alh && sleep 5 && uname -a && sleep 3 && date"
 
 cmd' :: String -> Req -> ClientM Res
 say' :: Pid -> Text -> ClientM NoContent
