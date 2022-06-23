@@ -720,6 +720,14 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
     range: 7-10
     ```
 
+1. In `index.mjs`, add a `reportPayment` property to `commonInteract` right after the `reportTransfer` property:
+
+    ``` js
+    load: /examples/wisdom-12-complete/index.mjs
+    md5: a8f7083fadc2f568146297185aff3211
+    range: 20-22
+    ```
+
 1. In `index.rsh`, add a `reportPayment` property to `commonInteract` right after the `reportCancellation` property:
 
     ``` reach
