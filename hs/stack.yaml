@@ -45,4 +45,3 @@ extra-deps:
     - lib/services/amazonka-pinpoint
     - lib/services/amazonka-pinpoint-email
     - lib/services/amazonka-pinpoint-sms-voice
-  - servant-typescript-0.1.0.2@sha256:92cfd7f7d96de7a01d3834ef50daec181c54b94b1daa3f5a497d5561b86ea7d3,3030
