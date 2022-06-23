@@ -173,7 +173,7 @@ Provider connections are created with the code below:
 `{!js} MainNet`
 
 ``` js
-load: /examples/overview-networks/index.mjs
+load: /examples/variable-transfers-main/index.mjs
 md5: 5540ec5765e38d8a4d9a26439458de93
 range: 11-11
 ```
@@ -181,7 +181,7 @@ range: 11-11
 `{!js} TestNet`
 
 ``` js
-load: /examples/overview-networks/index.mjs
+load: /examples/variable-transfers-main/index.mjs
 md5: 5540ec5765e38d8a4d9a26439458de93
 range: 13-13
 ```
@@ -189,7 +189,7 @@ range: 13-13
 `{!js} LocalHost`
 
 ``` js
-load: /examples/overview-networks/index.mjs
+load: /examples/variable-transfers-main/index.mjs
 md5: 5540ec5765e38d8a4d9a26439458de93
 range: 15-15
 ```
@@ -527,16 +527,6 @@ acc.tokenAccept(token) => Promise<void>
 Returns a Promise that completes when the Reach account abstraction is ready to accept non-network tokens specified by the `{!js} token`.
 This does nothing on some consensus networks, but should always be used to ensure your frontend is blockchain agnostic.
 
-Example:
-
-```js
-load: examples/atomic-swap/index.mjs
-md5: 9e2dd8f8db4ef6e83cc5c95fab50fd80
-range: 37-40
-```
-
-Here, `Alice` and `Bob` opt-in to the tokens `zorkmid` and `gil` using `{!js} tokenAccept` prior to receiving them.
-
 ---
 @{ref("js", "tokenAccepted")}
 ```js
@@ -561,18 +551,7 @@ acc.balanceOf(token?) => Promise<BigNumber>
 stdlib.balanceOf(acc, token?) => Promise<BigNumber>
 ```
 
-Promises the balance of network tokens (or non-network tokens if `{!js} token` is provided) held by given Reach account abstraction `{!js} acc`.
-
-Example:
-
-```js
-load: examples/raffle/index.mjs
-md5: 69477201beedc87b2616001290ae29cf
-range: 10-10
-```
-
-This code obtains the balance of network tokens for a user, `{!js} who`, and sets it to the `getBalance` object.
-This makes the account balance simpler to reference later in the code, such as displaying balances after transactions, proving that cancelled transactions did not transfer tokens, etc.
+Promises the balance of network tokens (or non-network tokens if `{!js} token` is provided) held by given by a Reach account abstraction `{!js} acc`.
 
 ---
 @{ref("js", "balancesOf")}@{ref("js", "stdlib.balancesOf")}@{ref("js", "acc.balancesOf")}
