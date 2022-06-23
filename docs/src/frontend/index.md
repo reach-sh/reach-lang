@@ -1429,6 +1429,16 @@ test.chk(id: string, actual:any, expected:any, xtra:object): void
 Runs a check named `id` that does not fail if `actual` is the same as `expected`.
 Records additional information in the log from `xtra`.
 
+Example:
+
+```js
+load: /examples/map-tuple-key/index.mjs
+md5: cd5c8b278ef9f5ee40c13627cb23889e
+range: 34 - 36
+```
+
+In this code, the `{!js} chk` asserts that the unsigned integer `i[1]` is the same as `bn(val)`.
+
 @{ref("js", "test.chkErr")}
 ```js
 test.chkErr(id: string, expected:string, f:() => Promise): void
