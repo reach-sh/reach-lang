@@ -173,7 +173,7 @@ Provider connections are created with the code below:
 `{!js} MainNet`
 
 ``` js
-load: /examples/overview-networks/index.mjs
+load: /examples/variable-transfers-main/index.mjs
 md5: 5540ec5765e38d8a4d9a26439458de93
 range: 11-11
 ```
@@ -181,7 +181,7 @@ range: 11-11
 `{!js} TestNet`
 
 ``` js
-load: /examples/overview-networks/index.mjs
+load: /examples/variable-transfers-main/index.mjs
 md5: 5540ec5765e38d8a4d9a26439458de93
 range: 13-13
 ```
@@ -189,7 +189,7 @@ range: 13-13
 `{!js} LocalHost`
 
 ``` js
-load: /examples/overview-networks/index.mjs
+load: /examples/variable-transfers-main/index.mjs
 md5: 5540ec5765e38d8a4d9a26439458de93
 range: 15-15
 ```
