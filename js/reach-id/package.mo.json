@@ -1,12 +1,13 @@
 {
   "name": "@reach-sh/id",
-  "version": "0.0.1",
+  "version": "{{REACH_VERSION}}",
   "description": "Client for Reach ID",
   "main": "dist/cjs/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsc && node index.js",
-    "watch": "tsc -w"
+    "start": "tsc && node dist/index.js",
+    "watch": "tsc -w",
+    "compile": "tsc"
   },
   "repository": {
     "type": "git",
@@ -20,5 +21,6 @@
   },
   "dependencies": {
     "node-fetch": "^3.2.6"
-  }
+  },
+  "type": "module"
 }

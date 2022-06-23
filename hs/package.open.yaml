@@ -16,11 +16,16 @@ extra-source-files:
 dependencies:
 - aeson
 - aeson-pretty
+- amazonka
+- amazonka-core
+- amazonka-pinpoint
+- amazonka-pinpoint-email
 - async
 - base >= 4.7 && < 5
 - base64
 - bytestring
 - containers
+- cookie
 - cryptonite
 - data-default-class
 - deepseq
@@ -43,11 +48,14 @@ dependencies:
 - io-capture
 - language-javascript >= 0.7.1.1
 - lattices
+- lens
 - loop
 - main-tester
 - memory
 - mtl
+- mysql-simple
 - optparse-applicative
+- OTP
 - parsec
 - parsec-numbers
 - pretty-show
@@ -55,13 +63,17 @@ dependencies:
 - prettyprinter
 - process
 - process-extras
+- random
 - regex
 - safe
 - scientific
 - scotty >= 0.12
+- scrypt
 - search-algorithms
 - servant
 - servant-client
+- servant-auth
+- servant-auth-server
 - servant-server
 - silently
 - simple-smt
@@ -81,12 +93,15 @@ dependencies:
 - temporary
 - text
 - time
+- tomland
 - transformers
 - unix-compat
 - unordered-containers
 - utf8-string
+- uuid
 - vector
 - wai
+- wai-cors
 - wai-extra
 - warp
 - yaml
