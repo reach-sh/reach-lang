@@ -886,12 +886,12 @@ A Web-app can do the following prior to attaching to the contract:
 Once confirmed, the Web-app can attach to the contract and complete the transaction.
 The following directions show you how to obtain `price` from the contract before attaching:
 
-1. In `index.rsh`, add Lines 46 and 51:
+1. In `index.rsh`, add Lines 23 and 29:
 
     ``` reach
     load: /examples/wisdom-14-modal/index.rsh
     md5: ba3a13f791cd8b66554d685957ea1d9d
-    range: 42-52
+    range: 20-30
     ```
 
 1. In `index.mjs`, add Lines 59 and 60 (in the `buyer` section):
