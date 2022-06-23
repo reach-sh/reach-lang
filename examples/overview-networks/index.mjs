@@ -3,7 +3,7 @@ import * as backend from './build/index.main.mjs';
 
 const stdlib = loadStdlib();
 
-var whichNetwork = 0
+const whichNetwork = 0
 
 if (whichNetwork === 1)  {
   const selectNetworks = await ask.ask(`Enter the number of the network you want to connect to: MainNet(0), TestNet(1), or LocalHost(2).`, (w => w));
@@ -16,7 +16,7 @@ if (whichNetwork === 1)  {
 	}  
 }  else { 
   stdlib.getProvider();
-  } 
+} 
 
 const accAlice = await stdlib.newTestAccount(stdlib.parseCurrency(10000));
 const accBob = await stdlib.newTestAccount(stdlib.parseCurrency(10000));
