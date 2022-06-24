@@ -174,24 +174,24 @@ Provider connections are created with the code below:
 
 ``` js
 load: /examples/overview-networks/index.mjs
-md5: 6332c848257ab51d5ff673dd36e9d6b0
-range: 11-11
+md5: e7ef6ff7bd8c96f1caa5708c9f3e7169
+range: 9-9
 ```
 
 `{!js} TestNet`
 
 ``` js
 load: /examples/overview-networks/index.mjs
-md5: 6332c848257ab51d5ff673dd36e9d6b0
-range: 13-13
+md5: e7ef6ff7bd8c96f1caa5708c9f3e7169
+range: 11-11
 ```
 
 `{!js} LocalHost`
 
 ``` js
 load: /examples/overview-networks/index.mjs
-md5: 6332c848257ab51d5ff673dd36e9d6b0
-range: 15-15
+md5: e7ef6ff7bd8c96f1caa5708c9f3e7169
+range: 13-13
 ```
 
 ---

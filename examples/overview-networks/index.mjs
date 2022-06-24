@@ -1,22 +1,17 @@
-import { loadStdlib, ask } from '@reach-sh/stdlib';
+import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
 const stdlib = loadStdlib();
 
-const whichNetwork = 0
+const whichNetwork = 0;
 
 if (whichNetwork === 1)  {
-  const selectNetworks = await ask.ask(`Enter the number of the network you want to connect to: MainNet(0), TestNet(1), or LocalHost(2).`, (w => w));
-  if (selectNetworks === 0) {
-      stdlib.setProviderByName('MainNet');
-    } else if (selectNetworks === 1) {
-      stdlib.setProviderByName('TestNet');
-    } else if (selectNetworks === 2) {
-      stdlib.setProviderByName('LocalHost');
-	}  
-}  else { 
-  stdlib.getProvider();
-} 
+  stdlib.setProviderByName('MainNet');
+} else if (whichNetwork === 2) {
+  stdlib.setProviderByName('TestNet');
+} else if (whichNetwork === 3) {
+  stdlib.setProviderByName('LocalHost');
+}
 
 const accAlice = await stdlib.newTestAccount(stdlib.parseCurrency(10000));
 const accBob = await stdlib.newTestAccount(stdlib.parseCurrency(10000));
