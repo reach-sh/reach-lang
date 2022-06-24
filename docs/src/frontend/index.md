@@ -501,6 +501,16 @@ acc.tokenAccept(token) => Promise<void>
 Returns a Promise that completes when the Reach account abstraction is ready to accept non-network tokens specified by the `{!js} token`.
 This does nothing on some consensus networks, but should always be used to ensure your frontend is blockchain agnostic.
 
+Example:
+
+```js
+load: examples/atomic-swap/index.mjs
+md5: 9e2dd8f8db4ef6e83cc5c95fab50fd80
+range: 37-40
+```
+
+Here, `Alice` and `Bob` opt-in to the tokens `zorkmid` and `gil` using `{!js} tokenAccept` prior to receiving them.
+
 ---
 @{ref("js", "tokenAccepted")}
 ```js
