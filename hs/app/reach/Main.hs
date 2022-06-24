@@ -2501,12 +2501,11 @@ support = command "support" $ info h d
     go SupportToolArgs {sta_so = SupportOpts {}} = do
       rawArgs <- liftIO getArgs
       let rawArgs' = dropWhile (/= "support") rawArgs
-      let actualArgs = tailMay rawArgs'
-      case actualArgs of
+      let useArgs xs = upload =<< mapM z xs 
+      case tailMay rawArgs' of
         Nothing -> impossible $ "support args do not start with 'support': " <> show rawArgs
         Just [] -> liftIO $ useArgs [ "index.rsh", "index.mjs" ]
         Just xs -> liftIO $ useArgs xs
-      where useArgs xs = upload =<< mapM z xs
     f i c = i .= object
       [ "content" .= if T.null (T.strip $ pack c) then "// (Empty source file)" else c
       , "language" .= ("JavaScript" :: String)
