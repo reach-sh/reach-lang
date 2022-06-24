@@ -46,7 +46,11 @@ if [ "${CIRCLE_BRANCH}" = "" ] ; then
   CIRCLE_BRANCH=master
 fi
 
-MD5_BRANCH=$(echo "${GITBRANCH}" | ${MD5} | awk '{print $1}')
+if [ "${CIRCLE_BRANCH}" != "master"]; then 
+  MD5_BRANCH=$(echo "${GITBRANCH}" | ${MD5} | awk '{print $1}')
+else
+  MD5_BRANCH="${CIRCLE_BRANCH}"
+fi
 
 CACHE_FROM=()
 dp () {
