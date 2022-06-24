@@ -4,10 +4,14 @@ module Reach.Proto
   ( FDescOut'(..)
   , FDescOut(..)
   , Req(..)
+  , Res(..)
   , Proto
+  , cmd''
   , cmd
+  , say''
   , say
   , listen
+  , appStubServer
   , runStubServer
   , stubPort
   ) where
@@ -16,6 +20,7 @@ import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Concurrent.STM
 import Control.Exception (catch)
+import Control.Monad
 import Control.Monad.IO.Class
 import Data.Aeson
 import Data.IORef
@@ -87,7 +92,7 @@ data Req = Req
   } deriving (Eq, Generic, FromJSON, ToJSON)
 
 data Res = Res -- TODO
-  deriving (Eq, Generic, FromJSON, ToJSON)
+  deriving (Eq, Show, Generic, FromJSON, ToJSON)
 
 type Pid = Text
 
@@ -188,39 +193,43 @@ stubUnixProc c f = do
     ExitSuccess -> i >>= f . flip ExitCode' 0
     ExitFailure x -> i >>= f . flip ExitCode' x
 
-runStubServer :: IO ()
-runStubServer = Warp.run stubPort $ serve (Proxy @Proto) ((r :<|> pin) :<|> pout) where
+appStubServer :: Bool -> Maybe String -> Application
+appStubServer l t = serve (Proxy @Proto) ((r :<|> pin) :<|> pout) where
   r c Req {..} = do
-    liftIO $ do
+    when l . liftIO $ do
       utc <- getCurrentTime
       putStrLn $ show utc <> ": reach " <> c <> " " <> unpack (intercalate " " req_args)
     pure Res
 
   pin p s = do
-    liftIO $ do
+    when l . liftIO $ do
       utc <- getCurrentTime
       putStrLn $ show utc <> ": PUT /v0/proc/" <> unpack p <> "/fd/0 " <> unpack s
     pure NoContent
 
   pout pid fd = do
-    liftIO . putStrLn $ "Received listen request for PID# " <> unpack pid
+    when l . liftIO . putStrLn $ "Received listen request for PID# " <> unpack pid
     pure $ case fd of
       Stdout'  -> source [Stdout 0 "first", Keepalive, Stdout 1 "second"]
       Stderr'  -> source []
-      Stdboth' -> fromStepT . withKeepalives $ stubUnixProc "ls -alh && sleep 5 && uname -a && sleep 3 && date"
+      Stdboth' -> fromStepT . withKeepalives . stubUnixProc
+        $ maybe "ls -alh && sleep 5 && uname -a && sleep 3 && date" id t
 
-cmd' :: String -> Req -> ClientM Res
-say' :: Pid -> Text -> ClientM NoContent
-cmd' :<|> say' = client $ Proxy @V0_Sync
+runStubServer :: IO ()
+runStubServer = Warp.run stubPort $ appStubServer True Nothing
+
+cmd'' :: String -> Req -> ClientM Res
+say'' :: Pid -> Text -> ClientM NoContent
+cmd'' :<|> say'' = client $ Proxy @V0_Sync
 
 todoErrorHandler :: ClientError -> IO a
 todoErrorHandler = fail . show
 
 cmd :: ClientEnv -> String -> Req -> IO ()
-cmd e c r = runClientM (cmd' c r) e >>= either todoErrorHandler (print . encode)
+cmd e c r = runClientM (cmd'' c r) e >>= either todoErrorHandler (print . encode)
 
 say :: ClientEnv -> Pid -> Text -> IO ()
-say e p t = runClientM (say' p t) e >>= either todoErrorHandler (const $ pure ())
+say e p t = runClientM (say'' p t) e >>= either todoErrorHandler (const $ pure ())
 
 listen :: ClientEnv -> (String -> IO ()) -> (FDescOut -> IO ()) -> Pid -> FDescOut' -> IO ()
 listen e x f p o = S.withClientM (S.client (Proxy @V0_Stream) p o) e

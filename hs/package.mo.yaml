@@ -35,6 +35,7 @@ dependencies:
 - hexstring
 - hspec
 - hspec-smallcheck
+- hspec-wai
 - http-client
 - http-client-tls
 - http-conduit
