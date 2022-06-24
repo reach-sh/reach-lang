@@ -1,18 +1,30 @@
 {- HLINT ignore "Use camelCase" -}
 {- HLINT ignore "Use if" -}
+{-# LANGUAGE DataKinds #-}
 
-module ReachPC.DirScan (Hash, FileHash(..), FileData(..), FileHashTree, FileDataTree, readUpdatedFiles, hashDirectory) where
+module ReachPC.DirScan
+  ( Hash
+  , FileHash(..)
+  , FileData(..)
+  , FileHashTree
+  , FileDataTree
+  , readUpdatedFiles
+  , hashDirectory
+  ) where
 
-import System.Directory (listDirectory, doesFileExist, pathIsSymbolicLink)
+import System.Directory (listDirectory, doesFileExist, pathIsSymbolicLink, getModificationTime)
 import System.FilePath (addTrailingPathSeparator, (</>))
 import System.FilePath.Glob as G
 import qualified Data.Map as M
 import Data.List (partition)
 import qualified Data.ByteString as BS
 import Data.Char (isSpace)
-import Crypto.Hash (hash, SHA1, Digest) 
+import Crypto.Hash (hash, SHA1)
+import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
+import Data.Binary (decodeFile, encodeFile)
+import qualified Data.ByteArray as BA (unpack)
 
-type Hash = Digest SHA1
+type Hash = BS.ByteString
 
 data FileHash 
   = FH_File Hash
@@ -30,6 +42,7 @@ type FileHashTree = M.Map FilePath FileHash
 
 type FileDataTree = M.Map FilePath FileData
 
+-- Given a dir and an old hash tree of that dir, produces a FileDataTree with only the differences
 readUpdatedFiles :: FilePath -> FileHashTree -> IO FileDataTree
 readUpdatedFiles root remoteHashes = do
   localHashes <- hashDirectory root 
@@ -55,15 +68,59 @@ compareHashTrees localHashes remoteHashes = M.union updatedFiles deletedFiles
   hasChanged l r = if l == r then Nothing else Just l
 
 hashFile :: FilePath -> IO Hash
-hashFile = fmap hash . BS.readFile
+hashFile p = BS.pack . BA.unpack . (hash @BS.ByteString @SHA1) <$> BS.readFile p
+
+type CacheTree = M.Map FilePath Hash
 
 -- Takes a directory and walks it recursively. Hashes each file encountered,
 -- records directories encountered, and ignores symlinks. Special files ???
 -- Reads ".reachignore" if it exists and ignores files that match patterns in it
 hashDirectory :: FilePath -> IO FileHashTree
-hashDirectory root = M.mapKeys dropRootPrefix <$> doScan [] [root] M.empty
+hashDirectory root = do
+  (cacheTree, cacheMTime) <- readCacheTree
+  hashTree <- doScan cacheTree cacheMTime [] [root] M.empty
+  writeCacheTree $ hashTreeToCacheTree hashTree
+  return $ M.mapKeys dropRootPrefix hashTree
  where
   dropRootPrefix = drop $ length $ addTrailingPathSeparator root
+
+  doScan _ _ _ [] hashTree = return hashTree
+  doScan cacheTree cacheMTime ignores (dir:dirStack) hashTree = do
+    -- Read .reachignore in this directory
+    newIgnores <- readIgnores dir
+    let ignores' = newIgnores <> ignores
+    
+    -- Walk current dir
+    paths <- map (dir </>) <$> listDirectory dir
+    pathsAreFile <- mapM doesFileExist paths
+    pathsAreSymlink <- mapM pathIsSymbolicLink paths
+    let pathTypes = zip3 paths pathsAreFile pathsAreSymlink
+    let pathTypes' = [(p, isFile) | (p, isFile, isSymlink) <- pathTypes, 
+                                    not isSymlink, 
+                                    not $ isIgnored ignores' p]
+    let (files_, dirs_) = partition snd pathTypes'
+    let files = map fst files_
+    let dirs = map fst dirs_
+    
+    -- Hash encountered files
+    let cacheOrHash path = do
+          mtime <- getModificationTime path
+          case mtime < cacheMTime of
+            False -> hashFile path
+            True -> case M.lookup path cacheTree of
+                      Just h -> return h
+                      _ -> hashFile path
+    fileHashes <- mapM cacheOrHash files
+    let fileHashes' = zip files (map FH_File fileHashes)
+    let newFilesMap = M.fromList fileHashes'
+
+    -- Add remaining dirs to stack and hashes map
+    let dirStack' = dirs <> dirStack
+    let newDirsMap = M.fromList (map (, FH_Directory) dirs)
+    
+    let hashTree' = M.unions [hashTree, newFilesMap, newDirsMap]
+    doScan cacheTree cacheMTime ignores' dirStack' hashTree'
+
   isIgnored ignores path = any (`G.match` path) ignores
   readIgnores dir = do
     let path = dir </> ".reachignore"
@@ -76,33 +133,20 @@ hashDirectory root = M.mapKeys dropRootPrefix <$> doScan [] [root] M.empty
         let ignoresPatterns = filter (not . null) $ map (takeWhile patternChar) $ lines ignoresFile
         let ignores = map (G.compile . (dir </>)) ignoresPatterns
         return ignores
-  doScan _ [] hashTree = return hashTree
-  doScan ignores (dir:dirStack) hashTree = do
-    -- Read .reachignore in this directory
-    newIgnores <- readIgnores dir
-    let ignores' = newIgnores <> ignores
-    
-    -- Walk current dir
-    paths <- listDirectory dir
-    let paths' = map (dir </>) paths
-    pathsAreFile <- mapM doesFileExist paths'
-    pathsAreSymlink <- mapM pathIsSymbolicLink paths'
-    let pathTypes = zip3 paths' pathsAreFile pathsAreSymlink
-    let pathTypes' = [(p, isFile) | (p, isFile, isSymlink) <- pathTypes, 
-                                    not isSymlink, 
-                                    not $ isIgnored ignores' p]
-    let (files, dirs) = partition snd pathTypes'
-    let files' = map fst files
-    let dirs' = map fst dirs
-    
-    -- Hash encountered files
-    fileHashes <- mapM hashFile files'
-    let fileHashes' = zip files' (map FH_File fileHashes)
-    let newFilesMap = M.fromList fileHashes'
 
-    -- Add remaining dirs to stack and hashes map
-    let dirStack' = dirs' <> dirStack
-    let newDirsMap = M.fromList (map (, FH_Directory) dirs')
-    
-    let hashTree' = M.unions [hashTree, newFilesMap, newDirsMap]
-    doScan ignores' dirStack' hashTree'
+  hashTreeToCacheTree = M.fromList . foldr foldHelper [] . M.toList
+  foldHelper (p, fh) lst =
+    case fh of
+      FH_File h -> (p, h) : lst
+      _ -> lst
+
+  cachePath = root </> ".reachcache"
+  writeCacheTree = encodeFile cachePath
+  readCacheTree = do
+    haveCache <- doesFileExist cachePath
+    case haveCache of
+      False -> return (M.empty, posixSecondsToUTCTime 0)
+      True -> do
+        mtime <- getModificationTime cachePath
+        (cacheTree :: CacheTree) <- decodeFile cachePath
+        return (cacheTree, mtime)
