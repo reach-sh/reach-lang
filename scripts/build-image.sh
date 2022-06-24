@@ -46,7 +46,7 @@ if [ "${CIRCLE_BRANCH}" = "" ] ; then
   CIRCLE_BRANCH=master
 fi
 
-BRANCH_MD5=$(echo ${GITBRANCH} | ${MD5})
+MD5_BRANCH=$(echo "${GITBRANCH}" | ${MD5})
 
 CACHE_FROM=()
 dp () {
