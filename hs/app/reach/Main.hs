@@ -2519,7 +2519,7 @@ support = command "support" $ info h d
       ]
     z i = doesFileExist i >>= \case
       False -> do
-          putStrLn $ "Couldn't find the following file: " ++ i
+          putStrLn $ "Couldn't find the following file: " <> i
           pure []
       -- "Contents files can't be in subdirectories or include '/' in the name"
       True -> (\a -> [f (K.fromText $ T.replace "/" "\\" $ pack i) a]) <$> readFile i
