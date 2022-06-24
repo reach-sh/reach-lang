@@ -2504,14 +2504,9 @@ support = command "support" $ info h d
       let actualArgs = tailMay rawArgs'
       case actualArgs of
         Nothing -> impossible $ "support args do not start with 'support': " <> show rawArgs
-        Just [] -> doDefaultBehavior
-        Just xs -> liftIO $ do
-          arrayOfPairs <- mapM z xs
-          case [] `elem` arrayOfPairs of
-            False -> upload arrayOfPairs
-            True -> do
-              putStrLn "\nNothing uploaded"
-              exitWith $ ExitFailure 1
+        Just [] -> liftIO $ useArgs [ "index.rsh", "index.mjs" ]
+        Just xs -> liftIO $ useArgs xs
+      where useArgs xs = upload =<< mapM z xs
     f i c = i .= object
       [ "content" .= if T.null (T.strip $ pack c) then "// (Empty source file)" else c
       , "language" .= ("JavaScript" :: String)
@@ -2520,7 +2515,8 @@ support = command "support" $ info h d
     z i = doesFileExist i >>= \case
       False -> do
           putStrLn $ "Couldn't find the following file: " <> i
-          pure []
+          putStrLn "\nNothing uploaded"
+          exitWith $ ExitFailure 1
       -- "Contents files can't be in subdirectories or include '/' in the name"
       True -> (\a -> [f (K.fromText $ T.replace "/" "\\" $ pack i) a]) <$> readFile i
     clientId = "c4bfe74cc8be5bbaf00e" :: String
@@ -2531,15 +2527,6 @@ support = command "support" $ info h d
         $ setRequestBodyJSON (object x)
       <$> parseRequest ("POST " <> u)
       >>= httpLBS
-    doDefaultBehavior = liftIO $ do
-      rsh <- z "index.rsh"
-      mjs <- z "index.mjs"
-      when (null rsh && null mjs) $ do
-        putStrLn "Neither index.rsh nor index.mjs exist in the current directory; aborting."
-        exitWith ExitSuccess
-      when (null rsh) $ putStrLn "\nDidn't find index.rsh in the current directory; skipping..."
-      when (null mjs) $ putStrLn "\nDidn't find index.mjs in the current directory; skipping..."
-      upload [ rsh, mjs ]
     upload arrayOfPairs = liftIO $ do
       a <- req "https://github.com/login/device/code"
         [ "client_id" .= clientId
