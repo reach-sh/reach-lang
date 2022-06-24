@@ -535,7 +535,7 @@ md5: 69477201beedc87b2616001290ae29cf
 range: 10-10
 ```
 
-This code obtains the balance of network tokens for user, `{!js} who`, and sets it to the `getBalance` object.
+This code obtains the balance of network tokens for a user, `{!js} who`, and sets it to the `getBalance` object.
 This makes the account balance simpler to reference later in the code, such as displaying balances after transactions, proving that cancelled transactions did not transfer tokens, etc.
 
 ---
