@@ -115,6 +115,7 @@ dependencies:
 - attoparsec
 - Glob
 - split
+- binary
 
 default-extensions:
 - BangPatterns
