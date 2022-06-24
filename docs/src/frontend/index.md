@@ -535,18 +535,7 @@ acc.balanceOf(token?) => Promise<BigNumber>
 stdlib.balanceOf(acc, token?) => Promise<BigNumber>
 ```
 
-Promises the balance of network tokens (or non-network tokens if `{!js} token` is provided) held by given Reach account abstraction `{!js} acc`.
-
-Example:
-
-```js
-load: examples/raffle/index.mjs
-md5: 69477201beedc87b2616001290ae29cf
-range: 10-10
-```
-
-This code obtains the balance of network tokens for user, `{!js} who`, and sets it to the `getBalance` object.
-This makes the account balance simpler to reference later in the code, such as displaying balances after transactions, proving that cancelled transactions did not transfer tokens, etc.
+Promises the balance of network tokens (or non-network tokens if `{!js} token` is provided) held by given by a Reach account abstraction `{!js} acc`.
 
 ---
 @{ref("js", "balancesOf")}@{ref("js", "stdlib.balancesOf")}@{ref("js", "acc.balancesOf")}
