@@ -1307,6 +1307,10 @@
     "title": "<span class=\"ref\" id=\"cmd_reach%20scaffold\" data-scope=\"cmd\" data-symbol=\"reach scaffold\"> </span>   reach scaffold",
     "path": "/tool/#ref-usage-scaffold"
   },
+  "ref-usage-support": {
+    "title": "<span class=\"ref\" id=\"cmd_reach%20support\" data-scope=\"cmd\" data-symbol=\"reach support\"> </span>   reach support",
+    "path": "/tool/#ref-usage-support"
+  },
   "ref-usage-update": {
     "title": "<span class=\"ref\" id=\"cmd_reach%20update\" data-scope=\"cmd\" data-symbol=\"reach update\"> </span>   reach update",
     "path": "/tool/#ref-usage-update"
