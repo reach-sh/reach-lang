@@ -219,6 +219,18 @@ $ reach scaffold
 
 The files created are the same as those used temporarily by `{!cmd} reach run`.
 
+# {#ref-usage-support} @{ref("cmd", "reach support")} `reach support`
+
+You can upload a gist to GitHub using
+
+```cmd
+$ reach support
+```
+
+Successful completion of this command gives you a link to a gist on GitHub that anyone with the link can view.
+
+`{!cmd} reach support` uploads `index.rsh` from the current directory, if it can find it, and `index.mjs` from the current directory, if it can find it.
+
 # {#ref-usage-react} @{ref("cmd", "reach react")} `reach react`
 
 You can run a simple React app by executing
