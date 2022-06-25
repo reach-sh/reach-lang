@@ -1,0 +1,8 @@
+reachc: error[RE0076]: Expected Participant, got something else: <SLV_Clo>
+
+  ./pr1988.rsh:12:9:application
+
+  12|     .api(
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0076
+
