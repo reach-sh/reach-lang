@@ -1021,7 +1021,6 @@ In the `buyerInteract` `{!rsh} Object`, add the following `{!rsh} function`:
 ```reach
 load: /examples/mkt-5-interaction-reports/index.rsh
 md5: 9fa5772961e243c9e09c60e22d55cf40
-md5: 9fa5772961e243c9e09c60e22d55cf40
 range: 36 - 36
 ```
 
