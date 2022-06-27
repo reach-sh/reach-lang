@@ -12,7 +12,7 @@ module ReachPC.DirScan
   , hashDirectory
   ) where
 
-import System.Directory (listDirectory, doesFileExist, pathIsSymbolicLink, getModificationTime)
+import System.Directory (listDirectory, doesFileExist, pathIsSymbolicLink, getModificationTime, createDirectoryIfMissing)
 import System.FilePath (addTrailingPathSeparator, (</>))
 import System.FilePath.Glob as G
 import qualified Data.Map as M
@@ -140,8 +140,10 @@ hashDirectory root = do
       FH_File h -> (p, h) : lst
       _ -> lst
 
-  cachePath = root </> ".reachcache"
-  writeCacheTree = encodeFile cachePath
+  cachePath = root </> ".reach" </> "cache-tree"
+  writeCacheTree cacheTree = do
+    createDirectoryIfMissing False (root </> ".reach")
+    encodeFile cachePath cacheTree
   readCacheTree = do
     haveCache <- doesFileExist cachePath
     case haveCache of
