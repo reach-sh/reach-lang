@@ -50,17 +50,15 @@ data Config = Config
   , cfg_connector :: Connector
   , cfg_forwardEnvVars :: [String]
   , cfg_project :: String
-  , cfg_organization :: String
   } deriving (Show)
 
 -- Represents a reach.toml file; Same fields as Config, except every field is optional (because they
 -- may also be specified by flags or env vars).
 data RchToml = RchToml
-  { rtml_cloudOrLocal :: !(Maybe CloudOrLocal)
-  , rtml_connector :: !(Maybe Connector)
-  , rtml_forwardEnvVars :: !(Maybe [String])
-  , rtml_project :: !(Maybe String)
-  , rtml_organization :: !(Maybe String)
+  { rtml_cloudOrLocal :: Maybe CloudOrLocal
+  , rtml_connector :: Maybe Connector
+  , rtml_forwardEnvVars :: Maybe [String]
+  , rtml_project :: Maybe String
   } deriving (Show)
 
 -- Generates a Config by reading various sources. If a project reach.toml isn't found, crash. 
@@ -71,6 +69,7 @@ getProjectConfig cliOpts = do
   globalRchToml <- readOrCreateGlobalReachToml
   envVars <- getEnvironment
   let envVar = flip lookup envVars
+  let unwrapConfigOption = fromMaybe . error . (++ "\nCheck <reach.sh/docs/project-config TODO page> for help\n") 
   
   -- The pattern here is that for every part of the project config, we check (and prioritize)
   -- env var, command line flag, project reach.toml, global reach.toml.
@@ -78,7 +77,7 @@ getProjectConfig cliOpts = do
   -- Whether to use reachd-cloud or reachd-local
   -- REACH_CLOUD_OR_LOCAL / --cloud or --local / cloud-or-local = "cloud" or "local"
   let env_cloudOrLocal = readCloudOrLocal <$> envVar "REACH_CLOUD_OR_LOCAL"
-  let cli_cloudOrLocal = boolToCloudOrLocal <$> Cli.cli_cloudOrLocal cliOpts
+  let cli_cloudOrLocal = (\b -> if b then Cloud else Local) <$> Cli.cli_cloudOrLocal cliOpts
   let prj_cloudOrLocal = rtml_cloudOrLocal projectRchToml
   let glb_cloudOrLocal = rtml_cloudOrLocal globalRchToml
   let cfg_cloudOrLocal = unwrapConfigOption "Unspecified whether to use Reach Cloud or Reach Local." $
@@ -96,7 +95,7 @@ getProjectConfig cliOpts = do
   -- What env vars to forward to the remote (sources are combined, not prioritized)
   -- REACH_FORWARD_ENV_VARS / --env / forward-env-vars = [...]
   let env_forwardEnvVars = maybe [] (splitOn ",") $ envVar "REACH_FORWARD_ENV_VARS"
-  let cli_forwardEnvVars = fromMaybe [] $ Cli.cli_forwardedEnvVars cliOpts
+  let cli_forwardEnvVars = fromMaybe [] $ Cli.cli_forwardEnvVars cliOpts
   let prj_forwardEnvVars = fromMaybe [] $ rtml_forwardEnvVars projectRchToml
   let gbl_forwardEnvVars = fromMaybe [] $ rtml_forwardEnvVars globalRchToml
   let cfg_forwardEnvVars = env_forwardEnvVars <> cli_forwardEnvVars <> prj_forwardEnvVars <> gbl_forwardEnvVars
@@ -110,21 +109,7 @@ getProjectConfig cliOpts = do
   let cfg_project = unwrapConfigOption "Unspecified remote project identifier." $
                     env_project <|> cli_project <|> prj_project <|> glb_project
 
-  -- Remote organization
-  -- REACH_ORGANIZATION / --organization=... / organization = ".."
-  let env_organization = envVar "REACH_ORGANIZATION"
-  let cli_organization = Cli.cli_organization cliOpts
-  let prj_organization = rtml_organization projectRchToml
-  let glb_organization = rtml_organization globalRchToml
-  let cfg_organization = unwrapConfigOption "Unspecified remote organization." $
-                         env_organization <|> cli_organization <|> prj_organization <|> glb_organization
-
-  print Config{..}
-
   return Config{..}
- where
-  boolToCloudOrLocal b = if b then Cloud else Local
-  unwrapConfigOption = fromMaybe . error . (++ "\nCheck <reach.sh/docs/project-config TODO page> for help\n") 
 
 readOrCreateGlobalReachToml :: IO RchToml
 readOrCreateGlobalReachToml = do
@@ -163,7 +148,6 @@ reachTomlCodec = RchToml
   <*> T.dioptional (T.enumBounded "connector") T..= rtml_connector
   <*> T.dioptional (T.arrayOf T._String "forward-env-vars") T..= rtml_forwardEnvVars
   <*> T.dioptional (T.string "project") T..= rtml_project
-  <*> T.dioptional (T.string "organization") T..= rtml_organization
 
 -- TODO: put into separate file and include at compile time
 defaultReachToml :: ByteString
