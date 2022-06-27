@@ -8,7 +8,7 @@ export const main = Reach.App(() => {
 
   A.publish();
 
-  var [ lastTime, lastSecs, i ] = [ thisConsensusTime(), thisConsensusSecs(), 0 ];
+  var [ lastTime, lastSecs, i ] = [ thisConsensusTime(), baseWaitSecs(), 0 ];
   invariant(lastTime > baseWaitTime() &&
             lastTime == thisConsensusTime() &&
             lastSecs >= baseWaitSecs() &&
@@ -17,7 +17,7 @@ export const main = Reach.App(() => {
     commit();
     A.publish();
     assert(thisConsensusTime() > lastTime);
-    [ lastTime, lastSecs, i ] = [ thisConsensusTime(), thisConsensusSecs(), i + 1 ];
+    [ lastTime, lastSecs, i ] = [ thisConsensusTime(), baseWaitSecs(), i + 1 ];
     continue;
   }
 
