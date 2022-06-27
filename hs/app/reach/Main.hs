@@ -1117,7 +1117,7 @@ compile = command "compile" $ info f d
 
         else
           cid="$(docker ps -f "ancestor=reachsh/reach:$v" --format '{{.ID}} {{.Labels}}' \
-            | grep " sh.reach.dir-project=$$PWD\$$" \
+            | grep "sh.reach.dir-project=$$PWD" \
             | awk '{print $$1}' \
             | head -n1)"
 
