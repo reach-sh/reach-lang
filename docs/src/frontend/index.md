@@ -586,6 +586,16 @@ If `{!js} tokens` contains a `{!js} null`,
 the corresponding position in the output array will contain the account's balance of network tokens.
 This function is more efficient for getting multiple token balances than repeated calls to `{!js} stdlib.balanceOf`.
 
+Example: 
+
+```js
+load: examples/account-balancesOf/index.mjs
+md5: df8e6d557df389629e04f6eb544a7baf
+range: 22-22
+```
+
+The `eggBal`, `bknBal`, and `tstBal` array is set equal to the array of `egg.id`, `bkn.id`, `tst.id` using an `{!js} await` and the `{!js} balancesOf` method.
+
 ---
 @{ref("js", "minimumBalanceOf")}
 ```js
