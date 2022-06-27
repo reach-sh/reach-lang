@@ -3,6 +3,7 @@ orbs:
   jq: "circleci/jq@2.2.0"
   shellcheck: "circleci/shellcheck@2.2.0"
   slack: "circleci/slack@4.3.3"
+  windows: circleci/windows@4.1.1
 
 executors:
   fake:
@@ -340,6 +341,37 @@ jobs:
         path: js/browser-tests/cypress/screenshots
     - slack_fail
 
+  build-release-linux:
+    docker:
+      - image: haskell:9.0.2
+    steps:
+      - checkout
+      - run: .circleci/release-builds/linux.sh
+      - store_artifacts:
+          path: /tmp/artifacts
+
+  build-release-mac:
+    macos:
+      xcode: 12.5.1
+    steps:
+      - checkout
+      - run: .circleci/release-builds/mac.sh
+      - store_artifacts:
+          path: /tmp/artifacts
+
+  build-release-windows:
+    executor:
+      name: windows/default
+    steps:
+      - checkout
+      - run:
+          name: Compile
+          shell: bash.exe
+          command: .circleci/release-builds/windows.sh
+      - store_artifacts:
+          path: /tmp/artifacts
+
+
 workflows:
   docs:
     jobs:
@@ -368,4 +400,10 @@ workflows:
         filters:
           branches:
             only: master
+    - build-release-windows:
+        requires: [ approve-release ]
+    - build-release-mac:
+        requires: [ approve-release ]
+    - build-release-linux:
+        requires: [ approve-release ]
     # Sink and examples follow

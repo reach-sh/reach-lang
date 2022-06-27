@@ -82,6 +82,10 @@ hs-clean: expand
 hs-build: expand
 	stack build --fast $(MEVEREST)
 
+.PHONY: hs-release
+hs-release: expand
+	stack build $(MEVEREST)
+
 .PHONY: hs-test
 hs-test: hs-build
 	# these are gitignored, so just delete them

@@ -32,7 +32,7 @@ dependencies:
 - file-embed >= 0.0.9
 - filepath
 - generic-deriving
-- hexstring
+# - hexstring
 - hspec
 - hspec-smallcheck
 - hspec-wai
@@ -40,11 +40,11 @@ dependencies:
 - http-client-tls
 - http-conduit
 - http-media
-- io-capture
+# - io-capture
 - language-javascript >= 0.7.1.1
-- lattices
-- loop
-- main-tester
+# - lattices
+# - loop
+# - main-tester
 - memory
 - mtl
 - optparse-applicative
@@ -52,7 +52,7 @@ dependencies:
 - parsec-numbers
 - pretty-show
 - pretty-simple
-- prettyprinter
+# - prettyprinter
 - process
 - process-extras
 - regex
@@ -65,7 +65,7 @@ dependencies:
 - servant-server
 - silently
 - simple-smt
-- smallcheck
+# - smallcheck
 - stm
 - system-filepath
 - tasty
@@ -83,7 +83,7 @@ dependencies:
 - time
 - transformers
 - unix-compat
-- unordered-containers
+# - unordered-containers
 - utf8-string
 - vector
 - wai
@@ -198,8 +198,7 @@ executables:
     - neat-interpolation
     - parsec
     - safe
-    - unix
-    - unix-time
+    #- unix
     - reach
   proto-stub:
     <<: *std-exe
