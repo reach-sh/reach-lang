@@ -518,6 +518,17 @@ acc.setDebugLabel(string) => acc
 
 An account may set a distinguishing label to use in debug logs. If no label is provided, then the first four digits of the account address will be used.
 
+Example:
+
+```js
+load: /examples/ctc-address/index.mjs
+md5: 0a4b59a9ff0f11d45e20f90fc2f1a233
+range: 9-10
+```
+
+This code uses `{!rsh} setDebugLabel` to set `accAlice` to the label of `Alice`, and `accBob` to `Bob`.
+This makes debugging much simpler, especially when using a large number of accounts, because each account can be set to a different human-readable string.
+
 ---
 @{ref("js", "tokenAccept")}
 ```js
