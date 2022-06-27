@@ -1,5 +1,4 @@
 {- HLINT ignore "Use if" -}
--- {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
 module ReachPC.Config
@@ -118,7 +117,6 @@ interactiveConfigCreate = do
         , rtml_connector = connector
         , rtml_forwardEnvVars = forwardEnvVars
         }
-
 
   writeFile rchTmlPath "# See this webpage <TODO LINK> for more information\n"
   let encoded = encodeReachToml newRchTml
