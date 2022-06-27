@@ -1880,6 +1880,17 @@ baseWaitSecs()
 These primitives return the network time (network seconds) that a relative time argument refers to.
 This is either the same as `{!rsh} lastConsensusTime` (`{!rsh} lastConsensusSecs`) or the deadline of the previous `{!rsh} wait` or `{!rsh} .timeout`.
 
+```reach
+load: /examples/baseWaitTime/index.rsh
+md5: c383368eea0a2ec23cd823334758bd02
+range: 11-15
+```
+
+This code creates three variables of `lastTime`, `lastSecs`, and `i`.
+It then sets `lastTime` to `{!rsh} thisConsensusTime`, `lastSecs` to `{!rsh} baseWaitSecs` and `i` to 0.
+Then, an invariant is created to make sure that `lastTime` is greater than `{!rsh} baseWaitTime`, `lastTime` is equal to `{!rsh} thisConsensusTime`, `lastSecs` is either equal or greater than `{!rsh} basWaitSecs` and that the `{!rsh} balance` is equal to 0.
+This makes sure that the order of blocks matches the order of time.
+
 ### Time arguments - `relativeTime`, `absoluteTime`, `relativeSecs`, `absoluteSecs`
 
 @{ref("rsh", "relativeTime")}@{ref("rsh", "absoluteTime")}@{ref("rsh", "relativeSecs")}@{ref("rsh", "absoluteSecs")}
