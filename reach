@@ -80,7 +80,7 @@ run_d () {
         "$@"
   else
     cid="$(docker ps -f "ancestor=$IMG" --format '{{.ID}} {{.Labels}}' \
-      | grep " sh.reach.dir-project=$(pwd)\$" \
+      | grep "sh.reach.dir-project=$(pwd)" \
       | awk '{print $1}' \
       | head -n1)"
 
