@@ -5,12 +5,9 @@
 This tutorial teaches how to create a safe application for two `{!rsh} Participant`s, `Seller` and `Buyer`, to transact business.
 
 :::note
-A `{!rsh} Participant` in this context refers to anyone partaking in a particular transaction. 
+A `{!rsh} Participant` in this context refers to anyone participating in a particular transaction. 
 In other words, a `{!rsh} Participant` is a user.
 :::
-
-The [Reach](https://reach.sh/) programming language will be used in this tutorial. 
-Reach is a development platform for launching smarter blockchain projects in less time.
 
 The following image is a pictorial description of how the application will work at the end of this tutorial.
 
@@ -30,7 +27,6 @@ By the end, you will have learned:
 It is assumed that you have installed Reach. 
 If you need help installing Reach, refer to the [Quick Start Guide](https://docs.reach.sh/quickstart/#quickstart).
 
-
 ## {#tut-mkt-starter} Starter Code
 
 This section will guide you on how to create the basic code for this project.
@@ -41,7 +37,7 @@ This section will guide you on how to create the basic code for this project.
 mkdir market
 ```
 
-2. Change the working directory into the `market`.
+2. Change the working directory to `market`.
 
 ```reach
 cd market
@@ -53,21 +49,23 @@ cd market
 touch index.rsh index.mjs
 ```
 
-* The `index.mjs` is the frontend of the DApp that will be created since it contains the code that the `{!rsh} Participant`s will `{!rsh} interact` with.
+* `index.mjs` is the frontend of the DApp containing the code that the `{!rsh} Participant`s will `{!rsh} interact` with.
 
-* The `index.rsh` is the backend that contains the DApp's instructions and ensures the security of the DApp.
-This is actually where the `Reach` code will live.
+* `index.rsh` is the backend that contains the DApp's instructions and ensures the security of the DApp.
+This is where the `Reach` code is written.
 
 ### {#tut-mkt-starter-backend} Backend
 
-Start working in `index.rsh` by typing out the following code:
+In `index.rsh`, type out the following code:
 
 ```reach
 load: /examples/mkt-1-starter/index.rsh
+md5: 0db2f196a40225069c9728319be85434
+range: 1 - 7
 ```
 
 This code doesn't do anything yet, but it is an important foundation for code later in the tutorial. 
-`Reach` projects begin with this structure.
+Many `Reach` projects begin with this structure.
 
 * Line 1 tells `Reach` how to compile or run the DApp.
 Without it, you will get an error.
@@ -80,6 +78,12 @@ This will hold properties that are common to the `seller` and `buyer`.
 
 * Line 7 declares a `buyerInteract` `{!rsh} object`.
  It contains everything that the `buyer` can do during this transaction.
+ 
+ ```reach
+load: /examples/mkt-1-starter/index.rsh
+md5: 0db2f196a40225069c9728319be85434
+range: 9 - 19
+```
 
 * Lines 9 and 19 are the start and end of the main export from the program. 
 Only the code within this block is compiled. 
@@ -93,11 +97,13 @@ Without it, the program will never start.
 
 ### {#tut-mkt-starter-frontend} Frontend
 
-Next, work on the `index.mjs` file. 
+Next, let's work on the `index.mjs` file. 
 Type the code below:
 
 ```reach
 load: /examples/mkt-1-starter/index.mjs
+md5: b5f8b9b475567605d7b0ae7a52b93d46
+range: 1 - 6
 ```
 
 * Line 1 imports `{!rsh} loadStdlib` from the Reach standard library.
@@ -112,55 +118,59 @@ It will be automatically generated when you run `{!cmd} ./reach run` in your ter
 
 * Line 6: The `Buyer` attaches to the contract.
 
-* Lines 8 to 17 is an asynchronous block that is used to execute the whole of the frontend code.
+```reach
+load: /examples/mkt-1-starter/index.mjs
+md5: b5f8b9b475567605d7b0ae7a52b93d46
+range: 8 - 17
+```
+
+* Lines 8 to 17 is an asynchronous block that is used to execute the frontend code.
 
 * Lines 9 to 12 execute the `Seller`'s contract on the `Seller`. 
 The `Seller` is also given access to `commonInteract` and `sellerInteract` properties. 
 
 * Lines 13 to 16 execute the `Buyer`'s contract on the `Buyer`. 
-But this time around, the `Buyer` is given access to the `commonInteract` and `buyerInteract` properties.
+The `Buyer` is also given access to the `commonInteract` and `buyerInteract` properties.
 
 The code that you have just written forms the basis for the DApp that is to be built.
 
 Notice that `commonInteract`, `buyerInteract`, and `sellerInteract` are similar in both the backend and frontend files. 
 
 This is because `Reach` requires knowing how the variables will be used before they are referenced. 
-he program exits with an error if those variables are not used the way they were declared.
+The program exits with an error if those variables are not used the way they were declared.
 So these variables are declared at the backend before being defined in the frontend. 
 
 This might feel like a lot of work especially if you are coming from a language like JavaScript that is weakly typed.
 However, it is better to use a language with stronger security, especially when dealing with money and trust.
 
-### {#tut-mkt-starter-Review} Review
+### {#tut-mkt-starter-review} Review
 
 In this section, we created the basic code for the application that this tutorial plans to build.
 
 Two (2) important files were created and the necessary code was added. 
-See full code [here]().
+See the full code [here]().
 
 Next, a simple DApp will be built. 
-This will help to visualize what the finished product will look and feel like.
-If the diagram above wasn't clear enough, this next section will help.
+This will help you to visualize how the finished product will be designed.
 
 Time to proceed!
 
 ## {#tut-mkt-basic} Basic DApp
 
-In this section, a basic DApp will be created to demonstrate what the finished product will look like. 
+In this section, a basic DApp will be created with only essential functionality. 
 By the end, you will see how a basic Reach command-line DApp works.
 
 ### {#tut-mkt-basic-why} Why Build This Basic DApp
 
 A `seller` relocates to an area where there is high demand for the goods he sells. 
 He enjoys a monopoly in the market and soon realizes that he has more `buyer`s than he can handle.
-He also finds out that the method he has been using to transact business isn't secure enough as the business grows.
+He also finds out that the method he has been using to transact business is not secure enough as the business grows.
 
-He then decides to build an application that will make it easy for him to transact business with little or no supervision. 
-Since he is new to this technology and enjoys a monopoly, he decides to build a simple DApp that gives no autonomy to him or the `buyer`. 
+He then decides to hire someone to build an application that will allow him to transact business with little or no supervision. 
+Since he is new to this technology and enjoys a monopoly, he decides he needs a simple DApp that gives no autonomy to him or the `buyer`. 
 Once he and a `buyer` agree to transact business, the DApp picks a good that both parties must agree to transact upon.
 
-You are contracted to build this application and you follow these steps to successfully build the application:
-
+You have been contracted to build this application and you follow these steps to successfully build the application:
 
 ### {#tut-mkt-basic-declare} Declare Variables
 
@@ -168,6 +178,7 @@ Enter the following code just before the  `commonInteract` `{!rsh} Object`:
 
 ```reach
 load: /examples/mkt-2-basic/index.rsh
+md5: f077a4aea0733cb5632fd35522287267
 range: 3 - 11
 ```
 
@@ -181,30 +192,30 @@ An integer is represented by `{!rsh} UInt`.
 :::
 
 * Line 4: `quantity`. 
-This is an `{!rsh} integer` that represents the quantity of the `product` that the `buyer` order.
+This is an `{!rsh} integer` that represents the quantity of the `product` that the `buyer` orders.
 
 * Line 5: `announcement`. 
 This is a `{!rsh} String` that will represent a short advertisement made by the `seller`. 
 
 :::note
 A string is represented by `{!rsh} Bytes(28)`.
-The integer (28) in braces defines how long the string may be.
+The integer in braces (28) defines the maximum length of the string.
 :::
 
 * Lines 6 to 11: `product`. 
 This is an `{!rsh} Object` that contains the properties (i.e. key-value pair) of each product that the `seller` has in stock for sale.
 
 * Line 13: `products`. 
-This is an `{!rsh} Array` of `product`. 
+This is an `{!rsh} Array` of `product`s offered by the seller. 
 
-
-Now that those variables have been declared, flesh out the `commonInteract`, `sellerInteract` and `buyerInteract` `{!rsh} Object`s.
+Now that those variables have been declared, we need to flesh out the `commonInteract`, `sellerInteract` and `buyerInteract` `{!rsh} Object`s.
 These are the steps:
 
 For the `commonInteract` `{!rsh} Object`, replace this code:
 
 ```reach
 load: /examples/mkt-1-starter/index.rsh
+md5: 0db2f196a40225069c9728319be85434
 range: 3 - 3
 ```
 
@@ -212,6 +223,7 @@ with this code:
 
 ```reach
 load: /examples/mkt-2-basic/index.rsh
+md5: f077a4aea0733cb5632fd35522287267
 range: 14 - 25
 ```
 
@@ -219,17 +231,17 @@ range: 14 - 25
 This will hold properties that will be accessible to both the `seller` and `buyer`.
 
 * Lines 15 to 24: `showResult`.
- This is a  `{!rsh} function` that takes in 2 `{!rsh} Object`s and returns nothing.
+ This is a `{!rsh} function` that takes in two (2) `{!rsh} Object`s and returns nothing.
 
 :::note
 A `{!rsh} function` in Reach is defined as `{!rsh} Fun([input], output)`.
 :::
 
-
 Remove this code for the `sellerInteract` `{!rsh} Object`:
 
 ```reach
 load: /examples/mkt-1-starter/index.rsh
+md5: 0db2f196a40225069c9728319be85434
 range: 5 - 5
 ```
 
@@ -237,6 +249,7 @@ Enter this code instead:
 
 ```reach
 load: /examples/mkt-2-basic/index.rsh
+md5: f077a4aea0733cb5632fd35522287267
 range: 27 - 33
 ```
 
@@ -249,11 +262,11 @@ range: 27 - 33
 * Line 32: `reportReady`.
  This is a `{!rsh} function` that takes in the `announcement` and `products` and returns nothing.
 
-
 Clear this code for the `buyerInteract` `{!rsh} Object`:
 
 ```reach
 load: /examples/mkt-1-starter/index.rsh
+md5: 0db2f196a40225069c9728319be85434
 range: 7 - 7
 ```
 
@@ -261,6 +274,7 @@ Type in this code instead:
 
 ```reach
 load: /examples/mkt-2-basic/index.rsh
+md5: f077a4aea0733cb5632fd35522287267
 range: 35 - 37
 ```
 
@@ -273,13 +287,14 @@ This will hold all properties accessible to the `buyer`.
  It then returns an `Object` containing the `buyer`'s `choice` and `quantity`.
 
 That is all that needs to be done in the backend for now. 
-Attention will be given to the frontend now.
+Now we need to define the frontend.
 
 ### {#tut-mkt-basic-accounts} Create Accounts
 In the [previous section](##tut-mkt-starter-frontend), contracts were setup for the `{!rsh} Participant`s:
 
 ```reach
 load: /examples/mkt-1-starter/index.mjs
+md5: b5f8b9b475567605d7b0ae7a52b93d46
 range: 5 - 6
 ```
 
@@ -309,6 +324,7 @@ Just before the contracts, type the following code:
 
 ```reach
 load: /examples/mkt-2-basic/index.mjs
+md5: d5bb7b565a6c62e13856e735d8ace111
 range: 5 - 8
 ```
 
@@ -316,7 +332,7 @@ range: 5 - 8
 `{!rsh} parseCurrency` converts the figure passed into it to an acceptable currency on a DApp.
 
 :::note
-`{!rsh} parseCurrency` `{!rsh} function` is an in-built method that transform regular currencies (such as USD, EUR and Naira) into currencies used to transact on a DApp.
+The `{!rsh} parseCurrency` `{!rsh} function` is a built-in method that transforms fiat currencies (such as USD, EUR and GBP) into currencies used to transact on a DApp.
 Currencies used in a DApp include ETH and ALGO.
 :::
 
@@ -332,10 +348,9 @@ Just below the contracts, enter the following code for the `sellerInteract`:
 
 ```reach
 load: /examples/mkt-2-basic/index.mjs
+md5: d5bb7b565a6c62e13856e735d8ace111
 range: 13 - 30
 ```
-
-This code will be accessible to the `Seller` only.
 
 * Line 13 defines `sellerInteract` as an `{!rsh} Object`.
 
@@ -356,15 +371,13 @@ You can see this as the seller's unique identifier.
 
 That is all that the `Seller` needs for this section.
 
-
 The next code is for the `buyerInteract`:
 
 ```reach
 load: /examples/mkt-2-basic/index.mjs
+md5: d5bb7b565a6c62e13856e735d8ace111
 range: 32 - 47
 ```
-
-The `Buyer` will have access to this code.
 
 * Line 32 defines `buyerInteract` as an `{!rsh} Object`.
 
@@ -388,11 +401,11 @@ This is also a random number that is not more than `100`.
 
 That completes the `buyerInteract`. 
 
-
-Finally, the type the code below for `commonInteract`:
+Finally, type the code below for `commonInteract`:
 
 ```reach
 load: /examples/mkt-2-basic/index.mjs
+md5: d5bb7b565a6c62e13856e735d8ace111
 range: 49 - 61
 ```
 
@@ -435,6 +448,7 @@ Go back to the backend file. Just below `{!rsh} init();`, type the following cod
 
 ```reach
 load: /examples/mkt-2-basic/index.rsh
+md5: f077a4aea0733cb5632fd35522287267
 range: 50 - 55
 ```
 
@@ -469,6 +483,7 @@ Next, type in the following code for the `Buyer`'s interaction:
 
 ```reach
 load: /examples/mkt-2-basic/index.rsh
+md5: f077a4aea0733cb5632fd35522287267
 range: 57 - 61
 ```
 
@@ -487,6 +502,7 @@ Finally, the result of the program is shown with the following code:
 
 ```reach
 load: /examples/mkt-2-basic/index.rsh
+md5: f077a4aea0733cb5632fd35522287267
 range: 63 - 63
 ```
 
@@ -538,10 +554,11 @@ You get one result each time that you execute `{!cmd} ./reach run`.
 :::
 
 This is a beautiful start. 
-You just created a simple DApp that makes a simple transaction happen.
+You just created a simple DApp that completes a simple transaction.
 
 ### {#tut-mkt-basic-Review} Review
-This section taught the basics of the Reach language and demonstrated how the final DApp to be built will work. You were able to learn that:
+This section taught the basics of the Reach language and demonstrated how the final DApp to be built will work.
+You learned that:
 
 * A `{!rsh} Participant` is a user.
 
@@ -556,7 +573,8 @@ The integer (x) in braces defines how long the string may be.
 
 * Calling `{!rsh} interact` on something in Reach is the same thing as calling upon a `{!rsh} function` to execute the code within it.
 
-* A local step is an action that happens on a `{!rsh} Participant`'s machine. This step is used to execute codes that are only accessible to a particular `{!rsh} Participant`.
+* A local step is an action that happens on a `{!rsh} Participant`'s machine.
+This step is used to execute code that is only accessible to a particular `{!rsh} Participant`.
 
 * `{!rsh} declassify()` is used to make any secret `{!rsh} publish`able or shareable with other `{!rsh} Participant`s.
 
@@ -566,7 +584,8 @@ The `{!rsh} Participant` that initiates the transaction deploys the contract, wh
 * An account is like a book that keeps track of the activities of a particular user. 
 It holds information that helps the DApp manage a `{!rsh} Participant`.
 
-That was a good way to start building the marketplace application that has just been embarked upon. Hopefully, you found it helpful and easy to follow. 
+That was a good way to start building the marketplace application.
+Hopefully, you found it helpful and easy to follow. 
 
 It is important to note that Reach offers flexibility in the way code may be written. 
 Check [here](../../../examples/mkt-3-basic-alt) for an optional way that the code for this section may be written.
@@ -650,7 +669,6 @@ That will be leveraged in giving the `{!rsh} Participant`s autonomy as the proje
 
 That is the basics of how the `{!cmd} ./reach run` command works. 
 
-
 ### {#tut-mkt-interaction-why} Why Build An Interactive DApp
 
 The Basic DApp has been working fine and the business has grown but the `seller` no longer enjoys a monopoly - he now has competitors. 
@@ -670,6 +688,7 @@ Type the following code in the backend file:
 
 ```reach
 load: /examples/mkt-4-interaction-basic/index.rsh
+md5: 8b848cfcef89c59feb46b9bce2ed4535
 range: 1 - 34
 ```
 
@@ -694,6 +713,7 @@ In the `index.mjs` file, type the code below:
 
 ```reach
 load: /examples/mkt-4-interaction-basic/index.mjs
+md5: a3630889eeffc107acbdf70e15635ced
 range: 1 - 12
 ```
 
@@ -730,6 +750,7 @@ After that, type in the following:
 
 ```reach
 load: /examples/mkt-4-interaction-basic/index.mjs
+md5: a3630889eeffc107acbdf70e15635ced
 range: 14 - 29
 ```
 
@@ -781,6 +802,7 @@ The code below executes if the `{!rsh} Participant` is the `seller`:
 
 ```reach
 load: /examples/mkt-4-interaction-basic/index.mjs
+md5: a3630889eeffc107acbdf70e15635ced
 range: 32 - 52
 ```
 
@@ -828,6 +850,7 @@ Type the following:
 
 ```reach
 load: /examples/mkt-4-interaction-basic/index.mjs
+md5: a3630889eeffc107acbdf70e15635ced
 range: 55 - 78
 ```
 
@@ -841,7 +864,6 @@ range: 55 - 78
 
 * Line 68 uses the `{!rsh} ask` `{!rsh} Object` imported on line 1 to request for the contract details to be pasted in the terminal.
 
-
 The `buyer`'s output at this point looks like this:
 
 ```reach
@@ -854,7 +876,6 @@ Balance is 1000000000 μALGO
 Balance is 1000 ALGO
 Paste contract info: 
 ```
-
 
 * Lines 69 and 70 are executed after the `buyer` has pasted the details of the contract in the terminal.
 
@@ -919,6 +940,7 @@ Type the following code after the `{!rsh} init` line for the `seller`:
 
 ```reach
 load: /examples/mkt-4-interaction-basic/index.rsh
+md5: 8b848cfcef89c59feb46b9bce2ed4535
 range: 36 - 41
 ```
 The only difference here is that `Seller` has been changed to `S`. 
@@ -928,6 +950,7 @@ Type the code below for the `buyer`:
 
 ```reach
 load: /examples/mkt-4-interaction-basic/index.rsh
+md5: 8b848cfcef89c59feb46b9bce2ed4535
 range: 43 - 55
 ```
 
@@ -958,7 +981,6 @@ For Buyer:
 
 ![Buyer's output for basic interactive DApp](./tut-mkt-Interaction-test-seller.png)
 
-
 Full Demonstration
 
 > Video here
@@ -976,6 +998,7 @@ Replace the `commonInteract` `{!rsh} Object` with the following code:
 
 ```reach
 load: /examples/mkt-5-interaction-reports/index.rsh
+md5: 9fa5772961e243c9e09c60e22d55cf40
 range: 12 - 19
 ```
 
@@ -997,6 +1020,8 @@ In the `buyerInteract` `{!rsh} Object`, add the following `{!rsh} function`:
 
 ```reach
 load: /examples/mkt-5-interaction-reports/index.rsh
+md5: 9fa5772961e243c9e09c60e22d55cf40
+md5: 9fa5772961e243c9e09c60e22d55cf40
 range: 36 - 36
 ```
 
@@ -1013,6 +1038,7 @@ In the frontend file, replace the `commonInteract` `{!rsh} Object` with the foll
 
 ```reach
 load: /examples/mkt-5-interaction-reports/index.mjs
+md5: 2c66e28fba1c3faa073c05fec12d4045
 range: 29 - 42
 ```
 
@@ -1049,6 +1075,7 @@ In the `buyerInteract`, add the following code:
 
 ```reach
 load: /examples/mkt-5-interaction-reports/index.mjs
+md5: 2c66e28fba1c3faa073c05fec12d4045
 range: 87 - 87
 ```
 
@@ -1065,6 +1092,7 @@ Replace this code:
 
 ```reach
 load: /examples/mkt-4-interaction-basic/index.rsh
+md5: 8b848cfcef89c59feb46b9bce2ed4535
 range: 47 - 52
 ```
 
@@ -1072,6 +1100,7 @@ With this:
 
 ```reach
 load: /examples/mkt-5-interaction-reports/index.rsh
+md5: 9fa5772961e243c9e09c60e22d55cf40
 range: 55 - 62
 ```
 
@@ -1087,11 +1116,11 @@ range: 55 - 62
 
 * Line 61 `{!rsh} commit`s if Line 55 is false.
 
-
 Next, type the following code:
 
 ```reach
 load: /examples/mkt-5-interaction-reports/index.rsh
+md5: 9fa5772961e243c9e09c60e22d55cf40
 range: 64 - 73
 ```
 
@@ -1110,14 +1139,13 @@ This obtains the `buyer`'s consent and stores it as `willBuy`.
 
 * Line 73 publishes `willBuy`
 
-
 Now enter the code below:
 
 ```reach
 load: /examples/mkt-5-interaction-reports/index.rsh
+md5: 9fa5772961e243c9e09c60e22d55cf40
 range: 75 - 82
 ```
-
 
 * Line 75 checks if the `willBuy` is false.
 
@@ -1131,11 +1159,11 @@ range: 75 - 82
 
 * Line 81 `{!rsh} commit`s if Line 75 is true.
 
-
 Finally, the following code handles the payment and delivery if all goes well:
 
 ```reach
 load: /examples/mkt-5-interaction-reports/index.rsh
+md5: 9fa5772961e243c9e09c60e22d55cf40
 range: 84 - 90
 ```
 
@@ -1222,7 +1250,6 @@ Your Balance is 999.998 ALGO.
 ```
 
 > Video or GIF here
-
 
 If the transaction is successful, the output received should look like this:
 
@@ -1322,7 +1349,6 @@ Since regular transactions happen on a GUI and not on a terminal, how can Reach 
 
 The next section has been designed to teach everything that you need to know about building a web application using Reach.
 
-
 ## {#tut-mkt-view-contract} View the Contract
 
 This section teaches what `{!rsh} View`s are, how to use them and why they are important. 
@@ -1361,6 +1387,7 @@ We will add `{!rsh} View` here using the `{!rsh} Object` literal.
 
 ```reach
 load: /examples/mkt-6-view-contract-object/index.rsh
+md5: 431ce0577f26e934c0c19c23b36e7bc0
 range: 42 - 42
 ```
 
@@ -1372,6 +1399,7 @@ This means that the `sellerInfo` `{!rsh} Object` will be accessible through a `{
 
 ```reach
 load: /examples/mkt-6-view-contract-object/index.rsh
+md5: 431ce0577f26e934c0c19c23b36e7bc0
 range: 49 - 49
 ```
 
@@ -1379,6 +1407,7 @@ Add:
 
 ```reach
 load: /examples/mkt-6-view-contract-object/index.rsh
+md5: 431ce0577f26e934c0c19c23b36e7bc0
 range: 50 - 50
 ```
 
@@ -1394,20 +1423,23 @@ All changes in this file will be in the `buyerInteract` `{!rsh} Object`.
 
 ```js
 load: /examples/mkt-5-interaction-reports/index.mjs
+md5: 2c66e28fba1c3faa073c05fec12d4045
 range: 72 - 75
 ```
 
 2. Between
 
 ```js
-load: /examples/mkt-6-view-contract-object/index.mjs
+load: /examples/mkt-5-interaction-reports/index.mjs
+md5: 2c66e28fba1c3faa073c05fec12d4045
 range: 90 - 90
 ```
 
 and 
 
 ```js
-load: /examples/mkt-6-view-contract-object/index.mjs
+load: /examples/mkt-5-interaction-reports/index.mjs
+md5: 2c66e28fba1c3faa073c05fec12d4045
 range: 100 - 100
 ```
 
@@ -1415,6 +1447,7 @@ Enter the following code:
 
 ```js
 load: /examples/mkt-6-view-contract-object/index.mjs
+md5: bada4c51cc7662aa0fd18ddfc9f16a60
 range: 91 - 99
 ```
 
@@ -1429,3 +1462,88 @@ range: 91 - 99
 * Line 98 logs a message to the console indicating where the `{!rsh} View` ends.
 
 That is all the change that needs to be done both in the frontend and in the code generally.
+
+#### {#tut-mkt-view-contract-how-object-testing} Testing
+
+Open two terminals. In the first one, 
+run `{!cmd} ./reach run index seller` 
+and in the second terminal, 
+run `{!cmd} ./reach run index buyer`
+
+The output you receive should look like this:
+
+For Seller:
+
+```reach
+Your role is seller
+The consensus network is ALGO.
+The standard unit is ALGO
+The atomic unit is μALGO
+Balance is 1000 ALGO
+Balance is 1000000000 μALGO
+Balance is 1000 ALGO
+Your Balance is 1000 ALGO.
+Welcome to the Market
+Contract info: {"type":"BigNumber","hex":"0x03"}
+The Buyer paid 300 ALGO to the contract.
+The contract paid 300 ALGO to you.
+You owe the buyer 3 bunches of Carrots.
+Seller passes status report.
+Your Balance is 1299.996 ALGO.
+```
+
+For Buyer:
+
+```reach
+Your role is buyer
+The consensus network is ALGO.
+The standard unit is ALGO
+The atomic unit is μALGO
+Balance is 1000 ALGO
+Balance is 1000000000 μALGO
+Balance is 1000 ALGO
+Paste contract info: 
+{"type":"BigNumber","hex":"0x03"}
+Attaching to contract
+...
+List of products for sale:
+Begin View Section
+1. Potatoes at 200 ALGO per unit (bag).
+2. Carrots at 100 ALGO per unit (bunch).
+3. Corn at 50 ALGO per unit (ear).
+End View Section
+Successfully attached
+Your Balance is 1000 ALGO.
+Enter 1-3, or 0 to exit:
+2
+Enter number of units, or 0 to exit:
+3
+You are ordering 3 bunches of Carrots at 100 ALGO per bunch.
+Do you want to complete the purchase for 300 ALGO?
+y
+You paid 300 ALGO to the contract.
+The contract paid 300 ALGO to the seller.
+The seller owes you 3 bunches of Carrots.
+Buyer passes status report.
+Your Balance is 699.994 ALGO.
+```
+
+However, you will notice that it comes with a warning like the one below:
+
+```reach
+warning[RW0005]: The Object type's format is controlled by Reach; you may want to use Struct instead for external interfaces, so you can mandate and document the format.
+
+  ./index.rsh:42:17:application
+
+  42|   const V = View('Main', { sellerInfo: Object({ announcement: announcement, products: products }) });
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0005
+```
+
+To fix this, you need to use `{!rsh} Struct`s in defining your `{!rsh} View`s instead of `{!rsh} Object`s.
+That is what we will be doing next.
+
+### {#tut-mkt-view-contract-how-struct} Using Struct
+
+We will now re-write the `{!rsh} View` using `{!rsh} Struct`.
+This will help get rid of the warning.
