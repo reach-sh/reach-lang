@@ -526,7 +526,7 @@ md5: 0a4b59a9ff0f11d45e20f90fc2f1a233
 range: 9-10
 ```
 
-This code uses `{!rsh} setDebugLabel` to set `accAlice` to the label of `Alice`, and `accBob` to `Bob`.
+This code uses `{!js} setDebugLabel` to set `accAlice` to the label of `Alice`, and `accBob` to `Bob`.
 This makes debugging much simpler, especially when using a large number of accounts, because each account can be set to a different human-readable string.
 
 ---
