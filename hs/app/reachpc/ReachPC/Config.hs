@@ -112,7 +112,7 @@ getProjectConfig cliOpts = do
   -- What env vars to forward to the remote (sources are combined, not prioritized)
   -- REACH_FORWARD_ENV_VARS / --env / forward-env-vars = [...] in reach.toml
   let env_forwardEnvVars = maybe [] (splitOn ",") $ envVar "REACH_FORWARD_ENV_VARS"
-  let cli_forwardEnvVars = fromMaybe [] $ Cli.cli_forwardedEnvVars cliOpts
+  let cli_forwardEnvVars = fromMaybe [] $ Cli.cli_forwardEnvVars cliOpts
   let prj_forwardEnvVars = fromMaybe [] $ rtml_forwardEnvVars
   let cfg_forwardEnvVars = env_forwardEnvVars <> cli_forwardEnvVars <> prj_forwardEnvVars
 
