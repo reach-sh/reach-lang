@@ -224,12 +224,14 @@ The files created are the same as those used temporarily by `{!cmd} reach run`.
 You can upload a gist to GitHub using
 
 ```cmd
-$ reach support
+$ reach support path/to/file1 path/to/file2 path/to/file3 ...
 ```
 
-Successful completion of this command gives you a link to a gist on GitHub that anyone with the link can view.
+`{!cmd} reach support` takes a list of files that defaults to `index.rsh` and `index.mjs` if called without parameters.
 
-`{!cmd} reach support` uploads `index.rsh` from the current directory, if it can find it, and `index.mjs` from the current directory, if it can find it.
+It will fail at the first file it fails to find.
+
+If all passed files are present, this command uploads those files as a gist to GitHub, and gives you a link to that gist that anyone with the link can view.
 
 # {#ref-usage-react} @{ref("cmd", "reach react")} `reach react`
 
