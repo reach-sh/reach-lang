@@ -322,6 +322,16 @@ The meaning of "default account" varies between contexts.
 When running in the browser, the default account will be connected to a wallet.
 This promise will be rejected with an exception if no sensible default account can be accessed for the current context.
 
+Example:
+
+```js
+load: /examples/rsvp/index.js
+md5: ac7d3caae5994352ef4cf445515730ab
+range: 28-28
+```
+
+This code uses `{!js} stdlib.getDefaultAccount` to set `acc` to the account that was connected to the DApp earlier in the code.
+
 ---
 
 @{ref("js", "newTestAccount")}@{ref("js", "stdlib.newTestAccount")}
