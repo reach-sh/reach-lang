@@ -954,6 +954,16 @@ stdlib.launchToken(accCreator: Account, name: string, sym: string, opts?: Launch
 Launches a non-network token with the given `{!js} name` and unit symbol `{!js} sym`.
 Launched on the network by `{!js} accCreator`.
 
+Example:
+
+```js
+load: examples/atomic-swap/index.mjs
+md5: 9e2dd8f8db4ef6e83cc5c95fab50fd80
+range: 27-28
+```
+
+The tokens `gil` and `zorkmid` are created in this code snippet, and then launched using `{!js} launchToken` by the `{!js} accCreator` account with the symbols `GIL` and `ZMD`.
+
 Possible options to provide in `{!js} opts` include:
 + `{!js} decimals` The number of digits to use after the decimal point when displaying the non-network token.
 The default is the same as the network token.
