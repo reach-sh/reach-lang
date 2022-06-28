@@ -1033,6 +1033,16 @@ You may provide an optional `{!js} onProgress` callback, used for reporting prog
 which may be called many times up until the specified network time.
 It will receive an object with keys `{!js} current` and `{!js} target`,
 
+Example:
+
+```js
+load: /examples/pr855/index.mjs
+md5: 35b43976f21f4043f858cf344e210904
+range: 20-22
+```
+
+The `{!js} while` statement in this code has an `{!js} await` that has the code wait the amount of time equal to `moment` by using `{!js} waitUntilTime`.
+
 ---
 @{ref("js", "stdlib.waitUntilSecs")}@{ref("js", "waitUntilSecs")}
 ```js
