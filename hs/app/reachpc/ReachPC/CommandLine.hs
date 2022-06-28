@@ -27,7 +27,9 @@ Available options:
 
 Special commands:
   auth              Authenticate with Reach cloud
-  config            Configure default Reach settings
+  config            Interactively configure the current project's `reach.toml`
+  config-global     Interactively configure Reach global settings
+  init              Initialize a project in the current directory
   local-install     Install Reach Local
   local-up          Bring up Reach Local
   local-down        Halt Reach Local
