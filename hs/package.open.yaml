@@ -197,6 +197,9 @@ executables:
   reachc:
     <<: *std-exe
     source-dirs:         app/reachc
+  reach-id-client:
+    <<: *std-exe
+    source-dirs:         app/reach-id-client
   reach:
     main:                Main.hs
     source-dirs:         app/reach

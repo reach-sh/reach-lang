@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
-module Reach.AST.ID.Req where
+module Reach.ID.Types where
 
 import           Data.Aeson
 import           GHC.Generics
