@@ -962,7 +962,7 @@ md5: 9e2dd8f8db4ef6e83cc5c95fab50fd80
 range: 27-28
 ```
 
-The tokens `gil` and `zorkmid` are created in this code snippet, and then launched using `{!js} launchToken` by the `{!js} accCreator` account with the symbols `GIL` and `ZMD`.
+The tokens `gil` and `zorkmid` are created in this code snippet, and then launched using `{!js} stdlib.launchToken` by the `{!js} accCreator` account with the symbols `GIL` and `ZMD`.
 
 Possible options to provide in `{!js} opts` include:
 + `{!js} decimals` The number of digits to use after the decimal point when displaying the non-network token.
