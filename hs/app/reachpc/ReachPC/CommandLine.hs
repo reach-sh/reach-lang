@@ -2,7 +2,7 @@
 
 module ReachPC.CommandLine (CliOptions(..), parseCliOptions, helpMessage) where
 
-import Data.Text (Text)
+import Data.Text (Text, unpack)
 import NeatInterpolation (text)
 import Data.List.Extra (splitOn)
 import System.Environment (getArgs)
@@ -36,6 +36,13 @@ Special commands:
   version           Display version
 |]
 
+shortHelpMessage :: Text
+shortHelpMessage = [text|
+No command was specified.
+Run with `reach -h` to see special commands.
+Run with the `reach help` see Reach Cloud/Local commands.
+|]
+
 data CliOptions = CliOptions
   { cli_command :: (String, [String])
   , cli_error :: Maybe String
@@ -63,4 +70,4 @@ parseCliOptions = flip go emptyCliOptions <$> getArgs
     ("--project":p:args')   -> go args' opts{ cli_project = Just p }
     (arg@('-':_):_)         -> opts{ cli_error = Just $ "Unknown or bad use of argument " <> arg }
     (cmd:args')             -> opts{ cli_command = (cmd, args') }
-    []                      -> opts{ cli_error = Just "No command was specified.\nRun with -h to see local commands, or run with the `help` command to see remote commands." }
+    []                      -> opts{ cli_error = Just $ unpack shortHelpMessage }
