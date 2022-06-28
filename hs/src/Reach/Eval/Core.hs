@@ -27,6 +27,7 @@ import qualified Data.Vector as Vector
 import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
+import Numeric
 import Reach.AST.Base
 import Reach.AST.DL
 import Reach.AST.DLBase
@@ -4264,9 +4265,11 @@ evalExpr e = case e of
     locAtf (srcloc_jsa "id ref" a) $
       evalId "expression" x
   JSDecimal a ns -> do
-    when ('e' `elem` ns || 'E' `elem` ns) $
-      expect_ $ Err_Eval_IllegalJS e
-    case splitOn "." ns of
+    let ns' = case ('e' `elem` ns || 'E' `elem` ns) of
+            True -> do
+              showFFloat Nothing (read ns :: Double) ""
+            False -> ns
+    case splitOn "." ns' of
       [iDigits, fDigits] ->
         let i = iDigits <> fDigits
          in let scale = '1' : replicate (length fDigits) '0'
