@@ -1,5 +1,3 @@
-{- HLINT ignore "Use newtype instead of data" -}
-
 module Main (main, CliOptions) where
 
 -- used for stdio green threading / streaming stuff
