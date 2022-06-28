@@ -7,7 +7,7 @@ module Main (main, CliOptions) where
 -- runStdinThread callback = forkIO $ forever $ getLine >>= callback . (<> "\n") 
 
 import ReachPC.CommandLine (CliOptions(..), parseCliOptions, helpMessage)
-import ReachPC.Config (Config(..), getProjectConfig, interactiveConfigCreate)
+import ReachPC.Config (Config(..), getProjectConfig, interactiveCreateReachToml, interactiveCreateGlobalsToml)
 import System.Environment (getEnvironment)
 import System.Exit (die)
 import Data.List (isPrefixOf)
@@ -25,7 +25,9 @@ main = do
   case fst cli_command of
     "local-help" -> TIO.putStrLn helpMessage
     "version" -> version
-    "config" -> interactiveConfigCreate
+    "init" -> interactiveCreateReachToml False
+    "config" -> interactiveCreateReachToml True
+    "config-global" -> interactiveCreateGlobalsToml
     "auth" -> auth
     "local-down" -> localDown
     "local-install" -> localInstall
