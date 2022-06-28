@@ -10,5 +10,7 @@ cradle:
       component: "reach:reach-test"
     - path: "./app/reachc"
       component: "reach:exe:reachc"
+    - path: "./app/reach-id-client"
+      component: "reach:exe:reach-id-client"
     - path: "./app/reach"
       component: "reach:exe:reach"

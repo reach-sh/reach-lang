@@ -1,8 +1,10 @@
-module Reach.IdClient
-  ( AuthResult(..)
+module Reach.ID.Client
+  ( App
+  , AuthResult(..)
   , createAccount
   , defaultEnv
   , getAccountInfo
+  , JWT
   , login
   , logout
   , Password(..)
@@ -25,7 +27,7 @@ import           Data.IORef
 import           Data.Maybe
 import           Network.HTTP.Client
 import           Network.HTTP.Simple
-import           Reach.AST.ID.Req
+import           Reach.ID.Types
 import           Reach.Util
 
 
@@ -137,7 +139,6 @@ saveMfaInfo = save e_mfaInfo
 
 saveUser :: User -> App User
 saveUser = save e_user
-
 
 -- Methods
 
