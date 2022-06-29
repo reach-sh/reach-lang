@@ -2,6 +2,7 @@
 
 const commonInteract = {
   reportCancellation: Fun([], Null),
+  reportTransfer: Fun([UInt], Null),
   reportPayment: Fun([UInt], Null),
 };
 const sellerInteract = {
@@ -45,6 +46,7 @@ export const main = Reach.App(() => {
   transfer(price).to(S);
   commit();
 
+  each([S, B], () => interact.reportTransfer(price));
   B.interact.reportWisdom(wisdom);
 
   exit();
