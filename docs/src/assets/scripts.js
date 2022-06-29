@@ -209,7 +209,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
       };
     }
     const processKeyUp = debounce(() => search());
-    const search = async (evt) => {
+    const search = async (_evt) => {
       const { hits } = await searchIndex.search(searchInput.value);
       if ( ! hits.length ) { return; }
       searchResultsList.innerHTML = '';
