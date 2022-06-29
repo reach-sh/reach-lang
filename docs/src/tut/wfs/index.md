@@ -708,7 +708,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
-    md5: a8f7083fadc2f568146297185aff3211
+    md5: 0e0778e6de9b3280f9bbfe0af56921b8
     range: 26-35
     ```
 
@@ -716,23 +716,23 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: 0b68da38d749583f08c3edceeff253a5
     range: 7-10
     ```
 
-1. In `index.mjs`, add a `reportPayment` property to `commonInteract` right after the `reportTransfer` property:
+1. In `index.mjs`, add a `reportPayment` property to `commonInteract`:
 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
-    md5: a8f7083fadc2f568146297185aff3211
-    range: 20-22
+    md5: 0e0778e6de9b3280f9bbfe0af56921b8
+    range: 20-21
     ```
 
 1. In `index.rsh`, add a `reportPayment` property to `commonInteract` right after the `reportCancellation` property:
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: 0b68da38d749583f08c3edceeff253a5
     range: 3-6
     ```
 
@@ -740,7 +740,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
-    md5: a8f7083fadc2f568146297185aff3211
+    md5: 0e0778e6de9b3280f9bbfe0af56921b8
     range: 48-54
     ```
 
@@ -748,7 +748,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: 0b68da38d749583f08c3edceeff253a5
     range: 13-17
     ```
 
@@ -756,7 +756,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: 0b68da38d749583f08c3edceeff253a5
     range: 39-48
     ```
 
@@ -769,27 +769,27 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
     It might be nice to inform the `seller` and the `buyer` when the `{!rsh} pay` and `{!rsh} transfer` actions take place.
     The next steps add these improvements.
 
-1. In `index.mjs`, add `reportCancellation` to `commonInteract`:
+1. In `index.mjs`, add `reportTransfer` to `commonInteract` just above `reportPayment`:
 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
-    md5: a8f7083fadc2f568146297185aff3211
-    range: 23-23
+    md5: 0e0778e6de9b3280f9bbfe0af56921b8
+    range: 21-21
     ```
 
-1. In `index.rsh`, add `reportPayment` to `commonInteract`:
+1. In `index.rsh`, add `reportTransfer` to `commonInteract`:
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: 0b68da38d749583f08c3edceeff253a5
     range: 5-5
     ```
 
-1. In `index.rsh`, add Lines 2 and 10 to existing code:
+1. In `index.rsh`, add Lines 41 and 49 to existing code to use `reportTransfer`:
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: 0b68da38d749583f08c3edceeff253a5
     range: 40-50
     ```
 
@@ -841,14 +841,14 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ```
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: 0b68da38d749583f08c3edceeff253a5
     ```
 
     And the final frontend code:
 
     ```
     load: /examples/wisdom-12-complete/index.mjs
-    md5: a8f7083fadc2f568146297185aff3211
+    md5: 0e0778e6de9b3280f9bbfe0af56921b8
     ```
 
 # {#wfs-20} View the contract
