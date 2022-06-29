@@ -195,7 +195,21 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
     currentPage.bookPath = undefined;
     searchInput.focus();
     const searchResultsList = doc.getElementById('search-results-list');
-    searchInput.addEventListener('keyup', async (evt) => {
+    /*
+    https://www.freecodecamp.org/news/javascript-debounce-example/
+    */
+    function debounce(fn, timeoutInMilliseconds = 250) {
+      let timer;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(
+          () => { fn.apply(this, args); },
+          timeoutInMilliseconds
+        );
+      };
+    }
+    const processKeyUp = debounce(() => search());
+    const search = async (evt) => {
       const { hits } = await searchIndex.search(searchInput.value);
       if ( ! hits.length ) { return; }
       searchResultsList.innerHTML = '';
@@ -236,7 +250,8 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
         searchResultsList.append(e);
       });
       setClickFollowLink();
-    });
+    };
+    searchInput.addEventListener('keyup', processKeyUp);
   }
 
   // Write otp html.
