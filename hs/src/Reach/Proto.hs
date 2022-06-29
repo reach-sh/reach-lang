@@ -5,7 +5,9 @@ module Reach.Proto
   , FDescOut(..)
   , Req(..)
   , Res(..)
+  , ResInterpret(..)
   , Proto
+  , stubDispatchReach
   , cmd''
   , cmd
   , say''
@@ -28,6 +30,9 @@ import Data.Proxy
 import Data.Text
 import Data.Time.Clock
 import GHC.Generics
+import Options.Applicative hiding ((<|>))
+import Options.Applicative.Help.Pretty (text)
+import Reach.CommandLine
 import Servant
 import Servant.Client
 import Servant.Types.SourceT
@@ -42,6 +47,7 @@ import qualified Data.ByteString.Lazy.UTF8 as BL
 import qualified Data.Map.Strict as M
 import qualified Network.HTTP.Media as H
 import qualified Network.Wai.Handler.Warp as Warp
+import qualified Options.Applicative as O
 import qualified Servant.Client.Streaming as S
 
 -- https://docs.servant.dev/en/latest/cookbook/basic-streaming/Streaming.html
@@ -53,8 +59,19 @@ import qualified Servant.Client.Streaming as S
 -- TODO "AppT" over `say`, `listen`, and `cmd` request helpers
 -- TODO prolong client timeouts
 
+type Pid = Text
+type ProjectHashes = M.Map FilePath Text
+type ProjectContent = M.Map FilePath Text
+type Subcommand = Mod CommandFields (IO ResInterpret)
+type SubcommandDispatch = Req -> String -> Handler Res
+
 stubPort :: Int
 stubPort = 8123
+
+ecode :: ExitCode -> Int
+ecode = \case
+  ExitSuccess -> 0
+  ExitFailure n -> n
 
 data EventStream
 
@@ -83,18 +100,27 @@ data FDescOut
   | Keepalive
   | ExitCode' Integer Int
 
-type Project = M.Map FilePath Text -- path:hash
-
 data Req = Req
-  { req_args  :: [Text]
-  , req_files :: Maybe Project
+  { req_args  :: [String]
+  , req_files :: Maybe ProjectHashes
   , req_env   :: M.Map Text Text
   } deriving (Eq, Generic, FromJSON, ToJSON)
 
-data Res = Res -- TODO
+data ResInterpret
+  = ExitStdout Int Text
+  | ExitStderr Int Text
+  | AttachStreamJustListen Pid Integer
+  | AttachStreamListenSpeak Pid Integer
+  -- TODO spec further:
+  --  * We'll want to batch PUTs rather than send them all at once
+  --  * Once the cloud is satisfied it has everything we'll redirect the client
+  | PutProjectUpdates ProjectContent
   deriving (Eq, Show, Generic, FromJSON, ToJSON)
 
-type Pid = Text
+data Res
+  = Redirect String
+  | Interpret ResInterpret
+  deriving (Eq, Show, Generic, FromJSON, ToJSON)
 
 instance Accept EventStream where
   contentType _ = "text" H.// "event-stream"
@@ -189,17 +215,53 @@ stubUnixProc c f = do
   both `catch` onEOF
   fo `catch` onEOF
   fe `catch` onEOF
-  waitForProcess ph >>= \case
-    ExitSuccess -> i >>= f . flip ExitCode' 0
-    ExitFailure x -> i >>= f . flip ExitCode' x
+  n <- waitForProcess ph
+  i >>= f . flip ExitCode' (ecode n)
 
-appStubServer :: Bool -> Maybe String -> Application
-appStubServer l t = serve (Proxy @Proto) ((r :<|> pin) :<|> pout) where
-  r c Req {..} = do
+mkDispatchOptparse :: ParserInfo (IO ResInterpret) -> SubcommandDispatch
+mkDispatchOptparse i Req {..} c = case execParserPure p i (c : req_args) of
+  CompletionInvoked _ -> pure . Interpret $ ExitStderr 1 "Reach doesn't support shell completions."
+  Failure e -> do
+    let (e', n) = renderFailure e "reach"
+    pure . Interpret . ExitStderr (ecode n) $ pack e'
+  O.Success f -> Interpret <$> liftIO f
+ where
+  p = prefs $ showHelpOnError <> showHelpOnEmpty <> helpShowGlobals
+
+-- These won't really live in the protocol definition --------------------------
+stubHelp :: Subcommand
+stubHelp = command "help" $ info f d where
+  d = progDesc "Show usage"
+  f = pure . pure $ ExitStdout 0 "TODO: build non-stub version"
+
+stubInit :: Subcommand
+stubInit = command "init" (info f $ d <> foot) where
+  d = progDesc "Set up source files for a simple app in the current directory"
+  f = go <$> strArgument (metavar "TEMPLATE" <> value "_default" <> showDefault)
+  foot = footerDoc . Just $ text "Available templates:\n"
+    <> text "_default"
+    <> text "\n\nAborts if index.rsh or index.mjs already exist"
+  go t = pure $ ExitStdout 0 $ "TODO: build non-stub version\nSelected: " <> t
+
+stubCompile :: Subcommand
+stubCompile = command "compile" $ info f d where
+  d = progDesc "Compile an app"
+  f = go <$> compiler
+  go _ = pure $ AttachStreamJustListen "54321" 0
+--------------------------------------------------------------------------------
+
+stubDispatchReach :: SubcommandDispatch
+stubDispatchReach = mkDispatchOptparse p where
+  p = info (hsubparser s <**> helper) fullDesc
+  s = stubHelp <> stubInit <> stubCompile
+
+appStubServer :: SubcommandDispatch -> Bool -> Maybe String -> Application
+appStubServer d l t = serve (Proxy @Proto) ((r :<|> pin) :<|> pout) where
+  r c a@Req {..} = do
     when l . liftIO $ do
       utc <- getCurrentTime
-      putStrLn $ show utc <> ": reach " <> c <> " " <> unpack (intercalate " " req_args)
-    pure Res
+      putStrLn $ show utc <> ": reach " <> c <> " " <> unpack (intercalate " " $ pack <$> req_args)
+    d a c
 
   pin p s = do
     when l . liftIO $ do
@@ -213,10 +275,10 @@ appStubServer l t = serve (Proxy @Proto) ((r :<|> pin) :<|> pout) where
       Stdout'  -> source [Stdout 0 "first", Keepalive, Stdout 1 "second"]
       Stderr'  -> source []
       Stdboth' -> fromStepT . withKeepalives . stubUnixProc
-        $ maybe "ls -alh && sleep 5 && uname -a && sleep 3 && date" id t
+        $ maybe "cd ../examples/ttt && ../../reach compile" id t
 
 runStubServer :: IO ()
-runStubServer = Warp.run stubPort $ appStubServer True Nothing
+runStubServer = Warp.run stubPort $ appStubServer stubDispatchReach True Nothing
 
 cmd'' :: String -> Req -> ClientM Res
 say'' :: Pid -> Text -> ClientM NoContent
@@ -225,8 +287,8 @@ cmd'' :<|> say'' = client $ Proxy @V0_Sync
 todoErrorHandler :: ClientError -> IO a
 todoErrorHandler = fail . show
 
-cmd :: ClientEnv -> String -> Req -> IO ()
-cmd e c r = runClientM (cmd'' c r) e >>= either todoErrorHandler (print . encode)
+cmd :: ClientEnv -> String -> Req -> (Res -> IO ()) -> IO ()
+cmd e c r f = runClientM (cmd'' c r) e >>= either todoErrorHandler f
 
 say :: ClientEnv -> Pid -> Text -> IO ()
 say e p t = runClientM (say'' p t) e >>= either todoErrorHandler (const $ pure ())

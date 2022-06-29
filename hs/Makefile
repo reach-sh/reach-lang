@@ -174,8 +174,5 @@ proto-stub-serve: hs-build
 
 .PHONY: proto-stub-client
 proto-stub-client: hs-build
-	@stack exec -- proto-stub cmd help
+	@stack exec -- proto-stub cmd init --help
 	@stack exec -- proto-stub cmd compile --verify-fail-once
-	@stack exec -- proto-stub cmd run examples/ttt foo bar baz
-	@stack exec -- proto-stub say
-	@stack exec -- proto-stub listen
