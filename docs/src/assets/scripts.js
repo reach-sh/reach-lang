@@ -182,6 +182,13 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   doc.querySelector('div#hh-viewer-wrapper div#hh-viewer').textContent = '';
   doc.querySelector('div#hh-viewer-wrapper div#hh-viewer').append(pageDoc);
 
+  // Adjust page title, adding self-reference link
+  const theader = doc.querySelector('h1');
+  const hlink = theader.querySelector("a");
+  theader.remove();
+  tspan.appendChild(hlink);
+  tspan.className += " refHeader"
+
   // If search page.
   const searchInput = doc.getElementById('search-input');
   if (searchInput) {
