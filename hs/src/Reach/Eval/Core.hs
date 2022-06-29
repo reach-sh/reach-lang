@@ -4265,6 +4265,8 @@ evalExpr e = case e of
     locAtf (srcloc_jsa "id ref" a) $
       evalId "expression" x
   JSDecimal a ns -> do
+    when (('e' `elem` ns && '.' `elem` ns) || ('E' `elem` ns && '.' `elem` ns)) $
+      expect_ $ Err_Eval_IllegalJS e
     let ns' = case ('e' `elem` ns || 'E' `elem` ns) of
             True -> do
               showFFloat Nothing (read ns :: Double) ""
