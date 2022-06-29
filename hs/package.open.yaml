@@ -203,3 +203,4 @@ executables:
   proto-stub:
     <<: *std-exe
     source-dirs:         app/proto-stub
+
