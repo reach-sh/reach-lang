@@ -185,8 +185,7 @@ $ sudo echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyring
 And then run:
 
 ```cmd
-$ sudo apt-get update
-$ sudo apt-get install docker-ce docker-ce-cli containerd.io
+$ sudo apt-get update && sudo apt-get install docker-ce docker-ce-cli containerd.io
 ```
 
 You may want to run the [post-installation steps for Linux](https://docs.docker.com/engine/install/linux-postinstall/) that Docker recommends.
@@ -205,7 +204,7 @@ $ curl https://docs.reach.sh/reach -o reach ; chmod +x reach
 
 Reach is successfully downloaded if the following command returns a version number:
 
-```
+``` cmd
 $ ./reach version
 ```
 
