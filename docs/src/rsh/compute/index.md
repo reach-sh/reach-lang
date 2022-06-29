@@ -516,7 +516,7 @@ is an expression that evaluates to the given value.
 
 The @{defn("null literal")} may be written as `{!rsh} null`.
 
-@{defn("Numeric literal")}s may be written in decimal, hexadecimal, octal, or scientific (exponential) notation.
+@{defn("Numeric literal")}s may be written in decimal, hexadecimal, octal, or scientific (exponential) notation. When written in scientific notation, they must be formatted without the `{!rsh} .` character.
 Numeric literals must obey the @{defn("bit width")} of `{!rsh} UInt` if they are used as `{!rsh} UInt` values at runtime, but if they only appear at compile-time, then they may be any positive number.
 Reach provides abstractions for working with `{!rsh} Int`s and signed `{!rsh} FixedPoint` numbers.
 `{!rsh} Int`s may be defined by applying the unary `{!rsh} +` and `{!rsh} -` operators to values of type `{!rsh} UInt`.
