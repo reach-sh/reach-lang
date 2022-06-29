@@ -516,8 +516,7 @@ is an expression that evaluates to the given value.
 
 The @{defn("null literal")} may be written as `{!rsh} null`.
 
-@{defn("Numeric literal")}s may be written in decimal, hexadecimal, or octal.
-They may not be written with scientific (exponential) notation.
+@{defn("Numeric literal")}s may be written in decimal, hexadecimal, octal, or scientific (exponential) notation.
 Numeric literals must obey the @{defn("bit width")} of `{!rsh} UInt` if they are used as `{!rsh} UInt` values at runtime, but if they only appear at compile-time, then they may be any positive number.
 Reach provides abstractions for working with `{!rsh} Int`s and signed `{!rsh} FixedPoint` numbers.
 `{!rsh} Int`s may be defined by applying the unary `{!rsh} +` and `{!rsh} -` operators to values of type `{!rsh} UInt`.
@@ -1907,7 +1906,7 @@ md5: aba879d62803fb298b7ce92187d6a489
 range: 48 - 52
 ```
 
-This code takes `{!rsh} absoluteTime` as the `{!rsh} Left` variant tag in the `{!rsh} timeout` method. 
+This code takes `{!rsh} absoluteTime` as the `{!rsh} Left` variant tag in the `{!rsh} timeout` method.
 In the following sample, `{!rsh} absoluteSecs` is used in the anonymous `{!rsh} function` as the `{!rsh} Right` variant tag:
 
 ```reach
@@ -2179,7 +2178,7 @@ md5: 2c13099a264f42f5d9fe0bc80a70a1ce
 range: 28 - 34
 ```
 
-This code computes the `finalOutcome` of the `Rock, Paper, Scissors` game using the `{!rsh} pow` method. 
+This code computes the `finalOutcome` of the `Rock, Paper, Scissors` game using the `{!rsh} pow` method.
 It takes `outcome` as the `base`, the sum of `handAlice` and `handBob` as the `power`, and `10` as the `precision`.
 
 For reference, `6` iterations provides enough accuracy to calculate up to `2^64 - 1`, so the largest power it can compute is `2^63`.
