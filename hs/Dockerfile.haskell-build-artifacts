@@ -42,7 +42,7 @@ RUN apk add make curl bash
 COPY .docker-root ./.docker-root
 COPY Makefile.docker ./Makefile
 RUN make ROOT=.docker-root install-mo
-COPY package.mo.yaml ./
+COPY package.open.yaml ./
 RUN make ROOT=.docker-root package.yaml
 
 COPY stack.yaml stack.yaml.lock ./

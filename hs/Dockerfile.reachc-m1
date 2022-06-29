@@ -49,7 +49,7 @@ WORKDIR /tmp/hs
 # mostly copied form haskell-build-artifacts
 COPY .docker-root ./.docker-root
 COPY Makefile.docker ./Makefile
-COPY package.mo.yaml ./
+COPY package.open.yaml ./
 RUN make ROOT=.docker-root install-mo package.yaml
 
 # stack.yaml.lock intentionally omitted
