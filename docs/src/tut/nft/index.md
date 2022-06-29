@@ -50,12 +50,13 @@ Reach's backend is very often one single Reach `rsh` file, which is syntacticall
 but contains web3 functionality.
 The frontend in a Reach DApp can be created with JavaScript using Reach's [Standard JavaScript Library](https://docs.reach.sh/frontend/#ref-frontends).
 Alternatively, developers can use Python, Go, or C# in their frontend by utilizing Reach's [RPC Server](https://docs.reach.sh/rpc/).
+Or they can directly use the Algorand SDK and interact with their application using the standard Algorand ABI.
 
 Reach's backend, often named `index.rsh`, 
-instructs data to be published to the consensus network (a blockchain) and defines interfaces that can interact with the frontend. 
-This interface is commonly referred to as a Participant Interact Interface. 
+orchestrates the data to be published to the consensus network (a blockchain) and defines interfaces that can interact with the frontend. 
+This interface is referred to as a Participant Interact Interface. 
 The frontend defines the interact objects and is often contained within a single file called `index.mjs`. 
-The frontend provides a graphical representation of the participants, e.g. Alice and Bob. 
+The frontend provides an interface to the participants, e.g. Alice and Bob. 
 The user interface may be in the form of a command line, 
 or more preferably, a web or mobile app.
 
@@ -64,13 +65,12 @@ Developers codify the business logic of their application and the Reach compiler
 Reach abstracts the heavy lifting of smart contract development, 
 allowing developers to focus their energy on participant interaction. 
 
-Additionally, Reach's built in theorem verification engine ensures that the contract has the ability to exit, 
+Additionally, Reach's built-in formal verification engine ensures that the contract has the ability to exit, 
 protects against common blockchain attacks, 
-guarantees the contract exits with a zero balance, 
-thus preventing locked away and inaccessible tokens, 
+guarantees the contract exits with a zero balance (thus preventing locked away and inaccessible tokens),
 verifies the contract won't overspend, 
 confirms that formulas are true whether participants and frontends are honest or dishonest, 
-and facilitates token linearity. 
+and guarantees token linearity. 
 
 As a result, auditing Reach DApps is easier and less expensive when compared to low-level alternative programming languages. 
 Reach's compiler is more efficient than most human-built low-level code. 
@@ -88,7 +88,7 @@ Reach backends are comprised of four primary modes:
 
 App Initialization refers to the section beginning at the creation of the Participant Interact Interface and ending at the `init()` statement. 
 
-A local step occurs on a participants local machine. 
+A local step occurs on a participant's local machine. 
 Information discovered in the local step remains private until it is declassified and published in a consensus step.
 
 Step refers to the state of the application. 
@@ -104,25 +104,21 @@ Reach is designed to work on POSIX systems with [make](https://en.wikipedia.org/
 
 To confirm dependencies are installed, try to successfully run the following three terminal commands.
 
-
 ```
   $ make --version
   $ docker --version
   $ docker-compose --version
 ```
 
-
 If you’re using Windows, consult [the guide to using Reach on Windows](https://docs.reach.sh/guide-windows.html).
 
 Next, make a directory for Reach and a subdirectory for the Auction DApp:
-
 
 ``` bash
   $ mkdir -p ~/Reach/api-nft-auction && cd ~/Reach/api-nft-auction
 ```
 
 If your terminal has trouble with this command, create the directories one at a time:
-
 
 ``` bash
   $ mkdir Reach
@@ -133,7 +129,6 @@ If your terminal has trouble with this command, create the directories one at a 
 
 Create two files: The backend Reach file: `index.rsh` and the frontend JavaScript file: `index.mjs`.
 
-
 ``` bash
   $ touch index.rsh
   $ touch index.mjs
@@ -141,42 +136,36 @@ Create two files: The backend Reach file: `index.rsh` and the frontend JavaScrip
 
 Next, download Reach with the following curl command:
 
-
 ``` bash
   $ curl https://docs.reach.sh/reach -o reach ; chmod +x reach
 ```
 
-
 Since Reach is Dockerized, the necessary images are downloaded automatically when used for the first time, 
 but can be done manually by running
-
 
 ```bash
   $ ./reach update
 ```
 
-
 ## Setup environments
 
-Set an environment variable to use the Algorand Blockchain. 
-
+Set an environment variable to use the Algorand connector. 
 
 ``` bash
 $ export REACH_CONNECTOR_MODE=ALGO
 ```
 
-
 # Application Overview
 
-This Decentralized Auction involves a Creator who establishes the sale and Buyers who bid on an NFT in Algos. 
-If the bid is successful, the DApp will hold the Algos. 
+This Decentralized Auction involves a Creator who establishes the sale and Buyers who bid on an NFT in ALGOs. 
+If the bid is successful, the DApp will hold the ALGOs. 
 Bidding is only allowed while the auction is active. 
-If the bid supplants a previous bid, then the contract automatically refunds the previous higher bidder’s Algos. 
+If the bid supplants a previous bid, then the contract automatically refunds the previous higher bidder’s ALGOs. 
 At the end of the auction, the highest bidder receives the NFT and the contract transfers the funds to the Creator.
 
 <center>
 ![Auction close](../../imgs/dapp-close.png){: style="width:500px" align=center }
-<figcaption style="font-size:12px">Close out the auction: Carla receives the NFT and Alice gets paid 2000 Algos.</figcaption>
+<figcaption style="font-size:12px">Close out the auction: Carla receives the NFT and Alice gets paid 2000 ALGOs.</figcaption>
 </center>
 
 # Building a DApp
@@ -213,13 +202,11 @@ The methods in each participant's interact interface are reflected as Interact O
 
 Let's define the methods in the Participant Interact Interface:
 
-
 ```
 load: /examples/nft-auction-api/index.rsh
 md5: aba879d62803fb298b7ce92187d6a489
 range: 1-17
 ```
-
 
 This block initializes the DApp and populates the Participant Interact Interface.
 
@@ -237,13 +224,11 @@ This block initializes the DApp and populates the Participant Interact Interface
 
 Now, let's set up the initial data definitions in the frontend.
 
-
 ```
 load: /examples/nft-auction-api/index.mjs
 md5: b76a933a8b855f0c18dab4830d3e4135
 range: 1-15
 ```
-
 
 + Lines 1-2: Imports Reach's standard JavaScript library and the compiled version of `index.rsh`
 + Lines 4-5: Defines the standard library as `stdlib` and creates `devnet` tokens
@@ -255,13 +240,11 @@ Notice that `nftId`, `minBid`, and `lenInBlocks` from the backend are all given 
 Before returning to the backend, let's define the Creator's interact object. 
 This object will be created after the `Bidder`'s `API` logic, which is covered in the next section.
 
-
 ```
 load: /examples/nft-auction-api/index.mjs
 md5: b76a933a8b855f0c18dab4830d3e4135
 range: 51-66
 ```
-
 
 + Line 51: The Creator account deploys the Reach application 
 + Line 52: Instantiates the Creator's interact object. 
@@ -323,13 +306,11 @@ However, at least one user must always be a `Participant` because `API`s are not
 
 Now, we can codify the body of the DApp, given our understanding of the communication model, `Participants` and `API`s.
 
-
 ```
 load: /examples/nft-auction-api/index.rsh
 md5: aba879d62803fb298b7ce92187d6a489
 range: 19-26
 ```
-
 
 + Line 19: Begins the Creator's local step
 + Line 20: Calls and declassifies the `getSale()` function and stores the output of `getSale()` into an object
@@ -366,7 +347,6 @@ In this next example, the creator uses `pay` to transfer a specific NFT to the c
 Creator.pay([[amt, nftId]]);
 ```
 
-
 ### ParallelReduce
 
 At this point, we have satisfied the requirement to create `Bidder`s and we allow a `Creator` to submit an NFT to the contract. 
@@ -383,13 +363,11 @@ So while `Alice` is producing a new state, `Bob` might also be producing one.
 Reach determines who tried to update the state first (`fork`) and depending on the winner of the race runs a specified logic (`case`).
 :::
 
-
 ```
 load: /examples/nft-auction-api/index.rsh
 md5: aba879d62803fb298b7ce92187d6a489
 range: 28-37
 ```
-
 
 + Line 28: Defines an expression that determines when the auction will end
 + Line 29-33: Creates the `parallelReduce`; aligns the `Creator` as the first `highestBidder`, the `minBid` as the `lastPrice`, 
@@ -423,26 +401,22 @@ The `api_` form can be used when the dynamic assertions, `assume` and `require`,
 One advantage of `api_` is that it allows Reach developers to write less code, thereby reducing opportunities to introduce bugs. 
 It's also a quick indication that the dynamic assertions will not change between local and consensus steps.
 
-
 ```
 load: /examples/nft-auction-api/index.rsh
 md5: aba879d62803fb298b7ce92187d6a489
 range: 39-43
 ```
 
-
 We'll skip line 38 for the time being and return to it with an explanation in the [Assertion Insertion](#assertion-insertion) section.
 
 + Line 39-40: Returns the `bid` and a created "notify" argument to update other APIs with the newest high bidder and their price. 
 + Line 41-43: If this `bid` is not the first `bid` then the `api_` will return the `lastPrice` to the address of the previous highest bidder.
-
 
 ```
 load: /examples/nft-auction-api/index.rsh
 md5: aba879d62803fb298b7ce92187d6a489
 range: 44-48
 ```
-
 
 + Line 44: Assigns `this` to the constant `who`
 + Line 45: Creator `interact`s with the `seeBid` function, which accepts `who`, an `API` `Bidder`, and their `bid`.
@@ -462,13 +436,11 @@ Once `timeout` is triggered, `Creator` will move the DApp to a consensus step wi
 `timeout` methods are also used to protect participants against [non-participation attacks](https://docs.reach.sh/guide/timeout/#guide-timeout). In this DApp, the `timeout` method ensures that the auction will end after a set amount of time has passed.
 :::
 
-
 ```
 load: /examples/nft-auction-api/index.rsh
 md5: aba879d62803fb298b7ce92187d6a489
 range: 49-52
 ```
-
 
 + Line 49: Instructs the timeout to trigger when `absoluteTime` reaches the value stored in `end`
 + Line 50: Creator publishes to the consensus network, moving the DApp to a consensus step
@@ -486,7 +458,6 @@ md5: b76a933a8b855f0c18dab4830d3e4135
 range: 17-23
 ``` 
 
-
 + Line 17: Establishes `done` as a `let`, rather than a `const` so that the boolean is able to mutate to `true` when it is time to exit the `parallelReduce`
 + Line 18: Sets `bidders` as an empty array
 + Line 19: Creates `startBidders()`, a function that will be triggered by `auctionReady()`
@@ -497,13 +468,11 @@ which will be called when `API Participants` place a `bid`
 + Line 22: Randomly chooses the amount to increment the `bid` by
 + Line 23: Adds the increment to the `bid`
 
-
 ```
 load: /examples/nft-auction-api/index.mjs
 md5: b76a933a8b855f0c18dab4830d3e4135
 range: 25-30
 ```
-
 
 + Line 25: Initializes a new account with `devnet` tokens
 + Line 26: Sets the account address as a distinguishing label in debug logs
@@ -512,13 +481,11 @@ range: 25-30
 + Line 29: Attaches the `API Participant` to the contract
 + Line 30: Stores the balance of the `Bidder` in `getBal`
 
-
 ```
 load: /examples/nft-auction-api/index.mjs
 md5: b76a933a8b855f0c18dab4830d3e4135
 range: 32-33
 ```
-
 
 + Line 32: Prints the `bidder` and their `bid` amount
 + Line 33: Prints the `bidder`'s balance before their `bid`
@@ -541,7 +508,6 @@ However, Reach has removed the need to remember when to use which dynamic assert
 
 Let's return to the missing pieces in the DApp and populate them with the proper assertions. 
 
-
 ```
 load: /examples/nft-auction-api/index.rsh
 md5: aba879d62803fb298b7ce92187d6a489
@@ -550,7 +516,6 @@ range: 26-28
 
 + Line 27: A Static Assertion: Asserts that the balance of the `nftId` will always equal the value stored in `amt`. 
 If the assertion fails then the program will exit with an error message of `"balance of NFT is wrong"`.
-
 
 ```
 load: /examples/nft-auction-api/index.rsh
@@ -565,13 +530,11 @@ The compiler knows that `api_` indicates that the local step and consensus step 
 That concludes the backend assertions. 
 Next, we'll implement a `try` and `catch` condition in the frontend.
 
-
 ```
 load: /examples/nft-auction-api/index.mjs
 md5: b76a933a8b855f0c18dab4830d3e4135
 range: 34-41
 ```
-
 
 + Line 34: Begins the `try` conditional
 + Line 35: Stores the `Bidder`'s `address` and `bid` amount in a constant 
@@ -596,13 +559,11 @@ A consensus transfer occurs when a participant, "the originator", makes a public
 Additional consensus transfer patterns are discussed in the [reach guides](http://localhost:8080/guide/ctransfers/#guide-ctransfers). 
 In the logic below, the NFT is `transfer`ed to the highest bidder at the end of the auction, and if it is not the first `bid` then the last `bid` amount is `transfer`ed to the `Creator`. 
 
-
 ```
 load: /examples/nft-auction-api/index.rsh
 md5: aba879d62803fb298b7ce92187d6a489
 range: 54-56
 ```
-
 
 + Line 54: Transfers the NFT to the winning bidder
 + Line 55: If the contract is closing after at least one bid then the winning bid amount is transferred to the `Creator`
@@ -640,13 +601,11 @@ An auction isn't much fun without bidders, so let's create a few!
 
 Add this block inside `startBidders`, after `runBidder` closes.
 
-
 ```
 load: /examples/nft-auction-api/index.mjs
 md5: b76a933a8b855f0c18dab4830d3e4135
 range: 43-49
 ```
-
 
 + Lines 43-45: Creates three bidders, `Alice`, `Bob`, and `Claire` who will wait to race until `runBidder` is called.
 + Lines 46-48: Features a `while` loop that increments `devnet` transaction blocks forward until `done` is `true`.
@@ -662,13 +621,11 @@ Running initial tests in `devnet` allows us to rapidly test the functionality of
 With every other task complete, the last thing to do is end the contract. 
 We return to the backend to add the last two lines.
 
-
 ```
 load: /examples/nft-auction-api/index.rsh
 md5: aba879d62803fb298b7ce92187d6a489
 range: 57-58
 ```
-
 
 + Line 57: Moves the contract into Step mode
 + Line 58: Exits and destroys the contract
