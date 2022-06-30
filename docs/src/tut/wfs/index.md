@@ -716,7 +716,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: ad020dbd03b390968b22e5e857e72bb7
+    md5: fd2d3da9616b833d3ef4dc991043d7ce
     range: 8-11
     ```
 
@@ -732,7 +732,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: ad020dbd03b390968b22e5e857e72bb7
+    md5: fd2d3da9616b833d3ef4dc991043d7ce
     range: 3-6
     ```
 
@@ -748,7 +748,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: ad020dbd03b390968b22e5e857e72bb7
+    md5: fd2d3da9616b833d3ef4dc991043d7ce
     range: 13-17
     ```
 
@@ -756,7 +756,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: ad020dbd03b390968b22e5e857e72bb7
+    md5: fd2d3da9616b833d3ef4dc991043d7ce
     range: 39-47
     ```
 
