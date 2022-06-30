@@ -403,6 +403,7 @@ const mkCommon = async (lib, extra) => {
     describe('exports a `parseCurrency` function', () => {
       it(`that converts to ${n} correctly`, () =>
         expect(parseCurrency(amt)).toBe(amtNet));
+        expect(parseCurrency('18446744073709.551615', 6).toString()).toBe('18446744073709551615');
     });
 
     describe('exports a `formatCurrency` function', () => {
