@@ -209,7 +209,6 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
     currentPage.bookPath = undefined;
     searchInput.focus();
     const searchResultsList = doc.getElementById('search-results-list');
-    const processKeyUp = debounce(() => search());
     const search = async (_evt) => {
       const { hits } = await searchIndex.search(searchInput.value);
       if ( ! hits.length ) { return; }
@@ -252,7 +251,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
       });
       setClickFollowLink();
     };
-    searchInput.addEventListener('keyup', processKeyUp);
+    searchInput.addEventListener('keyup', debounce(() => search()));
   }
 
   // Write otp html.
