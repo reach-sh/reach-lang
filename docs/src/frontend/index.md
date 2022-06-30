@@ -436,12 +436,12 @@ You can use `{!js} canFundFromFaucet` to check if `{!js} fundFromFaucet` can be 
 Example:
 
 ```js
-load: /examples/js-tests/index.mjs
-md5: 9a27d958d40db261b33c6fe318e6bc25
-range: 327 - 328
+load: /examples/rps-9-web/index.js
+md5: 29b1b17df91e1d49053670f72eebc6b4
+range: 32 - 34
 ```
 
-This code creates an account and then funds that account with 100,000 network tokens from a private faucet.
+This code funds the account with `fundAmount` worth of tokens from a faucet.
 This is used in cases where funding from a normal faucet is difficult or impossible, such as when using large token quantities.
 
 ---
@@ -457,7 +457,7 @@ Example:
 ```js
 load: /examples/rps-9-web/index.js
 md5: 29b1b17df91e1d49053670f72eebc6b4
-range: 25 - 34
+range: 26 - 34
 ```
 
 This React frontend from the [Rock, Paper, Scissors](##tut) tutorial checks if the account can be funded from a faucet using `{!js} canFundFromFaucet`.
@@ -1121,18 +1121,6 @@ stdlib.protect(t, x) => x
 
 Asserts that value `{!js} x` has Reach type `{!js} t`. An exception is thrown if this is not the case.
 
-Example:
-
-```reach
-load: /examples/js-tests/index.mjs
-md5: 9a27d958d40db261b33c6fe318e6bc25
-range: 352 - 355
-```
-
-This code tests to see if variables that are supposed to be `{!js} null` return `{!js} null`.
-The first `expect` asserts that `{!js} null` has Reach type `{!js} T_Null`. 
-The next `expect` asserts that `{!js} undefined` has Reach type `{!js} T_Null`. 
-
 ---
 @{ref("js", "T_Null")}@{ref("js", "T_Bool")}@{ref("js", "T_UInt")}@{ref("js", "T_Bytes")}@{ref("js", "T_Address")}@{ref("js", "T_Array")}@{ref("js", "T_Tuple")}@{ref("js", "T_Object")}
 ```js
@@ -1306,12 +1294,12 @@ Example:
 
 ```js
 load: /examples/js-tests/index.mjs
-md5: 9a27d958d40db261b33c6fe318e6bc25
-range: 444 - 448
+md5: 0779cd5bfb7d45de6a7f46b9cd6c7164
+range: 118 - 119
 ```
 
-In this example, `{!js} stdlib`'s `{!js} parseInt` takes an object as its parameter and returns a number.
-The object in this snippet has a `{!js} sign` property, and an `{!js} i` property, which contains the number to parse.
+In this example, the value of the `{!js} parseInt` of `k` is checked to see if it is not equal to -1.
+The statement contained within the braces following the `{!js} if` statement executes when the `{!js} if` statement resolves to true.
 
 ---
 @{ref("js", "numberToInt")}
