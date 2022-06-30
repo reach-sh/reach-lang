@@ -38,7 +38,6 @@ export const main = Reach.App(() => {
   }
 
   B.pay(price);
-  each([S, B], () => interact.reportPayment(price));
   commit();
 
   S.only(() => { const wisdom = declassify(interact.wisdom); });
