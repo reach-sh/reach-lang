@@ -17,7 +17,7 @@ export function _getEvents(s) {
 export function _getViews(s, viewlib) {
   const stdlib = s.reachStdlib;
   const ctc0 = stdlib.T_UInt;
-
+  
   return {
     infos: {
       },
@@ -25,7 +25,7 @@ export function _getViews(s, viewlib) {
       3: [ctc0, ctc0]
       }
     };
-
+  
   };
 export function _getMaps(s) {
   const stdlib = s.reachStdlib;
@@ -43,10 +43,10 @@ export async function D(ctcTop, interact) {
   const stdlib = ctc.stdlib;
   const ctc0 = stdlib.T_UInt;
   const ctc1 = stdlib.T_Tuple([ctc0]);
-
-
+  
+  
   const v98 = stdlib.protect(ctc0, interact.y, 'for D\'s interact field y');
-
+  
   const txn1 = await (ctc.sendrecv({
     args: [v98],
     evt_cnt: 1,
@@ -59,17 +59,17 @@ export async function D(ctcTop, interact) {
       const sim_r = { txns: [], mapRefs: [], maps: [] };
       let sim_txn_ctr = stdlib.UInt_max;
       const getSimTokCtr = () => { sim_txn_ctr = sim_txn_ctr.sub(1); return sim_txn_ctr; };
-
-
+      
+      
       const {data: [v102], secs: v104, time: v103, didSend: v27, from: v101 } = txn1;
-
+      
       ;
       const v105 = stdlib.checkedBigNumberify('./child.rsh:16:28:decimal', stdlib.UInt_max, '0');
       const v106 = v103;
-
+      
       if (await (async () => {
         const v112 = stdlib.lt(v105, stdlib.checkedBigNumberify('./child.rsh:18:16:decimal', stdlib.UInt_max, '2'));
-
+        
         return v112;})()) {
         sim_r.isHalt = false;
         }
@@ -91,10 +91,10 @@ export async function D(ctcTop, interact) {
   ;
   let v105 = stdlib.checkedBigNumberify('./child.rsh:16:28:decimal', stdlib.UInt_max, '0');
   let v106 = v103;
-
+  
   while (await (async () => {
     const v112 = stdlib.lt(v105, stdlib.checkedBigNumberify('./child.rsh:18:16:decimal', stdlib.UInt_max, '2'));
-
+    
     return v112;})()) {
     const txn2 = await (ctc.recv({
       didSend: false,
@@ -114,16 +114,16 @@ export async function D(ctcTop, interact) {
     const v138 = stdlib.add(v105, stdlib.checkedBigNumberify('./child.rsh:22:20:decimal', stdlib.UInt_max, '1'));
     const cv105 = v138;
     const cv106 = v124;
-
+    
     v105 = cv105;
     v106 = cv106;
-
+    
     continue;
-
+    
     }
   return;
-
-
+  
+  
   };
 export async function _f3(ctcTop, interact) {
   if (typeof(ctcTop) !== 'object' || ctcTop._initialize === undefined) {
@@ -135,8 +135,8 @@ export async function _f3(ctcTop, interact) {
   const ctc0 = stdlib.T_UInt;
   const ctc1 = stdlib.T_Tuple([ctc0]);
   const ctc2 = stdlib.T_Null;
-
-
+  
+  
   const [v102, v105] = await ctc.getState(stdlib.checkedBigNumberify('<builtin>', stdlib.UInt_max, '3'), [ctc0, ctc0]);
   const v115 = stdlib.protect(ctc1, await interact.in(), {
     at: './child.rsh:1:23:application',
@@ -144,7 +144,7 @@ export async function _f3(ctcTop, interact) {
     msg: 'in',
     who: 'f'
     });
-
+  
   const txn1 = await (ctc.sendrecv({
     args: [v102, v105, v115],
     evt_cnt: 1,
@@ -157,10 +157,10 @@ export async function _f3(ctcTop, interact) {
       const sim_r = { txns: [], mapRefs: [], maps: [] };
       let sim_txn_ctr = stdlib.UInt_max;
       const getSimTokCtr = () => { sim_txn_ctr = sim_txn_ctr.sub(1); return sim_txn_ctr; };
-
-
+      
+      
       const {data: [v123], secs: v125, time: v124, didSend: v69, from: v122 } = txn1;
-
+      
       sim_r.txns.push({
         kind: 'api',
         who: "f"
@@ -170,7 +170,7 @@ export async function _f3(ctcTop, interact) {
       const v130 = stdlib.add(v105, v102);
       const v131 = stdlib.add(v130, v127);
       const v132 = await txn1.getOutput('f', 'v131', ctc0, v131);
-
+      
       const v138 = stdlib.add(v105, stdlib.checkedBigNumberify('./child.rsh:22:20:decimal', stdlib.UInt_max, '1'));
       const v177 = v138;
       const v179 = stdlib.lt(v138, stdlib.checkedBigNumberify('./child.rsh:18:16:decimal', stdlib.UInt_max, '2'));
@@ -208,7 +208,7 @@ export async function _f3(ctcTop, interact) {
     }
   else {
     }
-
+  
   const v138 = stdlib.add(v105, stdlib.checkedBigNumberify('./child.rsh:22:20:decimal', stdlib.UInt_max, '1'));
   const v177 = v138;
   const v179 = stdlib.lt(v138, stdlib.checkedBigNumberify('./child.rsh:18:16:decimal', stdlib.UInt_max, '2'));
@@ -218,8 +218,8 @@ export async function _f3(ctcTop, interact) {
   else {
     return;
     }
-
-
+  
+  
   };
 export async function f(ctcTop, interact) {
   if (typeof(ctcTop) !== 'object' || ctcTop._initialize === undefined) {
