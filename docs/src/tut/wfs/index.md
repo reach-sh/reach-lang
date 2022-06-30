@@ -285,7 +285,7 @@ Follow these directions to pass `role` as a command-line argument:
 
 # {#wfs-15} Explore units and balances
 
-This section helps you explore standard and atomic units using the [JavaScript Standard Library](/en/essentials/frontend-programming/javascript-frontends/).
+This section helps you explore standard and atomic units using the [JavaScript Standard Library](##ref-frontends-rpc-js).
 Regarding tokens, each consensus network has a (divisible) standard unit and an (indivisible) atomic unit.
 Users usually want to see standard units.
 A smart contract, on the other hand, always deals with atomic units.
@@ -716,7 +716,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: ad020dbd03b390968b22e5e857e72bb7
     range: 8-11
     ```
 
@@ -732,7 +732,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: ad020dbd03b390968b22e5e857e72bb7
     range: 3-6
     ```
 
@@ -748,7 +748,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: ad020dbd03b390968b22e5e857e72bb7
     range: 13-17
     ```
 
@@ -756,7 +756,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: ad020dbd03b390968b22e5e857e72bb7
     range: 39-47
     ```
 
@@ -773,7 +773,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` js
     load: /examples/wisdom-13-reports/index.mjs
-    md5: a8f7083fadc2f568146297185aff3211
+    md5: eec9aa549f69c740329d1e6299e3ae78
     range: 23-23
     ```
 
@@ -781,7 +781,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-13-reports/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: 85f53c5770899593584b34d719968f62
     range: 5-5
     ```
 
@@ -789,7 +789,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-13-reports/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: 85f53c5770899593584b34d719968f62
     range: 40-50
     ```
 
@@ -841,14 +841,14 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ```
     load: /examples/wisdom-13-reports/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: 85f53c5770899593584b34d719968f62
     ```
 
     And the final frontend code:
 
     ```
     load: /examples/wisdom-13-reports/index.mjs
-    md5: a8f7083fadc2f568146297185aff3211
+    md5: eec9aa549f69c740329d1e6299e3ae78
     ```
 
 # {#wfs-20} View the contract
