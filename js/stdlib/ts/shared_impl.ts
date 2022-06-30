@@ -1211,5 +1211,10 @@ export const makeParseCurrency = (defaultDecs: number) => (amt: CurrencyAmount, 
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
-  return bigNumberify(ethers.utils.parseUnits(amt.toString(), decimals));
+  let [amtL, amtR, ...amtMore] = amt.toString().split('.');
+  if (amtMore.length > 0) {
+    throw Error(`malformed input: parseCurrency('${amt}')`);
+  }
+  const amtStr = `${amtL}.${(amtR || '').slice(0, decimals)}`;
+  return bigNumberify(ethers.utils.parseUnits(amtStr, decimals));
 };
