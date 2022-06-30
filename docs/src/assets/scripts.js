@@ -16,6 +16,20 @@ const currentPage = {
 
 // let lang = window.navigator.language.split('-')[0];
 
+/*
+https://www.freecodecamp.org/news/javascript-debounce-example/
+*/
+function debounce(fn, timeoutInMilliseconds = 250) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(
+      () => { fn.apply(this, args); },
+      timeoutInMilliseconds
+    );
+  };
+}
+
 const getWinWidthStr = () => {
   const s = window.innerWidth;
   if (s >= 1200) { return 'xl' }
@@ -195,19 +209,6 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
     currentPage.bookPath = undefined;
     searchInput.focus();
     const searchResultsList = doc.getElementById('search-results-list');
-    /*
-    https://www.freecodecamp.org/news/javascript-debounce-example/
-    */
-    function debounce(fn, timeoutInMilliseconds = 250) {
-      let timer;
-      return (...args) => {
-        clearTimeout(timer);
-        timer = setTimeout(
-          () => { fn.apply(this, args); },
-          timeoutInMilliseconds
-        );
-      };
-    }
     const processKeyUp = debounce(() => search());
     const search = async (_evt) => {
       const { hits } = await searchIndex.search(searchInput.value);
