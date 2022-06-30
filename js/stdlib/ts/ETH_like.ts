@@ -27,6 +27,7 @@ import {
   j2s,
   j2sf,
   handleFormat,
+  makeParseCurrency,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -39,7 +40,6 @@ import type { // =>
   BigNumber,
 } from 'ethers';
 import type { // =>
-  CurrencyAmount,
   IAccount,
   IBackend,
   IViewLib,
@@ -1078,12 +1078,11 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eq: Even
 /**
  * @description  Parse currency by network
  * @param amt  value in the {@link standardUnit} for the network.
+ * @param {number} [decimals] how many "decimal places" the target currency has. Defaults to the network standard.
  * @returns  the amount in the {@link atomicUnit} of the network.
  * @example  parseCurrency(100).toString() // => '100000000000000000000'
  */
-function parseCurrency(amt: CurrencyAmount): BigNumber {
-  return bigNumberify(real_ethers.utils.parseUnits(amt.toString(), standardDigits));
-}
+const parseCurrency = makeParseCurrency(standardDigits);
 
 const zeroBn = bigNumberify(0);
 
