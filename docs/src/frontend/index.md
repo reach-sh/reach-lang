@@ -1393,7 +1393,7 @@ The following exports are for dealing with network tokens.
 stdlib.standardUnit // string
 stdlib.atomicUnit // string
 stdlib.minimumBalance // atomicUnitAmount
-stdlib.parseCurrency(standardUnitAmount: int) => atomicUnitAmount
+stdlib.parseCurrency(standardUnitAmount: int, decimals?: number) => atomicUnitAmount
 stdlib.formatCurrency(atomicUnitAmount: int) => string  // display amount in standard unit
 stdlib.formatWithDecimals(atomicUnitAmount: int, tokenDecimals: int) => string  // display amount of atomic unit with custom decimal place
 ```
