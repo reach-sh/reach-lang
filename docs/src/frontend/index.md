@@ -437,8 +437,8 @@ Example:
 
 ```js
 load: /examples/js-tests/index.mjs
-md5: a6dfd25339271829ff6c2ab942cd84b6
-range: 326 - 327
+md5: 9a27d958d40db261b33c6fe318e6bc25
+range: 327 - 328
 ```
 
 This code creates an account and then funds that account with 100,000 network tokens from a private faucet.
@@ -1125,8 +1125,8 @@ Example:
 
 ```reach
 load: /examples/js-tests/index.mjs
-md5: a6dfd25339271829ff6c2ab942cd84b6
-range: 351 - 354
+md5: 9a27d958d40db261b33c6fe318e6bc25
+range: 352 - 355
 ```
 
 This code tests to see if variables that are supposed to be `{!js} null` return `{!js} null`.
@@ -1306,8 +1306,8 @@ Example:
 
 ```js
 load: /examples/js-tests/index.mjs
-md5: a6dfd25339271829ff6c2ab942cd84b6
-range: 425 - 429
+md5: 9a27d958d40db261b33c6fe318e6bc25
+range: 444 - 448
 ```
 
 In this example, `{!js} stdlib`'s `{!js} parseInt` takes an object as its parameter and returns a number.
