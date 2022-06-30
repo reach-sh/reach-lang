@@ -840,14 +840,14 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
     Let's take a look at the final Reach code:
 
     ```
-    load: /examples/wisdom-13-reports/index.rsh
+    load: /examples/wisdom-12-complete/index.rsh
     md5: 6c030c9ce4d5f51d53711ef4eeeb217e
     ```
 
     And the final frontend code:
 
     ```
-    load: /examples/wisdom-13-reports/index.mjs
+    load: /examples/wisdom-12-complete/index.mjs
     md5: a8f7083fadc2f568146297185aff3211
     ```
 
