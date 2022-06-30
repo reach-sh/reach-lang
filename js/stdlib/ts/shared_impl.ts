@@ -1206,3 +1206,10 @@ export const apiStateMismatchError = (bin: IBackend<any>, es: BigNumber, as: Big
     + `\nState ${as} corresponds to the commit() at ${al}`
     + (el == al ? "\n(This means that the commit() is in the continuation of impure control-flow.)" : ""));
 };
+
+export const makeParseCurrency = (defaultDecs: number) => (amt: CurrencyAmount, decimals: number = defaultDecs): BigNumber => {
+  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
+    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
+  }
+  return bigNumberify(ethers.utils.parseUnits(amt.toString(), decimals));
+};
