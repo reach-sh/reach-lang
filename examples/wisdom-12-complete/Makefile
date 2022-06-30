@@ -1,3 +1,3 @@
 .PHONY: run
 run:
-	./run.sh
+	sh -e ./run.sh
