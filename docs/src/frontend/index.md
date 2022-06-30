@@ -437,7 +437,7 @@ Example:
 
 ```js
 load: /examples/js-tests/index.mjs
-md5: 580bfc156974144e2c6505b75fe4a440
+md5: a6dfd25339271829ff6c2ab942cd84b6
 range: 326 - 327
 ```
 
@@ -1125,7 +1125,7 @@ Example:
 
 ```reach
 load: /examples/js-tests/index.mjs
-md5: 580bfc156974144e2c6505b75fe4a440
+md5: a6dfd25339271829ff6c2ab942cd84b6
 range: 351 - 354
 ```
 
@@ -1306,8 +1306,8 @@ Example:
 
 ```js
 load: /examples/js-tests/index.mjs
-md5: 580bfc156974144e2c6505b75fe4a440
-range: 424 - 428
+md5: a6dfd25339271829ff6c2ab942cd84b6
+range: 425 - 429
 ```
 
 In this example, `{!js} stdlib`'s `{!js} parseInt` takes an object as its parameter and returns a number.
