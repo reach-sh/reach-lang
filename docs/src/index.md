@@ -1,4 +1,4 @@
-# {#reach-top} Reach: The Safest and Easiest DApp Programming Language
+# {#reach-top} Reach: The Smartest, Fastest, and Safest DApp Programming Language
 
 <head>
     <style>
