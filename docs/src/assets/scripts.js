@@ -42,7 +42,7 @@ const establishDisplayFor = (id, selector, property) => {
   const button = doc.querySelector(selector);
   if (winWidth == 'xl' || winWidth == 'lg' || winWidth == 'md') {
     element.style.maxWidth = maxColWidth;
-    element.style.display = 'block';
+    element.style.display = 'none';
     button.style.display = 'none';
   } else if (winWidth == 'sm' || winWidth == 'xs') {
     element.style.maxWidth = 'none';
