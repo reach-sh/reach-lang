@@ -15,11 +15,11 @@
     <div class="row">
         <section class="col-sm-4 p-2">
             <a href="/build/#build">
-                <img src="../assets/img/build-df.svg" 
+                <img src="../assets/img/build-df.svg"
                     class="img-fluid bg-dark"
                     onmouseover="this.src='../assets/img/build-hv.svg';"
                     onmouseout="this.src='../assets/img/build-df.svg';"
-                    onclick="this.src='../assets/img/build-hv.svg';" 
+                    onclick="this.src='../assets/img/build-hv.svg';"
                     alt="Why Builders Need Reach"
                 />
                 <p class="card-text mt-2">Build with us</p>
@@ -27,7 +27,7 @@
         </section>
         <section class="col-sm-4 p-2">
             <a href="/quickstart/#quickstart">
-                <img src="../assets/img/download-df.svg" 
+                <img src="../assets/img/download-df.svg"
                     class="img-fluid bg-dark"
                     onmouseover="this.src='../assets/img/download-hv.svg';"
                     onmouseout="this.src='../assets/img/download-df.svg';"
@@ -39,7 +39,7 @@
         </section>
         <section class="col-sm-4 p-2">
             <a href="/tut/#tuts">
-                <img src="../assets/img/learn-df.svg" 
+                <img src="../assets/img/learn-df.svg"
                     class="img-fluid bg-dark"
                     onmouseover="this.src='../assets/img/learn-hv.svg';"
                     onmouseout="this.src='../assets/img/learn-df.svg';"
@@ -53,11 +53,11 @@
     <div class="row">
         <section class="col-sm-4 p-2">
             <a href="@{DISCORD}">
-                <img src="../assets/img/comm-df.svg" 
+                <img src="../assets/img/comm-df.svg"
                     class="img-fluid bg-dark"
                     onmouseover="this.src='../assets/img/comm-hv.svg';"
                     onmouseout="this.src='../assets/img/comm-df.svg';"
-                    onclick="this.src='../assets/img/comm-hv.svg';" 
+                    onclick="this.src='../assets/img/comm-hv.svg';"
                     alt="Join the Discord Community"
                 />
                 <p class="card-text mt-2">Join Us</p>
@@ -65,7 +65,7 @@
         </section>
         <section class="col-sm-4 p-2">
             <a href="@{DISCUSSIONS}">
-                <img src="../assets/img/help-df.svg" 
+                <img src="../assets/img/help-df.svg"
                     class="img-fluid bg-dark"
                     onmouseover="this.src='../assets/img/help-hv.svg';"
                     onmouseout="this.src='../assets/img/help-df.svg';"
@@ -77,7 +77,7 @@
         </section>
         <section class="col-sm-4 p-2">
             <a href="@{REPO}">
-                <img src="../assets/img/contrib-df.svg" 
+                <img src="../assets/img/contrib-df.svg"
                     class="img-fluid bg-dark"
                     onmouseover="this.src='../assets/img/contrib-hv.svg';"
                     onmouseout="this.src='../assets/img/contrib-df.svg';"
@@ -88,4 +88,4 @@
             </a>
         </section>
     </div>
-</div> 
+</div>
