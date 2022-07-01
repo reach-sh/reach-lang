@@ -164,6 +164,7 @@ watch-reachpc: expand
 
 .PHONY: repl-reach-cli
 repl-reach-cli: expand
+	@stack build --fast $(MEVEREST)
 	@stack ghci app/reach/Main.hs $(MEVEREST) \
 	  --package pretty-simple \
 	  --ghci-options "-interactive-print=Text.Pretty.Simple.pPrint"
