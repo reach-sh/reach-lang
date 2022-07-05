@@ -3,15 +3,10 @@
 # start daily ping telemetry script
 sh /daily-ping.sh &
 
-POSTGRES_PORT=5432
-
-# shellcheck disable=SC2153
-echo "Wait for $POSTGRES_HOST:$POSTGRES_PORT"
-# shellcheck disable=SC2188
-while ! <"/dev/tcp/$POSTGRES_HOST/$POSTGRES_PORT"; do
-  echo not ready yet, trying again in 1s...
-  sleep 1
-done
+# Start postgres
+export PGDATA="$POSTGRES_DATA"
+su postgres -c "postgres" &
+bash /wait-for-postgres.sh
 
 if [ "$REACH_DEBUG" = "" ] ; then
   echo Not starting debugger. To start, use REACH_DEBUG=1.
@@ -50,7 +45,7 @@ ILOG="${ALGORAND_DATA}/indexer.log"
   --pidfile "${ALGORAND_DATA}/indexer.pid" \
   --dev-mode \
   --token "reach-devnet" \
-  --postgres "host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable"
+  --postgres "host=localhost port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable"
  echo Indexer died, restarting...
  done) 1>"${ILOG}" 2>&1 &
 

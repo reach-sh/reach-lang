@@ -88,6 +88,16 @@ FROM $ALPINE_IMAGE
 
 RUN apk add --no-cache bash libstdc++ curl
 
+# Install Postgres
+ENV POSTGRES_PORT=5432
+ENV POSTGRES_DATA=/postgres
+ENV POSTGRES_USER=algogrand
+ENV POSTGRES_PASSWORD=indexer
+ENV POSTGRES_DB=pgdb
+COPY install-postgres.sh /
+COPY wait-for-postgres.sh /
+RUN bash install-postgres.sh
+
 ENV ALGORAND_NETWORK=/var/lib/algorand_network
 ENV ALGORAND_DATA=${ALGORAND_NETWORK}/Primary
 
