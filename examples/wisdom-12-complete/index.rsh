@@ -2,7 +2,6 @@
 
 const commonInteract = {
   reportCancellation: Fun([], Null),
-  reportTransfer: Fun([UInt], Null),
   reportPayment: Fun([UInt], Null),
 };
 const sellerInteract = {
