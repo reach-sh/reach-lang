@@ -716,8 +716,8 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: ac58c8a9ba51e3daa9ec60b5929b219c
-    range: 8-11
+    md5: 60fe1e24ff88c4faf36755607e09e0c4
+    range: 7-12
     ```
 
 1. In `index.mjs`, add a `reportPayment` property to `commonInteract`:
@@ -732,7 +732,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: ac58c8a9ba51e3daa9ec60b5929b219c
+    md5: 60fe1e24ff88c4faf36755607e09e0c4
     range: 3-6
     ```
 
@@ -748,7 +748,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: ac58c8a9ba51e3daa9ec60b5929b219c
+    md5: 60fe1e24ff88c4faf36755607e09e0c4
     range: 13-17
     ```
 
@@ -756,7 +756,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: ac58c8a9ba51e3daa9ec60b5929b219c
+    md5: 60fe1e24ff88c4faf36755607e09e0c4
     range: 39-47
     ```
 
@@ -782,7 +782,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
     ``` reach
     load: /examples/wisdom-13-reports/index.rsh
     md5: 9944f5a6fb8df38715f0095226bff55c
-    range: 5-5
+    range: 6-6
     ```
 
 1. In `index.rsh`, add Lines 41 and 49 to existing code:
