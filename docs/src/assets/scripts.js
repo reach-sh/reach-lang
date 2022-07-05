@@ -28,7 +28,7 @@ function debounce(fn, timeoutInMilliseconds = 250) {
       timeoutInMilliseconds
     );
   };
-}
+};
 
 const getWinWidthStr = () => {
   const s = window.innerWidth;
