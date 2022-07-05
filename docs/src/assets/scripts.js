@@ -251,7 +251,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
       });
       setClickFollowLink();
     };
-    searchInput.addEventListener('keyup', debounce(() => search()));
+    searchInput.addEventListener('keyup', debounce(search));
   }
 
   // Write otp html.
