@@ -2,20 +2,7 @@ version: "3"
 services:
   devnet-algo:
     image: reachsh/devnet-algo:latest
-    depends_on:
-      - devnet-algo-pg
-    environment:
-      - POSTGRES_HOST=devnet-algo-pg
-      - POSTGRES_USER=algogrand
-      - POSTGRES_PASSWORD=indexer
-      - POSTGRES_DB=pgdb
     ports:
       - "4180:4180"
       - "8980:8980"
       - "9392:9392"
-  devnet-algo-pg:
-    image: postgres:11-alpine
-    environment:
-      - POSTGRES_USER=algogrand
-      - POSTGRES_PASSWORD=indexer
-      - POSTGRES_DB=pgdb
