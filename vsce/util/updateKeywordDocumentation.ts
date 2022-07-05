@@ -206,7 +206,7 @@ const INJECT_SAMPLE_PROGRAMS_INTO = (
   docString: string
 ): string => {
   const regularExpression: RegExp = RegExp(
-    /load: (.+)\n *range: (\d+) *- *(\d+)/, 'g'
+    /load: (.+)\n *md5: [a-z0-9]+\n *range: (\d+) *- *(\d+)/, 'g'
   );
 
   let regExArray = regularExpression.exec(docString);
@@ -222,7 +222,8 @@ const INJECT_SAMPLE_PROGRAMS_INTO = (
       parseInt(startLine) - 1, parseInt(endLine)
     ).join('\n');
     docString = docString.replace(
-      /load: (.+)\n *range: (\d+) *- *(\d+)/, stringToInject
+      regularExpression,
+      stringToInject,
     );
 
     regExArray = regularExpression.exec(docString);
