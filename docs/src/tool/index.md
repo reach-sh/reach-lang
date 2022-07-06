@@ -209,6 +209,17 @@ You can halt all Dockerized Reach apps and devnets by running
 $ reach down
 ```
 
+# {#ref-usage-clean} @{ref("cmd", "reach clean")} `reach clean`
+
+`{!cmd} reach clean` deletes the contents of `build/index.main.mjs` by default.
+This command is useful when the backend's version no longer matches the Reach standard JavaScript library. 
+
+The standard usage is `{!cmd} reach clean [MODULE] [IDENT]` where `MODULE` is "index" by default and `IDENT` is "main". 
+Changing the default values will change the `mjs` file `{!cmd} reach clean` seeks to delete.
+
+If `MODULE` is a directory then `{!cmd} reach clean` will `cd` into `MODULE` and remove `build/index.IDENT.mjs`.
+If `MODULE` is a file name then `{!cmd} reach clean` will remove `build/MODULE.IDENT.mjs`.
+
 # {#ref-usage-scaffold} @{ref("cmd", "reach scaffold")} `reach scaffold`
 
 You can create templated `Dockerfile` and `package.json` files for a simple Reach app by running
