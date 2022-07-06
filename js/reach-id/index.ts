@@ -83,7 +83,7 @@ type Opts = {
 
 type FetchOpts = { auth: JWT } | undefined
 
-class ReachID {
+export class ReachID {
 
   opts: Opts = {
     useEnv: false,
