@@ -50,7 +50,7 @@ createAccountInfo = info parser $ progDesc "Creates an account"
       <*> strArgument (metavar "PHONE_NUMBER")
       <*> optional (strOption (long "mfa-sms" <> metavar "MFA_SMS_NUMBER"))
       <*> optional (strOption (long "mfa-email" <> metavar "MFA_EMAIL"))
-      <*> optional (switch $ long "mfa-totp")
+      <*> optional (strOption $ long "mfa-totp")
 
 updateAccountInfo :: ParserInfo Method
 updateAccountInfo = info parser $ progDesc "Updates the account information for the logged in user"
@@ -62,7 +62,7 @@ updateAccountInfo = info parser $ progDesc "Updates the account information for 
       <*> strArgument (metavar "PHONE_NUMBER")
       <*> optional (strOption (long "mfa-sms" <> metavar "MFA_SMS_NUMBER"))
       <*> optional (strOption (long "mfa-email" <> metavar "MFA_EMAIL"))
-      <*> optional (switch $ long "mfa-totp")
+      <*> optional (strOption $ long "mfa-totp")
 
 verifyMfaInfo :: ParserInfo Method
 verifyMfaInfo = info parser $ progDesc "Verifies a login with an MFA code"
