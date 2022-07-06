@@ -14,7 +14,7 @@ data CreateAccountFormInfo = CreateAccountFormInfo
   , ca_phoneNumber :: String
   , ca_mfaSms      :: Maybe String
   , ca_mfaEmail    :: Maybe String
-  , ca_mfaTotp     :: Maybe Bool
+  , ca_mfaTotp     :: Maybe String
   } deriving (Eq, Show, Generic)
 
 instance ToJSON CreateAccountFormInfo
@@ -49,7 +49,7 @@ data UpdateAccountFormInfo = UpdateAccountFormInfo
   , ua_phoneNumber :: String
   , ua_mfaSms      :: Maybe String
   , ua_mfaEmail    :: Maybe String
-  , ua_mfaTotp     :: Maybe Bool
+  , ua_mfaTotp     :: Maybe String
   } deriving (Eq, Show, Generic)
 
 instance ToJSON UpdateAccountFormInfo
@@ -59,7 +59,7 @@ data MfaInfo = MfaInfo
   { mi_userId   :: String
   , mi_mfaSms   :: Maybe String
   , mi_mfaEmail :: Maybe String
-  , mi_mfaTotp  :: Maybe Bool
+  , mi_mfaTotp  :: Maybe String
   } deriving (Eq, Show, Generic)
 
 instance ToJSON MfaInfo
@@ -81,7 +81,7 @@ data User = User
   , phoneNumber :: String
   , mfaSms      :: Maybe String
   , mfaEmail    :: Maybe String
-  , mfaTotp     :: Maybe Bool
+  , mfaTotp     :: Maybe String
  } deriving (Eq, Ord, Show, Generic)
 
 instance ToJSON User

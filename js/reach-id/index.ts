@@ -16,7 +16,7 @@ type CreateAccount =
   , ca_phoneNumber : string
   , ca_mfaSms?     : string
   , ca_mfaEmail?   : string
-  , ca_mfaTotp?    : boolean }
+  , ca_mfaTotp?    : string }
 
 type Login =
   { lf_username : string
@@ -27,7 +27,7 @@ type MfaInfo =
   { mi_userId    : ID
   , mi_mfaSms?   : string
   , mi_mfaEmail? : string
-  , mi_mfaTotp?  : boolean
+  , mi_mfaTotp?  : string
   }
 
 type UpdateAccount =
@@ -36,7 +36,7 @@ type UpdateAccount =
   , ua_phoneNumber : string
   , ua_mfaSms?     : string
   , ua_mfaEmail?   : string
-  , ua_mfaTotp?    : boolean }
+  , ua_mfaTotp?    : string }
 
 type UpdateValueFormInfo =
   { uv_newVal : string
@@ -54,7 +54,7 @@ type User =
   , phoneNumber : string
   , mfaSms?     : string
   , mfaEmail?   : string
-  , mfaTotp?    : boolean }
+  , mfaTotp?    : string }
 
 
 const baseUrl = `http://127.0.0.1:8080`;
