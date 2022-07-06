@@ -103,8 +103,8 @@ getProjectConfig cliOpts = do
                          env_cloudOrLocal <|> cli_cloudOrLocal <|> rtml_cloudOrLocal <|> gtml_cloudOrLocal
 
   -- What connector to use (algo/cfx/eth/...)
-  -- REACH_CONNECTOR / --connector=... / connector = "algo" or "eth" or ...
-  let env_connector = readConnector <$> envVar "REACH_CONNECTOR"
+  -- REACH_CONNECTOR_MODE / --connector=... / connector = "algo" or "eth" or ...
+  let env_connector = readConnector <$> envVar "REACH_CONNECTOR_MODE"
   let cli_connector = readConnector <$> Cli.cli_connector cliOpts
   let cfg_connector = unwrapConfigOption "Unspecified what connector to use." $
                       env_connector <|> cli_connector <|> rtml_connector <|> gtml_connector
