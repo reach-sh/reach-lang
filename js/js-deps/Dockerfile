@@ -2,7 +2,7 @@
 ARG NODE_IMAGE
 FROM $NODE_IMAGE
 
-RUN apk update && apk add git make python3 libc-dev gcc g++ mariadb-connector-c-dev pcre-dev
+RUN apk update && apk add git make python3 libc-dev gcc g++
 WORKDIR /js-deps
 COPY package.json /js-deps/
 COPY package-lock.json /js-deps/maybe

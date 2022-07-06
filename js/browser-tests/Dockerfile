@@ -1,5 +1,9 @@
 # TODO: pull version from DEPS
+ARG ALPINE_IMAGE
 ARG CYPRESS_IMAGE
+FROM $ALPINE_IMAGE
+RUN apk add mariadb-connector-c-dev pcre-dev
+
 FROM $CYPRESS_IMAGE
 
 WORKDIR /test

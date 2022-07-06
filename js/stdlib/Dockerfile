@@ -12,7 +12,7 @@ FROM reachsh/reach AS reach
 FROM $NODE_IMAGE AS prepare
 
 WORKDIR /stdlib
-RUN apk update && apk add git make python3 libc-dev gcc g++ curl bash mariadb-connector-c-dev pcre-dev
+RUN apk update && apk add git make python3 libc-dev gcc g++ curl bash
 COPY .docker-root ./.docker-root
 COPY Makefile.docker ./Makefile
 RUN make ROOT=.docker-root install-mo
