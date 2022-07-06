@@ -211,7 +211,12 @@ $ reach down
 
 # {#ref-usage-clean} @{ref("cmd", "reach clean")} `reach clean`
 
-`{!cmd} reach clean` deletes the contents of `build/index.main.mjs` by default.
+You can delete the contents of `build/index.main.mjs` with
+
+```cmd
+$ reach clean
+```
+
 This command is useful when the backend's version no longer matches the Reach standard JavaScript library. 
 
 The standard usage is `{!cmd} reach clean [MODULE] [IDENT]` where `MODULE` is "index" by default and `IDENT` is "main". 
