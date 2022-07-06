@@ -52,6 +52,7 @@ dependencies:
 - loop
 - main-tester
 - memory
+- mmorph
 - mtl
 - mysql-simple
 - optparse-applicative
