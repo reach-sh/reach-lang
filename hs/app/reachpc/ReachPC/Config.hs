@@ -96,7 +96,7 @@ getProjectConfig cliOpts = do
   let unwrapConfigOption = fromMaybe . error . (++ "\nCheck <reach.sh/docs/project-config TODO page> for help\n")
 
   -- Whether to use reachd-cloud or reachd-local
-  -- REACH_CLOUD_OR_LOCAL / --cloud or --local / cloud-or-local = "cloud" or "local" in reach.toml or global.toml
+  -- REACH_CLOUD_OR_LOCAL / --cloud or --local / cloud-or-local = "cloud" or "local" in reach.toml or config.toml
   let env_cloudOrLocal = readCloudOrLocal <$> envVar "REACH_CLOUD_OR_LOCAL"
   let cli_cloudOrLocal = (\b -> if b then Cloud else Local) <$> Cli.cli_cloudOrLocal cliOpts
   let cfg_cloudOrLocal = unwrapConfigOption "Unspecified whether to use Reach Cloud or Reach Local." $
@@ -146,7 +146,7 @@ reachTomlPath = go . tomlPaths =<< getCurrentDirectory
     if exists then return $ Just path else go paths
 
 globalsTomlPath :: IO FilePath
-globalsTomlPath = getXdgDirectory XdgConfig "reach" <&> (</> "global.toml")
+globalsTomlPath = getXdgDirectory XdgConfig "reach" <&> (</> "config.toml")
 
 -- helper for interactiveCreate*
 data PromptAnswer = Unset | Unchanged | Str String
