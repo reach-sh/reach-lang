@@ -17,7 +17,9 @@ RUN apt-get update \
     curl \
     gcc \
     git \
+    libmariadb-dev \
     libnuma-dev \
+    libpcre3-dev \
     llvm \
     make \
     python3 \
