@@ -2896,7 +2896,7 @@ One reason this code could be encountered is if there is a branch within a `{!rs
 ```reach
 load: /hs/t/n/pr-149.rsh
 md5: a96b9457368e1246a8e5ee55e93b34f6
-range: 60-73
+range: 60-71
 ```
 
 You can fix this by explicitly adding the `{!rsh} continue` statement to the erroneous block of code.
@@ -2904,7 +2904,7 @@ You can fix this by explicitly adding the `{!rsh} continue` statement to the err
 ```reach
 load: /hs/t/y/pr-149.rsh
 md5: 6acb94a95c4f7d5a333def81772083f4
-range: 60-71
+range: 60-73
 ```
 
 ## {#RP0000} RP0000
