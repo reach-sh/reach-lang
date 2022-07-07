@@ -1,0 +1,8 @@
+reachc: error[RL0000]: code must not be reachable: Scope requires explicit return, but none given; typically this is a branch of a `while` body without a `continue` or `exit`
+
+  ./pr-149.rsh:70:15:dot
+
+  70|       Anybody.publish()
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RL0000
+
