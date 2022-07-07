@@ -2889,14 +2889,23 @@ You can fix this by using the correct syntax. Please view the documentation for 
 
 ## {#RL0000} RL0000
 
-This error indicates that the given code must not be reachable because it would
-result in an error if reached. This error may be caused for different reasons,
-which will be explained if encountered.
+This error indicates that the given code must not be reachable because it would result in an error if reached. This error may be caused for different reasons, which will be explained if encountered.
 
-One reason this code could be encountered is if there is a branch within a `{!rsh} while`
-loop, which does not contain a `{!rsh} continue` statement when it is expected.
-You can fix this by explicitly adding the `{!rsh} continue` statement to the erroneous block
-of code.
+One reason this code could be encountered is if there is a branch within a `{!rsh} while` loop, which does not contain a `{!rsh} continue` statement when it is expected.
+
+```reach
+load: /hs/t/n/pr-149.rsh
+md5: a96b9457368e1246a8e5ee55e93b34f6
+range: 60-73
+```
+
+You can fix this by explicitly adding the `{!rsh} continue` statement to the erroneous block of code.
+
+```reach
+load: /hs/t/y/pr-149.rsh
+md5: 6acb94a95c4f7d5a333def81772083f4cd
+range: 60-71
+```
 
 ## {#RP0000} RP0000
 
