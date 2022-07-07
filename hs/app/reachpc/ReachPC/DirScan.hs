@@ -26,7 +26,7 @@ import qualified Data.ByteArray as BA (unpack)
 
 type Hash = BS.ByteString
 
-data FileHash 
+data FileHash
   = FH_File Hash
   | FH_Directory
   | FH_Deleted
@@ -45,12 +45,12 @@ type FileDataTree = M.Map FilePath FileData
 -- Given a dir and an old hash tree of that dir, produces a FileDataTree with only the differences
 readUpdatedFiles :: FilePath -> FileHashTree -> IO FileDataTree
 readUpdatedFiles root remoteHashes = do
-  localHashes <- hashDirectory root 
+  localHashes <- hashDirectory root
   let updateHashTree = compareHashTrees localHashes remoteHashes
   readFilesInHashTree root updateHashTree
 
 -- Converts a FileHashTree into a FileDataTree by reading file entries
-readFilesInHashTree :: FilePath -> FileHashTree -> IO FileDataTree   
+readFilesInHashTree :: FilePath -> FileHashTree -> IO FileDataTree
 readFilesInHashTree root tree = M.fromList <$> mapM readHash (M.toList tree)
  where
   readHash (p, fh) = case fh of
@@ -89,19 +89,19 @@ hashDirectory root = do
     -- Read .reachignore in this directory
     newIgnores <- readIgnores dir
     let ignores' = newIgnores <> ignores
-    
+
     -- Walk current dir
     paths <- map (dir </>) <$> listDirectory dir
     pathsAreFile <- mapM doesFileExist paths
     pathsAreSymlink <- mapM pathIsSymbolicLink paths
     let pathTypes = zip3 paths pathsAreFile pathsAreSymlink
-    let pathTypes' = [(p, isFile) | (p, isFile, isSymlink) <- pathTypes, 
-                                    not isSymlink, 
+    let pathTypes' = [(p, isFile) | (p, isFile, isSymlink) <- pathTypes,
+                                    not isSymlink,
                                     not $ isIgnored ignores' p]
     let (files_, dirs_) = partition snd pathTypes'
     let files = map fst files_
     let dirs = map fst dirs_
-    
+
     -- Hash encountered files
     let cacheOrHash path = do
           mtime <- getModificationTime path
@@ -117,7 +117,7 @@ hashDirectory root = do
     -- Add remaining dirs to stack and hashes map
     let dirStack' = dirs <> dirStack
     let newDirsMap = M.fromList (map (, FH_Directory) dirs)
-    
+
     let hashTree' = M.unions [hashTree, newFilesMap, newDirsMap]
     doScan cacheTree cacheMTime ignores' dirStack' hashTree'
 

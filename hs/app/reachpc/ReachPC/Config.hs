@@ -34,10 +34,10 @@ readCloudOrLocal = readEnum "CloudOrLocal" . capitalFirst
  where
   capitalFirst (c:s) = toUpper c : map toLower s
   capitalFirst [] = []
-  
+
 readConnector :: String -> Connector
 readConnector = readEnum "Connector" . capitalAll
- where 
+ where
   capitalAll = map toUpper
 
 readEnum :: forall a. (Show a, Read a, Enum a, Bounded a) => String -> String -> a
@@ -85,7 +85,7 @@ globalsTomlCodec = GlobalsToml
   <$> T.dioptional (T.enumBounded "cloud-or-local") T..= gtml_cloudOrLocal
   <*> T.dioptional (T.enumBounded "connector") T..= gtml_connector
 
--- Generates a Config by reading various sources. If a project reach.toml isn't found, crash. 
+-- Generates a Config by reading various sources. If a project reach.toml isn't found, crash.
 -- If a global reach.toml isn't found,  make one with global entries.
 getProjectConfig :: Cli.CliOptions -> IO Config
 getProjectConfig cliOpts = do
