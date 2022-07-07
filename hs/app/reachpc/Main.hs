@@ -1,12 +1,6 @@
 {- HLINT ignore "Use newtype instead of data" -}
 
-module Main (main, CliOptions) where
-
--- used for stdio green threading / streaming stuff
--- import Control.Concurrent (ThreadId, forkIO)
--- import Control.Monad (forever)
--- runStdinThread :: (String -> IO ()) -> IO ThreadId
--- runStdinThread callback = forkIO $ forever $ getLine >>= callback . (<> "\n") 
+module Main (main) where
 
 import ReachPC.CommandLine (CliOptions(..), parseCliOptions, helpMessage)
 import ReachPC.Config (Config(..), getProjectConfig)
