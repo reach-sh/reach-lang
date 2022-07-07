@@ -4,17 +4,24 @@ module Reach.Proto
   ( FDescOut'(..)
   , FDescOut(..)
   , Req(..)
+  , ReqProjPut(..)
   , Res(..)
   , ResInterpret(..)
+  , StubConfig(..)
+  , XProject(..)
   , Proto
-  , stubDispatchReach
-  , cmd''
-  , cmd
-  , say''
-  , say
-  , listen
   , appStubServer
+  , cmd
+  , cmd''
+  , fromXProject
+  , listen
+  , listen''
+  , projPut
+  , projPut''
   , runStubServer
+  , say
+  , say''
+  , stubDispatchReach
   , stubPort
   ) where
 
@@ -24,10 +31,13 @@ import Control.Concurrent.STM
 import Control.Exception (catch)
 import Control.Monad
 import Control.Monad.IO.Class
+import Control.Monad.Morph
+import Control.Monad.Reader
 import Data.Aeson
 import Data.IORef
+import Data.List.NonEmpty
 import Data.Proxy
-import Data.Text
+import Data.Text hiding (concat)
 import Data.Time.Clock
 import GHC.Generics
 import Options.Applicative hiding ((<|>))
@@ -45,6 +55,7 @@ import Text.Parsec.Token
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Lazy.UTF8 as BL
 import qualified Data.Map.Strict as M
+import qualified Data.Text.IO as T
 import qualified Network.HTTP.Media as H
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Options.Applicative as O
@@ -62,8 +73,15 @@ import qualified Servant.Client.Streaming as S
 type Pid = Text
 type ProjectHashes = M.Map FilePath Text
 type ProjectContent = M.Map FilePath Text
-type Subcommand = Mod CommandFields (IO ResInterpret)
-type SubcommandDispatch = Req -> String -> Handler Res
+
+data SCEnv c = SCEnv
+  { sce_req :: Req
+  , _sce_cnf :: c -- Implementors can supply their own configuration types
+  }
+
+type SubcommandStepT c = StepT (ReaderT (SCEnv c) IO) Res
+type Subcommand c = Mod CommandFields (SubcommandStepT c)
+type SubcommandDispatch = Req -> String -> SourceT IO Res
 
 stubPort :: Int
 stubPort = 8123
@@ -72,6 +90,40 @@ ecode :: ExitCode -> Int
 ecode = \case
   ExitSuccess -> 0
   ExitFailure n -> n
+
+data XProject = XProject
+  { xproj_orgOrUser :: Text
+  , xproj_name :: Text
+  } deriving (Eq, Show)
+
+fromXProject :: XProject -> Text
+fromXProject XProject {..} = "@" <> xproj_orgOrUser <> "/" <> xproj_name
+
+toXProject :: Text -> Either String XProject
+toXProject = either (Left . show) Right . runParser pXProject () ""
+
+instance ToJSON XProject where
+  toJSON = String . fromXProject
+
+instance ToHttpApiData XProject where
+  toUrlPiece = fromXProject
+
+pXProject :: Parsec Text () XProject
+pXProject = XProject -- e.g. "@reach-sh/rps"
+  <$> (pack <$> (string "@" *> ok (string "/")))
+  <*> (pack <$> ok eof)
+ where
+  ok x = do
+    a <- alphaNum
+    b <- manyTill (alphaNum <|> char '-') (try . lookAhead $ alphaNum <* x)
+    c <- alphaNum <* x
+    pure $ [a] <> b <> [c]
+
+instance FromJSON XProject where
+  parseJSON = withText "XProject" $ either fail pure . toXProject
+
+instance FromHttpApiData XProject where
+  parseUrlPiece = either (Left . pack) Right . toXProject
 
 data EventStream
 
@@ -106,15 +158,16 @@ data Req = Req
   , req_env   :: M.Map Text Text
   } deriving (Eq, Generic, FromJSON, ToJSON)
 
+data ReqProjPut = ReqProjPut
+  { req_projput :: ProjectContent
+  } deriving (Eq, Generic, FromJSON, ToJSON)
+
 data ResInterpret
   = ExitStdout Int Text
   | ExitStderr Int Text
   | AttachStreamJustListen Pid Integer
   | AttachStreamListenSpeak Pid Integer
-  -- TODO spec further:
-  --  * We'll want to batch PUTs rather than send them all at once
-  --  * Once the cloud is satisfied it has everything we'll redirect the client
-  | PutProjectUpdates ProjectContent
+  | PutProjectUpdates (NonEmpty FilePath)
   deriving (Eq, Show, Generic, FromJSON, ToJSON)
 
 data Res
@@ -163,15 +216,32 @@ pFDescOut = pka <|> try pout <|> pexit where
 instance MimeUnrender EventStream FDescOut where
   mimeUnrender _ = either (Left . show) Right . runParser pFDescOut () "" . BL.toString
 
-type V0_Sync = "v0" :>
-    ( "exec" :> "reach" :> Capture "cmd" String :> ReqBody '[JSON] Req :> Post '[JSON] Res
- :<|> "proc" :> Capture "pid" Pid :> "fd" :> "0" :> ReqBody '[PlainText] Text :> PutNoContent
-    )
+-- TODO octet stream
+type V0_Proj = "proj"
+  :> Header' '[Required, Strict] "X-Reach-Project" XProject
+  :> ReqBody '[JSON] ReqProjPut
+  :> PutNoContent -- TODO: replace me with HTTP 202
 
-type V0_Stream = "v0"
-  :> "proc" :> Capture "pid" Pid
-  :> "fd"   :> Capture "fd"  FDescOut'
+type V0_ProcIn = "proc"
+  :> Capture "pid" Pid
+  :> "fd" :> "0"
+  :> ReqBody '[PlainText] Text
+  :> PutNoContent -- TODO: replace me with HTTP 202
+
+type V0_Sync = "v0" :> (V0_Proj :<|> V0_ProcIn)
+
+type V0_ProcOut = "proc"
+  :> Capture "pid" Pid
+  :> "fd" :> Capture "fd"  FDescOut'
   :> StreamGet NoFraming EventStream (SourceIO FDescOut)
+
+type V0_Exec = "exec" :> "reach"
+  :> Capture "cmd" String
+  :> Header "X-Reach-Project" XProject
+  :> ReqBody '[JSON] Req
+  :> StreamPost NewlineFraming JSON (SourceIO Res)
+
+type V0_Stream = "v0" :> (V0_ProcOut :<|> V0_Exec)
 
 type Proto = V0_Sync :<|> V0_Stream
 
@@ -218,57 +288,82 @@ stubUnixProc c f = do
   n <- waitForProcess ph
   i >>= f . flip ExitCode' (ecode n)
 
-mkDispatchOptparse :: ParserInfo (IO ResInterpret) -> SubcommandDispatch
-mkDispatchOptparse i Req {..} c = case execParserPure p i (c : req_args) of
-  CompletionInvoked _ -> pure . Interpret $ ExitStderr 1 "Reach doesn't support shell completions."
-  Failure e -> do
-    let (e', n) = renderFailure e "reach"
-    pure . Interpret . ExitStderr (ecode n) $ pack e'
-  O.Success f -> Interpret <$> liftIO f
+mkDispatchOptparse :: SCEnv c -> ParserInfo (SubcommandStepT c) -> SubcommandDispatch
+mkDispatchOptparse e i Req {..} c = fromStepT $ case execParserPure p i (c : req_args) of
+  CompletionInvoked _ -> Yield
+    (Interpret $ ExitStderr 1 "Reach doesn't support shell completions.")
+    Stop
+  Failure x ->
+    Yield (Interpret . ExitStderr (ecode n) $ pack x') Stop
+    where (x', n) = renderFailure x "reach"
+  O.Success f -> (flip runReaderT e) `hoist` f
  where
   p = prefs $ showHelpOnError <> showHelpOnEmpty <> helpShowGlobals
 
+cmdJust :: ResInterpret -> SubcommandStepT c
+cmdJust f = Yield (Interpret f) Stop
+
+cmdIO :: ReaderT (SCEnv c) IO Res -> SubcommandStepT c
+cmdIO f = Effect $ f >>= pure . flip Yield Stop
+
+-- TODO
+fsHashPresent :: FilePath -> Text -> ReaderT (SCEnv c) IO Bool
+fsHashPresent _ _ = pure False
+
+withSyncedProject :: SubcommandStepT c -> SubcommandStepT c
+withSyncedProject f = Effect $ do
+  asks (req_files . sce_req) >>= \case
+    Nothing -> pure $ Yield (Interpret $ ExitStderr 1 "Missing mandatory project hashes") Stop
+    Just fs -> do -- TODO
+      _ns <- fmap M.fromList . flip filterM (M.toList fs) $ \(k, a) ->
+        not <$> fsHashPresent k a
+      pure f
+
 -- These won't really live in the protocol definition --------------------------
-stubHelp :: Subcommand
+stubHelp :: Subcommand c
 stubHelp = command "help" $ info f d where
   d = progDesc "Show usage"
-  f = pure . pure $ ExitStdout 0 "TODO: build non-stub version"
+  f = pure . cmdJust $ ExitStdout 0 "TODO: build non-stub version"
 
-stubInit :: Subcommand
+stubInit :: Subcommand c
 stubInit = command "init" (info f $ d <> foot) where
   d = progDesc "Set up source files for a simple app in the current directory"
   f = go <$> strArgument (metavar "TEMPLATE" <> value "_default" <> showDefault)
   foot = footerDoc . Just $ text "Available templates:\n"
     <> text "_default"
     <> text "\n\nAborts if index.rsh or index.mjs already exist"
-  go t = pure $ ExitStdout 0 $ "TODO: build non-stub version\nSelected: " <> t
+  go t = cmdJust . ExitStdout 0 $ "TODO: build non-stub version\nSelected: " <> t
 
-stubCompile :: Subcommand
+stubCompile :: Subcommand c
 stubCompile = command "compile" $ info f d where
   d = progDesc "Compile an app"
   f = go <$> compiler
-  go _ = pure $ AttachStreamJustListen "54321" 0
+  go _ = withSyncedProject . cmdIO . pure . Interpret $ AttachStreamJustListen "54321" 0
 --------------------------------------------------------------------------------
 
-stubDispatchReach :: SubcommandDispatch
-stubDispatchReach = mkDispatchOptparse p where
+stubDispatchReach :: SCEnv c -> SubcommandDispatch
+stubDispatchReach e = mkDispatchOptparse e p where
   p = info (hsubparser s <**> helper) fullDesc
   s = stubHelp <> stubInit <> stubCompile
 
-appStubServer :: SubcommandDispatch -> Bool -> Maybe String -> Application
-appStubServer d l t = serve (Proxy @Proto) ((r :<|> pin) :<|> pout) where
-  r c a@Req {..} = do
-    when l . liftIO $ do
-      utc <- getCurrentTime
-      putStrLn $ show utc <> ": reach " <> c <> " " <> unpack (intercalate " " $ pack <$> req_args)
-    d a c
+data StubConfig = StubConfig
 
+appStubServer :: StubConfig -> (SCEnv StubConfig -> SubcommandDispatch) -> Bool -> Maybe String -> Application
+appStubServer e d l t = serve (Proxy @Proto) ((pput :<|> pin) :<|> (pout :<|> r)) where
+  -- Update project files
+  pput x _fs = do
+    when l . liftIO . T.putStrLn $ "Syncing " <> fromXProject x <> "..."
+    -- TODO _fs
+    pure NoContent
+
+  -- stdin
   pin p s = do
     when l . liftIO $ do
       utc <- getCurrentTime
       putStrLn $ show utc <> ": PUT /v0/proc/" <> unpack p <> "/fd/0 " <> unpack s
     pure NoContent
 
+  -- stdout/stderr
   pout pid fd = do
     when l . liftIO . putStrLn $ "Received listen request for PID# " <> unpack pid
     pure $ case fd of
@@ -277,22 +372,36 @@ appStubServer d l t = serve (Proxy @Proto) ((r :<|> pin) :<|> pout) where
       Stdboth' -> fromStepT . withKeepalives . stubUnixProc
         $ maybe "cd ../examples/ttt && ../../reach compile" id t
 
-runStubServer :: IO ()
-runStubServer = Warp.run stubPort $ appStubServer stubDispatchReach True Nothing
+  -- reach $cmd [ $args ]
+  r c _ a@Req {..} = do
+    when l . liftIO $ do
+      utc <- getCurrentTime
+      putStrLn $ show utc <> ": reach " <> c <> " " <> unpack (intercalate " " $ pack <$> req_args)
+    pure $ d (SCEnv a e) a c
 
-cmd'' :: String -> Req -> ClientM Res
+runStubServer :: IO ()
+runStubServer = Warp.run stubPort $ appStubServer StubConfig stubDispatchReach True Nothing
+
+projPut'' :: XProject -> ReqProjPut -> ClientM NoContent
 say'' :: Pid -> Text -> ClientM NoContent
-cmd'' :<|> say'' = client $ Proxy @V0_Sync
+projPut'' :<|> say'' = client $ Proxy @V0_Sync
+
+listen'' :: Text -> FDescOut' -> S.ClientM (SourceT IO FDescOut)
+cmd'' :: String -> Maybe XProject -> Req -> S.ClientM (SourceT IO Res)
+listen'' :<|> cmd'' = S.client $ Proxy @V0_Stream
 
 todoErrorHandler :: ClientError -> IO a
 todoErrorHandler = fail . show
 
-cmd :: ClientEnv -> String -> Req -> (Res -> IO ()) -> IO ()
-cmd e c r f = runClientM (cmd'' c r) e >>= either todoErrorHandler f
+-- TODO refactor us ------------------------------------------------------------
+projPut :: ClientEnv -> XProject -> ReqProjPut -> IO ()
+projPut e p r = runClientM (projPut'' p r) e >>= either todoErrorHandler (const $ pure ())
 
 say :: ClientEnv -> Pid -> Text -> IO ()
 say e p t = runClientM (say'' p t) e >>= either todoErrorHandler (const $ pure ())
 
 listen :: ClientEnv -> (String -> IO ()) -> (FDescOut -> IO ()) -> Pid -> FDescOut' -> IO ()
-listen e x f p o = S.withClientM (S.client (Proxy @V0_Stream) p o) e
-  $ either todoErrorHandler (foreach x f)
+listen e x f p o = S.withClientM (listen'' p o) e $ either todoErrorHandler (foreach x f)
+
+cmd :: ClientEnv -> (String -> IO ()) -> String -> Maybe XProject -> Req -> (Res -> IO ()) -> IO ()
+cmd e x c mp r f = S.withClientM (cmd'' c mp r) e $ either todoErrorHandler (foreach x f)
