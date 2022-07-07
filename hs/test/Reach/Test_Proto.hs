@@ -1,5 +1,6 @@
 module Reach.Test_Proto
-  ( spec_headerParse
+  ( spec_account
+  , spec_headerParse
   , spec_proto
   , main
   ) where
