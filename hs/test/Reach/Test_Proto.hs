@@ -22,11 +22,16 @@ import qualified Servant.Client.Streaming as S
 
 main :: IO ()
 main = hspec $ do
+  spec_account
   spec_headerParse
   spec_proto
 
 type MXP = Maybe XProject
 type EXP = Either String XProject
+
+spec_account :: Spec
+spec_account = describe "Parsing an `Account`" $ do
+  it "<has yet to be specified>" $ pendingWith "CORE-2029"
 
 spec_headerParse :: Spec
 spec_headerParse = describe "Parsing an" $ do
