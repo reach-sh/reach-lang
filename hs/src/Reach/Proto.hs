@@ -92,7 +92,7 @@ ecode = \case
   ExitFailure n -> n
 
 data XProject = XProject
-  { xproj_orgOrUser :: Text
+  { xproj_orgOrUser :: Text -- CORE-2027
   , xproj_name :: Text
   } deriving (Eq, Show)
 
