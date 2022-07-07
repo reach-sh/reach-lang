@@ -219,7 +219,7 @@ $ reach clean
 
 This command is useful when the backend's version no longer matches the Reach standard library you have installed and you need to recompile.
 
-The standard usage is `{!cmd} reach clean [MODULE] [IDENT]` where `MODULE` is "index" by default and `IDENT` is "main". 
+The standard usage is `{!cmd} reach clean [MODULE] [IDENT]` where `MODULE` is `index` by default and `IDENT` is `main`. 
 Changing the default values will change the `mjs` file `{!cmd} reach clean` seeks to delete.
 
 If `MODULE` is a directory then `{!cmd} reach clean` will `cd` into `MODULE` and remove `build/index.IDENT.mjs`.
