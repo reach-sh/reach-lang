@@ -217,7 +217,7 @@ You can delete the contents of `build/index.main.mjs` with
 $ reach clean
 ```
 
-This command is useful when the backend's version no longer matches the Reach standard JavaScript library. 
+This command is useful when the backend's version no longer matches the Reach standard library you have installed and you need to recompile.
 
 The standard usage is `{!cmd} reach clean [MODULE] [IDENT]` where `MODULE` is "index" by default and `IDENT` is "main". 
 Changing the default values will change the `mjs` file `{!cmd} reach clean` seeks to delete.
