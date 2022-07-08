@@ -89,7 +89,5 @@
 { "Digest": "sha256:1c35abc8ccba5b0c4a052b6ef26717fd82ec6d9000d81c43d6ba081d20e3ed67", "Repository": "reachsh/react-runner", "Tag": "stable" },
 { "Digest": "sha256:1c35abc8ccba5b0c4a052b6ef26717fd82ec6d9000d81c43d6ba081d20e3ed67", "Repository": "reachsh/react-runner", "Tag": "0" },
 { "Digest": "sha256:1c35abc8ccba5b0c4a052b6ef26717fd82ec6d9000d81c43d6ba081d20e3ed67", "Repository": "reachsh/react-runner", "Tag": "0.1" },
-{ "Digest": "sha256:1c35abc8ccba5b0c4a052b6ef26717fd82ec6d9000d81c43d6ba081d20e3ed67", "Repository": "reachsh/react-runner", "Tag": "0.1.8" },
-{ "Digest": "sha256:3162a6ead070474b27289f09eac4c865e75f93847a2d7098f718ee5a721637c4", "Repository": "postgres", "Tag": "latest" },
-{ "Digest": "sha256:752a7fc46308a48ac55d4c20c640c1a5fc5761839f40d3c3e8ffb34492eb0ac4", "Repository": "postgres", "Tag": "11-alpine" }
+{ "Digest": "sha256:1c35abc8ccba5b0c4a052b6ef26717fd82ec6d9000d81c43d6ba081d20e3ed67", "Repository": "reachsh/react-runner", "Tag": "0.1.8" }
 ]

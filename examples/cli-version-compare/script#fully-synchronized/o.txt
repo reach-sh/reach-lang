@@ -7,6 +7,5 @@ Reach's Docker images are up-to-date.
  * reachsh/devnet-algo   8e78dffa:  stable, 0, 0.1, 0.1.8, 34107655, 2022-01-31
  * reachsh/devnet-cfx    e9f029f0:  stable, 0, 0.1, 0.1.8, 34107655, 2022-01-31
  * reachsh/devnet-eth    110bc4d6:  stable, 0, 0.1, 0.1.8, 34107655, 2022-01-31
- * postgres              752a7fc4:  11-alpine (required by: reachsh/devnet-algo)
 
 There's a newer version of the `reach` script available.

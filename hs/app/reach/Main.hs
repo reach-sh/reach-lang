@@ -70,7 +70,7 @@ import qualified Reach.Closed.TSA.Main as TSA
 onlyEverest :: String -> String
 onlyEverest x = x <> me
   where
-    me = if hasReachEverest then "" else (" (" <> onlyWithReachEverest <> ")")
+    me = if hasReachEverest then "" else " (" <> onlyWithReachEverest <> ")"
 
 f_onlyEverest :: String -> Parser App
 f_onlyEverest sub = pure $ do
@@ -157,10 +157,10 @@ mkReachVersionOf iv = \case
   Just m -> either (const . Left $ iv m) Right $ parse (hash <|> numeric <|> datestamp m) "" m
   where
     TokenParser {..} = makeTokenParser emptyDef
-    xx = eof *> pure Nothing
+    xx = eof $> Nothing
     ti = toInteger
 
-    hash = RVHash . pack <$> (try $ count 8 (oneOf $ ['0' .. '9'] <> ['a' .. 'f']) <* eof)
+    hash = RVHash . pack <$> try (count 8 (oneOf $ ['0' .. '9'] <> ['a' .. 'f']) <* eof)
 
     datestamp m = maybe (fail m) (pure . RVDate) $ parseTimeM False defaultTimeLocale "%Y-%m-%d" m
 
@@ -171,8 +171,8 @@ mkReachVersionOf iv = \case
           <*> ((Just <$> (dot *> decimal)) <|> xx)
           <*> ((Just <$> (dot *> decimal <* eof)) <|> xx)
       -- Beware: minor/patch defaults are meaningless when updating
-      let rvMinor = maybe (if rvEnvNumericMajor /= ti major then 0 else ti minor) id rvEnvNumericMinor
-      let rvPatch = maybe (if rvMinor /= ti minor then 0 else ti patch) id rvEnvNumericPatch
+      let rvMinor = fromMaybe (if rvEnvNumericMajor /= ti major then 0 else ti minor) rvEnvNumericMinor
+      let rvPatch = fromMaybe (if rvMinor /= ti minor then 0 else ti patch) rvEnvNumericPatch
       pure $ RVWithMaj RVNumeric {..}
 
 mkReachVersionOf' :: Text -> Either () ReachVersionOf
@@ -233,7 +233,7 @@ mkShell =
               optional (string "/" *> many (try $ many alphaNum *> string "/"))
                 *> string a
                 *> eof
-                *> pure b
+                $> b
       either (const $ pure (ShellUnknown, pack s)) (pure . (,pack s)) $
         parse
           (p "bash" Bash <|> p "zsh" Zsh)
@@ -492,71 +492,32 @@ type Digest = Text
 
 type TagRaw = Text
 
-data ImageThirdParty
-  = Postgres
-  deriving (Eq, Ord, Show, Enum, Bounded)
-
-itpT :: ImageThirdParty -> Text
-itpT = \case
-  Postgres -> "postgres"
-
-itpF :: Text -> A.Parser ImageThirdParty
-itpF = \case
-  "postgres" -> pure Postgres
-  v -> fail $ "Invalid `ImageThirdParty` \"" <> unpack v <> "\""
-
-instance ToJSON ImageThirdParty where
-  toJSON = String . itpT
-
-instance FromJSON ImageThirdParty where
-  parseJSON = withText "ImageThirdParty" itpF
-
-instance A.FromJSONKey ImageThirdParty where
-  fromJSONKey = A.FromJSONKeyTextParser itpF
-
--- TODO devise solution to "double update" problem if new Reach release
--- includes third-party tag changes
-imageThirdPartyTagRaw :: ImageThirdParty -> TagRaw
-imageThirdPartyTagRaw = \case
-  Postgres -> "11-alpine"
-
-imageThirdPartyDockerHubRoot :: ImageThirdParty -> String
-imageThirdPartyDockerHubRoot = \case
-  Postgres -> "library" -- https://hub.docker.com/_/postgres?tab=tags
-
-type Image = Either ImageThirdParty Text
-
-instance A.ToJSONKey Image where
-  toJSONKey = A.toJSONKeyText $ either itpT id
-
-instance A.FromJSONKey Image where
-  fromJSONKey = A.FromJSONKeyTextParser $ \j ->
-    (Left <$> itpF j) <|> pure (Right j)
+type Image = Text
 
 newtype Image' = Image' Image
   deriving (Show, Eq)
 
-instance ToJSON Image' where toJSON (Image' i) = either toJSON toJSON i
+instance ToJSON Image' where toJSON (Image' i) = toJSON i
 
 instance FromJSON Image' where
   parseJSON = withText "Image'" $ \case
-    i | i `elem` (("reachsh/" <>) <$> rights imagesAll) -> pure . Image' $ Right i
-    i -> Image' . Left <$> parseJSON (String i)
+    i | i `elem` (("reachsh/" <>) <$> imagesAll) -> pure $ Image' i
+    i -> error $ "unrecognized Image " <> unpack i
 
 imagesCommon :: [Image]
 imagesCommon =
-  [ Right "reach"
-  , Right "reach-cli"
-  , Right "react-runner"
-  , Right "rpc-server"
-  , Right "runner"
+  [ "reach"
+  , "reach-cli"
+  , "react-runner"
+  , "rpc-server"
+  , "runner"
   ]
 
 imagesFor :: Connector -> [Image]
 imagesFor = \case
-  ALGO -> [Right $ devnetFor ALGO, Left Postgres]
-  CFX -> [Right $ devnetFor CFX]
-  ETH -> [Right $ devnetFor ETH]
+  ALGO -> [devnetFor ALGO]
+  CFX -> [devnetFor CFX]
+  ETH -> [devnetFor ETH]
 
 imagesForAllConnectors :: [Image]
 imagesForAllConnectors = L.foldl' (<>) [] $ imagesFor <$> [minBound .. maxBound]
@@ -1633,7 +1594,7 @@ hashes = command "hashes" $ info f d
     |]
     f = pure $ do
       v <- versionBy majMinPat . version'' <$> asks e_var
-      let is = filter (/= "reach-cli") $ rights imagesAll
+      let is = filter (/= "reach-cli") imagesAll
       script $ do
         h "latest" "reach-cli"
         forM_ is $ h v
@@ -1835,13 +1796,11 @@ instance FromJSON DockerILS where parseJSON = parseJSON' 5
 
 data TagFor
   = TFReach ReachVersionOf
-  | TFThirdParty TagRaw
   | TFReachCLI
   deriving (Eq, Ord, Show)
 
 tagFor :: TagFor -> Text
 tagFor = \case
-  TFThirdParty t -> t
   TFReachCLI -> "latest"
   TFReach (RVDate t) -> packs t
   TFReach (RVHash t) -> t
@@ -1858,7 +1817,7 @@ instance FromJSON TagFor where
   parseJSON = withText "TagFor" $ \case
     "latest" -> pure TFReachCLI -- NB this is incidentally true today, but may not always be
     "" -> fail "Invalid `TagFor` \"\""
-    t -> pure . either (const $ TFThirdParty t) TFReach $ mkReachVersionOf' t
+    t -> pure . either (error $ "Invalid `TagFor` " <> unpack t) TFReach $ mkReachVersionOf' t
 
 type DockerAssoc = M.Map Image (M.Map Digest [TagFor])
 
@@ -1915,22 +1874,17 @@ arch' = case arch of
 remoteDockerAssocFor :: FilePath -> FilePath -> Image -> Maybe String -> ImageHost -> IO (Either ImageHostAPIFail DockerAssoc)
 remoteDockerAssocFor tmpC tmpH img mtag h = go
   where
-    (go, itp) = case h of
+    go = case h of
       -- https://docs.docker.com/docker-hub/api/latest/#tag/rate-limiting
       -- https://docs.docker.com/docker-hub/download-rate-limit/#other-limits
       DockerHub ->
-        ( fetch 0 8 "hub.docker.com" dh_next dh_results uDockerHub >>= assoc aDH
-        , \x p -> imageThirdPartyDockerHubRoot p <> x <> unpack (T.toLower $ packs p)
-        )
+        fetch 0 8 "hub.docker.com" dh_next dh_results uDockerHub >>= assoc aDH
 
     mkTag t = case img of
-      Left p -> Just $ if t == imageThirdPartyTagRaw p then [TFThirdParty t] else []
-      Right "reach-cli" -> Just $ if t == tagFor TFReachCLI then [TFReachCLI] else []
-      Right _ -> either (const Nothing) (\a -> Just [TFReach a]) $ mkReachVersionOf' t
+      "reach-cli" -> Just $ if t == tagFor TFReachCLI then [TFReachCLI] else []
+      _ -> either (const Nothing) (\a -> Just [TFReach a]) $ mkReachVersionOf' t
 
-    (img', img'') = case img of
-      Left tp -> (itp "/" tp, img)
-      Right r -> (x, Right $ pack x) where x = "reachsh/" <> unpack r
+    (img', img'') = (x, pack x) where x = "reachsh/" <> unpack img
 
     aDH a ImageHostAPIDockerHubResult {..} = maybe a id $ do
       d <- L.find ((== arch') . dhri_architecture) dhr_images >>= dhri_digest
@@ -1953,7 +1907,7 @@ remoteDockerAssocFor tmpC tmpH img mtag h = go
     -- Note: DockerHub API's headers are sometimes inconsistent with their own docs, dropping `X-` prefix
     fetch c t fqdn nextPage results u = do
       r <- httpJSONEither u
-      threadDelay . (* 100000) . maybe 0 id $ do
+      threadDelay . (* 100000) . fromMaybe 0 $ do
         l <- grh r "RateLimit-Remaining"
         pure $ if (l :: Int) < length imagesAll then 1 else 0
       if getResponseStatusCode r == 429
@@ -1962,14 +1916,14 @@ remoteDockerAssocFor tmpC tmpH img mtag h = go
             then pure . Left . IHAFRetriesExhausted (pack img') $ float2Int t
             else do
               n <- getUnixTime
-              ms <- pure . (* 1000000) . maybe (2 ** c) id $ do
+              ms <- pure . (* 1000000) . fromMaybe (2 ** c) $ do
                 a <- grh r "Retry-After"
                 readMay . show . udtSeconds $ UnixTime a 0 `diffUnixTime` n
               threadDelay $ float2Int ms
               fetch (c + 1) t fqdn nextPage results u
         else case getResponseBody r of
           Left e -> do
-            let x = fqdn <> "-api-fail-" <> either (itp "-") unpack img <> ".txt"
+            let x = fqdn <> "-api-fail-" <> unpack img <> ".txt"
             T.writeFile (tmpC </> x) . toStrict $ pShowNoColor e
             pure . Left . IHAFUnexpectedResponse . pack $
               show h <> " API served unexpected response when querying `"
@@ -1987,8 +1941,7 @@ remoteUpdates psb imgs = do
   Env {..} <- ask
 
   let mtag = \case
-        Left i -> Just . unpack $ imageThirdPartyTagRaw i
-        Right "reach-cli" -> Just . unpack $ tagFor TFReachCLI
+        "reach-cli" -> Just . unpack $ tagFor TFReachCLI
         _ -> Nothing
 
   let d = threadDelay 2500000 *> putStr "." *> hFlush stdout *> d
@@ -2045,7 +1998,7 @@ remoteUpdates psb imgs = do
   pure (pack $ e_dirTmpHost </> rn, L.foldl' M.union mempty $ rights ts)
 
 imgTxt :: Image' -> Text
-imgTxt (Image' x) = either (T.toLower . packs) id x
+imgTxt (Image' x) = x
 
 versionCompare' :: Bool -> Bool -> Bool -> Bool -> App
 versionCompare' i' j' u' p' = scriptWithConnectorModeOptional $ do
@@ -2076,8 +2029,7 @@ versionCompare' i' j' u' p' = scriptWithConnectorModeOptional $ do
   t = mappend ("docker image ls --digests --format "
     <> "'{ \"Digest\": \"{{.Digest}}\", \"Repository\": \"{{.Repository}}\", \"Tag\": \"{{.Tag}}\" }' ")
 
-  q = T.intercalate " && \\\n" $ (t <$> ("reachsh/" <>) <$> rights imagesAll)
-    <> (t <$> (T.toLower . packs) <$> [minBound .. maxBound :: ImageThirdParty])
+  q = T.intercalate " && \\\n" $ t . ("reachsh/" <>) <$> imagesAll
 
 versionCompare :: Subcommand
 versionCompare = command "version-compare" $ info f mempty
@@ -2102,7 +2054,7 @@ versionCompare2 = command "version-compare2" $ info f mempty
       <*> switch (long "print-stand-by")
     g ni j l rl mr ms up psb = do
       Env {e_var = Var {..}, ..} <- ask
-      assocL <- (liftIO $ A.eitherDecodeFileStrict' l) >>= \case
+      assocL <- liftIO (A.eitherDecodeFileStrict' l) >>= \case
         Left e -> liftIO $ do
           u <- liftIO $ BSL.readFile l
           let x = "docker-digests-parse-fail.txt"
@@ -2124,41 +2076,38 @@ versionCompare2 = command "version-compare2" $ info f mempty
                 (maybe (M.singleton d t) (M.insertWith (<>) d t) $ a !? r)
                 a
 
-            t' = either (const []) (\a -> [a]) . fmap TFReach . mkReachVersionOf'
+            t' = either (const []) ((: []) . TFReach) . mkReachVersionOf'
 
             ils'' = flip mapMaybe ils' $ \DockerILS {..} -> do
               guard $ dils_Digest /= "<none>"
-              let ir = dils_Repository `elem` (("reachsh/" <>) <$> rights imagesAll)
+              let ir = dils_Repository `elem` (("reachsh/" <>) <$> imagesAll)
               let dt = case dils_Repository of
                     "reachsh/reach-cli" | dils_Tag == tagFor TFReachCLI -> const [TFReachCLI]
                     _ | ir -> t'
-                    _ -> \z -> [TFThirdParty z]
+                    i -> error $ "Unrecognized image " <> unpack i
               dr <- case dils_Repository of
-                "postgres" -> Just $ Left Postgres
-                _ | ir -> Just $ Right dils_Repository
+                _ | ir -> Just dils_Repository
                 _ -> Nothing
               Just (dr, dils_Digest, dt dils_Tag)
 
       when rl . liftIO $ removeFile l
 
       (latestScript, assocR) <- case (ms, mr) of
-        _ | ms /= "" && mr /= "" -> (pack ms, ) . maybe mempty id <$> (liftIO $ A.decodeFileStrict' mr)
+        _ | ms /= "" && mr /= "" -> (pack ms, ) . fromMaybe mempty <$> liftIO (A.decodeFileStrict' mr)
         _ -> remoteUpdates psb imagesAll
 
       -- Treat remote tags as unique and authoritative, but local tags might be
       -- repeated due to Docker manifest strangeness
-      let isR i d = maybe False (const True) $ assocR !? i >>= (!? d)
+      let isR i d = isJust $ assocR !? i >>= (!? d)
 
-      let tfThirdParty i t (d, ts) = isR i d && TFThirdParty t `elem` ts
       let tfReach i t (d, ts) = isR i d && (TFReach <$> mkReachVersionOf' t) `elem` (Right <$> ts)
       let tfReachCLI i (d, ts) = isR i d && TFReachCLI `elem` ts
 
       let mkQ mi mt m a i t = case a !? i of
             Nothing -> mi i t
             Just i' -> case i of
-              Left _ -> maybe' $ tfThirdParty i t
-              Right "reachsh/reach-cli" -> maybe' $ tfReachCLI i
-              Right _ -> maybe' $ tfReach i t
+              "reachsh/reach-cli" -> maybe' $ tfReachCLI i
+              _ -> maybe' $ tfReach i t
               where
                 maybe' x =
                   maybe (mt i t) (\(d, ts) -> m i d ts)
@@ -2178,27 +2127,16 @@ versionCompare2 = command "version-compare2" $ info f mempty
               where
                 dm = ld == rd
                 rts' = filter (`notElem` lts) rts
-            (DAQLMissingTag li _, DAQRMatch ri@(Left _) rd rts)
-              | li == ri && ri `elem` (pre <$> imagesForAllConnectors)
-              -> tp (mkNca nxa ri rd rts) nxa li ()
-              where nxa = mDorTs ri rd rts
             (DAQLMissingTag _ _, DAQRMatch i rd rts) -> mDorTs i rd rts
-            -- It's okay for a user to skip an unwanted connector + all its
-            -- dependent third-party images, but e.g. if devnet-algo exists
-            -- locally then postgres must also be synchronized
             (DAQLMissingImg li _, DAQRMatch ri rd rts)
               | li == ri && ri `elem` (pre <$> imagesForAllConnectors)
-              -> either (tp nca nxa li) (const nca) ri
+              -> nca
               where
                 nca = mkNca nxa ri rd rts
                 nxa = DAQNewDigestAvailable ri rd rts
             (_, DAQRMatch i d rts) -> DAQNewDigestAvailable i d rts
             where
-              pre = fmap ("reachsh/" <>)
-              tp nca nxa li _ = maybe nca (const nxa) $ do
-                let cs = rights . concat . L.filter (li `elem`)
-                      $ fmap pre . imagesFor <$> [minBound .. maxBound]
-                guard . any isJust $ ((assocL !?) . Right) <$> cs
+              pre = ("reachsh/" <>)
               -- When `REACH_CONNECTOR_MODE` is set (except for `$conn-live`)
               -- synchronizing `devnet-$conn` should be mandatory
               mkNca x ri rd rts = case connectorMode of
@@ -2232,18 +2170,16 @@ versionCompare2 = command "version-compare2" $ info f mempty
                     , maybe True ((== rvEnvNumericMinor) . Just) mn
                     ]
 
-      let reaches = query t . Right . ("reachsh/" <>) <$> rights imagesAll
-      let others = lefts imagesAll <&> \o -> query (imageThirdPartyTagRaw o) $ Left o
-      let both = reaches <> others
+      let images = query t . ("reachsh/" <>) <$> imagesAll
 
-      let uImgs = [Image' a | DAQUnknownImg a _ <- both]
-      let uTags = [(Image' x, y) | DAQUnknownTag x y <- both]
+      let uImgs = [Image' a | DAQUnknownImg a _ <- images]
+      let uTags = [(Image' x, y) | DAQUnknownTag x y <- images]
 
       let vc@VersionCompare{..} = VersionCompare
-            [VersionCompareIDTs (Image' x) y z | DAQSync x y z <- both]
-            [VersionCompareIDTs (Image' x) y z | DAQNewDigestAvailable x y z <- both]
-            [VersionCompareIDTs (Image' x) y z | DAQNewTags x y z <- both]
-            [VersionCompareIDTs (Image' x) y z | DAQNewConnectorAvailable x y z <- both]
+            [VersionCompareIDTs (Image' x) y z | DAQSync x y z <- images]
+            [VersionCompareIDTs (Image' x) y z | DAQNewDigestAvailable x y z <- images]
+            [VersionCompareIDTs (Image' x) y z | DAQNewTags x y z <- images]
+            [VersionCompareIDTs (Image' x) y z | DAQNewConnectorAvailable x y z <- images]
 
       case (length uImgs > 0, length uTags > 0, j, up) of
         (True, _, _, _) -> liftIO $ do
@@ -2262,7 +2198,7 @@ versionCompare2 = command "version-compare2" $ info f mempty
           let confF = e_dirConfigContainer </> confE
           let confC = pack confF
           let confH = pack $ e_dirConfigHost </> confE
-          let ec = if length (vc_synced <> vc_newConnector) >= length both then "0" else "60"
+          let ec = if length (vc_synced <> vc_newConnector) >= length images then "0" else "60"
 
           liftIO $ do
             createDirectoryIfMissing True $ takeDirectory confF
@@ -2308,16 +2244,10 @@ versionCompare2 = command "version-compare2" $ info f mempty
           let p x = imgTxt x <> T.replicate (m - T.length (imgTxt x)) " "
           let n a = when (any ((> 0) . length) a) $ putStrLn ""
 
-          let r = flip either (const "") $ \x ->
-                let rs = rights . concat . L.filter (Left x `elem`)
-                      $ fmap (fmap ("reachsh/" <>)) . imagesFor <$> [minBound .. maxBound]
-                in " (required by: " <> T.intercalate ", " rs <> ")"
-
-          let say = mapM_ $ \(VersionCompareIDTs x@(Image' x') y z) ->
+          let say = mapM_ $ \(VersionCompareIDTs x@(Image' _) y z) ->
                 T.putStrLn $
                   " * " <> p x <> "  " <> s y <> ":  "
                     <> T.intercalate ", " (tagFor <$> L.sort z)
-                    <> r x'
 
           let ancas (VersionCompareIDTs x' y zs) = "\n" <> a <> "\n" <> T.intercalate "\n" b where
                 x = imgTxt x'
@@ -2370,7 +2300,7 @@ versionCompare2 = command "version-compare2" $ info f mempty
 
           let utd = "Reach's Docker images are up-to-date"
           let wyl = "Would you like to add the new connectors listed above?"
-          case length (vc_synced <> vc_newConnector) >= length both of
+          case length (vc_synced <> vc_newConnector) >= length images of
             True -> case length vc_newConnector == 0 of
               True -> do
                 liftIO $ do
