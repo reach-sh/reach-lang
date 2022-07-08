@@ -1294,7 +1294,7 @@ Example:
 
 ```js
 load: /examples/js-tests/index.mjs
-md5: 0779cd5bfb7d45de6a7f46b9cd6c7164
+md5: 9a27d958d40db261b33c6fe318e6bc25
 range: 118 - 119
 ```
 
