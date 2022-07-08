@@ -1290,17 +1290,6 @@ stdlib.parseInt(Int) => number
 
 Parses a signed `{!rsh} Int` into a JavaScript number.
 
-Example:
-
-```js
-load: /examples/js-tests/index.mjs
-md5: 9a27d958d40db261b33c6fe318e6bc25
-range: 118 - 119
-```
-
-In this example, the value of the `{!js} parseInt` of `k` is checked to see if it is not equal to -1.
-The statement contained within the braces following the `{!js} if` statement executes when the `{!js} if` statement resolves to true.
-
 ---
 @{ref("js", "numberToInt")}
 ```js
