@@ -1,6 +1,5 @@
 New tags are available for:
  * reachsh/devnet-algo   8e78dffa:  stable, 0, 0.1, 34107655, 2022-01-31
- * postgres              752a7fc4:  11-alpine (required by: reachsh/devnet-algo)
 
 The following images are fully synchronized:
  * reachsh/reach         fd08459b:  stable, 0, 0.1, 0.1.8, 34107655, 2022-01-31

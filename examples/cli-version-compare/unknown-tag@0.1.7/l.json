@@ -92,7 +92,5 @@
 { "Digest": "sha256:977b6f6d36c43824d800fba3f00f7d601c3aa529251d0a0c5b664dfb1e7bb924", "Repository": "reachsh/devnet-cfx", "Tag": "195b98ed" },
 { "Digest": "sha256:977b6f6d36c43824d800fba3f00f7d601c3aa529251d0a0c5b664dfb1e7bb924", "Repository": "reachsh/devnet-cfx", "Tag": "2022-01-24" },
 { "Digest": "sha256:7f10bb742d32f7c98c32160823635bf3e4137268ef7bb650f8d68dace93f1f9b", "Repository": "reachsh/devnet-cfx", "Tag": "2022-01-19" },
-{ "Digest": "sha256:7f10bb742d32f7c98c32160823635bf3e4137268ef7bb650f8d68dace93f1f9b", "Repository": "reachsh/devnet-cfx", "Tag": "d5a45f78" },
-{ "Digest": "sha256:3162a6ead070474b27289f09eac4c865e75f93847a2d7098f718ee5a721637c4", "Repository": "postgres", "Tag": "latest" },
-{ "Digest": "sha256:752a7fc46308a48ac55d4c20c640c1a5fc5761839f40d3c3e8ffb34492eb0ac4", "Repository": "postgres", "Tag": "11-alpine" }
+{ "Digest": "sha256:7f10bb742d32f7c98c32160823635bf3e4137268ef7bb650f8d68dace93f1f9b", "Repository": "reachsh/devnet-cfx", "Tag": "d5a45f78" }
 ]
