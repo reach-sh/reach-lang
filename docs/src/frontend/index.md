@@ -303,6 +303,16 @@ The `evt` argument is an unstable object that describes the request.
 The `pre` argument is a Promise of an unstable object with details about the request, available after the request has been made.
 The `post` argument is a Promise of an unstable object with details about the completed request, available after the request has been completed.
 
+Example:
+
+```js
+load: /examples/signingMonitor/index.mjs
+md5: ba025829c65235bef3ceddc4a5f0c150
+range: 5-7
+```
+
+This sample has a hook of `{!js} async` and performs an `{!js} await` for the `{!js} Promise` of both `pre` and `post`.
+
 # {#ref-frontends-js-acc} Creating an Account Handle
 
 @{ref("js","acc")}
