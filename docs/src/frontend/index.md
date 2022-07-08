@@ -510,6 +510,16 @@ acc.networkAccount => networkAccount
 
 Returns the connector-specific account specification of a Reach account abstraction.
 
+Example:
+
+```js
+load: /examples/clawback/index.mjs
+md5: edcec408b29e3995381679f71381dc80
+range: 26-26
+```
+
+This code sets the `aliceAddr` to the consensus network format of the wallet address of `accAlice` using the `{!js} networkAccount` method.
+
 ---
 @{ref("js", "getAddress")}
 ```js
