@@ -502,7 +502,7 @@ instance ToJSON Image' where toJSON (Image' i) = toJSON i
 instance FromJSON Image' where
   parseJSON = withText "Image'" $ \case
     i | i `elem` (("reachsh/" <>) <$> imagesAll) -> pure $ Image' i
-    i -> error $ "unrecognized Image " <> unpack i
+    i -> error $ "unrecognized Image \"" <> unpack i <> "\""
 
 imagesCommon :: [Image]
 imagesCommon =
@@ -1817,7 +1817,7 @@ instance FromJSON TagFor where
   parseJSON = withText "TagFor" $ \case
     "latest" -> pure TFReachCLI -- NB this is incidentally true today, but may not always be
     "" -> fail "Invalid `TagFor` \"\""
-    t -> pure . either (error $ "Invalid `TagFor` " <> unpack t) TFReach $ mkReachVersionOf' t
+    t -> pure . either (error $ "Invalid `TagFor` \"" <> unpack t <> "\"") TFReach $ mkReachVersionOf' t
 
 type DockerAssoc = M.Map Image (M.Map Digest [TagFor])
 
@@ -2084,7 +2084,7 @@ versionCompare2 = command "version-compare2" $ info f mempty
               let dt = case dils_Repository of
                     "reachsh/reach-cli" | dils_Tag == tagFor TFReachCLI -> const [TFReachCLI]
                     _ | ir -> t'
-                    i -> error $ "Unrecognized image " <> unpack i
+                    i -> error $ "Unrecognized image \"" <> unpack i <> "\""
               dr <- case dils_Repository of
                 _ | ir -> Just dils_Repository
                 _ -> Nothing
@@ -2130,10 +2130,7 @@ versionCompare2 = command "version-compare2" $ info f mempty
             (DAQLMissingTag _ _, DAQRMatch i rd rts) -> mDorTs i rd rts
             (DAQLMissingImg li _, DAQRMatch ri rd rts)
               | li == ri && ri `elem` (pre <$> imagesForAllConnectors)
-              -> nca
-              where
-                nca = mkNca nxa ri rd rts
-                nxa = DAQNewDigestAvailable ri rd rts
+              -> mkNca (DAQNewDigestAvailable ri rd rts) ri rd rts
             (_, DAQRMatch i d rts) -> DAQNewDigestAvailable i d rts
             where
               pre = ("reachsh/" <>)
