@@ -967,9 +967,9 @@ Launched on the network by `{!js} accCreator`.
 Example:
 
 ```js
-load: examples/atomic-swap/index.mjs
+load: /examples/atomic-swap/index.mjs
 md5: 9e2dd8f8db4ef6e83cc5c95fab50fd80
-range: 27-28
+range: 24-25
 ```
 
 The tokens `gil` and `zorkmid` are created in this code snippet, and then launched using `{!js} stdlib.launchToken` by the `{!js} accCreator` account with the symbols `GIL` and `ZMD`.
