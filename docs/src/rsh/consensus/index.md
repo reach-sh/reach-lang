@@ -487,14 +487,15 @@ This value is intended to be a digest of a larger metadata document.
 + `decimals`: A value of type `{!rsh} UInt`; defaults to `{!rsh} 6` on Algorand, and `{!rsh} 18` on Ethereum and Conflux.
 
 The following examples demonstrate how the details above may be used:
+
 ```reach
-load: examples/token-decimals/index.rsh
+load: /examples/token-decimals/index.rsh
 md5: 0b9ee900d1bd566dcc7383749d770ab1
 range: 14 - 17
 ```
 
 ```reach
-load: examples/mint-basic/index.rsh
+load: /examples/mint-basic/index.rsh
 md5: 1ccb4872438f69d9c8af711b08d817a4
 range: 28 - 33
 ```
@@ -680,7 +681,7 @@ While the example below shows the usage of  `{!rsh} s.remove(ADDRESS)`
 ```reach
 load: /examples/dominant-assurance/index.rsh
 md5: d327454b582bdfa6f03d71de5ce2dd97
-range: 143 - 143
+range: 144 - 144
 ```
 
 To check whether an address is in the set, `{!rsh} s.member(ADDRESS)` is used.
