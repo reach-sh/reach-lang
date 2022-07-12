@@ -1196,14 +1196,18 @@ export const formatWithDecimals = (amt: unknown, decimals: number): string => {
   return handleFormat(amt, decimals, decimals)
 }
 
-export const apiStateMismatchError = (bin: IBackend<any>, es: BigNumber, as: BigNumber) : Error => {
+export const apiStateMismatchError = (bin: IBackend<any>, es: BigNumber | BigNumber[], as: BigNumber) : Error => {
   const formatLoc = (s:BigNumber) =>
     formatAssertInfo(bin._stateSourceMap[s.toNumber()]);
-  const el = formatLoc(es);
+  const msg = (s: any, l: any) => `\nState ${s} corresponds to the commit() at ${l}`;
+  const el = Array.isArray(es)
+              ? es.map((s) => msg(s, formatLoc(s)))
+              :  msg(es, formatLoc(es));
   const al = formatLoc(as);
-  return Error(`Expected the DApp to be in state ${es}, but it was actually in state ${as}.\n`
-    + `\nState ${es} corresponds to the commit() at ${el}`
-    + `\nState ${as} corresponds to the commit() at ${al}`
+  const fmtEs = Array.isArray(es) ? "[" + es + "]" : es;
+  return Error(`Expected the DApp to be in state(s) ${fmtEs}, but it was actually in state ${as}.\n`
+    + el
+    + msg(as, al)
     + (el == al ? "\n(This means that the commit() is in the continuation of impure control-flow.)" : ""));
 };
 
