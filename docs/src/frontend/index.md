@@ -303,6 +303,16 @@ The `evt` argument is an unstable object that describes the request.
 The `pre` argument is a Promise of an unstable object with details about the request, available after the request has been made.
 The `post` argument is a Promise of an unstable object with details about the completed request, available after the request has been completed.
 
+Example:
+
+```js
+load: /examples/signingMonitor/index.mjs
+md5: ba025829c65235bef3ceddc4a5f0c150
+range: 5-7
+```
+
+This sample has a hook of `{!js} async` and performs an `{!js} await` for the `{!js} Promise` of both `pre` and `post`.
+
 # {#ref-frontends-js-acc} Creating an Account Handle
 
 @{ref("js","acc")}
@@ -436,12 +446,12 @@ You can use `{!js} canFundFromFaucet` to check if `{!js} fundFromFaucet` can be 
 Example:
 
 ```js
-load: /examples/js-tests/index.mjs
-md5: 9a27d958d40db261b33c6fe318e6bc25
-range: 327 - 328
+load: /examples/rps-9-web/index.js
+md5: 29b1b17df91e1d49053670f72eebc6b4
+range: 32 - 34
 ```
 
-This code creates an account and then funds that account with 100,000 network tokens from a private faucet.
+This code funds the account with `fundAmount` worth of tokens from a faucet.
 This is used in cases where funding from a normal faucet is difficult or impossible, such as when using large token quantities.
 
 ---
@@ -457,7 +467,7 @@ Example:
 ```js
 load: /examples/rps-9-web/index.js
 md5: 29b1b17df91e1d49053670f72eebc6b4
-range: 25 - 34
+range: 26 - 34
 ```
 
 This React frontend from the [Rock, Paper, Scissors](##tut) tutorial checks if the account can be funded from a faucet using `{!js} canFundFromFaucet`.
@@ -499,6 +509,16 @@ acc.networkAccount => networkAccount
 ```
 
 Returns the connector-specific account specification of a Reach account abstraction.
+
+Example:
+
+```js
+load: /examples/clawback/index.mjs
+md5: edcec408b29e3995381679f71381dc80
+range: 26-26
+```
+
+This code sets `aliceAddr` to the consensus network format of the wallet address of `accAlice` using the `{!js} networkAccount` method.
 
 ---
 @{ref("js", "getAddress")}
@@ -1121,18 +1141,6 @@ stdlib.protect(t, x) => x
 
 Asserts that value `{!js} x` has Reach type `{!js} t`. An exception is thrown if this is not the case.
 
-Example:
-
-```reach
-load: /examples/js-tests/index.mjs
-md5: 9a27d958d40db261b33c6fe318e6bc25
-range: 352 - 355
-```
-
-This code tests to see if variables that are supposed to be `{!js} null` return `{!js} null`.
-The first `expect` asserts that `{!js} null` has Reach type `{!js} T_Null`. 
-The next `expect` asserts that `{!js} undefined` has Reach type `{!js} T_Null`. 
-
 ---
 @{ref("js", "T_Null")}@{ref("js", "T_Bool")}@{ref("js", "T_UInt")}@{ref("js", "T_Bytes")}@{ref("js", "T_Address")}@{ref("js", "T_Array")}@{ref("js", "T_Tuple")}@{ref("js", "T_Object")}
 ```js
@@ -1301,17 +1309,6 @@ stdlib.parseInt(Int) => number
 ```
 
 Parses a signed `{!rsh} Int` into a JavaScript number.
-
-Example:
-
-```js
-load: /examples/js-tests/index.mjs
-md5: 9a27d958d40db261b33c6fe318e6bc25
-range: 444 - 448
-```
-
-In this example, `{!js} stdlib`'s `{!js} parseInt` takes an object as its parameter and returns a number.
-The object in this snippet has a `{!js} sign` property, and an `{!js} i` property, which contains the number to parse.
 
 ---
 @{ref("js", "numberToInt")}
@@ -1526,6 +1523,16 @@ test.chk(id: string, actual:any, expected:any, xtra:object): void
 
 Runs a check named `id` that does not fail if `actual` is the same as `expected`.
 Records additional information in the log from `xtra`.
+
+Example:
+
+```js
+load: /examples/map-tuple-key/index.mjs
+md5: cd5c8b278ef9f5ee40c13627cb23889e
+range: 34 - 36
+```
+
+In this code, the `{!js} chk` asserts that the unsigned integer `i[1]` is the same as `bn(val)`.
 
 @{ref("js", "test.chkErr")}
 ```js
