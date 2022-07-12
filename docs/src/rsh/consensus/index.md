@@ -406,7 +406,7 @@ A transfer expression may only occur within a consensus step.
 ```reach
 load: /examples/simple-nft-auction/index.rsh
 md5: 1f95425a9feb9f5bf1e677461a83df4e
-range: 59-60
+range: 60-61
 ```
 
 The first `{!rsh} transfer` example from the Simple NFT Auction pays the `lastPrice` to the NFT `Creator`.
