@@ -1561,8 +1561,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
     };
 
-    const getCurrentStep_ = async (getC:GetC): Promise<BigNumber> => {
-      const { getAppState, getGlobalState } = await getC();
+    const getCurrentStep_ = async (ch:ContractHandler): Promise<BigNumber> => {
+      const { getAppState, getGlobalState } = ch;
       const appSt = await getAppState();
       if ( !appSt ) { throw Error(`getCurrentStep_: no appSt`); }
       const gs = await getGlobalState(appSt);
@@ -1613,7 +1613,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
 
       const getCurrentStep = async () => {
-        return await getCurrentStep_(getC);
+        return await getCurrentStep_(await getC());
       }
 
       const getState = async (vibne:BigNumber, vtys:AnyALGO_Ty[]): Promise<Array<any>> => {
@@ -2135,8 +2135,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         async (...args: any[]): Promise<any> => {
           debug('getView1', v, k, args);
           const { decode } = vim;
+          const ch = await getC();
           try {
-            const step = await getCurrentStep_(getC);
+            const step = await getCurrentStep_(ch);
             const vi = bigNumberToNumber(step);
             const vtys = vs[vi];
             if ( ! vtys ) { throw Error(`no views for state ${step}`); }
