@@ -726,17 +726,19 @@ type EQInitArgs = {
 };
 type EventQueue = IEventQueue<EQInitArgs, IndexerTxn, RecvTxn>;
 const newEventQueue = (): EventQueue => {
-  const getTxns = async (dhead:string, initArgs:EQInitArgs, ctime: BigNumber, howMany: number): Promise<EQGetTxnsR<IndexerTxn>> => {
+  const getTxns = async (dhead:string, initArgs:EQInitArgs, ctime: BigNumber, howMany: number, limsug?: number): Promise<EQGetTxnsR<IndexerTxn>> => {
     const { ApplicationID } = initArgs;
     const indexer = await getIndexer();
     const mtime = bigNumberToNumber(ctime.add(1));
     debug(dhead, { ctime, mtime });
     const appn = bigNumberToNumber(ApplicationID);
-    const query =
+    let query =
       indexer.searchForTransactions()
         .applicationID(appn)
         //.txType('appl')
         .minRound(mtime);
+    // TODO: ignore limsug on randlabs?
+    if (limsug) { query = query.limit(limsug); }
     const q = query as unknown as ApiCall<IndexerQueryMRes>
     const res = await doQuery_(dhead, q, howMany);
     const txns: Array<IndexerTxn> = [];
@@ -2567,7 +2569,7 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
 
   // Next, we check that it was created with this program and wasn't created
   // with a different program first (which could have modified the state)
-  const iat = await eq.deq(dhead);
+  const iat = await eq.deq(dhead, 1);
   debug({iat});
   chkeq_bn(iat['created-application-index'], ApplicationID, 'app created');
   chkeq_bn(iat['application-index'], 0, 'app created');

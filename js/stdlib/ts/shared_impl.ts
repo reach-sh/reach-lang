@@ -901,8 +901,8 @@ export interface IEventQueue<EQInitArgs, RawTxn, ProcTxn> {
   isInited : () => boolean,
   init: (args:EQInitArgs) => void,
   pushIgnore: (pred: Pred<RawTxn>) => void,
-  peq: (lab: string, didTimeout: AsyncPred<Time>) => Promise<EQPeqResult<ProcTxn>>,
-  deq: (dhead: string) => Promise<ProcTxn>,
+  peq: (lab: string, didTimeout: AsyncPred<Time>, limsug?: number) => Promise<EQPeqResult<ProcTxn>>,
+  deq: (dhead: string, limsug?: number) => Promise<ProcTxn>,
 };
 export interface EQGetTxnsR<RawTxn> {
   txns: Array<RawTxn>,
@@ -911,7 +911,7 @@ export interface EQGetTxnsR<RawTxn> {
 export interface EQCtorArgs<EQInitArgs, RawTxn, ProcTxn> {
   raw2proc: (t:RawTxn) => ProcTxn,
   alwaysIgnored: Pred<RawTxn>,
-  getTxns: (dhead:string, initArgs:EQInitArgs, ctime: Time, howMany: number) => Promise<EQGetTxnsR<RawTxn>>,
+  getTxns: (dhead:string, initArgs:EQInitArgs, ctime: Time, howMany: number, limsug?: number) => Promise<EQGetTxnsR<RawTxn>>,
   getTxnTime: (x:RawTxn) => Time,
 };
 export const makeEventQueue = <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<EQInitArgs,RawTxn,ProcTxn>): IEventQueue<EQInitArgs, RawTxn, ProcTxn> => {
@@ -930,7 +930,7 @@ export const makeEventQueue = <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<
     customIgnore.push(pred);
   };
   const notIgnored = (txn:RawTxn) => (! alwaysIgnored(txn));
-  const peq = async (lab: string, didTimeout: AsyncPred<Time>): Promise<EQPeqResult<ProcTxn>> => {
+  const peq = async (lab: string, didTimeout: AsyncPred<Time>, limsug?: number): Promise<EQPeqResult<ProcTxn>> => {
     const dhead = `${lab} peq`;
     const updateCtime = (ntime:Time): Time => {
       if ( ctime.lt(ntime) ) {
@@ -943,7 +943,7 @@ export const makeEventQueue = <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<
       throw Error(`${dhead}: not initialized`); }
     let howMany = 0;
     while ( ptxns.length === 0 ) {
-      let { txns, gtime } = await getTxns(dhead, initArgs, ctime, howMany++);
+      let { txns, gtime } = await getTxns(dhead, initArgs, ctime, howMany++, limsug);
       if ( txns.length === 0 && gtime ) { updateCtime(gtime); }
       else {
         const r = (x:RawTxn): Time => updateCtime(getTxnTime(x));
@@ -972,8 +972,8 @@ export const makeEventQueue = <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<
     }
     return { timeout: false, txn: ptxns[0] };
   };
-  const deq = async (dhead: string): Promise<ProcTxn> => {
-    const r = await peq(dhead, neverTrue);
+  const deq = async (dhead: string, limsug?: number): Promise<ProcTxn> => {
+    const r = await peq(dhead, neverTrue, limsug);
     if ( r.timeout ) { throw Error('impossible'); }
     ptxns.shift();
     return r.txn;
