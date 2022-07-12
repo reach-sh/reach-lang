@@ -2,7 +2,7 @@ FROM reachsh/runner:latest
 
 RUN apk --no-cache add make
 
-COPY Makefile package.json /app/
+COPY Makefile package.json package-lock.json /app/
 
 RUN make js-install
 

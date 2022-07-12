@@ -4,6 +4,8 @@ FILE=$2
 shift 2
 ARGS=( "$@" )
 
+MD5=md5sum; if [ ! "$(command -v $MD5)" ]; then MD5=md5; fi
+
 HERE=$(dirname "$0")
 ROOT="${HERE}"/..
 mkdir -p .docker-root
@@ -44,6 +46,12 @@ if [ "${CIRCLE_BRANCH}" = "" ] ; then
   CIRCLE_BRANCH=master
 fi
 
+if [ "${CIRCLE_BRANCH}" != "master" ]; then 
+  MD5_BRANCH=$(echo "${GITBRANCH}" | ${MD5} | awk '{print $1}')
+else
+  MD5_BRANCH="${CIRCLE_BRANCH}"
+fi
+
 CACHE_FROM=()
 dp () {
   if [ "${REACH_BUILD_NO_CACHE}" = "" ] ; then
@@ -53,7 +61,7 @@ dp () {
 }
 IMAGEC="${IMAGE}:circleci"
 dpb () {
-  dp "${IMAGEC}-${1}-${CIRCLE_BRANCH}"
+  dp "${IMAGEC}-${1}-${MD5_BRANCH}"
   if [ "${CIRCLE_BRANCH}" != "master" ] ; then
     dp "${IMAGEC}-${1}-master"
   fi
@@ -70,7 +78,7 @@ export DOCKER_BUILDKIT
 build_image () {
     LAYER=$1
     TARGET=()
-    TAG="--tag=${IMAGEC}-${LAYER}-${CIRCLE_BRANCH}"
+    TAG="--tag=${IMAGEC}-${LAYER}-${MD5_BRANCH}"
     if [ "x${LAYER}" != "x" ]; then
       TARGET+=("--target=${LAYER}")
     fi
@@ -86,5 +94,5 @@ for i in $LAYERS; do
 done
 
 build_image ""
-docker tag "${IMAGEC}--${CIRCLE_BRANCH}" "${IMAGE}:latest"
-docker tag "${IMAGEC}--${CIRCLE_BRANCH}" "${IMAGE}:circleci-${CIRCLE_SHA1}"
+docker tag "${IMAGEC}--${MD5_BRANCH}" "${IMAGE}:latest"
+docker tag "${IMAGEC}--${MD5_BRANCH}" "${IMAGE}:circleci-${CIRCLE_SHA1}"

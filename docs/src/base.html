@@ -20,11 +20,25 @@
       }
     });
 
+    const initializeThemeSwitcher = () => {
+      const { classList } = document.documentElement;
+      const toggle = document.getElementById("themeToggler");
+      if (window.matchMedia && window.matchMedia(
+        '(prefers-color-scheme: dark)'
+      ).matches) {
+        classList.add("night");
+        toggle.innerHTML = `<i class="fas fa-sun fa-lg"></i>`;
+      } else {
+        classList.add("day");
+        toggle.innerHTML = `<i class="fas fa-moon fa-lg"></i>`;
+      }
+    };
     const setDisplayStyleFor = (id) => {
       const displayStyle = localStorage.getItem(id);
       document.getElementById(id).style.display = displayStyle;
     };
     window.onload = (_event) => {
+      initializeThemeSwitcher();
       setDisplayStyleFor("book-col");
       setDisplayStyleFor("otp-col");
     };
@@ -34,6 +48,19 @@
     };
     const setItemToNone = (_event, item) => {
       localStorage.setItem(item, "none");
+    };
+
+    // https://stackoverflow.com/a/68824350
+    const toggleTheme = () => {
+      const { classList } = document.documentElement;
+      const toggle = document.getElementById("themeToggler");
+      if (classList.contains("day")) {
+        classList.replace("day", "night");
+        toggle.innerHTML = `<i class="fas fa-sun fa-lg"></i>`;
+      } else if (classList.contains("night")) {
+        classList.replace("night", "day");
+        toggle.innerHTML = `<i class="fas fa-moon fa-lg"></i>`;
+      }
     };
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -66,6 +93,7 @@
 
         <div class="navbar-nav" style="cursor: pointer;">
           <li class="nav-item nav-link">
+            <a class="nav-link-a"  id="themeToggler" onclick="toggleTheme()"></a>
             <a class="nav-link-a follow" href="https://github.com/reach-sh/reach-lang/discussions"><i class="fas fa-comments fa-lg"></i></a>
             <a class="nav-link-a follow" href="https://discord.com/invite/AZsgcXu"><i class="fab fa-discord fa-lg"></i></a>
             <a class="nav-link-a follow" href="https://github.com/reach-sh/reach-lang"><i class="fab fa-github fa-lg"></i></a>
@@ -95,7 +123,10 @@
           class="btn btn-outline-secondary btn-sm hide-book-icon"
           onclick="setItemToNone(event, 'book-col')"
         >
-          <i class="fas fa-times"></i>
+          <img
+            alt="close left sidebar"
+            src="/assets/icons/Colorway=Light Mode, State=Hover, Action=Collapse.svg"
+          />
         </button>
       </div>
     </div>
@@ -111,7 +142,10 @@
                 class="btn btn-outline-secondary btn-sm show-book-col"
                 onclick="setItemToBlock(event, 'book-col')"
               >
-                <i class="fas fa-bars"></i>
+                <img
+                  alt="expand left sidebar"
+                  src="/assets/icons/Colorway=Dark Mode, State=Hover, Action=Expand.svg"
+                />
               </button>
             </div>
 

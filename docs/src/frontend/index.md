@@ -168,6 +168,32 @@ Multiple free API providers are used behind the scenes, [as implemented by ether
 On Algorand, `{!js} 'MainNet'` will connect to MainNet, and `{!js} 'TestNet'` to TestNet.
 The free RandLabs API provider is used ([https://algoexplorerapi.io](https://algoexplorerapi.io)).
 
+Provider connections are created with the code below:
+
+`{!js} MainNet`
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: a0d32a930197470096ccdd9fcaeace96
+range: 9-9
+```
+
+`{!js} TestNet`
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: a0d32a930197470096ccdd9fcaeace96
+range: 11-11
+```
+
+`{!js} LocalHost`
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: a0d32a930197470096ccdd9fcaeace96
+range: 13-13
+```
+
 ---
 @{ref("js", "providerEnvByName")}
 ```js
@@ -296,6 +322,16 @@ The meaning of "default account" varies between contexts.
 When running in the browser, the default account will be connected to a wallet.
 This promise will be rejected with an exception if no sensible default account can be accessed for the current context.
 
+Example:
+
+```js
+load: /examples/rsvp/index.js
+md5: ac7d3caae5994352ef4cf445515730ab
+range: 28-28
+```
+
+This code uses `{!js} stdlib.getDefaultAccount` to set `acc` to the account that was connected to the DApp earlier in the code.
+
 ---
 
 @{ref("js", "newTestAccount")}@{ref("js", "stdlib.newTestAccount")}
@@ -401,8 +437,8 @@ Example:
 
 ```js
 load: /examples/js-tests/index.mjs
-md5: 580bfc156974144e2c6505b75fe4a440
-range: 326 - 327
+md5: 9a27d958d40db261b33c6fe318e6bc25
+range: 327 - 328
 ```
 
 This code creates an account and then funds that account with 100,000 network tokens from a private faucet.
@@ -492,6 +528,17 @@ acc.setDebugLabel(string) => acc
 
 An account may set a distinguishing label to use in debug logs. If no label is provided, then the first four digits of the account address will be used.
 
+Example:
+
+```js
+load: /examples/ctc-address/index.mjs
+md5: 0a4b59a9ff0f11d45e20f90fc2f1a233
+range: 9-10
+```
+
+This code uses `{!js} setDebugLabel` to set `accAlice` to the label of `Alice`, and `accBob` to `Bob`.
+This makes debugging much simpler, especially when using a large number of accounts, because each account can be set to a different human-readable string.
+
 ---
 @{ref("js", "tokenAccept")}
 ```js
@@ -500,6 +547,16 @@ acc.tokenAccept(token) => Promise<void>
 
 Returns a Promise that completes when the Reach account abstraction is ready to accept non-network tokens specified by the `{!js} token`.
 This does nothing on some consensus networks, but should always be used to ensure your frontend is blockchain agnostic.
+
+Example:
+
+```js
+load: examples/atomic-swap/index.mjs
+md5: 9e2dd8f8db4ef6e83cc5c95fab50fd80
+range: 37-40
+```
+
+Here, `Alice` and `Bob` opt-in to the tokens `zorkmid` and `gil` using `{!js} tokenAccept` prior to receiving them.
 
 ---
 @{ref("js", "tokenAccepted")}
@@ -525,7 +582,18 @@ acc.balanceOf(token?) => Promise<BigNumber>
 stdlib.balanceOf(acc, token?) => Promise<BigNumber>
 ```
 
-Promises the balance of network tokens (or non-network tokens if `{!js} token` is provided) held by given by a Reach account abstraction `{!js} acc`.
+Promises the balance of network tokens (or non-network tokens if `{!js} token` is provided) held by given Reach account abstraction `{!js} acc`.
+
+Example:
+
+```js
+load: examples/raffle/index.mjs
+md5: 69477201beedc87b2616001290ae29cf
+range: 10-10
+```
+
+This code obtains the balance of network tokens for a user, `{!js} who`, and sets it to the `getBalance` object.
+This makes the account balance simpler to reference later in the code, such as displaying balances after transactions, proving that cancelled transactions did not transfer tokens, etc.
 
 ---
 @{ref("js", "balancesOf")}@{ref("js", "stdlib.balancesOf")}@{ref("js", "acc.balancesOf")}
@@ -538,6 +606,16 @@ for a given Reach account `{!js} acc`.
 If `{!js} tokens` contains a `{!js} null`,
 the corresponding position in the output array will contain the account's balance of network tokens.
 This function is more efficient for getting multiple token balances than repeated calls to `{!js} stdlib.balanceOf`.
+
+Example: 
+
+```js
+load: examples/account-balancesOf/index.mjs
+md5: df8e6d557df389629e04f6eb544a7baf
+range: 22-22
+```
+
+The `eggBal`, `bknBal`, and `tstBal` array is set equal to the array of `egg.id`, `bkn.id`, `tst.id` using an `{!js} await` and the `{!js} balancesOf` method.
 
 ---
 @{ref("js", "minimumBalanceOf")}
@@ -886,6 +964,16 @@ stdlib.launchToken(accCreator: Account, name: string, sym: string, opts?: Launch
 Launches a non-network token with the given `{!js} name` and unit symbol `{!js} sym`.
 Launched on the network by `{!js} accCreator`.
 
+Example:
+
+```js
+load: examples/atomic-swap/index.mjs
+md5: 9e2dd8f8db4ef6e83cc5c95fab50fd80
+range: 27-28
+```
+
+The tokens `gil` and `zorkmid` are created in this code snippet, and then launched using `{!js} stdlib.launchToken` by the `{!js} accCreator` account with the symbols `GIL` and `ZMD`.
+
 Possible options to provide in `{!js} opts` include:
 + `{!js} decimals` The number of digits to use after the decimal point when displaying the non-network token.
 The default is the same as the network token.
@@ -965,6 +1053,16 @@ You may provide an optional `{!js} onProgress` callback, used for reporting prog
 which may be called many times up until the specified network time.
 It will receive an object with keys `{!js} current` and `{!js} target`,
 
+Example:
+
+```js
+load: /examples/pr855/index.mjs
+md5: 35b43976f21f4043f858cf344e210904
+range: 20-22
+```
+
+The `{!js} while` statement in this code has an `{!js} await` that has the code wait the amount of time equal to `moment` by using `{!js} waitUntilTime`.
+
 ---
 @{ref("js", "stdlib.waitUntilSecs")}@{ref("js", "waitUntilSecs")}
 ```js
@@ -1027,8 +1125,8 @@ Example:
 
 ```reach
 load: /examples/js-tests/index.mjs
-md5: 580bfc156974144e2c6505b75fe4a440
-range: 351 - 354
+md5: 9a27d958d40db261b33c6fe318e6bc25
+range: 352 - 355
 ```
 
 This code tests to see if variables that are supposed to be `{!js} null` return `{!js} null`.
@@ -1208,8 +1306,8 @@ Example:
 
 ```js
 load: /examples/js-tests/index.mjs
-md5: 580bfc156974144e2c6505b75fe4a440
-range: 424 - 428
+md5: 9a27d958d40db261b33c6fe318e6bc25
+range: 444 - 448
 ```
 
 In this example, `{!js} stdlib`'s `{!js} parseInt` takes an object as its parameter and returns a number.
@@ -1295,7 +1393,7 @@ The following exports are for dealing with network tokens.
 stdlib.standardUnit // string
 stdlib.atomicUnit // string
 stdlib.minimumBalance // atomicUnitAmount
-stdlib.parseCurrency(standardUnitAmount: int) => atomicUnitAmount
+stdlib.parseCurrency(standardUnitAmount: int, decimals?: number) => atomicUnitAmount
 stdlib.formatCurrency(atomicUnitAmount: int) => string  // display amount in standard unit
 stdlib.formatWithDecimals(atomicUnitAmount: int, tokenDecimals: int) => string  // display amount of atomic unit with custom decimal place
 ```

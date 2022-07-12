@@ -30,7 +30,7 @@ RUN	cmake --build build && cmake --install build
 
 FROM $ALPINE_IMAGE
 RUN apk update
-RUN apk add ncurses ncurses-dev libc6-compat zlib-dev gcc g++ git gmp-dev
+RUN apk add ncurses ncurses-dev libc6-compat zlib-dev gcc g++ git gmp-dev mariadb-connector-c-dev pcre-dev
 RUN ln -s /lib64/ld-linux-x86-64.so.2 /lib/ld-linux-x86-64.so.2
 RUN ln -s /usr/lib/libncursesw.so.6 /usr/lib/libtinfo.so.6
 RUN ln -s /usr/lib/libtinfo.so.6 /usr/lib/libtinfo.so
@@ -42,7 +42,7 @@ RUN apk add make curl bash
 COPY .docker-root ./.docker-root
 COPY Makefile.docker ./Makefile
 RUN make ROOT=.docker-root install-mo
-COPY package.mo.yaml ./
+COPY package.open.yaml ./
 RUN make ROOT=.docker-root package.yaml
 
 COPY stack.yaml stack.yaml.lock ./

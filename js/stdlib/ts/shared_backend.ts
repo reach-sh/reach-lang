@@ -5,11 +5,13 @@ import {
   bigNumberToNumber,
 } from './CBR';
 import {
+  apiStateMismatchError,
   debug,
   j2s,
 } from './shared_impl';
 export {
   bigNumberToNumber,
+  apiStateMismatchError,
 };
 void(debug);
 

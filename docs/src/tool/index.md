@@ -209,6 +209,22 @@ You can halt all Dockerized Reach apps and devnets by running
 $ reach down
 ```
 
+# {#ref-usage-clean} @{ref("cmd", "reach clean")} `reach clean`
+
+You can delete the contents of `build/index.main.mjs` with
+
+```cmd
+$ reach clean
+```
+
+This command is useful when the backend's version no longer matches the Reach standard library you have installed and you need to recompile.
+
+The standard usage is `{!cmd} reach clean [MODULE] [IDENT]` where `MODULE` is `index` by default and `IDENT` is `main`. 
+Changing the default values will change the `mjs` file `{!cmd} reach clean` seeks to delete.
+
+If `MODULE` is a directory then `{!cmd} reach clean` will `cd` into `MODULE` and remove `build/index.IDENT.mjs`.
+If `MODULE` is a file name then `{!cmd} reach clean` will remove `build/MODULE.IDENT.mjs`.
+
 # {#ref-usage-scaffold} @{ref("cmd", "reach scaffold")} `reach scaffold`
 
 You can create templated `Dockerfile` and `package.json` files for a simple Reach app by running
@@ -218,6 +234,20 @@ $ reach scaffold
 ```
 
 The files created are the same as those used temporarily by `{!cmd} reach run`.
+
+# {#ref-usage-support} @{ref("cmd", "reach support")} `reach support`
+
+You can upload a gist to GitHub using
+
+```cmd
+$ reach support path/to/file1 path/to/file2 path/to/file3 ...
+```
+
+`{!cmd} reach support` takes a list of files that defaults to `index.rsh` and `index.mjs` if called without parameters.
+
+It will fail at the first file it fails to find.
+
+If all passed files are present, this command uploads those files as a gist to GitHub, and gives you a link to that gist that anyone with the link can view.
 
 # {#ref-usage-react} @{ref("cmd", "reach react")} `reach react`
 

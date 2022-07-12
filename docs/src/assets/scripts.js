@@ -16,6 +16,20 @@ const currentPage = {
 
 // let lang = window.navigator.language.split('-')[0];
 
+/*
+https://www.freecodecamp.org/news/javascript-debounce-example/
+*/
+function debounce(fn, timeoutInMilliseconds = 250) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(
+      () => { fn.apply(this, args); },
+      timeoutInMilliseconds
+    );
+  };
+};
+
 const getWinWidthStr = () => {
   const s = window.innerWidth;
   if (s >= 1200) { return 'xl' }
@@ -42,7 +56,7 @@ const establishDisplayFor = (id, selector, property) => {
   const button = doc.querySelector(selector);
   if (winWidth == 'xl' || winWidth == 'lg' || winWidth == 'md') {
     element.style.maxWidth = maxColWidth;
-    element.style.display = 'block';
+    element.style.display = 'none';
     button.style.display = 'none';
   } else if (winWidth == 'sm' || winWidth == 'xs') {
     element.style.maxWidth = 'none';
@@ -182,13 +196,20 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   doc.querySelector('div#hh-viewer-wrapper div#hh-viewer').textContent = '';
   doc.querySelector('div#hh-viewer-wrapper div#hh-viewer').append(pageDoc);
 
+  // Adjust page title, adding self-reference link
+  const theader = doc.querySelector('h1');
+  const hlink = theader.querySelector("a");
+  theader.remove();
+  tspan.appendChild(hlink);
+  tspan.className += " refHeader"
+
   // If search page.
   const searchInput = doc.getElementById('search-input');
   if (searchInput) {
     currentPage.bookPath = undefined;
     searchInput.focus();
     const searchResultsList = doc.getElementById('search-results-list');
-    searchInput.addEventListener('keyup', async (evt) => {
+    const search = async (_evt) => {
       const { hits } = await searchIndex.search(searchInput.value);
       if ( ! hits.length ) { return; }
       searchResultsList.innerHTML = '';
@@ -229,7 +250,8 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
         searchResultsList.append(e);
       });
       setClickFollowLink();
-    });
+    };
+    searchInput.addEventListener('keyup', debounce(search));
   }
 
   // Write otp html.
@@ -309,6 +331,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
 const clickFollowLink = async (evt) => {
   if ( evt.shiftKey || evt.ctrlKey || evt.metaKey ) { return; }
   const t = evt.target.closest('a');
+  if (t === null) { return; }
   if ( t.classList && t.classList.contains("copyBtn") ) {
     evt.preventDefault();
     await navigator.clipboard.writeText(t.getAttribute('data-clipboard-text'));
@@ -363,4 +386,3 @@ makeShowHide('button.hide-otp-icon', 'button.show-otp-col', 'otp-col');
 doc.getElementById('page-col').addEventListener('scroll', scrollHandler);
 
 getWebpage(window.location.pathname, window.location.hash, true);
-

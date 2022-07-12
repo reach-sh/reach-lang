@@ -285,7 +285,7 @@ Follow these directions to pass `role` as a command-line argument:
 
 # {#wfs-15} Explore units and balances
 
-This section helps you explore standard and atomic units using the [JavaScript Standard Library](/en/essentials/frontend-programming/javascript-frontends/).
+This section helps you explore standard and atomic units using the [JavaScript Standard Library](##ref-frontends-rpc-js).
 Regarding tokens, each consensus network has a (divisible) standard unit and an (indivisible) atomic unit.
 Users usually want to see standard units.
 A smart contract, on the other hand, always deals with atomic units.
@@ -708,7 +708,7 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
-    md5: a8f7083fadc2f568146297185aff3211
+    md5: 601ca2fa79d21e1623af6c7d6745e3ce
     range: 26-35
     ```
 
@@ -716,15 +716,23 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
-    range: 7-10
+    md5: ad020dbd03b390968b22e5e857e72bb7
+    range: 7-12
+    ```
+
+1. In `index.mjs`, add a `reportPayment` property to `commonInteract`:
+
+    ``` js
+    load: /examples/wisdom-12-complete/index.mjs
+    md5: 601ca2fa79d21e1623af6c7d6745e3ce
+    range: 21-21
     ```
 
 1. In `index.rsh`, add a `reportPayment` property to `commonInteract` right after the `reportCancellation` property:
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: ad020dbd03b390968b22e5e857e72bb7
     range: 3-6
     ```
 
@@ -732,15 +740,15 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` js
     load: /examples/wisdom-12-complete/index.mjs
-    md5: a8f7083fadc2f568146297185aff3211
-    range: 48-54
+    md5: 601ca2fa79d21e1623af6c7d6745e3ce
+    range: 49-53
     ```
 
 1. In `index.rsh`, add `reportWisdom` to `buyerInteract`:
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    md5: ad020dbd03b390968b22e5e857e72bb7
     range: 13-17
     ```
 
@@ -748,8 +756,8 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     ``` reach
     load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
-    range: 39-48
+    md5: ad020dbd03b390968b22e5e857e72bb7
+    range: 39-47
     ```
 
     * Line 39: The `buyer` always pays the contract.
@@ -761,27 +769,27 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
     It might be nice to inform the `seller` and the `buyer` when the `{!rsh} pay` and `{!rsh} transfer` actions take place.
     The next steps add these improvements.
 
-1. In `index.mjs`, add `reportCancellation` to `commonInteract`:
+1. In `index.mjs`, add `reportTransfer` to `commonInteract`:
 
     ``` js
-    load: /examples/wisdom-12-complete/index.mjs
-    md5: a8f7083fadc2f568146297185aff3211
+    load: /examples/wisdom-13-reports/index.mjs
+    md5: 2085c1ee9691223495a5e0059df1f5ab
     range: 23-23
     ```
 
-1. In `index.rsh`, add `reportPayment` to `commonInteract`:
+1. In `index.rsh`, add `reportTransfer` to `commonInteract`:
 
     ``` reach
-    load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
-    range: 5-5
+    load: /examples/wisdom-13-reports/index.rsh
+    md5: 9944f5a6fb8df38715f0095226bff55c
+    range: 6-6
     ```
 
-1. In `index.rsh`, add Lines 2 and 10 to existing code:
+1. In `index.rsh`, add Lines 41 and 49 to existing code:
 
     ``` reach
-    load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    load: /examples/wisdom-13-reports/index.rsh
+    md5: 9944f5a6fb8df38715f0095226bff55c
     range: 40-50
     ```
 
@@ -831,16 +839,16 @@ This section shows you how to get wisdom from the `seller` on the frontend, and 
 
     Let's take a look at the final Reach code:
 
-    ```
-    load: /examples/wisdom-12-complete/index.rsh
-    md5: 6c030c9ce4d5f51d53711ef4eeeb217e
+    ```reach
+    load: /examples/wisdom-13-reports/index.rsh
+    md5: 9944f5a6fb8df38715f0095226bff55c
     ```
 
     And the final frontend code:
 
-    ```
-    load: /examples/wisdom-12-complete/index.mjs
-    md5: a8f7083fadc2f568146297185aff3211
+    ```js
+    load: /examples/wisdom-13-reports/index.mjs
+    md5: 2085c1ee9691223495a5e0059df1f5ab
     ```
 
 # {#wfs-20} View the contract
@@ -878,12 +886,12 @@ A Web-app can do the following prior to attaching to the contract:
 Once confirmed, the Web-app can attach to the contract and complete the transaction.
 The following directions show you how to obtain `price` from the contract before attaching:
 
-1. In `index.rsh`, add Lines 46 and 51:
+1. In `index.rsh`, add Lines 23 and 29:
 
     ``` reach
     load: /examples/wisdom-14-modal/index.rsh
     md5: ba3a13f791cd8b66554d685957ea1d9d
-    range: 42-52
+    range: 20-30
     ```
 
 1. In `index.mjs`, add Lines 59 and 60 (in the `buyer` section):

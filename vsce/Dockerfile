@@ -1,5 +1,6 @@
 # Start with an image that has Node.js.
-FROM node:16.13.0
+ARG NODE_IMAGE
+FROM $NODE_IMAGE
 
 # create a WORKDIR to prevent
 # ERROR EPERM: operation not permitted

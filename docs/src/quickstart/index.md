@@ -48,7 +48,7 @@ shutdown -r -t 0
 After rebooting, reopen `Powershell` as an administrator, and execute the following commands:
 
 ```cmd
-cd c:\; mkdir downloads; cd c:\downloads; wget  -uri https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -outfile .\wsl_update_x64.msi; .\wsl_update_x64.msi
+cd c:\; mkdir downloads; cd c:\downloads; wget -uri https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -outfile .\wsl_update_x64.msi; .\wsl_update_x64.msi
 ```
 
 In the Command Prompt window, run the following command to set the WSL version to 2:
@@ -185,8 +185,7 @@ $ sudo echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyring
 And then run:
 
 ```cmd
-$ sudo apt-get update
-$ sudo apt-get install docker-ce docker-ce-cli containerd.io
+$ sudo apt-get update && sudo apt-get install docker-ce docker-ce-cli containerd.io
 ```
 
 You may want to run the [post-installation steps for Linux](https://docs.docker.com/engine/install/linux-postinstall/) that Docker recommends.
@@ -205,7 +204,7 @@ $ curl https://docs.reach.sh/reach -o reach ; chmod +x reach
 
 Reach is successfully downloaded if the following command returns a version number:
 
-```
+``` cmd
 $ ./reach version
 ```
 
@@ -259,4 +258,3 @@ $ ./reach version
 
 You are now ready to start programming in Reach.
 Check out our [tutorials](##tuts) to get started.
-

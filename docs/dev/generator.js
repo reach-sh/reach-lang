@@ -621,7 +621,6 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
   });
 
   await gatherSearchData({doc, title, here});
-  theader.remove();
 
   // Process code snippets.
   const linkifySpans = (elem, language) => {

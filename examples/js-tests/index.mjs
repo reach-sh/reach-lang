@@ -121,6 +121,7 @@ const mkCommon = async (lib, extra) => {
 
     parseCurrency,
     formatCurrency,
+    formatWithDecimals,
 
     bytesEq,
     eq,
@@ -403,6 +404,7 @@ const mkCommon = async (lib, extra) => {
     describe('exports a `parseCurrency` function', () => {
       it(`that converts to ${n} correctly`, () =>
         expect(parseCurrency(amt)).toBe(amtNet));
+        expect(parseCurrency('18446744073709.551615', 6).toString()).toBe('18446744073709551615');
     });
 
     describe('exports a `formatCurrency` function', () => {
@@ -411,6 +413,24 @@ const mkCommon = async (lib, extra) => {
         expect(formatCurrency(amtNet, 2)).toBe(amtTruncTo2);
         expect(formatCurrency(amtNet.toString())).toBe(amt);
         expect(formatCurrency(789)).toBe(fc789);
+      });
+    });
+
+    describe('formatWithDecimals', () => {
+      it(`works with parseCurrency`, () => {
+        const doSpec = (n, decs) => {
+          const c = parseCurrency(n, decs);
+          const s = formatWithDecimals(c, decs);
+          expect(s).toBe(n.toString().slice(0, s.length));
+          expect((s.split('.')[1] || '').length <= decs).toBe(true);
+          return [c, s];
+        }
+        for (const decs of [0, 2, 6, 18]) {
+          doSpec(Math.random() * 10, decs);
+        }
+        const [c, s] = doSpec('0.1234567', 6);
+        expect(c.toString()).toBe('123456');
+        expect(s).toBe('0.123456');
       });
     });
   };

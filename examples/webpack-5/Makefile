@@ -21,7 +21,7 @@ serve: build
 # Requires that you have npm linked @reach-sh/stdlib
 # (cd ../../js/stdlib && make js-build && npm link)
 .PHONY: js-install
-js-install: package.json
+js-install: package.json package-lock.json
 	npm install
 	npm link @reach-sh/stdlib
 

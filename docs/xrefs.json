@@ -707,6 +707,10 @@
     "title": "RX0000",
     "path": "/rsh/errors/#RX0000"
   },
+  "build": {
+    "title": "Reach is for Builders",
+    "path": "/build/#build"
+  },
   "cfx-faq": {
     "title": "FAQ",
     "path": "/networks/#cfx-faq"
@@ -920,7 +924,7 @@
     "path": "/quickstart/#quickstart"
   },
   "reach-top": {
-    "title": "Reach: The Safest and Easiest DApp Programming Language",
+    "title": "Reach: The Smartest, Fastest, and Safest DApp Programming Language",
     "path": "/#reach-top"
   },
   "ref": {
@@ -1243,6 +1247,10 @@
     "title": "<span class=\"ref\" id=\"cmd_reach%20--disable-reporting\" data-scope=\"cmd\" data-symbol=\"reach --disable-reporting\"> </span>   reach --disable-reporting",
     "path": "/tool/#ref-usage-arg-disable-reporting"
   },
+  "ref-usage-clean": {
+    "title": "<span class=\"ref\" id=\"cmd_reach%20clean\" data-scope=\"cmd\" data-symbol=\"reach clean\"> </span>   reach clean",
+    "path": "/tool/#ref-usage-clean"
+  },
   "ref-usage-compile": {
     "title": "<span class=\"ref\" id=\"cmd_reach%20compile\" data-scope=\"cmd\" data-symbol=\"reach compile\"> </span>   reach compile",
     "path": "/tool/#ref-usage-compile"
@@ -1306,6 +1314,10 @@
   "ref-usage-scaffold": {
     "title": "<span class=\"ref\" id=\"cmd_reach%20scaffold\" data-scope=\"cmd\" data-symbol=\"reach scaffold\"> </span>   reach scaffold",
     "path": "/tool/#ref-usage-scaffold"
+  },
+  "ref-usage-support": {
+    "title": "<span class=\"ref\" id=\"cmd_reach%20support\" data-scope=\"cmd\" data-symbol=\"reach support\"> </span>   reach support",
+    "path": "/tool/#ref-usage-support"
   },
   "ref-usage-update": {
     "title": "<span class=\"ref\" id=\"cmd_reach%20update\" data-scope=\"cmd\" data-symbol=\"reach update\"> </span>   reach update",

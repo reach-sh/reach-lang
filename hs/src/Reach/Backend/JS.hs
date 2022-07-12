@@ -215,15 +215,18 @@ jsBool = \case
 jsNum :: Integer -> Doc
 jsNum = jsString . show
 
+jsChkBigNum :: SrcLoc -> UIntTy -> Doc -> App Doc
+jsChkBigNum at uit i = do
+  uim <- case uit of
+            UI_Word -> jsArg (DLA_Constant $ DLC_UInt_max)
+            UI_256 -> return $ jsNum $ uint256_Max
+  return $ jsApply "stdlib.checkedBigNumberify" [jsAt at, uim, i]
+
 jsCon :: AppT DLLiteral
 jsCon = \case
   DLL_Null -> return "null"
   DLL_Bool b -> return $ jsBool b
-  DLL_Int at uit i -> do
-    uim <- case uit of
-             UI_Word -> jsArg (DLA_Constant $ DLC_UInt_max)
-             UI_256 -> return $ jsNum $ uint256_Max
-    return $ jsApply "stdlib.checkedBigNumberify" [jsAt at, uim, jsNum i]
+  DLL_Int at uit i -> jsChkBigNum at uit $ jsNum i
   DLL_TokenZero ->
     return "stdlib.Token_zero"
 
@@ -946,19 +949,18 @@ setupPart who = [
 jsApiWrapper :: B.ByteString -> [Int] -> App Doc
 jsApiWrapper p whichs = do
   let who = pretty $ bunpack p
-  let chk_which w = "step == " <> pretty w
-  let chk_st = concatWith (\ l r -> l <> " || " <> r) $ map chk_which whichs
-  let allowed = pretty whichs
-  let assertStep = "stdlib.assert" <> parens (chk_st <> ", 'API called in the wrong state. Currently in state: ' + step + ', expected:  " <> allowed <> "'") <> semi
+  let aux = jsChkBigNum srcloc_builtin UI_Word
+  allowed <- pretty <$> mapM (aux . jsNum . fromIntegral) whichs
   let jmps = map (\ which -> do
           let inst = "_" <> who <> pretty which
           "if" <+> parens ("step" <+> "==" <+> pretty which) <+> braces ("return " <> inst <> parens "ctcTop, interact" <> semi)
         ) whichs
+  curStep <- aux "step"
   let body = vsep $
         setupPart who
-        <> [ "const step = await ctc.getCurrentStep()"
-            , assertStep ]
+        <> [ "const step = await ctc.getCurrentStep()" ]
         <> jmps
+        <> [ "throw stdlib.apiStateMismatchError({ _stateSourceMap }, " <> allowed <> ", " <> curStep <> ")" ]
   return $ "export" <+> jsFunction who ["ctcTop", "interact"] body
 
 iExpect :: Doc -> Doc -> Doc -> Doc

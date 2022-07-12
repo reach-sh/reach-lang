@@ -1971,7 +1971,7 @@ evalForm f args = do
     SLForm_setApiDetails -> do
       at <- withAt id
       (who_e, msg, mc_id) <- two_mthree_args
-      who <- expectParticipant who_e
+      who <- mustBeParticipant who_e
       let mCaseId = maybe Nothing (Just . jse_expect_id at) mc_id
       (ct, tys) <- case mCaseId of
         -- API Fork With Multiple Cases (msg is Data instance)
@@ -2017,16 +2017,11 @@ evalForm f args = do
       [de, e] -> return (de, e)
       _ -> illegal_args 2
 
-expectParticipant :: JSExpression -> App SLPart
-expectParticipant who_e =
-  evalExpr who_e >>= \case
-    (_, SLV_Participant _ part _ _) -> return part
-    _ -> impossible "expected Participant"
-
-expectString :: SLVal -> String
-expectString = \case
-  SLV_Bytes _ s -> bunpack s
-  _ -> impossible "Expected String"
+mustBeParticipant :: JSExpression -> App SLPart
+mustBeParticipant who_e =
+  (snd <$> evalExpr who_e) >>= \case
+    SLV_Participant _ part _ _ -> return part
+    v -> expect_t v $ Err_Expected "Participant"
 
 evalPolyEq :: SecurityLevel -> SLVal -> SLVal -> App SLSVal
 evalPolyEq lvl x y =
@@ -5123,7 +5118,7 @@ doApiCall lhs (ApiCallRec {..}) = do
   let jidg xi = jid $ ".api" <> show idx <> "." <> xi
   let whoOnly = mkDot a [slac_who, jid "only"]
   let e2s = flip JSExpressionStatement sa
-  who_str <- jsString a . bunpack <$> expectParticipant slac_who
+  who_str <- jsString a . bunpack <$> mustBeParticipant slac_who
   let callOnly s = es $ jsCall a whoOnly s
   -- Deconstruct args
   let dom = jidg "dom"
@@ -5212,7 +5207,7 @@ doForkAPI2Case isSingleFun args = do
           ya = jsa y
           injectChecks = prependFunStmts chks
   let doLog w = do
-        who_str <- jsString a . bunpack <$> expectParticipant w
+        who_str <- jsString a . bunpack <$> mustBeParticipant w
         return $ jsCall a (jid ".emitLog") [jidg "rng", who_str]
   let mkConsensusOnly w = jsCall wa (JSMemberDot w wa (jid "only")) [jsThunkStmts wa [JSIf wa wa (jsCall wa (jid "didPublish") []) wa $ JSExpressionStatement (jsCall wa (JSMemberDot (jid "interact") wa (jid "out")) [dom, jidg "rngl"]) sp]]
         where

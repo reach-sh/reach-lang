@@ -17,6 +17,7 @@ import Data.Bits
 import qualified Data.ByteString.Internal as BSI
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSLC8
+import Data.ByteString.UTF8 (toString)
 import Data.Char
 import Data.Either
 import Data.Functor
@@ -35,6 +36,7 @@ import Data.Text.Lazy.Encoding
 import Data.Time
 import Data.Time.Format.ISO8601
 import Data.Tuple.Extra (first)
+import Data.UnixTime
 import qualified Data.Yaml as Y
 import GHC.Float
 import GHC.Generics
@@ -1115,7 +1117,8 @@ compile = command "compile" $ info f d
 
         else
           cid="$(docker ps -f "ancestor=reachsh/reach:$v" --format '{{.ID}} {{.Labels}}' \
-            | grep " sh.reach.dir-project=$$PWD\$$" \
+            | grep -e "sh.reach.dir-project=$$(pwd)\$$" \
+                   -e "sh.reach.dir-project=$$(pwd)," \
             | awk '{print $$1}' \
             | head -n1)"
 
@@ -1553,13 +1556,13 @@ info' = command "info" $ info f d
   where
     d = progDesc "List available updates"
     f = g <$> switchInteractiveAUs
-    g i = versionCompare' (not i) False False
+    g i = versionCompare' (not i) False False True
 
 update :: Subcommand
 update = command "update" $ info (pure f) d
   where
     d = progDesc "Perform available updates"
-    f = versionCompare' True False True
+    f = versionCompare' True False True True
 
 dockerReset :: Subcommand
 dockerReset = command "docker-reset" $ info f d
@@ -1913,6 +1916,8 @@ remoteDockerAssocFor :: FilePath -> FilePath -> Image -> Maybe String -> ImageHo
 remoteDockerAssocFor tmpC tmpH img mtag h = go
   where
     (go, itp) = case h of
+      -- https://docs.docker.com/docker-hub/api/latest/#tag/rate-limiting
+      -- https://docs.docker.com/docker-hub/download-rate-limit/#other-limits
       DockerHub ->
         ( fetch 0 8 "hub.docker.com" dh_next dh_results uDockerHub >>= assoc aDH
         , \x p -> imageThirdPartyDockerHubRoot p <> x <> unpack (T.toLower $ packs p)
@@ -1933,22 +1938,33 @@ remoteDockerAssocFor tmpC tmpH img mtag h = go
       guard $ d /= "" && t /= []
       Just $ M.insertWith (<>) d t a
 
-
     uDockerHub = parseRequest_
       $ "https://hub.docker.com/v2/repositories/" <> img' <> "/tags?page_size=100&ordering=last_updated"
      <> maybe "" ("&name=" <>) mtag
 
     assoc f = either (pure . Left) $ pure . Right . M.singleton img'' . L.foldl' f mempty
 
+    grh r l = readMay . toString
+      =<< getResponseHeader ("X-" <> l) r `atMay` 0 <|> getResponseHeader l r `atMay` 0
+
     -- Exponential back-off with `c` rate-limit events + max `t` tries
+    --  *OR*  max `t` tries using API's `X-Retry-After` header if available
+    --  *AND* voluntarily easing off when rate-limit is nearly exhausted
+    -- Note: DockerHub API's headers are sometimes inconsistent with their own docs, dropping `X-` prefix
     fetch c t fqdn nextPage results u = do
       r <- httpJSONEither u
+      threadDelay . (* 100000) . maybe 0 id $ do
+        l <- grh r "RateLimit-Remaining"
+        pure $ if (l :: Int) < length imagesAll then 1 else 0
       if getResponseStatusCode r == 429
         then do
           if c > t
             then pure . Left . IHAFRetriesExhausted (pack img') $ float2Int t
             else do
-              let ms = (2 :: Float) ** c * 100000
+              n <- getUnixTime
+              ms <- pure . (* 1000000) . maybe (2 ** c) id $ do
+                a <- grh r "Retry-After"
+                readMay . show . udtSeconds $ UnixTime a 0 `diffUnixTime` n
               threadDelay $ float2Int ms
               fetch (c + 1) t fqdn nextPage results u
         else case getResponseBody r of
@@ -1966,8 +1982,8 @@ remoteDockerAssocFor tmpC tmpH img mtag h = go
             maybe (pure $ Right []) (fetch c t fqdn nextPage results . parseRequest_) (nextPage r')
               >>= either (pure . Left) (pure . Right . (results r' <>))
 
-remoteUpdates :: [Image] -> AppT (Text, DockerAssoc)
-remoteUpdates imgs = do
+remoteUpdates :: Bool -> [Image] -> AppT (Text, DockerAssoc)
+remoteUpdates psb imgs = do
   Env {..} <- ask
 
   let mtag = \case
@@ -1975,9 +1991,16 @@ remoteUpdates imgs = do
         Right "reach-cli" -> Just . unpack $ tagFor TFReachCLI
         _ -> Nothing
 
+  let d = threadDelay 2500000 *> putStr "." *> hFlush stdout *> d
+  pdots <- liftIO . forkIO . when psb $ putStr "Please stand-by..." *> hFlush stdout *> d
+
   (sh, ts) <- liftIO . concurrently (httpLBS uriReachScript)
     $ forConcurrently imgs $ \i ->
       remoteDockerAssocFor e_dirTmpContainer e_dirTmpHost i (mtag i) $ imageHost e_var
+
+  liftIO $ do
+    killThread pdots
+    when psb $ putStrLn ""
 
   let rn = "reach.new"
   liftIO $ case getResponseStatusCode sh of
@@ -2010,6 +2033,8 @@ remoteUpdates imgs = do
           <> " attempts."
         | (i, n) <- rs
         ]
+      putStrLn "\nPlease wait awhile and try again, or, if the issue persists, reply to the following thread:"
+      putStrLn " https://github.com/reach-sh/reach-lang/discussions/1030#discussioncomment-2940142\n"
     when (length us > 0) $ do
       mapM_ T.putStrLn us
       T.putStrLn $
@@ -2022,13 +2047,15 @@ remoteUpdates imgs = do
 imgTxt :: Image' -> Text
 imgTxt (Image' x) = either (T.toLower . packs) id x
 
-versionCompare' :: Bool -> Bool -> Bool -> App
-versionCompare' i' j' u' = scriptWithConnectorModeOptional $ do
+versionCompare' :: Bool -> Bool -> Bool -> Bool -> App
+versionCompare' i' j' u' p' = scriptWithConnectorModeOptional $ do
   now <- zulu
   Env {e_var = Var {..}, ..} <- ask
-  let i = if i' then " --non-interactive" else ""
-  let j = if j' then " --json" else ""
-  let u = if u' then " --update" else ""
+  let x l s = if l then " --" <> s else ""
+  let i = x i' "non-interactive"
+  let j = x j' "json"
+  let u = x u' "update"
+  let p = x (p' && not j') "print-stand-by"
   let confE = "_docker" </> "ils-" <> now <> ".json"
   let confC = pack $ e_dirConfigContainer </> confE
   let confH = pack $ e_dirConfigHost </> confE
@@ -2043,7 +2070,7 @@ versionCompare' i' j' u' = scriptWithConnectorModeOptional $ do
     {/g' >> $confH
     echo ']' >> $confH
 
-    $reachEx version-compare2$i$j$u --rm-ils --ils="$confC"
+    $reachEx version-compare2$i$j$u$p --rm-ils --ils="$confC"
   |]
  where
   t = mappend ("docker image ls --digests --format "
@@ -2059,6 +2086,7 @@ versionCompare = command "version-compare" $ info f mempty
       <$> switchNonInteractiveAUs
       <*> switchJSONAUs
       <*> switch (long "update")
+      <*> pure False
 
 versionCompare2 :: Subcommand
 versionCompare2 = command "version-compare2" $ info f mempty
@@ -2071,7 +2099,8 @@ versionCompare2 = command "version-compare2" $ info f mempty
       <*> strOption (long "stub-remote" <> value "")
       <*> strOption (long "stub-script" <> value "")
       <*> switch (long "update")
-    g ni j l rl mr ms up = do
+      <*> switch (long "print-stand-by")
+    g ni j l rl mr ms up psb = do
       Env {e_var = Var {..}, ..} <- ask
       assocL <- (liftIO $ A.eitherDecodeFileStrict' l) >>= \case
         Left e -> liftIO $ do
@@ -2114,7 +2143,7 @@ versionCompare2 = command "version-compare2" $ info f mempty
 
       (latestScript, assocR) <- case (ms, mr) of
         _ | ms /= "" && mr /= "" -> (pack ms, ) . maybe mempty id <$> (liftIO $ A.decodeFileStrict' mr)
-        _ -> remoteUpdates imagesAll
+        _ -> remoteUpdates psb imagesAll
 
       -- Treat remote tags as unique and authoritative, but local tags might be
       -- repeated due to Docker manifest strangeness
@@ -2465,17 +2494,30 @@ instance FromJSON GitHubGistResponse where
   parseJSON = withObject "GitHubGistResponse" $ \o -> GitHubGistResponse <$> o .: "html_url"
 
 support :: Subcommand
-support = command "support" $ info (pure g) d
+support = command "support" $ info h d
   where
-    d = progDesc "Create GitHub gist of index.rsh and index.mjs"
+    d = progDesc "Create a GitHub gist of index.rsh and index.mjs (default), or specify your own files to upload!"
+    h = go <$> supportFromCommandLineHs
+    go SupportToolArgs {sta_so = SupportOpts {}} = do
+      rawArgs <- liftIO getArgs
+      let rawArgs' = dropWhile (/= "support") rawArgs
+      let useArgs xs = upload =<< mapM z xs 
+      case tailMay rawArgs' of
+        Nothing -> impossible $ "support args do not start with 'support': " <> show rawArgs
+        Just [] -> liftIO $ useArgs [ "index.rsh", "index.mjs" ]
+        Just xs -> liftIO $ useArgs xs
     f i c = i .= object
       [ "content" .= if T.null (T.strip $ pack c) then "// (Empty source file)" else c
       , "language" .= ("JavaScript" :: String)
       , "type" .= ("application/javascript" :: String)
       ]
     z i = doesFileExist i >>= \case
-      False -> pure []
-      True -> (\a -> [f (K.fromString i) a]) <$> readFile i
+      False -> do
+          putStrLn $ "Couldn't find the following file: " <> i
+          putStrLn "\nNothing uploaded"
+          exitWith $ ExitFailure 1
+      -- "Contents files can't be in subdirectories or include '/' in the name"
+      True -> (\a -> [f (K.fromText $ T.replace "/" "\\" $ pack i) a]) <$> readFile i
     clientId = "c4bfe74cc8be5bbaf00e" :: String
     is l = maybe False (== pack l) . headMay
     by a x = maybe (putStrLn ("Missing field `" <> x <> "`.") >> exitWith (ExitFailure 1)) pure
@@ -2484,12 +2526,7 @@ support = command "support" $ info (pure g) d
         $ setRequestBodyJSON (object x)
       <$> parseRequest ("POST " <> u)
       >>= httpLBS
-    g = liftIO $ do
-      rsh <- z "index.rsh"
-      mjs <- z "index.mjs"
-      when (null rsh && null mjs) $ do
-        putStrLn "Neither index.rsh nor index.mjs exist in the current directory; aborting."
-        exitWith ExitSuccess
+    upload arrayOfPairs = liftIO $ do
       a <- req "https://github.com/login/device/code"
         [ "client_id" .= clientId
         , "scope" .= ("gist" :: String)
@@ -2499,7 +2536,7 @@ support = command "support" $ info (pure g) d
       T.putStrLn [N.text|
         Please enter $userCode at https://github.com/login/device.
 
-        Type 'y' after successful authorization to upload index.mjs, index.rsh, or both:
+        Type 'y' after successful authorization to upload your files:
       |]
       hFlush stdout >> getChar >>= \c -> unless (toUpper c == 'Y') $ do
         putStrLn "\nNo files were uploaded. Run `reach support` again to retry."
@@ -2517,15 +2554,13 @@ support = command "support" $ info (pure g) d
           Just _ -> t `by` "error" >>= T.putStrLn . (pack "\nError while acquiring access token:\n" <>)
         exitWith $ ExitFailure 1
       gat <- unpack <$> t `by` "access_token"
-      when (null rsh) $ putStrLn "\nDidn't find index.rsh in the current directory; skipping..."
-      when (null mjs) $ putStrLn "\nDidn't find index.mjs in the current directory; skipping..."
       -- @TODO: Also add output of reach hashes!
       parseRequest "POST https://api.github.com/gists"
         >>= httpBS
           . setRequestHeader "User-Agent" [ BSI.packChars "reach" ]
           . setRequestHeader "Authorization" [ BSI.packChars ("token " <> gat) ]
           . setRequestHeader "Accept" [ BSI.packChars "application/vnd.github.v3+json" ]
-          . setRequestBodyJSON (object [ "files" .= object (rsh <> mjs) ])
+          . setRequestBodyJSON (object [ "files" .= object (concat arrayOfPairs) ])
         >>= Y.decodeThrow . getResponseBody
         >>= \(GitHubGistResponse r) -> T.putStrLn $ "\n" <> [N.text|
               Your gist is viewable at:
