@@ -1,0 +1,30 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance zero at application exit"
+  at ./token_track_api_call_zero_bal.rsh:22:7:application
+
+  // Violation Witness
+
+  const UInt.max = 1;
+
+
+  // Theorem Formalization
+
+  const tokInfos/77 = array(Tuple(UInt, UInt, Bool), [[0, 0, false ] ]);
+  //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
+  const tokInfo/99 = tokInfos/77[0];
+  //    ^ would be [0, 0, false ]
+  const tokInfos'/104 = Array.set(tokInfos/77, 0, [0, tokInfo/99[1], tokInfo/99[2] ] );
+  //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
+  const tokInfo/109 = tokInfos'/104[0];
+  //    ^ would be [0, 0, false ]
+  const v127 = 0 == Array.set(tokInfos'/104, 0, [(tokInfo/109[0] + 1), tokInfo/109[1], tokInfo/109[2] ] )[0][0];
+  //    ^ would be false
+  assert(v127);
+
+  Verifying when NO participants are honest
+Checked 16 theorems; 2 failures (and 1 omitted repeats) :'(

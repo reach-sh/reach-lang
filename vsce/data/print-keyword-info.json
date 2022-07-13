@@ -545,6 +545,9 @@
   "Token.supply": {
     "CompletionItemKind": "Method"
   },
+  "Token.track": {
+    "CompletionItemKind": "Method"
+  },
   "Tuple": {
     "CompletionItemKind": "TypeParameter"
   },

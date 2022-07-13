@@ -782,6 +782,7 @@ data SLPrimitive
   | SLPrim_Token_burn
   | SLPrim_Token_destroy
   | SLPrim_Token_destroyed
+  | SLPrim_Token_track
   | SLPrim_didPublish
   | SLPrim_unstrict
   | SLPrim_polyNeq

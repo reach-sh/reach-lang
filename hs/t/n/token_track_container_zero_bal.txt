@@ -1,0 +1,295 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance zero at application exit"
+  at ./token_track_container_zero_bal.rsh:32:7:application
+
+  // Violation Witness
+
+  const UInt.max = 5;
+
+  const toks/753 = protect<Array(Token, 5)>("A".interact.getTokens());
+  //    ^ could = array(Token, [Token!val!0, Token!val!1, Token!val!3, Token!val!4, Token!val!2 ] )
+  //      from: ./token_track_container_zero_bal.rsh:10:47:application
+
+  // Theorem Formalization
+
+  const initialInfo/746 = [0, 0, false ];
+  //    ^ would be [0, 0, false ]
+  const tokInfos/747 = array(Tuple(UInt, UInt, Bool), [initialInfo/746, initialInfo/746, initialInfo/746, initialInfo/746, initialInfo/746 ]);
+  //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
+  const v798 = toks/753[0];
+  //    ^ would be Token!val!0
+  const v799 = toks/753[1];
+  //    ^ would be Token!val!1
+  const v800 = toks/753[2];
+  //    ^ would be Token!val!3
+  const v801 = toks/753[3];
+  //    ^ would be Token!val!4
+  const v802 = toks/753[4];
+  //    ^ would be Token!val!2
+  const tokInfo/838 = tokInfos/747[0];
+  //    ^ would be [0, 0, false ]
+  const tokInfos'/843 = Array.set(tokInfos/747, 0, [0, tokInfo/838[1], tokInfo/838[2] ] );
+  //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
+  const tokInfo/845 = tokInfos'/843[1];
+  //    ^ would be [0, 0, false ]
+  const tokInfos'/850 = Array.set(tokInfos'/843, 1, [0, tokInfo/845[1], tokInfo/845[2] ] );
+  //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
+  const tokInfo/852 = tokInfos'/850[2];
+  //    ^ would be [0, 0, false ]
+  const tokInfos'/857 = Array.set(tokInfos'/850, 2, [0, tokInfo/852[1], tokInfo/852[2] ] );
+  //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
+  const tokInfo/859 = tokInfos'/857[3];
+  //    ^ would be [0, 0, false ]
+  const tokInfos'/864 = Array.set(tokInfos'/857, 3, [0, tokInfo/859[1], tokInfo/859[2] ] );
+  //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
+  const tokInfo/866 = tokInfos'/864[4];
+  //    ^ would be [0, 0, false ]
+  const tokInfos'/871 = Array.set(tokInfos'/864, 4, [0, tokInfo/866[1], tokInfo/866[2] ] );
+  //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
+  const tokens'/872 = Array.set(Array.set(Array.set(Array.set(Array.set(array(Token, [Token.zero, Token.zero, Token.zero, Token.zero, Token.zero ]), 0, v798 ), 1, v799 ), 2, v800 ), 3, v801 ), 4, v802 );
+  //    ^ would be array(Token, [Token!val!0, Token!val!1, Token!val!3, Token!val!4, Token!val!2 ] )
+  const initAcc/958 = [false, 0 ];
+  //    ^ would be [false, 0 ]
+  const searchIdx/1538 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/1549 = ((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/1538 ] : [false, (searchIdx/1538 + 1) ])[1];
+  //    ^ would be 0
+  const searchIdx/1560 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/1538 ] : [false, (searchIdx/1538 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/1549 ] : [false, (searchIdx/1549 + 1) ])[1];
+  //    ^ would be 0
+  const searchIdx/1571 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/1538 ] : [false, (searchIdx/1538 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/1549 ] : [false, (searchIdx/1549 + 1) ])[0] ? true : (tokens'/872[2] == v798)) ? [true, searchIdx/1560 ] : [false, (searchIdx/1560 + 1) ])[1];
+  //    ^ would be 0
+  const searchIdx/1582 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/1538 ] : [false, (searchIdx/1538 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/1549 ] : [false, (searchIdx/1549 + 1) ])[0] ? true : (tokens'/872[2] == v798)) ? [true, searchIdx/1560 ] : [false, (searchIdx/1560 + 1) ])[0] ? true : (tokens'/872[3] == v798)) ? [true, searchIdx/1571 ] : [false, (searchIdx/1571 + 1) ])[1];
+  //    ^ would be 0
+  const searchIdx/1598 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/1609 = ((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/1598 ] : [false, (searchIdx/1598 + 1) ])[1];
+  //    ^ would be 0
+  const searchIdx/1620 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/1598 ] : [false, (searchIdx/1598 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/1609 ] : [false, (searchIdx/1609 + 1) ])[1];
+  //    ^ would be 0
+  const searchIdx/1631 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/1598 ] : [false, (searchIdx/1598 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/1609 ] : [false, (searchIdx/1609 + 1) ])[0] ? true : (tokens'/872[2] == v798)) ? [true, searchIdx/1620 ] : [false, (searchIdx/1620 + 1) ])[1];
+  //    ^ would be 0
+  const searchIdx/1642 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/1598 ] : [false, (searchIdx/1598 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/1609 ] : [false, (searchIdx/1609 + 1) ])[0] ? true : (tokens'/872[2] == v798)) ? [true, searchIdx/1620 ] : [false, (searchIdx/1620 + 1) ])[0] ? true : (tokens'/872[3] == v798)) ? [true, searchIdx/1631 ] : [false, (searchIdx/1631 + 1) ])[1];
+  //    ^ would be 0
+  const tokIdx/989 = ((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/1598 ] : [false, (searchIdx/1598 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/1609 ] : [false, (searchIdx/1609 + 1) ])[0] ? true : (tokens'/872[2] == v798)) ? [true, searchIdx/1620 ] : [false, (searchIdx/1620 + 1) ])[0] ? true : (tokens'/872[3] == v798)) ? [true, searchIdx/1631 ] : [false, (searchIdx/1631 + 1) ])[0] ? true : (tokens'/872[4] == v798)) ? [true, searchIdx/1642 ] : [false, (searchIdx/1642 + 1) ])[1];
+  //    ^ would be 0
+  const tokInfo/991 = tokInfos'/871[tokIdx/989];
+  //    ^ would be [0, 0, false ]
+  const tokInfos'/996 = Array.set(tokInfos'/871, tokIdx/989, [(tokInfos'/871[((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/1538 ] : [false, (searchIdx/1538 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/1549 ] : [false, (searchIdx/1549 + 1) ])[0] ? true : (tokens'/872[2] == v798)) ? [true, searchIdx/1560 ] : [false, (searchIdx/1560 + 1) ])[0] ? true : (tokens'/872[3] == v798)) ? [true, searchIdx/1571 ] : [false, (searchIdx/1571 + 1) ])[0] ? true : (tokens'/872[4] == v798)) ? [true, searchIdx/1582 ] : [false, (searchIdx/1582 + 1) ])[1]][0] + 1), tokInfo/991[1], tokInfo/991[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[1, 0, false ] ] )
+  const searchIdx/1658 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/1669 = ((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/1658 ] : [false, (searchIdx/1658 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/1680 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/1658 ] : [false, (searchIdx/1658 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/1669 ] : [false, (searchIdx/1669 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/1691 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/1658 ] : [false, (searchIdx/1658 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/1669 ] : [false, (searchIdx/1669 + 1) ])[0] ? true : (tokens'/872[2] == v799)) ? [true, searchIdx/1680 ] : [false, (searchIdx/1680 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/1702 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/1658 ] : [false, (searchIdx/1658 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/1669 ] : [false, (searchIdx/1669 + 1) ])[0] ? true : (tokens'/872[2] == v799)) ? [true, searchIdx/1680 ] : [false, (searchIdx/1680 + 1) ])[0] ? true : (tokens'/872[3] == v799)) ? [true, searchIdx/1691 ] : [false, (searchIdx/1691 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/1718 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/1729 = ((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/1718 ] : [false, (searchIdx/1718 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/1740 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/1718 ] : [false, (searchIdx/1718 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/1729 ] : [false, (searchIdx/1729 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/1751 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/1718 ] : [false, (searchIdx/1718 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/1729 ] : [false, (searchIdx/1729 + 1) ])[0] ? true : (tokens'/872[2] == v799)) ? [true, searchIdx/1740 ] : [false, (searchIdx/1740 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/1762 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/1718 ] : [false, (searchIdx/1718 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/1729 ] : [false, (searchIdx/1729 + 1) ])[0] ? true : (tokens'/872[2] == v799)) ? [true, searchIdx/1740 ] : [false, (searchIdx/1740 + 1) ])[0] ? true : (tokens'/872[3] == v799)) ? [true, searchIdx/1751 ] : [false, (searchIdx/1751 + 1) ])[1];
+  //    ^ would be 1
+  const tokIdx/1028 = ((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/1718 ] : [false, (searchIdx/1718 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/1729 ] : [false, (searchIdx/1729 + 1) ])[0] ? true : (tokens'/872[2] == v799)) ? [true, searchIdx/1740 ] : [false, (searchIdx/1740 + 1) ])[0] ? true : (tokens'/872[3] == v799)) ? [true, searchIdx/1751 ] : [false, (searchIdx/1751 + 1) ])[0] ? true : (tokens'/872[4] == v799)) ? [true, searchIdx/1762 ] : [false, (searchIdx/1762 + 1) ])[1];
+  //    ^ would be 1
+  const tokInfo/1030 = tokInfos'/996[tokIdx/1028];
+  //    ^ would be [0, 0, false ]
+  const tokInfos'/1035 = Array.set(tokInfos'/996, tokIdx/1028, [(tokInfos'/996[((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/1658 ] : [false, (searchIdx/1658 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/1669 ] : [false, (searchIdx/1669 + 1) ])[0] ? true : (tokens'/872[2] == v799)) ? [true, searchIdx/1680 ] : [false, (searchIdx/1680 + 1) ])[0] ? true : (tokens'/872[3] == v799)) ? [true, searchIdx/1691 ] : [false, (searchIdx/1691 + 1) ])[0] ? true : (tokens'/872[4] == v799)) ? [true, searchIdx/1702 ] : [false, (searchIdx/1702 + 1) ])[1]][0] + 1), tokInfo/1030[1], tokInfo/1030[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[1, 0, false ], [1, 0, false ] ] )
+  const searchIdx/1778 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/1789 = ((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/1778 ] : [false, (searchIdx/1778 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/1800 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/1778 ] : [false, (searchIdx/1778 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/1789 ] : [false, (searchIdx/1789 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/1811 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/1778 ] : [false, (searchIdx/1778 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/1789 ] : [false, (searchIdx/1789 + 1) ])[0] ? true : (tokens'/872[2] == v800)) ? [true, searchIdx/1800 ] : [false, (searchIdx/1800 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/1822 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/1778 ] : [false, (searchIdx/1778 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/1789 ] : [false, (searchIdx/1789 + 1) ])[0] ? true : (tokens'/872[2] == v800)) ? [true, searchIdx/1800 ] : [false, (searchIdx/1800 + 1) ])[0] ? true : (tokens'/872[3] == v800)) ? [true, searchIdx/1811 ] : [false, (searchIdx/1811 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/1838 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/1849 = ((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/1838 ] : [false, (searchIdx/1838 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/1860 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/1838 ] : [false, (searchIdx/1838 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/1849 ] : [false, (searchIdx/1849 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/1871 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/1838 ] : [false, (searchIdx/1838 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/1849 ] : [false, (searchIdx/1849 + 1) ])[0] ? true : (tokens'/872[2] == v800)) ? [true, searchIdx/1860 ] : [false, (searchIdx/1860 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/1882 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/1838 ] : [false, (searchIdx/1838 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/1849 ] : [false, (searchIdx/1849 + 1) ])[0] ? true : (tokens'/872[2] == v800)) ? [true, searchIdx/1860 ] : [false, (searchIdx/1860 + 1) ])[0] ? true : (tokens'/872[3] == v800)) ? [true, searchIdx/1871 ] : [false, (searchIdx/1871 + 1) ])[1];
+  //    ^ would be 2
+  const tokIdx/1067 = ((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/1838 ] : [false, (searchIdx/1838 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/1849 ] : [false, (searchIdx/1849 + 1) ])[0] ? true : (tokens'/872[2] == v800)) ? [true, searchIdx/1860 ] : [false, (searchIdx/1860 + 1) ])[0] ? true : (tokens'/872[3] == v800)) ? [true, searchIdx/1871 ] : [false, (searchIdx/1871 + 1) ])[0] ? true : (tokens'/872[4] == v800)) ? [true, searchIdx/1882 ] : [false, (searchIdx/1882 + 1) ])[1];
+  //    ^ would be 2
+  const tokInfo/1069 = tokInfos'/1035[tokIdx/1067];
+  //    ^ would be [0, 0, false ]
+  const tokInfos'/1074 = Array.set(tokInfos'/1035, tokIdx/1067, [(tokInfos'/1035[((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/1778 ] : [false, (searchIdx/1778 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/1789 ] : [false, (searchIdx/1789 + 1) ])[0] ? true : (tokens'/872[2] == v800)) ? [true, searchIdx/1800 ] : [false, (searchIdx/1800 + 1) ])[0] ? true : (tokens'/872[3] == v800)) ? [true, searchIdx/1811 ] : [false, (searchIdx/1811 + 1) ])[0] ? true : (tokens'/872[4] == v800)) ? [true, searchIdx/1822 ] : [false, (searchIdx/1822 + 1) ])[1]][0] + 1), tokInfo/1069[1], tokInfo/1069[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[1, 0, false ], [1, 0, false ], [1, 0, false ] ] )
+  const searchIdx/1898 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/1909 = ((initAcc/958[0] ? true : (tokens'/872[0] == v801)) ? [true, searchIdx/1898 ] : [false, (searchIdx/1898 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/1920 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v801)) ? [true, searchIdx/1898 ] : [false, (searchIdx/1898 + 1) ])[0] ? true : (tokens'/872[1] == v801)) ? [true, searchIdx/1909 ] : [false, (searchIdx/1909 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/1931 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v801)) ? [true, searchIdx/1898 ] : [false, (searchIdx/1898 + 1) ])[0] ? true : (tokens'/872[1] == v801)) ? [true, searchIdx/1909 ] : [false, (searchIdx/1909 + 1) ])[0] ? true : (tokens'/872[2] == v801)) ? [true, searchIdx/1920 ] : [false, (searchIdx/1920 + 1) ])[1];
+  //    ^ would be 3
+  const searchIdx/1942 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v801)) ? [true, searchIdx/1898 ] : [false, (searchIdx/1898 + 1) ])[0] ? true : (tokens'/872[1] == v801)) ? [true, searchIdx/1909 ] : [false, (searchIdx/1909 + 1) ])[0] ? true : (tokens'/872[2] == v801)) ? [true, searchIdx/1920 ] : [false, (searchIdx/1920 + 1) ])[0] ? true : (tokens'/872[3] == v801)) ? [true, searchIdx/1931 ] : [false, (searchIdx/1931 + 1) ])[1];
+  //    ^ would be 3
+  const searchIdx/1958 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/1969 = ((initAcc/958[0] ? true : (tokens'/872[0] == v801)) ? [true, searchIdx/1958 ] : [false, (searchIdx/1958 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/1980 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v801)) ? [true, searchIdx/1958 ] : [false, (searchIdx/1958 + 1) ])[0] ? true : (tokens'/872[1] == v801)) ? [true, searchIdx/1969 ] : [false, (searchIdx/1969 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/1991 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v801)) ? [true, searchIdx/1958 ] : [false, (searchIdx/1958 + 1) ])[0] ? true : (tokens'/872[1] == v801)) ? [true, searchIdx/1969 ] : [false, (searchIdx/1969 + 1) ])[0] ? true : (tokens'/872[2] == v801)) ? [true, searchIdx/1980 ] : [false, (searchIdx/1980 + 1) ])[1];
+  //    ^ would be 3
+  const searchIdx/2002 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v801)) ? [true, searchIdx/1958 ] : [false, (searchIdx/1958 + 1) ])[0] ? true : (tokens'/872[1] == v801)) ? [true, searchIdx/1969 ] : [false, (searchIdx/1969 + 1) ])[0] ? true : (tokens'/872[2] == v801)) ? [true, searchIdx/1980 ] : [false, (searchIdx/1980 + 1) ])[0] ? true : (tokens'/872[3] == v801)) ? [true, searchIdx/1991 ] : [false, (searchIdx/1991 + 1) ])[1];
+  //    ^ would be 3
+  const tokIdx/1106 = ((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v801)) ? [true, searchIdx/1958 ] : [false, (searchIdx/1958 + 1) ])[0] ? true : (tokens'/872[1] == v801)) ? [true, searchIdx/1969 ] : [false, (searchIdx/1969 + 1) ])[0] ? true : (tokens'/872[2] == v801)) ? [true, searchIdx/1980 ] : [false, (searchIdx/1980 + 1) ])[0] ? true : (tokens'/872[3] == v801)) ? [true, searchIdx/1991 ] : [false, (searchIdx/1991 + 1) ])[0] ? true : (tokens'/872[4] == v801)) ? [true, searchIdx/2002 ] : [false, (searchIdx/2002 + 1) ])[1];
+  //    ^ would be 3
+  const tokInfo/1108 = tokInfos'/1074[tokIdx/1106];
+  //    ^ would be [0, 0, false ]
+  const tokInfos'/1113 = Array.set(tokInfos'/1074, tokIdx/1106, [(tokInfos'/1074[((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v801)) ? [true, searchIdx/1898 ] : [false, (searchIdx/1898 + 1) ])[0] ? true : (tokens'/872[1] == v801)) ? [true, searchIdx/1909 ] : [false, (searchIdx/1909 + 1) ])[0] ? true : (tokens'/872[2] == v801)) ? [true, searchIdx/1920 ] : [false, (searchIdx/1920 + 1) ])[0] ? true : (tokens'/872[3] == v801)) ? [true, searchIdx/1931 ] : [false, (searchIdx/1931 + 1) ])[0] ? true : (tokens'/872[4] == v801)) ? [true, searchIdx/1942 ] : [false, (searchIdx/1942 + 1) ])[1]][0] + 1), tokInfo/1108[1], tokInfo/1108[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[1, 0, false ], [1, 0, false ], [1, 0, false ], [1, 0, false ] ] )
+  const searchIdx/2018 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/2029 = ((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2018 ] : [false, (searchIdx/2018 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/2040 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2018 ] : [false, (searchIdx/2018 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2029 ] : [false, (searchIdx/2029 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/2051 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2018 ] : [false, (searchIdx/2018 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2029 ] : [false, (searchIdx/2029 + 1) ])[0] ? true : (tokens'/872[2] == v802)) ? [true, searchIdx/2040 ] : [false, (searchIdx/2040 + 1) ])[1];
+  //    ^ would be 3
+  const searchIdx/2062 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2018 ] : [false, (searchIdx/2018 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2029 ] : [false, (searchIdx/2029 + 1) ])[0] ? true : (tokens'/872[2] == v802)) ? [true, searchIdx/2040 ] : [false, (searchIdx/2040 + 1) ])[0] ? true : (tokens'/872[3] == v802)) ? [true, searchIdx/2051 ] : [false, (searchIdx/2051 + 1) ])[1];
+  //    ^ would be 4
+  const searchIdx/2078 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/2089 = ((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2078 ] : [false, (searchIdx/2078 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/2100 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2078 ] : [false, (searchIdx/2078 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2089 ] : [false, (searchIdx/2089 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/2111 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2078 ] : [false, (searchIdx/2078 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2089 ] : [false, (searchIdx/2089 + 1) ])[0] ? true : (tokens'/872[2] == v802)) ? [true, searchIdx/2100 ] : [false, (searchIdx/2100 + 1) ])[1];
+  //    ^ would be 3
+  const searchIdx/2122 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2078 ] : [false, (searchIdx/2078 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2089 ] : [false, (searchIdx/2089 + 1) ])[0] ? true : (tokens'/872[2] == v802)) ? [true, searchIdx/2100 ] : [false, (searchIdx/2100 + 1) ])[0] ? true : (tokens'/872[3] == v802)) ? [true, searchIdx/2111 ] : [false, (searchIdx/2111 + 1) ])[1];
+  //    ^ would be 4
+  const tokIdx/1145 = ((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2078 ] : [false, (searchIdx/2078 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2089 ] : [false, (searchIdx/2089 + 1) ])[0] ? true : (tokens'/872[2] == v802)) ? [true, searchIdx/2100 ] : [false, (searchIdx/2100 + 1) ])[0] ? true : (tokens'/872[3] == v802)) ? [true, searchIdx/2111 ] : [false, (searchIdx/2111 + 1) ])[0] ? true : (tokens'/872[4] == v802)) ? [true, searchIdx/2122 ] : [false, (searchIdx/2122 + 1) ])[1];
+  //    ^ would be 4
+  const tokInfo/1147 = tokInfos'/1113[tokIdx/1145];
+  //    ^ would be [0, 0, false ]
+  const tokInfos'/1152 = Array.set(tokInfos'/1113, tokIdx/1145, [(tokInfos'/1113[((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2018 ] : [false, (searchIdx/2018 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2029 ] : [false, (searchIdx/2029 + 1) ])[0] ? true : (tokens'/872[2] == v802)) ? [true, searchIdx/2040 ] : [false, (searchIdx/2040 + 1) ])[0] ? true : (tokens'/872[3] == v802)) ? [true, searchIdx/2051 ] : [false, (searchIdx/2051 + 1) ])[0] ? true : (tokens'/872[4] == v802)) ? [true, searchIdx/2062 ] : [false, (searchIdx/2062 + 1) ])[1]][0] + 1), tokInfo/1147[1], tokInfo/1147[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[1, 0, false ], [1, 0, false ], [1, 0, false ], [1, 0, false ], [1, 0, false ] ] )
+  const searchIdx/2198 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/2209 = ((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/2198 ] : [false, (searchIdx/2198 + 1) ])[1];
+  //    ^ would be 0
+  const searchIdx/2220 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/2198 ] : [false, (searchIdx/2198 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/2209 ] : [false, (searchIdx/2209 + 1) ])[1];
+  //    ^ would be 0
+  const searchIdx/2231 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/2198 ] : [false, (searchIdx/2198 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/2209 ] : [false, (searchIdx/2209 + 1) ])[0] ? true : (tokens'/872[2] == v798)) ? [true, searchIdx/2220 ] : [false, (searchIdx/2220 + 1) ])[1];
+  //    ^ would be 0
+  const searchIdx/2242 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/2198 ] : [false, (searchIdx/2198 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/2209 ] : [false, (searchIdx/2209 + 1) ])[0] ? true : (tokens'/872[2] == v798)) ? [true, searchIdx/2220 ] : [false, (searchIdx/2220 + 1) ])[0] ? true : (tokens'/872[3] == v798)) ? [true, searchIdx/2231 ] : [false, (searchIdx/2231 + 1) ])[1];
+  //    ^ would be 0
+  const searchIdx/2258 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/2269 = ((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/2258 ] : [false, (searchIdx/2258 + 1) ])[1];
+  //    ^ would be 0
+  const searchIdx/2280 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/2258 ] : [false, (searchIdx/2258 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/2269 ] : [false, (searchIdx/2269 + 1) ])[1];
+  //    ^ would be 0
+  const searchIdx/2291 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/2258 ] : [false, (searchIdx/2258 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/2269 ] : [false, (searchIdx/2269 + 1) ])[0] ? true : (tokens'/872[2] == v798)) ? [true, searchIdx/2280 ] : [false, (searchIdx/2280 + 1) ])[1];
+  //    ^ would be 0
+  const searchIdx/2302 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/2258 ] : [false, (searchIdx/2258 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/2269 ] : [false, (searchIdx/2269 + 1) ])[0] ? true : (tokens'/872[2] == v798)) ? [true, searchIdx/2280 ] : [false, (searchIdx/2280 + 1) ])[0] ? true : (tokens'/872[3] == v798)) ? [true, searchIdx/2291 ] : [false, (searchIdx/2291 + 1) ])[1];
+  //    ^ would be 0
+  const tokIdx/1208 = ((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/2258 ] : [false, (searchIdx/2258 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/2269 ] : [false, (searchIdx/2269 + 1) ])[0] ? true : (tokens'/872[2] == v798)) ? [true, searchIdx/2280 ] : [false, (searchIdx/2280 + 1) ])[0] ? true : (tokens'/872[3] == v798)) ? [true, searchIdx/2291 ] : [false, (searchIdx/2291 + 1) ])[0] ? true : (tokens'/872[4] == v798)) ? [true, searchIdx/2302 ] : [false, (searchIdx/2302 + 1) ])[1];
+  //    ^ would be 0
+  const tokInfo/1210 = tokInfos'/1152[tokIdx/1208];
+  //    ^ would be [1, 0, false ]
+  const tokInfos'/1215 = Array.set(tokInfos'/1152, tokIdx/1208, [(tokInfos'/1152[((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v798)) ? [true, searchIdx/2198 ] : [false, (searchIdx/2198 + 1) ])[0] ? true : (tokens'/872[1] == v798)) ? [true, searchIdx/2209 ] : [false, (searchIdx/2209 + 1) ])[0] ? true : (tokens'/872[2] == v798)) ? [true, searchIdx/2220 ] : [false, (searchIdx/2220 + 1) ])[0] ? true : (tokens'/872[3] == v798)) ? [true, searchIdx/2231 ] : [false, (searchIdx/2231 + 1) ])[0] ? true : (tokens'/872[4] == v798)) ? [true, searchIdx/2242 ] : [false, (searchIdx/2242 + 1) ])[1]][0] - 1), tokInfo/1210[1], tokInfo/1210[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, false ], [1, 0, false ], [1, 0, false ], [1, 0, false ], [1, 0, false ] ] )
+  const searchIdx/2378 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/2389 = ((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/2378 ] : [false, (searchIdx/2378 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/2400 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/2378 ] : [false, (searchIdx/2378 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/2389 ] : [false, (searchIdx/2389 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/2411 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/2378 ] : [false, (searchIdx/2378 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/2389 ] : [false, (searchIdx/2389 + 1) ])[0] ? true : (tokens'/872[2] == v799)) ? [true, searchIdx/2400 ] : [false, (searchIdx/2400 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/2422 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/2378 ] : [false, (searchIdx/2378 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/2389 ] : [false, (searchIdx/2389 + 1) ])[0] ? true : (tokens'/872[2] == v799)) ? [true, searchIdx/2400 ] : [false, (searchIdx/2400 + 1) ])[0] ? true : (tokens'/872[3] == v799)) ? [true, searchIdx/2411 ] : [false, (searchIdx/2411 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/2438 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/2449 = ((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/2438 ] : [false, (searchIdx/2438 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/2460 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/2438 ] : [false, (searchIdx/2438 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/2449 ] : [false, (searchIdx/2449 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/2471 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/2438 ] : [false, (searchIdx/2438 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/2449 ] : [false, (searchIdx/2449 + 1) ])[0] ? true : (tokens'/872[2] == v799)) ? [true, searchIdx/2460 ] : [false, (searchIdx/2460 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/2482 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/2438 ] : [false, (searchIdx/2438 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/2449 ] : [false, (searchIdx/2449 + 1) ])[0] ? true : (tokens'/872[2] == v799)) ? [true, searchIdx/2460 ] : [false, (searchIdx/2460 + 1) ])[0] ? true : (tokens'/872[3] == v799)) ? [true, searchIdx/2471 ] : [false, (searchIdx/2471 + 1) ])[1];
+  //    ^ would be 1
+  const tokIdx/1266 = ((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/2438 ] : [false, (searchIdx/2438 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/2449 ] : [false, (searchIdx/2449 + 1) ])[0] ? true : (tokens'/872[2] == v799)) ? [true, searchIdx/2460 ] : [false, (searchIdx/2460 + 1) ])[0] ? true : (tokens'/872[3] == v799)) ? [true, searchIdx/2471 ] : [false, (searchIdx/2471 + 1) ])[0] ? true : (tokens'/872[4] == v799)) ? [true, searchIdx/2482 ] : [false, (searchIdx/2482 + 1) ])[1];
+  //    ^ would be 1
+  const tokInfo/1268 = tokInfos'/1215[tokIdx/1266];
+  //    ^ would be [1, 0, false ]
+  const tokInfos'/1273 = Array.set(tokInfos'/1215, tokIdx/1266, [(tokInfos'/1215[((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v799)) ? [true, searchIdx/2378 ] : [false, (searchIdx/2378 + 1) ])[0] ? true : (tokens'/872[1] == v799)) ? [true, searchIdx/2389 ] : [false, (searchIdx/2389 + 1) ])[0] ? true : (tokens'/872[2] == v799)) ? [true, searchIdx/2400 ] : [false, (searchIdx/2400 + 1) ])[0] ? true : (tokens'/872[3] == v799)) ? [true, searchIdx/2411 ] : [false, (searchIdx/2411 + 1) ])[0] ? true : (tokens'/872[4] == v799)) ? [true, searchIdx/2422 ] : [false, (searchIdx/2422 + 1) ])[1]][0] - 1), tokInfo/1268[1], tokInfo/1268[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, false ], [0, 0, false ], [1, 0, false ], [1, 0, false ], [1, 0, false ] ] )
+  const searchIdx/2558 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/2569 = ((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/2558 ] : [false, (searchIdx/2558 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/2580 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/2558 ] : [false, (searchIdx/2558 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/2569 ] : [false, (searchIdx/2569 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/2591 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/2558 ] : [false, (searchIdx/2558 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/2569 ] : [false, (searchIdx/2569 + 1) ])[0] ? true : (tokens'/872[2] == v800)) ? [true, searchIdx/2580 ] : [false, (searchIdx/2580 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/2602 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/2558 ] : [false, (searchIdx/2558 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/2569 ] : [false, (searchIdx/2569 + 1) ])[0] ? true : (tokens'/872[2] == v800)) ? [true, searchIdx/2580 ] : [false, (searchIdx/2580 + 1) ])[0] ? true : (tokens'/872[3] == v800)) ? [true, searchIdx/2591 ] : [false, (searchIdx/2591 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/2618 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/2629 = ((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/2618 ] : [false, (searchIdx/2618 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/2640 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/2618 ] : [false, (searchIdx/2618 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/2629 ] : [false, (searchIdx/2629 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/2651 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/2618 ] : [false, (searchIdx/2618 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/2629 ] : [false, (searchIdx/2629 + 1) ])[0] ? true : (tokens'/872[2] == v800)) ? [true, searchIdx/2640 ] : [false, (searchIdx/2640 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/2662 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/2618 ] : [false, (searchIdx/2618 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/2629 ] : [false, (searchIdx/2629 + 1) ])[0] ? true : (tokens'/872[2] == v800)) ? [true, searchIdx/2640 ] : [false, (searchIdx/2640 + 1) ])[0] ? true : (tokens'/872[3] == v800)) ? [true, searchIdx/2651 ] : [false, (searchIdx/2651 + 1) ])[1];
+  //    ^ would be 2
+  const tokIdx/1324 = ((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/2618 ] : [false, (searchIdx/2618 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/2629 ] : [false, (searchIdx/2629 + 1) ])[0] ? true : (tokens'/872[2] == v800)) ? [true, searchIdx/2640 ] : [false, (searchIdx/2640 + 1) ])[0] ? true : (tokens'/872[3] == v800)) ? [true, searchIdx/2651 ] : [false, (searchIdx/2651 + 1) ])[0] ? true : (tokens'/872[4] == v800)) ? [true, searchIdx/2662 ] : [false, (searchIdx/2662 + 1) ])[1];
+  //    ^ would be 2
+  const tokInfo/1326 = tokInfos'/1273[tokIdx/1324];
+  //    ^ would be [1, 0, false ]
+  const tokInfos'/1331 = Array.set(tokInfos'/1273, tokIdx/1324, [(tokInfos'/1273[((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v800)) ? [true, searchIdx/2558 ] : [false, (searchIdx/2558 + 1) ])[0] ? true : (tokens'/872[1] == v800)) ? [true, searchIdx/2569 ] : [false, (searchIdx/2569 + 1) ])[0] ? true : (tokens'/872[2] == v800)) ? [true, searchIdx/2580 ] : [false, (searchIdx/2580 + 1) ])[0] ? true : (tokens'/872[3] == v800)) ? [true, searchIdx/2591 ] : [false, (searchIdx/2591 + 1) ])[0] ? true : (tokens'/872[4] == v800)) ? [true, searchIdx/2602 ] : [false, (searchIdx/2602 + 1) ])[1]][0] - 1), tokInfo/1326[1], tokInfo/1326[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, false ], [0, 0, false ], [0, 0, false ], [1, 0, false ], [1, 0, false ] ] )
+  const searchIdx/2738 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/2749 = ((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2738 ] : [false, (searchIdx/2738 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/2760 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2738 ] : [false, (searchIdx/2738 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2749 ] : [false, (searchIdx/2749 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/2771 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2738 ] : [false, (searchIdx/2738 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2749 ] : [false, (searchIdx/2749 + 1) ])[0] ? true : (tokens'/872[2] == v802)) ? [true, searchIdx/2760 ] : [false, (searchIdx/2760 + 1) ])[1];
+  //    ^ would be 3
+  const searchIdx/2782 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2738 ] : [false, (searchIdx/2738 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2749 ] : [false, (searchIdx/2749 + 1) ])[0] ? true : (tokens'/872[2] == v802)) ? [true, searchIdx/2760 ] : [false, (searchIdx/2760 + 1) ])[0] ? true : (tokens'/872[3] == v802)) ? [true, searchIdx/2771 ] : [false, (searchIdx/2771 + 1) ])[1];
+  //    ^ would be 4
+  const searchIdx/2798 = initAcc/958[1];
+  //    ^ would be 0
+  const searchIdx/2809 = ((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2798 ] : [false, (searchIdx/2798 + 1) ])[1];
+  //    ^ would be 1
+  const searchIdx/2820 = ((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2798 ] : [false, (searchIdx/2798 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2809 ] : [false, (searchIdx/2809 + 1) ])[1];
+  //    ^ would be 2
+  const searchIdx/2831 = ((((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2798 ] : [false, (searchIdx/2798 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2809 ] : [false, (searchIdx/2809 + 1) ])[0] ? true : (tokens'/872[2] == v802)) ? [true, searchIdx/2820 ] : [false, (searchIdx/2820 + 1) ])[1];
+  //    ^ would be 3
+  const searchIdx/2842 = ((((((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2798 ] : [false, (searchIdx/2798 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2809 ] : [false, (searchIdx/2809 + 1) ])[0] ? true : (tokens'/872[2] == v802)) ? [true, searchIdx/2820 ] : [false, (searchIdx/2820 + 1) ])[0] ? true : (tokens'/872[3] == v802)) ? [true, searchIdx/2831 ] : [false, (searchIdx/2831 + 1) ])[1];
+  //    ^ would be 4
+  const tokIdx/1382 = ((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2798 ] : [false, (searchIdx/2798 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2809 ] : [false, (searchIdx/2809 + 1) ])[0] ? true : (tokens'/872[2] == v802)) ? [true, searchIdx/2820 ] : [false, (searchIdx/2820 + 1) ])[0] ? true : (tokens'/872[3] == v802)) ? [true, searchIdx/2831 ] : [false, (searchIdx/2831 + 1) ])[0] ? true : (tokens'/872[4] == v802)) ? [true, searchIdx/2842 ] : [false, (searchIdx/2842 + 1) ])[1];
+  //    ^ would be 4
+  const tokInfo/1384 = tokInfos'/1331[tokIdx/1382];
+  //    ^ would be [1, 0, false ]
+  const v1403 = 0 == Array.set(tokInfos'/1331, tokIdx/1382, [(tokInfos'/1331[((((((((((initAcc/958[0] ? true : (tokens'/872[0] == v802)) ? [true, searchIdx/2738 ] : [false, (searchIdx/2738 + 1) ])[0] ? true : (tokens'/872[1] == v802)) ? [true, searchIdx/2749 ] : [false, (searchIdx/2749 + 1) ])[0] ? true : (tokens'/872[2] == v802)) ? [true, searchIdx/2760 ] : [false, (searchIdx/2760 + 1) ])[0] ? true : (tokens'/872[3] == v802)) ? [true, searchIdx/2771 ] : [false, (searchIdx/2771 + 1) ])[0] ? true : (tokens'/872[4] == v802)) ? [true, searchIdx/2782 ] : [false, (searchIdx/2782 + 1) ])[1]][0] - 1), tokInfo/1384[1], tokInfo/1384[2] ] )[3][0];
+  //    ^ would be false
+  assert(v1403);
+
+  Verifying when NO participants are honest
+Checked 104 theorems; 2 failures (and 1 omitted repeats) :'(

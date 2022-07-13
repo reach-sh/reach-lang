@@ -157,6 +157,7 @@ completionKind v =
         SLPrim_Token_burn -> Just CK_Method
         SLPrim_Token_destroy -> Just CK_Method
         SLPrim_Token_destroyed -> Just CK_Method
+        SLPrim_Token_track -> Just CK_Method
         SLPrim_didPublish -> Just CK_Function
         SLPrim_unstrict -> Just CK_Function
         SLPrim_polyNeq -> Just CK_Function

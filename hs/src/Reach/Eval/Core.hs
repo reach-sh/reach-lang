@@ -1370,6 +1370,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
         , ("destroy", delayCall SLPrim_Token_destroy)
         , ("destroyed", delayCall SLPrim_Token_destroyed)
         , ("supply", delayCall SLPrim_Token_supply)
+        , ("track", delayCall SLPrim_Token_track)
         ]
   SLV_Type ST_Token ->
     return $ Just $
@@ -1379,6 +1380,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
         , ("destroy", retV $ public $ SLV_Prim $ SLPrim_Token_destroy)
         , ("destroyed", retV $ public $ SLV_Prim $ SLPrim_Token_destroyed)
         , ("supply", retV $ public $ SLV_Prim $ SLPrim_Token_supply)
+        , ("track", retV $ public $ SLV_Prim SLPrim_Token_track)
         ]
   SLV_Prim SLPrim_Struct -> return $ Just structValueEnv
   SLV_Type (ST_Struct ts) ->
@@ -2652,6 +2654,20 @@ warnInteractType = \case
   where
     r = warnInteractType
 
+trackToken :: DLArg -> DLArg -> App ()
+trackToken tok bal = do
+  tokdv <- case tok of
+            DLA_Var dv -> return dv
+            _ -> impossible "Not token"
+  st <- readSt id
+  let existingToks = st_toks st
+  setSt $
+    st
+      { st_toks = existingToks <> [tokdv]
+      , st_tok_pos = M.insert (DLA_Var tokdv) (length existingToks) (st_tok_pos st)
+      }
+  doBalanceInit' TM_Balance (Just tok) bal
+
 evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
   case p of
@@ -2734,18 +2750,18 @@ evalPrim p sargs =
       let existingToks = st_toks st
       tokIsUniq <- tokIsUnique (map DLA_Var existingToks) $ DLA_Var tokdv
       doClaim CT_Assume tokIsUniq $ Just "New token is unique"
-      setSt $
-        st
-          { st_toks = existingToks <> [tokdv]
-          , st_toks_c = S.insert tokdv (st_toks_c st)
-          , st_tok_pos = M.insert (DLA_Var tokdv) (length existingToks) (st_tok_pos st)
-          }
+      setSt $ st { st_toks_c = S.insert tokdv (st_toks_c st) }
       let toka = DLA_Var tokdv
-      let mtok_a = Just $ toka
-      doBalanceInit' TM_Balance mtok_a supplya
+      trackToken toka supplya
       tokenMetaSet TM_Supply toka supplya False
       tokenMetaSet TM_Destroyed toka (DLA_Literal $ DLL_Bool False) False
       return $ public $ SLV_DLVar tokdv
+    SLPrim_Token_track -> do
+      ensure_mode SLM_ConsensusStep "Token.track"
+      at <- withAt id
+      toka <- compileCheckType T_Token =<< one_arg
+      trackToken toka (DLA_Literal $ DLL_Int at UI_Word 0)
+      return $ public $ SLV_Null at "Token.track"
     SLPrim_padTo len -> do
       v <- one_arg
       (vl, _) <- typeOfBytes v
