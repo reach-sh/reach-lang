@@ -460,7 +460,7 @@ range: 85 - 87
 
 ### {#ref-programs-consensus-token-minting} Token minting
 
-@{ref("rsh", "burn")}@{ref("rsh", "Token.burn")}@{ref("rsh", "destroy")}@{ref("rsh", "Token.destroy")}@{ref("rsh", "supply")}@{ref("rsh", "Token.supply")}@{ref("rsh", "destroyed")}@{ref("rsh", "Token.destroyed")}
+@{ref("rsh", "burn")}@{ref("rsh", "Token.burn")}@{ref("rsh", "destroy")}@{ref("rsh", "Token.destroy")}@{ref("rsh", "supply")}@{ref("rsh", "Token.supply")}@{ref("rsh", "destroyed")}@{ref("rsh", "Token.destroyed")}@{ref("rsh", "Token.track")}
 ```reach
 require(supply >= 2 * amt);
 const tok = new Token({ name, symbol, url, metadata, supply, decimals });
@@ -470,6 +470,9 @@ assert(tok.supply() == supply - amt);
 tok.burn();
 assert(tok.destroyed() == false);
 tok.destroy();
+
+const [ [tok2], k ] = call(API.getToken());
+Token.track(tok2);
 ```
 
 :::note
@@ -524,6 +527,10 @@ has been called on `{!rsh} tok` yet.
 ---
 
 `{!rsh} Token.supply(tok)`, or `{!rsh} tok.supply()`, where `{!rsh} tok` is a `{!rsh} Token` value, may be used to query the current supply of tokens, i.e. the number of tokens which have not been burnt.
+
+---
+
+`{!rsh} Token.track(tok)`, or `{!rsh} tok.track()`, where `{!rsh} tok` is a `{!rsh} Token` value, may be used to explicitly start tracking the balance of a Token in an application. This operation is useful for tracking a token that is received from an API call or published within a container, like an `{!rsh} Array` or `{!rsh} Data` object.
 
 ### Remote objects
 
