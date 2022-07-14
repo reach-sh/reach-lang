@@ -68,7 +68,6 @@ dependencies:
 - safe
 - scientific
 - scotty >= 0.12
-- scrypt
 - search-algorithms
 - servant
 - servant-client
