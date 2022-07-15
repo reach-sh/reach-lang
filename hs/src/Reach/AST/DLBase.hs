@@ -1376,7 +1376,17 @@ flattenInterfaceLikeMap = M.fromList . concatMap go . M.toList
     go' :: Maybe SLPart -> (SLVar, a) -> (SLPart, a)
     go' mp (v, x) = (fromMaybe "" (fmap (flip (<>) "_") mp) <> bpack v, x)
 
-type DLViews = InterfaceLikeMap IType
+type DLViews = InterfaceLikeMap (IType, [B.ByteString])
+
+data AliasType
+  = A_Api
+  | A_View
+  deriving (Eq, Ord, Show)
+
+instance Pretty AliasType where
+  pretty = \case
+    A_Api  -> "Api_Alias"
+    A_View -> "View_Alias"
 
 type Aliases = M.Map SLVar (Maybe B.ByteString)
 

@@ -15,6 +15,7 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.Util
+import qualified Data.ByteString as B
 
 data SimIdentity = Consensus | Participant Participant
   deriving (Eq, Ord, Show, Generic)
@@ -1046,19 +1047,19 @@ isTimeout tc_mtime phId = do
             return $ Just step
     Nothing -> return $ Nothing
 
-registerViews :: [(Maybe SLPart, [(SLVar, IType)])] -> App ()
+registerViews :: [(Maybe SLPart, [(SLVar, (IType, [B.ByteString]))])] -> App ()
 registerViews [] = return ()
 registerViews ((_, []) : vs) = registerViews vs
-registerViews ((sl, ((slv,ty) : vars)) : vs) = do
+registerViews ((sl, ((slv,(ty, aliases)) : vars)) : vs) = do
   s <- getState
-  let (g,l) = registerView s (fmap bunpack sl) slv ty
+  let (g,l) = registerView s (fmap bunpack sl) slv ty aliases
   setGlobal g
   setLocal l
   registerViews [(sl,vars)]
   registerViews vs
 
-registerView :: State -> Maybe String -> SLVar -> IType -> State
-registerView (g, l) v_name v_var v_ty = do
+registerView :: State -> Maybe String -> SLVar -> IType -> [B.ByteString] -> State
+registerView (g, l) v_name v_var v_ty _aliases = do
   let views = e_views g
   let viewids = e_viewids g
   let vid = e_nvid g
@@ -1067,6 +1068,7 @@ registerView (g, l) v_name v_var v_ty = do
   let pName = case v_name of
         Nothing -> ""
         Just p -> p
+  -- XXX add same view for all aliases
   let g' =
         g
           { e_views = M.insert vid v views

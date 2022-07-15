@@ -73,6 +73,7 @@ data AppRes = AppRes
   , -- All the bound Participants, Views, APIs
     ar_entities :: M.Map String SrcLoc
   , ar_api_alias :: M.Map SLVar (Maybe B.ByteString, [SLType])
+  , ar_view_alias :: M.Map SLVar [B.ByteString]
   }
 
 data AppInitSt
@@ -3369,12 +3370,17 @@ evalPrim p sargs =
       retV $ (lvl, SLV_Object nAt (Just $ ns <> " API") io)
     SLPrim_View -> do
       ensure_mode SLM_AppInit "View"
-      (nv, intv) <- case args of
-        [x] -> return (Nothing, x)
-        [x, y] -> return (Just x, y)
+      (nv, intv, alias) <- case args of
+        [x] -> return (Nothing, x, Nothing)
+        [x, y] ->
+          typeOfM x >>= \case
+            Just (T_Bytes {}, _) -> return (Just x, y, Nothing)
+            _ -> return (Nothing, x, Just y)
+        [x, y, z] -> return (Just x, y, Just z)
         _ -> illegal_args
       n <- mapM mustBeBytes nv
       SLInterface im <- mustBeInterface intv
+      aliasEnv <- mapM mustBeObject alias >>= return . fromMaybe mempty
       let mns = bunpack <$> n
       nAt <- withAt id
       mapM_ (verifyName nAt "View" $ M.keys im) mns
@@ -3395,13 +3401,19 @@ evalPrim p sargs =
                 ST_UDFun {} ->
                   expect_ $ Err_View_UDFun
                 _ -> IT_Val <$> st2dte t
-            return $ (di, io)
+            let chkAlias ma = do
+                  a <- mustBeTuple $ sss_val ma
+                  mapM mustBeBytes a
+            m_alias <- fromMaybe [] <$> mapM chkAlias (M.lookup k aliasEnv)
+            return $ ((di, m_alias), (m_alias, io))
       ix <- mapWithKeyM go im
       let i' = M.map fst ix
-      let io = M.map snd ix
+      let io = M.map (snd . snd) ix
+      let va = M.map (fst . snd) ix
       -- Merge untagged views which have `Nothing` key
       aisiPut aisi_res $ \ar ->
-        ar {ar_views = M.insertWith M.union n i' $ ar_views ar}
+        ar { ar_views = M.insertWith M.union n i' $ ar_views ar
+           , ar_view_alias = M.union va $ ar_view_alias ar }
       retV $ (lvl, SLV_Object nAt (Just $ ns <> " View") io)
     SLPrim_Map -> illegal_args
     SLPrim_Map_new -> do

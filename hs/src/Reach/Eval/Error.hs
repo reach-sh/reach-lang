@@ -20,6 +20,7 @@ import Reach.Texty (pretty)
 import Reach.Util
 import Reach.Version
 import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
+import qualified Data.ByteString as B
 
 data LookupCtx
   = -- Signifies the user referencing a variable from a ctxt (:: String).
@@ -167,6 +168,7 @@ data EvalError
   | Err_Eval_EmptyData
   | Err_JSON SLValTy
   | Err_ContractCode ConnectorName String SLValTy
+  | Err_Alias_Name_Clash [B.ByteString]
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -315,6 +317,7 @@ instance HasErrorCode EvalError where
     Err_Eval_EmptyData -> 135
     Err_JSON {} -> 136
     Err_ContractCode {} -> 137
+    Err_Alias_Name_Clash {} -> 138
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -777,5 +780,7 @@ instance Show EvalError where
       "Cannot convert value to JSON: " <> show_sv sv
     Err_ContractCode cn msg sv ->
       "Failed to compile or parse contract code for " <> show cn <> ": " <> msg <> ": " <> show_sv sv
+    Err_Alias_Name_Clash names ->
+      "The following aliases have been declared multiple times: " <> show names
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

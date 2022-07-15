@@ -11,6 +11,7 @@ import Reach.AST.PL
 import Reach.CollectCounts
 import Reach.AnalyzeVars
 import Reach.Util
+import qualified Data.ByteString as B
 
 data Env = Env
   { e_cs :: IORef Counts
@@ -80,6 +81,9 @@ instance AC DLArg where
   ac = viaVisit
 
 instance AC IType where
+  ac = return
+
+instance AC B.ByteString where
   ac = return
 
 isPure' :: DLExpr -> App Bool
