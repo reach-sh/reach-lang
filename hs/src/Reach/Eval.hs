@@ -22,7 +22,7 @@ import Reach.Parser
 import Reach.Util
 import Reach.Warning
 import qualified Data.ByteString as B
-import Data.List.Extra (groupSort)
+import Data.List.Extra (groupSort, (\\))
 import Reach.UnsafeUtil (unsafeNub)
 
 compileDApp :: DLStmts -> DLSExports -> SLVal -> App DLProg
@@ -51,7 +51,7 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
           }
   init_dlo <- readDlo id
   envr <- liftIO $ newIORef $ AppEnv mempty init_dlo mempty mempty
-  resr <- liftIO $ newIORef $ AppRes mempty mempty mempty mempty mempty mempty mempty
+  resr <- liftIO $ newIORef $ AppRes mempty mempty mempty mempty mempty mempty mempty mempty
   appr <- liftIO $ newIORef $ AIS_Init envr resr
   mape <- liftIO $ makeMapEnv
   e_droppedAsserts' <- (liftIO . dupeCounter) =<< (e_droppedAsserts <$> ask)
@@ -79,7 +79,8 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
           , dlo_droppedAsserts = e_droppedAsserts'
           }
   AppRes {..} <- liftIO $ readIORef resr
-  aliases <- verifyAliases ar_api_alias
+  aliases <- verifyApiAliases ar_api_alias
+  verifyViewAliases ar_view_alias
   dli_maps <- liftIO $ readIORef $ me_ms mape
   let dli = DLInit {..}
   let sps_ies = ar_pie
@@ -99,14 +100,22 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
   return DLProg {..}
 compileDApp _ _ _ = impossible "compileDApp called without a Reach.App"
 
-verifyAliases :: M.Map SLVar (Maybe B.ByteString, [SLType]) -> App Aliases
-verifyAliases m = do
+verifyApiAliases :: M.Map SLVar (Maybe B.ByteString, [SLType]) -> App Aliases
+verifyApiAliases m = do
   forM_ (groupSort $ M.elems m) $ \case
     (Just k, doms) -> do
       unless (length doms == length (unsafeNub doms)) $ do
         expect_ $ Err_Alias_Type_Clash $ bunpack k
     (Nothing, _) -> return ()
   return $ M.map fst m
+
+verifyViewAliases :: M.Map SLVar [B.ByteString] -> App ()
+verifyViewAliases m = do
+  let aliases = concat $ M.elems m
+  let uniqAliases = unsafeNub aliases
+  when (length aliases /= length uniqAliases) $
+    expect_ $ Err_Alias_Name_Clash $ aliases \\ uniqAliases
+  return ()
 
 class Pandemic a where
   pan :: a -> App a

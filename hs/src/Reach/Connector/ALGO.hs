@@ -3158,6 +3158,7 @@ data CMeth
     , cview_sig :: String
     , cview_ret_ty :: DLType
     , cview_hs :: VSIHandler
+    , cview_lab :: LT.Text
     }
   | CAlias
     { calias_who :: SLPart
@@ -3252,13 +3253,15 @@ capis (p, ms) = do
   where
     qualify = M.size ms > 1
 
-cview :: (SLPart, VSITopInfo) -> (String, CMeth)
-cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs) = (cview_sig, c)
+cview :: (SLPart, VSITopInfo) -> App [(String, CMeth)]
+cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs aliases) = do
+    cview_lab <- freshLabel $ bunpack who
+    let v = CView {..}
+    return $ (cview_sig, v) : concatMap (\ alias -> [(bunpack alias, CAlias alias v)]) aliases
   where
     cview_who = who
     f = bunpack who
     cview_sig = signatureStr False f cview_arg_tys $ Just cview_ret_ty
-    c = CView {..}
 
 doWrapData :: [DLType] -> (DLArg -> App ()) -> App ()
 doWrapData tys mk = do
@@ -3283,6 +3286,11 @@ cmeth sigi = \case
     comment $ LT.pack $ sigDump sigi
     block_' (bunpack alias) $ do
       code "b" [capi_label]
+  CAlias alias (CView {..}) -> do
+    comment $ LT.pack $ "View: " <> cview_sig
+    comment $ LT.pack $ sigDump sigi
+    block_' (bunpack alias) $ do
+      code "b" [cview_lab]
   CApi _ sig _ which tys doWrap lab [] -> do
     block lab $ do
       comment $ LT.pack $ "API: " <> sig
@@ -3309,8 +3317,8 @@ cmeth sigi = \case
       gvLoad GV_currentStep
       let go _ l = code "b" [l]
       cblt "api" go $ bltM $ M.fromList wls
-  CView who sig _ hs -> do
-    block_' (bunpack who) $ do
+  CView who sig _ hs lab -> do
+    block lab $ do
       comment $ LT.pack $ "View: " <> sig
       comment $ LT.pack $ sigDump sigi
       gvLoad GV_currentStep
@@ -3344,7 +3352,7 @@ bindFromArgs vs m = do
 
 data VSIBlockVS = VSIBlockVS [DLVarLet] DLExportBlock
 type VSIHandler = M.Map Int VSIBlockVS
-data VSITopInfo = VSITopInfo [DLType] DLType VSIHandler
+data VSITopInfo = VSITopInfo [DLType] DLType VSIHandler [B.ByteString]
 type VSITop = M.Map SLPart VSITopInfo
 
 instance AC VSIBlockVS where
@@ -3361,9 +3369,10 @@ selectFromM f k m = M.mapMaybe go m
 analyzeViews :: (CPViews, ViewInfos) -> VSITop
 analyzeViews (vs, vis) = vsit
   where
-    vsit = M.mapWithKey got $ flattenInterfaceLikeMap vs
-    got who it = VSITopInfo args ret hs
+    vsit = M.fromList $ map (uncurry got) $ M.toList $ flattenInterfaceLikeMap vs
+    got who (it, aliases) = (who, v aliases)
       where
+        v = VSITopInfo args ret hs
         hs = selectFromM VSIBlockVS who vsih
         (args, ret) =
           case it of
@@ -3525,7 +3534,7 @@ compile_algo env disp pl = do
   runProg $ do
     ai_sm <- M.fromList <$> concatMapM capis (M.toAscList ai)
     let vsiTop = analyzeViews vsi
-    let vsi_sm = M.fromList $ map cview $ M.toAscList vsiTop
+    vsi_sm <- M.fromList <$> concatMapM cview (M.toAscList vsiTop)
     let meth_sm = M.union ai_sm vsi_sm
     liftIO $ writeIORef meth_sm_r meth_sm
     let maxApiRetSize = maxTypeSize $ M.map cmethRetTy meth_sm

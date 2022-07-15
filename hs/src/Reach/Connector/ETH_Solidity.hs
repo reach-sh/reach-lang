@@ -1671,9 +1671,10 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
               , ext_defn
               ]
     map_defns <- mapM map_defn (M.toList dli_maps)
-    let tgo :: Maybe SLPart -> (SLVar, IType) -> App ((T.Text, Aeson.Value), Doc)
-        tgo v (k, t) = do
-          let vk_ = maybe k (\v' -> bunpack v' <> "_" <> k) v
+    let tgo :: Maybe SLPart -> (SLVar, (IType, [B.ByteString])) -> App ([(T.Text, Aeson.Value)], Doc)
+        tgo v (k, (t, aliases)) = do
+          let mk kv = maybe kv (\v' -> bunpack v' <> "_" <> kv) v
+          let vk_ = mk k
           let vk = pretty $ vk_
           let (dom, rng) = itype2arr t
           args <- mapM (allocDLVar at) dom
@@ -1700,7 +1701,9 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
                 <> (map (\(a, i) -> "_t.elem" <> pretty i <> " = "
                           <> solRawVar a <> semi) $ zip args ([0 ..] :: [Int]))
                 <> ["return " <> solApply vkWrapped ["_t"] <> semi]
-          let wrapper = solFunction vk dom' ret wrapperBody
+          let mkWrapper name = solFunction name dom' ret wrapperBody
+          let wrapper = mkWrapper vk
+          let view_defns = map (mkWrapper . pretty . mk . bunpack) aliases
           illegal <- flip (<>) semi <$> solRequire "invalid view_i" "false"
           let igo (i, ViewInfo vvs vim) = freshVarMap $ do
                 c' <- solEq "current_step" $ solNum i
@@ -1722,14 +1725,17 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
                 return $ (defn, solWhen c' $ vsep [de', ret'])
           (defns, body') <- unzip <$> (mapM igo $ M.toAscList vi)
           let body'' = vsep $ body' <> [illegal]
+          let keys = (s2t k, Aeson.String $ s2t vk_) :
+                      map (\ a -> let a' = bunpack a in (s2t a', Aeson.String $ s2t $ mk a')) aliases
           return $
-            (,) (s2t k, Aeson.String $ s2t vk_) $
-              vsep $ defns <> [solFunction vkWrapped [mayMemSol wrappedDomTy <> " _a"] retWrapped body''] <> [wrapper]
+            (,) keys $
+              vsep $ defns <> [solFunction vkWrapped [mayMemSol wrappedDomTy <> " _a"] retWrapped body''] <> [wrapper] <> view_defns
     let vgo (v, tm) = do
-          (o_ks, bs) <- unzip <$> (mapM (tgo v) $ M.toAscList tm)
-          -- Lift untagged views
+          (o_kss, bs) <- unzip <$> (mapM (tgo v) $ M.toAscList tm)
+          let o_ks = concat o_kss
+          -- Lift untagged viewss
           let keys = case v of
-                Just v' -> [(b2t v', aesonObject o_ks)]
+                Just v' -> [(b2t v', aesonObject $ o_ks)]
                 Nothing -> o_ks
           return (keys, vsep bs)
     (view_jsons, view_defns) <- unzip <$> (mapM vgo $ M.toAscList vs)

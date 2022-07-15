@@ -1102,21 +1102,28 @@ jsViews (cvs, vis) = do
                   return $ jsReturn $ parens eb'call
                 Nothing -> return $ illegal
             return $ jsWhen c $ vsep [let', ret']
-      let enInfo' :: Maybe SLPart -> SLVar -> IType -> App Doc
-          enInfo' v k vt = do
+      let enInfo' :: Maybe SLPart -> (SLVar, (IType, [B.ByteString])) -> App ([(SLVar, Doc)], Doc)
+          enInfo' v (k, (vt, aliases)) = do
             let (_, rng) = itype2arr vt
             rng' <- jsContract rng
             body <- (vsep . M.elems) <$> mapWithKeyM (enDecode v k) vis
             let body' = vsep [body, illegal]
             let decode' = jsApply "async " ["i", "svs", "args"] <+> "=>" <+> jsBraces body'
-            return $
-              jsObject $
-                M.fromList $
-                  [ ("ty" :: String, rng')
-                  , ("decode", decode')
-                  ]
-      let enInfo k v = mapWithKeyM (enInfo' k) v
+            let view_asn = "const " <> pretty k <> " = " <> decode' <> ";"
+            let val = jsObject $
+                        M.fromList $
+                          [ ("ty" :: String, rng')
+                          , ("decode", pretty k)
+                          ]
+            return $ (,view_asn) $ map (, val) $ k : map bunpack aliases
+      -- These two maps respect hierarchy of named Views, whereas the flattened ones in
+      -- Algo would not
+      let enInfo k v = do
+            (m, view_asn) <- unzip <$> mapM (enInfo' k) (M.toList v)
+            return (view_asn, M.fromList . concat $ m)
       infos' <- mapWithKeyM enInfo cvs
+      let view_asns = concatMap fst $ M.elems infos'
+      let infos'' = M.map snd infos'
       -- Lift untagged views to same level as tagged views
       let infos =
             jsObject $
@@ -1126,12 +1133,13 @@ jsViews (cvs, vis) = do
                      Just k -> M.insert (bunpack k) . jsObject
                      Nothing -> M.union)
                 mempty
-                infos'
+                infos''
       maps_defn <- jsMapDefns False
       return $
         vsep $
-          [ maps_defn
-          , jsReturn $
+          maps_defn :
+          view_asns <>
+          [ jsReturn $
               jsObject $
                 M.fromList $
                   [ ("views" :: String, views)

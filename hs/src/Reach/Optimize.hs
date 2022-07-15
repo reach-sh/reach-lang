@@ -15,6 +15,7 @@ import Reach.Sanitize
 import Reach.UnrollLoops
 import Reach.Util
 import Safe (atMay)
+import qualified Data.ByteString as B
 
 type App = ReaderT Env IO
 
@@ -262,6 +263,10 @@ instance Optimize DLVar where
   gcs _ = return ()
 
 instance Optimize Bool where
+  opt = return
+  gcs _ = return ()
+
+instance Optimize B.ByteString where
   opt = return
   gcs _ = return ()
 
