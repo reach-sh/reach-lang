@@ -43,7 +43,7 @@ export const main = Reach.App(() => {
         same(zs);
         B.interact.log(xs, ys, zs);
         k(null);
-		commit()
+        commit()
       })
     .api(P.g,
       () => 0,
