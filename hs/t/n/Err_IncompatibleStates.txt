@@ -1,0 +1,10 @@
+reachc: error[RE0066]: Incompatible states:
+The expected state of the program varies between branches because:
+  * Expected to be in step , but in consensus step.
+
+  ./ErrFailure.rsh:38:7:case
+
+  38|   fork()
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0066
+

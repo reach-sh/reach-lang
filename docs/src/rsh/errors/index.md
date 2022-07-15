@@ -1251,11 +1251,20 @@ commit();
 ## {#RE0066} RE0066
 
 This error indicates that the state of the program differs in the continuation of a
-branching statement. That is, if a Reach program may execute multiple different code paths at
-runtime, the continuation of those branches must make the same assumption about state.
+branching statement. That is, if a Reach program may execute multiple different code paths at runtime, the continuation of those branches must make the same assumption about state.
 
 For example, this error may be caused by having one branch end in consensus step and
 the other in a step. You can fix this by ensuring both branches end in the same mode.
+
+Example:
+
+```reach
+load: /hs/t/n/Err_IncompatibleStates.rsh
+md5: c87e4091641e0c9ac0b57e46fec73ac2
+range: 38 - 51
+```
+
+This fork ends in two different states, Step and Consensus, but after removing the `{!rsh} commit` both fork statements end in Consensus Step.
 
 Another example is a `{!rsh} Participant` makes their first publication in the branch
 of a conditional. You can fix this by having the `{!rsh} Participant` make their first
