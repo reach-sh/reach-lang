@@ -15,7 +15,7 @@ execution.
 It uses finite on-chain state.
 The DApp consists of one application.
 The contract escrow account is the application account.
-Sometimes a companion contract is created that is used to increased the opcode budget during contract execution.
+Sometimes a companion contract is created that is used to increase the opcode budget during contract execution.
 
 It relies on versions of `algod` that support TEAL version 6, such as Algorand 3.5.1.
 It uses the Algorand `indexer` version 2 to lookup and monitor publications; in other words, it does _not_ rely on any communication network other than Algorand itself.
