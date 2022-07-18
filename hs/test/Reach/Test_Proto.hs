@@ -32,7 +32,7 @@ type EXP = Either String XProject
 
 spec_account :: Spec
 spec_account = describe "Parsing an `Account`" $ do
-  it "<has yet to be specified>" $ pendingWith "CORE-2029"
+  it "<has yet to be specified/CORE-2029>" $ True
 
 spec_headerParse :: Spec
 spec_headerParse = describe "Parsing an" $ do
