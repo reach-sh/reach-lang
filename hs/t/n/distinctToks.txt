@@ -18,9 +18,9 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v87 = ((y/68 == x/67) ? false : true);
+  const v94 = ((y/68 == x/67) ? false : true);
   //    ^ would be false
-  require(v87);
+  require(v94);
 
   Verifying when NO participants are honest
 Checked 11 theorems; 1 failures :'(

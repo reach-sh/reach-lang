@@ -26,15 +26,15 @@ Verification failed:
 
   // Theorem Formalization
 
-  const tokens'/318 = Array.set(Array.set(array(Token, [Token.zero, Token.zero ]), 0, tok1/292 ), 1, tok2/293 );
+  const tokens'/316 = Array.set(Array.set(array(Token, [Token.zero, Token.zero ]), 0, tok1/292 ), 1, tok2/293 );
   //    ^ would be array(Token, [Token!val!0, Token!val!1 ] )
   const payTok/449 = data_id/439[0];
   //    ^ would be Token!val!4
   const searchIdx/604 = [false, 0 ][1];
   //    ^ would be 0
-  const searchIdx/615 = (([false, 0 ][0] ? true : (tokens'/318[0] == payTok/449)) ? [true, searchIdx/604 ] : [false, (searchIdx/604 + 1) ])[1];
+  const searchIdx/615 = (([false, 0 ][0] ? true : (tokens'/316[0] == payTok/449)) ? [true, searchIdx/604 ] : [false, (searchIdx/604 + 1) ])[1];
   //    ^ would be 1
-  const isFound'/476 = (((([false, 0 ][0] ? true : (tokens'/318[0] == payTok/449)) ? [true, searchIdx/604 ] : [false, (searchIdx/604 + 1) ])[0] ? true : (tokens'/318[1] == payTok/449)) ? [true, searchIdx/615 ] : [false, (searchIdx/615 + 1) ])[0];
+  const isFound'/476 = (((([false, 0 ][0] ? true : (tokens'/316[0] == payTok/449)) ? [true, searchIdx/604 ] : [false, (searchIdx/604 + 1) ])[0] ? true : (tokens'/316[1] == payTok/449)) ? [true, searchIdx/615 ] : [false, (searchIdx/615 + 1) ])[0];
   //    ^ would be false
   assert(isFound'/476);
 

@@ -54,7 +54,6 @@ dependencies:
 - memory
 - mmorph
 - mtl
-- mysql-simple
 - optparse-applicative
 - OTP
 - parsec

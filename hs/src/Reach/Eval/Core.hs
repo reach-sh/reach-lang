@@ -2654,8 +2654,10 @@ warnInteractType = \case
   where
     r = warnInteractType
 
-trackToken :: DLArg -> DLArg -> App ()
-trackToken tok bal = do
+trackToken :: DLArg -> Maybe DLArg -> App ()
+trackToken tok mBal = do
+  at <- withAt id
+  let bal = fromMaybe (DLA_Literal $ DLL_Int at UI_Word 0) mBal
   tokdv <- case tok of
             DLA_Var dv -> return dv
             _ -> impossible "Not token"
@@ -2752,7 +2754,7 @@ evalPrim p sargs =
       doClaim CT_Assume tokIsUniq $ Just "New token is unique"
       setSt $ st { st_toks_c = S.insert tokdv (st_toks_c st) }
       let toka = DLA_Var tokdv
-      trackToken toka supplya
+      trackToken toka $ Just supplya
       tokenMetaSet TM_Supply toka supplya False
       tokenMetaSet TM_Destroyed toka (DLA_Literal $ DLL_Bool False) False
       return $ public $ SLV_DLVar tokdv
@@ -2760,7 +2762,7 @@ evalPrim p sargs =
       ensure_mode SLM_ConsensusStep "Token.track"
       at <- withAt id
       toka <- compileCheckType T_Token =<< one_arg
-      trackToken toka (DLA_Literal $ DLL_Int at UI_Word 0)
+      trackToken toka Nothing
       return $ public $ SLV_Null at "Token.track"
     SLPrim_padTo len -> do
       v <- one_arg
@@ -4937,27 +4939,25 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
   let mkmsg v t = ctxt_mkvar $ DLVar at (getBindingOrigin v) t
   dr_msg <- zipWithM mkmsg msg_dass_t msg_ts
   let toks = filter ((==) T_Token . varType) dr_msg
+  let tok_as = map DLA_Var toks
+  let old_toks = st_toks st
   unless (null toks) $ do
     sco <- e_sco <$> ask
     when (isJust $ sco_while_vars sco) $
       expect_ $ Err_Token_InWhile
-  let old_toks = st_toks st
-  let all_toks = old_toks <> toks
-  let all_toks_idx = (flip zip [0 ..]) $ map DLA_Var all_toks
-  let st_recv =
-        st
-          { st_mode = SLM_ConsensusStep
-          , st_pdvs = pdvs_recv
-          , st_toks = all_toks
-          , st_after_first = True
-          , st_tok_pos = M.fromList all_toks_idx
-          }
   msg_env <- foldlM env_insertp mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ dr_msg
   let recv_env_mod = who_env_mod . (M.insert "this" (SLSSVal at Public $ SLV_DLVar dr_from))
   let recv_env = msg_env
   (tc_recv, k_st, k_cr) <- do
     SLRes conlifts k_st (mktc_recv, k_cr) <- captureRes $ do
+      let st_recv =
+            st
+              { st_mode = SLM_ConsensusStep
+              , st_pdvs = pdvs_recv
+              , st_after_first = True
+              }
       setSt st_recv
+      mapM_ (flip trackToken Nothing) tok_as
       sco_recv <- sco_update_and_mod recv_imode recv_env recv_env_mod
       locSco sco_recv $ do
         evalChecks
@@ -4967,7 +4967,6 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
         void $ locSt st_pure $ evalApplyVals' req_rator [public bv, public $ SLV_Bytes at $ "non-network tokens distinct"]
         void $ locSt st_pure $ evalExpr $ amt_req
         forM_ (map DLA_Var toks) $ \tok -> do
-          doBalanceInit TM_Balance $ Just tok
           ctxt_lift_eff $ DLE_TokenInit at tok
         -- Check payments
         DLPayAmt {..} <- compilePayAmt_ amt_e
