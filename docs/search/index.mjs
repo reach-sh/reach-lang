@@ -24,9 +24,12 @@ const retriveAllGitHubDiscussions = (lastCursor) => {
       });
 
       response.on('end', async () => {
-        const { edges } = JSON.parse(
-          data
-        ).data.repository.discussions;
+        const json = JSON.parse(data);
+        if (!json.data || !json.data.repository) {
+          console.error('Bad response from GH', `lastCursor=${lastCursor}`, json);
+          reject();
+        }
+        const { edges } = json.data.repository.discussions;
         console.info('Discussions', edges);
         const cursorOfLastDiscussion = edges[
           edges.length - 1
