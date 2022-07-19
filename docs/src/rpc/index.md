@@ -18,6 +18,8 @@ starts an instance of the Reach RPC Server.
 
 ---
 
+## {#ref-rpc-methods} RPC Methods
+
 The Reach RPC Server supports the following @{defn("RPC methods")}:
 
 + `/health` returns `{!js} true` to indicate the server is running properly.
@@ -28,18 +30,57 @@ All `/stdlib` methods are synchronous value RPC methods that accept and produce 
 Those methods instead accept and produce account RPC handles, which are random strings that represent the corresponding account representations.
 For example, `/stdlib/newTestAccount` does not return an account like `{!js} newTestAccount`, but instead returns an account RPC handle.
 
-+ `/forget/acc` accepts an account RPC handle and deletes it from the Reach RPC Server's memory.
-+ `/acc/$METHOD` where `$METHOD` is a method of an account representation of the [JavaScript standard library](##ref-frontends-js).
+### {#ref-acc-methods} ACC Methods
 
 All `/acc` methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the account RPC handle returned by a prior RPC method invocation; and, a method that accepts a backend (like `/acc/attach` (i.e. `{!js} acc.attach`) or `/acc/deploy` (i.e. `{!js} acc.deploy`) does not accept a backend argument, but has it implicitly provided by the Reach RPC Server.
+
++ `/forget/acc` accepts an account RPC handle and deletes it from the Reach RPC Server's memory.
++ `/acc/$METHOD` where `$METHOD` is a method of an account representation of the [JavaScript standard library](##ref-frontends-js).
 
 Furthermore, those that produce contract representations instead produce contract RPC handles.
 For example, `/acc/deploy` does not return a contract representation like `{!js} acc.deploy`, but instead returns a contract RPC handle.
 
+### {#ref-ctc-methods} CTC Methods
+
+Most `/ctc` methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the contract RPC handle returned by a prior RPC method invocation.
+
 + `/forget/ctc` accepts a contract RPC handle and deletes it from the Reach RPC Server's memory.
 + `/ctc/$METHOD` where `$METHOD` is a method of a contract representation of the [JavaScript standard library](##ref-frontends-js).
 
-Most `/ctc` methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the contract RPC handle returned by a prior RPC method invocation.
+`/ctc` methods can access `{!js} ctc.views`, `{!js} ctc.apis`, and `{!js} ctc.events`. 
+Similar to standard library functions, the full name or first letter can be used when calling the following methods.
+
++ `/ctc/v` or `/ctc/views` provides access to all `{!rsh} View`s.
++ `/ctc/a` or `/ctc/apis` makes `{!rsh} API` functions available to the frontend.
++ `/ctc/e` or `/ctc/events` provides access to `{!rsh} Events` objects.
+
+For Example:
+
+```
+rpc('/ctc/views/', view_creator)      # Access view 'Creator'
+rpc('/ctc/apis/', bidder)             # Call 'Bidder' API
+rpc('/ctc/events/', event_bid)        # Access 'Bid' event object
+```
+
+Below, in line 45, `getRead` accesses a `{!rsh} View` named `Reader` from the attached contract stored in `const c`. 
+
+``` js
+load: /examples/rpc-api-full/index.mjs
+md5: c670a626bd1b081f278ffbeb128794c9
+range: 41-49
+```
+
+Further into the same file, RPC is used to access the attached `Writer` `{!rsh} API` and its arguments.
+
+``` js
+load: /examples/rpc-api-full/index.mjs
+md5: c670a626bd1b081f278ffbeb128794c9
+range: 59-63
+```
+
+By providing access to `{!rsh} View`s, `{!rsh} API`s, and `{!rsh} Events`,  RPC `/ctc` methods allow developers to build complete frontend Reach applications in the language of their choice. 
+
+### {#ref-part-methods} PART Methods
 
 `/ctc/p/$PARTICIPANT` and `/ctc/participants/$PARTICIPANT` are interactive RPC method alternatives to the `/backend/$PARTICIPANT` method described below.
 They accept the same arguments and behave identically.
@@ -47,11 +88,12 @@ They accept the same arguments and behave identically.
 + `/forget/token` accepts a token RPC handle and deletes it from the Reach RPC Server's memory.
 + `/backend/$PARTICIPANT` where `$PARTICIPANT` is a participant of the backend compiled by the [JavaScript backend](##ref-backends-js).
 
+### {#ref-backend-methods} Backend Methods
+
 All `/backend/$PARTICIPANT` methods are interactive RPC methods that accept three arguments:
 + `ctcId` --- A contract RPC handle to provide as the contract to the backend
 + `values` --- An object containing the non-function components of the participant interact interface of the backend.
 + `methods` --- An object whose keys correspond to the function components of the participant interact interface of the backend, but whose values are `{!js} true`.
-
 
 As a special case, if `values` contains `stdlib.hasRandom` bound to `{!js} true`, then the [JavaScript standard library](##ref-frontends-js)'s implementation of `{!js} hasRandom` is provided to the backend.
 
