@@ -530,7 +530,8 @@ has been called on `{!rsh} tok` yet.
 
 ---
 
-`{!rsh} Token.track(tok)`, or `{!rsh} tok.track()`, where `{!rsh} tok` is a `{!rsh} Token` value, may be used to explicitly start tracking the balance of a Token in an application. This operation is useful for tracking a token that is received from an API call or published within a container, like an `{!rsh} Array` or `{!rsh} Data` object.
+`{!rsh} Token.track(tok)`, or `{!rsh} tok.track()`, where `{!rsh} tok` is a `{!rsh} Token` value, may be used to explicitly start tracking the balance of a non-network token in an application.
+This operation is useful for tracking a token that is received from an API call or published within a container, like an `{!rsh} Array` or `{!rsh} Data` object.
 
 ### Remote objects
 
