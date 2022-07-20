@@ -8,11 +8,11 @@ const manyArgFunSig = Fun([UInt, UInt, UInt, UInt,
                           ],
                           UInt)
 
-const sum = (v0,v1,v2,v3,
-             v4,v5,v6,v7,
-             v8,v9,v10,v11,
-             v12,v13,v14,v15,
-             v16,v17,v18,v19
+const sum = (v0,v1,v2,v3
+             , v4,v5,v6,v7
+             , v8,v9,v10,v11
+             , v12,v13,v14,v15
+             , v16,v17,v18,v19
             ) => {
               return v0 + v1 + v2 + v3
                 + v4 + v5 + v6 + v7
@@ -33,7 +33,7 @@ export const mainServer = Reach.App(() => {
   })
   setOptions({
     connectors: [
-      // With 16 arguments, the Solidity compiler errors saying that the stack is too deep.
+      // ETH is limited to 12 arguments for APIs or Views before the Solidity compiler complains about stack depth.
       //ETH,
       ALGO,
     ]
@@ -67,7 +67,6 @@ export const mainClient = Reach.App(() => {
   })
   setOptions({
     connectors: [
-      // With 16 arguments, the Solidity compiler errors saying that the stack is too deep.
       //ETH,
       ALGO,
     ]
