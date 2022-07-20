@@ -1663,9 +1663,19 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
           let mkdom arg argt = do
                 argt' <- solType_p AM_Call argt
                 return $ solDecl (solRawVar arg) argt'
+          wrappedDomTy <- solType $ T_Tuple dom
           dom' <- zipWithM mkdom args dom
           rng' <- solType_p AM_Memory rng
           let ret = "external view returns" <+> parens rng'
+          let retWrapped = "internal view returns" <+> parens (rng' <> " _viewRet")
+          let vkWrapped = vk <> "_wrapped"
+          let wrapperBody =
+                vsep
+                $ [(mayMemSol wrappedDomTy) <> " _t" <> semi]
+                <> (map (\(a, i) -> "_t.elem" <> pretty i <> " = "
+                          <> solRawVar a <> semi) $ zip args ([0 ..] :: [Int]))
+                <> ["return " <> solApply vkWrapped ["_t"] <> semi]
+          let wrapper = solFunction vk dom' ret wrapperBody
           illegal <- flip (<>) semi <$> solRequire "invalid view_i" "false"
           let igo (i, ViewInfo vvs vim) = freshVarMap $ do
                 c' <- solEq "current_step" $ solNum i
@@ -1673,6 +1683,7 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
                 vvs_ty' <- solAsnType vvs
                 let de' = solSet (parens $ solDecl asnv (mayMemSol vvs_ty')) $ solApply "abi.decode" ["current_svbs", parens vvs_ty']
                 extendVarMap $ M.fromList $ map (\vv -> (vv, asnv <> "." <> solRawVar vv)) $ vvs
+                extendVarMap $ M.fromList $ map (\(a, argI) -> (a, "_a.elem" <> pretty argI)) $ zip args ([0 ..] :: [Int])
                 (defn, ret') <-
                   case M.lookup k (fromMaybe mempty $ M.lookup v vim) of
                     Just eb -> do
@@ -1688,7 +1699,7 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
           let body'' = vsep $ body' <> [illegal]
           return $
             (,) (s2t k, Aeson.String $ s2t vk_) $
-              vsep $ defns <> [solFunction vk dom' ret body'']
+              vsep $ defns <> [solFunction vkWrapped [mayMemSol wrappedDomTy <> " _a"] retWrapped body''] <> [wrapper]
     let vgo (v, tm) = do
           (o_ks, bs) <- unzip <$> (mapM (tgo v) $ M.toAscList tm)
           -- Lift untagged views
