@@ -13,6 +13,11 @@ export const main = Reach.App(() => {
   tok.track();
   commit();
 
+  const [ [tok2], k2 ] = call(B.getToken).check((tok2) => { check(distinct(tok, tok2)); });
+  k2(null);
+  tok2.track();
+  commit();
+
   A.pay([ [1, tok] ]);
   commit();
 

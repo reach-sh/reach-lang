@@ -30,4 +30,4 @@ Verification failed:
   assert(v300);
 
   Verifying when NO participants are honest
-Checked 28 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 29 theorems; 2 failures (and 1 omitted repeats) :'(
