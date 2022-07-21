@@ -54,6 +54,9 @@ dontWriteSol = False
 maxDepth :: Int
 maxDepth = 13
 
+apiMaxArgs :: Int
+apiMaxArgs = 12
+
 maxContractLen :: Int
 maxContractLen = 24576
 
@@ -1407,6 +1410,10 @@ apiDef who qualify ApiInfo {..} = do
   let who_s = adjustApiName (bunpack who) ai_which qualify
   let mf = solMsg_fun ai_which
   (argDefns, tyLifts, args, m_arg_ty) <- apiArgs "_t.msg" $ ApiInfo {..}
+  when (length args > apiMaxArgs) $
+    error $ "The ETH connector supports APIs that have up to " <>
+    show apiMaxArgs <> " arguments, but " <> bunpack who <> " uses " <>
+    show (length args) <> "."
   let body =
         vsep $
           [ m_arg_ty <+> "memory _t;"
@@ -1654,6 +1661,10 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
           let vk = pretty $ vk_
           let (dom, rng) = itype2arr t
           args <- mapM (allocDLVar at) dom
+          when (length args > apiMaxArgs) $
+            error $ "The ETH connector supports Views that have up to " <>
+            show apiMaxArgs <> " arguments, but " <> vk_ <> " uses " <>
+            show (length args) <> "."
           let mkargvm arg = (arg, solRawVar arg)
           extendVarMap $ M.fromList $ map mkargvm args
           let solType_p am ty = do
