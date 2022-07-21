@@ -2,7 +2,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 164 theorems; No failures!
+Checked 178 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
  * Step 0 may use up to 16 assets, but the limit is 8. Step 0 starts at ./many_txns.rsh:62:5:dot.
  * Step 0 may use up to 17 transaction references, but the limit is 8. Step 0 starts at ./many_txns.rsh:62:5:dot.

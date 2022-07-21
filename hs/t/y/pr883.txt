@@ -3,25 +3,25 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 10 theorems; No failures!
+Checked 7 theorems; No failures!
 Compiling "mt_object"...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 10 theorems; No failures!
+Checked 7 theorems; No failures!
 Compiling "mt_struct"...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 10 theorems; No failures!
+Checked 7 theorems; No failures!
 Compiling "mt_tuple"...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 10 theorems; No failures!
+Checked 7 theorems; No failures!
 warning[RW0005]: The `Object` type's format is controlled by Reach; you may want to use `Struct` instead for external interfaces, so you can mandate and document the format.
 
   ./pr883.rsh:8:16:application

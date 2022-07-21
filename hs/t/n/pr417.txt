@@ -68,4 +68,4 @@ Verification failed:
   //    ^ would be false
   assert(v398);
 
-Checked 40 theorems; 4 failures (and 1 omitted repeats) :'(
+Checked 37 theorems; 4 failures (and 1 omitted repeats) :'(

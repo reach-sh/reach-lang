@@ -8,4 +8,4 @@ Verification failed:
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 13 theorems; 1 failures :'(
+Checked 11 theorems; 1 failures :'(

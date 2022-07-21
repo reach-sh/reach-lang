@@ -2,7 +2,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 8 theorems; No failures!
+Checked 6 theorems; No failures!
 reachc: error[RC0000]: integer literal out of range for ALGO: 18446744073709551616 not in [0,18446744073709551615]
 
   <builtin>

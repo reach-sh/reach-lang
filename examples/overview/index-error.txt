@@ -22,4 +22,4 @@ Verification failed:
   assert(v93);
 
   Verifying when NO participants are honest
-Checked 13 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 10 theorems; 2 failures (and 1 omitted repeats) :'(

@@ -94,4 +94,4 @@ Verification failed:
   assert(v636);
 
   Verifying when NO participants are honest
-Checked 56 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 48 theorems; 2 failures (and 1 omitted repeats) :'(
