@@ -2654,21 +2654,28 @@ warnInteractType = \case
   where
     r = warnInteractType
 
-trackToken :: DLArg -> Maybe DLArg -> App ()
-trackToken tok mBal = do
+trackTokens :: [(DLVar, Maybe DLArg)] -> App ()
+trackTokens toks_x_bals = do
   at <- withAt id
-  let bal = fromMaybe (DLA_Literal $ DLL_Int at UI_Word 0) mBal
-  tokdv <- case tok of
-            DLA_Var dv -> return dv
-            _ -> impossible "Not token"
   st <- readSt id
-  let existingToks = st_toks st
+  let toks = map fst toks_x_bals
+  let old_toks = st_toks st
+  let all_toks = old_toks <> toks
+  let all_toks_idx = (flip zip [0 ..]) $ map DLA_Var all_toks
   setSt $
     st
-      { st_toks = existingToks <> [tokdv]
-      , st_tok_pos = M.insert (DLA_Var tokdv) (length existingToks) (st_tok_pos st)
+      { st_toks = all_toks
+      , st_tok_pos = M.fromList all_toks_idx
       }
-  doBalanceInit' TM_Balance (Just tok) bal
+  forM_ toks_x_bals $ \ (tok, mBal) -> do
+    let bal = fromMaybe (DLA_Literal $ DLL_Int at UI_Word 0) mBal
+    doBalanceInit' TM_Balance (Just $ DLA_Var tok) bal
+  let req_rator = SLV_Prim $ SLPrim_claim CT_Require
+  -- Initialize and distinctize tokens
+  bv <- let f = map SLV_DLVar in evalDistinctTokens (f old_toks) (f toks)
+  void $
+    locSt (st {st_mode = SLM_ConsensusPure}) $
+      evalApplyVals' req_rator [public bv, public $ SLV_Bytes at $ "non-network tokens distinct"]
 
 evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
@@ -2754,7 +2761,7 @@ evalPrim p sargs =
       doClaim CT_Assume tokIsUniq $ Just "New token is unique"
       setSt $ st { st_toks_c = S.insert tokdv (st_toks_c st) }
       let toka = DLA_Var tokdv
-      trackToken toka $ Just supplya
+      trackTokens [(tokdv, Just supplya)]
       tokenMetaSet TM_Supply toka supplya False
       tokenMetaSet TM_Destroyed toka (DLA_Literal $ DLL_Bool False) False
       return $ public $ SLV_DLVar tokdv
@@ -2762,7 +2769,8 @@ evalPrim p sargs =
       ensure_mode SLM_ConsensusStep "Token.track"
       at <- withAt id
       toka <- compileCheckType T_Token =<< one_arg
-      trackToken toka Nothing
+      tokdv <- case toka of { DLA_Var dv -> return dv; _ -> impossible "Expected token DLVar" }
+      trackTokens [(tokdv, Nothing)]
       return $ public $ SLV_Null at "Token.track"
     SLPrim_padTo len -> do
       v <- one_arg
@@ -4939,8 +4947,6 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
   let mkmsg v t = ctxt_mkvar $ DLVar at (getBindingOrigin v) t
   dr_msg <- zipWithM mkmsg msg_dass_t msg_ts
   let toks = filter ((==) T_Token . varType) dr_msg
-  let tok_as = map DLA_Var toks
-  let old_toks = st_toks st
   unless (null toks) $ do
     sco <- e_sco <$> ask
     when (isJust $ sco_while_vars sco) $
@@ -4957,14 +4963,11 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
               , st_after_first = True
               }
       setSt st_recv
-      mapM_ (flip trackToken Nothing) tok_as
+      trackTokens $ map (,Nothing) toks
       sco_recv <- sco_update_and_mod recv_imode recv_env recv_env_mod
       locSco sco_recv $ do
         evalChecks
         let req_rator = SLV_Prim $ SLPrim_claim CT_Require
-        -- Initialize and distinctize tokens
-        bv <- let f = map SLV_DLVar in evalDistinctTokens (f old_toks) (f toks)
-        void $ locSt st_pure $ evalApplyVals' req_rator [public bv, public $ SLV_Bytes at $ "non-network tokens distinct"]
         void $ locSt st_pure $ evalExpr $ amt_req
         forM_ (map DLA_Var toks) $ \tok -> do
           ctxt_lift_eff $ DLE_TokenInit at tok
