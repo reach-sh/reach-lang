@@ -2676,22 +2676,6 @@ trackToken tok mBal = do
     locSt (st {st_mode = SLM_ConsensusPure}) $
       evalApplyVals' req_rator [public bv, public $ SLV_Bytes at $ "non-network tokens distinct"]
 
--- trackToken :: DLVar -> Maybe DLArg -> App ()
--- trackToken tok mBal = do
---   at <- withAt id
---   st <- readSt id
---   let toks = map fst toks_x_bals
---   let old_toks = st_toks st
---   let all_toks = old_toks <> toks
---   let all_toks_idx = (flip zip [0 ..]) $ map DLA_Var all_toks
---   setSt $
---     st
---       { st_toks = existingToks <> [tok]
---       , st_tok_pos = M.fromList all_toks_idx
---       }
---   let bal = fromMaybe (DLA_Literal $ DLL_Int at UI_Word 0) mBal
---   doBalanceInit' TM_Balance (Just $ DLA_Var tok) bal
-
 evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
   case p of
