@@ -617,7 +617,7 @@ Before we had this line in the file, when we ran `./reach compile`, it would pri
 
 ```
 load: /examples/rps-3-bets/index.txt
-md5: 45ed47e882a4edb92edf2e3d46469863
+md5: b40fa499b4eb0f5685be6bdacc9f72dc
 range: 2-7
 ```
 
@@ -625,7 +625,7 @@ But now, it prints out
 
 ```
 load: /examples/rps-4-attack/index.txt
-md5: ddc6e13e30d19b2efce40b364614a41f
+md5: 7dd7ca4ad02b809cfd3e9f74b980bda1
 range: 2-7
 ```
 
@@ -685,7 +685,7 @@ When we run `./reach compile (reachexlink rps-4-attack/index-bad.rsh)`, it gives
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: 272193fdf327080cc3192dbc90782efa
+md5: d5d9cb9d86446f5139a7565f1c8aa5d4
 range: 4-31
 ```
 
@@ -720,7 +720,7 @@ When we run `./reach run`, it reports that this assertion is false:
 
 ```
 load: /examples/rps-4-attack/index-fails.txt
-md5: 10ce8c3d19e7aefc50c8ebd58a858d1b
+md5: b0b80d19e5358713c90b7734431b5b3d
 range: 2-6
 ```
 
