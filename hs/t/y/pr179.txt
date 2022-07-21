@@ -2,6 +2,6 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 170 theorems; No failures!
+Checked 162 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
  * Step 0 uses 1168 bytes of logs, but the limit is 1024. Step 0 starts at ./pr179.rsh:61:11:dot.

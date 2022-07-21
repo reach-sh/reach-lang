@@ -5,4 +5,4 @@ Verifying for ALGO connector
 Verifying for ETH connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 477 theorems; No failures!
+Checked 474 theorems; No failures!

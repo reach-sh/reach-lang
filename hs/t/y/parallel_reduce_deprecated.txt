@@ -2,7 +2,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 20 theorems; No failures!
+Checked 17 theorems; No failures!
 warning[RW0000]: `parallel_reduce` is now deprecated. It has been renamed from snake case to camel case. Use `parallelReduce`.
 
   ./parallel_reduce_deprecated.rsh:11:9:id ref

@@ -29,4 +29,4 @@ Verification failed:
   require(v98);
 
   Verifying when NO participants are honest
-Checked 14 theorems; 1 failures :'(
+Checked 10 theorems; 1 failures :'(

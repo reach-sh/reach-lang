@@ -76,7 +76,7 @@ Verification failed:
   //    ^ would be false
   assert(v210);
 
-Checked 24 theorems; 4 failures :'(
+Checked 21 theorems; 4 failures :'(
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs.
 
   ./invariant_label.rsh:20:13:application

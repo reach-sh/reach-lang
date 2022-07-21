@@ -32,4 +32,4 @@ Verification failed:
   assert(v124);
 
   Verifying when NO participants are honest
-Checked 12 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 10 theorems; 2 failures (and 1 omitted repeats) :'(

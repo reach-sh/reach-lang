@@ -2,7 +2,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 21 theorems; No failures!
+Checked 18 theorems; No failures!
 reachc: error[RAPI0003]: API "P_get" does not always return result in same consensus step
 
   ./API_Twice3.rsh:10:9:application

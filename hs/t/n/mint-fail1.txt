@@ -138,4 +138,4 @@ Verification failed:
   assert(v580);
 
   Verifying when NO participants are honest
-Checked 48 theorems; 4 failures (and 2 omitted repeats) :'(
+Checked 42 theorems; 4 failures (and 2 omitted repeats) :'(

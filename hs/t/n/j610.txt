@@ -18,4 +18,4 @@ Verification failed:
   assert(didPublish/22);
 
   Verifying when NO participants are honest
-Checked 5 theorems; 1 failures :'(
+Checked 4 theorems; 1 failures :'(

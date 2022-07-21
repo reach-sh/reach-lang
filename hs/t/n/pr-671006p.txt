@@ -27,7 +27,7 @@ Verification failed:
   assert(v247);
 
   Verifying when NO participants are honest
-Checked 34 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 30 theorems; 2 failures (and 1 omitted repeats) :'(
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs.
 
   ./pr-671006p.rsh:45:13:application

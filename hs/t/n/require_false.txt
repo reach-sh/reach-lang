@@ -9,4 +9,4 @@ Verification failed:
   require(false);
 
   Verifying when NO participants are honest
-Checked 6 theorems; 1 failures :'(
+Checked 5 theorems; 1 failures :'(

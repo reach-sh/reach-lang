@@ -46,4 +46,4 @@ Verification failed:
   //    ^ would be false
   assert(v119);
 
-Checked 12 theorems; 2 failures :'(
+Checked 10 theorems; 2 failures :'(
