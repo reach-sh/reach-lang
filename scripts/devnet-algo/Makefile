@@ -49,6 +49,7 @@ generate-network:
 	DOCKER_BUILDKIT=1 docker build --target ignore-generate-out -o out \
 		--build-arg ALPINE_IMAGE=${ALPINE_IMAGE} \
 		--build-arg GOLANG_IMAGE=${GOLANG_IMAGE} \
+		--pull=false \
 		.
 	rsync -a --progress out/ algorand_network/
 

@@ -9,8 +9,11 @@ echo "version $VER of the extension"
 echo "using $NODE_IMAGE..."
 echo
 # Give the new image a tag of "img".
-docker build --build-arg  \
-	NODE_IMAGE="${NODE_IMAGE}" -t img .
+docker build \
+  --build-arg NODE_IMAGE="${NODE_IMAGE}" \
+  --pull=false \
+  -t img \
+  .
 
 # Give publish, "$VER", -p and "$KEY"
 # all as arguments to vsce, which is the

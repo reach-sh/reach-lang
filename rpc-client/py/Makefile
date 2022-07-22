@@ -11,7 +11,7 @@ clean:
 
 .PHONY: build
 build: clean ./VERSION
-	docker build --tag=reachsh/rpc-client-py:latest .
+	docker build --pull=false --tag=reachsh/rpc-client-py:latest .
 	@echo 'Bundling...' \
 	  && CID="$$(docker run -itd --rm reachsh/rpc-client-py:latest)" \
 	  && docker cp "$$CID:/lib/dist" ./dist \

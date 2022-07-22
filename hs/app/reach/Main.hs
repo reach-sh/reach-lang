@@ -1238,7 +1238,7 @@ run' = command "run" . info f $ d <> noIntersperse
         CNAME="$appService-$$$$"
 
         set +e
-        docker build -f $dockerfile' --tag=$appImageTag . \
+        docker build -f $dockerfile' --tag=$appImageTag --pull=false . \
           && docker-compose -f "$$TMP/docker-compose.yml" run \
             -e REACHC_ID="$whoami'" \
             --name "$$CNAME"$$NO_DEPS --rm $appService $args''
