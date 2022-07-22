@@ -935,14 +935,6 @@
     "title": "Tool",
     "path": "/tool/#ref"
   },
-  "ref-acc-methods": {
-    "title": "ACC Methods",
-    "path": "/rpc/#ref-acc-methods"
-  },
-  "ref-backend-methods": {
-    "title": "Backend Methods",
-    "path": "/rpc/#ref-backend-methods"
-  },
   "ref-backends": {
     "title": "Compiled Output",
     "path": "/cout/#ref-backends"
@@ -970,10 +962,6 @@
   "ref-backends-rpc-proto": {
     "title": "Specification",
     "path": "/rpc/proto/#ref-backends-rpc-proto"
-  },
-  "ref-ctc-methods": {
-    "title": "CTC Methods",
-    "path": "/rpc/#ref-ctc-methods"
   },
   "ref-error-codes": {
     "title": "Error Codes",
@@ -1082,10 +1070,6 @@
   "ref-networks": {
     "title": "Networks",
     "path": "/networks/#ref-networks"
-  },
-  "ref-part-methods": {
-    "title": "PART Methods",
-    "path": "/rpc/#ref-part-methods"
   },
   "ref-programs": {
     "title": "Language",
@@ -1259,9 +1243,25 @@
     "title": "Validity and other concepts",
     "path": "/rsh/#ref-programs-valid"
   },
-  "ref-rpc-methods": {
+  "ref-rpc-method": {
     "title": "RPC Methods",
-    "path": "/rpc/#ref-rpc-methods"
+    "path": "/rpc/#ref-rpc-method"
+  },
+  "ref-rpc-method-acc": {
+    "title": "Account Methods",
+    "path": "/rpc/#ref-rpc-method-acc"
+  },
+  "ref-rpc-method-backend": {
+    "title": "Backend Methods",
+    "path": "/rpc/#ref-rpc-method-backend"
+  },
+  "ref-rpc-method-ctc": {
+    "title": "Contract Methods",
+    "path": "/rpc/#ref-rpc-method-ctc"
+  },
+  "ref-rpc-method-part": {
+    "title": "Participant Methods",
+    "path": "/rpc/#ref-rpc-method-part"
   },
   "ref-usage": {
     "title": "Usage",
