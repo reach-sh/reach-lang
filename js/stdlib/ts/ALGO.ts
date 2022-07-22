@@ -2600,50 +2600,29 @@ export function unsafeGetMnemonic(acc: NetworkAccount|Account): string {
   return algosdk.secretKeyToMnemonic(networkAccount.sk);
 }
 
-const makeAssetCreateTxn = (
-  creator: Address,
-  supply: BigNumber,
-  decimals: number,
-  symbol: string,
-  name: string,
-  url: string,
-  metadataHash: string,
-  clawback: Address | undefined,
-  note: Uint8Array | undefined,
-  params: TxnParams,
-): Transaction => {
-  return algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
-    from: creator,
-    note: note,
-    total: bigNumberToBigInt(supply),
-    decimals: decimals,
-    defaultFrozen: false,
-    unitName: symbol,
-    assetName: name,
-    assetURL: url,
-    assetMetadataHash: metadataHash,
-    clawback: clawback,
-    suggestedParams: params,
-  });
-}
-
 export const launchToken = async (accCreator: Account, name: string, sym: string, opts: LaunchTokenOpts = {}) => {
   const addrCreator = accCreator.networkAccount.addr;
   const supply = opts.supply ? bigNumberify(opts.supply) : bigNumberify(2).pow(64).sub(1);
   const decimals = opts.decimals ?? 6;
   const url = opts.url ?? '';
-  const metadataHash = opts.metadataHash ?? '';
-  const clawback = opts.clawback ? cbr2algo_addr(protect(T_Address, opts.clawback) as string) : undefined;
+  const assetMetadataHash = opts.metadataHash ?? '';
+  const f_addr = (x:unknown) => x ? cbr2algo_addr(protect(T_Address, x) as string) : undefined;
+  const clawback = f_addr(opts.clawback);
+  const freeze = f_addr(opts.freeze);
+  const reserve = f_addr(opts.reserve);
   const note = opts.note || undefined;
-  const params = await getTxnParams('launchToken');
+  const defaultFrozen = opts.defaultFrozen ?? false;
+  const suggestedParams = await getTxnParams('launchToken');
 
   const txnResult = await sign_and_send_sync(
     `launchToken ${j2s(accCreator)} ${name} ${sym}`,
     accCreator.networkAccount,
-    toWTxn(makeAssetCreateTxn(
-      addrCreator, supply, decimals, sym,
-      name, url, metadataHash, clawback, note,
-      params))
+    toWTxn(algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
+      assetMetadataHash, assetName: name, assetURL: url, clawback,
+      decimals, defaultFrozen, freeze, note, reserve,
+      suggestedParams, total: bigNumberToBigInt(supply), unitName: sym,
+      from: addrCreator,
+    }))
   );
 
   const assetIndex = txnResult['created-asset-index'];

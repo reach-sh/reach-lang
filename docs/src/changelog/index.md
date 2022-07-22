@@ -7,6 +7,9 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verRC("0.1.11")}
 
++ @{rcHead("0.1.11-rc5")}
++ 2022/07/22: Added `freeze`, `reserve`, and `defaultFrozen` options to `{!js} stdlib.launchToken`.
++ @{rcHead("0.1.11-rc4")}
 + 2022/06/18: Added `{!rsh} enforce`.
 + 2022/06/18: Added `{!rsh} currentMode`.
 + 2022/06/01: Added `onCompletion` field to `{!rsh} remote.ALGO`.

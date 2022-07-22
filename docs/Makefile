@@ -6,6 +6,7 @@ build:
 	DOCKER_BUILDKIT=1 docker build \
 	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
 	  --build-arg DOCS_IMAGE=${DOCS_IMAGE} \
+	  --pull=false \
 	  -o $$(pwd) \
 	  -f Dockerfile ..
 
