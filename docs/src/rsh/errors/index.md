@@ -2770,6 +2770,10 @@ This error indicates that you are using a function, like `{!rsh} ContractCode`, 
 
 This error indicates that there was an error while parsing or compiling contract code for `{!rsh} ContractCode`.
 
+## {#RETH0001} RETH0001
+
+This error indicates that a View or API uses more arguments than are supported on the ETH connector.
+
 ## {#REP0000} REP0000
 
 This error indicates that the body of a `{!rsh} while` loop does not make a publication before the `{!rsh} continue`
