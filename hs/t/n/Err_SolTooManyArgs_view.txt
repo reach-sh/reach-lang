@@ -1,0 +1,13 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 7 theorems; No failures!
+reachc: error[RETH0000]: The ETH connector supports Views that have up to 12 arguments, but vSumMany uses 13.
+
+  ./Err_SolTooManyArgs_view.rsh:22:36:application
+
+  22| export const mainServer = Reach.App(() => {
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RETH0000
+
