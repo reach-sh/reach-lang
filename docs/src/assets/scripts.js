@@ -205,6 +205,10 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
 
   // If search page.
   const searchInput = doc.getElementById('search-input');
+  const { href } = window.location;
+  const rawSearchQuery = href.split('search/#search')[1];
+  const searchParams = new URLSearchParams(rawSearchQuery);
+  const searchQuery = searchParams.get('q');
   if (searchInput) {
     currentPage.bookPath = undefined;
     searchInput.focus();
@@ -249,9 +253,14 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
         }
         searchResultsList.append(e);
       });
+      updateHistory(`search?q=${searchInput.value}`);
       setClickFollowLink();
     };
     searchInput.addEventListener('keyup', debounce(search));
+    if (searchQuery) {
+      searchInput.value = searchQuery;
+      searchInput.dispatchEvent(new KeyboardEvent('keyup'));
+    }
   }
 
   // Write otp html.
