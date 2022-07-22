@@ -1,0 +1,13 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 7 theorems; No failures!
+warning[RW0005]: The `Object` type's format is controlled by Reach; you may want to use `Struct` instead for external interfaces, so you can mandate and document the format.
+
+  ./object_set6.rsh:7:19:application
+
+  7|   const E = Events({ put: [O2] });
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0005
+
