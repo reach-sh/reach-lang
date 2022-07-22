@@ -25,6 +25,7 @@ import qualified Data.Set as S
 import Data.String (IsString)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
+import Generics.Deriving (Generic)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
@@ -59,6 +60,23 @@ apiMaxArgs = 12
 
 maxContractLen :: Int
 maxContractLen = 24576
+
+--- Solidity errors
+
+data EthError
+  = Err_SolTooManyArgs String String Int
+  deriving (Eq, ErrorMessageForJson, ErrorSuggestions, Generic)
+
+instance HasErrorCode EthError where
+  errPrefix = const "RETH"
+  errIndex = \case
+    Err_SolTooManyArgs {} -> 0
+
+instance Show EthError where
+  show = \case
+    Err_SolTooManyArgs viewsOrApis name num ->
+      "The ETH connector supports " <> viewsOrApis <> " that have up to " <>
+      show apiMaxArgs <> " arguments, but " <> name <> " uses " <> show num <> "."
 
 --- Solidity helpers
 
@@ -1411,9 +1429,7 @@ apiDef who qualify ApiInfo {..} = do
   let mf = solMsg_fun ai_which
   (argDefns, tyLifts, args, m_arg_ty) <- apiArgs "_t.msg" $ ApiInfo {..}
   when (length args > apiMaxArgs) $
-    error $ "The ETH connector supports APIs that have up to " <>
-    show apiMaxArgs <> " arguments, but " <> bunpack who <> " uses " <>
-    show (length args) <> "."
+    expect_throw Nothing ai_at $ Err_SolTooManyArgs "APIs" (bunpack who) (length args)
   let body =
         vsep $
           [ m_arg_ty <+> "memory _t;"
@@ -1662,9 +1678,7 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
           let (dom, rng) = itype2arr t
           args <- mapM (allocDLVar at) dom
           when (length args > apiMaxArgs) $
-            error $ "The ETH connector supports Views that have up to " <>
-            show apiMaxArgs <> " arguments, but " <> vk_ <> " uses " <>
-            show (length args) <> "."
+            expect_throw Nothing at $ Err_SolTooManyArgs "Views" vk_ (length args)
           let mkargvm arg = (arg, solRawVar arg)
           extendVarMap $ M.fromList $ map mkargvm args
           let solType_p am ty = do
