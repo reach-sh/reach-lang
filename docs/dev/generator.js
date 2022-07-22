@@ -70,7 +70,7 @@ const languages = [
     aliases: ['rsh'],
   },
 ];
-const languageNormalizeDict = {};
+const languageNormalizeDict = { "txt": "txt" };
 for (const l of languages) {
   languageNormalizeDict[l.id] = l.id;
   for (const alias of (l.aliases || [])) {

@@ -3,6 +3,42 @@
 This section provides an in depth explanation of the error codes produced from
 the Reach compiler.
 
+## {#how-to-read-errors} How to read error messages and stack traces
+
+Suppose you try to run the following program:
+
+```reach
+load: /hs/t/n/stack-example.rsh
+md5: b65abc2e8bf51b56d0217065cc56b912
+```
+
+This program contains an error on line 8.
+It tries to pass `{!rsh} "five"` to a function that expects a number.
+
+When you try to compile this program, you will get the following error:
+
+```
+load: /hs/t/n/stack-example.txt
+md5: d41c28b3a520ffb3b3759055729c8583
+```
+
+The first block (lines 1-4) provides the category (`error` in this case, but could be `warning`), a code (`RE0088`), and an explanation (`These types are mismatched`).
+Each code has a corresponding section in this document that explains the error in more detail.
+See for example @{seclink("RE0088")}.
+
+The second block (lines 5-7) provides an excerpt of the line of code that the error occurred on.
+Sometimes this block is missing when Reach cannot track the source location of your error.
+
+The third block (lines 9-11) provides a stack trace that shows how this line of code was arrived at.
+The stack trace shows the newest frames at the top and the oldest frames at the bottom.
+Each frame contains information about the name of the function, where it is defined, and where it was called from.
+
+For example, this error says that the error was detected on line 7 and column 25: the `{!rsh} +`.
+This was being run inside the function defined on line 7 column 20 (the `{!rsh} =>`) whose name is `g` and that it was called on line 8 column 21 (the `{!rsh} (` after `g`).
+This was being run inside the function defined on line 8 column 17 (the `{!rsh} =>`) and that it was called on line 9 column 16 (the `{!rsh} (` in the definition of `ten`).
+
+Finally, the last block (line 13) contains a link to the explanation of the given error.
+
 ## {#RA0000} RA0000
 
 This error indicates that a program, targeting the Algorand connector, is attempting to

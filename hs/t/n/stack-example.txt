@@ -1,0 +1,14 @@
+reachc: error[RE0088]: These types are mismatched:
+  expected: UInt
+       got: Bytes(4)
+
+  ./stack-example.rsh:7:25:application
+
+  7|   const g = (y, z) => y + z;
+
+Trace:
+  in "g" from (./stack-example.rsh:7:20:function exp) at (./stack-example.rsh:8:21:application)
+  in "f" from (./stack-example.rsh:8:17:function exp) at (./stack-example.rsh:9:16:application)
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0088
+

@@ -835,6 +835,10 @@
     "title": "Using Reach on Windows",
     "path": "/guide/windows/#guide-windows"
   },
+  "how-to-read-errors": {
+    "title": "How to read error messages and stack traces",
+    "path": "/rsh/errors/#how-to-read-errors"
+  },
   "over-compile": {
     "title": "Compile",
     "path": "/tut/overview/#over-compile"
