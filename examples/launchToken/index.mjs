@@ -11,5 +11,7 @@ const gil = await stdlib.launchToken(accA, 'Gil', 'GIL', {
   defaultFrozen: true,
 });
 
-// gh #1270
-console.log(await accA.balancesOf([ parseInt(`${gil.id}`) ]));
+if ( stdlib.connector === 'ALGO' ) {
+  // gh #1270
+  console.log(await accA.balancesOf([ parseInt(`${gil.id}`) ]));
+}
