@@ -48,12 +48,14 @@ build-m1:
 	  --build-arg SOLC_IMAGE="$(SOLC_IMAGE)" \
 	  --build-arg Z3_VERSION="$(Z3_VERSION)" \
 	  --build-arg UBUNTU_IMAGE="$(UBUNTU_IMAGE)" \
+	  --pull=false \
 	  --tag=$(IMG_REACHC):latest \
 	  -f Dockerfile.reachc-m1 .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
 	docker build \
 	  --platform linux/arm64 \
 	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \
+	  --pull=false \
 	  --tag=$(IMG_REACH_CLI):latest \
 	  -f Dockerfile.reach-cli-m1 .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
