@@ -15,6 +15,7 @@ import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
 import Reach.Counter
+import Reach.Util
 
 type App = ReaderT Env IO
 
@@ -24,6 +25,12 @@ data Env = Env
   { fCounter :: Counter
   , fRho :: IORef (M.Map DLVar DLVar)
   }
+
+newScope :: App x -> App x
+newScope m = do
+  Env {..} <- ask
+  fRho' <- liftIO $ dupeIORef fRho
+  local (\e -> e {fRho = fRho'}) m
 
 class Freshen a where
   fu :: AppT a
@@ -176,7 +183,7 @@ instance Freshen DLExpr where
     DLE_ContractNew at tns dr -> DLE_ContractNew at <$> fu tns <*> fu dr
 
 instance {-# OVERLAPS #-} Freshen k => Freshen (SwitchCases k) where
-  fu = mapM (\(vn, vnu, k) -> (,,) <$> fu_v vn <*> pure vnu <*> fu k)
+  fu = mapM (\(vn, vnu, k) -> (,,) <$> fu_v vn <*> pure vnu <*> (newScope $ fu k))
 
 instance Freshen DLStmt where
   fu = \case
@@ -226,7 +233,7 @@ instance Freshen DLTail where
     DT_Com m k -> DT_Com <$> fu m <*> fu k
 
 instance Freshen DLBlock where
-  fu (DLBlock at fs t a) =
+  fu (DLBlock at fs t a) = newScope $
     DLBlock at fs <$> fu t <*> fu a
 
 instance Freshen DLAssignment where
@@ -263,14 +270,14 @@ instance Freshen DLSend where
 
 instance Freshen a => Freshen (DLRecv a) where
   fu (DLRecv {..}) =
-    DLRecv <$> fu_v dr_from <*> fu_v dr_msg <*> fu_v dr_time <*> fu_v dr_secs <*> fu dr_didSend <*> fu dr_k
+    DLRecv <$> fu_v dr_from <*> fu_v dr_msg <*> fu_v dr_time <*> fu_v dr_secs <*> fu dr_didSend <*> (newScope $ fu dr_k)
 
 instance Freshen LLStep where
   fu = \case
     LLS_Com s k -> LLS_Com <$> fu s <*> fu k
     LLS_Stop at -> return $ LLS_Stop at
     LLS_ToConsensus at lct send recv mtime ->
-      LLS_ToConsensus at <$> fu lct <*> fu send <*> fu recv <*> fu mtime
+      LLS_ToConsensus at <$> fu lct <*> fu send <*> fu recv <*> (newScope $ fu mtime)
 
 instance Freshen FromInfo where
   fu = \case
