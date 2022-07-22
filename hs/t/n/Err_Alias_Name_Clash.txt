@@ -1,0 +1,16 @@
+warning[RW0004]: There are no publications in the application.
+
+  ./Err_Alias_Name_Clash.rsh:3:30:application
+
+  3| export const main = Reach.App(() => {
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0004
+
+reachc: error[RE0138]: The following aliases have been declared multiple times: ["y"]
+
+  ./Err_Alias_Name_Clash.rsh:3:30:compileDApp
+
+  3| export const main = Reach.App(() => {
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0138
+

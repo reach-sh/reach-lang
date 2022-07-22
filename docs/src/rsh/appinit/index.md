@@ -196,11 +196,16 @@ This section is about defining views during application initialization. Views ar
 View('NFT', { owner: Address })
 // or
 View({ owner: Address })
+// or
+View('NFT', { owner: Address }, { owner: ["currentHolder"] })
+// or
+View({ owner: Address }, { owner: ["currentHolder"] })
 ```
 
 Views are read-only functions that can be called by other contracts, as well as off-chain.
 
-A view is defined with `{!rsh} View(viewName, viewInterface)` or `{!rsh} View(viewInterface)`, where `{!rsh} viewName` is a string that labels the view and `{!rsh} viewInterface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp.
+A view is defined with `{!rsh} View(viewName, viewInterface, ?viewAlias)` or `{!rsh} View(viewInterface, ?viewAlias)`, where `{!rsh} viewName` is a string that labels the view, `{!rsh} viewInterface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp, and `{!rsh} viewAlias` is an object mapping fields from the `{!rsh} viewInterface` to a tuple of aliases.
+An alias, which is a string, is another name that the view will be accessible from.
 
 These views are available in frontends via the `{!js} ctc.views` object.
 

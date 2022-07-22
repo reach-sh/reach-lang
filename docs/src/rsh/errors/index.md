@@ -1122,7 +1122,7 @@ for the function you are attempting to use and provide it with the correct argum
 
 ## {#RE0056} RE0056
 
-This error indicates that you are attempting to create a variable, although another variable in the scope uses the same name. 
+This error indicates that you are attempting to create a variable, although another variable in the scope uses the same name.
 
 Example:
 
@@ -1132,7 +1132,7 @@ md5: 87f19538850309dc0a0093898a961b8d
 range: 3 - 8
 ```
 
-In Reach, identifier shadowing is not allowed. 
+In Reach, identifier shadowing is not allowed.
 You can fix this issue by renaming your variable or moving one of the variable declarations to another scope where it does not conflict with the other.
 
 Example:
@@ -1156,7 +1156,7 @@ md5: 1aa6de133c2a6fd17a95b79a614adee4
 range: 13 - 20
 ```
 
-The `{!rsh} return` statement on line 19 will never be executed. 
+The `{!rsh} return` statement on line 19 will never be executed.
 The `{!rsh} return` statement in the `{!rsh} if ... else ...` block already handled what is needed for the `g` `{!rsh} function`.
 
 To fix the code remove line 19:
@@ -2217,7 +2217,7 @@ can either abstract the arguments into a new `{!rsh} Data` type or make separate
 
 @{errver(false, "v0.1")}
 
-This error indicates that there are multiple `{!rsh} API`s, `{!rsh} Participant`s or `{!rsh} ParticipantClass`es with the same name. 
+This error indicates that there are multiple `{!rsh} API`s, `{!rsh} Participant`s or `{!rsh} ParticipantClass`es with the same name.
 
 Example:
 
@@ -2542,7 +2542,7 @@ md5: f64aaa770eb9d6fe07c5074fda861b90
 range: 8 - 17
 ```
 
-This snippet `{!rsh} call`s the `{!rsh} API` instead of publishing. 
+This snippet `{!rsh} call`s the `{!rsh} API` instead of publishing.
 
 ## {#RE0126} RE0126
 
@@ -2769,6 +2769,12 @@ This error indicates that you are using a function, like `{!rsh} ContractCode`, 
 ## {#RE0137} RE0137
 
 This error indicates that there was an error while parsing or compiling contract code for `{!rsh} ContractCode`.
+
+## {#RE0138} RE0138
+
+This error indicates that a view alias was declared multiple times.
+
+You can fix this error by using unique names for your views and aliases.
 
 ## {#RETH0001} RETH0001
 
@@ -3291,7 +3297,7 @@ lastConsensusSecs() // references network seconds
 
 ### Correct code:
 
-``` reach 
+``` reach
 load: /hs/t/y/Fix_LoopVariableLength.rsh
 md5: a7450399a78f1da3e595dbdbdf7035e9
 range: 24 - 24
