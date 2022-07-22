@@ -2266,6 +2266,9 @@ export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
 };
 
 const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber|false>> => {
+  const bn = bigNumberify;
+  const tokenbs = tokens.map((tr) => tr == null ? tr : bn(tr));
+
   // Querying Algod for balances
   if (await nodeCanRead()) {
     const client = await getAlgodClient();
@@ -2274,12 +2277,12 @@ const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Arr
     if ('val' in accountInfoM) {
       const accountInfo = accountInfoM['val'];
       const accountAssets = accountInfo['assets'] ?? [];
-      const tokenBalances = tokens.map(t => {
-        if (t === null) {
-          return bigNumberify(accountInfo['amount']);
+      const tokenBalances = tokenbs.map(tb => {
+        if (tb === null) {
+          return bn(accountInfo['amount']);
         } else {
-          const bal = accountAssets.find(asset => t.eq(asset['asset-id']))?.['amount'];
-          return bal ? bigNumberify(bal) : false;
+          const bal = accountAssets.find(asset => tb.eq(asset['asset-id']))?.['amount'];
+          return bal ? bn(bal) : false;
         }
       });
       return tokenBalances;
@@ -2291,12 +2294,12 @@ const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Arr
   const addr = extractAddr(acc);
   const query = indexer.lookupAccountAssets(addr) as unknown as ApiCall<IndexerAccountAssetsRes>;
   const accountAssets = (await doQuery_('balancesOfM', query))['assets'];
-  const tokenBalances = tokens.map(async t => {
-    if (t === null) {
-      return await balanceOfM(acc, t);
+  const tokenBalances = tokenbs.map(async tb => {
+    if (tb === null) {
+      return await balanceOfM(acc, tb);
     } else {
-      const bal = accountAssets.find(asset => t.eq(asset['asset-id']))?.['amount'];
-      return bal ? bigNumberify(bal) : false;
+      const bal = accountAssets.find(asset => tb.eq(asset['asset-id']))?.['amount'];
+      return bal ? bn(bal) : false;
     }
   });
   return Promise.all(tokenBalances);
