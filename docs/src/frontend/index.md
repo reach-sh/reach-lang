@@ -1005,8 +1005,14 @@ The default is no url.
 The default is no metadata hash.
 
 Algorand-only options:
-+ `{!js} clawback` Address that can claw back holdings of the token.
++ `{!js} clawback` Address that can clawback (steal) holdings of the token.
 The default is no clawback address.
++ `{!js} freeze` Address that can freeze holdings of the token.
+The default is no freeze address.
++ `{!js} defaultFrozen` A boolean that indicates whether token holdings are frozen by default.
+The default is `{!js} false`.
++ `{!js} reserve` Address that should hold reserves of the token.
+The default is no reserve address.
 + `{!js} note` A `{!js} Uint8Array` for the `Note` field of the asset creation transaction.
 
 For more information on Algorand-only options, see
