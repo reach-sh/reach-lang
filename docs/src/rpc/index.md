@@ -34,14 +34,12 @@ For example, `/stdlib/newTestAccount` does not return an account like `{!js} new
 
 ### {#ref-rpc-method-acc} Account Methods
 
-All `/acc` methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the account RPC handle returned by a prior RPC method invocation; and, a method that accepts a backend (like `/acc/attach` (i.e. `{!js} acc.attach`) or `/acc/deploy` (i.e. `{!js} acc.deploy`) does not accept a backend argument, but has it implicitly provided by the Reach RPC Server.
-
 + `/acc/$METHOD` where `$METHOD` is a method of an account representation of the [JavaScript standard library](##ref-frontends-js).
+
+All `/acc` methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the account RPC handle returned by a prior RPC method invocation; and, a method that accepts a backend (like `/acc/attach` (i.e. `{!js} acc.attach`) or `/acc/deploy` (i.e. `{!js} acc.deploy`) does not accept a backend argument, but has it implicitly provided by the Reach RPC Server.
 
 Furthermore, those that produce contract representations instead produce contract RPC handles.
 For example, `/acc/deploy` does not return a contract representation like `{!js} acc.deploy`, but instead returns a contract RPC handle.
-
-+ `/forget/ctc` accepts a contract RPC handle and deletes it from the Reach RPC Server's memory.
 
 ### {#ref-rpc-method-ctc} Contract Methods
 
@@ -52,23 +50,27 @@ Most `/ctc` methods are synchronous value RPC methods that accept and produce th
 `/ctc` methods can access `{!js} ctc.views`, `{!js} ctc.apis`, and `{!js} ctc.events`. 
 Similar to standard library functions, the full name or first letter can be used when calling the following methods.
 
-+ `/ctc/v` or `/ctc/views` provides access to all `{!rsh} View`s.
-+ `/ctc/a` or `/ctc/apis` makes `{!rsh} API` functions available to the frontend.
-+ `/ctc/e` or `/ctc/events` provides access to `{!rsh} Events`.
++ `/ctc/v` and `/ctc/views` provide access to `{!rsh} View`s.
++ `/ctc/a` and `/ctc/apis` make `{!rsh} API` functions available to the frontend.
++ `/ctc/e` and `/ctc/events` provide access to `{!rsh} Events`.
 
-Any `{!rsh} View`, `{!rsh} API` or `{!rsh} Events` may be accessed with the following syntax:
+`{!rsh} View`, `{!rsh} API` and `{!rsh} Events` may be accessed with the following syntax:
 
 ```
-RPC /ctc/views/$VIEW_NAME            # Top-level data of a view, $VIEW_NAME
-RPC /ctc/views/$VIEW_NAME/$VIEW_FUN  # Data found in $VIEW_NAME's function, $VIEW_FUN
+RPC /ctc/views/$V_NAME          # Top-level data 
+RPC /ctc/views/$V_NAME/$V_FUN   # Data in $V_FUN
+RPC /ctc/apis/$A_NAME           # Top-level data 
+RPC /ctc/apis/$A_NAME/$A_FUN    # Data in $A_FUN
+RPC /ctc/events/$E_NAME         # Top-level data 
+RPC /ctc/events/$E_NAME/$E_FUN  # Data in $E_FUN
 ```
 
 For example:
 
 ```
-rpc('/ctc/views/$VIEW_NAME/$VIEW_FUN', c)    # Access data returned from a function, $VIEW_FUN, found in the View, $VIEW_NAME; `c` handles the contract Id
-rpc('/ctc/apis/$API_NAME/$API_FUN', c)       # Calls an API function, $API_FUN, from an API, $API_NAME
-rpc('/ctc/events/$EVENT_NAME/$EVENT_FUN', c) # Access data from an event function, $EVENT_FUN, from event $EVENT_NAME
+rpc('/ctc/views/$V_NAME/$V_FUN', c)   # Access data of function, $V_FUN, found in View, $V_NAME; `c` handles the contract Id
+rpc('/ctc/apis/$A_NAME/$A_FUN', c)    # Calls API function, $A_FUN, from API, $A_NAME
+rpc('/ctc/events/$E_NAME/$E_FUN', c)  # Access data from event function, $E_FUN, in event $E_NAME
 ```
 
 Below, in line 45, `getRead` accesses a `{!rsh} View` named `Reader` from the attached contract handle stored in `const c`. 
@@ -88,6 +90,8 @@ range: 59-63
 ```
 
 By providing access to `{!rsh} View`s, `{!rsh} API`s, and `{!rsh} Events`,  RPC `/ctc` methods allow developers to build complete frontend Reach applications in the language of their choice. 
+
++ `/forget/ctc` accepts a contract RPC handle and deletes it from the Reach RPC Server's memory.
 
 ### {#ref-rpc-method-part} Participant Methods
 
