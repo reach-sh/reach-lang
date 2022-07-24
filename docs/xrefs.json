@@ -1339,34 +1339,6 @@
     "title": "Troubleshooting",
     "path": "/trouble/#trouble"
   },
-  "ts-mac-platform": {
-    "title": "MacOS M1 problems",
-    "path": "/trouble/#ts-mac-platform"
-  },
-  "ts-out-of-memory": {
-    "title": "Out of Memory",
-    "path": "/trouble/#ts-out-of-memory"
-  },
-  "ts-perm": {
-    "title": "Permissions",
-    "path": "/trouble/#ts-perm"
-  },
-  "ts-reachdir": {
-    "title": "./reach: is a directory",
-    "path": "/trouble/#ts-reachdir"
-  },
-  "ts-reachsudo": {
-    "title": "reach run  seems to require sudo",
-    "path": "/trouble/#ts-reachsudo"
-  },
-  "ts-vscode": {
-    "title": "Troubleshooting Reach VSCode Extension",
-    "path": "/trouble/#ts-vscode"
-  },
-  "ts-win8": {
-    "title": "Windows 8 Docker installation problems",
-    "path": "/trouble/#ts-win8"
-  },
   "tut": {
     "title": "Rock, Paper, Scissors!",
     "path": "/tut/rps/#tut"
