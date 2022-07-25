@@ -209,7 +209,16 @@ An alias, which is a string, is another name that the view will be accessible fr
 
 These views are available in frontends via the `{!js} ctc.views` object.
 
-These views are available on-chain by using the appropriate network's ABI and are named `viewName_f` or `f` is there is no `viewName`, where `v` is the name of the field.
+These views are available on-chain by using the appropriate network's ABI and are named `viewName_f` or `f` is there is no `viewName`, where `f` is the name of the field.
+An alias uses the same naming convention; it is named `viewName_alias`, or `alias`, if there is no `viewName`.
+
+The example below demonstrates the on-chain name of views:
+```reach
+  const V1 = View({ a: UInt }, { a: ['b', 'c'] });
+  // Generates views: a, b, c
+  const V2 = View('V', { a: UInt }, { a: ['b', 'c'] });
+  // Generates views: V_a, V_b, V_c
+```
 
 In backends, the `{!rsh} View` object as a view object.
 

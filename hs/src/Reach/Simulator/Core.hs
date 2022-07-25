@@ -15,7 +15,6 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.Util
-import qualified Data.ByteString as B
 
 data SimIdentity = Consensus | Participant Participant
   deriving (Eq, Ord, Show, Generic)
@@ -1047,7 +1046,7 @@ isTimeout tc_mtime phId = do
             return $ Just step
     Nothing -> return $ Nothing
 
-registerViews :: [(Maybe SLPart, [(SLVar, (IType, [B.ByteString]))])] -> App ()
+registerViews :: [(Maybe SLPart, [(SLVar, DLView)])] -> App ()
 registerViews [] = return ()
 registerViews ((_, []) : vs) = registerViews vs
 registerViews ((sl, ((slv,(ty, aliases)) : vars)) : vs) = do

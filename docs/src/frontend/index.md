@@ -627,7 +627,7 @@ If `{!js} tokens` contains a `{!js} null`,
 the corresponding position in the output array will contain the account's balance of network tokens.
 This function is more efficient for getting multiple token balances than repeated calls to `{!js} stdlib.balanceOf`.
 
-Example: 
+Example:
 
 ```js
 load: examples/account-balancesOf/index.mjs
@@ -900,6 +900,12 @@ If a View was specified without a `{!rsh} viewName`, for example `{!rsh} View({ 
 
 ```js
 ctc.v.owner();
+```
+
+If we add an alias for the above view using `{!rsh} View({ owner: Address }, { owner: ["holder"]})`, we could also access the alias:
+
+```js
+ctc.v.holder();
 ```
 
 ---
@@ -1383,7 +1389,7 @@ md5: be92a6fe101d3f22bf3dd463aa618f80
 range: 22 -25
 ```
 
-This code converts the last 8 bytes of `b1`, `b2`, `b3` and `b4` to an `{!rsh} UInt` on lines 22, 23, 24 and 25, respectively. 
+This code converts the last 8 bytes of `b1`, `b2`, `b3` and `b4` to an `{!rsh} UInt` on lines 22, 23, 24 and 25, respectively.
 After which, the `{!js} mod` method is called on the respective results.
 
 If the string is less than 8 bytes long, this function will convert the entire string to an `{!rsh} UInt`.
