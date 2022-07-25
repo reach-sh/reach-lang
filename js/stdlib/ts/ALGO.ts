@@ -90,6 +90,7 @@ import {
 } from './ALGO_compiled';
 export type { Token } from './ALGO_compiled';
 import {
+  simTokenAccepted_
 } from './shared_backend';
 import type { MapRefT, MaybeRep } from './shared_backend'; // =>
 import { window, process } from './shim';
@@ -168,7 +169,7 @@ export interface ProviderEnv {
   ALGO_NODE_WRITE_ONLY: string // preferably: 'yes' | 'no'
 };
 
-const reachBackendVersion = 17;
+const reachBackendVersion = 18;
 const reachAlgoBackendVersion = 10;
 export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
@@ -1644,6 +1645,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         return await viewMapRef(i, f);
       };
 
+      const simTokenAccepted = async (sim_r:any, addr:any, tok:any): Promise<boolean> => {
+        simTokenAccepted_(sim_r, addr, tok);
+        return await balanceOfMNonNet(addr, tok) !== false;
+      };
+
       const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
         const { funcNum, evt_cnt, lct, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt, sim_p } = srargs;
         const isCtor = (funcNum === 0);
@@ -1833,6 +1839,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             } else if ( t.kind === 'tokenDestroy' ) {
               recordAsset(t.tok);
               howManyMoreFees++; return;
+            } else if ( t.kind === 'tokenAccepted' ) {
+              recordAsset(t.tok);
+              recordAccount(t.addr);
+              return;
             } else if ( t.kind === 'remote' ) {
               recordApp(t.obj);
               processRemote(t.remote);
@@ -2099,7 +2109,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         return result;
       }
 
-      return { getContractInfo, getContractAddress, getContractCompanion, getBalance, getState, getCurrentStep, sendrecv, recv, apiMapRef };
+      return { getContractInfo, getContractAddress, getContractCompanion, getBalance, getState, getCurrentStep, sendrecv, recv, apiMapRef, simTokenAccepted };
     };
 
     const readStateBytes = (prefix:string, key:number[], src:AppStateKVs): (Uint8Array|undefined) => {
@@ -2320,26 +2330,15 @@ const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Arr
 const balanceOfM = async (acc: Account, token: Token | null): Promise<BigNumber | false> => {
   const dhead = 'balanceOfM';
   const addr = extractAddr(acc);
-  if (await nodeCanRead()) {
-    const client = await getAlgodClient();
-    if (token == null) {
+  if (token == null) {
+    if (await nodeCanRead()) {
+      const client = await getAlgodClient();
       // Node algo balance
       const query = client.accountInformation(addr).exclude('all') as unknown as ApiCall<AccountInfo>;
       const accountInfo = await doQuery_(dhead, query);
       return bigNumberify(accountInfo['amount']);
     } else {
-      // Node token balance
-      const query = client.accountAssetInformation(addr, bigNumberToNumber(token)) as unknown as ApiCall<AccountAssetInfo>;
-      const accountAssetInfoM = await doQueryM_(dhead, query);
-      if ('val' in accountAssetInfoM) {
-        return bigNumberify(accountAssetInfoM['val']['asset-holding']?.['amount'] ?? 0);
-      } else {
-        return false;
-      }
-    }
-  } else {
-    const indexer = await getIndexer();
-    if (token == null) {
+      const indexer = await getIndexer();
       // Indexer algo balance
       const query = indexer.lookupAccountByID(addr).exclude('all') as unknown as ApiCall<IndexerAccountInfoRes>;
       const accountInfoM = await doQueryM_(dhead, query);
@@ -2348,19 +2347,22 @@ const balanceOfM = async (acc: Account, token: Token | null): Promise<BigNumber 
       } else {
         return false;
       }
-    } else {
-      // Indexer token balance
-      const tokenId = bigNumberToNumber(token);
-      const client = await getAlgodClient();
-      const query = client.accountAssetInformation(addr, tokenId) as ApiCall<AccountAssetInfo>;
-      const accountAssetInfoM = await doQueryM_(dhead, query);
-      if ('val' in accountAssetInfoM) {
-        const assetHolding = accountAssetInfoM['val']['asset-holding'];
-        return assetHolding ? bigNumberify(assetHolding['amount']) : false;
-      } else {
-        return false;
-      }
     }
+  } else {
+    return balanceOfMNonNet(addr, token);
+  }
+}
+
+const balanceOfMNonNet = async (addr:string, token:Token) => {
+  const tokenId = bigNumberToNumber(token);
+  const client = await getAlgodClient();
+  const query = client.accountAssetInformation(addr, tokenId) as ApiCall<AccountAssetInfo>;
+  const accountAssetInfoM = await doQueryM_("balanceOfMNonNet", query);
+  if ('val' in accountAssetInfoM) {
+    const assetHolding = accountAssetInfoM['val']['asset-holding'];
+    return assetHolding ? bigNumberify(assetHolding['amount']) : false;
+  } else {
+    return false;
   }
 }
 

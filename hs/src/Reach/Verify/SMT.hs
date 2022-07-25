@@ -1132,6 +1132,8 @@ smt_e at_dv mdv de = do
       mempty
     DLE_TokenInit {} ->
       mempty
+    DLE_TokenAccepted at _ _ ->
+      unbound at
     DLE_CheckPay at f amta mtok -> do
       (pv_net, pv_ks) <- fromMaybe (impossible "no ctxt_pay_amt") <$> (ctxt_pay_amt <$> ask)
       amta' <- smt_a at amta

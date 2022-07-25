@@ -132,6 +132,7 @@ instance FreeVars DLExpr where
     DLE_Claim _ _ _ a _ -> freeVars a
     DLE_Transfer _ a b c -> freeVars [a, b] <> freeVars c
     DLE_TokenInit _ a -> freeVars a
+    DLE_TokenAccepted _ a b -> freeVars a <> freeVars b
     DLE_CheckPay _ _ a b -> freeVars a <> freeVars b
     DLE_Wait _ a -> freeVars a
     DLE_PartSet _ _ a -> freeVars a

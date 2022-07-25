@@ -781,6 +781,7 @@ data DLExpr
   | DLE_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg (Maybe B.ByteString)
   | DLE_Transfer SrcLoc DLArg DLArg (Maybe DLArg)
   | DLE_TokenInit SrcLoc DLArg
+  | DLE_TokenAccepted SrcLoc DLArg DLArg
   | DLE_CheckPay SrcLoc [SLCtxtFrame] DLArg (Maybe DLArg)
   | DLE_Wait SrcLoc DLTimeArg
   | DLE_PartSet SrcLoc SLPart DLArg
@@ -900,6 +901,10 @@ instance PrettySubst DLExpr where
     DLE_TokenInit _ tok -> do
       tok' <- prettySubst tok
       return $ "tokenInit" <> parens tok'
+    DLE_TokenAccepted _ addr tok -> do
+      addr' <- prettySubst addr
+      tok' <- prettySubst tok
+      return $ "canReceive" <> parens (addr' <> ", " <> tok')
     DLE_CheckPay _ _ da mtok -> do
       da' <- prettySubst da
       mtok' <- prettySubst mtok
@@ -993,6 +998,7 @@ instance IsPure DLExpr where
       False
     DLE_Transfer {} -> False
     DLE_TokenInit {} -> False
+    DLE_TokenAccepted {} -> False
     DLE_CheckPay {} -> False
     DLE_Wait {} -> False
     DLE_PartSet {} -> False
@@ -1026,6 +1032,7 @@ instance IsLocal DLExpr where
     DLE_Claim {} -> True
     DLE_Transfer {} -> False
     DLE_TokenInit {} -> False
+    DLE_TokenAccepted {} -> False
     DLE_CheckPay {} -> False
     DLE_Wait {} -> False
     DLE_PartSet {} -> True

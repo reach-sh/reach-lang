@@ -456,6 +456,14 @@ jsExpr = \case
             [ ("amt", zero')
             , ("tok", tok')
             ]
+  DLE_TokenAccepted _ addr tok -> do
+    (ctxt_mode <$> ask) >>= \case
+      JM_Backend -> return "true"
+      JM_View -> impossible "view canReceive"
+      JM_Simulate -> do
+        addr' <- jsArg addr
+        tok' <- jsArg tok
+        return $ jsApply "ctc.simTokenAccepted" ["sim_r", addr', tok']
   DLE_CheckPay _ _ amt mtok -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> mempty
@@ -1161,7 +1169,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 17
+reachBackendVersion = 18
 
 jsPIProg :: ConnectorObject -> PLProg -> App Doc
 jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do

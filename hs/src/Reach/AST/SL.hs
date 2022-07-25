@@ -771,6 +771,7 @@ data SLPrimitive
   | SLPrim_remote
   | SLPrim_remotef SrcLoc DLArg (Maybe String) SLTypeFun (Maybe SLVal) (Maybe (Either SLVal SLVal)) (Maybe DLRemoteALGO) (Maybe RemoteFunMode)
   | SLPrim_balance
+  | SLPrim_Token_accepted
   | SLPrim_Token_supply
   | SLPrim_viewis SrcLoc (Maybe SLPart) SLVar SLType
   | SLPrim_init

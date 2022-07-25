@@ -453,6 +453,7 @@ instance Optimize DLExpr where
         _ ->
           DLE_Transfer at <$> opt t <*> pure a' <*> opt m
     DLE_TokenInit at t -> DLE_TokenInit at <$> opt t
+    DLE_TokenAccepted at addr tok -> DLE_TokenAccepted at <$> opt addr <*> opt tok
     DLE_CheckPay at fs a m -> DLE_CheckPay at fs <$> opt a <*> opt m
     DLE_Wait at a -> DLE_Wait at <$> opt a
     DLE_PartSet at who a -> DLE_PartSet at who <$> opt a

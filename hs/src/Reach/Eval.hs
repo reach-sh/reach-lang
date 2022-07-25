@@ -157,6 +157,7 @@ instance Pandemic DLExpr where
     DLE_Claim at cxt ct a mbbs -> DLE_Claim at cxt ct <$> pan a <*> pure mbbs
     DLE_Transfer at who da mtok -> DLE_Transfer at <$> pan who <*> pan da <*> pan mtok
     DLE_TokenInit at a -> DLE_TokenInit at <$> pan a
+    DLE_TokenAccepted at addr tok -> DLE_TokenAccepted at <$> pan addr <*> pan tok
     DLE_CheckPay at cxt a mtok -> DLE_CheckPay at cxt <$> pan a <*> pan mtok
     DLE_Wait at a -> DLE_Wait at <$> pan a
     DLE_PartSet at slp a -> DLE_PartSet at slp <$> pan a

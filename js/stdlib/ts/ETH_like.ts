@@ -1,7 +1,7 @@
 import Timeout from 'await-timeout';
 import { ethers as real_ethers } from 'ethers';
 import {
-  assert, protect,
+  assert, protect, simTokenAccepted_,
 } from './shared_backend';
 import type { MaybeRep, MapRefT } from './shared_backend'; // =>
 import {
@@ -92,7 +92,7 @@ type Interface = real_ethers.utils.Interface;
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-const reachBackendVersion = 17;
+const reachBackendVersion = 18;
 const reachEthBackendVersion = 7;
 export type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
@@ -565,6 +565,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         // @ts-ignore
         return res;
       };
+      const simTokenAccepted = async (sim_r:any, addr:any, tok:any): Promise<boolean> => {
+        simTokenAccepted_(sim_r, addr, tok);
+        return true;
+      };
 
       const canIWin = async (lct:BigNumber): Promise<boolean> => {
         if ( lct.eq(0) ) { return true; }
@@ -781,7 +785,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         return cs;
       }
 
-      return { getContractInfo, getContractAddress, getContractCompanion, getBalance, getCurrentStep, sendrecv, recv, getState, apiMapRef };
+      return { getContractInfo, getContractAddress, getContractCompanion, getBalance, getCurrentStep, sendrecv, recv, getState, apiMapRef, simTokenAccepted };
     };
 
     const setupView = (setupViewArgs: SetupViewArgs) => {

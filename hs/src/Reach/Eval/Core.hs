@@ -1372,6 +1372,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
         , ("destroyed", delayCall SLPrim_Token_destroyed)
         , ("supply", delayCall SLPrim_Token_supply)
         , ("track", delayCall SLPrim_Token_track)
+        , ("accepted", delayCall SLPrim_Token_accepted)
         ]
   SLV_Type ST_Token ->
     return $ Just $
@@ -1382,6 +1383,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
         , ("destroyed", retV $ public $ SLV_Prim $ SLPrim_Token_destroyed)
         , ("supply", retV $ public $ SLV_Prim $ SLPrim_Token_supply)
         , ("track", retV $ public $ SLV_Prim SLPrim_Token_track)
+        , ("accepted", retV $ public $ SLV_Prim SLPrim_Token_accepted)
         ]
   SLV_Prim SLPrim_Struct -> return $ Just structValueEnv
   SLV_Type (ST_Struct ts) ->
@@ -2785,6 +2787,15 @@ evalPrim p sargs =
         [] -> getBalanceOf Nothing
         [v] -> getBalanceOf . Just =<< compileCheckType T_Token v
         _ -> illegal_args
+    SLPrim_Token_accepted -> do
+      at <- withAt id
+      (addr_, tok_) <- two_args
+      ensure_mode SLM_ConsensusStep "Token.accepted"
+      addr <- compileCheckType T_Address addr_
+      tok <- compileCheckType T_Token tok_
+      dv_ <- ctxt_lift_expr (DLVar at Nothing T_Bool) $ DLE_TokenAccepted at addr tok
+      dv <- doInternalLog_ Nothing dv_
+      retV $ public $ SLV_DLVar dv
     SLPrim_Token_supply -> do
       v <- one_arg
       da <- compileCheckType T_Token v

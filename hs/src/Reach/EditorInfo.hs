@@ -146,6 +146,7 @@ completionKind v =
         SLPrim_remote -> Just CK_Function
         SLPrim_remotef {} -> Nothing
         SLPrim_balance -> Just CK_Function
+        SLPrim_Token_accepted -> Just CK_Function
         SLPrim_Token_supply -> Just CK_Method
         SLPrim_viewis _ _ _ _ -> Nothing
         SLPrim_init -> Just CK_Function
