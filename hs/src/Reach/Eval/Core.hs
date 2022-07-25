@@ -3383,13 +3383,19 @@ evalPrim p sargs =
       aliasEnv <- mapM mustBeObject alias >>= return . fromMaybe mempty
       let mns = bunpack <$> n
       nAt <- withAt id
-      mapM_ (verifyName nAt "View" $ M.keys im) mns
+      let mustBeTupleOfBytes ma = do
+            a <- mustBeTuple $ sss_val ma
+            mapM mustBeBytes a
+      aliases <- concatMapM (fmap (fmap bunpack) . mustBeTupleOfBytes) $ M.elems aliasEnv
+      mapM_ (verifyName nAt "View" $ M.keys im <> aliases) mns
       let ns = fromMaybe "Untagged" mns
       let go k (at, t) = do
             warnInteractType t
+            m_alias <- fromMaybe [] <$> mapM mustBeTupleOfBytes (M.lookup k aliasEnv)
             when (isNothing nv) $ do
-              verifyName at "View" [] k
-              verifyNotReserved at k
+              let names = k : map bunpack m_alias
+              mapM_ (verifyName at "View" []) names
+              mapM_ (verifyNotReserved at) names
             let vv = SLV_Prim $ SLPrim_viewis at n k t
             let vom = M.singleton "set" $ SLSSVal at Public vv
             let vo = SLV_Object at (Just $ ns <> " View, " <> k) vom
@@ -3401,10 +3407,6 @@ evalPrim p sargs =
                 ST_UDFun {} ->
                   expect_ $ Err_View_UDFun
                 _ -> IT_Val <$> st2dte t
-            let chkAlias ma = do
-                  a <- mustBeTuple $ sss_val ma
-                  mapM mustBeBytes a
-            m_alias <- fromMaybe [] <$> mapM chkAlias (M.lookup k aliasEnv)
             return $ ((di, m_alias), (m_alias, io))
       ix <- mapWithKeyM go im
       let i' = M.map fst ix

@@ -204,7 +204,7 @@ View({ owner: Address }, { owner: ["currentHolder"] })
 
 Views are read-only functions that can be called by other contracts, as well as off-chain.
 
-A view is defined with `{!rsh} View(viewName, viewInterface, ?viewAlias)` or `{!rsh} View(viewInterface, ?viewAlias)`, where `{!rsh} viewName` is a string that labels the view, `{!rsh} viewInterface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp, and `{!rsh} viewAlias` is an object mapping fields from the `{!rsh} viewInterface` to a tuple of aliases.
+A view is defined with `{!rsh} View(viewName, viewInterface, ?viewAlias)` or `{!rsh} View(viewInterface, ?viewAlias)`, where `{!rsh} viewName` is a string that labels the view, `{!rsh} viewInterface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp, and `{!rsh} viewAlias` is an optional object mapping fields from the `{!rsh} viewInterface` to a tuple of aliases.
 An alias, which is a string, is another name that the view will be accessible from.
 
 These views are available in frontends via the `{!js} ctc.views` object.

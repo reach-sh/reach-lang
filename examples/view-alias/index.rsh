@@ -9,7 +9,6 @@ export const main = Reach.App(() => {
     x: UInt,
     f: Fun([UInt], UInt)
   }, {
-    // ensure key is in view interface
     x: ["val", "val2"],
     f: ["succ"],
   });

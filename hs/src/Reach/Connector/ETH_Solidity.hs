@@ -1733,7 +1733,7 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
     let vgo (v, tm) = do
           (o_kss, bs) <- unzip <$> (mapM (tgo v) $ M.toAscList tm)
           let o_ks = concat o_kss
-          -- Lift untagged viewss
+          -- Lift untagged views
           let keys = case v of
                 Just v' -> [(b2t v', aesonObject $ o_ks)]
                 Nothing -> o_ks
