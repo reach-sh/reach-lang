@@ -1051,15 +1051,16 @@ registerViews :: [(Maybe SLPart, [(SLVar, (IType, [B.ByteString]))])] -> App ()
 registerViews [] = return ()
 registerViews ((_, []) : vs) = registerViews vs
 registerViews ((sl, ((slv,(ty, aliases)) : vars)) : vs) = do
-  s <- getState
-  let (g,l) = registerView s (fmap bunpack sl) slv ty aliases
-  setGlobal g
-  setLocal l
+  forM_ (slv : map bunpack aliases) $ \ vVar -> do
+    s <- getState
+    let (g,l) = registerView s (fmap bunpack sl) vVar ty
+    setGlobal g
+    setLocal l
   registerViews [(sl,vars)]
   registerViews vs
 
-registerView :: State -> Maybe String -> SLVar -> IType -> [B.ByteString] -> State
-registerView (g, l) v_name v_var v_ty _aliases = do
+registerView :: State -> Maybe String -> SLVar -> IType -> State
+registerView (g, l) v_name v_var v_ty = do
   let views = e_views g
   let viewids = e_viewids g
   let vid = e_nvid g
@@ -1068,7 +1069,6 @@ registerView (g, l) v_name v_var v_ty _aliases = do
   let pName = case v_name of
         Nothing -> ""
         Just p -> p
-  -- XXX add same view for all aliases
   let g' =
         g
           { e_views = M.insert vid v views
