@@ -19,3 +19,4 @@ build
 hs/app-closed
 hs/package.closed.yaml
 hs/src/Reach/Closed
+docs/kToD.ts

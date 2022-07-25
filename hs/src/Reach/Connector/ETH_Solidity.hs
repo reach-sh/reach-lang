@@ -1671,7 +1671,7 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
               , ext_defn
               ]
     map_defns <- mapM map_defn (M.toList dli_maps)
-    let tgo :: Maybe SLPart -> (SLVar, (IType, [B.ByteString])) -> App ([(T.Text, Aeson.Value)], Doc)
+    let tgo :: Maybe SLPart -> (SLVar, DLView) -> App ([(T.Text, Aeson.Value)], Doc)
         tgo v (k, (t, aliases)) = do
           let mk kv = maybe kv (\v' -> bunpack v' <> "_" <> kv) v
           let vk_ = mk k

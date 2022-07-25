@@ -1102,7 +1102,7 @@ jsViews (cvs, vis) = do
                   return $ jsReturn $ parens eb'call
                 Nothing -> return $ illegal
             return $ jsWhen c $ vsep [let', ret']
-      let enInfo' :: Maybe SLPart -> (SLVar, (IType, [B.ByteString])) -> App ([(SLVar, Doc)], Doc)
+      let enInfo' :: Maybe SLPart -> (SLVar, DLView) -> App ([(SLVar, Doc)], Doc)
           enInfo' v (k, (vt, aliases)) = do
             let (_, rng) = itype2arr vt
             rng' <- jsContract rng
