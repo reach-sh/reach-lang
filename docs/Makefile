@@ -2,7 +2,7 @@ ROOT=..
 include $(ROOT)/DEPS
 
 .PHONY: build
-build:
+build: check
 	DOCKER_BUILDKIT=1 docker build \
 	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
 	  --build-arg DOCS_IMAGE=${DOCS_IMAGE} \
@@ -10,29 +10,21 @@ build:
 	  -o $$(pwd) \
 	  -f Dockerfile ..
 
-.PHONY: check
-check:
-	@echo Checking extension hover documentation...
-	@echo
-	cp ../vsce/server/src/keywordToDocumentation.ts ./tmp.ts
-	make check-accept
-	@if cmp ../vsce/server/src/keywordToDocumentation.ts ./tmp.ts; then \
-		echo \\nThe extension hover documentation is up to date.; \
-	else \
-		cp ./tmp.ts ../vsce/server/src/keywordToDocumentation.ts; \
-		echo \\nThe extension hover documentation is out of date.; \
-	fi; \
-	rm ./tmp.ts;
-
-.PHONY: check-accept
-check-accept:
+kToD.ts:
 	DOCKER_BUILDKIT=1 docker build \
 	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
 	  --build-arg NODE_IMAGE=${NODE_IMAGE} \
-	  --file update_ext_hover_doc/Dockerfile .. \
-	  -o $$(pwd)
-	cp ./kToD.ts ../vsce/server/src/keywordToDocumentation.ts
-	rm ./kToD.ts
+	  --pull=false \
+	  -o $$(pwd) \
+	  -f update_ext_hover_doc/Dockerfile ..
+
+KDP=../vsce/server/src/keywordToDocumentation.ts
+.PHONY: check
+check: kToD.ts
+	cmp $^ "${KDP}"
+.PHONY: check-accept
+check-accept: kToD.ts
+	mv $^ "${KDP}"
 
 .PHONY: update-search
 update-search:
