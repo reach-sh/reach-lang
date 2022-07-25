@@ -2,7 +2,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 10 theorems; No failures!
+Checked 7 theorems; No failures!
 reachc: error[RETH0000]: The ETH connector supports APIs that have up to 12 arguments, but sumMany uses 13.
 
   ./Err_SolTooManyArgs.rsh:40:3:application
