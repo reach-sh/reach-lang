@@ -2058,6 +2058,14 @@ ce = \case
       addInitTok tok
       void $ checkTxn $ CheckTxn {..}
       void $ makeTxn $ MakeTxn {..}
+  DLE_TokenAccepted _ addr tok -> do
+    ca addr
+    ca tok
+    incResource R_Account addr
+    incResource R_Asset tok
+    code "asset_holding_get" [ "AssetBalance" ]
+    op "swap"
+    op "pop"
   DLE_CheckPay ct_at fs ct_amt ct_mtok -> do
     void $ checkTxn $ CheckTxn {..}
     show_stack "CheckPay" Nothing ct_at fs

@@ -146,6 +146,7 @@ instance CollectsTypes DLExpr where
     DLE_Claim _ _ _ a _ -> cts a
     DLE_Transfer _ x y z -> cts x <> cts y <> cts z
     DLE_TokenInit _ x -> cts x
+    DLE_TokenAccepted _ a t -> cts a <> cts t
     DLE_CheckPay _ _ y z -> cts y <> cts z
     DLE_Wait _ a -> cts a
     DLE_PartSet _ _ a -> cts a

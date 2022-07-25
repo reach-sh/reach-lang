@@ -236,6 +236,8 @@ kgq_e ctxt mv = \case
     kgq_a_all ctxt amt
   DLE_TokenInit _ tok ->
     kgq_a_all ctxt tok
+  DLE_TokenAccepted _ addr tok ->
+    kgq_a_all ctxt addr >> kgq_a_all ctxt tok
   DLE_CheckPay _ _ amt _ ->
     kgq_a_all ctxt amt
   DLE_Wait _ amt ->

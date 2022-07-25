@@ -304,3 +304,7 @@ export const simTokenBurn = (sim_r:any, tok:any, amt:any): void => {
 export const simTokenDestroy = (sim_r:any, tok:any): void => {
   sim_r.txns.push({kind: 'tokenDestroy', tok});
 };
+
+export const simTokenAccepted_ = (sim_r:any, addr:any, tok:any): void => {
+  sim_r.txns.push({kind: 'tokenAccepted', addr, tok});
+};

@@ -108,6 +108,7 @@ instance Subst DLExpr where
     DLE_Claim a b c d e -> DLE_Claim a b c <$> subst d <*> pure e
     DLE_Transfer at x y z -> DLE_Transfer at <$> subst x <*> subst y <*> subst z
     DLE_TokenInit at x -> DLE_TokenInit at <$> subst x
+    DLE_TokenAccepted at addr tok -> DLE_TokenAccepted at <$> subst addr <*> subst tok
     DLE_CheckPay at x y z -> DLE_CheckPay at x <$> subst y <*> subst z
     DLE_Wait at x -> DLE_Wait at <$> subst x
     DLE_PartSet at x y -> DLE_PartSet at x <$> subst y

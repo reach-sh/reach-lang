@@ -426,6 +426,7 @@ instance DepthOf DLExpr where
     DLE_Claim _ _ _ a _ -> depthOf a
     DLE_Transfer _ x y z -> max <$> depthOf [x, y] <*> depthOf z
     DLE_TokenInit _ x -> depthOf x
+    DLE_TokenAccepted _ x y -> max <$> depthOf x <*> depthOf y
     DLE_CheckPay _ _ y z -> max <$> depthOf y <*> depthOf z
     DLE_Wait _ x -> depthOf x
     DLE_PartSet _ _ x -> depthOf x
@@ -679,6 +680,8 @@ solExpr sp = \case
   DLE_Transfer _ who amt mtok ->
     spa $ solTransfer who amt mtok
   DLE_TokenInit {} -> return emptyDoc
+  DLE_TokenAccepted _ _ _ -> do
+    return "(true)"
   DLE_CheckPay at fs amt mtok -> do
     let require :: String -> Doc -> App Doc
         require msg e = spa $ solRequire (show (at, fs, msg)) e

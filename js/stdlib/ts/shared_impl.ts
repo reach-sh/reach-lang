@@ -199,6 +199,7 @@ export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy exten
   getState: (v:BigNumber, ctcs:Array<ConnectorTy>) => Promise<Array<any>>,
   getCurrentStep: () => Promise<BigNumber>,
   apiMapRef: (i:number, ty:ConnectorTy) => MapRefT<any>,
+  simTokenAccepted: (sim_r:any, addr:any, tok:any) => Promise<boolean>,
 };
 
 export type ISetupArgs<ContractInfo, VerifyResult> = {
@@ -213,7 +214,7 @@ export type ISetupViewArgs<ContractInfo, VerifyResult> =
 export type ISetupEventArgs<ContractInfo, VerifyResult> =
   Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
 
-type SpecificKeys = ("getContractInfo"|"getContractAddress"|"getContractCompanion"|"getBalance"|"sendrecv"|"recv"|"getState"|"getCurrentStep"|"apiMapRef");
+type SpecificKeys = ("getContractInfo"|"getContractAddress"|"getContractCompanion"|"getBalance"|"sendrecv"|"recv"|"getState"|"getCurrentStep"|"apiMapRef"|"simTokenAccepted");
 
 export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, (SpecificKeys)>;
 
@@ -345,14 +346,15 @@ export const stdContract =
   const _initialize = () => {
     const {
       getContractInfo, getContractAddress, getContractCompanion,
-      getBalance, sendrecv, recv, getCurrentStep, getState, apiMapRef
+      getBalance, sendrecv, recv, getCurrentStep, getState, apiMapRef,
+      simTokenAccepted
     } =
       _setup(setupArgs);
     return {
       selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
       getContractInfo, getContractAddress, getContractCompanion,
       getBalance, sendrecv, recv,
-      getCurrentStep, getState, apiMapRef,
+      getCurrentStep, getState, apiMapRef, simTokenAccepted
     };
   };
   const ctcC = { _initialize };
@@ -593,6 +595,10 @@ export type ISimTxn<Token, ContractInfo> = {
 } | {
   kind: 'tokenDestroy',
   tok: Token,
+} | {
+  kind: 'tokenAccepted',
+  tok: Token,
+  addr: string,
 } | {
   kind: 'remote',
   obj: ContractInfo,

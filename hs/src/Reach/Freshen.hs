@@ -166,6 +166,7 @@ instance Freshen DLExpr where
     DLE_Claim a b c d e -> DLE_Claim a b <$> fu c <*> fu d <*> pure e
     DLE_Transfer at x y z -> DLE_Transfer at <$> fu x <*> fu y <*> fu z
     DLE_TokenInit at x -> DLE_TokenInit at <$> fu x
+    DLE_TokenAccepted at x y -> DLE_TokenAccepted at <$> fu x <*> fu y
     DLE_CheckPay at x y z -> DLE_CheckPay at x <$> fu y <*> fu z
     DLE_Wait at x -> DLE_Wait at <$> fu x
     DLE_PartSet at x y -> DLE_PartSet at x <$> fu y

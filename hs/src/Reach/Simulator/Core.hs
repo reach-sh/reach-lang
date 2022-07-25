@@ -603,6 +603,7 @@ instance Interp DLExpr where
               transferLedger simContract acc ev n
               return V_Null
     DLE_TokenInit _at _dlarg -> return V_Null
+    DLE_TokenAccepted _at _dlargA _dlargB -> return $ V_Bool True
     DLE_CheckPay _at _slcxtframes _dlarg _maybe_dlarg -> return $ V_Null
     DLE_Wait at dltimearg -> case dltimearg of
       Left dlarg -> do
