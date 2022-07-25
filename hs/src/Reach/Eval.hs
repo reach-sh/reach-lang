@@ -115,7 +115,6 @@ verifyViewAliases m = do
   let uniqAliases = unsafeNub aliases
   when (length aliases /= length uniqAliases) $
     expect_ $ Err_Alias_Name_Clash $ aliases \\ uniqAliases
-  return ()
 
 class Pandemic a where
   pan :: a -> App a

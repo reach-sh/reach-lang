@@ -1116,8 +1116,6 @@ jsViews (cvs, vis) = do
                           , ("decode", pretty k)
                           ]
             return $ (,view_asn) $ map (, val) $ k : map bunpack aliases
-      -- These two maps respect hierarchy of named Views, whereas the flattened ones in
-      -- Algo would not
       let enInfo k v = do
             (m, view_asn) <- unzip <$> mapM (enInfo' k) (M.toList v)
             return (view_asn, M.fromList . concat $ m)
