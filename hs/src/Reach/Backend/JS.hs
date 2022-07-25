@@ -1109,11 +1109,12 @@ jsViews (cvs, vis) = do
             body <- (vsep . M.elems) <$> mapWithKeyM (enDecode v k) vis
             let body' = vsep [body, illegal]
             let decode' = jsApply "async " ["i", "svs", "args"] <+> "=>" <+> jsBraces body'
-            let view_asn = "const " <> pretty k <> " = " <> decode' <> ";"
+            let name = maybe "" (pretty . bunpack) v <> "_" <> pretty k
+            let view_asn = "const " <> name <> " = " <> decode' <> ";"
             let val = jsObject $
                         M.fromList $
                           [ ("ty" :: String, rng')
-                          , ("decode", pretty k)
+                          , ("decode", name)
                           ]
             return $ (,view_asn) $ map (, val) $ k : map bunpack aliases
       let enInfo k v = do
