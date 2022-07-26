@@ -1120,6 +1120,23 @@ smt_e at_dv mdv de = do
       s <- smtTypeSort t
       obj_da' <- smt_a at obj_da
       bound at $ smtApply (s ++ "_" ++ f) [obj_da']
+    DLE_ObjectSet at obj_a fieldName val_a ->
+      forM_ mdv $ \result_v@(DLVar _ _ result_t _) -> do
+        let obj_t = argTypeOf obj_a
+        let objFields = M.fromList $ objstrTypes obj_t
+        objSort <- smtTypeSort obj_t
+        resultSort <- smtTypeSort result_t
+        obj_se <- smt_a at obj_a
+        val_se <- smt_a at val_a
+        result_se <- smt_v at result_v
+        bound at result_se
+        -- Assert unchanged fields match the old object
+        let copiedFields = M.toList $ M.delete fieldName objFields
+        forM_ copiedFields $ \(key, _) -> do
+          smtAssertCtxt $ smtEq (smtApply (objSort    <> "_" <> key) [obj_se])
+                                (smtApply (resultSort <> "_" <> key) [result_se])
+        -- Assert the changed field matches the given val
+        smtAssertCtxt $ smtEq val_se (smtApply (resultSort <> "_" <> fieldName) [result_se])
     DLE_Interact at _ _ _ _ _ ->
       unbound at
     DLE_Digest at args -> do
@@ -1748,7 +1765,7 @@ newFileLogger p = do
       logUntab = modifyIORef tabr $ \x -> x - 1
       printTab = do
         tab <- readIORef tabr
-        mapM_ (\_ -> hPutStr logh "  ") $ take tab $ repeat ()
+        replicateM_ tab $ hPutStr logh "  "
       send_tag = "[send->] "
       -- recv_tag = "[<-recv]"
       logMessage m' = do

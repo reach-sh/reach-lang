@@ -1453,7 +1453,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
   SLV_Prim SLPrim_Object ->
     return $ Just $
       M.fromList
-        [ ("set", retStdLib "Object_set")
+        [ ("set", retV $ public $ SLV_Prim SLPrim_Object_set)
         , ("setIfUnset", retStdLib "Object_setIfUnset")
         , ("has", retV $ public $ SLV_Prim $ SLPrim_Object_has)
         , ("fields", retV $ public $ SLV_Prim $ SLPrim_Object_fields)
@@ -3163,6 +3163,20 @@ evalPrim p sargs =
         _ -> expect_t a $ Err_Expected "object type"
       let tm' = M.map (\t -> SLSSVal at lvl (SLV_Type t)) tm
       retV $ (lvl, SLV_Object at Nothing tm')
+    SLPrim_Object_set -> do
+      at <- withAt id
+      (obj, fieldV, valV) <- three_args
+      (objTy, objDLA) <- compileTypeOf obj
+      (valTy, valDLA) <- compileTypeOf valV
+      fieldName <- bunpack <$> mustBeBytes fieldV
+      case objTy of
+        T_Object objFields -> do
+          let objFields' = M.insert fieldName valTy objFields
+          let objTy' = T_Object objFields'
+          let dle = DLE_ObjectSet at objDLA fieldName valDLA
+          dlv <- ctxt_lift_expr (DLVar at Nothing objTy') dle
+          return (lvl, SLV_DLVar dlv)
+        _ -> illegal_args
     SLPrim_makeEnum -> do
       at' <- withAt $ srcloc_at "makeEnum" Nothing
       case map snd sargs of
@@ -4153,7 +4167,7 @@ assertRefinedArgs ct sargs iat (SLTypeFun {..}) = do
 evalApplyVals' :: SLVal -> [SLSVal] -> App SLSVal
 evalApplyVals' rator randvs = do
   SLAppRes _ val <- evalApplyVals rator randvs
-  return $ val
+  return val
 
 litToSV :: DLLiteral -> App SLVal
 litToSV = \case
@@ -4175,7 +4189,7 @@ argToSV = \case
 
 evalApplyArgs' :: SLVal -> [DLArg] -> App SLSVal
 evalApplyArgs' rator randas =
-  evalApplyVals' rator =<< mapM (liftM public . argToSV) randas
+  evalApplyVals' rator =<< mapM (fmap public . argToSV) randas
 
 evalApplyClosureVals :: SrcLoc -> SLClo -> [SLSVal] -> App SLAppRes
 evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEnv {..}) randvs = do

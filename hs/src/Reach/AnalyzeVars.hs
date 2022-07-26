@@ -149,6 +149,7 @@ instance FreeVars DLExpr where
     DLE_DataTag _ d -> freeVars d
     DLE_FromSome _ a b -> freeVars [a, b]
     DLE_ContractNew _ a dr -> freeVars a <> freeVars dr
+    DLE_ObjectSet _ a _ b -> freeVars [a, b]
 
 instance FreeVars DLLetVar where
   freeVars = \case

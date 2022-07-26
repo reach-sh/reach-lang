@@ -183,6 +183,7 @@ instance Freshen DLExpr where
     DLE_DataTag at d -> DLE_DataTag at <$> fu d
     DLE_FromSome at mo da -> DLE_FromSome at <$> fu mo <*> fu da
     DLE_ContractNew at tns dr -> DLE_ContractNew at <$> fu tns <*> fu dr
+    DLE_ObjectSet at a b c -> DLE_ObjectSet at <$> fu a <*> pure b <*> fu c
 
 instance {-# OVERLAPS #-} Freshen k => Freshen (SwitchCases k) where
   fu = mapM (\(vn, vnu, k) -> (,,) <$> fu_v vn <*> pure vnu <*> (newScope $ fu k))
