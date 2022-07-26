@@ -3257,11 +3257,12 @@ cview :: (SLPart, VSITopInfo) -> App [(String, CMeth)]
 cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs aliases) = do
     cview_lab <- freshLabel $ bunpack who
     let v = CView {..}
-    return $ (cview_sig, v) : concatMap (\ alias -> [(bunpack alias, CAlias alias v)]) aliases
+    return $ (cview_sig, v) : concatMap (\ alias -> [(mk_sig $ bunpack alias, CAlias alias v)]) aliases
   where
     cview_who = who
     f = bunpack who
-    cview_sig = signatureStr False f cview_arg_tys $ Just cview_ret_ty
+    cview_sig = mk_sig f
+    mk_sig n = signatureStr False n cview_arg_tys $ Just cview_ret_ty
 
 doWrapData :: [DLType] -> (DLArg -> App ()) -> App ()
 doWrapData tys mk = do
@@ -3369,16 +3370,18 @@ selectFromM f k m = M.mapMaybe go m
 analyzeViews :: (CPViews, ViewInfos) -> VSITop
 analyzeViews (vs, vis) = vsit
   where
-    vsit = M.fromList $ map (uncurry got) $ M.toList $ flattenInterfaceLikeMap vs
-    got who (it, aliases) = (who, v aliases)
+    vsit = M.fromList $ concatMap (\ (mi, m) -> map (got mi) $ M.toList m) $ M.toList vs
+    got mi (who, (it, aliases)) = (f, v $ map mk aliases)
       where
         v = VSITopInfo args ret hs
-        hs = selectFromM VSIBlockVS who vsih
+        mk n = maybe "" (<> "_") mi <> n
+        f = mk $ bpack who
+        hs = selectFromM VSIBlockVS f vsih
         (args, ret) =
           case it of
             IT_Val t -> ([], t)
             IT_Fun d r -> (d, r)
-            IT_UDFun _ -> impossible $ "udview " <> bunpack who
+            IT_UDFun _ -> impossible $ "udview " <> who
     vsih = M.map goh vis
     goh (ViewInfo svs vi) = (map v2vl svs, flattenInterfaceLikeMap vi)
 
