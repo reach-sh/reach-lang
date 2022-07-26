@@ -94,8 +94,7 @@ export const fromRight = (e, d) => e.match({
 // Standard library functions that should be hidden in some way, like
 // SLV_HaskellFunction FIXME
 
-// export const Object_set = (o, k, e) =>
-//   ({...o, [k]: e});
+export const Object_set = (o, k, e) => Object.set(o, k, e);
 export const Object_setIfUnset = (o, k, dv) =>
   Object.has(o, k) ? o : Object.set(o, k, dv);
 export const Array_empty =
