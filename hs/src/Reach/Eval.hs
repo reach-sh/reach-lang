@@ -174,6 +174,7 @@ instance Pandemic DLExpr where
     DLE_DataTag at d -> DLE_DataTag at <$> pan d
     DLE_FromSome at mo da -> DLE_FromSome at <$> pan mo <*> pan da
     DLE_ContractNew at cns dr -> DLE_ContractNew at <$> pan cns <*> pan dr
+    DLE_ObjectSet at o k v -> DLE_ObjectSet at <$> pan o <*> pan k <*> pan v
 
 instance Pandemic DLVar where
   pan (DLVar at m_locvar t i) = do

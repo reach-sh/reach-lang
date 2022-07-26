@@ -691,6 +691,7 @@ instance Interp DLExpr where
       setGlobal $ g {e_nctc = ctcId}
       -- XXX make an interact point with dr
       return $ V_Contract $ fromIntegral ctcId
+    DLE_ObjectSet {} -> undefined -- TODO
 
 instance Interp DLStmt where
   interp = \case

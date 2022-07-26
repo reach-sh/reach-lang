@@ -611,6 +611,11 @@ jsExpr = \case
             , ("opts", o')
             ]
         return $ jsApply "stdlib.simContractNew" ["sim_r", jsObject cns', dr', "getSimTokCtr()"]
+  DLE_ObjectSet _ o k v -> do
+    o' <- jsArg o
+    v' <- jsArg v
+    let k' = jsString k
+    return $ jsBraces $ "..." <> o' <> ", " <> k' <> ": " <> v'
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
