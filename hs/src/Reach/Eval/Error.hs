@@ -20,7 +20,6 @@ import Reach.Texty (pretty)
 import Reach.Util
 import Reach.Version
 import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
-import qualified Data.ByteString as B
 
 data LookupCtx
   = -- Signifies the user referencing a variable from a ctxt (:: String).

@@ -22,7 +22,7 @@ import Reach.Parser
 import Reach.Util
 import Reach.Warning
 import qualified Data.ByteString as B
-import Data.List.Extra (groupSort, (\\))
+import Data.List.Extra (groupSort)
 import Reach.UnsafeUtil (unsafeNub)
 
 compileDApp :: DLStmts -> DLSExports -> SLVal -> App DLProg
