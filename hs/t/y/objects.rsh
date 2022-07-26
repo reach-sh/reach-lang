@@ -6,7 +6,7 @@ export const main = Reach.App(
     const obj0 = {};
 
     // Normal object literal
-    const obj1 = {x: 1, something: 5};
+    const obj1 = {x: 1};
 
     // object field reference .
     const obj1X0 = obj1.x;
