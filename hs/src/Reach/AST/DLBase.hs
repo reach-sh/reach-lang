@@ -782,6 +782,7 @@ data DLExpr
   | DLE_ArrayConcat SrcLoc DLArg DLArg
   | DLE_TupleRef SrcLoc DLArg Integer
   | DLE_ObjectRef SrcLoc DLArg String
+  | DLE_ObjectSet SrcLoc DLArg SLVar DLArg
   | DLE_Interact SrcLoc [SLCtxtFrame] SLPart String DLType [DLArg]
   | DLE_Digest SrcLoc [DLArg]
   | DLE_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg (Maybe B.ByteString)
@@ -973,6 +974,10 @@ instance PrettySubst DLExpr where
       cns' <- prettySubst cns
       dr' <- prettySubst dr
       return $ "new Contract" <> parens cns' <> "." <> dr'
+    DLE_ObjectSet _ o k v -> do
+      o' <- prettySubst o
+      v' <- prettySubst v
+      return $ "Object.set(" <> o' <> ", " <> pretty k <> ", " <> v' <> ")"
 
 instance PrettySubst LogKind where
   prettySubst = \case
@@ -1025,6 +1030,7 @@ instance IsPure DLExpr where
     DLE_DataTag {} -> True
     DLE_FromSome {} -> True
     DLE_ContractNew {} -> False
+    DLE_ObjectSet {} -> True
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -1060,6 +1066,7 @@ instance IsLocal DLExpr where
     DLE_DataTag {} -> True
     DLE_FromSome {} -> True
     DLE_ContractNew {} -> False
+    DLE_ObjectSet {} -> True
 
 instance CanDupe DLExpr where
   canDupe e =

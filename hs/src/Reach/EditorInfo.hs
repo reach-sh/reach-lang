@@ -122,6 +122,7 @@ completionKind v =
         SLPrim_Object -> Just CK_TypeParameter
         SLPrim_Object_has -> Just CK_Method
         SLPrim_Object_fields -> Just CK_Method
+        SLPrim_Object_set -> Just CK_Method
         SLPrim_App_Delay _ _ _ -> Nothing
         SLPrim_op op -> case op of
           S_MUL_DIV -> Just CK_Function
