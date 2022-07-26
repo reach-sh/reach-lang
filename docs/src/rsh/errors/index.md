@@ -2770,12 +2770,6 @@ This error indicates that you are using a function, like `{!rsh} ContractCode`, 
 
 This error indicates that there was an error while parsing or compiling contract code for `{!rsh} ContractCode`.
 
-## {#RE0138} RE0138
-
-This error indicates that a view alias was declared multiple times.
-
-You can fix this error by using unique names for your views and aliases.
-
 ## {#RETH0001} RETH0001
 
 This error indicates that a View or API uses more arguments than are supported on the ETH connector.

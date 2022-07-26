@@ -80,7 +80,6 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
           }
   AppRes {..} <- liftIO $ readIORef resr
   aliases <- verifyApiAliases ar_api_alias
-  verifyViewAliases ar_view_alias
   dli_maps <- liftIO $ readIORef $ me_ms mape
   let dli = DLInit {..}
   let sps_ies = ar_pie
@@ -108,13 +107,6 @@ verifyApiAliases m = do
         expect_ $ Err_Alias_Type_Clash $ bunpack k
     (Nothing, _) -> return ()
   return $ M.map fst m
-
-verifyViewAliases :: M.Map SLVar [B.ByteString] -> App ()
-verifyViewAliases m = do
-  let aliases = concat $ M.elems m
-  let uniqAliases = unsafeNub aliases
-  when (length aliases /= length uniqAliases) $
-    expect_ $ Err_Alias_Name_Clash $ aliases \\ uniqAliases
 
 class Pandemic a where
   pan :: a -> App a
