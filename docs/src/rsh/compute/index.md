@@ -1848,6 +1848,7 @@ The @{defn("thisConsensusTime")} primitive returns the network time of the curre
 
 :::note
 Some networks do not support observing the time of a consensus operation until after it has finalized.
+For more information, read @{seclink("RW0006")}. 
 :::
 
 ---
@@ -1888,7 +1889,7 @@ range: 11-15
 
 This code creates three variables of `lastTime`, `lastSecs`, and `i`.
 It then sets `lastTime` to `{!rsh} thisConsensusTime`, `lastSecs` to `{!rsh} baseWaitSecs` and `i` to 0.
-Then, an invariant is created to make sure that `lastTime` is greater than `{!rsh} baseWaitTime`, `lastTime` is equal to `{!rsh} thisConsensusTime`, `lastSecs` is either equal or greater than `{!rsh} basWaitSecs` and that the `{!rsh} balance` is equal to 0.
+Then, an invariant is created to make sure that `lastTime` is greater than `{!rsh} baseWaitTime`, `lastTime` is equal to `{!rsh} thisConsensusTime`, `lastSecs` is either equal or greater than `{!rsh} baseWaitSecs` and that the `{!rsh} balance` is equal to 0.
 This makes sure that the order of blocks matches the order of time.
 
 ### Time arguments - `relativeTime`, `absoluteTime`, `relativeSecs`, `absoluteSecs`
@@ -1946,6 +1947,8 @@ range: 32 - 36
 ```
 
 If a time argument is required, an integer value is allowed and is interpreted as a `{!rsh} relativeTime`, but this behavior is deprecated and you will see a warning.
+
+Be sure to read @{seclink("RW0006")} if you use network seconds.
 
 ### Time verification - `verifyRelativeTime`, `verifyAbsoluteTime`, `verifyRelativeSecs`, `verifyAbsoluteSecs`
 

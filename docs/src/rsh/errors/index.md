@@ -3279,7 +3279,7 @@ This process would slowly "resychronize"; on Algorand, it would gain 20 seconds 
 This means it would take roughly 5 hours to resychronize after a day of downtime.
 However, this is not guaranteed to occur at any particular time, because block proposers (on Algorand, at least) are free to leave the timestamp unchanged from the last block (i.e. there is no minimum increment), so it is possible that time would never be synchronized with reality at all.
 
-Thus, it is unsafe to rely on network seconds for most purposes (such as interest on loans, time limits on auctions, and so forth), because network downtime (even intermitten) and adversarial block proposers (acting alone) can delay and influence the block time.
+Thus, it is unsafe to rely on network seconds for most purposes (such as interest on loans, time limits on auctions, and so forth), because network downtime (even intermittent) and adversarial block proposers (acting alone) can delay and influence the block time.
 
 ### Problematic code:
 
