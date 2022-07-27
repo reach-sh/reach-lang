@@ -27,7 +27,6 @@ Each code has a corresponding section in this document that explains the error i
 See for example @{seclink("RE0088")}.
 
 The second block (lines 5-7) provides an excerpt of the line of code that the error occurred on.
-The code listed might be the start of the code block that has the error, such as a `{!rsh} parallelReduce`, `{!rsh} while`, or `{!rsh} fork`, not the line of the code with the error.
 Sometimes this block is missing when Reach cannot track the source location of your error.
 
 The third block (lines 9-11) provides a stack trace that shows how this line of code was arrived at.
@@ -2771,6 +2770,10 @@ This error indicates that you are using a function, like `{!rsh} ContractCode`, 
 
 This error indicates that there was an error while parsing or compiling contract code for `{!rsh} ContractCode`.
 
+## {#RETH0001} RETH0001
+
+This error indicates that a View or API uses more arguments than are supported on the ETH connector.
+
 ## {#REP0000} REP0000
 
 This error indicates that the body of a `{!rsh} while` loop does not make a publication before the `{!rsh} continue`
@@ -3276,7 +3279,7 @@ This process would slowly "resychronize"; on Algorand, it would gain 20 seconds 
 This means it would take roughly 5 hours to resychronize after a day of downtime.
 However, this is not guaranteed to occur at any particular time, because block proposers (on Algorand, at least) are free to leave the timestamp unchanged from the last block (i.e. there is no minimum increment), so it is possible that time would never be synchronized with reality at all.
 
-Thus, it is unsafe to rely on network seconds for most purposes (such as interest on loans, time limits on auctions, and so forth), because network downtime (even intermitten) and adversarial block proposers (acting alone) can delay and influence the block time.
+Thus, it is unsafe to rely on network seconds for most purposes (such as interest on loans, time limits on auctions, and so forth), because network downtime (even intermittent) and adversarial block proposers (acting alone) can delay and influence the block time.
 
 ### Problematic code:
 
