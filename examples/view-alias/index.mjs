@@ -13,14 +13,14 @@ const ctcAlice = accAlice.contract(backend);
 const expectedViews = ['x', 'val', 'val2', 'f', 'succ', 'V2_y', 'V2_yVal', 'V2_g', 'V2_sub'];
 
 const chkAlgoAbi = () => {
-  const algoAbi = backend._Connectors.ALGO.ABI.sigs;
+  const algoAbi = ctcAlice.getABI().sigs;
   expectedViews.forEach((ev) => {
     stdlib.assert(algoAbi.find(x => x.startsWith(ev)), `Found expected view ${ev}`);
   });
 }
 
 const chkEthAbi = () => {
-  const ethAbi = JSON.parse(backend._Connectors.ETH.ABI);
+  const ethAbi = ctcAlice.getABI();
 
   expectedViews.forEach((ev) => {
     stdlib.assert(ethAbi.find(x => x.name == ev) != undefined, "Found expected view");
