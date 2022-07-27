@@ -1848,7 +1848,6 @@ The @{defn("thisConsensusTime")} primitive returns the network time of the curre
 
 :::note
 Some networks do not support observing the time of a consensus operation until after it has finalized.
-For more information, read @{seclink("RW0006")}. 
 :::
 
 ---
