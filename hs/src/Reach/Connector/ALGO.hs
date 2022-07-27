@@ -3291,7 +3291,8 @@ cmeth sigi = \case
     comment $ LT.pack $ "View: " <> cview_sig
     comment $ LT.pack $ sigDump sigi
     block_' (bunpack alias) $ do
-      code "b" [cview_lab]
+      let go _ _ = code "b" [cview_lab]
+      cblt "viewAlias" go (bltM cview_hs)
   CApi _ sig _ which tys doWrap lab [] -> do
     block lab $ do
       comment $ LT.pack $ "API: " <> sig

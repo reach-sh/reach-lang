@@ -1,8 +1,0 @@
-reachc: error[RE0123]: The name `A_y` has already been used by a Participant, View or API at: ./view_alias_shadowed.rsh:5:16:application
-
-  ./view_alias_shadowed.rsh:6:17:application
-
-  6|   const V = View({ x: UInt }, { x: ['A_y']});
-
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0123
-

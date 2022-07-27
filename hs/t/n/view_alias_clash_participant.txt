@@ -1,0 +1,8 @@
+reachc: error[RE0123]: The name `A` has already been used by a Participant, View or API at: ./view_alias_clash_participant.rsh:4:24:application
+
+  ./view_alias_clash_participant.rsh:5:18:application
+
+  5|   const V2 = View({a : UInt}, {a: ["A"]});
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0123
+
