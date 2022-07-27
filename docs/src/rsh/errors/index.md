@@ -27,6 +27,7 @@ Each code has a corresponding section in this document that explains the error i
 See for example @{seclink("RE0088")}.
 
 The second block (lines 5-7) provides an excerpt of the line of code that the error occurred on.
+The code listed might be the start of the code block that has the error, such as a `{!rsh} parallelReduce`, `{!rsh} while`, or `{!rsh} fork`, not the line of the code with the error.
 Sometimes this block is missing when Reach cannot track the source location of your error.
 
 The third block (lines 9-11) provides a stack trace that shows how this line of code was arrived at.
