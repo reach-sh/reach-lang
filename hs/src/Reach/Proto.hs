@@ -4,7 +4,6 @@ module Reach.Proto
   ( FDescOut'(..)
   , FDescOut(..)
   , Req(..)
-  , ReqProjPut(..)
   , Res(..)
   , ResInterpret(..)
   , StubConfig(..)
@@ -43,6 +42,7 @@ import Data.Map.Strict
 import Data.Maybe
 import Data.Proxy
 import Data.Text hiding (all, concat)
+import Data.Text.Encoding
 import Data.Time.Clock
 import GHC.Generics
 import Options.Applicative hiding ((<|>))
@@ -58,6 +58,7 @@ import System.Time.Extra
 import Text.Parsec
 import Text.Parsec.Language
 import Text.Parsec.Token
+import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Lazy.UTF8 as BL
 import qualified Data.List as L
@@ -168,16 +169,12 @@ data Req = Req
   , req_env   :: M.Map Text Text
   } deriving (Eq, Generic, FromJSON, ToJSON)
 
-data ReqProjPut = ReqProjPut
-  { req_projput :: M.Map FilePath Text
-  } deriving (Eq, Generic, FromJSON, ToJSON)
-
 data ResInterpret
   = ExitStdout Int Text
   | ExitStderr Int Text
   | AttachStreamJustListen Pid Integer
   | AttachStreamListenSpeak Pid Integer
-  | PutProjectUpdates (NonEmpty FilePath)
+  | PutProjectUpdates (NonEmpty (FilePath, HashFS))
   deriving (Eq, Show, Generic, FromJSON, ToJSON)
 
 data Res
@@ -226,10 +223,11 @@ pFDescOut = pka <|> try pout <|> pexit where
 instance MimeUnrender EventStream FDescOut where
   mimeUnrender _ = either (Left . show) Right . runParser pFDescOut () "" . BL.toString
 
--- TODO octet stream
 type V0_Proj = "proj"
-  :> Header' '[Required, Strict] "X-Reach-Project" XProject
-  :> ReqBody '[JSON] ReqProjPut
+  :> Header' '[Required, Strict] "X-Reach-Project"      XProject
+  :> Header' '[Required, Strict] "X-Reach-Project-Hash" HashFS
+  :> Header' '[Required, Strict] "X-Reach-Project-Path" FilePath
+  :> StreamBody NoFraming OctetStream (SourceIO B.ByteString)
   :> PutNoContent -- TODO: replace me with HTTP 202
 
 type V0_ProcIn = "proc"
@@ -317,7 +315,8 @@ cmdIO :: ReaderT (SCEnv c) IO Res -> SubcommandStepT c
 cmdIO f = Effect $ f <&> flip Yield Stop
 
 class FS c where
-  -- TODO unbuffered contents; maybe better as ByteString(?)
+  -- TODO unbuffered contents everywhere; maybe better if we always use ByteString(?)
+  store  :: HashFS -> SourceT IO B.ByteString -> ReaderT (SCEnv c) IO ()
   stored :: HashFS -> ReaderT (SCEnv c) IO (Maybe Text)
   staged :: FilePath -> Text -> ReaderT (SCEnv c) IO ()
   syncToutStore :: ReaderT (SCEnv c) IO Seconds
@@ -328,7 +327,7 @@ withSyncedProject f = Effect $ asks (req_files . sce_req) >>= maybe l go where
   -- TODO batch `stored` + `staged` operations so we don't spike those harshly?
   -- TODO increase parallelism
   l = pure . cmdJust $ ExitStderr 1 "Missing mandatory project hashes"
-  w (p, h) = T.take 6 h <> " - " <> pack p
+  w (p, h) = T.take 8 h <> " - " <> pack p
 
   toutStage t s = cmdJust . ExitStderr 1 $ T.intercalate ""
     [ "Couldn't stage:\n"
@@ -359,7 +358,7 @@ withSyncedProject f = Effect $ asks (req_files . sce_req) >>= maybe l go where
     let go' [] = f   -- Fully synchronized
         go' (x:xs) = -- Stream sync requests to client, poll for fulfillment, stage
           let (a, b) = L.splitAt 4 xs
-          in Yield (Interpret . PutProjectUpdates $ fst x :| (fst <$> a)) . Effect $ do
+          in Yield (Interpret . PutProjectUpdates $ x :| a) . Effect $ do
             (usl, usr) <- conc (x:a) $ \(p, h) -> do
               let poll' = stored h >>= maybe (liftIO (sleep 0.1) *> poll') (pure . (p, h, ))
               tout tr p h poll'
@@ -398,6 +397,7 @@ stubDispatchReach e = mkDispatchOptparse e p where
   p = info (hsubparser s <**> helper) fullDesc
   s = stubHelp <> stubInit <> stubCompile
 
+-- Note: we may want to build safer multi-thread synchronization around these
 data StubConfig = StubConfig
   { sc_syncToutStore :: IORef Seconds
   , sc_syncToutStage :: IORef Seconds
@@ -420,6 +420,11 @@ instance FS StubConfig where
   syncToutStore = asks sce_cnf >>= \StubConfig {..} -> liftIO $ readIORef sc_syncToutStore
   syncToutStage = asks sce_cnf >>= \StubConfig {..} -> liftIO $ readIORef sc_syncToutStage
 
+  store h c = asks sce_cnf >>= \StubConfig {..} -> liftIO $ do
+    let f b s = insertWith (flip (<>)) h b s
+    foreach fail (void . modifyIORef' sc_store . f . decodeUtf8) c
+    -- NB: non-stub instances must verify the hash once they've fully received the contents!
+
   stored h = asks sce_cnf >>= \StubConfig {..} -> liftIO $ do
     readIORef sc_syncLagStore >>= sleep
     (!? h) <$> readIORef sc_store
@@ -431,9 +436,10 @@ instance FS StubConfig where
 appStubServer :: StubConfig -> (SCEnv StubConfig -> SubcommandDispatch) -> Bool -> Maybe String -> Application
 appStubServer e d l t = serve (Proxy @Proto) ((pput :<|> pin) :<|> (pout :<|> r)) where
   -- Update project files
-  pput x _fs = do
-    when l . liftIO . T.putStrLn $ "Syncing " <> fromXProject x <> "..."
-    -- TODO _fs
+  pput x h f c = do
+    -- Annoyance: concurrent threads can mangle output
+    when l . liftIO . T.putStrLn $ "Syncing " <> fromXProject x <> ": " <> pack f <> "..."
+    liftIO . runReaderT (store h c) $ SCEnv (Req [] Nothing mempty) e
     pure NoContent
 
   -- stdin
@@ -461,10 +467,10 @@ appStubServer e d l t = serve (Proxy @Proto) ((pput :<|> pin) :<|> (pout :<|> r)
 
 runStubServer :: IO ()
 runStubServer = do
-  c <- mkStubConfig 2 4 0 0
+  c <- mkStubConfig 4 2 0 0
   Warp.run stubPort $ appStubServer c stubDispatchReach True Nothing
 
-projPut'' :: XProject -> ReqProjPut -> ClientM NoContent
+projPut'' :: XProject -> HashFS -> FilePath -> SourceT IO B.ByteString -> ClientM NoContent
 say'' :: Pid -> Text -> ClientM NoContent
 projPut'' :<|> say'' = client $ Proxy @V0_Sync
 
@@ -476,8 +482,11 @@ todoErrorHandler :: ClientError -> IO a
 todoErrorHandler = fail . show
 
 -- TODO refactor us ------------------------------------------------------------
-projPut :: ClientEnv -> XProject -> ReqProjPut -> IO ()
-projPut e p r = runClientM (projPut'' p r) e >>= either todoErrorHandler (const $ pure ())
+
+-- Note: real clients will probably pass file contents (`c`) with:
+-- https://hackage.haskell.org/package/servant-0.19/docs/Servant-Types-SourceT.html#v:readFile
+projPut :: ClientEnv -> XProject -> HashFS -> FilePath -> SourceT IO B.ByteString -> IO ()
+projPut e x h p c = runClientM (projPut'' x h p c) e >>= either todoErrorHandler (const $ pure ())
 
 say :: ClientEnv -> Pid -> Text -> IO ()
 say e p t = runClientM (say'' p t) e >>= either todoErrorHandler (const $ pure ())
