@@ -164,7 +164,8 @@ instance CollectsTypes DLExpr where
     DLE_DataTag _ d -> cts d
     DLE_FromSome _ mo da -> cts mo <> cts da
     DLE_ContractNew _ cns dr -> cts cns <> cts dr
-    DLE_ObjectSet _ o k v -> cts o <> cts k <> cts v
+    DLE_ObjectSet _ o _ v -> cts o <> cts v
+    DLE_TupleSet _ t _ v -> cts t <> cts v
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m

@@ -2025,6 +2025,14 @@ ce = \case
   DLE_TupleRef at ta idx -> do
     ca ta
     cTupleRef at (argTypeOf ta) idx
+  DLE_TupleSet at tup_a index val_a -> do
+    let tup_t = argTypeOf tup_a
+    let tupFields = tupleTypes tup_t
+    let (_, valStart, valLen) = computeExtract tupFields index
+    let tupLen = typeSizeOf tup_t
+    ca tup_a
+    ca val_a
+    csplice at valStart (valStart + valLen) tupLen
   DLE_ObjectRef _at oa f -> do
     let fts = argObjstrTypes oa
     let fidx = objstrFieldIndex (argTypeOf oa) f
@@ -2033,10 +2041,11 @@ ce = \case
     cextract start sz
     cfrombs t
   DLE_ObjectSet at obj_a fieldName val_a -> do
-    let fieldTypes = argObjstrTypes obj_a
+    let obj_t = argTypeOf obj_a
+    let fieldTypes = objstrTypes obj_t
     let fieldIndex = objstrFieldIndex (argTypeOf obj_a) fieldName
     let (_, valStart, valLen) = computeExtract (map snd fieldTypes) fieldIndex
-    let objLen = typeSizeOf $ argTypeOf obj_a
+    let objLen = typeSizeOf obj_t
     ca obj_a
     ca val_a
     csplice at valStart (valStart + valLen) objLen

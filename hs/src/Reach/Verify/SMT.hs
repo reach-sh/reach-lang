@@ -1115,6 +1115,19 @@ smt_e at_dv mdv de = do
       s <- smtTypeSort t
       arr_da' <- smt_a at arr_da
       bound at $ smtApply (s ++ "_elem" ++ show i) [arr_da']
+    DLE_TupleSet at tup_a index_ val_a -> do
+      forM_ mdv $ \(DLVar _ _ tup_t _) -> do
+        tupSort <- smtTypeSort tup_t
+        tup_se <- smt_a at tup_a
+        val_se <- smt_a at val_a
+        let index = fromInteger index_
+        let tupCtor = tupSort ++ "_cons"
+        let tupLen = length $ tupleTypes tup_t
+        let copiedFields = map (\n -> smtApply (tupSort <> "_elem" <> show n) [tup_se]) $
+                             filter (/= index) [0..tupLen-1]
+        let (h, t) = splitAt index copiedFields
+        let fields = h ++ [val_se] ++ t
+        bound at $ smtApply tupCtor fields
     DLE_ObjectRef at obj_da f -> do
       let t = argTypeOf obj_da
       s <- smtTypeSort t

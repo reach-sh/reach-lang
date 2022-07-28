@@ -404,9 +404,22 @@ jsExpr = \case
     aa' <- jsArg aa
     i' <- jsCon $ DLL_Int at UI_Word i
     return $ aa' <> brackets i'
+  DLE_TupleSet _ t i v -> do
+    t' <- jsArg t
+    v' <- jsArg v
+    let i' = jsNum i
+    let slice = t' <> ".slice"
+    let hd = "..." <> jsApply slice [jsNum 0, i']
+    let tl = "..." <> jsApply slice [i']
+    return $ jsArray [hd, v', tl]
   DLE_ObjectRef _ oa f -> do
     oa' <- jsArg oa
     return $ oa' <> "." <> pretty f
+  DLE_ObjectSet _ o k v -> do
+    o' <- jsArg o
+    v' <- jsArg v
+    let k' = jsString k
+    return $ jsBraces $ "..." <> o' <> ", " <> k' <> ": " <> v'
   DLE_Interact at fs _ m t as -> do
     ai' <- jsAssertInfo at fs (Just $ bpack m)
     as' <- mapM jsArg as
@@ -611,11 +624,6 @@ jsExpr = \case
             , ("opts", o')
             ]
         return $ jsApply "stdlib.simContractNew" ["sim_r", jsObject cns', dr', "getSimTokCtr()"]
-  DLE_ObjectSet _ o k v -> do
-    o' <- jsArg o
-    v' <- jsArg v
-    let k' = jsString k
-    return $ jsBraces $ "..." <> o' <> ", " <> k' <> ": " <> v'
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do

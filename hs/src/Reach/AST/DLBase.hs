@@ -786,6 +786,7 @@ data DLExpr
   | DLE_ArraySet SrcLoc DLArg DLArg DLArg
   | DLE_ArrayConcat SrcLoc DLArg DLArg
   | DLE_TupleRef SrcLoc DLArg Integer
+  | DLE_TupleSet SrcLoc DLArg Integer DLArg
   | DLE_ObjectRef SrcLoc DLArg String
   | DLE_ObjectSet SrcLoc DLArg SLVar DLArg
   | DLE_Interact SrcLoc [SLCtxtFrame] SLPart String DLType [DLArg]
@@ -982,7 +983,11 @@ instance PrettySubst DLExpr where
     DLE_ObjectSet _ o k v -> do
       o' <- prettySubst o
       v' <- prettySubst v
-      return $ "Object.set(" <> o' <> ", " <> pretty k <> ", " <> v' <> ")"
+      return $ "Object.set" <> parens (render_das [o', pretty k, v'])
+    DLE_TupleSet _ t i v -> do
+      t' <- prettySubst t
+      v' <- prettySubst v
+      return $ "Tuple.set" <> parens (render_das [t', pretty i, v'])
 
 instance PrettySubst LogKind where
   prettySubst = \case
@@ -1036,6 +1041,7 @@ instance IsPure DLExpr where
     DLE_FromSome {} -> True
     DLE_ContractNew {} -> False
     DLE_ObjectSet {} -> True
+    DLE_TupleSet {} -> True
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -1072,6 +1078,7 @@ instance IsLocal DLExpr where
     DLE_FromSome {} -> True
     DLE_ContractNew {} -> False
     DLE_ObjectSet {} -> True
+    DLE_TupleSet {} -> True
 
 instance CanDupe DLExpr where
   canDupe e =
