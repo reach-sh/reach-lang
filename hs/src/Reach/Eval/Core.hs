@@ -3165,17 +3165,22 @@ evalPrim p sargs =
       retV $ (lvl, SLV_Object at Nothing tm')
     SLPrim_Object_set -> do
       at <- withAt id
-      (obj, fieldV, valV) <- three_args
-      (objTy, objDLA) <- compileTypeOf obj
-      (valTy, valDLA) <- compileTypeOf valV
-      fieldName <- bunpack <$> mustBeBytes fieldV
-      case objTy of
+      (obj_v, field_v, val_v) <- three_args
+      (obj_t, obj_a) <- compileTypeOf obj_v
+      (val_t, val_a) <- compileTypeOf val_v
+      fieldName <- bunpack <$> mustBeBytes field_v
+      case obj_t of
         T_Object objFields -> do
-          let objFields' = M.insert fieldName valTy objFields
-          let objTy' = T_Object objFields'
-          let dle = DLE_ObjectSet at objDLA fieldName valDLA
-          dlv <- ctxt_lift_expr (DLVar at Nothing objTy') dle
-          return (lvl, SLV_DLVar dlv)
+          let objFields' = M.insert fieldName val_t objFields
+          let result_t = T_Object objFields'
+          -- DLE_ObjectSet only applies when updating an existing field,
+          -- not when adding a new field or changing a field's type
+          case obj_t == result_t of
+            True -> do
+              let dle = DLE_ObjectSet at obj_a fieldName val_a
+              dlv <- ctxt_lift_expr (DLVar at Nothing result_t) dle
+              return (lvl, SLV_DLVar dlv)
+            False -> undefined -- no idea what parts of this module would pertain to this
         _ -> illegal_args
     SLPrim_makeEnum -> do
       at' <- withAt $ srcloc_at "makeEnum" Nothing

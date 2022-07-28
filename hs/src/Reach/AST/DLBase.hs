@@ -120,6 +120,11 @@ objstrTypes = \case
   T_Struct ts -> ts
   _ -> impossible $ "should be obj"
 
+objstrFieldIndex :: DLType -> SLVar -> Integer
+objstrFieldIndex t f = fromIntegral $ fromJust' $ List.elemIndex f $ map fst $ objstrTypes t
+  where
+    fromJust' = fromMaybe $ impossible "field not in type"
+
 showTys :: Show a => [a] -> String
 showTys = List.intercalate ", " . map show
 
