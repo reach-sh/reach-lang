@@ -26,6 +26,7 @@ import Reach.Texty
 import Reach.Util
 import Data.Bifunctor
 import Data.Bool (bool)
+import Control.DeepSeq (NFData)
 
 type ConnectorName = T.Text
 
@@ -637,19 +638,24 @@ instance Pretty ApiInfo where
         , ("ret", pretty ai_ret_ty)
         ]
 
+data PrimVerification
+  = PV_Safe      -- No static assertion, yes dynamic check
+  | PV_Verified  -- Yes static assertion, no dynamic check
+  deriving (Eq, Generic, NFData, Ord, Show)
+
 data PrimOp
-  = ADD UIntTy
-  | SUB UIntTy
-  | MUL UIntTy
-  | DIV UIntTy
-  | MOD UIntTy
+  = ADD UIntTy (Maybe PrimVerification)
+  | SUB UIntTy (Maybe PrimVerification)
+  | MUL UIntTy (Maybe PrimVerification)
+  | DIV UIntTy (Maybe PrimVerification)
+  | MOD UIntTy (Maybe PrimVerification)
   | PLT UIntTy
   | PLE UIntTy
   | PEQ UIntTy
   | PGE UIntTy
   | PGT UIntTy
   | SQRT UIntTy
-  | UCAST UIntTy UIntTy Bool
+  | UCAST UIntTy UIntTy Bool (Maybe PrimVerification)
   | IF_THEN_ELSE
   | DIGEST_EQ
   | ADDRESS_EQ
@@ -671,20 +677,30 @@ data PrimOp
   | GET_COMPANION
   deriving (Eq, Generic, Ord, Show)
 
+instance Pretty PrimVerification where
+  pretty = viaShow
+
 instance Pretty PrimOp where
   pretty = \case
-    ADD t -> uitp t <> "+"
-    SUB t -> uitp t <> "-"
-    MUL t -> uitp t <> "*"
-    DIV t -> uitp t <> "/"
-    MOD t -> uitp t <> "%"
+    ADD t Nothing -> uitp t <> "+"
+    SUB t Nothing -> uitp t <> "-"
+    MUL t Nothing -> uitp t <> "*"
+    DIV t Nothing -> uitp t <> "/"
+    MOD t Nothing -> uitp t <> "%"
+    ADD t (Just pv) -> pretty pv <> parens (uitp t <> "+")
+    SUB t (Just pv) -> pretty pv <> parens (uitp t <> "-")
+    MUL t (Just pv) -> pretty pv <> parens (uitp t <> "*")
+    DIV t (Just pv) -> pretty pv <> parens (uitp t <> "/")
+    MOD t (Just pv) -> pretty pv <> parens (uitp t <> "%")
     PLT t -> uitp t <> "<"
     PLE t -> uitp t <> "<="
     PEQ t -> uitp t <> "=="
     PGE t -> uitp t <> ">="
     PGT t -> uitp t <> ">"
     SQRT t -> uitp t <> "sqrt"
-    UCAST dom rng trunc -> "cast" <> parens (uitp dom <> "," <> uitp rng <> if trunc then ",Truncate" else "")
+    UCAST dom rng trunc mpv ->
+      let s = "cast" <> parens (uitp dom <> "," <> uitp rng <> if trunc then ",Truncate" else "") in
+      maybe s ((<> parens s) . pretty) mpv
     IF_THEN_ELSE -> "ite"
     DIGEST_EQ -> "=="
     ADDRESS_EQ -> "=="

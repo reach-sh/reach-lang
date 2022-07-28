@@ -902,6 +902,21 @@
   "rsh": {
     "CompletionItemKind": "Function"
   },
+  "safeAdd": {
+    "CompletionItemKind": "Operator"
+  },
+  "safeDiv": {
+    "CompletionItemKind": "Operator"
+  },
+  "safeMod": {
+    "CompletionItemKind": "Operator"
+  },
+  "safeMul": {
+    "CompletionItemKind": "Operator"
+  },
+  "safeSub": {
+    "CompletionItemKind": "Operator"
+  },
   "setOptions": {
     "CompletionItemKind": "Function"
   },
@@ -955,6 +970,21 @@
   },
   "var": {
     "CompletionItemKind": "Keyword"
+  },
+  "veriAdd": {
+    "CompletionItemKind": "Operator"
+  },
+  "veriDiv": {
+    "CompletionItemKind": "Operator"
+  },
+  "veriMod": {
+    "CompletionItemKind": "Operator"
+  },
+  "veriMul": {
+    "CompletionItemKind": "Operator"
+  },
+  "veriSub": {
+    "CompletionItemKind": "Operator"
   },
   "verifyAbsoluteSecs": {
     "CompletionItemKind": "Function"

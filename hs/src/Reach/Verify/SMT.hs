@@ -304,18 +304,18 @@ smtMulDiv = \case
 smtPrimOp :: SrcLoc -> PrimOp -> [DLArg] -> [SExpr] -> App SExpr
 smtPrimOp at p dargs =
   case p of
-    ADD _ -> bvapp "bvadd" "+"
-    SUB _ -> bvapp "bvsub" "-"
-    MUL _ -> bvapp "bvmul" "*"
-    DIV _ -> bvapp "bvudiv" "div"
-    MOD _ -> bvapp "bvumod" "mod"
+    ADD _ _ -> bvapp "bvadd" "+"
+    SUB _ _ -> bvapp "bvsub" "-"
+    MUL _ _ -> bvapp "bvmul" "*"
+    DIV _ _ -> bvapp "bvudiv" "div"
+    MOD _ _ -> bvapp "bvumod" "mod"
     PLT _ -> bvapp "bvult" "<"
     PLE _ -> bvapp "bvule" "<="
     PEQ _ -> app "="
     PGE _ -> bvapp "bvuge" ">="
     PGT _ -> bvapp "bvugt" ">"
     SQRT _ -> app "UInt_sqrt"
-    UCAST _ _ _ -> \case
+    UCAST _ _ _ _ -> \case
       [x] -> return x
       _ -> impossible "ucast"
     LSH -> bvapp "bvshl" "UInt_lsh"
@@ -1206,7 +1206,7 @@ smt_e at_dv mdv de = do
             PGT _ -> do
               let w = DLA_Literal $ DLL_Int at UI_Word 1
               w' <- smt_a at w
-              go smtEq =<< smtPrimOp at (ADD UI_Word) [o, w] [o', w']
+              go smtEq =<< smtPrimOp at (ADD UI_Word Nothing) [o, w] [o', w']
             PGE _ -> go smtGe o'
             _ -> impossible $ "timeOrder: bad op: " <> show op
     DLE_EmitLog at _ lv ->
