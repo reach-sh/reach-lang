@@ -108,7 +108,8 @@ instance Sanitize DLExpr where
     DLE_DataTag _ d -> DLE_DataTag sb (sani d)
     DLE_FromSome _ mo da -> DLE_FromSome sb (sani mo) (sani da)
     DLE_ContractNew _ cns dr -> DLE_ContractNew sb (sani cns) (sani dr)
-    DLE_ObjectSet _ a k v -> DLE_ObjectSet sb (sani a) k (sani v)
+    DLE_ObjectSet _ o k v -> DLE_ObjectSet sb (sani o) k (sani v)
+    DLE_TupleSet _ t i v -> DLE_TupleSet sb (sani t) i (sani v)
 
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m

@@ -180,6 +180,7 @@ instance Countable DLExpr where
     DLE_FromSome _ mo da -> counts mo <> counts da
     DLE_ContractNew _ cns dr -> counts cns <> counts dr
     DLE_ObjectSet _ o _ v -> counts [o, v]
+    DLE_TupleSet _ t _ v -> counts [t, v]
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m

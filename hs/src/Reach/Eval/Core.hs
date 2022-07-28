@@ -3129,16 +3129,28 @@ evalPrim p sargs =
       retV $ (lvl, SLV_Type $ ST_Tuple vs)
     SLPrim_tuple_set -> do
       at <- withAt id
-      case map snd sargs of
-        [tup, (SLV_Int _ _ idxi), val] -> do
-          tupvs <- explodeTupleLike "tuple_set" tup
-          let go i v = if idxi == i then val else v
+      (tup_v, index_v, val_v) <- three_args
+      (tup_t, tup_a) <- compileTypeOf tup_v
+      (val_t, val_a) <- compileTypeOf val_v
+      index <- case index_v of
+        SLV_Int _ _ i -> return i
+        v -> expect_t v $ Err_Expected "int"
+      let tupTypes = tupleTypes tup_t
+      let tupLen = length tupTypes
+      when (index >= fromIntegral tupLen) $
+        expect_ $ Err_Eval_RefOutOfBounds tupLen index
+      let (h, t) = splitAt (fromInteger index) tupTypes
+      let result_t = T_Tuple $ h ++ [val_t] ++ tail t
+      case tup_t == result_t of
+        True -> do
+          let dle = DLE_TupleSet at tup_a index val_a
+          dlv <- ctxt_lift_expr (DLVar at Nothing tup_t) dle
+          return (lvl, SLV_DLVar dlv)
+        False -> do
+          tupvs <- explodeTupleLike "tuple_set" tup_v
+          let go i v = if index == i then val_v else v
           let tupvs' = zipWith go [0 ..] tupvs
-          let len = length tupvs
-          unless (idxi < fromIntegral len) $
-            expect_ $ Err_Eval_RefOutOfBounds len idxi
-          return $ (lvl, SLV_Tuple at tupvs')
-        _ -> illegal_args
+          return (lvl, SLV_Tuple at tupvs')
     SLPrim_Object -> do
       objm <- mustBeObject =<< one_arg
       vm <-
@@ -3169,19 +3181,16 @@ evalPrim p sargs =
       (obj_t, obj_a) <- compileTypeOf obj_v
       (val_t, val_a) <- compileTypeOf val_v
       fieldName <- bunpack <$> mustBeBytes field_v
-      case obj_t of
-        T_Object objFields -> do
-          let objFields' = M.insert fieldName val_t objFields
-          let result_t = T_Object objFields'
-          -- DLE_ObjectSet only applies when updating an existing field,
-          -- not when adding a new field or changing a field's type
-          case obj_t == result_t of
-            True -> do
-              let dle = DLE_ObjectSet at obj_a fieldName val_a
-              dlv <- ctxt_lift_expr (DLVar at Nothing result_t) dle
-              return (lvl, SLV_DLVar dlv)
-            False -> undefined -- no idea what parts of this module would pertain to this
-        _ -> illegal_args
+      let objFields = M.fromList $ objstrTypes obj_t
+      let result_t = T_Object $ M.insert fieldName val_t objFields
+      -- DLE_ObjectSet only applies when updating an existing field,
+      -- not when adding a new field or changing a field's type
+      case obj_t == result_t of
+        True -> do
+          let dle = DLE_ObjectSet at obj_a fieldName val_a
+          dlv <- ctxt_lift_expr (DLVar at Nothing obj_t) dle
+          return (lvl, SLV_DLVar dlv)
+        False -> undefined -- no idea what parts of this module would pertain to this
     SLPrim_makeEnum -> do
       at' <- withAt $ srcloc_at "makeEnum" Nothing
       case map snd sargs of
