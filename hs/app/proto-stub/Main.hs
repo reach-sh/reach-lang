@@ -1,7 +1,7 @@
 module Main (main) where
 
 import Control.Concurrent.Async
-import Data.List (intercalate)
+import Data.Maybe
 import Network.HTTP.Client
 import Reach.Proto
 import Safe
@@ -23,10 +23,10 @@ main = do
   m <- newManager defaultManagerSettings
   getArgs >>= \case
     ["serve"] -> do
-      putStrLn . color Magenta $ "Serving on port: " <> (style Bold $ show stubPort) <> "..."
+      putStrLn . color Magenta $ "Serving on port: " <> style Bold (show stubPort) <> "..."
       runStubServer
     c -> cmd' m
-      (maybe "help" id $ (drop 1 c) `atMay` 0)
+      (fromMaybe "help" $ drop 1 c `atMay` 0)
       (Just $ XProject "matt" "rps")
       $ Req (drop 2 c) (Just proj) mempty
  where
@@ -38,12 +38,12 @@ main = do
   msg = \case
     Stdout    n m -> putStrLn $ "id# " <> show n <> " (stdout): " <> BL.toString m
     Stderr    n m -> putStrLn $ "id# " <> show n <> " (stderr): " <> BL.toString m
-    Keepalive     -> putStrLn $ "(keepalive)"
+    Keepalive     -> putStrLn   "(keepalive)"
     ExitCode' n m -> putStrLn  ("id# " <> show n <> " (exit code): " <> show m) *> exitWith' m
 
   listen' m p = do
     putStrLn . color Magenta
-      $ "Listening to stub server on port: " <> (style Bold $ show stubPort) <> "..."
+      $ "Listening to stub server on port: " <> style Bold (show stubPort) <> "..."
     listen (env m) err msg p Stdboth'
 
   proj = M.fromList --- examples/ttt@696974d
@@ -53,8 +53,8 @@ main = do
     ]
 
   cmd' m c mp r@Req{..} = do
-    let as = if null req_args then "" else " " <> intercalate " " req_args
-    putStrLn . color Magenta $ (style Bold $ "`reach " <> c <> as <> "`")
+    let as = if null req_args then "" else " " <> unwords req_args
+    putStrLn . color Magenta $ style Bold ("`reach " <> c <> as <> "`")
       <> " to stub server on port: " <> show stubPort <> "..."
     cmd (env m) err c mp r $ \case
       -- TODO redirects mean we'll need to swap the "manager" that lives in our `ClientEnv`
@@ -74,6 +74,6 @@ main = do
             $ "Syncing " <> show (N.length ps) <> " `"
            <> T.unpack (fromXProject x)
            <> "` files to stub server on port: "
-           <> (style Bold $ show stubPort) <> "..."
+           <> style Bold (show stubPort) <> "..."
           forConcurrently_ ps $ \(p, h) ->
             projPut (env m) x h p . source $ [B.fromString "file contents"]
