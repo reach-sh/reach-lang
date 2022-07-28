@@ -7,6 +7,7 @@ module Reach.Test_Proto
 
 import Control.Monad.Except
 import Data.Aeson
+import Data.IORef
 import Network.HTTP.Client
 import Reach.Proto
 import Safe
@@ -14,7 +15,6 @@ import Servant.API
 import Servant.Client
 import Servant.Types.SourceT
 import Test.Hspec
-import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Servant.Client.Streaming as S
@@ -32,7 +32,7 @@ type EXP = Either String XProject
 
 spec_account :: Spec
 spec_account = describe "Parsing an `Account`" $ do
-  it "<has yet to be specified/CORE-2029>" $ True
+  it "<has yet to be specified/CORE-2029>" True
 
 spec_headerParse :: Spec
 spec_headerParse = describe "Parsing an" $ do
@@ -54,33 +54,40 @@ spec_headerParse = describe "Parsing an" $ do
       eitherDecode "\"@jay/rsvp\"" `shouldBe` Right (XProject "jay" "rsvp")
 
 spec_proto :: Spec
-spec_proto = around (Warp.testWithApplication app) $ do
-  u <- runIO $ parseBaseUrl "http://localhost"
-  m <- runIO $ newManager defaultManagerSettings
-  let env p = mkClientEnv m $ u { baseUrlPort = p }
-  let run p x = S.withClientM x (env p) . either (fail . show) $ \a ->
-            runExceptT (runSourceT a) >>= either (fail . show) pure
+spec_proto = do
+  let tr = 1
+  let tl = 1
+  let lr = 0
+  let ll = 0
+  c@StubConfig {..} <- runIO $ mkStubConfig tr tl lr ll
+  let app = pure . appStubServer c stubDispatchReach False $ Just "sleep 2 && echo yes"
 
-  -- TODO FS mock
-  describe "Requesting `reach compile`" $ do
-    it "with a bogus flag like --nope will fail" $ \p -> do
-      [Interpret (ExitStderr n t)] <- run p $ cmd'' "compile" Nothing $ Req ["--nope"] Nothing mempty
-      n `shouldBe` 1
-      headMay (T.splitOn "\n" t) `shouldBe` Just "Invalid option `--nope'"
+  let reset = liftIO $ do
+        writeIORef sc_syncToutStore tr
+        writeIORef sc_syncToutStage tl
+        writeIORef sc_syncLagStore  lr
+        writeIORef sc_syncLagStage  ll
 
-    it "with a supported flag like --print-keyword-info will succeed" $ \p -> do
-      [Interpret (AttachStreamJustListen _ _)] <- run p . cmd'' "compile" Nothing $ Req
-        ["--print-keyword-info"]
-        (Just $ M.fromList
-          [ ("index.mjs", "<hash>")
-          , ("index.rsh", "<hash>")
-          ])
-        mempty
-      pure ()
+  around (\f -> reset *> Warp.testWithApplication app f) $ do
+    u <- runIO $ parseBaseUrl "http://localhost"
+    m <- runIO $ newManager defaultManagerSettings
+    let env p = mkClientEnv m $ u { baseUrlPort = p }
+    let run p x = S.withClientM x (env p) . either (fail . show) $ \a ->
+              runExceptT (runSourceT a) >>= either (fail . show) pure
 
-  describe "`say`ing some freeform text to a `PID`" $ do
-    it "should succeed" $ \p ->
-      runClientM (say'' "1024" "pipe me through `PID`'s stdin") (env p) >>= (`shouldBe` Right NoContent)
+    describe "Requesting `reach compile`" $ do
+      it "with a bogus flag like --nope will fail" $ \p -> do
+        [Interpret (ExitStderr n t)] <- run p $ cmd'' "compile" Nothing $ Req ["--nope"] Nothing mempty
+        n `shouldBe` 1
+        headMay (T.splitOn "\n" t) `shouldBe` Just "Invalid option `--nope'"
 
- where
-  app = pure . appStubServer StubConfig stubDispatchReach False $ Just "sleep 2 && echo yes"
+      it "with a supported flag like --print-keyword-info will succeed" $ \p -> do
+        [Interpret (AttachStreamJustListen _ _)] <- run p . cmd'' "compile" Nothing $ Req
+          ["--print-keyword-info"]
+          (Just mempty)
+          mempty
+        pure ()
+
+    describe "`say`ing some freeform text to a `PID`" $ do
+      it "should succeed" $ \p ->
+        runClientM (say'' "1024" "pipe me through `PID`'s stdin") (env p) >>= (`shouldBe` Right NoContent)
