@@ -177,6 +177,6 @@ proto-stub-serve: hs-build
 
 .PHONY: proto-stub-client
 proto-stub-client: hs-build
-	@stack exec -- proto-stub cmd init --help
-	@stack exec -- proto-stub cmd no-such --cli || :
+	@#stack exec -- proto-stub cmd init --help
+	@#stack exec -- proto-stub cmd no-such --cli || :
 	@stack exec -- proto-stub cmd compile --verify-fail-once
