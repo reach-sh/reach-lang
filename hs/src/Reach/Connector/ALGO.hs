@@ -2027,26 +2027,19 @@ ce = \case
     cTupleRef at (argTypeOf ta) idx
   DLE_ObjectRef _at oa f -> do
     let fts = argObjstrTypes oa
-    let fidx = fromIntegral $ fromMaybe (impossible "field") $ List.findIndex ((== f) . fst) fts
+    let fidx = objstrFieldIndex (argTypeOf oa) f
     let (t, start, sz) = computeExtract (map snd fts) fidx
     ca oa
     cextract start sz
     cfrombs t
   DLE_ObjectSet at obj_a fieldName val_a -> do
-    -- This makes the (unsound?) assumption that when adding a new field to an object,
-    -- all copied fields should stay in the order they were already in.
-    let val_t = argTypeOf val_a
-    let oldFieldTypes = argObjstrTypes obj_a
-    let newFieldTypes = M.toAscList $ M.insert fieldName val_t $ M.fromList oldFieldTypes
-    let fieldIdx = fromIntegral $ fromJust $ List.elemIndex fieldName $ map fst newFieldTypes
-    let (_, valStart, oldValLen_) = computeExtract (map snd newFieldTypes) fieldIdx
-    let oldValLen = if length oldFieldTypes == length newFieldTypes then oldValLen_ else 0
+    let fieldTypes = argObjstrTypes obj_a
+    let fieldIndex = objstrFieldIndex (argTypeOf obj_a) fieldName
+    let (_, valStart, valLen) = computeExtract (map snd fieldTypes) fieldIndex
     let objLen = typeSizeOf $ argTypeOf obj_a
-    let newValLen = typeSizeOf val_t
-    when (objLen + newValLen - oldValLen > 4096) $ warn "object too large" -- what to do?
     ca obj_a
     ca val_a
-    csplice at valStart (valStart + oldValLen) objLen
+    csplice at valStart (valStart + valLen) objLen
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> cdigest $ map go args
     where

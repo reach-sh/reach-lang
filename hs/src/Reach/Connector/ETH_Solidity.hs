@@ -667,14 +667,14 @@ solExpr sp = \case
     return $ oe' <> "." <> p (pretty f) <> sp
   DLE_ObjectSet _ obj_a fieldName val_a -> do
     let objFields = M.fromList $ argObjstrTypes obj_a
-    result_t <- solType $ T_Object $ M.insert fieldName (argTypeOf val_a) objFields
+    obj_t <- solType $ argTypeOf obj_a
     obj' <- solArg obj_a
     val' <- solArg val_a
     let newField = objPrefix $ pretty fieldName <> ": " <> val'
     let copiedFields = map (\fn -> objPrefix $ fn <> ": " <> obj' <> "." <> (objPrefix fn)) $
                          map (pretty . fst) $ M.toList $ M.delete fieldName objFields
     let objLiteral = braces $ comma_sep $ newField : copiedFields
-    return $ result_t <> parens objLiteral
+    return $ obj_t <> parens objLiteral
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> do
     args' <- mapM solArg args

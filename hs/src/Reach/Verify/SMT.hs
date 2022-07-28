@@ -1121,22 +1121,17 @@ smt_e at_dv mdv de = do
       obj_da' <- smt_a at obj_da
       bound at $ smtApply (s ++ "_" ++ f) [obj_da']
     DLE_ObjectSet at obj_a fieldName val_a ->
-      forM_ mdv $ \result_v@(DLVar _ _ result_t _) -> do
-        let obj_t = argTypeOf obj_a
-        let objFields = M.fromList $ objstrTypes obj_t
+      forM_ mdv $ \(DLVar _ _ obj_t _) -> do
         objSort <- smtTypeSort obj_t
-        resultSort <- smtTypeSort result_t
         obj_se <- smt_a at obj_a
         val_se <- smt_a at val_a
-        result_se <- smt_v at result_v
-        bound at result_se
-        -- Assert unchanged fields match the old object
-        let copiedFields = M.toList $ M.delete fieldName objFields
-        forM_ copiedFields $ \(key, _) -> do
-          smtAssertCtxt $ smtEq (smtApply (objSort    <> "_" <> key) [obj_se])
-                                (smtApply (resultSort <> "_" <> key) [result_se])
-        -- Assert the changed field matches the given val
-        smtAssertCtxt $ smtEq val_se (smtApply (resultSort <> "_" <> fieldName) [result_se])
+        let objCtor = objSort ++ "_cons"
+        let copiedFields = map (\f -> smtApply (objSort <> "_" <> f) [obj_se]) $
+                             filter (/= fieldName) $ map fst $ objstrTypes obj_t
+        let fieldIndex = fromInteger $ objstrFieldIndex obj_t fieldName
+        let (h, t) = splitAt fieldIndex copiedFields
+        let fields = h ++ [val_se] ++ t
+        bound at $ smtApply objCtor fields
     DLE_Interact at _ _ _ _ _ ->
       unbound at
     DLE_Digest at args -> do
