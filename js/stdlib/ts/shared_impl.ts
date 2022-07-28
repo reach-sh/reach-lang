@@ -747,17 +747,27 @@ export const makeArith = (m:BigNumber): Arith => {
     checkedBigNumberify(`internal`, m, x);
 
   type BNOp2 = 'add'|'sub'|'mod'|'mul'|'div'|'and'|'or'|'xor';
-  const doBN2 = (f:BNOp2, a:BigNumber, b:BigNumber) => a[f](b);
-  const getCheck = (w:UIntTy) => w ? checkB : checkM;
-  const cast = (from:UIntTy, to:UIntTy, x:num, trunc:boolean): BigNumber => {
+  const doBN2 = (f:BNOp2, a:BigNumber, b:BigNumber, pre: any = undefined, post: any = undefined) => {
+    if ( pre && !(pre[1](a, b)) ) {
+      throw Error(`Precondition failed: ${pre[0]}`);
+    }
+    const r = a[f](b);
+    if ( post && !(post[1](r)) ) {
+      throw Error(`Postcondition failed: ${post[0]}`);
+    }
+    return r;
+  };
+  const getCheck = (w:UIntTy) => w === 'UInt256' ? checkB : checkM;
+
+  const cast = (from:UIntTy, to:UIntTy, x:num, trunc:boolean, chkOverflow:boolean): BigNumber => {
     const checkF = getCheck(from);
-    const checkT = getCheck(to);
+    const checkT = chkOverflow ? getCheck(to) : ((x: any) => x);
     const bigX = bigNumberify(x);
     const maybeTruncated = trunc ? bigX.and(m) : bigX;
     return checkT(checkF(maybeTruncated));
   };
 
-  const liftX2 = (check:(x:BigNumber) => BigNumber) => (f:BNOp2) => (a:num, b:num): BigNumber => check(doBN2(f, bigNumberify(a), bigNumberify(b)));
+  const liftX2 = (check:(x:BigNumber) => BigNumber) => (f:BNOp2, pre: any = undefined) => (a:num, b:num): BigNumber => check(doBN2(f, bigNumberify(a), bigNumberify(b), pre));
   const liftB = liftX2(checkB);
   const liftM = liftX2(checkM);
 
@@ -773,11 +783,17 @@ export const makeArith = (m:BigNumber): Arith => {
   const liftB1 = liftX1(checkB);
   const liftM1 = liftX1(checkM);
 
+  const divPreC = ["div by zero", (_: BigNumber, y: BigNumber) => y.gt(0) ];
+
   const add = liftM('add');
+  const safeAdd = liftM('add', ["add overflow", (x: BigNumber, y: BigNumber) => x.lte(m.sub(y)) ]);
   const sub = liftM('sub');
+  const safeSub = liftM('sub', ["sub wraparound", (x: BigNumber, y: BigNumber) => x.gte(y) ]);
   const mod = liftM('mod');
+  const safeMod = liftM('mod', divPreC);
   const mul = liftM('mul');
   const div = liftM('div');
+  const safeDiv = liftM('div', divPreC);
   const band = liftM('and');
   const bior = liftM('or');
   const bxor = liftM('xor');
@@ -798,7 +814,7 @@ export const makeArith = (m:BigNumber): Arith => {
   return {
     add, sub, mod, mul, div, band, bior, bxor, sqrt,
     add256, sub256, mod256, mul256, div256, band256, bior256, bxor256, sqrt256,
-    cast, muldiv };
+    cast, muldiv, safeAdd, safeSub, safeMod, safeDiv };
 };
 
 export const argsSlice = <T>(args: Array<T>, cnt: number): Array<T> =>

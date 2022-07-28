@@ -69,10 +69,14 @@ export interface Stdlib_Backend_Shared<Ty> extends Stdlib_Backend_Shared_User<Ty
 
 export interface Arith {
   add: (x: num, y: num) => BigNumber
+  safeAdd: (x: num, y: num) => BigNumber
   sub: (x: num, y: num) => BigNumber
+  safeSub: (x: num, y: num) => BigNumber
   mod: (x: num, y: num) => BigNumber
+  safeMod: (x: num, y: num) => BigNumber
   mul: (x: num, y: num) => BigNumber
   div: (x: num, y: num) => BigNumber
+  safeDiv: (x: num, y: num) => BigNumber
   band: (x: num, y: num) => BigNumber
   bior: (x: num, y: num) => BigNumber
   bxor: (x: num, y: num) => BigNumber
@@ -87,7 +91,7 @@ export interface Arith {
   bxor256: (x: num, y: num) => BigNumber
   sqrt256: (n1: num, n2: num) => BigNumber
   muldiv: (x: num, y: num, z:num) => BigNumber
-  cast: (from: UIntTy, to: UIntTy, x: num, truncate: boolean) => BigNumber
+  cast: (from: UIntTy, to: UIntTy, x: num, truncate: boolean, chkOverflow: boolean) => BigNumber
 };
 
 export interface Stdlib_Backend_Base<Ty> extends Stdlib_Backend_Shared<Ty>, Arith, TypeDefs<Ty> {

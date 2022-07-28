@@ -641,18 +641,18 @@ allKeywords :: [SLKwd]
 allKeywords = enumFrom minBound
 
 data SPrimOp
-  = S_ADD
-  | S_SUB
-  | S_MUL
-  | S_DIV
-  | S_MOD
+  = S_ADD (Maybe PrimVerification)
+  | S_SUB (Maybe PrimVerification)
+  | S_MUL (Maybe PrimVerification)
+  | S_DIV (Maybe PrimVerification)
+  | S_MOD (Maybe PrimVerification)
   | S_PLT
   | S_PLE
   | S_PEQ
   | S_PGE
   | S_PGT
   | S_SQRT
-  | S_UCAST UIntTy Bool
+  | S_UCAST UIntTy Bool (Maybe PrimVerification)
   | S_IF_THEN_ELSE
   | S_DIGEST_EQ
   | S_ADDRESS_EQ
@@ -672,18 +672,18 @@ data SPrimOp
 
 sprimToPrim :: UIntTy -> UIntTy -> SPrimOp -> PrimOp
 sprimToPrim dom rng = \case
-  S_ADD -> ADD rng
-  S_SUB -> SUB rng
-  S_MUL -> MUL rng
-  S_DIV -> DIV rng
-  S_MOD -> MOD rng
+  S_ADD mpv -> ADD rng mpv
+  S_SUB mpv -> SUB rng mpv
+  S_MUL mpv -> MUL rng mpv
+  S_DIV mpv -> DIV rng mpv
+  S_MOD mpv -> MOD rng mpv
   S_PLT -> PLT dom
   S_PLE -> PLE dom
   S_PEQ -> PEQ dom
   S_PGE -> PGE dom
   S_PGT -> PGT dom
   S_SQRT -> SQRT dom
-  S_UCAST _ trunc -> UCAST dom rng trunc
+  S_UCAST _ trunc mpv -> UCAST dom rng trunc mpv
   S_IF_THEN_ELSE -> IF_THEN_ELSE
   S_DIGEST_EQ -> DIGEST_EQ
   S_ADDRESS_EQ -> ADDRESS_EQ

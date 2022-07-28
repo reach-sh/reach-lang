@@ -1494,7 +1494,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               .lookupAccountAppLocalStates(addr)
               .applicationID(bigNumberToNumber(ApplicationID)) as unknown as ApiCall<IndexerAccountAppLocalStatesRes>;
             const appLocalStatesRes = await doQuery_(dhead, query);
-            // As of indexer version 2.11.1 (at least, possibly higher versions too), 
+            // As of indexer version 2.11.1 (at least, possibly higher versions too),
             // apps-local-states can come back 'null', equivalent to an empty array
             const appsLocalStates = appLocalStatesRes['apps-local-states'] ?? [];
             const appLocalState = appsLocalStates.find(app => ApplicationID.eq(app['id']));
@@ -2285,7 +2285,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   };
   const unsupportedAcc = stdAccount_unsupported(connector);
 
-  const accObj = { ...unsupportedAcc, networkAccount, getAddress: selfAddress, 
+  const accObj = { ...unsupportedAcc, networkAccount, getAddress: selfAddress,
                    stdlib, setDebugLabel, tokenAccepted, tokensAccepted: tokensAccepted_,
                    tokenAccept, tokenMetadata, contract };
   const acc = accObj as unknown as Account;
