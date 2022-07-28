@@ -417,10 +417,16 @@ mkStubConfig tr tl lr ll = StubConfig
   <*> newIORef mempty
 
 instance FS StubConfig where
-  stored h      = asks sce_cnf >>= \StubConfig {..} -> liftIO $ (!? h) <$> readIORef sc_store
-  staged p t    = asks sce_cnf >>= \StubConfig {..} -> liftIO . modifyIORef sc_stage $ M.insert p t
   syncToutStore = asks sce_cnf >>= \StubConfig {..} -> liftIO $ readIORef sc_syncToutStore
   syncToutStage = asks sce_cnf >>= \StubConfig {..} -> liftIO $ readIORef sc_syncToutStage
+
+  stored h = asks sce_cnf >>= \StubConfig {..} -> liftIO $ do
+    readIORef sc_syncLagStore >>= sleep
+    (!? h) <$> readIORef sc_store
+
+  staged p t = asks sce_cnf >>= \StubConfig {..} -> liftIO $ do
+    readIORef sc_syncLagStage >>= sleep
+    modifyIORef sc_stage $ M.insert p t
 
 appStubServer :: StubConfig -> (SCEnv StubConfig -> SubcommandDispatch) -> Bool -> Maybe String -> Application
 appStubServer e d l t = serve (Proxy @Proto) ((pput :<|> pin) :<|> (pout :<|> r)) where
