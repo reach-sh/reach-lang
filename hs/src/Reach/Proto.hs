@@ -228,13 +228,13 @@ type V0_Proj = "proj"
   :> Header' '[Required, Strict] "X-Reach-Project-Hash" HashFS
   :> Header' '[Required, Strict] "X-Reach-Project-Path" FilePath
   :> StreamBody NoFraming OctetStream (SourceIO B.ByteString)
-  :> PutNoContent -- TODO: replace me with HTTP 202
+  :> PutAccepted '[JSON] NoContent
 
 type V0_ProcIn = "proc"
   :> Capture "pid" Pid
   :> "fd" :> "0"
   :> ReqBody '[PlainText] Text
-  :> PutNoContent -- TODO: replace me with HTTP 202
+  :> PutAccepted '[JSON] NoContent
 
 type V0_Sync = "v0" :> (V0_Proj :<|> V0_ProcIn)
 
