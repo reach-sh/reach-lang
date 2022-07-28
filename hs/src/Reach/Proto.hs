@@ -16,6 +16,7 @@ module Reach.Proto
   , fromXProject
   , listen
   , listen''
+  , mkStubConfig
   , projPut
   , projPut''
   , runStubServer
@@ -34,10 +35,14 @@ import Control.Monad.IO.Class
 import Control.Monad.Morph
 import Control.Monad.Reader
 import Data.Aeson
+import Data.Either
+import Data.Functor
 import Data.IORef
 import Data.List.NonEmpty
+import Data.Map.Strict
+import Data.Maybe
 import Data.Proxy
-import Data.Text hiding (concat)
+import Data.Text hiding (all, concat)
 import Data.Time.Clock
 import GHC.Generics
 import Options.Applicative hiding ((<|>))
@@ -49,12 +54,15 @@ import Servant.Types.SourceT
 import System.Exit
 import System.IO
 import System.Process (CreateProcess(..), StdStream(..), createProcess, waitForProcess, shell)
+import System.Time.Extra
 import Text.Parsec
 import Text.Parsec.Language
 import Text.Parsec.Token
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Lazy.UTF8 as BL
+import qualified Data.List as L
 import qualified Data.Map.Strict as M
+import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Network.HTTP.Media as H
 import qualified Network.Wai.Handler.Warp as Warp
@@ -70,21 +78,23 @@ import qualified Servant.Client.Streaming as S
 -- TODO "AppT" over `say`, `listen`, and `cmd` request helpers
 -- TODO prolong client timeouts
 
-type Pid = Text
-type ProjectHashes = M.Map FilePath Text
-type ProjectContent = M.Map FilePath Text
+type Pid    = Text
+type HashFS = Text
 
 data SCEnv c = SCEnv
   { sce_req :: Req
-  , _sce_cnf :: c -- Implementors can supply their own configuration types
+  , sce_cnf :: c -- Implementors can supply their own configuration types
   }
 
-type SubcommandStepT c = StepT (ReaderT (SCEnv c) IO) Res
-type Subcommand c = Mod CommandFields (SubcommandStepT c)
+type SubcommandStepT c  = StepT (ReaderT (SCEnv c) IO) Res
+type Subcommand c       = Mod CommandFields (SubcommandStepT c)
 type SubcommandDispatch = Req -> String -> SourceT IO Res
 
 stubPort :: Int
 stubPort = 8123
+
+packs :: Show a => a -> Text
+packs = pack . show
 
 ecode :: ExitCode -> Int
 ecode = \case
@@ -154,12 +164,12 @@ data FDescOut
 
 data Req = Req
   { req_args  :: [String]
-  , req_files :: Maybe ProjectHashes
+  , req_files :: Maybe (M.Map FilePath HashFS)
   , req_env   :: M.Map Text Text
   } deriving (Eq, Generic, FromJSON, ToJSON)
 
 data ReqProjPut = ReqProjPut
-  { req_projput :: ProjectContent
+  { req_projput :: M.Map FilePath Text
   } deriving (Eq, Generic, FromJSON, ToJSON)
 
 data ResInterpret
@@ -195,14 +205,14 @@ instance MimeRender EventStream FDescOut where
 pFDescOut :: Parsec String () FDescOut
 pFDescOut = pka <|> try pout <|> pexit where
   TokenParser {..} = makeTokenParser emptyDef
-  pka = (string ": keepalive\n\n" *> pure Keepalive) <* eof
-  pnum = (try $ char '0' *> pure 0 <* newline <* try newline) <|> natural
+  pka = (string ": keepalive\n\n" $> Keepalive) <* eof
+  pnum = try (char '0' $> 0 <* newline <* try newline) <|> natural
   pid = string "id: " *> pnum
   pdata x = string "data: " *> x <* eof
   pout = do
     i <- pid
     e <- string "event: "
-      *> ((try $ string "stdout" *> pure Stdout') <|> (string "stderr" *> pure Stderr'))
+      *> (try (string "stdout" $> Stdout') <|> (string "stderr" $> Stderr'))
       <* newline
     m <- BL.fromString <$> pdata (manyTill anyChar (try $ string "\n\n"))
     case e of
@@ -268,7 +278,7 @@ stubUnixProc :: String -> (FDescOut -> IO ()) -> IO ()
 stubUnixProc c f = do
   (_, Just o, Just e, ph) <- createProcess (shell c) { std_out = CreatePipe, std_err = CreatePipe }
   i' <- newIORef 0 -- Represents message ID
-  let onEOF = \(_ :: IOError) -> modifyIORef i' (+ (-1))
+  let onEOF (_ :: IOError) = modifyIORef i' (+ (-1))
   let i = do
         n <- readIORef i'
         writeIORef i' $ n + 1
@@ -296,7 +306,7 @@ mkDispatchOptparse e i Req {..} c = fromStepT $ case execParserPure p i (c : req
   Failure x ->
     Yield (Interpret . ExitStderr (ecode n) $ pack x') Stop
     where (x', n) = renderFailure x "reach"
-  O.Success f -> (flip runReaderT e) `hoist` f
+  O.Success f -> flip runReaderT e `hoist` f
  where
   p = prefs $ showHelpOnError <> showHelpOnEmpty <> helpShowGlobals
 
@@ -304,20 +314,62 @@ cmdJust :: ResInterpret -> SubcommandStepT c
 cmdJust f = Yield (Interpret f) Stop
 
 cmdIO :: ReaderT (SCEnv c) IO Res -> SubcommandStepT c
-cmdIO f = Effect $ f >>= pure . flip Yield Stop
+cmdIO f = Effect $ f <&> flip Yield Stop
 
--- TODO
-fsHashPresent :: FilePath -> Text -> ReaderT (SCEnv c) IO Bool
-fsHashPresent _ _ = pure False
+class FS c where
+  -- TODO unbuffered contents; maybe better as ByteString(?)
+  stored :: HashFS -> ReaderT (SCEnv c) IO (Maybe Text)
+  staged :: FilePath -> Text -> ReaderT (SCEnv c) IO ()
+  syncToutStore :: ReaderT (SCEnv c) IO Seconds
+  syncToutStage :: ReaderT (SCEnv c) IO Seconds
 
-withSyncedProject :: SubcommandStepT c -> SubcommandStepT c
-withSyncedProject f = Effect $ do
-  asks (req_files . sce_req) >>= \case
-    Nothing -> pure $ Yield (Interpret $ ExitStderr 1 "Missing mandatory project hashes") Stop
-    Just fs -> do -- TODO
-      _ns <- fmap M.fromList . flip filterM (M.toList fs) $ \(k, a) ->
-        not <$> fsHashPresent k a
-      pure f
+withSyncedProject :: FS c => SubcommandStepT c -> SubcommandStepT c
+withSyncedProject f = Effect $ asks (req_files . sce_req) >>= maybe l go where
+  -- TODO batch `stored` + `staged` operations so we don't spike those harshly?
+  -- TODO increase parallelism
+  l = pure . cmdJust $ ExitStderr 1 "Missing mandatory project hashes"
+  w (p, h) = T.take 6 h <> " - " <> pack p
+
+  toutStage t s = cmdJust . ExitStderr 1 $ T.intercalate ""
+    [ "Couldn't stage:\n"
+    , intercalate "\n" $ w <$> L.sort s
+    , "\nwithin ", packs t, " seconds."
+    ]
+
+  toutStore t s = cmdJust . ExitStderr 1 $ T.intercalate ""
+    [ "Client didn't provide:\n"
+    , intercalate "\n" $ w <$> L.sort s
+    , "\nwithin ", packs t, " seconds."
+    ]
+
+  go fs = do
+    tr  <- syncToutStore
+    tl  <- syncToutStage
+    env <- ask
+    fs' <- forM (M.toList fs) $ \(p, h) -> (p, ) . maybe (Left h) (Right . (h, )) <$> stored h
+
+    let tout t p h m = race (sleep t $> (p, h)) $ runReaderT m env
+    let conc s = liftIO . fmap partitionEithers . forConcurrently s
+
+    let ss = [(p, h, c) | (p, Right (h, c)) <- fs'] -- Already present in cloud storage
+    let us = [(p, h)    | (p, Left h)       <- fs'] -- Must be requested from client
+
+    (ssl, _) <- conc ss $ \(p, h, c) -> tout tl p h $ staged p c
+
+    let go' [] = f   -- Fully synchronized
+        go' (x:xs) = -- Stream sync requests to client, poll for fulfillment, stage
+          let (a, b) = L.splitAt 4 xs
+          in Yield (Interpret . PutProjectUpdates $ fst x :| (fst <$> a)) . Effect $ do
+            (usl, usr) <- conc (x:a) $ \(p, h) -> do
+              let poll' = stored h >>= maybe (liftIO (sleep 0.1) *> poll') (pure . (p, h, ))
+              tout tr p h poll'
+            case L.null usl of
+              False -> pure $ toutStore tr usl
+              True -> do
+                (ssl', _) <- conc usr $ \(p, h, c) -> tout tl p h $ staged p c
+                pure $ if L.null ssl' then go' b else toutStage tl ssl'
+
+    pure $ if L.null ssl then go' us else toutStage tl ssl
 
 -- These won't really live in the protocol definition --------------------------
 stubHelp :: Subcommand c
@@ -334,19 +386,41 @@ stubInit = command "init" (info f $ d <> foot) where
     <> text "\n\nAborts if index.rsh or index.mjs already exist"
   go t = cmdJust . ExitStdout 0 $ "TODO: build non-stub version\nSelected: " <> t
 
-stubCompile :: Subcommand c
+stubCompile :: FS c => Subcommand c
 stubCompile = command "compile" $ info f d where
   d = progDesc "Compile an app"
   f = go <$> compiler
   go _ = withSyncedProject . cmdIO . pure . Interpret $ AttachStreamJustListen "54321" 0
 --------------------------------------------------------------------------------
 
-stubDispatchReach :: SCEnv c -> SubcommandDispatch
+stubDispatchReach :: FS c => SCEnv c -> SubcommandDispatch
 stubDispatchReach e = mkDispatchOptparse e p where
   p = info (hsubparser s <**> helper) fullDesc
   s = stubHelp <> stubInit <> stubCompile
 
 data StubConfig = StubConfig
+  { sc_syncToutStore :: IORef Seconds
+  , sc_syncToutStage :: IORef Seconds
+  , sc_syncLagStore  :: IORef Seconds
+  , sc_syncLagStage  :: IORef Seconds
+  , sc_store         :: IORef (M.Map HashFS   Text)
+  , sc_stage         :: IORef (M.Map FilePath Text)
+  }
+
+mkStubConfig :: Seconds -> Seconds -> Seconds -> Seconds -> IO StubConfig
+mkStubConfig tr tl lr ll = StubConfig
+  <$> newIORef tr
+  <*> newIORef tl
+  <*> newIORef lr
+  <*> newIORef ll
+  <*> newIORef mempty
+  <*> newIORef mempty
+
+instance FS StubConfig where
+  stored h      = asks sce_cnf >>= \StubConfig {..} -> liftIO $ (!? h) <$> readIORef sc_store
+  staged p t    = asks sce_cnf >>= \StubConfig {..} -> liftIO . modifyIORef sc_stage $ M.insert p t
+  syncToutStore = asks sce_cnf >>= \StubConfig {..} -> liftIO $ readIORef sc_syncToutStore
+  syncToutStage = asks sce_cnf >>= \StubConfig {..} -> liftIO $ readIORef sc_syncToutStage
 
 appStubServer :: StubConfig -> (SCEnv StubConfig -> SubcommandDispatch) -> Bool -> Maybe String -> Application
 appStubServer e d l t = serve (Proxy @Proto) ((pput :<|> pin) :<|> (pout :<|> r)) where
@@ -370,17 +444,19 @@ appStubServer e d l t = serve (Proxy @Proto) ((pput :<|> pin) :<|> (pout :<|> r)
       Stdout'  -> source [Stdout 0 "first", Keepalive, Stdout 1 "second"]
       Stderr'  -> source []
       Stdboth' -> fromStepT . withKeepalives . stubUnixProc
-        $ maybe "cd ../examples/ttt && ../../reach compile" id t
+        $ fromMaybe "cd ../examples/ttt && ../../reach compile" t
 
   -- reach $cmd [ $args ]
   r c _ a@Req {..} = do
     when l . liftIO $ do
       utc <- getCurrentTime
-      putStrLn $ show utc <> ": reach " <> c <> " " <> unpack (intercalate " " $ pack <$> req_args)
+      putStrLn $ show utc <> ": reach " <> c <> " " <> unpack (T.unwords $ pack <$> req_args)
     pure $ d (SCEnv a e) a c
 
 runStubServer :: IO ()
-runStubServer = Warp.run stubPort $ appStubServer StubConfig stubDispatchReach True Nothing
+runStubServer = do
+  c <- mkStubConfig 2 4 0 0
+  Warp.run stubPort $ appStubServer c stubDispatchReach True Nothing
 
 projPut'' :: XProject -> ReqProjPut -> ClientM NoContent
 say'' :: Pid -> Text -> ClientM NoContent
