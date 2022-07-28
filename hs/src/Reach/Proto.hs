@@ -421,7 +421,7 @@ instance FS StubConfig where
   syncToutStage = asks sce_cnf >>= \StubConfig {..} -> liftIO $ readIORef sc_syncToutStage
 
   store h c = asks sce_cnf >>= \StubConfig {..} -> liftIO $ do
-    let f b s = insertWith (flip (<>)) h b s
+    let f = insertWith (flip (<>)) h
     foreach fail (void . modifyIORef' sc_store . f . decodeUtf8) c
     -- NB: non-stub instances must verify the hash once they've fully received the contents!
 
