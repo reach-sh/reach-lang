@@ -434,11 +434,11 @@ interpAs aid p = do
 
 interpPrim :: SrcLoc -> (PrimOp, [DLVal]) -> App DLVal
 interpPrim at = \case
-  (ADD _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (+) lhs rhs
-  (SUB _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (-) lhs rhs
-  (MUL _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (*) lhs rhs
-  (DIV _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ div lhs rhs
-  (MOD _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ mod lhs rhs
+  (ADD _ _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (+) lhs rhs
+  (SUB _ _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (-) lhs rhs
+  (MUL _ _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (*) lhs rhs
+  (DIV _ _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ div lhs rhs
+  (MOD _ _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ mod lhs rhs
   (PLT _, [V_UInt lhs, V_UInt rhs]) -> return $ V_Bool $ (<) lhs rhs
   (PLE _, [V_UInt lhs, V_UInt rhs]) -> return $ V_Bool $ (<=) lhs rhs
   (PEQ _, [V_UInt lhs, V_UInt rhs]) -> return $ V_Bool $ (==) lhs rhs

@@ -409,13 +409,22 @@ instance DepthOf DLRemote where
       addN n m = (+) n <$> m
       pairList = concatMap (\(a, b) -> [a, b])
 
+instance DepthOf PrimOp where
+  depthOf = \case
+    ADD {} -> return 1
+    SUB {} -> return 1
+    MUL {} -> return 1
+    DIV {} -> return 1
+    MOD {} -> return 1
+    _ -> return 0
+
 instance DepthOf DLExpr where
   depthOf = \case
     DLE_Arg _ a -> depthOf a
     DLE_LArg _ a -> depthOf a
     DLE_Impossible {} -> return 0
     DLE_VerifyMuldiv {} -> return 0
-    DLE_PrimOp _ _ as -> add1 $ depthOf as
+    DLE_PrimOp _ op as -> add1 $ max <$> depthOf as <*> depthOf op
     DLE_ArrayRef _ x y -> add1 $ depthOf [x, y]
     DLE_ArraySet _ x y z -> depthOf [x, y, z]
     DLE_ArrayConcat _ x y -> add1 $ depthOf [x, y]
@@ -532,23 +541,23 @@ solArg = \case
 solPrimApply :: PrimOp -> [Doc] -> App Doc
 solPrimApply = \case
   SELF_ADDRESS {} -> impossible "self address"
-  ADD _ -> safeOp "unsafeAdd" "+"
-  SUB _ -> safeOp "unsafeSub" "-"
-  MUL _ -> safeOp "unsafeMul" "*"
-  DIV _ -> binOp "/"
-  MOD _ -> binOp "%"
+  ADD _ mpv -> safeOp mpv "unsafeAdd" "safeAdd"
+  SUB _ mpv -> safeOp mpv "unsafeSub" "safeSub"
+  MUL _ mpv -> safeOp mpv "unsafeMul" "safeMul"
+  DIV _ mpv -> safeOp mpv "unsafeDiv" "safeDiv"
+  MOD _ mpv -> safeOp mpv "unsafeMod" "safeMod"
   PLT _ -> binOp "<"
   PLE _ -> binOp "<="
   PEQ _ -> binOp "=="
   PGE _ -> binOp ">="
   PGT _ -> binOp ">"
   SQRT _ -> \args -> return $ solApply "safeSqrt" args
-  UCAST _ _ _ -> \case
+  UCAST _ _ _ _ -> \case
     [x] -> return x
     _ -> impossible "ucast"
   MUL_DIV -> \case
     [x, y, den] -> do
-      mul <- safeOp "unsafeMul" "*" [x, y]
+      mul <- safeOp Nothing "unsafeMul" "safeMul" [x, y]
       binOp "/" [mul, den]
     _ -> impossible "solPrimApply: MUL_DIV args"
   LSH -> binOp "<<"
@@ -573,11 +582,11 @@ solPrimApply = \case
   GET_COMPANION -> impossible "GET_COMPANION"
   where
     constr = const . return
-    safeOp fun op args = do
+    safeOp mpv veriFun safeFun args = do
       PLOpts {..} <- ctxt_plo <$> ask
-      case plo_verifyArithmetic of
-        False -> binOp op args
-        True -> return $ solApply fun args
+      case plo_verifyArithmetic || maybe False (== PV_Verified) mpv of
+        False -> return $ solApply safeFun args
+        True -> return $ solApply veriFun args
     binOp op = \case
       [l, r] -> return $ solBinOp op l r
       _ -> impossible $ "emitSol: bin op args"
@@ -860,7 +869,7 @@ doConcat dv x y = do
   let copy src (off :: Integer) = do
         let sz = arraySize src
         src' <- solArg src
-        add <- solPrimApply (ADD UI_Word) ["i", solNum off]
+        add <- solPrimApply (ADD UI_Word Nothing) ["i", solNum off]
         let ref = solArrayRef src' "i"
         return $ "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++") <> solBraces (solArrayRef dv' add <+> "=" <+> ref <> semi)
   x' <- copy x 0
@@ -922,7 +931,7 @@ solCom = \case
              -- Get balances of non-network tokens before call
              let s1 = solSet tv_before $ getBalance tokArg
              -- Get balances of non-network tokens after call
-             tokRecv <- solPrimApply (SUB UI_Word) [getBalance tokArg, tv_before]
+             tokRecv <- solPrimApply (SUB UI_Word Nothing) [getBalance tokArg, tv_before]
              let s2 = solSet ((solMemVar dv <> ".elem1") <> ".elem" <> pretty i) tokRecv
              return (s1, s2))
           (zip nonNetTokRecv [0 ..])
@@ -936,10 +945,10 @@ solCom = \case
              tv_before <- allocMemVar at $ T_UInt UI_Word
              tokArg <- solArg tok
              paid <- maybe (return "0") solArg $ M.lookup tok nonNetToksPayAmt
-             sub <- solPrimApply (SUB UI_Word) [getBalance tokArg, paid]
+             sub <- solPrimApply (SUB UI_Word Nothing) [getBalance tokArg, paid]
              let s1 = solSet tv_before sub
              tv_after <- allocMemVar at $ T_UInt UI_Word
-             tokRecv <- solPrimApply (SUB UI_Word) [getBalance tokArg, tv_before]
+             tokRecv <- solPrimApply (SUB UI_Word Nothing) [getBalance tokArg, tv_before]
              let s2 = solSet tv_after tokRecv
              s3 <- solRequire "remote did not transfer unexpected non-network tokens" =<< solEq tv_after "0"
              return (s1, s2 <> s3 <> semi))
@@ -947,7 +956,7 @@ solCom = \case
     let call' = ".call{value:" <+> netTokPaid <> "}"
     let meBalance = "address(this).balance"
     addMemVar dv
-    sub' <- solPrimApply (SUB UI_Word) [meBalance, v_before]
+    sub' <- solPrimApply (SUB UI_Word Nothing) [meBalance, v_before]
     let sub'l = [solSet (solMemVar dv <> ".elem0") sub']
     -- Non-network tokens received from remote call
     let billOffset :: Int -> Doc
@@ -958,7 +967,7 @@ solCom = \case
             _ -> [ solSet (solMemVar dv <> ".elem" <> billOffset 1) $ solApply "abi.decode" [v_return, parens rng_ty'_] ]
     let e_data_e = solApply "abi.encodeWithSelector" eargs
     e_data <- allocVar
-    e_before <- solPrimApply (SUB UI_Word) [meBalance, netTokPaid]
+    e_before <- solPrimApply (SUB UI_Word Nothing) [meBalance, netTokPaid]
     err_msg <- solRequireMsg $ show (at, fs, ("remote " <> f <> " failed"))
     -- XXX we could assert that the balances of all our tokens is the same as
     -- it was before
@@ -1023,7 +1032,7 @@ solCom = \case
     bal <- case mtok of
       Nothing -> return "address(this).balance"
       Just tok -> getBalance <$> solArg tok
-    sub <- solPrimApply (SUB UI_Word) [actBalV, tb']
+    sub <- solPrimApply (SUB UI_Word Nothing) [actBalV, tb']
     zero <- solArg $ DLA_Literal $ DLL_Int at UI_Word 0
     cnd <- solPrimApply (PLT UI_Word) [actBalV, tb']
     ite <- solPrimApply IF_THEN_ELSE [cnd, zero, sub]

@@ -1363,18 +1363,18 @@ czpad xtra = do
 cprim :: PrimOp -> [DLArg] -> App ()
 cprim = \case
   SELF_ADDRESS {} -> impossible "self address"
-  ADD t -> bcallz t "+"
-  SUB t -> bcallz t "-"
-  MUL t -> bcallz t "*"
-  DIV t -> bcallz t "/"
-  MOD t -> bcallz t "%"
+  ADD t _ -> bcallz t "+"
+  SUB t _ -> bcallz t "-"
+  MUL t _ -> bcallz t "*"
+  DIV t _ -> bcallz t "/"
+  MOD t _ -> bcallz t "%"
   PLT t -> bcall t "<"
   PLE t -> bcall t "<="
   PEQ t -> bcall t "=="
   PGT t -> bcall t ">"
   PGE t -> bcall t ">="
   SQRT t -> bcallz t "sqrt"
-  UCAST from to trunc -> \case
+  UCAST from to trunc _ -> \case
     [v] -> do
       case (from, to) of
         (UI_Word, UI_256) -> do

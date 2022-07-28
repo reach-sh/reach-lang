@@ -51,6 +51,10 @@ contract Stdlib {
     require((z = x - y) <= x, "sub wraparound"); }
   function safeMul(uint256 x, uint256 y) internal pure returns (uint256 z) {
     require(y == 0 || (z = x * y) / y == x, "mul overflow"); }
+  function safeDiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    require(y != 0 && (z = x / y) != 0, "div by zero"); }
+  function safeMod(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    require(y != 0 && (z = x % y) != 0, "div by zero"); }
 
   function unsafeAdd(uint256 x, uint256 y) internal pure returns (uint256 z) {
     unchecked { z = x + y; } }
@@ -58,6 +62,10 @@ contract Stdlib {
     unchecked { z = x - y; } }
   function unsafeMul(uint256 x, uint256 y) internal pure returns (uint256 z) {
     unchecked { z = x * y; } }
+  function unsafeDiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    unchecked { z = x / y; } }
+  function unsafeMod(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    unchecked { z = x % y; } }
 
   function safeSqrt(uint256 y) internal pure returns (uint256 z) {
     if (y > 3) {

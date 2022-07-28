@@ -627,6 +627,16 @@ base_env_slvals =
   , ("isDataVariant", SLV_Prim $ SLPrim_isDataVariant)
   , ("fromSome", SLV_Prim $ SLPrim_fromSome)
   , ("distinct", SLV_Prim $ SLPrim_distinct)
+  , ("safeAdd", SLV_Prim $ SLPrim_op (S_ADD $ Just PV_Safe))
+  , ("safeSub", SLV_Prim $ SLPrim_op (S_SUB $ Just PV_Safe))
+  , ("safeMul", SLV_Prim $ SLPrim_op (S_MUL $ Just PV_Safe))
+  , ("safeDiv", SLV_Prim $ SLPrim_op (S_DIV $ Just PV_Safe))
+  , ("safeMod", SLV_Prim $ SLPrim_op (S_MOD $ Just PV_Safe))
+  , ("veriAdd", SLV_Prim $ SLPrim_op (S_ADD $ Just PV_Verified))
+  , ("veriSub", SLV_Prim $ SLPrim_op (S_SUB $ Just PV_Verified))
+  , ("veriMul", SLV_Prim $ SLPrim_op (S_MUL $ Just PV_Verified))
+  , ("veriDiv", SLV_Prim $ SLPrim_op (S_DIV $ Just PV_Verified))
+  , ("veriMod", SLV_Prim $ SLPrim_op (S_MOD $ Just PV_Verified))
   , ( "Reach"
     , (SLV_Object sb (Just $ "Reach") $
          m_fromList_public_builtin
@@ -1157,20 +1167,20 @@ stEnsureMode slm = do
 binaryToPrim :: JSBinOp -> App SLVal
 binaryToPrim = \case
   JSBinOpAnd _ -> impossible "and"
-  JSBinOpDivide a -> prim a S_DIV
+  JSBinOpDivide a -> prim a $ S_DIV Nothing
   JSBinOpEq a -> fun a "polyEq" "=="
   JSBinOpGe a -> prim a S_PGE
   JSBinOpGt a -> prim a S_PGT
   JSBinOpLe a -> prim a S_PLE
   JSBinOpLt a -> prim a S_PLT
-  JSBinOpMinus a -> prim a S_SUB
+  JSBinOpMinus a -> prim a $ S_SUB Nothing
   JSBinOpMod a -> fun a "polyMod" "%"
   JSBinOpNeq a -> fun a "polyNeq" "!="
   JSBinOpOr _ -> impossible "or"
-  JSBinOpPlus a -> prim a S_ADD
+  JSBinOpPlus a -> prim a $ S_ADD Nothing
   JSBinOpStrictEq a -> fun a "polyEq" "==="
   JSBinOpStrictNeq a -> fun a "polyNeq" "!=="
-  JSBinOpTimes a -> prim a S_MUL
+  JSBinOpTimes a -> prim a $ S_MUL Nothing
   JSBinOpLsh a -> prim a S_LSH
   JSBinOpRsh a -> prim a S_RSH
   JSBinOpBitAnd a -> prim a S_BAND
@@ -2145,8 +2155,15 @@ evalPrimOp :: SPrimOp -> [SLSVal] -> App SLSVal
 evalPrimOp sp sargs = do
   at <- withAt id
   let zero mt = SLV_Int at mt 0
+  let goMul = do
+        case args of
+          [SLV_Int _ mt 1, rhs] | mtOkay mt rhs -> static rhs
+          [lhs, SLV_Int _ mt 1] | mtOkay mt lhs -> static lhs
+          [SLV_Int _ mt 0, rhs] | mtOkay mt rhs -> static $ zero $ uintTyM rhs
+          [lhs, SLV_Int _ mt 0] | mtOkay mt lhs -> static $ zero $ uintTyM lhs
+          _ -> nn2n (*)
   case sp of
-    S_UCAST to trunc -> do
+    S_UCAST to trunc _ -> do
       case args of
         [SLV_Int lhs_at _ lhs_i] | not trunc -> static $ SLV_Int lhs_at (Just to) lhs_i
         _ -> do
@@ -2172,27 +2189,11 @@ evalPrimOp sp sargs = do
           make_var_ (T_UInt UI_Word) [ae]
         _ -> expect_ $ Err_Apply_ArgCount at 1 (length args)
     S_SQRT -> n2n isqrt
-    S_ADD ->
-      case args of
-        [SLV_Int _ mt 0, rhs] | mtOkay mt rhs -> static rhs
-        [lhs, SLV_Int _ mt 0] | mtOkay mt lhs -> static lhs
-        _ -> nn2n (+)
-    S_SUB ->
-      case args of
-        [lhs, SLV_Int _ mt 0] | mtOkay mt lhs -> static lhs
-        _ -> nn2n (-)
-    S_MUL ->
-      case args of
-        [SLV_Int _ mt 1, rhs] | mtOkay mt rhs -> static rhs
-        [lhs, SLV_Int _ mt 1] | mtOkay mt lhs -> static lhs
-        [SLV_Int _ mt 0, rhs] | mtOkay mt rhs -> static $ zero $ uintTyM rhs
-        [lhs, SLV_Int _ mt 0] | mtOkay mt lhs -> static $ zero $ uintTyM lhs
-        _ -> nn2n (*)
-    S_DIV ->
-      case args of
-        [lhs, SLV_Int _ mt 1] | mtOkay mt lhs -> static lhs
-        _ -> nn2n (div)
-    S_MOD -> nn2n (mod)
+    S_ADD _ -> goAdd
+    S_SUB _ -> goSub
+    S_MUL _ -> goMul
+    S_DIV _ -> goDiv
+    S_MOD _ -> nn2n (mod)
     S_PLT -> nn2b (<)
     S_PLE -> nn2b (<=)
     S_PEQ ->
@@ -2234,9 +2235,9 @@ evalPrimOp sp sargs = do
     S_BXOR -> nn2n (xor)
     S_MUL_DIV -> case args of
       [SLV_Int _ mt 1, rhs, den] | mtOkay2 mt rhs den ->
-        evalPrimOp S_DIV $ map (lvl,) [rhs, den]
+        evalPrimOp (S_DIV Nothing) $ map (lvl,) [rhs, den]
       [lhs, SLV_Int _ mt 1, den] | mtOkay2 mt lhs den ->
-        evalPrimOp S_DIV $ map (lvl,) [lhs, den]
+        evalPrimOp (S_DIV Nothing) $ map (lvl,) [lhs, den]
       [SLV_Int _ mt 0, rhs, den] | mtOkay2 mt rhs den -> static $ zero $ uintTyM rhs
       [lhs, SLV_Int _ mt 0, den] | mtOkay2 mt lhs den -> static $ zero $ uintTyM den
       [x, y, z]
@@ -2261,6 +2262,19 @@ evalPrimOp sp sargs = do
         _ -> do
           at <- withAt id
           expect_ $ Err_Apply_ArgCount at n (length args)
+    goAdd = do
+      case args of
+        [SLV_Int _ mt 0, rhs] | mtOkay mt rhs -> static rhs
+        [lhs, SLV_Int _ mt 0] | mtOkay mt lhs -> static lhs
+        _ -> nn2n (+)
+    goSub = do
+      case args of
+        [lhs, SLV_Int _ mt 0] | mtOkay mt lhs -> static lhs
+        _ -> nn2n (-)
+    goDiv = do
+      case args of
+        [lhs, SLV_Int _ mt 1] | mtOkay mt lhs -> static lhs
+        _ -> nn2n (div)
     nn2b op =
       case args of
         [SLV_Int _ mt1 lhs, SLV_Int _ mt2 rhs] | mtOkay' mt1 mt2 -> do
@@ -2317,49 +2331,68 @@ evalPrimOp sp sargs = do
       let chkDiv t denom = do
             ca <- doCmp (PGT t) [denom, DLA_Literal $ DLL_Int sb t 0]
             dopClaim ca "div by zero"
-      whenVerifyArithmetic $
-        case p of
-          ADD t -> do
+      let verifyAdd t = do
             let (a, b) = case dargs of
                   [a_, b_] -> (a_, b_)
                   _ -> impossible "add args"
-            ra <- doOp (T_UInt t) (SUB t) [lim_maxUInt_a, b]
+            ra <- doOp (T_UInt t) (SUB t Nothing) [lim_maxUInt_a, b]
             ca <- doCmp (PLE t) [a, ra]
             dopClaim ca "add overflow"
-          SUB t -> do
+      let verifySub t = do
             ca <- doCmp (PGE t) dargs
             dopClaim ca "sub wraparound"
-          DIV t -> do
+      let verifyDiv t = do
             chkDiv t $ case dargs of
               [_, b] -> b
               _ -> impossible "div args"
-          MOD t -> do
+      let verifyMod t = do
             chkDiv t $ case dargs of
               [_, b] -> b
               _ -> impossible "mod args"
-          MUL_DIV -> do
-            chkDiv UI_Word $ case dargs of
-              [_, _, b] -> b
-              _ -> impossible "muldiv args"
-          UCAST UI_256 UI_Word trunc -> unless trunc $ do
+      let verifyUCast trunc = unless trunc $ do
             -- We add an assertion when casting from UInt256 to UInt, unless we want to truncate
             let a = case dargs of
                   [a_] -> a_
                   _ -> impossible "cast args"
-            wordLimitAs256 <- doOp (T_UInt UI_256) (UCAST UI_Word UI_256 False) [ uintTyMax UI_Word ]
+            wordLimitAs256 <- doOp (T_UInt UI_256) (UCAST UI_Word UI_256 False Nothing) [ uintTyMax UI_Word ]
             ca <- doCmp (PLE UI_256) [a, wordLimitAs256]
             dopClaim ca "cast overflow"
-          _ -> return $ mempty
+      let verifyMul t = do
+            let (a, b) = case dargs of
+                  [a_, b_] -> (a_, b_)
+                  _ -> impossible "add args"
+            ra <- doOp (T_UInt t) (DIV t Nothing) [lim_maxUInt_a, b]
+            ca <- doCmp (PLE t) [a, ra]
+            dopClaim ca "mul overflow"
+      let shouldVerifyArith = \case
+            Just PV_Verified -> return True
+            Just PV_Safe -> return False
+            _ -> readDlo dlo_verifyArithmetic
+      let whenShouldVerifyArith mpv m = do
+            shouldVerify <- shouldVerifyArith mpv
+            when shouldVerify $ m
+      case p of
+        ADD t mpv -> whenShouldVerifyArith mpv $ verifyAdd t
+        SUB t mpv -> whenShouldVerifyArith mpv $ verifySub t
+        DIV t mpv -> whenShouldVerifyArith mpv $ verifyDiv t
+        MOD t mpv -> whenShouldVerifyArith mpv $ verifyMod t
+        MUL t mpv -> whenShouldVerifyArith mpv $ verifyMul t
+        MUL_DIV -> do
+          whenShouldVerifyArith Nothing $
+            chkDiv UI_Word $ case dargs of
+              [_, _, b] -> b
+              _ -> impossible "muldiv args"
+        UCAST UI_256 UI_Word trunc mpv -> whenShouldVerifyArith mpv $ verifyUCast trunc
+        _ -> return $ mempty
       dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_PrimOp at p dargs)
       let da = DLA_Var dv
       let chkMul t = do
             ca <- doCmp (PLE t) [da, lim_maxUInt_a]
             dopClaim ca "mul overflow"
-      whenVerifyArithmetic $
-        case p of
-          MUL t -> chkMul t
-          MUL_DIV -> chkMul UI_Word
-          _ -> return $ mempty
+      case p of
+        MUL t mpv -> whenShouldVerifyArith mpv $ chkMul t
+        MUL_DIV -> whenShouldVerifyArith Nothing $ chkMul UI_Word
+        _ -> return $ mempty
       return $ (lvl, SLV_DLVar dv)
 
 explodeTupleLike :: String -> SLVal -> App [SLVal]
@@ -2536,8 +2569,8 @@ doBalanceUpdate mtok op = \case
     bsv <- getBalanceOf mtok
     -- Assume we can add/sub from balance
     let assumeOps = M.fromList [
-          (S_ADD, (ADD UI_Word, assumeLtUMax)),
-          (S_SUB, (SUB UI_Word, assumeGtZero)) ]
+          (S_ADD Nothing, (ADD UI_Word Nothing, assumeLtUMax)),
+          (S_SUB Nothing, (SUB UI_Word Nothing, assumeGtZero)) ]
     whenVerifyArithmetic $ do
       forM_ (M.lookup op assumeOps) $
         assumeBalanceUpdate (snd bsv) rhs
@@ -2610,7 +2643,7 @@ tokenPay :: Maybe DLArg -> DLArg -> B.ByteString -> ReaderT Env IO ()
 tokenPay mtok_a amt_a msg = do
   amt_sv <- argToSV amt_a
   doBalanceAssert mtok_a amt_sv S_PLE msg
-  doBalanceUpdate mtok_a S_SUB amt_sv
+  doBalanceUpdate mtok_a (S_SUB Nothing) amt_sv
 
 getBillTokens :: Maybe (Either SLVal SLVal) -> DLPayAmt -> App (Bool, [DLArg])
 getBillTokens mbill billAmt = do
@@ -2693,11 +2726,13 @@ evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
   case p of
     SLPrim_castOrTrunc to -> do
-      (mTrunc, sargs') <-
+      (mTrunc, mShouldVerify, sargs') <-
         case sargs of
-          [i, (_, SLV_Bool _ trunc)] -> return (Just trunc, [i])
-          _ -> return (Nothing, sargs)
-      evalPrimOp (S_UCAST to (fromMaybe False mTrunc)) sargs'
+          [i, (_, SLV_Bool _ trunc), (_, SLV_Bool _ shouldVerify)] -> return (Just trunc, Just shouldVerify, [i])
+          [i, (_, SLV_Bool _ trunc)] -> return (Just trunc, Nothing, [i])
+          _ -> return (Nothing, Nothing, sargs)
+      let mpv = maybe Nothing (Just . bool PV_Safe PV_Verified) mShouldVerify
+      evalPrimOp (S_UCAST to (fromMaybe False mTrunc) mpv) sargs'
     SLPrim_Token_burn -> do
       (tokv, mamtv) <-
         case args of
@@ -2716,8 +2751,8 @@ evalPrim p sargs =
       let mtok_a = Just toka
       amt_sv <- argToSV amta
       doBalanceAssert mtok_a amt_sv S_PLE (bpack lab)
-      doBalanceUpdate mtok_a S_SUB amt_sv
-      tokenMetaUpdate TM_Supply toka S_SUB amt_sv
+      doBalanceUpdate mtok_a (S_SUB Nothing) amt_sv
+      tokenMetaUpdate TM_Supply toka (S_SUB Nothing) amt_sv
       ctxt_lift_eff $ DLE_TokenBurn at toka amta
       return $ public $ SLV_Null at lab
     SLPrim_Token_destroy -> do
@@ -3701,21 +3736,21 @@ evalPrim p sargs =
                 return (2, Just nnTokAmts)
       (resi, mNonNetToksRecv) <- getRemoteResults
       res <- doArrRef_ res' $ SLV_Int at nn resi
-      doBalanceUpdate Nothing S_ADD apdvv
+      doBalanceUpdate Nothing (S_ADD Nothing) apdvv
       case fromMaybe (Right zero) mbill of
         Left _ -> do
           forM_ (zip nntbRecv [0 .. length nntbRecv - 1]) $ \(t, i) ->
             case mNonNetToksRecv of
               Nothing -> return ()
               Just nnTokAmts -> do
-                doBalanceUpdate (Just t) S_ADD
+                doBalanceUpdate (Just t) (S_ADD Nothing)
                   =<< doArrRef_ nnTokAmts (SLV_Int at nn $ fromIntegral i)
           return $ public res'
         Right _ -> do
           sv <- argToSV $ pa_net billAmt
           forM_ (pa_ks billAmt) $ \(a, t) -> do
             a' <- argToSV a
-            doBalanceUpdate (Just t) S_ADD a'
+            doBalanceUpdate (Just t) (S_ADD Nothing) a'
           -- Ensure we're paid expected network tokens
           cmp_v <- evalApplyVals' (SLV_Prim $ SLPrim_op S_PEQ) [public sv, public apdvv]
           void $
@@ -3854,7 +3889,7 @@ evalPrim p sargs =
       fvBal <- getBalanceOf' mtok
       let trackedBal = DLA_Var fvBal
       untrackedFunds <- ctxt_lift_expr mdv $ DLE_GetUntrackedFunds at mtok trackedBal
-      dv <- ctxt_lift_expr mdv $ DLE_PrimOp at (ADD UI_Word) [DLA_Var untrackedFunds, trackedBal]
+      dv <- ctxt_lift_expr mdv $ DLE_PrimOp at (ADD UI_Word Nothing) [DLA_Var untrackedFunds, trackedBal]
       setBalance TM_Balance mtok (DLA_Var dv)
       return (lvl, SLV_DLVar untrackedFunds)
     SLPrim_isDataVariant -> do
@@ -3942,9 +3977,9 @@ evalPrim p sargs =
       (y_ty, _) <- compileTypeOf y
       let go isDigest = do
             bi <- evalPrimOp (S_BTOI_LAST8 isDigest) [public x]
-            evalPrimOp S_MOD [bi, public y]
+            evalPrimOp (S_MOD Nothing) [bi, public y]
       case (x_ty, y_ty) of
-        (T_UInt x_ui, T_UInt y_ui) | x_ui == y_ui -> evalPrimOp S_MOD sargs
+        (T_UInt x_ui, T_UInt y_ui) | x_ui == y_ui -> evalPrimOp (S_MOD Nothing) sargs
         (T_Bytes {}, T_UInt UI_Word) -> go False
         (T_Digest, T_UInt UI_Word) -> go True
         (l, r) -> expect_ $ Err_mod_Types l r
@@ -5098,7 +5133,7 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
         fs <- e_stack <$> ask
         let checkPayAmt1 mtok pa = do
               sv <- argToSV pa
-              doBalanceUpdate mtok S_ADD sv
+              doBalanceUpdate mtok (S_ADD Nothing) sv
               ctxt_lift_eff $ DLE_CheckPay at fs pa mtok
         checkPayAmt1 Nothing pa_net
         forM_ pa_ks $ uncurry $ flip $ checkPayAmt1 . Just

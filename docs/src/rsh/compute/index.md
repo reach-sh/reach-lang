@@ -597,7 +597,7 @@ Boolean operations, like `{!rsh} &&`, only operate on booleans.
 `{!rsh} polyMod` operates on `{!rsh} UInt`s and `{!rsh} UInt256`. The first argument may be a `{!rsh} Digest` or `{!rsh} Bytes`.
 It is invalid to use binary operations on the wrong types of values.
 
-@{ref("rsh", "and")}@{ref("rsh", "or")}@{ref("rsh", "xor")}@{ref("rsh", "add")}@{ref("rsh", "sub")}@{ref("rsh", "mul")}@{ref("rsh", "div")}@{ref("rsh", "mod")}@{ref("rsh", "polyMod")}@{ref("rsh", "eq")}@{ref("rsh", "lt")}@{ref("rsh", "le")}@{ref("rsh", "ge")}@{ref("rsh", "gt")}@{ref("rsh", "lsh")}@{ref("rsh", "rsh")}@{ref("rsh", "band")}@{ref("rsh", "bior")}@{ref("rsh", "bxor")}@{ref("rsh", "polyEq")}@{ref("rsh", "polyNeq")}
+@{ref("rsh", "and")}@{ref("rsh", "or")}@{ref("rsh", "xor")}@{ref("rsh", "add")}@{ref("rsh", "sub")}@{ref("rsh", "mul")}@{ref("rsh", "div")}@{ref("rsh", "mod")}@{ref("rsh", "polyMod")}@{ref("rsh", "eq")}@{ref("rsh", "lt")}@{ref("rsh", "le")}@{ref("rsh", "ge")}@{ref("rsh", "gt")}@{ref("rsh", "lsh")}@{ref("rsh", "rsh")}@{ref("rsh", "band")}@{ref("rsh", "bior")}@{ref("rsh", "bxor")}@{ref("rsh", "polyEq")}@{ref("rsh", "polyNeq")}@{ref("rsh", "safeAdd")}@{ref("rsh", "safeSub")}@{ref("rsh", "safeMul")}@{ref("rsh", "safeDiv")}@{ref("rsh", "safeMod")}@{ref("rsh", "veriAdd")}@{ref("rsh", "veriSub")}@{ref("rsh", "veriMul")}@{ref("rsh", "veriDiv")}@{ref("rsh", "veriMod")}
 ```reach
 and(a, b)     // &&
 or(a, b)      // ||
@@ -618,9 +618,21 @@ band(a, b)    // &
 bior(a, b)    // |
 polyEq(a, b)  // ==, ===
 polyNeq(a, b) // !=, !==
+safeAdd(a, b)
+safeSub(a, b)
+safeMul(a, b)
+safeDiv(a, b)
+safeMod(a, b)
+veriAdd(a, b)
+veriSub(a, b)
+veriMul(a, b)
+veriDiv(a, b)
+veriMod(a, b)
 ```
 
 All binary expression operators have a corresponding named function in the standard library.
+The named arithmetic functions prefixed with `{!rsh} safe`, e.g. `{!rsh} safeAdd`, bypass `{!rsh} verifyArithmetic` and are not statically verified; they are only checked at runtime.
+The named arithmetic functions prefixed with `{!rsh} veri`, e.g. `{!rsh} veriAdd`, are statically verified, regardless of `{!rsh} verifyArithmetic`; no runtime checks will be generated for these verified operations.
 While `{!rsh} &&` and `{!rsh} ||` may not evaluate their second argument,
 their corresponding named functions `{!rsh} and`, `{!rsh} or`, and `{!rsh} xor`, always do.
 
@@ -1963,7 +1975,7 @@ md5: aba879d62803fb298b7ce92187d6a489
 range: 48 - 52
 ```
 
-This code takes `{!rsh} absoluteTime` as the `{!rsh} Left` variant tag in the `{!rsh} timeout` method. 
+This code takes `{!rsh} absoluteTime` as the `{!rsh} Left` variant tag in the `{!rsh} timeout` method.
 In the following sample, `{!rsh} absoluteSecs` is used in the anonymous `{!rsh} function` as the `{!rsh} Right` variant tag:
 
 ```reach
@@ -2237,7 +2249,7 @@ md5: 2c13099a264f42f5d9fe0bc80a70a1ce
 range: 28 - 34
 ```
 
-This code computes the `finalOutcome` of the `Rock, Paper, Scissors` game using the `{!rsh} pow` method. 
+This code computes the `finalOutcome` of the `Rock, Paper, Scissors` game using the `{!rsh} pow` method.
 It takes `outcome` as the `base`, the sum of `handAlice` and `handBob` as the `power`, and `10` as the `precision`.
 
 For reference, `6` iterations provides enough accuracy to calculate up to `2^64 - 1`, so the largest power it can compute is `2^63`.
