@@ -126,6 +126,7 @@ instance Subst DLExpr where
     DLE_FromSome at mo da -> DLE_FromSome at <$> subst mo <*> subst da
     DLE_ContractNew at cns dr -> DLE_ContractNew at <$> subst cns <*> subst dr
     DLE_ObjectSet at a b c -> DLE_ObjectSet at <$> subst a <*> pure b <*> subst c
+    DLE_TupleSet at a b c -> DLE_TupleSet at <$> subst a <*> pure b <*> subst c
 
 instance Subst DLStmt where
   subst = \case

@@ -483,6 +483,7 @@ instance Optimize DLExpr where
         _ -> meh
     DLE_ContractNew at cns dr -> DLE_ContractNew at <$> opt cns <*> opt dr
     DLE_ObjectSet at o k v -> DLE_ObjectSet at <$> opt o <*> pure k <*> opt v
+    DLE_TupleSet at t k v -> DLE_TupleSet at <$> opt t <*> pure k <*> opt v
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
   gcs _ = return ()

@@ -420,6 +420,7 @@ instance DepthOf DLExpr where
     DLE_ArraySet _ x y z -> depthOf [x, y, z]
     DLE_ArrayConcat _ x y -> add1 $ depthOf [x, y]
     DLE_TupleRef _ x _ -> add1 $ depthOf x
+    DLE_TupleSet _ t _ v -> add1 $ depthOf [t, v]
     DLE_ObjectRef _ x _ -> add1 $ depthOf x
     DLE_ObjectSet _ a _ b -> add1 $ depthOf [a, b]
     DLE_Interact _ _ _ _ _ as -> depthOf as
@@ -658,6 +659,17 @@ solExpr sp = \case
   DLE_TupleRef _ ae i -> do
     ae' <- solArg ae
     return $ ae' <> ".elem" <> pretty i <> sp
+  DLE_TupleSet _ tup_a index val_a -> do
+    let tupFields = tupleTypes $ argTypeOf tup_a
+    let tupLen = fromIntegral $ length tupFields
+    tup_t <- solType $ argTypeOf tup_a
+    tup' <- solArg tup_a
+    val' <- solArg val_a
+    let newField = "elem" <> pretty index <> ": " <> val'
+    let copiedFields = map (\n -> "elem" <> n <> ": " <> tup' <> "." <> "elem" <> n) $
+                         map pretty $ filter (/= index) [0..tupLen-1]
+    let tupLiteral = braces $ comma_sep $ newField : copiedFields
+    return $ tup_t <> parens tupLiteral
   DLE_ObjectRef _ oe f -> do
     oe' <- solArg oe
     let p = case argTypeOf oe of
