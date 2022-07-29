@@ -112,12 +112,53 @@ If you are building a browser-based DApp, then you may need to set up a fallback
 stdlib.setWalletFallback(make: () => wallet): void
 ```
 
-When you call this function, if no browser wallet is available, then `{!js} make` will be called to construct one.
-The value that `{!js} make` should return differs between connectors.
+When you call this function, if no browser wallet is available, then `{!js} make` will be called to construct one and it will be installed as if there were always a browser wallet.
 
-On Ethereum, it must match the interface of MetaMask.
-On Conflux, it must match the interface of ConfluxPortal.
-On Algorand, it must match the [ARC-0011](https://github.com/algorandfoundation/ARCs/blob/main/ARCs/arc-0011.md) standard.
+The value that `{!js} make` should return differs between connectors:
+- On Ethereum, it must match the interface of MetaMask.
+- On Conflux, it must match the interface of ConfluxPortal.
+- On Algorand, it must match the [ARC-0011](https://github.com/algorandfoundation/ARCs/blob/main/ARCs/arc-0011.md) standard.
+
+---
+
+Since this function installs a new value as the browser wallet, if you call `{!js} stdlib.setWalletFallback` twice, then the second is guaranteed to do nothing, _even if you are using different standard library instances_, because this modifies a global property of the browser.
+If you want to work around that, then you'd have to delete the property so that Reach cannot find a browser wallet on the second time.
+
+For example, this is a bad program that is useless:
+```js
+const stdlib1 = loadStdlib();
+stdlib1.setWalletFallback( make1 ); // maybe does something
+
+const stdlib2 = loadStdlib();
+stdlib2.setWalletFallback( make2 ); // does nothing!
+```
+because the second call is useless.
+If you were using a connector like Algorand, then you'd want to do:
+```js
+const stdlib1 = loadStdlib();
+stdlib1.setWalletFallback( make1 ); // maybe does something
+
+const stdlib2 = loadStdlib();
+delete window.algorand;
+stdlib2.setWalletFallback( make2 ); // does something
+
+f( stdlib1 ); // uses make2's result
+```
+But even this will not do what you think, because in `f`, `stdlib1` will still use the global variable `{!js} window.algorand`, which is the value that `make2` returns.
+
+The solution to this is to explicitly access the wallet using `stdlib1`, before you reset the wallet:
+```js
+const stdlib1 = loadStdlib();
+stdlib1.setWalletFallback( make1 ); // maybe does something
+await stdlib1.getProvider(); // look at wallet
+
+const stdlib2 = loadStdlib();
+delete window.algorand;
+stdlib2.setWalletFallback( make2 ); // does something
+await stdlib2.getProvider(); // look at wallet
+
+f( stdlib1 ); // uses make1's result
+```
 
 ---
 @{ref("js", "stdlib.walletFallback")}
