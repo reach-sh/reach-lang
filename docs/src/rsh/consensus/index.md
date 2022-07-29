@@ -460,7 +460,7 @@ range: 85 - 87
 
 ### {#ref-programs-consensus-token-minting} Token minting
 
-@{ref("rsh", "burn")}@{ref("rsh", "Token.burn")}@{ref("rsh", "destroy")}@{ref("rsh", "Token.destroy")}@{ref("rsh", "supply")}@{ref("rsh", "Token.supply")}@{ref("rsh", "destroyed")}@{ref("rsh", "Token.destroyed")}@{ref("rsh", "Token.track")}
+@{ref("rsh", "burn")}@{ref("rsh", "Token.burn")}@{ref("rsh", "destroy")}@{ref("rsh", "Token.destroy")}@{ref("rsh", "supply")}@{ref("rsh", "Token.supply")}@{ref("rsh", "destroyed")}@{ref("rsh", "Token.destroyed")}@{ref("rsh", "Token.track")}@{ref("rsh", "Token.accepted")}
 ```reach
 require(supply >= 2 * amt);
 const tok = new Token({ name, symbol, url, metadata, supply, decimals });
@@ -532,6 +532,11 @@ has been called on `{!rsh} tok` yet.
 
 `{!rsh} Token.track(tok)`, or `{!rsh} tok.track()`, where `{!rsh} tok` is a `{!rsh} Token` value, may be used to explicitly start tracking the balance of a non-network token in an application.
 This operation is useful for tracking a token that is received from an API call or published within a container, like an `{!rsh} Array` or `{!rsh} Data` object.
+
+---
+
+`{!rsh} Token.accepted(acc, tok)`, where `{!rsh} acc` is an `{!rsh} Account` value and `{!rsh} tok` is a `{!rsh} Token` value, returns true if `{!rsh} acc` is ready to accept non-network tokens specified by `{!rsh} tok`, and false otherwise.
+This always returns true on some consensus networks, but should always be used to ensure your frontend is blockchain agnostic.
 
 ### Remote objects
 
