@@ -467,6 +467,13 @@ export type TokenMetadata = {
   metadata?: string,
   supply: BigNumber,
   decimals?: BigNumber,
+  // ALGO-specific
+  clawback?: string,
+  creator?: string,
+  defaultFrozen?: boolean,
+  freeze?: string,
+  manager?: string,
+  reserve?: string,
 };
 
 export type LaunchTokenOpts = {
