@@ -212,15 +212,18 @@ mkEnv0 eCounter eDroppedAsserts eConst eParts eMaps eSimulate = do
   return $ Env {..}
 
 maybeClearMaps :: App a -> App a
-maybeClearMaps m = do
-  cm <- asks eClearMaps
-  when cm $ do
-    let clear = M.filterWithKey $ \k _ ->
-          case k of
-            DLE_MapRef {} -> False
-            _ -> True
-    updateLookupWhen (const True) $ \ce ->
-        ce {cePrev = clear $ cePrev ce}
+maybeClearMaps m = asks eClearMaps >>= \case
+  True -> doClearMaps m
+  False -> m
+
+doClearMaps :: App a -> App a
+doClearMaps m = do
+  let clear = M.filterWithKey $ \k _ ->
+        case k of
+          DLE_MapRef {} -> False
+          _ -> True
+  updateLookupWhen (const True) $ \ce ->
+      ce {cePrev = clear $ cePrev ce}
   m
 
 opt_v2p :: DLVar -> App (DLVar, DLArg)
@@ -717,7 +720,7 @@ instance Optimize LLConsensus where
     LLC_Switch at ov csm ->
       optSwitch id LLC_Com LLC_Switch at ov csm
     LLC_While at asn inv cond body k -> do
-      inv' <- newScope $ opt inv
+      inv' <- newScope $ doClearMaps $ opt inv
       optWhile (\asn' cond' body' k' -> LLC_While at asn' inv' cond' body' k') asn cond body k
     LLC_Continue at asn ->
       LLC_Continue at <$> opt asn
