@@ -2277,7 +2277,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     })();
     const supply = bigNumberify(tokenInfo['total']);
     const decimals = bigNumberify(tokenInfo['decimals']);
-    return { name, symbol, url, metadata, supply, decimals };
+    const { clawback, creator, freeze, manager, reserve } = tokenInfo;
+    const defaultFrozen = tokenInfo['default-frozen'];
+    return { name, symbol, url, metadata, supply, decimals, clawback, creator, defaultFrozen, freeze, manager, reserve };
   };
   const unsupportedAcc = stdAccount_unsupported(connector);
 
