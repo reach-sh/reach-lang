@@ -344,6 +344,16 @@ const clickFollowLink = async (evt) => {
   if ( t.classList && t.classList.contains("copyBtn") ) {
     evt.preventDefault();
     await navigator.clipboard.writeText(t.getAttribute('data-clipboard-text'));
+    const id = t.getAttribute('id');
+    $(`#${id}`).attr('title', "Copied!")
+      .tooltip('enable')
+      .tooltip('show');
+    const milliseconds = 1000;
+    setTimeout(() => {
+      $(`#${id}`)
+        .tooltip('disable')
+        .attr('title', "Copy to clipboard");
+    }, milliseconds);
     return;
   }
   const href = t.href;
