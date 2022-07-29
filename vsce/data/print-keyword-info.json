@@ -530,6 +530,9 @@
   "Token": {
     "CompletionItemKind": "TypeParameter"
   },
+  "Token.accepted": {
+    "CompletionItemKind": "Function"
+  },
   "Token.burn": {
     "CompletionItemKind": "Method"
   },
