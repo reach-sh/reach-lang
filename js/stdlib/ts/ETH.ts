@@ -1,70 +1,36 @@
+import {
+  EthersLike, EthLikeArgs,
+  EthLikeCompiled, EthLikeCompiledArgs
+} from './ETH_like_interfaces';
+import {
+  Stdlib_User,
+} from './interfaces';
+
 import { makeEthLike } from './ETH_like'
 import * as ethImpl from './ETH_impl';
-export type { Provider, ProviderEnv, ProviderName } from './ETH_impl';
-export type { Token, ContractInfo, Address, NetworkAccount, Ty, Backend, Account } from './ETH_like';
+import type { Provider, ProviderEnv, ProviderName } from './ETH_impl';
+import type { Token, ContractInfo, Address, NetworkAccount, Ty, Backend, Account } from './ETH_like';
+import * as ethers from 'ethers';
+import * as shared_user from './shared_user';
+import * as ETH_compiled from './ETH_compiled';
+import * as ETH_compiled_impl from './ETH_compiled_impl';
 
-export * from './ETH_compiled';
-export const connector = 'ETH';
-export * as ethers from 'ethers';
+const _ETH_compiled_impl: EthLikeCompiledArgs = ETH_compiled_impl;
+void(_ETH_compiled_impl);
 
-const ethLike = makeEthLike(ethImpl);
-// The following should be identical to CFX.ts
-export const {
-  doCall,
-  getQueryLowerBound,
-  setQueryLowerBound,
-  getValidQueryWindow,
-  setValidQueryWindow,
-  getProvider,
-  setProvider,
-  randomUInt,
-  hasRandom,
-  setProviderByEnv,
-  setProviderByName,
-  providerEnvByName,
-  setWalletFallback,
-  walletFallback,
-  balanceOf,
-  balancesOf,
-  minimumBalanceOf,
-  transfer,
-  connectAccount,
-  newAccountFromSecret,
-  newAccountFromMnemonic,
-  getDefaultAccount,
-  getFaucet,
-  setFaucet,
-  createAccount,
-  canFundFromFaucet,
-  fundFromFaucet,
-  newTestAccount,
-  newTestAccounts,
-  getNetworkTime,
-  waitUntilTime,
-  wait,
-  getNetworkSecs,
-  getTimeSecs,
-  waitUntilSecs,
-  verifyContract,
-  standardUnit,
-  atomicUnit,
-  parseCurrency,
-  minimumBalance,
-  formatCurrency,
-  formatAddress,
-  formatWithDecimals,
-  unsafeGetMnemonic,
-  launchToken,
-  reachStdlib,
-  setMinMillisBetweenRequests,
-  setCustomHttpEventHandler,
-  setSigningMonitor,
-} = ethLike;
-export const {
-  add, sub, mod, mul, div, band, bior, bxor, eq, ge, gt, le, lt,
-  add256, sub256, mod256, mul256, div256, band256, bior256, bxor256, eq256, ge256, gt256, le256, lt256, sqrt, sqrt256,
-  cast, muldiv,
-  protect, assert, Array_set,
-  bytesEq, digestEq, digest_xor, bytes_xor, btoiLast8
-} = reachStdlib;
-export * from './shared_user';
+export const load = (): Stdlib_User<Provider, ProviderEnv, ProviderName, Token, ContractInfo, Address, NetworkAccount, Ty, Backend, Account> => {
+  const ethers_: EthersLike = ethers;
+  const ethImpl_: EthLikeArgs<Provider, ProviderEnv, ProviderName> = ethImpl;
+  const ethLike = makeEthLike(ethImpl_);
+  const ETH_compiled_: EthLikeCompiled = ETH_compiled;
+
+  const connector = 'ETH';
+  return {
+    ...ethers_,
+    ...ethLike,
+    ...ethLike.reachStdlib,
+    ...shared_user,
+    ...ETH_compiled_,
+    connector,
+  };
+};

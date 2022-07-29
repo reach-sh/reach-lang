@@ -1,7 +1,7 @@
-export const connector = 'ALGO';
-
+import {
+  Stdlib_User,
+} from './interfaces';
 import algosdk from 'algosdk';
-export { default as algosdk } from 'algosdk';
 import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
@@ -94,19 +94,8 @@ import {
 import type { MapRefT, MaybeRep } from './shared_backend'; // =>
 import { window, process } from './shim';
 import { sha512_256 } from 'js-sha512';
-export const {
-  add, sub, mod, mul, div, band, bior, bxor, eq, ge, gt, le, lt,
-  add256, sub256, mod256, mul256, div256, band256, bior256, bxor256, eq256, ge256, gt256, le256, lt256, sqrt, sqrt256,
-  cast, muldiv,
-  protect, assert, Array_set,
-  bytesEq, digestEq, digest_xor, bytes_xor, btoiLast8
-} = stdlib;
-export * from './shared_user';
-import { setQueryLowerBound, getQueryLowerBound, handleFormat, formatWithDecimals } from './shared_impl';
-export { setQueryLowerBound, getQueryLowerBound, addressFromHex, formatWithDecimals };
-
-const [ setSigningMonitor, notifySend ] = makeSigningMonitor<unknown, RecvTxn>();
-export { setSigningMonitor };
+import * as shared_user from './shared_user';
+import * as shared_impl from './shared_impl';
 
 // Type Definitions
 type BigNumber = ethers.BigNumber;
@@ -157,6 +146,27 @@ export type NetworkAccount = {
   addr: Address,
   sk?: SecretKey
 };
+export type ProviderName = string;
+export interface Provider {
+  algod_bc: BaseHTTPClient,
+  indexer_bc: BaseHTTPClient,
+  algodClient: algosdk.Algodv2,
+  indexer: algosdk.Indexer,
+  nodeWriteOnly: boolean,
+  getDefaultAddress: () => Promise<Address>,
+  isIsolatedNetwork: boolean,
+  signAndPostTxns: (txns:WalletTransaction[], opts?: object) => Promise<unknown>,
+};
+export interface ProviderEnv {
+  ALGO_SERVER: string
+  ALGO_PORT: string
+  ALGO_TOKEN: string
+  ALGO_INDEXER_SERVER: string
+  ALGO_INDEXER_PORT: string
+  ALGO_INDEXER_TOKEN: string
+  REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
+  ALGO_NODE_WRITE_ONLY: string // preferably: 'yes' | 'no'
+};
 
 const reachBackendVersion = 17;
 const reachAlgoBackendVersion = 10;
@@ -185,6 +195,11 @@ export type Contract = IContract<ContractInfo, Address, Token, AnyALGO_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
 type SimRemote = ISimRemote<Token, ContractInfo>
 type SimTxn = ISimTxn<Token, ContractInfo>
+
+type VerifyResult = {
+  ApplicationID: BigNumber,
+  Deployer: Address,
+};
 type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
 type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
 type SetupEventArgs = ISetupEventArgs<ContractInfo, VerifyResult>;
@@ -326,9 +341,28 @@ type AlgodTxn = {
   'pool-error': string,
 };
 
+interface ALGOHacks {
+  signSendAndConfirm: any,
+  toWTxn: any,
+  algosdk: any,
+  getTxnParams: any,
+  MinTxnFee: any,
+  makeTransferTxn: any,
+  setFaucet: any,
+};
+interface ALGOStdlib extends Stdlib_User<Provider, ProviderEnv, ProviderName, Token, ContractInfo, Address, NetworkAccount, Ty, Backend, Account>, ALGOHacks {
+};
+export const load = (): ALGOStdlib => {
+
+const connector = 'ALGO';
+const reachStdlib = stdlib;
+const { setQueryLowerBound, getQueryLowerBound, formatWithDecimals, handleFormat } = shared_impl;
+
+const [ setSigningMonitor, notifySend ] = makeSigningMonitor<unknown, RecvTxn>();
+
 // module-wide config
 let customHttpEventHandler: (e: RHC.Event) => Promise<void> = async () => undefined;
-export function setCustomHttpEventHandler(h: (e: RHC.Event) => Promise<void>): void {
+function setCustomHttpEventHandler(h: (e: RHC.Event) => Promise<void>): void {
   customHttpEventHandler = h;
 }
 /**
@@ -337,7 +371,7 @@ export function setCustomHttpEventHandler(h: (e: RHC.Event) => Promise<void>): v
  *  Rate limiting is applied to all outgoing http requests, even if they are to different servers.
  */
 let minMillisBetweenRequests: number = 0;
-export function setMinMillisBetweenRequests(n: number): void {
+function setMinMillisBetweenRequests(n: number): void {
   minMillisBetweenRequests = n;
 }
 const reqLock = new Lock();
@@ -503,7 +537,7 @@ const doSignTxn = (ts:string, sk:SecretKey): string => {
   return doSignTxnToB64(decodeB64Txn(ts), sk);
 };
 
-export const signSendAndConfirm = async (
+const signSendAndConfirm = async (
   acc: NetworkAccount,
   txns: Array<WalletTransaction>,
 ): Promise<RecvTxn> => {
@@ -552,7 +586,7 @@ const encodeUnsignedTransaction = (t:Transaction): string => {
   return Buffer.from(algosdk.encodeUnsignedTransaction(t)).toString('base64');
 };
 
-export const toWTxn = (t:Transaction): WalletTransaction => {
+const toWTxn = (t:Transaction): WalletTransaction => {
   return {
     txn: encodeUnsignedTransaction(t),
     signers: [ txnFromAddress(t) ],
@@ -562,7 +596,7 @@ export const toWTxn = (t:Transaction): WalletTransaction => {
 // Backend
 const stdWait = () => Timeout.set(1000);
 
-export const getTxnParams = async (label: string): Promise<TxnParams> => {
+const getTxnParams = async (label: string): Promise<TxnParams> => {
   const dhead = `${label} fillTxn`;
   debug(dhead, `getting params`);
   const client = await getAlgodClient();
@@ -622,7 +656,7 @@ function must_be_supported(bin: Backend) {
 
 // Get these from stdlib
 // const MaxTxnLife = 1000;
-export const MinTxnFee = 1000;
+const MinTxnFee = 1000;
 const MaxAppTxnAccounts = 4;
 const MinBalance = 100000;
 const MaxAppProgramLen = 2048
@@ -685,10 +719,10 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0,
   }
 };
 
-export function getValidQueryWindow(): number|true {
+function getValidQueryWindow(): number|true {
   return true;
 }
-export function setValidQueryWindow(n: number|true): void {
+function setValidQueryWindow(n: number|true): void {
   if (typeof n === 'number') {
     throw Error(`Only setValidQueryWindow(true) is supported on Algorand`);
   }
@@ -767,11 +801,11 @@ const newEventQueue = (): EventQueue => {
   });
 };
 
-export const { addressEq, tokenEq, digest } = stdlib;
+const { addressEq, assert, gt, protect } = stdlib;
 
-export const { T_Null, T_Bool, T_UInt, T_UInt256, T_Tuple, T_Array, T_Contract, T_Object, T_Data, T_Bytes, T_Address, T_Digest, T_Struct, T_Token } = typeDefs;
+const { T_UInt, T_Tuple, T_Contract, T_Bytes, T_Address, T_Digest } = typeDefs;
 
-export const { randomUInt, hasRandom } = makeRandom(8);
+const { randomUInt, hasRandom } = makeRandom(8);
 
 async function waitIndexerFromEnv(env: ProviderEnv): Promise<[BaseHTTPClient, algosdk.Indexer]> {
   const { ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT, ALGO_INDEXER_TOKEN } = env;
@@ -791,16 +825,6 @@ async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<[BaseHTTPClient
   return [rhc, new algosdk.Algodv2(rhc)];
 }
 
-export interface Provider {
-  algod_bc: BaseHTTPClient,
-  indexer_bc: BaseHTTPClient,
-  algodClient: algosdk.Algodv2,
-  indexer: algosdk.Indexer,
-  nodeWriteOnly: boolean,
-  getDefaultAddress: () => Promise<Address>,
-  isIsolatedNetwork: boolean,
-  signAndPostTxns: (txns:WalletTransaction[], opts?: object) => Promise<unknown>,
-};
 
 const makeProviderByWallet = async (wallet:ARC11_Wallet, env: any): Promise<Provider> => {
   debug(`making provider with wallet`);
@@ -847,7 +871,7 @@ const makeProviderByWallet = async (wallet:ARC11_Wallet, env: any): Promise<Prov
   return { algod_bc, indexer_bc, indexer, algodClient, nodeWriteOnly, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
 };
 
-export const setWalletFallback = (wf:() => unknown) => {
+const setWalletFallback = (wf:() => unknown) => {
   if ( ! window.algorand ) { window.algorand = wf(); }
 };
 
@@ -987,7 +1011,7 @@ const walletFallback_WalletConnect = (WalletConnect:any, opts:object) => (): ARC
   const wc = new WalletConnect();
   return doWalletFallback_signOnly(opts, (() => wc.getAddr()), ((ts) => wc.signTxns(ts)));
 };
-export const walletFallback = (opts:any) => {
+const walletFallback = (opts:any) => {
   debug(`using wallet fallback with`, opts);
   const mac = opts.MyAlgoConnect;
   if ( mac ) {
@@ -1003,7 +1027,7 @@ export const walletFallback = (opts:any) => {
   return walletFallback_mnemonic(opts);
 };
 
-export const [getProvider, setProvider] = replaceableThunk(async () => {
+const [getProvider, setProvider] = replaceableThunk(async () => {
   if ( window.algorand ) {
     // @ts-ignore
     return await makeProviderByWallet(window.algorand, process.env);
@@ -1025,17 +1049,6 @@ const getIndexer = async () => {
 const nodeCanRead = async () => ((await getProvider()).nodeWriteOnly === false);
 const ensureNodeCanRead = async () =>
   assert(await nodeCanRead(), "node can read" );
-
-export interface ProviderEnv {
-  ALGO_SERVER: string
-  ALGO_PORT: string
-  ALGO_TOKEN: string
-  ALGO_INDEXER_SERVER: string
-  ALGO_INDEXER_PORT: string
-  ALGO_INDEXER_TOKEN: string
-  REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
-  ALGO_NODE_WRITE_ONLY: string // preferably: 'yes' | 'no'
-}
 
 const localhostProviderEnv: ProviderEnv = {
   ALGO_SERVER: 'http://localhost',
@@ -1084,7 +1097,7 @@ async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<Provider> {
   };
   return { algod_bc, indexer_bc, algodClient, indexer, nodeWriteOnly, isIsolatedNetwork, getDefaultAddress, signAndPostTxns };
 };
-export function setProviderByEnv(env: Partial<ProviderEnv>): void {
+function setProviderByEnv(env: Partial<ProviderEnv>): void {
   setProvider(makeProviderByEnv(env));
 };
 
@@ -1121,8 +1134,7 @@ function randlabsProviderEnv(net: string): ProviderEnv {
   }
 }
 
-export type ProviderName = string;
-export function providerEnvByName(pn: ProviderName): ProviderEnv {
+function providerEnvByName(pn: ProviderName): ProviderEnv {
   switch (pn) {
     case 'MainNet': return algonodeEnv('MainNet');
     case 'TestNet': return algonodeEnv('TestNet');
@@ -1138,13 +1150,13 @@ export function providerEnvByName(pn: ProviderName): ProviderEnv {
   }
 }
 
-export function setProviderByName(pn: ProviderName): void {
+function setProviderByName(pn: ProviderName): void {
   return setProviderByEnv(providerEnvByName(pn));
 }
 
 // eslint-disable-next-line max-len
 const rawFaucetDefaultMnemonic = 'guilt butter canyon devote inflict comfort lumber relief chat key fury absorb reject palm siege draw jelly lyrics melody palace use box joy ability result';
-export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
+const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
   const FAUCET = algosdk.mnemonicToSecretKey(
     envDefault(process.env.ALGO_FAUCET_PASSPHRASE, rawFaucetDefaultMnemonic),
   );
@@ -1156,7 +1168,7 @@ const NOTE_Reach_str = `Reach ${VERSION}`;
 const NOTE_Reach = str2note(NOTE_Reach_str);
 const NOTE_Reach_tag = (tag:number|undefined) => tag ? str2note(NOTE_Reach_str + ` ${tag})`) : NOTE_Reach;
 
-export const makeTransferTxn = (
+const makeTransferTxn = (
   from: Address,
   to: Address,
   value: BigNumber,
@@ -1178,7 +1190,7 @@ export const makeTransferTxn = (
   return txn;
 };
 
-export const transfer = async (
+const transfer = async (
   from: Account,
   to: Account,
   value: unknown,
@@ -1370,7 +1382,7 @@ const getDeletedApplicationInfoM = async (id: number): Promise<OrExn<AppInfo>> =
   }
 }
 
-export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
+const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   const thisAcc = networkAccount;
   let label = thisAcc.addr.substring(2, 6);
   const pks = T_Address.canonicalize(thisAcc);
@@ -2246,7 +2258,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   return stdAccount({ ...accObj, balanceOf: balanceOf_, balancesOf: balancesOf_ });
 };
 
-export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
+const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
   const ai = await getAccountInfo(acc);
   if ( ai.amount === BigInt(0) ) { return bigNumberify(0); }
   const createdAppCount = bigNumberify((ai['created-apps']??[]).length);
@@ -2352,20 +2364,20 @@ const balanceOfM = async (acc: Account, token: Token | null): Promise<BigNumber 
   }
 }
 
-export const balancesOf = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber>> => {
+const balancesOf = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber>> => {
   return (await balancesOfM(acc, tokens)).map(bal => bal == false ? bigNumberify(0) : bal);
 };
 
-export const balanceOf = async (acc: Account, token?: Token): Promise<BigNumber> => {
+const balanceOf = async (acc: Account, token?: Token): Promise<BigNumber> => {
   return (await balanceOfM(acc, token || null)) || bigNumberify(0);
 };
 
-export const createAccount = async (): Promise<Account> => {
+const createAccount = async (): Promise<Account> => {
   const networkAccount = algosdk.generateAccount();
   return await connectAccount(networkAccount);
 };
 
-export const canFundFromFaucet = async (): Promise<boolean> => {
+const canFundFromFaucet = async (): Promise<boolean> => {
   const faucet = await getFaucet();
   const dhead = 'canFundFromFaucet';
   debug(dhead, 'check genesis');
@@ -2382,26 +2394,26 @@ export const canFundFromFaucet = async (): Promise<boolean> => {
   return gt(fbal, 0);
 };
 
-export const fundFromFaucet = async (account: Account, value: unknown) => {
+const fundFromFaucet = async (account: Account, value: unknown) => {
   const faucet = await getFaucet();
   debug('fundFromFaucet');
   const tag = Math.round(Math.random() * (2 ** 32));
   await transfer(faucet, account, value, undefined, tag);
 };
 
-export const newTestAccount = async (startingBalance: unknown) => {
+const newTestAccount = async (startingBalance: unknown) => {
   const account = await createAccount();
   await fundFromFaucet(account, startingBalance);
   return account;
 };
 
-export const newTestAccounts = make_newTestAccounts(newTestAccount).parallel;
+const newTestAccounts = make_newTestAccounts(newTestAccount).parallel;
 
 /** @description the display name of the standard unit of currency for the network */
-export const standardUnit = 'ALGO';
+const standardUnit = 'ALGO';
 
 /** @description the display name of the atomic (smallest) unit of currency for the network */
-export const atomicUnit = 'μALGO';
+const atomicUnit = 'μALGO';
 
 /**
  * @description  Parse currency by network
@@ -2411,9 +2423,9 @@ export const atomicUnit = 'μALGO';
  * @example  parseCurrency(100).toString() // => '100000000'
  * @example  parseCurrency(100, 3).toString() // => '100000'
  */
-export const parseCurrency = makeParseCurrency(6);
+const parseCurrency = makeParseCurrency(6);
 
-export const minimumBalance: BigNumber =
+const minimumBalance: BigNumber =
   bigNumberify(MinBalance);
 
 const schemaMinBalancePerEntry: BigNumber = bigNumberify(SchemaMinBalancePerEntry)
@@ -2434,11 +2446,11 @@ const minimumBalance_app_create = (cns:any): BigNumber => {
 /**
  * @description  Format currency by network
  */
-export function formatCurrency(amt: unknown, decimals: number = 6): string {
+function formatCurrency(amt: unknown, decimals: number = 6): string {
   return handleFormat(amt, decimals, 6)
 }
 
-export async function getDefaultAccount(): Promise<Account> {
+async function getDefaultAccount(): Promise<Account> {
   const addr = await (await getProvider()).getDefaultAddress();
   return await connectAccount({ addr });
 }
@@ -2446,25 +2458,25 @@ export async function getDefaultAccount(): Promise<Account> {
 /**
  * @param mnemonic 25 words, space-separated
  */
-export const newAccountFromMnemonic = async (mnemonic: string): Promise<Account> => {
+const newAccountFromMnemonic = async (mnemonic: string): Promise<Account> => {
   return await connectAccount(algosdk.mnemonicToSecretKey(mnemonic));
 };
 
 /**
  * @param secret a Uint8Array, or its hex string representation
  */
-export const newAccountFromSecret = async (secret: string | SecretKey): Promise<Account> => {
+const newAccountFromSecret = async (secret: string | SecretKey): Promise<Account> => {
   const sk = ethers.utils.arrayify(secret);
   const mnemonic = algosdk.secretKeyToMnemonic(sk);
   return await newAccountFromMnemonic(mnemonic);
 };
 
-export const getNetworkTime = async (): Promise<BigNumber> => {
+const getNetworkTime = async (): Promise<BigNumber> => {
   const indexer = await getIndexer();
   const hc = await indexer.makeHealthCheck().do();
   return bigNumberify(hc['round']);
 };
-export const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
+const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
   const now = bigNumberToNumber(now_bn);
   try {
     await ensureNodeCanRead();
@@ -2480,7 +2492,7 @@ export const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
     return bigNumberify(info['timestamp']);
   }
 };
-export const getNetworkSecs = async (): Promise<BigNumber> =>
+const getNetworkSecs = async (): Promise<BigNumber> =>
   await getTimeSecs(await getNetworkTime());
 
 const stepTime = async (target: BigNumber): Promise<BigNumber> => {
@@ -2495,16 +2507,16 @@ const stepTime = async (target: BigNumber): Promise<BigNumber> => {
     }
   }
 };
-export const waitUntilTime = make_waitUntilX('time', getNetworkTime, stepTime);
+const waitUntilTime = make_waitUntilX('time', getNetworkTime, stepTime);
 
 const stepSecs = async (target: BigNumber): Promise<BigNumber> => {
   void(target);
   const now = await stepTime((await getNetworkTime()).add(1));
   return await getTimeSecs(now);
 };
-export const waitUntilSecs = make_waitUntilX('secs', getNetworkSecs, stepSecs);
+const waitUntilSecs = make_waitUntilX('secs', getNetworkSecs, stepSecs);
 
-export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
+const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const now = await getNetworkTime();
   return await waitUntilTime(now.add(delta), onProgress);
 };
@@ -2514,12 +2526,7 @@ const appLocalStateNumBytes = 0;
 const appGlobalStateNumUInt = 0;
 const appGlobalStateNumBytes = 1;
 
-type VerifyResult = {
-  ApplicationID: BigNumber,
-  Deployer: Address,
-};
-
-export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<VerifyResult> => {
+const verifyContract = async (info: ContractInfo, bin: Backend): Promise<VerifyResult> => {
   return verifyContract_('', info, bin, newEventQueue());
 }
 
@@ -2592,18 +2599,18 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
  * @param acc Account, NetworkAccount, base32-encoded address, or hex-encoded address
  * @returns the address formatted as a base32-encoded string with checksum
  */
-export function formatAddress(acc: string|NetworkAccount|Account): string {
+function formatAddress(acc: string|NetworkAccount|Account): string {
   return addressFromHex(T_Address.canonicalize(acc));
 }
 
-export function unsafeGetMnemonic(acc: NetworkAccount|Account): string {
+function unsafeGetMnemonic(acc: NetworkAccount|Account): string {
   // @ts-ignore
   const networkAccount: NetworkAccount = acc.networkAccount || acc;
   if (!networkAccount.sk) { throw Error(`unsafeGetMnemonic: Secret key not accessible for account`); }
   return algosdk.secretKeyToMnemonic(networkAccount.sk);
 }
 
-export const launchToken = async (accCreator: Account, name: string, sym: string, opts: LaunchTokenOpts = {}) => {
+const launchToken = async (accCreator: Account, name: string, sym: string, opts: LaunchTokenOpts = {}) => {
   const addrCreator = accCreator.networkAccount.addr;
   const supply = opts.supply ? bigNumberify(opts.supply) : bigNumberify(2).pow(64).sub(1);
   const decimals = opts.decimals ?? 6;
@@ -2649,4 +2656,28 @@ export const launchToken = async (accCreator: Account, name: string, sym: string
   return { name, sym, id, mint, optOut };
 }
 
-export const reachStdlib = stdlib;
+  return {
+    ...stdlib,
+    ...typeDefs,
+    ...shared_user,
+    ...({ setQueryLowerBound, getQueryLowerBound, addressFromHex, formatWithDecimals, setSigningMonitor }),
+    setCustomHttpEventHandler,
+    setMinMillisBetweenRequests,
+    signSendAndConfirm, toWTxn, getTxnParams, MinTxnFee, makeTransferTxn,
+    getValidQueryWindow, setValidQueryWindow,
+    randomUInt, hasRandom,
+    setWalletFallback, walletFallback,
+    getProvider, setProvider, setProviderByEnv, setProviderByName,
+    getFaucet, setFaucet, canFundFromFaucet, fundFromFaucet,
+    providerEnvByName,
+    transfer, connectAccount, minimumBalanceOf, balancesOf, balanceOf,
+    createAccount, newTestAccount, newTestAccounts, getDefaultAccount,
+    newAccountFromMnemonic, newAccountFromSecret,
+    getNetworkTime, getTimeSecs, getNetworkSecs,
+    waitUntilTime, waitUntilSecs, wait, verifyContract,
+    formatAddress, unsafeGetMnemonic, launchToken,
+    parseCurrency, minimumBalance, formatCurrency,
+    reachStdlib, algosdk,
+    connector, standardUnit, atomicUnit,
+  };
+};

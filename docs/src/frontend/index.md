@@ -63,6 +63,8 @@ const stdlib = loadStdlib(env);
 
 Returns the standard library based on the provided `{!js} env`.
 
+You may call this function multiple times and get completely separate standard libraries, with different (and incompatible!) configuration options.
+
 ---
 
 In environments where the Reach standard library has implicit access to `{!js} process.env`,
@@ -105,7 +107,7 @@ The first thing you should do in a frontend is decide if you need to specify a p
 
 If you are building a browser-based DApp, then you may need to set up a fallback for users that do not have a wallet.
 
-@{ref("js", "setWalletFallback")}
+@{ref("js", "stdlib.setWalletFallback")}
 ```js
 stdlib.setWalletFallback(make: () => wallet): void
 ```
@@ -118,7 +120,7 @@ On Conflux, it must match the interface of ConfluxPortal.
 On Algorand, it must match the [ARC-0011](https://github.com/algorandfoundation/ARCs/blob/main/ARCs/arc-0011.md) standard.
 
 ---
-@{ref("js", "walletFallback")}
+@{ref("js", "stdlib.walletFallback")}
 ```js
 stdlib.walletFallback(opts: object): () => wallet
 ```
@@ -155,7 +157,7 @@ Because these are fallbacks, you need to decide for your users which wallet they
 If you are not building a browser-based DApp, you may want to set the network provider by using a standard name or using environment variables:
 
 ---
-@{ref("js", "setProviderByName")}
+@{ref("js", "stdlib.setProviderByName")}
 ```js
 stdlib.setProviderByName(string) => void
 ```
@@ -195,7 +197,7 @@ range: 13-13
 ```
 
 ---
-@{ref("js", "providerEnvByName")}
+@{ref("js", "stdlib.providerEnvByName")}
 ```js
 stdlib.providerEnvByName(string) => env
 ```
@@ -203,7 +205,7 @@ stdlib.providerEnvByName(string) => env
 Retrieve configuration information about providers by name.
 
 ---
-@{ref("js", "setProviderByEnv")}
+@{ref("js", "stdlib.setProviderByEnv")}
 ```js
 stdlib.setProviderByEnv(env) => void
 ```
@@ -219,7 +221,7 @@ The environment object supports the same fields as `{!js} stdlib.loadStdlib`, wh
 Finally, Reach provides low-level access to defining a network provider.
 
 ---
-@{ref("js", "setProvider")}
+@{ref("js", "stdlib.setProvider")}
 ```js
 stdlib.setProvider(provider): void
 ```

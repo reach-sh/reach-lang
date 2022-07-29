@@ -8,6 +8,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{verRC("0.1.11")}
 
 + @{rcHead("0.1.11-rc6")}
++ 2022/07/29: Allow `{!js} loadStdlib` to be called multiple times to get separate standard library instances.
 + @{rcHead("0.1.11-rc5")}
 + 2022/07/22: Added support for `{!rsh} View` aliases.
 + 2022/07/22: Added `freeze`, `reserve`, and `defaultFrozen` options to `{!js} stdlib.launchToken`.
