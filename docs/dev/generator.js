@@ -653,6 +653,7 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     }
   }
   const mkEl = (s) => doc.createRange().createContextualFragment(s);
+  let numberOfCopyButtons = 0;
   for (const pre of doc.querySelectorAll('pre') ) {
     const code = pre.querySelector('code');
     if (!code) { continue; }
@@ -766,6 +767,12 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     cpEl.setAttribute("data-clipboard-text",
       splitRange(copyCode, (i, l) => `${l}\n`)[0].trimEnd());
     cpEl.href = "#";
+
+    // Set up tooltips on copy.
+    numberOfCopyButtons++;
+    cpEl.id = `copyBtn${numberOfCopyButtons}`;
+    cpEl.setAttribute('title', 'Copy to clipboard');
+
     chEl.appendChild(cpEl);
     pre.append(chEl);
     pre.append(mkEl(olStr));
