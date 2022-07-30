@@ -55,6 +55,8 @@ Reach uses the following environment variables:
 
 + `ALGO_TOKEN` is used as the API token for your `algod`.
   When left unspecified, this defaults to the token of the Reach devnet.
++ `ALGO_TOKEN_HEADER` is used as the HTTP header to share the API token.
+  When left unspecified, this defaults to `X-Algo-API-Token`.
 + `ALGO_SERVER` is used as the address of your `algod`.
   When left unspecified, this defaults to `http://localhost`.
 + `ALGO_PORT` is used as the port of your `algod`.
