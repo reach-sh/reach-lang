@@ -105,6 +105,19 @@ class App extends React.Component {
     this.appendMsg('Restoring WalletConnect');
   }
 
+  // Here we provide a network connection and use the default mnemonic signer
+  async useDefaultWallet() {
+    this.ensureStdlib();
+    // We grab the provider from before...
+    const provider = await stdlib.getProvider();
+    delete window.algorand;
+    stdlib = loadStdlib(process.env);
+    stdlib.setWalletFallback(reach.walletFallback({
+      // ...and use it again!
+      provider }));
+    this.appendMsg('Using default Wallet');
+  }
+
   render() {
     const { msgs } = this.state;
     const parent = this;
@@ -127,6 +140,8 @@ class App extends React.Component {
           >Save WalletConnect</button>
           <button onClick={() => parent.restoreWalletConnect()}
           >Restore WalletConnect</button>
+          <button onClick={() => parent.useDefaultWallet()}
+          >Use DefaultWallet</button>
         </p>
         <pre>{JSON.stringify(msgs, null, 2)}</pre>
       </div>

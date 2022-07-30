@@ -148,11 +148,13 @@ export type NetworkAccount = {
   sk?: SecretKey
 };
 export type ProviderName = string;
-export interface Provider {
+export interface BasicProvider {
   algod_bc: BaseHTTPClient,
   indexer_bc: BaseHTTPClient,
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
+}
+export interface Provider extends BasicProvider {
   nodeWriteOnly: boolean,
   getDefaultAddress: () => Promise<Address>,
   isIsolatedNetwork: boolean,
@@ -902,11 +904,13 @@ const checkAccounts = (addr: string, got?: string[]): void => {
 }
 
 const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns_:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
-  let p: Provider|undefined = undefined;
+  let p: BasicProvider|undefined = undefined;
   const base = opts['providerEnv'] || 'LocalHost';
   const _env = typeof base === 'string' ? providerEnvByName(base) : base;
   const enableNetwork = async (eopts?: EnableOpts): Promise<EnableNetworkResult> => {
-    p = await makeProviderByEnv(_env);
+    const op = opts.provider;
+    if ( op ) { p = (op as BasicProvider); }
+    else { p = await makeProviderByEnv(_env); }
     const { genesisID, genesisHash } = await p.algodClient.getTransactionParams().do();
     const ret = { genesisID, genesisHash };
     checkNetwork(ret, eopts);
@@ -931,8 +935,6 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     return p.indexer_bc;
   }
   const signTxns = async (txns:WalletTransaction[], sopts?:object) => {
-    // XXX arguably p isn't needed here
-    if ( !p ) { throw new Error(`must call enable`) };
     void(sopts);
     debug(`fallBack: signAndPostTxns`, {txns});
     const to_sign: string[] = [];
@@ -961,6 +963,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     return {}; // TODO
   }
   const signAndPostTxns = async (txns:WalletTransaction[], spopts?:object) => {
+    if ( !p ) { throw new Error(`must call enable`) };
     const stxns = await signTxns(txns, spopts);
     return await postTxns(stxns, spopts);
   };

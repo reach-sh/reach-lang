@@ -178,7 +178,13 @@ On Ethereum and Conflux, it always errors and cannot provide a wallet.
 
 On Algorand, it can provide a wallet that directly connects to the Algorand network, like `{!js} setProviderByName` (& `{!js} setProviderByEnv`), but provide interactive signing.
 The network connection is specified via the `providerEnv` key, which may be a string (which is used as an argument to `{!js} providerEnvByName`) or an environment (which is used as an argument to `{!js} setProviderByEnv`).
+Alternatively, a `{!js} BasicProvider` value can be provided with the key `provider` (see `{!js} stdlib.setProvider`'s documentation to understand the type of this value).
+
 By default, signing is via an interactive browser window prompt, where the user repeatedly provides their mnemonic.
+But, other fallbacks can be synthesized by providing special arguments in `opts`.
+
+
+---
 
 If the key `MyAlgoConnect` is provided, and bound to the `ALGO_MyAlgoConnect` export of `@reach-sh/stdlib`, then [MyAlgo](https://wallet.myalgo.com/home) will be used for signing.
 For example, this sets the wallet fallback to be MyAlgo used with Algorand TestNet:
@@ -187,6 +193,8 @@ import { ALGO_MyAlgoConnect as MyAlgoConnect } from '@reach-sh/stdlib';
 stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', MyAlgoConnect }));
 ```
+
+---
 
 If the key `WalletConnect` is provided, and bound to the `ALGO_WalletConnect` export of `@reach-sh/stdlib`, then [WalletConnect](https://walletconnect.com/) is used to connect to the [Algorand Wallet](https://algorandwallet.com/) for signing.
 For example, this sets the wallet fallback to be WalletConnect and the Algorand TestNet:
@@ -290,16 +298,22 @@ See: [https://docs.ethers.io/v5/api/providers/provider/](https://docs.ethers.io/
 
 On Algorand, `{!js} provider` is an object:
 ```js
-interface Provider {
+interface BasicProvider {
+  algod_bc: BaseHTTPClient,
+  indexer_bc: BaseHTTPClient,
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
+}
+interface Provider extends BasicProvider {
+  nodeWriteOnly: boolean,
   getDefaultAddress: () => Promise<Address>,
   isIsolatedNetwork: boolean,
-  signAndPostTxns: (txns:WalletTransaction[], opts?: any) => Promise<any>,
+  signAndPostTxns: (txns:WalletTransaction[], opts?: object) => Promise<unknown>,
 };
 ```
 
 The `{!js} algodClient` and `{!js} indexer` values are as specified by the [Algorand JS SDK](https://algorand.github.io/js-algorand-sdk/).
+The `{!js} algod_bc` and `{!js} indexer_bc` are objects that represent HTTP connections to those values.
 The `{!js} signAndPostTxns` function obeys [ARC-0008](https://github.com/reach-sh/ARCs/blob/reach-wallet/ARCs/arc-0008.md).
 
 Example:
