@@ -62,6 +62,9 @@ export type SignAndPostTxnsFunction = (
 export type GetAlgodv2ClientFunction = () => Promise<BaseHTTPClient>
 export type GetIndexerClientFunction = () => Promise<BaseHTTPClient>
 
+export type DisconnectFunction = (
+) => Promise<void>;
+
 export interface WindowAlgorand {
   enable: EnableFunction;
   enableNetwork?: EnableNetworkFunction;
@@ -71,6 +74,7 @@ export interface WindowAlgorand {
   signAndPostTxns: SignAndPostTxnsFunction;
   getAlgodv2Client: GetAlgodv2ClientFunction;
   getIndexerClient: GetIndexerClientFunction;
+  disconnect?: DisconnectFunction;
 };
 
 export type ARC11_Wallet = WindowAlgorand & {

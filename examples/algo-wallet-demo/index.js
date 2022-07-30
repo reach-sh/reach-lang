@@ -118,6 +118,13 @@ class App extends React.Component {
     this.appendMsg('Using default Wallet');
   }
 
+  // Here we disconnect the wallet (do this and new attach again to see the
+  // difference!)
+  async disconnectWallet() {
+    await window.algorand.disconnect();
+    this.appendMsg('Disconnected Wallet');
+  }
+
   render() {
     const { msgs } = this.state;
     const parent = this;
@@ -142,6 +149,8 @@ class App extends React.Component {
           >Restore WalletConnect</button>
           <button onClick={() => parent.useDefaultWallet()}
           >Use DefaultWallet</button>
+          <button onClick={() => parent.disconnectWallet()}
+          >Disconnect Wallet</button>
         </p>
         <pre>{JSON.stringify(msgs, null, 2)}</pre>
       </div>

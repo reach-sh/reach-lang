@@ -903,7 +903,7 @@ const checkAccounts = (addr: string, got?: string[]): void => {
   }
 }
 
-const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns_:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
+const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns_:(txns:string[]) => Promise<string[]>, disconnect_:() => Promise<void>): ARC11_Wallet => {
   let p: BasicProvider|undefined = undefined;
   const base = opts['providerEnv'] || 'LocalHost';
   const _env = typeof base === 'string' ? providerEnvByName(base) : base;
@@ -967,7 +967,10 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     const stxns = await signTxns(txns, spopts);
     return await postTxns(stxns, spopts);
   };
-  return { _env, enable, enableNetwork, enableAccounts, getAlgodv2Client, getIndexerClient, signTxns, postTxns, signAndPostTxns };
+  const disconnect = async () => {
+    return await disconnect_();
+  };
+  return { _env, enable, enableNetwork, enableAccounts, getAlgodv2Client, getIndexerClient, signTxns, postTxns, signAndPostTxns, disconnect };
 };
 const walletFallback_mnemonic = (opts:object) => (): ARC11_Wallet => {
   debug(`using mnemonic wallet fallback`);
@@ -983,7 +986,9 @@ const walletFallback_mnemonic = (opts:object) => (): ARC11_Wallet => {
       return doSignTxnToB64(t, acc.sk);
     });
   };
-  return doWalletFallback_signOnly(opts, getAddr, signTxns);
+  const disconnect = async () => {
+  };
+  return doWalletFallback_signOnly(opts, getAddr, signTxns, disconnect);
 };
 const walletFallback_MyAlgoWallet = (MyAlgoConnect: unknown, opts: object) => (): ARC11_Wallet => {
   debug(`using MyAlgoWallet wallet fallback`);
@@ -1011,13 +1016,16 @@ const walletFallback_MyAlgoWallet = (MyAlgoConnect: unknown, opts: object) => ()
     debug(`MAW signTransaction <-`, stxns);
     return stxns.map((sts) => Buffer.from(sts.blob).toString('base64'));
   };
-  return doWalletFallback_signOnly(opts, getAddr, signTxns);
+  const disconnect = async () => {
+  };
+  return doWalletFallback_signOnly(opts, getAddr, signTxns, disconnect);
 };
 interface ARC11_WalletWC extends ARC11_Wallet { wc: any };
 const walletFallback_WalletConnect = (WalletConnect:any, opts:any) => (): ARC11_WalletWC => {
   debug(`using WalletConnect wallet fallback`);
   const wc = (opts.WalletConnect_wc as any) || new WalletConnect();
-  const wallet = doWalletFallback_signOnly(opts, (() => wc.getAddr()), ((ts) => wc.signTxns(ts)));
+  const disconnect = (() => wc.disconnect());
+  const wallet = doWalletFallback_signOnly(opts, (() => wc.getAddr()), ((ts) => wc.signTxns(ts)), disconnect);
   return { ...wallet, wc };
 };
 const walletFallback = (opts:any) => {

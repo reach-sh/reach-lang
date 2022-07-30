@@ -30,6 +30,11 @@ export default class ALGO_WalletConnect {
     console.log(`AWC ensureWC`, {me});
   };
 
+  async disconnect() {
+    console.log(`AWC killSession`);
+    await this.wc.killSession();
+  }
+
   async ensureSession() {
     await this.ensureWC();
     if ( ! this.wc.connected ) {
