@@ -8,6 +8,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{verRC("0.1.11")}
 
 + @{rcHead("0.1.11-rc6")}
++ 2022/07/30: Upgraded React to 18.2.0.
 + 2022/07/30: Many more customization options were added to `{!js} stdlib.setWalletFallback`.
 + 2022/07/30: Added support for customize `ALGO_INDEXER_TOKEN_HEADER` in Algorand provider configuration.
 + 2022/07/30: Added support for customize `ALGO_TOKEN_HEADER` in Algorand provider configuration.
