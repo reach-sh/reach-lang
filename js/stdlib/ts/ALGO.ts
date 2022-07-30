@@ -830,7 +830,6 @@ async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<[BaseHTTPClient
   return [rhc, new algosdk.Algodv2(rhc)];
 }
 
-
 const makeProviderByWallet = async (wallet:ARC11_Wallet, env: any): Promise<Provider> => {
   debug(`making provider with wallet`);
   const defaults = { REACH_ISOLATED_NETWORK: 'no', ALGO_NODE_WRITE_ONLY: 'yes' }; // pessimistic
@@ -1011,10 +1010,12 @@ const walletFallback_MyAlgoWallet = (MyAlgoConnect: unknown, opts: object) => ()
   };
   return doWalletFallback_signOnly(opts, getAddr, signTxns);
 };
-const walletFallback_WalletConnect = (WalletConnect:any, opts:object) => (): ARC11_Wallet => {
+interface ARC11_WalletWC extends ARC11_Wallet { wc: any };
+const walletFallback_WalletConnect = (WalletConnect:any, opts:any) => (): ARC11_WalletWC => {
   debug(`using WalletConnect wallet fallback`);
-  const wc = new WalletConnect();
-  return doWalletFallback_signOnly(opts, (() => wc.getAddr()), ((ts) => wc.signTxns(ts)));
+  const wc = (opts.WalletConnect_wc as any) || new WalletConnect();
+  const wallet = doWalletFallback_signOnly(opts, (() => wc.getAddr()), ((ts) => wc.signTxns(ts)));
+  return { ...wallet, wc };
 };
 const walletFallback = (opts:any) => {
   debug(`using wallet fallback with`, opts);

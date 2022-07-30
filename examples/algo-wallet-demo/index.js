@@ -12,6 +12,7 @@ const providerEnv = 'TestNet';
 
 // We're going to modify this global variable a lot...
 let stdlib = undefined;
+let walletConnect_session = undefined;
 
 function renderDOM() {
   ReactDOM.render(
@@ -89,6 +90,21 @@ class App extends React.Component {
     this.appendMsg('Using WalletConnect');
   }
 
+  // Here we save and restore WalletConnect sessions
+  async saveWalletConnect() {
+    walletConnect_session = window.algorand.wc.wc;
+    this.appendMsg('Saving WalletConnect');
+  }
+  async restoreWalletConnect() {
+    delete window.algorand;
+    stdlib = loadStdlib(process.env);
+    const WalletConnect_wc = new WalletConnect(walletConnect_session);
+    stdlib.setWalletFallback(reach.walletFallback({
+      // ...we use a different fallback here:
+      providerEnv, WalletConnect, WalletConnect_wc }));
+    this.appendMsg('Restoring WalletConnect');
+  }
+
   render() {
     const { msgs } = this.state;
     const parent = this;
@@ -105,6 +121,12 @@ class App extends React.Component {
           >Attach Wallet</button>
           <button onClick={() => parent.queryAccount()}
           >Query Account</button>
+        </p>
+        <p>
+          <button onClick={() => parent.saveWalletConnect()}
+          >Save WalletConnect</button>
+          <button onClick={() => parent.restoreWalletConnect()}
+          >Restore WalletConnect</button>
         </p>
         <pre>{JSON.stringify(msgs, null, 2)}</pre>
       </div>

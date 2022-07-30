@@ -196,7 +196,16 @@ stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', WalletConnect }));
 ```
 
+This fallback exposes the underlying WalletConnect wrapper object as the `wc` property on the wallet.
+Furthermore, it supports using an existing WalletConnect wrapper object by providing the key `WalletConnect_wc` in the `{!js} stdlib.walletFallback` options object.
+
+---
+
 Because these are fallbacks, you need to decide for your users which wallet they'll use, or make a user interface element to let them select which wallet fallback to use.
+
+:::note
+Please refer to the [`algo-wallet-demo`](https://github.com/reach-sh/reach-lang/tree/master/examples/algo-wallet-demo) example to see a full walkthrough of using wallet fallbacks and all their options.
+:::
 
 ---
 

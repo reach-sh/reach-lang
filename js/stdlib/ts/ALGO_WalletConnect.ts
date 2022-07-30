@@ -6,9 +6,9 @@ export default class ALGO_WalletConnect {
   wc: any;
   connected: Signal;
 
-  constructor() {
+  constructor(wc:any = false) {
     console.log(`AWC ctor`);
-    this.wc = false;
+    this.wc = wc;
     this.connected = new Signal();
   }
 
