@@ -121,6 +121,11 @@ The value that `{!js} make` should return differs between connectors:
 
 ---
 
+:::note
+Please refer to the [`algo-wallet-demo`](https://github.com/reach-sh/reach-lang/tree/master/examples/algo-wallet-demo) example to see a full walkthrough of this discussion.
+:::
+
+
 Since this function installs a new value as the browser wallet, if you call `{!js} stdlib.setWalletFallback` twice, then the second is guaranteed to do nothing, _even if you are using different standard library instances_, because this modifies a global property of the browser.
 If you want to work around that, then you'd have to delete the property so that Reach cannot find a browser wallet on the second time.
 

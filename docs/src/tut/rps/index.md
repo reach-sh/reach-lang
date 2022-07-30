@@ -681,7 +681,7 @@ range: 27-41
 
 + Line 36 has `{!rsh} [1, 0]`, but should have `{!rsh} [2, 0]`.
 
-When we run `./reach compile (reachexlink rps-4-attack/index-bad.rsh)`, it gives details about the error:
+When we run `./reach compile rps-4-attack/index-bad.rsh`, it gives details about the error:
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
