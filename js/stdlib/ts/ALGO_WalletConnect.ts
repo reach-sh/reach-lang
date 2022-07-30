@@ -70,4 +70,4 @@ export default class ALGO_WalletConnect {
       throw e;
     }
   }
-};
+}

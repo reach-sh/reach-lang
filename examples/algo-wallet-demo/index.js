@@ -6,6 +6,7 @@ import { loadStdlib } from '@reach-sh/stdlib';
 // We are going to use all of the different Wallets in this program...
 import { ALGO_MyAlgoConnect as MyAlgoConnect } from '@reach-sh/stdlib';
 import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
+import { ALGO_PeraConnect as PeraConnect } from '@reach-sh/stdlib';
 
 // This program is intended to be used on the Algorand TestNet.
 const providerEnv = 'TestNet';
@@ -89,6 +90,15 @@ class App extends React.Component {
       providerEnv, WalletConnect }));
     this.appendMsg('Using WalletConnect');
   }
+  // This works the same, except...
+  async usePeraConnect() {
+    delete window.algorand;
+    stdlib = loadStdlib(process.env);
+    stdlib.setWalletFallback(reach.walletFallback({
+      // ...we use a different fallback here:
+      providerEnv, WalletConnect: PeraConnect }));
+    this.appendMsg('Using PeraConnect');
+  }
 
   // Here we save and restore WalletConnect sessions
   async saveWalletConnect() {
@@ -137,6 +147,8 @@ class App extends React.Component {
           >Use MyAlgo</button>
           <button onClick={() => parent.useWalletConnect()}
           >Use WalletConnect</button>
+          <button onClick={() => parent.usePeraConnect()}
+          >Use PeraConnect</button>
           <button onClick={() => parent.attachWallet()}
           >Attach Wallet</button>
           <button onClick={() => parent.queryAccount()}
