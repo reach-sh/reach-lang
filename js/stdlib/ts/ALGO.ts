@@ -1647,7 +1647,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
       const simTokenAccepted = async (sim_r:any, addr:any, tok:any): Promise<boolean> => {
         simTokenAccepted_(sim_r, addr, tok);
-        return await balanceOfMNonNet(addr, tok) !== false;
+        return (await balanceOfMNonNet(addr, tok)) !== false;
       };
 
       const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
