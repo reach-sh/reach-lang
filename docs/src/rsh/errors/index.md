@@ -798,26 +798,7 @@ while (true) {
 
 ## {#RE0033} RE0033
 
-@{ref("rsh", "async")}
-@{ref("rsh", "await")}
-@{ref("rsh", "break")}
-@{ref("rsh", "catch")}
-@{ref("rsh", "class")}
-@{ref("rsh", "debugger")}
-@{ref("rsh", "delete")}
-@{ref("rsh", "do")}
-@{ref("rsh", "enum")}
-@{ref("rsh", "extends")}
-@{ref("rsh", "for")}
-@{ref("rsh", "in")}
-@{ref("rsh", "instanceOf")}
-@{ref("rsh", "let")}
-@{ref("rsh", "of")}
-@{ref("rsh", "static")}
-@{ref("rsh", "throw")}
-@{ref("rsh", "try")}
-@{ref("rsh", "with")}
-@{ref("rsh", "yield")}
+@{ref("rsh", "async")}@{ref("rsh", "await")}@{ref("rsh", "break")}@{ref("rsh", "catch")}@{ref("rsh", "class")}@{ref("rsh", "debugger")}@{ref("rsh", "delete")}@{ref("rsh", "do")}@{ref("rsh", "enum")}@{ref("rsh", "extends")}@{ref("rsh", "for")}@{ref("rsh", "in")}@{ref("rsh", "instanceOf")}@{ref("rsh", "let")}@{ref("rsh", "of")}@{ref("rsh", "static")}@{ref("rsh", "throw")}@{ref("rsh", "try")}@{ref("rsh", "with")}@{ref("rsh", "yield")}
 
 This error indicates you are using an illegal JavaScript expression in Reach. Not all JavaScript
 expressions are valid Reach, as they are not applicable to the language.
