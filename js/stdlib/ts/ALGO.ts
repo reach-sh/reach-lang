@@ -165,11 +165,13 @@ export interface ProviderEnv {
   ALGO_TOKEN: string
   ALGO_INDEXER_SERVER: string
   ALGO_INDEXER_PORT: string
+  ALGO_INDEXER_TOKEN_HEADER: string
   ALGO_INDEXER_TOKEN: string
   REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
   ALGO_NODE_WRITE_ONLY: string // preferably: 'yes' | 'no'
 };
 const defaultALGO_TOKEN_HEADER = 'X-Algo-API-Token';
+const defaultALGO_INDEXER_TOKEN_HEADER = 'X-Indexer-API-Token';
 
 const reachBackendVersion = 18;
 const reachAlgoBackendVersion = 10;
@@ -811,10 +813,10 @@ const { T_UInt, T_Tuple, T_Contract, T_Bytes, T_Address, T_Digest } = typeDefs;
 const { randomUInt, hasRandom } = makeRandom(8);
 
 async function waitIndexerFromEnv(env: ProviderEnv): Promise<[BaseHTTPClient, algosdk.Indexer]> {
-  const { ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT, ALGO_INDEXER_TOKEN } = env;
+  const { ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT, ALGO_INDEXER_TOKEN, ALGO_INDEXER_TOKEN_HEADER } = env;
   await waitPort(ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
   const port = ALGO_INDEXER_PORT || undefined; // UTBC checks for undefined
-  const utbc = new UTBC.URLTokenBaseHTTPClient({'X-Indexer-API-Token': ALGO_INDEXER_TOKEN}, ALGO_INDEXER_SERVER, port);
+  const utbc = new UTBC.URLTokenBaseHTTPClient({[ALGO_INDEXER_TOKEN_HEADER]: ALGO_INDEXER_TOKEN}, ALGO_INDEXER_SERVER, port);
   const rhc = new RHC.ReachHTTPClient(utbc, 'indexer', httpEventHandler);
   return [rhc, new algosdk.Indexer(rhc)];
 }
@@ -1060,6 +1062,7 @@ const localhostProviderEnv: ProviderEnv = {
   ALGO_TOKEN: rawDefaultToken,
   ALGO_INDEXER_SERVER: 'http://localhost',
   ALGO_INDEXER_PORT: '8980',
+  ALGO_INDEXER_TOKEN_HEADER: defaultALGO_INDEXER_TOKEN_HEADER,
   ALGO_INDEXER_TOKEN: rawDefaultItoken,
   REACH_ISOLATED_NETWORK: 'yes',
   ALGO_NODE_WRITE_ONLY: 'no',
@@ -1069,7 +1072,7 @@ function envDefaultsALGO(env: Partial<ProviderEnv>): ProviderEnv {
   const denv = localhostProviderEnv;
   // @ts-ignore
   const ret: ProviderEnv = {};
-  for ( const f of ['ALGO_SERVER', 'ALGO_PORT', 'ALGO_TOKEN_HEADER', 'ALGO_TOKEN', 'ALGO_INDEXER_SERVER', 'ALGO_INDEXER_PORT', 'ALGO_INDEXER_TOKEN', 'REACH_ISOLATED_NETWORK', 'ALGO_NODE_WRITE_ONLY'] ) {
+  for ( const f of ['ALGO_SERVER', 'ALGO_PORT', 'ALGO_TOKEN_HEADER', 'ALGO_TOKEN', 'ALGO_INDEXER_SERVER', 'ALGO_INDEXER_PORT', 'ALGO_INDEXER_TOKEN_HEADER', 'ALGO_INDEXER_TOKEN', 'REACH_ISOLATED_NETWORK', 'ALGO_NODE_WRITE_ONLY'] ) {
     // @ts-ignore
     ret[f] = envDefault(env[f], denv[f]);
   }
@@ -1117,6 +1120,7 @@ function algonodeEnv(net: string): ProviderEnv {
     ALGO_TOKEN: ``,
     ALGO_INDEXER_SERVER: `${prefix}idx${suffix}`,
     ALGO_INDEXER_PORT: ``,
+    ALGO_INDEXER_TOKEN_HEADER: defaultALGO_INDEXER_TOKEN_HEADER,
     ALGO_INDEXER_TOKEN: ``,
     REACH_ISOLATED_NETWORK: 'no',
     ALGO_NODE_WRITE_ONLY: 'yes', // XXX no?
@@ -1134,6 +1138,7 @@ function randlabsProviderEnv(net: string): ProviderEnv {
     // TODO: update to just indexer.
     ALGO_INDEXER_SERVER: `https://algoindexer.${RANDLABS_BASE}`,
     ALGO_INDEXER_PORT: '',
+    ALGO_INDEXER_TOKEN_HEADER: defaultALGO_INDEXER_TOKEN_HEADER,
     ALGO_INDEXER_TOKEN: '',
     REACH_ISOLATED_NETWORK: 'no',
     ALGO_NODE_WRITE_ONLY: 'yes',

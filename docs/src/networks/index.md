@@ -55,7 +55,7 @@ Reach uses the following environment variables:
 
 + `ALGO_TOKEN` is used as the API token for your `algod`.
   When left unspecified, this defaults to the token of the Reach devnet.
-+ `ALGO_TOKEN_HEADER` is used as the HTTP header to share the API token.
++ `ALGO_TOKEN_HEADER` is used as the HTTP header to share the `algod` API token.
   When left unspecified, this defaults to `X-Algo-API-Token`.
 + `ALGO_SERVER` is used as the address of your `algod`.
   When left unspecified, this defaults to `http://localhost`.
@@ -63,6 +63,8 @@ Reach uses the following environment variables:
   When left unspecified, this defaults to `4180`.
 + `ALGO_INDEXER_TOKEN` is used as the API token for your `indexer`.
   When left unspecified, this defaults to the token of the Reach devnet.
++ `ALGO_INDEXER_TOKEN_HEADER` is used as the HTTP header to share the `indexer` API token.
+  When left unspecified, this defaults to `X-Indexer-API-Token`.
 + `ALGO_INDEXER_SERVER` is used as the address of your `indexer`.
   When left unspecified, this defaults to `http://localhost`.
 + `ALGO_INDEXER_PORT` is used as the port of your `indexer`.
