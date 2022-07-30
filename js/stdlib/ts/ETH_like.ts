@@ -1161,6 +1161,7 @@ function setCustomHttpEventHandler() {
 const ethLike = {
   ...ethLikeCompiled,
   ...providerLib,
+  ethers,
   doCall,
   getQueryLowerBound,
   setQueryLowerBound,
