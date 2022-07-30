@@ -536,7 +536,7 @@ This operation is useful for tracking a token that is received from an API call 
 ---
 
 `{!rsh} Token.accepted(acc, tok)`, where `{!rsh} acc` is an `{!rsh} Account` value and `{!rsh} tok` is a `{!rsh} Token` value, returns true if `{!rsh} acc` is ready to accept non-network tokens specified by `{!rsh} tok`, and false otherwise.
-This always returns true on some consensus networks, but should always be used to ensure your frontend is blockchain agnostic.
+This always returns true on some consensus networks, but could be useful on others where accounts need to explicitly agree to receive non-network tokens.
 
 ### Remote objects
 
