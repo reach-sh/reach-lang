@@ -13,6 +13,8 @@ goal \
   -n "devnet" \
   -t "network_template.json"
 
+goal account list -d "$NET_PRIMARY_NODE_DIR" > "${NET_DIR}"/accounts
+
 goal account list -d "$NET_PRIMARY_NODE_DIR" \
   | awk '{print $2}' > "$FAUCET_ADDRESS_FILE"
 

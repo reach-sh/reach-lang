@@ -331,7 +331,7 @@ minimumBalance_l :: DLLiteral
 minimumBalance_l = DLL_Int sb UI_Word algoMinimumBalance
 
 tealVersionPragma :: LT.Text
-tealVersionPragma = "#pragma version 6"
+tealVersionPragma = "#pragma version 7"
 
 -- Algo specific stuff
 
