@@ -47,7 +47,7 @@ jb () {
   jbi /js/stdlib
   jbi /js/runner
   #jbi /js/rpc-server
-  jbi /js/react-runner
+  #jbi /js/react-runner
   #jbi /js
 }
 
