@@ -5913,7 +5913,9 @@ doWhileLikeInitEval lhs rhs = do
         return $ (dv, da)
   helpm <- M.traverseWithKey help vars_env
   let unknown_var_env = M.map (\(dv, _) -> SLSSVal (srclocOf dv) Public (SLV_DLVar dv)) helpm
-  sco_env' <- sco_update unknown_var_env
+  -- We remove "this" afterwards because it is dangerous
+  let rm_this e = return $ M.delete "this" e
+  sco_env' <- sco_update_and_mod DisallowShadowing unknown_var_env rm_this
   let init_daem = M.fromList $ M.elems helpm
   let init_vars = M.map fst helpm
   init_dam <- compileArgExprMap init_daem

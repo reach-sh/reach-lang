@@ -170,6 +170,9 @@ if `{!rsh} COND_EXPR` is true, then the block executes,
 and if not, then the loop terminates and control transfers to the continuation of the while statement.
 The identifiers bound by `{!rsh} LHS` are bound within `{!rsh} DEFINE_BLOCK`, `{!rsh} INVARIANT_EXPR`, `{!rsh} COND_EXPR`, `{!rsh} BLOCK`, and the tail of the while statement.
 
+The identifier `{!rsh} this` is not bound within `{!rsh} DEFINE_BLOCK`, `{!rsh} INVARIANT_EXPR`, `{!rsh} COND_EXPR`, `{!rsh} BLOCK`, or after the `{!rsh} while`.
+This is because it will almost never mean what you think it means: you may think it means the actor, but it actually means the previous actor.
+
 :::note
 Read about finding [loop invariants](##guide-loop-invs) in the Reach guide.
 :::
@@ -303,6 +306,8 @@ The `{!rsh} .case` component may be repeated many times, just like in a `{!rsh} 
 
 The `{!rsh} .define` component may define bindings that reference the `{!rsh} LHS` values. These bindings are accessible
 from every component of the `{!rsh} parallelReduce` statement, except for the `{!rsh} INIT_EXPR`.
+
+Like a `{!rsh} while`, the `{!rsh} this` variable is not bound anywhere except for `{!rsh} INIT_EXPR`.
 
 #### `.timeRemaining`
 

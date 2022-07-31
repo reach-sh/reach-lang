@@ -1,0 +1,8 @@
+reachc: error[RP0012]: Unexpected token: DotToken
+
+  ./pr-define-this.rsh:10:5
+
+  10|     .invariant( balance() == 0 )
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RP0012
+

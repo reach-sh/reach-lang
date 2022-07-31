@@ -8,6 +8,12 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{verRC("0.1.11")}
 
 + @{rcHead("0.1.11-rc6")}
++ 2022/07/30: **Backwards Incompatible**: The `{!rsh} this` variable is removed from the scope inside `{!rsh} while` and `{!rsh} parallelReduce` syntax, except for the initialization expressions.
+
+  We consider backwards incompatible changes to be very serious and do not introduce them lightly.
+  In this case, we have observed too many programs containing major errors because they confuse `{!rsh} this`, which would refer to the _previous_ actor in these contexts with the _current_ actor.
+  This confusion creates scenarios where applications are incorrectly protected: either they are overly protected, by enforcing that an actor do two things in a row; or they are under protected, by allowing anyone to perform any action after the desired actor does something else first.
+  Given this danger, we are introducing this backwards incompatible change.
 + 2022/07/30: Added support for [PeraWallet Connect](https://github.com/perawallet/connect) as wallet fallback for Algorand.
 + 2022/07/30: Upgraded React to 18.2.0 in `{!cmd} reach react`.
 + 2022/07/30: Many more customization options were added to `{!js} stdlib.setWalletFallback`.

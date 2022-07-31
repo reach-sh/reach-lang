@@ -1,0 +1,11 @@
+reachc: error[RE0042]: Invalid unbound identifier in expression: this. Did you mean: ["is","Pos","abs","div","exit"]
+
+  ./while-cond-this.rsh:9:11:id ref
+
+  9|   while ( this == A ) {
+
+Trace:
+  in [unknown function] from (./while-cond-this.rsh:9:9:function exp) at (./while-cond-this.rsh:9:9:application)
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0042
+
