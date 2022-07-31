@@ -21,7 +21,7 @@ ENV SRC_PARENT ${GOPATH}/src/github.com/algorand
 ### ALGOD
 WORKDIR ${SRC_PARENT}
 # algod release
-ARG ALGO_VERSION=3.5.1-stable
+ARG ALGO_VERSION=3.8.1-stable
 RUN wget --quiet https://github.com/algorand/go-algorand/archive/refs/tags/v${ALGO_VERSION}.tar.gz && tar -xvf v${ALGO_VERSION}.tar.gz
 WORKDIR ${SRC_PARENT}/go-algorand-${ALGO_VERSION}
 RUN ./scripts/configure_dev-deps.sh
@@ -39,7 +39,7 @@ RUN make install
 ### INDEXER
 WORKDIR ${SRC_PARENT}
 # indexer release
-ARG INDEXER_VERSION=2.10.0
+ARG INDEXER_VERSION=2.13.0
 
 #RUN wget --quiet https://github.com/algorand/indexer/archive/refs/tags/${INDEXER_VERSION}.tar.gz && tar -xvf ${INDEXER_VERSION}.tar.gz
 #WORKDIR ${SRC_PARENT}/indexer-${INDEXER_VERSION}
@@ -79,6 +79,15 @@ FROM $ALPINE_IMAGE as generate
 COPY --from=build /go/bin/goal /go/bin/algod /go/bin/kmd /bin/
 COPY network_template.json .
 COPY generate.sh .
+
+ENV ALGORAND_NETWORK=algorand_network
+ENV ALGORAND_DATA=${ALGORAND_NETWORK}/Primary
+#COPY ${ALGORAND_NETWORK}/FAUCET.0.3000000.partkey ${ALGORAND_NETWORK}/
+COPY ${ALGORAND_NETWORK}/FAUCET.rootkey ${ALGORAND_NETWORK}/
+#COPY ${ALGORAND_NETWORK}/FAUCET.0.3000000.partkey ${ALGORAND_DATA}/devnet-v1/
+#COPY ${ALGORAND_NETWORK}/FAUCET.rootkey ${ALGORAND_DATA}/devnet-v1/
+#COPY ${ALGORAND_DATA}/kmd-v0.5/sqlite_wallets/ {ALGORAND_DATA}/sqlite_wallets/
+
 RUN ./generate.sh
 
 FROM scratch as ignore-generate-out
