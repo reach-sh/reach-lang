@@ -524,6 +524,9 @@
   "exit": {
     "CompletionItemKind": "Function"
   },
+  "explodingObject_set": {
+    "CompletionItemKind": "Function"
+  },
   "export": {
     "CompletionItemKind": "Keyword"
   },
