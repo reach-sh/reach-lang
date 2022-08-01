@@ -187,3 +187,8 @@ eitherGo e f =
 
 eitherP :: (Monad m) => (x -> Either a b) -> (b -> m c) -> x -> m (Either a c)
 eitherP p f e = eitherGo (p e) f
+
+replace :: Integral i => i -> a -> [a] -> [a]
+replace i v l = hd <> (v : tail tl)
+  where
+    (hd, tl) = splitAt (fromInteger $ toInteger i) l

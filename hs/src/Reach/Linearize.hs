@@ -491,21 +491,13 @@ df_com mkk back = \case
     info <- mkVar at "tokInfo" tokenInfoElemTy
     infos' <- mkVar at "tokInfos'" infoTy
     info' <- mkVar at "tokInfo'" tokenInfoElemTy
-    let uint = T_UInt UI_Word
-    bal <- mkVar at "tokBal" $ uint
-    supply <- mkVar at "tokSupply" $ uint
-    destroyed <- mkVar at "destroyed" $ T_Bool
-    let infoAt = DLE_TupleRef at (DLA_Var info)
+    let newValIndex = case meta of
+          TM_Balance -> 0
+          TM_Supply -> 1
+          TM_Destroyed -> 2
     let bs =
           [ asn info $ DLE_ArrayRef at infos idx
-          , asn bal $ infoAt 0
-          , asn supply $ infoAt 1
-          , asn destroyed $ infoAt 2
-          , asn info' $ DLE_LArg at $ DLLA_Tuple
-            [ if meta == TM_Balance   then newVal else DLA_Var bal
-            , if meta == TM_Supply    then newVal else DLA_Var supply
-            , if meta == TM_Destroyed then newVal else DLA_Var destroyed
-            ]
+          , asn info' $ DLE_TupleSet at (DLA_Var info) newValIndex newVal
           , asn infos' $ DLE_ArraySet at infos idx (DLA_Var info')
           ]
     let fs = DKC_FluidSet at FV_tokenInfos $ DLA_Var infos'
