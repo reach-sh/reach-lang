@@ -14,17 +14,15 @@ Verification failed:
 
   // Theorem Formalization
 
-  const tokInfos/77 = array(Tuple(UInt, UInt, Bool), [[0, 0, false ] ]);
+  const tokInfos/71 = array(Tuple(UInt, UInt, Bool), [[0, 0, false ] ]);
   //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
-  const tokInfo/99 = tokInfos/77[0];
-  //    ^ would be [0, 0, false ]
-  const tokInfos'/104 = Array.set(tokInfos/77, 0, [0, tokInfo/99[1], tokInfo/99[2] ] );
+  const tokInfos'/95 = Array.set(tokInfos/71, 0, Tuple.set(tokInfos/71[0], 0, 0 ) );
   //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
-  const tokInfo/109 = tokInfos'/104[0];
+  const tokInfo/100 = tokInfos'/95[0];
   //    ^ would be [0, 0, false ]
-  const v127 = 0 == Array.set(tokInfos'/104, 0, [(tokInfo/109[0] + 1), tokInfo/109[1], tokInfo/109[2] ] )[0][0];
+  const v115 = 0 == Array.set(tokInfos'/95, 0, Tuple.set(tokInfo/100, 0, (tokInfo/100[0] + 1) ) )[0][0];
   //    ^ would be false
-  assert(v127);
+  assert(v115);
 
   Verifying when NO participants are honest
 Checked 13 theorems; 2 failures (and 1 omitted repeats) :'(
