@@ -9,18 +9,18 @@ Verification failed:
 
   // Violation Witness
 
-  const .api23.dom/98 = protect<Tuple(Token)>("t".interact.in());
+  const .api23.dom/92 = protect<Tuple(Token)>("t".interact.in());
   //    ^ could = [Token!val!3 ]
   //      from: ./distinct_toks_api.rsh:13:3:application
-  const .api42.dom/120 = protect<Tuple(Token)>("t".interact.in());
+  const .api42.dom/111 = protect<Tuple(Token)>("t".interact.in());
   //    ^ could = [Token!val!3 ]
   //      from: ./distinct_toks_api.rsh:18:3:application
 
   // Theorem Formalization
 
-  const v141 = ((.api42.dom/120[0] == .api23.dom/98[0]) ? false : true);
+  const v129 = ((.api42.dom/111[0] == .api23.dom/92[0]) ? false : true);
   //    ^ would be false
-  require(v141);
+  require(v129);
 
   Verifying when NO participants are honest
 Checked 13 theorems; 1 failures :'(

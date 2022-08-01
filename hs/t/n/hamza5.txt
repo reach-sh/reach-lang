@@ -11,23 +11,23 @@ Verification failed:
 
   const UInt.max = 8856;
 
-  const tokenInfos/245 = <loop variable>;
+  const tokenInfos/212 = <loop variable>;
   //    ^ could = Array.const(Tuple(UInt, UInt, Bool), [8855, 8856, false ] )
   //      from: ./hamza5.rsh:31:3:while
 
   // Theorem Formalization
 
-  const tokInfo/266 = tokenInfos/245[0];
+  const tokInfo/233 = tokenInfos/212[0];
   //    ^ would be [8855, 8856, false ]
-  const v267 = tokInfo/266[0];
+  const v234 = tokInfo/233[0];
   //    ^ would be 8855
-  const tokInfos'/282 = Array.set(tokenInfos/245, 0, [(v267 - v267), tokInfo/266[1], tokInfo/266[2] ] );
+  const tokInfos'/246 = Array.set(tokenInfos/212, 0, Tuple.set(tokInfo/233, 0, (v234 - v234) ) );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 8856, false ] ] )
-  const tokInfo/283 = tokInfos'/282[0];
+  const tokInfo/247 = tokInfos'/246[0];
   //    ^ would be [0, 8856, false ]
-  const v300 = 0 == Array.set(tokInfos'/282, 0, [tokInfo/283[0], (tokInfo/283[1] - v267), tokInfo/283[2] ] )[0][1];
+  const v261 = 0 == Array.set(tokInfos'/246, 0, Tuple.set(tokInfo/247, 1, (tokInfo/247[1] - v234) ) )[0][1];
   //    ^ would be false
-  assert(v300);
+  assert(v261);
 
   Verifying when NO participants are honest
 Checked 27 theorems; 2 failures (and 1 omitted repeats) :'(
