@@ -538,6 +538,7 @@ type ReachCompilerErrorJSON = {
   ce_errorMessage: string;
   ce_offendingToken: string | null;
   ce_errorCode: string;
+  ce_stackTrace: string;
 }
 
 function findErrorLocations(compileErrors: string): ErrorLocation[] {
@@ -568,12 +569,23 @@ CallStack (from HasCallStack):
     const errorJson: ReachCompilerErrorJSON = JSON.parse(m[0].substring(7));
 
     //connection.console.log(`Tokens: ` + tokens);
-    const linePos = errorJson.ce_position[0] - 1;
-    const charPos = errorJson.ce_position[1] - 1;
+    let linePos = errorJson.ce_position[0] - 1;
+    let charPos = errorJson.ce_position[1] - 1;
     const suggestions = errorJson.ce_suggestions;
     const actualMessage = errorJson.ce_errorMessage;
     const offendingToken = errorJson.ce_offendingToken;
     const reachCompilerErrorCode = errorJson.ce_errorCode;
+    if (reachCompilerErrorCode === "RE0089") {
+      const { ce_stackTrace } = errorJson;
+      // Match "...at (/app/index.rsh:8:12:application)".
+      const regexp: RegExp = /index.rsh:(\d+):(\d+):.+$/;
+      const result = ce_stackTrace.match(regexp);
+      if (result) {
+        const [ _fullMatch, line, character ] = result;
+        linePos = parseInt(line, 10) - 1;
+        charPos = parseInt(character, 10) - 1;
+      }
+    }
 
     const start ={ line: linePos, character: charPos };
     const end = offendingToken ?
