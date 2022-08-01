@@ -13,7 +13,7 @@ For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#
 
 warning[RW0006]: This program uses network seconds, which are unreliable on most consensus networks. You should read the article about this warning to ensure that you understand the risks of building on them.
 
-  reach standard library:582:12:application
+  reach standard library:584:12:application
 
   
 
@@ -21,7 +21,7 @@ For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#
 
 warning[RW0006]: This program uses network seconds, which are unreliable on most consensus networks. You should read the article about this warning to ensure that you understand the risks of building on them.
 
-  reach standard library:582:12:application
+  reach standard library:584:12:application
 
   
 
