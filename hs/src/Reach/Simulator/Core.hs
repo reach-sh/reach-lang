@@ -545,14 +545,22 @@ instance Interp DLExpr where
     DLE_TupleRef _at dlarg n -> do
       arr <- vTuple <$> interp dlarg
       return $ saferIndex (fromIntegral n) arr
+    DLE_TupleSet _at tup_a index val_a -> do
+      tupVals <- vTuple <$> interp tup_a
+      val_v <- interp val_a
+      return $ V_Tuple $ replace index val_v tupVals
     DLE_ObjectRef _at dlarg str -> do
       v <- interp dlarg
       case v of
         V_Struct assocs -> do
-          return $ saferMaybe "DLE_ObjectRef: V_Struct" $ M.lookup str $ M.fromList assocs
+          return $ saferMaybe "DLE_ObjectRef: V_Struct" $ lookup str assocs
         V_Object vmap -> do
           return $ saferMaybe "DLE_ObjectRef: V_Object" $ M.lookup str vmap
         _ -> possible "DLE_ObjectRef: expected Object or Struct"
+    DLE_ObjectSet _at obj_a fieldName val_a -> do
+      objFields <- vObject <$> interp obj_a
+      val_v <- interp val_a
+      return $ V_Object $ M.insert fieldName val_v objFields
     DLE_Interact at slcxtframes slpart str dltype dlargs -> do
       let frame = maybeAt 0 slcxtframes
       let at' = case frame of
@@ -691,8 +699,6 @@ instance Interp DLExpr where
       setGlobal $ g {e_nctc = ctcId}
       -- XXX make an interact point with dr
       return $ V_Contract $ fromIntegral ctcId
-    DLE_ObjectSet {} -> undefined -- TODO
-    DLE_TupleSet {} -> undefined -- TODO
 
 instance Interp DLStmt where
   interp = \case

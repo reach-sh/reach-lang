@@ -3139,8 +3139,7 @@ evalPrim p sargs =
       let tupLen = length tupTypes
       when (index >= fromIntegral tupLen) $
         expect_ $ Err_Eval_RefOutOfBounds tupLen index
-      let (h, t) = splitAt (fromInteger index) tupTypes
-      let result_t = T_Tuple $ h ++ [val_t] ++ tail t
+      let result_t = T_Tuple $ replace index val_t tupTypes
       case tup_t == result_t of
         True -> do
           let dle = DLE_TupleSet at tup_a index val_a
@@ -3180,17 +3179,20 @@ evalPrim p sargs =
       (obj_v, field_v, val_v) <- three_args
       (obj_t, obj_a) <- compileTypeOf obj_v
       (val_t, val_a) <- compileTypeOf val_v
-      fieldName <- bunpack <$> mustBeBytes field_v
+      fieldName <- mustBeBytes field_v
+      let fieldName' = bunpack fieldName
       let objFields = M.fromList $ objstrTypes obj_t
-      let result_t = T_Object $ M.insert fieldName val_t objFields
+      let result_t = T_Object $ M.insert fieldName' val_t objFields
       -- DLE_ObjectSet only applies when updating an existing field,
       -- not when adding a new field or changing a field's type
       case obj_t == result_t of
         True -> do
-          let dle = DLE_ObjectSet at obj_a fieldName val_a
+          let dle = DLE_ObjectSet at obj_a fieldName' val_a
           dlv <- ctxt_lift_expr (DLVar at Nothing obj_t) dle
           return (lvl, SLV_DLVar dlv)
-        False -> undefined -- no idea what parts of this module would pertain to this
+        False -> do
+          explodeObject_set <- lookStdlib "explodeObject_set"
+          evalApplyVals' explodeObject_set (map (lvl,) [obj_v, SLV_Bytes at fieldName, val_v])
     SLPrim_makeEnum -> do
       at' <- withAt $ srcloc_at "makeEnum" Nothing
       case map snd sargs of
