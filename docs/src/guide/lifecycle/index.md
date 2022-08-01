@@ -182,3 +182,8 @@ Use the opportunity for PR to create buzz about the product. Proper timing for r
 * Apply a password to the UI for internal `testnet` testing
 * Prefer testing with `testnet` rather than `mainnet` unless there's a compelling counter argument
 * Perform a release to staging aimed at `mainnet` and user test before pushing to production
+
+Slow is smooth. Smooth is fast. 
+Taking time to identify the key goals and requirements of the DApp will inform what to test for and create an efficient development experience of the back and frontends. 
+In turn, auditors will be able to more easily understand a highly structured application which will allow you to move to user testing and production in faster time. 
+Join our [Discord](@{DISCORD}) for access to personalized help and guidance.
