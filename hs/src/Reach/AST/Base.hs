@@ -171,24 +171,26 @@ data CompilationError = CompilationError
   , ce_position :: [Int]
   , ce_offendingToken :: Maybe String
   , ce_errorCode :: String
+  , ce_stackTrace :: String
   }
   deriving (Show, Generic, ToJSON, FromJSON)
 
-makeCompilationError :: (ErrorSuggestions a, ErrorMessageForJson a, Show a, HasErrorCode a) => SrcLoc -> a -> CompilationError
-makeCompilationError src err =
+makeCompilationError :: (ErrorSuggestions a, ErrorMessageForJson a, Show a, HasErrorCode a) => SrcLoc -> a -> [String] -> CompilationError
+makeCompilationError src err stackTrace =
   CompilationError
     { ce_suggestions = snd $ errorSuggestions err
     , ce_offendingToken = fst $ errorSuggestions err
     , ce_errorMessage = errorMessageForJson err
     , ce_position = srcloc_line_col src
     , ce_errorCode = makeErrCode (errPrefix err) (errIndex err)
+    , ce_stackTrace = unwords stackTrace
     }
 
 encodeJSONString :: ToJSON a => a -> String
 encodeJSONString = map w2c . LB.unpack . encode
 
-makeErrorJson :: (ErrorSuggestions a, ErrorMessageForJson a, Show a, HasErrorCode a) => SrcLoc -> a -> String
-makeErrorJson src err = encodeJSONString $ makeCompilationError src err
+makeErrorJson :: (ErrorSuggestions a, ErrorMessageForJson a, Show a, HasErrorCode a) => SrcLoc -> a -> [String] -> String
+makeErrorJson src err stackTrace = encodeJSONString $ makeCompilationError src err stackTrace
 
 data CompileErrorException = CompileErrorException
   { cee_error :: CompilationError
@@ -214,8 +216,9 @@ instance FromJSON CompileErrorException where
 expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src err = throw CompileErrorException {..}
   where
+    cee_stackTrace = topOfStackTrace $ concat mCtx
     cee_pretty = getErrorMessage mCtx src False err ++ "\n" ++ prettyCallStack callStack
-    cee_error = makeCompilationError src err
+    cee_error = makeCompilationError src err cee_stackTrace
 
 expect_thrown :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => SrcLoc -> a -> b
 expect_thrown = expect_throw Nothing

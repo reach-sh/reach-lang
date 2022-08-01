@@ -665,10 +665,12 @@ display_fail tat f tk mmsg mrd mdv timeout = do
             []
             (M.toList pm_str_val)
       putLine $ show $ showTrace pm_dv_val smtTrace
+  let stackMsgs = map getStackTraceMessage f
+  let stackTraceTop = if length stackMsgs > 10 then take 10 stackMsgs <> ["  ..."] else stackMsgs
   liftIO $ do
     finishedMessage <- readIORef messageRef
     case unsafeIsErrorFormatJson of
-      True -> hPutStrLn stderr $ "error: " ++ makeErrorJson tat (SMTError finishedMessage)
+      True -> hPutStrLn stderr $ "error: " ++ makeErrorJson tat (SMTError finishedMessage) stackTraceTop
       False -> putStr finishedMessage
     when vo_first_fail_quit $
       exitWith $ ExitFailure 1
