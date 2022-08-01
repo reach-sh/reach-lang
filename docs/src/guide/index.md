@@ -25,4 +25,5 @@ The following guides are available:
 + @{seclink("guide-packages")}
 + @{seclink("guide-reach")}
 + @{seclink("guide-limits")}
++ @{seclink("guide-lifecycle")}
 + @{seclink("guide-roadmap")}
