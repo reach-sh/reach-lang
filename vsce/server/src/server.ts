@@ -496,6 +496,10 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
         href
       }
     };
+    connection.console.info('New Diagnostic object has range');
+    connection.console.info(JSON.stringify(diagnostic.range));
+    connection.console.log('');
+
     if (hasDiagnosticRelatedInformationCapability) {
       diagnostic.relatedInformation = [
         {
@@ -558,6 +562,9 @@ CallStack (from HasCallStack):
     connection.console.log(`Found pattern: ${m}`);
 
     // ERROR MESSAGE m: error: <json>
+    console.info();
+    console.info('Compilation errors string:');
+    console.info(compileErrors);
     const errorJson: ReachCompilerErrorJSON = JSON.parse(m[0].substring(7));
 
     //connection.console.log(`Tokens: ` + tokens);
@@ -586,12 +593,19 @@ CallStack (from HasCallStack):
       end.character   -= offendingToken!.length;
     }
 
+    connection.console.info('Error starts at');
+    connection.console.info(JSON.stringify(start));
+    connection.console.info('Error ends at');
+    connection.console.info(JSON.stringify(end));
+
     let location: ErrorLocation = {
       code: reachCompilerErrorCode,
       range: { start: start, end: end },
       errorMessage: actualMessage,
       suggestions: suggestions
     };
+    connection.console.info('Location is');
+    connection.console.info(JSON.stringify(location));
 
     locations.push(location);
   }
