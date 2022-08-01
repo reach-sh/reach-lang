@@ -3191,8 +3191,8 @@ evalPrim p sargs =
           dlv <- ctxt_lift_expr (DLVar at Nothing obj_t) dle
           return (lvl, SLV_DLVar dlv)
         False -> do
-          explodeObject_set <- lookStdlib "explodeObject_set"
-          evalApplyVals' explodeObject_set (map (lvl,) [obj_v, SLV_Bytes at fieldName, val_v])
+          explodingObject_set <- lookStdlib "explodingObject_set"
+          evalApplyVals' explodingObject_set (map (lvl,) [obj_v, SLV_Bytes at fieldName, val_v])
     SLPrim_makeEnum -> do
       at' <- withAt $ srcloc_at "makeEnum" Nothing
       case map snd sargs of
