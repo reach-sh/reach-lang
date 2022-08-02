@@ -496,6 +496,10 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
         href
       }
     };
+    connection.console.info('New Diagnostic object has range');
+    connection.console.info(JSON.stringify(diagnostic.range));
+    connection.console.log('');
+
     if (hasDiagnosticRelatedInformationCapability) {
       diagnostic.relatedInformation = [
         {
@@ -534,6 +538,7 @@ type ReachCompilerErrorJSON = {
   ce_errorMessage: string;
   ce_offendingToken: string | null;
   ce_errorCode: string;
+  ce_stackTrace: string;
 }
 
 function findErrorLocations(compileErrors: string): ErrorLocation[] {
@@ -558,15 +563,29 @@ CallStack (from HasCallStack):
     connection.console.log(`Found pattern: ${m}`);
 
     // ERROR MESSAGE m: error: <json>
+    console.info();
+    console.info('Compilation errors string:');
+    console.info(compileErrors);
     const errorJson: ReachCompilerErrorJSON = JSON.parse(m[0].substring(7));
 
     //connection.console.log(`Tokens: ` + tokens);
-    const linePos = errorJson.ce_position[0] - 1;
-    const charPos = errorJson.ce_position[1] - 1;
+    let linePos = errorJson.ce_position[0] - 1;
+    let charPos = errorJson.ce_position[1] - 1;
     const suggestions = errorJson.ce_suggestions;
     const actualMessage = errorJson.ce_errorMessage;
     const offendingToken = errorJson.ce_offendingToken;
     const reachCompilerErrorCode = errorJson.ce_errorCode;
+    if (reachCompilerErrorCode === "RE0089") {
+      const { ce_stackTrace } = errorJson;
+      // Match "...at (/app/index.rsh:8:12:application)".
+      const regexp: RegExp = /index.rsh:(\d+):(\d+):.+$/;
+      const result = ce_stackTrace.match(regexp);
+      if (result) {
+        const [ _fullMatch, line, character ] = result;
+        linePos = parseInt(line, 10) - 1;
+        charPos = parseInt(character, 10) - 1;
+      }
+    }
 
     const start ={ line: linePos, character: charPos };
     const end = offendingToken ?
@@ -586,12 +605,19 @@ CallStack (from HasCallStack):
       end.character   -= offendingToken!.length;
     }
 
+    connection.console.info('Error starts at');
+    connection.console.info(JSON.stringify(start));
+    connection.console.info('Error ends at');
+    connection.console.info(JSON.stringify(end));
+
     let location: ErrorLocation = {
       code: reachCompilerErrorCode,
       range: { start: start, end: end },
       errorMessage: actualMessage,
       suggestions: suggestions
     };
+    connection.console.info('Location is');
+    connection.console.info(JSON.stringify(location));
 
     locations.push(location);
   }
