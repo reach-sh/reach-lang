@@ -2032,6 +2032,7 @@ ce = \case
     let tupLen = typeSizeOf tup_t
     ca tup_a
     ca val_a
+    ctobs $ argTypeOf val_a
     csplice at valStart (valStart + valLen) tupLen
   DLE_ObjectRef _at oa f -> do
     let fts = argObjstrTypes oa
@@ -2048,6 +2049,7 @@ ce = \case
     let objLen = typeSizeOf obj_t
     ca obj_a
     ca val_a
+    ctobs $ argTypeOf val_a
     csplice at valStart (valStart + valLen) objLen
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> cdigest $ map go args
