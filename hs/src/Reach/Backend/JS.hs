@@ -407,11 +407,7 @@ jsExpr = \case
   DLE_TupleSet _ t i v -> do
     t' <- jsArg t
     v' <- jsArg v
-    let i' = jsNum i
-    let slice = t' <> ".slice"
-    let hd = "..." <> jsApply slice [jsNum 0, i']
-    let tl = "..." <> jsApply slice [i']
-    return $ jsArray [hd, v', tl]
+    return $ jsApply "stdlib.Array_set" [t', jsNum i, v']
   DLE_ObjectRef _ oa f -> do
     oa' <- jsArg oa
     return $ oa' <> "." <> pretty f
