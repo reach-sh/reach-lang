@@ -15,7 +15,7 @@ def get_unit():
   unit = sys.argv[1]
   if (unit not in units and unit != 'all'):
     fail_usage()
-  return unit 
+  return unit
 
 def get_id(row: any) -> str:
   return row['userId']['S']
@@ -40,7 +40,7 @@ def get_k(row: any, unit: str) -> str:
   if unit == 'day':
     return f"{d.year}-{zpad(d.month)}-{zpad(d.day)}"
   if unit == 'week':
-    return f"{d.year}-week{zpad(i.week)}"
+    return f"{i.year}-week{zpad(i.week)}"
   raise RuntimeError(f"Unexpected unit: {unit}")
 
 def group_per_unit(rows: list, unit: str) -> dict:
