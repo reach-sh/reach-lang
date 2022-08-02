@@ -12,7 +12,7 @@ export const main = Reach.App(() => {
   commit();
 
   A.publish()
-  const t2 = Tuple.set(t1, 1, 123);
+  const t2 = Tuple.set(t1, 1, n);
   E.put(t2);
   commit();
 });
