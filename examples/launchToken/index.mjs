@@ -20,18 +20,19 @@ if (isAlgo) {
   // gh #1270
   const bals_i = await accA.balancesOf([ parseInt(`${gil.id}`) ]);
   stdlib.assert(bals[0].eq(bals_i[0]));
-  // give indexer up to 5s to catch up
+  // give indexer time to catch up
   const start = (new Date()).valueOf();
   let delta = 0;
   let m = null;
-  while ((delta = (new Date()).valueOf() - start) < 5000) {
+  let e = null;
+  while ((delta = (new Date()).valueOf() - start) < 60000) {
     try {
       m = await accA.tokenMetadata(gil.id);
       console.log(`waited an extra ${delta}ms to get token metadata`);
       break;
-    } catch (e) { continue; }
+    } catch (err) { e = err; continue; }
   }
-  if (!m) { throw Error('Failed to fetch metadata'); }
+  if (!m) { console.error('Failed to fetch metadata'); throw e; }
   for (const k in accOpts) {
     stdlib.assert(stdlib.addressEq(m[k], accOpts[k]));
   };
