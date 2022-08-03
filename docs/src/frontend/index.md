@@ -667,8 +667,9 @@ Returns a Promise that returns if an account may accept a given token.
 This does nothing on some consensus networks, but should always be used to ensure your frontend is blockchain agnostic.
 
 ---
-@{ref("js", "acc.tokensAccepted")}
+@{ref("js", "acc.tokensAccepted")}@{ref("js", "stdlib.tokensAccepted")}
 ```js
+stdlib.tokensAccepted(acc) => Promise<Array<Token>>
 acc.tokensAccepted() => Promise<Array<Token>>
 ```
 
