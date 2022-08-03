@@ -3831,11 +3831,11 @@ evalPrim p sargs =
           return (lvl, SLV_DLVar eq)
       where
         tagMapsEqual actual given = case nameDiff actual given of
-          [] -> case nameDiff actual given of
+          [] -> case nameDiff given actual of
             [] -> return ()
             extras -> expect_ $ Err_Switch_ExtraCases extras
           missing -> expect_ $ Err_Switch_MissingCases missing
-        nameDiff a g = map fst $ M.toAscList $ M.difference a g
+        nameDiff x y = map fst $ M.toAscList $ M.difference x y
     SLPrim_fromSome -> do
       (mv, dv) <- two_args
       at <- withAt id
