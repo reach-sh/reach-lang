@@ -2697,6 +2697,8 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
   return { name, sym, id, mint, optOut };
 }
 
+const tokensAccepted = (acc: Account): Promise<Array<Token>> => acc.tokensAccepted();
+
   return {
     ...stdlib,
     ...typeDefs,
@@ -2720,5 +2722,6 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
     parseCurrency, minimumBalance, formatCurrency,
     reachStdlib, algosdk,
     connector, standardUnit, atomicUnit,
+    tokensAccepted,
   };
 };
