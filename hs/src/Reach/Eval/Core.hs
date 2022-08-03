@@ -624,7 +624,7 @@ base_env_slvals =
   , ("call", SLV_Form $ SLForm_apiCall)
   , (".setApiDetails", SLV_Form $ SLForm_setApiDetails)
   , ("getUntrackedFunds", SLV_Prim $ SLPrim_getUntrackedFunds)
-  , ("_dataTag", SLV_Prim $ SLPrim_DataTag)
+  , ("isDataVariant", SLV_Prim $ SLPrim_isDataVariant)
   , ("fromSome", SLV_Prim $ SLPrim_fromSome)
   , ("distinct", SLV_Prim $ SLPrim_distinct)
   , ( "Reach"
@@ -3799,19 +3799,43 @@ evalPrim p sargs =
       dv <- ctxt_lift_expr mdv $ DLE_PrimOp at (ADD UI_Word) [DLA_Var untrackedFunds, trackedBal]
       setBalance TM_Balance mtok (DLA_Var dv)
       return (lvl, SLV_DLVar untrackedFunds)
-    SLPrim_DataTag -> do
-      v <- one_arg
+    SLPrim_isDataVariant -> do
       at <- withAt id
-      case v of
+      (nameB, variantTuple, inst) <- three_args
+      nameB' <- mustBeBytes nameB
+      let name = bunpack nameB'
+      variants <- mustBeTuple variantTuple
+      variantNamesB <- mapM mustBeBytes variants
+      let variantNames = map bunpack variantNamesB
+      let givenTags = dataTagMap $ T_Data $ M.fromList $ zip variantNames
+           $ map (const T_Bool) variantNames
+      let tagNumM = givenTags M.!? name
+      tagNum <- case tagNumM of
+        Just x -> return x
+        Nothing -> expect_ $ Err_Switch_MissingCases [name]
+      let tagNumArg = DLA_Literal $ DLL_Int at UI_Word tagNum
+      case inst of
         SLV_Data _ dmap vn _ -> do
           let tm = dataTagMap $ T_Data dmap
+          _ <- tagMapsEqual tm givenTags
           let i = fromMaybe (impossible "SLV_Data missing key") $ tm M.!? vn
-          return (lvl, SLV_Int at (Just UI_Word) i)
+          return (lvl, SLV_Bool at (i == tagNum))
         _ -> do
-          (t, a) <- compileTypeOf v
+          (t, a) <- compileTypeOf inst
           _ <- mustBeDataTy Err_Switch_NotData t
-          result <- ctxt_lift_expr (DLVar at Nothing (T_UInt UI_Word)) $ DLE_DataTag at a
-          return (lvl, SLV_DLVar result)
+          let tm = dataTagMap $ t
+          _ <- tagMapsEqual tm givenTags
+          act <- ctxt_lift_expr (DLVar at Nothing (T_UInt UI_Word)) $ DLE_DataTag at a
+          eq <- ctxt_lift_expr (DLVar at Nothing T_Bool)
+            $ DLE_PrimOp at (PEQ UI_Word) [DLA_Var act, tagNumArg]
+          return (lvl, SLV_DLVar eq)
+      where
+        tagMapsEqual actual given = case nameDiff actual given of
+          [] -> case nameDiff actual given of
+            [] -> return ()
+            extras -> expect_ $ Err_Switch_ExtraCases extras
+          missing -> expect_ $ Err_Switch_MissingCases missing
+        nameDiff a g = map fst $ M.toAscList $ M.difference a g
     SLPrim_fromSome -> do
       (mv, dv) <- two_args
       at <- withAt id
