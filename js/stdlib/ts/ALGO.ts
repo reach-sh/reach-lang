@@ -2252,7 +2252,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     } else {
       const indexer = await getIndexer();
       const query = indexer.lookupAccountAssets(addr) as unknown as ApiCall<IndexerAccountAssetsRes>;
-      assetHoldings = (await doQuery_('balancesOfM', query))['assets'];
+      assetHoldings = (await doQuery_('tokensAccepted', query))['assets'];
     }
     return assetHoldings.map(ah => bigNumberify(ah["asset-id"]));
   }
