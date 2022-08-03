@@ -1,0 +1,8 @@
+reachc: error[RE0074]: Switch missing cases: ["B"]
+
+  ./isDataVariant_staticMissingCase.rsh:12:29:application
+
+  12|   const isDV = isDataVariant("A", ["A"], x);
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0074
+

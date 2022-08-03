@@ -1,4 +1,4 @@
-reachc: error[RE0000]: Invalid function application. Expected 1 args, got 2 for function defined at reach standard library:326:27:function exp
+reachc: error[RE0000]: Invalid function application. Expected 1 args, got 2 for function defined at reach standard library:321:27:function exp
 
   ./fxsqrt.rsh:10:30:application
 

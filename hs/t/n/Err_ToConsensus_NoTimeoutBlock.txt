@@ -8,12 +8,12 @@ For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#
 
 reachc: error[RE0027]: Cannot inspect consensus time until after first publication
 
-  reach standard library:585:31:application
+  reach standard library:580:31:application
 
   
 
 Trace:
-  in "relativeTime" from (reach standard library:581:71:function exp) at (./Err_ToConsensus_NoTimeoutBlock.rsh:8:23:application)
+  in "relativeTime" from (reach standard library:576:71:function exp) at (./Err_ToConsensus_NoTimeoutBlock.rsh:8:23:application)
 
 For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0027
 
