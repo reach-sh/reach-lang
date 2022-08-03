@@ -624,7 +624,7 @@ base_env_slvals =
   , ("call", SLV_Form $ SLForm_apiCall)
   , (".setApiDetails", SLV_Form $ SLForm_setApiDetails)
   , ("getUntrackedFunds", SLV_Prim $ SLPrim_getUntrackedFunds)
-  , (".dataTag", SLV_Prim $ SLPrim_DataTag)
+  , ("_dataTag", SLV_Prim $ SLPrim_DataTag)
   , ("fromSome", SLV_Prim $ SLPrim_fromSome)
   , ("distinct", SLV_Prim $ SLPrim_distinct)
   , ( "Reach"
