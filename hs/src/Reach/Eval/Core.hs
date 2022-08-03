@@ -3804,7 +3804,7 @@ evalPrim p sargs =
       at <- withAt id
       case v of
         SLV_Data _ dmap vn _ -> do
-          let tm = M.fromAscList $ zip (map fst $ M.toAscList dmap) ([0 ..] :: [Integer])
+          let tm = dataTagMap $ T_Data dmap
           let i = fromMaybe (impossible "SLV_Data missing key") $ tm M.!? vn
           return (lvl, SLV_Int at (Just UI_Word) i)
         _ -> do
