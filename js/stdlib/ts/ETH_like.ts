@@ -857,6 +857,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     debug(`tokenAccepted: Unnecessary on ETHlike`, token);
     return true;
   };
+  const tokensAccepted = async (): Promise<Array<Token>> => {
+    debug(`tokensAccepted: Unnecessary on ETHlike`);
+    return [];
+  };
   const tokenAccept = async (token:Token): Promise<void> => {
     debug(`tokenAccept: Unnecessary on ETHlike`, token);
     return;
@@ -893,8 +897,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   };
 
   const accObj = { networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, 
-                   tokenAccepted, tokenAccept, tokenMetadata, contract, setGasLimit, 
-                   getGasLimit, setStorageLimit, getStorageLimit };
+                   tokenAccepted, tokensAccepted, tokenAccept, tokenMetadata,
+                   contract, setGasLimit, getGasLimit, setStorageLimit, getStorageLimit };
   const acc = accObj as unknown as Account;
   const balanceOf_ = (token?: Token): Promise<BigNumber> => balanceOf(acc, token);
   const balancesOf_ = (tokens: Array<Token | null>): Promise<Array<BigNumber>> => balancesOf(acc, tokens);
