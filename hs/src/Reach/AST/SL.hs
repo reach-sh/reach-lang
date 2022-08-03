@@ -795,7 +795,7 @@ data SLPrimitive
   | SLPrim_event_is (Maybe SLPart) SLVar [SLType]
   | SLPrim_verifyMuldiv
   | SLPrim_getUntrackedFunds
-  | SLPrim_DataTag
+  | SLPrim_isDataVariant
   | SLPrim_fromSome
   | SLPrim_currentMode
   | SLPrim_distinct
