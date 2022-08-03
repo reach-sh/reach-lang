@@ -172,6 +172,7 @@ completionKind v =
         SLPrim_event_is _ _ _ -> Just CK_Method
         SLPrim_verifyMuldiv -> Just CK_Function
         SLPrim_getUntrackedFunds -> Just CK_Function
+        SLPrim_DataTag -> Just CK_Function
         SLPrim_fromSome -> Just CK_Function
         SLPrim_currentMode -> Just CK_Function
         SLPrim_distinct -> Just CK_Function
