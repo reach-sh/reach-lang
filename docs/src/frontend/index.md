@@ -667,13 +667,13 @@ Returns a Promise that returns if an account may accept a given token.
 This does nothing on some consensus networks, but should always be used to ensure your frontend is blockchain agnostic.
 
 ---
-@{ref("js", "tokenAccepted")}
+@{ref("js", "acc.tokensAccepted")}
 ```js
 acc.tokensAccepted() => Promise<Array<Token>>
 ```
 
 Returns a Promise for an array of tokens that are accepted by `acc`.
-On networks which do not keep track of this information (e.g. ETH), this returns an empty array.
+On networks which do not keep track of this information (e.g. Ethereum), this returns an empty array.
 
 ---
 @{ref("js", "tokenMetadata")}
