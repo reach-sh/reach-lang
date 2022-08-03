@@ -6,6 +6,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 ## 0.1.11: 2022/06 - present
 
 @{verRC("0.1.11")}
++ 2022/08/03: Added support for `{!rsh} isDataVariant`.
 
 + @{rcHead("0.1.11-rc6")}
 + 2022/07/30: **Backwards Incompatible**: The `{!rsh} this` variable is removed from the scope inside `{!rsh} while` and `{!rsh} parallelReduce` syntax, except for the initialization expressions.
