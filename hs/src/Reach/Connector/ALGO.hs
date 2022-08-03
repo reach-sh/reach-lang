@@ -2026,31 +2026,16 @@ ce = \case
     ca ta
     cTupleRef at (argTypeOf ta) idx
   DLE_TupleSet at tup_a index val_a -> do
-    let tup_t = argTypeOf tup_a
-    let tupFields = tupleTypes tup_t
-    let (_, valStart, valLen) = computeExtract tupFields index
-    let tupLen = typeSizeOf tup_t
     ca tup_a
     ca val_a
-    ctobs $ argTypeOf val_a
-    csplice at valStart (valStart + valLen) tupLen
-  DLE_ObjectRef _at oa f -> do
-    let fts = argObjstrTypes oa
-    let fidx = objstrFieldIndex (argTypeOf oa) f
-    let (t, start, sz) = computeExtract (map snd fts) fidx
-    ca oa
-    cextract start sz
-    cfrombs t
+    cTupleSet at (argTypeOf tup_a) index
+  DLE_ObjectRef at obj_a fieldName -> do
+    ca obj_a
+    uncurry (cTupleRef at) $ objectRefAsTupleRef obj_a fieldName
   DLE_ObjectSet at obj_a fieldName val_a -> do
-    let obj_t = argTypeOf obj_a
-    let fieldTypes = objstrTypes obj_t
-    let fieldIndex = objstrFieldIndex (argTypeOf obj_a) fieldName
-    let (_, valStart, valLen) = computeExtract (map snd fieldTypes) fieldIndex
-    let objLen = typeSizeOf obj_t
     ca obj_a
     ca val_a
-    ctobs $ argTypeOf val_a
-    csplice at valStart (valStart + valLen) objLen
+    uncurry (cTupleSet at) $ objectRefAsTupleRef obj_a fieldName
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> cdigest $ map go args
     where
@@ -2418,6 +2403,14 @@ ce = \case
       op "itxn_submit"
       code "itxn" ["CreatedApplicationID"]
   where
+    -- On ALGO, objects are represented identically to tuples of their fields in ascending order.
+    -- Consequently, we can pretend objects are tuples and use tuple functions as a shortcut.
+    objectRefAsTupleRef :: DLArg -> String -> (DLType, Integer)
+    objectRefAsTupleRef obj_a fieldName = (objAsTup_t, fieldIndex)
+      where
+        fieldIndex = objstrFieldIndex obj_t fieldName
+        objAsTup_t = T_Tuple $ map snd $ objstrTypes obj_t
+        obj_t = argTypeOf obj_a
     show_stack :: String -> Maybe BS.ByteString -> SrcLoc -> [SLCtxtFrame] -> App ()
     show_stack what msg at fs = do
       let msg' =
