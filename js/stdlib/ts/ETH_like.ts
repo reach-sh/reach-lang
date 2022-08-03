@@ -1164,6 +1164,8 @@ function setCustomHttpEventHandler() {
   console.warn(`setCustomHttpEventHandler is not supported on this connector`);
 }
 
+const tokensAccepted = (acc: Account): Promise<Array<Token>> => acc.tokensAccepted();
+
 // TODO: restore type ann once types are in place
 // const ethLike: EthLike = {
 const ethLike = {
@@ -1212,6 +1214,7 @@ const ethLike = {
   setCustomHttpEventHandler,
   setSigningMonitor,
   getTimeSecs,
+  tokensAccepted,
 };
 return ethLike;
 }

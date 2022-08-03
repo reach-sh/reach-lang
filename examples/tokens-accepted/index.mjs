@@ -7,7 +7,7 @@ const bit = await stdlib.launchToken(accBob, "Bit", "bit");
 
 const check = async (acc, tok) => {
   const accName = acc == accAlice ? 'Alice' : 'Bob';
-  const toks = await acc.tokensAccepted();
+  const toks = await (acc == accAlice ? acc.tokensAccepted() : stdlib.tokensAccepted(acc));
   const isAccepted = toks.some(t => tok.id.eq(t));
   stdlib.assert(isAccepted, `${tok.name} accepted by ${accName}`);
 };
