@@ -441,6 +441,7 @@ instance DepthOf DLExpr where
     DLE_EmitLog _ _ a -> add1 $ depthOf a
     DLE_setApiDetails {} -> return 0
     DLE_GetUntrackedFunds _ mt tb -> max <$> depthOf mt <*> depthOf tb
+    DLE_DataTag _ d -> add1 $ depthOf d
     DLE_FromSome _ mo da -> add1 $ depthOf [mo, da]
     DLE_ContractNew _ cns dr -> add1 $ max <$> depthOf cns <*> depthOf dr
     where
@@ -730,6 +731,10 @@ solExpr sp = \case
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_EmitLog {} -> impossible "emitLog"
   DLE_setApiDetails {} -> impossible "setApiDetails"
+  DLE_DataTag _ d -> do
+    d' <- solArg d
+    -- TODO - what kind of number should this be converted into?
+    return $ solApply "uint" [d' <> ".which"]
   DLE_FromSome _ mo da -> do
     mo' <- solArg mo
     da' <- solArg da

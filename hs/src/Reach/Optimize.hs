@@ -467,6 +467,7 @@ instance Optimize DLExpr where
     DLE_EmitLog at k a -> DLE_EmitLog at k <$> opt a
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mt tb -> DLE_GetUntrackedFunds at <$> opt mt <*> opt tb
+    DLE_DataTag at d -> DLE_DataTag at <$> opt d
     DLE_FromSome at mo da -> do
       mo' <- opt mo
       da' <- opt da

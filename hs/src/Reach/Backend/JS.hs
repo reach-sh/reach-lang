@@ -589,6 +589,10 @@ jsExpr = \case
           True -> jsSimTxn "info" [("tok", tok)] <> ","
           _ -> ""
     return $ parens $ infoSim <> rhs
+  DLE_DataTag _at d -> do
+    let o = jsObject $ M.map (DText . s2lt . show) $ dataTagMap $ argTypeOf d
+    d' <- jsArg d
+    return $ o <> brackets (d' <> "[0]")
   DLE_FromSome _at mo da -> do
     mo' <- jsArg mo
     da' <- jsArg da
