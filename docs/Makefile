@@ -21,7 +21,10 @@ kToD.ts:
 KDP=../vsce/server/src/keywordToDocumentation.ts
 .PHONY: check
 check: kToD.ts
-	cmp $^ "${KDP}"
+	@if ! cmp $^ "${KDP}"; then \
+		echo Fix with \`make check-accept\` && exit 1; \
+	fi
+
 .PHONY: check-accept
 check-accept: kToD.ts
 	mv $^ "${KDP}"
