@@ -1370,6 +1370,13 @@ As a special case, when the type of a variant is `{!rsh} Null`, the `{!rsh} VALU
 
 Data instances are consumed by `{!rsh} switch` statements and `{!rsh} match` expressions.
 
+@{ref("rsh", "isDataVariant")}
+Data instances may be checked against particular variants with the `{!rsh} isDataVariant` function.
+
+```reach
+isDataVariant("Circle", ["Circle", "Square", "Rect"], nice); // true
+```
+
 ### `Maybe`
 
 @{ref("rsh", "Maybe")}@{ref("rsh", "Maybe.Some")}@{ref("rsh", "Maybe.None")}@{ref("rsh", "fromMaybe")}
