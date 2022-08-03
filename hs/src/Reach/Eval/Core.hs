@@ -624,6 +624,7 @@ base_env_slvals =
   , ("call", SLV_Form $ SLForm_apiCall)
   , (".setApiDetails", SLV_Form $ SLForm_setApiDetails)
   , ("getUntrackedFunds", SLV_Prim $ SLPrim_getUntrackedFunds)
+  , (".dataTag", SLV_Prim $ SLPrim_DataTag)
   , ("fromSome", SLV_Prim $ SLPrim_fromSome)
   , ("distinct", SLV_Prim $ SLPrim_distinct)
   , ( "Reach"
@@ -3798,6 +3799,19 @@ evalPrim p sargs =
       dv <- ctxt_lift_expr mdv $ DLE_PrimOp at (ADD UI_Word) [DLA_Var untrackedFunds, trackedBal]
       setBalance TM_Balance mtok (DLA_Var dv)
       return (lvl, SLV_DLVar untrackedFunds)
+    SLPrim_DataTag -> do
+      v <- one_arg
+      at <- withAt id
+      case v of
+        SLV_Data _ dmap vn _ -> do
+          let tm = M.fromAscList $ zip (map fst $ M.toAscList dmap) ([0 ..] :: [Integer])
+          let i = fromMaybe (impossible "SLV_Data missing key") $ tm M.!? vn
+          return (lvl, SLV_Int at (Just UI_Word) i)
+        _ -> do
+          (t, a) <- compileTypeOf v
+          _ <- mustBeDataTy Err_Switch_NotData t
+          result <- ctxt_lift_expr (DLVar at Nothing (T_UInt UI_Word)) $ DLE_DataTag at a
+          return (lvl, SLV_DLVar result)
     SLPrim_fromSome -> do
       (mv, dv) <- two_args
       at <- withAt id
