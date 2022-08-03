@@ -733,8 +733,7 @@ solExpr sp = \case
   DLE_setApiDetails {} -> impossible "setApiDetails"
   DLE_DataTag _ d -> do
     d' <- solArg d
-    -- TODO - what kind of number should this be converted into?
-    return $ solApply "uint" [d' <> ".which"]
+    return $ solApply "uint256" [d' <> ".which"]
   DLE_FromSome _ mo da -> do
     mo' <- solArg mo
     da' <- solArg da
