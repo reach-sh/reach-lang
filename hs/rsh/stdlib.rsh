@@ -35,8 +35,10 @@ export const fromMaybe = (v, onNull, onSome) => {
   case None: return onNull();
   case Some: return onSome(v); } };
 
-export const isSome = m => fromMaybe(m, () => false, (_) => true);
-export const isNone = m => fromMaybe(m, () => true, (_) => false);
+// TODO - this definitely emits optimized teal code, but it no longer checks that the data is actually a proper Maybe type...
+// TODO - also optimize isLeft/isRight, etc
+export const isSome = m => _dataTag(m) === 1;
+export const isNone = m => _dataTag(m) === 0;
 export const maybe = (m, def, f) => fromMaybe(m, (() => def), f);
 
 export function implies (x, y) {
