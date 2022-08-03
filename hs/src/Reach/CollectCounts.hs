@@ -176,6 +176,7 @@ instance Countable DLExpr where
     DLE_EmitLog _ _ a -> counts a
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ mt tb -> counts mt <> counts tb
+    DLE_DataTag _ d -> counts d
     DLE_FromSome _ mo da -> counts mo <> counts da
     DLE_ContractNew _ cns dr -> counts cns <> counts dr
 

@@ -105,6 +105,7 @@ instance Sanitize DLExpr where
     DLE_EmitLog _ k a -> DLE_EmitLog sb k (sani a)
     DLE_setApiDetails _ w d c f -> DLE_setApiDetails sb w d c f
     DLE_GetUntrackedFunds _ mt tb -> DLE_GetUntrackedFunds sb (sani mt) (sani tb)
+    DLE_DataTag _ d -> DLE_DataTag sb (sani d)
     DLE_FromSome _ mo da -> DLE_FromSome sb (sani mo) (sani da)
     DLE_ContractNew _ cns dr -> DLE_ContractNew sb (sani cns) (sani dr)
 

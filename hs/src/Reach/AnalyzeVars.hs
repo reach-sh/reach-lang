@@ -146,6 +146,7 @@ instance FreeVars DLExpr where
     DLE_EmitLog _ _ a -> freeVars a
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ a b -> freeVars a <> freeVars b
+    DLE_DataTag _ d -> freeVars d
     DLE_FromSome _ a b -> freeVars [a, b]
     DLE_ContractNew _ a dr -> freeVars a <> freeVars dr
 

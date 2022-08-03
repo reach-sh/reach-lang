@@ -122,6 +122,7 @@ instance Subst DLExpr where
     DLE_EmitLog at lk x -> DLE_EmitLog at lk <$> subst x
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mtok tb -> DLE_GetUntrackedFunds at <$> subst mtok <*> subst tb
+    DLE_DataTag at d -> DLE_DataTag at <$> subst d
     DLE_FromSome at mo da -> DLE_FromSome at <$> subst mo <*> subst da
     DLE_ContractNew at cns dr -> DLE_ContractNew at <$> subst cns <*> subst dr
 

@@ -676,6 +676,10 @@ instance Interp DLExpr where
               M.lookup tok $
                 saferMaybe "getActualBalance" $ M.lookup simContract $ e_ledger e
       return $ V_UInt bal
+    DLE_DataTag _ d -> do
+      let tagmap = dataTagMap $ argTypeOf d
+      (k, _) <- vData <$> interp d
+      return $ V_UInt $ fromMaybe (impossible "DLE_DataTag sim") $ tagmap M.!? k
     DLE_FromSome _ mo da -> do
       (k, v) <- vData <$> interp mo
       case k of
