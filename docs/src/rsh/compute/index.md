@@ -778,6 +778,15 @@ A @{defn("tuple")} literal, written `{!rsh} [ EXPR_0, ..., EXPR_n ]`, is an expr
 
 `{!rsh} ...expr` may appear inside tuple expressions, in which case the spreaded expression must evaluate to a tuple or array, which is spliced in place.
 
+```reach
+load: /examples/nft-pawn-shop-api/index.rsh
+md5: 8dd9405706cd0b46139a796a2167386d
+range: 19 - 22
+```
+
+Tuples can be non-homogeneous, as in this example.
+This tuple is four (4) different expressions (`loanAmt`, `interest`, `nft`, and `deadline`) that are created at the same time, and then a `{!rsh} declassify` is performed to make them knowable to other users.
+
 ### {#ref-programs-arrays} Arrays
 
 @{ref("rsh", "array")}
