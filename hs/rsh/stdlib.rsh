@@ -35,10 +35,8 @@ export const fromMaybe = (v, onNull, onSome) => {
   case None: return onNull();
   case Some: return onSome(v); } };
 
-// TODO - this definitely emits optimized teal code, but it no longer checks that the data is actually a proper Maybe type...
-// TODO - also optimize isLeft/isRight, etc
-export const isSome = m => _dataTag(m) === 1;
-export const isNone = m => _dataTag(m) === 0;
+export const isSome = m => isDataVariant("Some", ["None", "Some"], m);
+export const isNone = m => isDataVariant("None", ["None", "Some"], m);
 export const maybe = (m, def, f) => fromMaybe(m, (() => def), f);
 
 export function implies (x, y) {
@@ -82,13 +80,8 @@ export const either = (e, l, r) =>
     Right: rv => { return r(rv); }
   });
 
-export const isLeft = e => e.match({
-  Left: (_) => { return true; },
-  Right: (_) => { return false; } });
-
-export const isRight = e => e.match({
-  Left: (_) => { return false; },
-  Right: (_) => { return true; } });
+export const isLeft = e => isDataVariant("Left", ["Left", "Right"], e)
+export const isRight = e => isDataVariant("Right", ["Left", "Right"], e)
 
 export const fromLeft = (e, d) => e.match({
   Left: (v) => { return v; },
