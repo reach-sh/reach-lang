@@ -2343,6 +2343,10 @@ ce = \case
         -- [ extra ]
         return ()
     label after_lab
+  DLE_DataTag _ d -> do
+    ca d
+    cint 0
+    op "getbyte"
   DLE_FromSome _ mo da -> do
     ca da
     ca mo

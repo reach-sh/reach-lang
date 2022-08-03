@@ -171,6 +171,7 @@ instance Pandemic DLExpr where
     DLE_EmitLog at lk vars -> DLE_EmitLog at lk <$> pan vars
     DLE_setApiDetails at who dom mc info -> return $ DLE_setApiDetails at who dom mc info
     DLE_GetUntrackedFunds at marg a -> DLE_GetUntrackedFunds at <$> pan marg <*> pan a
+    DLE_DataTag at d -> DLE_DataTag at <$> pan d
     DLE_FromSome at mo da -> DLE_FromSome at <$> pan mo <*> pan da
     DLE_ContractNew at cns dr -> DLE_ContractNew at <$> pan cns <*> pan dr
 

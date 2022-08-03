@@ -90,6 +90,12 @@ dataTypeMap = \case
   T_Data m -> m
   _ -> impossible "no data"
 
+dataTagMap :: DLType -> M.Map SLVar Integer
+dataTagMap d = M.fromAscList $ zip (map fst $ M.toAscList m) ints
+  where
+    m = dataTypeMap d
+    ints = ([0 ..] :: [Integer])
+
 arrTypeLen :: DLType -> (DLType, Integer)
 arrTypeLen = \case
   T_Array d l -> (d, l)
@@ -804,6 +810,7 @@ data DLExpr
       , sad_compile :: ApiInfoCompilation
       }
   | DLE_GetUntrackedFunds SrcLoc (Maybe DLArg) DLArg
+  | DLE_DataTag SrcLoc DLArg
   | DLE_FromSome SrcLoc DLArg DLArg
   -- Maybe try to generalize FromSome into a Match
   | DLE_ContractNew SrcLoc DLContractNews DLRemote
@@ -955,6 +962,9 @@ instance PrettySubst DLExpr where
       mtok' <- prettySubst mtok
       tb' <- prettySubst tb
       return $ "getActualBalance" <> parens (mtok' <> ", " <> tb')
+    DLE_DataTag _ d -> do
+      d' <- prettySubst d
+      return $ "dataTag" <> parens d'
     DLE_FromSome _ mo da -> do
       mo' <- prettySubst mo
       da' <- prettySubst da
@@ -1012,6 +1022,7 @@ instance IsPure DLExpr where
     DLE_EmitLog {} -> False
     DLE_setApiDetails {} -> False
     DLE_GetUntrackedFunds {} -> False
+    DLE_DataTag {} -> True
     DLE_FromSome {} -> True
     DLE_ContractNew {} -> False
 
@@ -1046,6 +1057,7 @@ instance IsLocal DLExpr where
     DLE_EmitLog {} -> False
     DLE_setApiDetails {} -> False
     DLE_GetUntrackedFunds {} -> True
+    DLE_DataTag {} -> True
     DLE_FromSome {} -> True
     DLE_ContractNew {} -> False
 

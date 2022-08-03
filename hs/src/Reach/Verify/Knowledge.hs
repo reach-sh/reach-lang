@@ -261,6 +261,8 @@ kgq_e ctxt mv = \case
     mapM_ (kgq_a_onlym ctxt mv . DLA_Var) lv
   DLE_setApiDetails {} -> mempty
   DLE_GetUntrackedFunds _ mt _ -> kgq_a_all ctxt mt
+  DLE_DataTag _ d -> do
+    kgq_a_all ctxt d
   DLE_FromSome _ mo da -> do
     kgq_a_all ctxt mo
     kgq_a_all ctxt da

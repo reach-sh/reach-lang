@@ -180,6 +180,7 @@ instance Freshen DLExpr where
     DLE_EmitLog at k a -> DLE_EmitLog at k <$> fu a
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mt tb -> DLE_GetUntrackedFunds at <$> fu mt <*> fu tb
+    DLE_DataTag at d -> DLE_DataTag at <$> fu d
     DLE_FromSome at mo da -> DLE_FromSome at <$> fu mo <*> fu da
     DLE_ContractNew at tns dr -> DLE_ContractNew at <$> fu tns <*> fu dr
 

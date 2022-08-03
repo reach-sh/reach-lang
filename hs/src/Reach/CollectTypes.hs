@@ -161,6 +161,7 @@ instance CollectsTypes DLExpr where
     DLE_EmitLog _ _ a -> cts a
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ mt tb -> cts mt <> cts tb
+    DLE_DataTag _ d -> cts d
     DLE_FromSome _ mo da -> cts mo <> cts da
     DLE_ContractNew _ cns dr -> cts cns <> cts dr
 
