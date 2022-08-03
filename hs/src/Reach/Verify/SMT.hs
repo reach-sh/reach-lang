@@ -1191,14 +1191,7 @@ smt_e at_dv mdv de = do
     DLE_DataTag at d -> do
       d' <- smt_a at d
       n <- smtTypeSort $ argTypeOf d
-      let variants = map fst $ M.toAscList $ dataTypeMap $ argTypeOf d
-      let variantCtors = map (\v -> n <> "_" <> v) variants
-      let variantVs = map (\vCtor -> Atom $ vCtor <> "_pv") variantCtors
-      let variantPs = map (\(vV, vC) -> List [Atom vC, vV])
-           $ zip variantVs variantCtors
-      let variantCs = map (\(vP, i) -> List [vP, Atom $ show i])
-           $ zip variantPs ([0 ..] :: [Int])
-      bound at $ smtApply "match" [d', List variantCs]
+      bound at $ smtApply (n <> "_dataTag") [d']
     DLE_FromSome at mo da -> do
       mo' <- smt_a at mo
       da' <- smt_a at da
@@ -1596,6 +1589,19 @@ _smtDefineTypes smt ts = do
             let vars = map mkvar $ M.toList tm_nis
             SMT.declareDatatype smt n [] vars
             _smt_declare_toBytes smt n
+            -- define helper function for DLE_DataTag
+            let tag_f = n <> "_dataTag"
+            let tagParam = n <> "_dataTagParam"
+            let variants = map fst $ M.toAscList $ dataTypeMap t
+            let variantCtors = map (\v -> n <> "_" <> v) variants
+            let variantVs = map (\vCtor -> Atom $ vCtor <> "_pv") variantCtors
+            let variantPs = map (\(vV, vC) -> List [Atom vC, vV])
+                 $ zip variantVs variantCtors
+            let variantCs = map (\(vP, i) -> List [vP, Atom $ show i])
+                 $ zip variantPs ([0 ..] :: [Int])
+            let tagBody = smtApply "match" [Atom tagParam, List variantCs]
+            void $ SMT.defineFun smt tag_f [(tagParam, Atom n)] (Atom "UInt") tagBody
+
             let inv_f = n ++ "_inv"
             let x = Atom "x"
             let mkvar_inv (vn', (_, arg_inv)) = List [List [(Atom vn'), x], arg_inv x]
