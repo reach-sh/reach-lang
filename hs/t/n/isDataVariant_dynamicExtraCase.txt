@@ -1,0 +1,8 @@
+reachc: error[RE0075]: Switch contains extra cases: ["C"]
+
+  ./isDataVariant_dynamicExtraCase.rsh:15:29:application
+
+  15|   const isDV = isDataVariant("A", ["A", "B", "C"], x);
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0075
+

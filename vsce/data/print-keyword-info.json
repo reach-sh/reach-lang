@@ -767,6 +767,9 @@
   "is": {
     "CompletionItemKind": "Function"
   },
+  "isDataVariant": {
+    "CompletionItemKind": "Function"
+  },
   "isIntervalType": {
     "CompletionItemKind": "Function"
   },
