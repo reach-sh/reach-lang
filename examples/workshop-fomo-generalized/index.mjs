@@ -14,6 +14,9 @@ const accBuyerArray = await Promise.all(
   )
 );
 
+accFunder.setGasLimit(5000000);
+accBuyerArray.forEach(ab => ab.setGasLimit(5000000));
+
 const ctcFunder = accFunder.contract(backend);
 const ctcInfo   = ctcFunder.getInfo();
 
