@@ -1377,6 +1377,16 @@ Data instances may be checked against particular variants with the `{!rsh} isDat
 isDataVariant("Circle", ["Circle", "Square", "Rect"], nice); // true
 ```
 
+The above use of `{!rsh} isDataVariant` is like the following switch, but more efficient:
+
+```reach
+switch(nice) {
+  case Circle: return true;
+  case Square: return false;
+  case Rect: return false;
+}
+```
+
 ### `Maybe`
 
 @{ref("rsh", "Maybe")}@{ref("rsh", "Maybe.Some")}@{ref("rsh", "Maybe.None")}@{ref("rsh", "fromMaybe")}

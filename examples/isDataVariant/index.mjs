@@ -10,6 +10,12 @@ const Player = (acc) => ({
   getDT: () => {
     return ['A', null];
   },
+  checkBool: (b) => {
+    // Check result for test
+    if (!b) {
+      throw "isDataVariant test file got wrong answer"
+    }
+  }
 })
 
 await Promise.all([
