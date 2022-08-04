@@ -669,11 +669,11 @@ This does nothing on some consensus networks, but should always be used to ensur
 ---
 @{ref("js", "acc.tokensAccepted")}@{ref("js", "stdlib.tokensAccepted")}
 ```js
-stdlib.tokensAccepted(acc) => Promise<Array<Token>>
+stdlib.tokensAccepted(addr: Address) => Promise<Array<Token>>
 acc.tokensAccepted() => Promise<Array<Token>>
 ```
 
-Returns a Promise for an array of tokens that are accepted by `acc`.
+Returns a Promise for an array of tokens that are accepted by `addr` or `acc`.
 On networks which do not keep track of this information (e.g. Ethereum), this returns an empty array.
 
 ---

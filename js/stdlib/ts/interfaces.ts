@@ -194,5 +194,5 @@ export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, Contrac
   setMinMillisBetweenRequests: (n: number) => void
   setCustomHttpEventHandler: (h: (e: any) => Promise<void>) => void
   setSigningMonitor: SetSigningMonitor
-  tokensAccepted: (acc: Account) => Promise<Array<Token>>
+  tokensAccepted: (acc: Address) => Promise<Array<Token>>
 }
