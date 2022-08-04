@@ -179,7 +179,7 @@ Here's the JavaScript frontend we wrote:
 
 ```
 load: /examples/workshop-fomo-generalized/index.mjs
-md5: 74b6cc410c339ee4ec5d023af5042095
+md5: 18aef8ce3d125252e3d0048dad36145d
 ```
 
 Let's see what it looks like when we run the program:
