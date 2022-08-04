@@ -857,10 +857,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     debug(`tokenAccepted: Unnecessary on ETHlike`, token);
     return true;
   };
-  const tokensAccepted = async (): Promise<Array<Token>> => {
-    debug(`tokensAccepted: Unnecessary on ETHlike`);
-    return [];
-  };
+
+  const tokensAccepted_ = (): Promise<Array<Token>> => tokensAccepted(networkAccount.address);
+
   const tokenAccept = async (token:Token): Promise<void> => {
     debug(`tokenAccept: Unnecessary on ETHlike`, token);
     return;
@@ -897,13 +896,18 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   };
 
   const accObj = { networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, 
-                   tokenAccepted, tokensAccepted, tokenAccept, tokenMetadata,
+                   tokenAccepted, tokensAccepted: tokensAccepted_, tokenAccept, tokenMetadata,
                    contract, setGasLimit, getGasLimit, setStorageLimit, getStorageLimit };
   const acc = accObj as unknown as Account;
   const balanceOf_ = (token?: Token): Promise<BigNumber> => balanceOf(acc, token);
   const balancesOf_ = (tokens: Array<Token | null>): Promise<Array<BigNumber>> => balancesOf(acc, tokens);
 
   return stdAccount({ ...accObj, balanceOf: balanceOf_, balancesOf: balancesOf_ });
+};
+
+const tokensAccepted = async (_addr: Address): Promise<Array<Token>> => {
+  debug(`tokensAccepted: Unnecessary on ETHlike`);
+  return [];
 };
 
 const newAccountFromSecret = async (secret: string): Promise<Account> => {
@@ -1163,8 +1167,6 @@ function setMinMillisBetweenRequests() {
 function setCustomHttpEventHandler() {
   console.warn(`setCustomHttpEventHandler is not supported on this connector`);
 }
-
-const tokensAccepted = (acc: Account): Promise<Array<Token>> => acc.tokensAccepted();
 
 // TODO: restore type ann once types are in place
 // const ethLike: EthLike = {

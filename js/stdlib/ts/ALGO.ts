@@ -2243,19 +2243,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return ( r !== false );
   };
 
-  const tokensAccepted = async (): Promise<Array<Token>> => {
-    const addr = networkAccount.addr;
-    let assetHoldings: Array<AssetHolding>;
-    if (await nodeCanRead()) {
-      const accountInfo = await getAddressInfo(addr);
-      assetHoldings = accountInfo['assets'] ?? [];
-    } else {
-      const indexer = await getIndexer();
-      const query = indexer.lookupAccountAssets(addr) as unknown as ApiCall<IndexerAccountAssetsRes>;
-      assetHoldings = (await doQuery_('tokensAccepted', query))['assets'];
-    }
-    return assetHoldings.map(ah => bigNumberify(ah["asset-id"]));
-  }
+  const tokensAccepted_ = (): Promise<Array<Token>> => tokensAccepted(networkAccount.addr);
 
   const tokenAccept = async (token:Token): Promise<void> => {
     if ( ! (await tokenAccepted(token)) ) {
@@ -2298,7 +2286,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   const unsupportedAcc = stdAccount_unsupported(connector);
 
   const accObj = { ...unsupportedAcc, networkAccount, getAddress: selfAddress, 
-                   stdlib, setDebugLabel, tokenAccepted, tokensAccepted,
+                   stdlib, setDebugLabel, tokenAccepted, tokensAccepted: tokensAccepted_,
                    tokenAccept, tokenMetadata, contract };
   const acc = accObj as unknown as Account;
   const balanceOf_ = (token?: Token): Promise<BigNumber> => balanceOf(acc, token);
@@ -2306,6 +2294,19 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
   return stdAccount({ ...accObj, balanceOf: balanceOf_, balancesOf: balancesOf_ });
 };
+
+const tokensAccepted = async (addr: Address): Promise<Array<Token>> => {
+  let assetHoldings: Array<AssetHolding>;
+  if (await nodeCanRead()) {
+    const accountInfo = await getAddressInfo(addr);
+    assetHoldings = accountInfo['assets'] ?? [];
+  } else {
+    const indexer = await getIndexer();
+    const query = indexer.lookupAccountAssets(addr) as unknown as ApiCall<IndexerAccountAssetsRes>;
+    assetHoldings = (await doQuery_('tokensAccepted', query))['assets'];
+  }
+  return assetHoldings.map(ah => bigNumberify(ah["asset-id"]));
+}
 
 const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
   const ai = await getAccountInfo(acc);
@@ -2696,8 +2697,6 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
 
   return { name, sym, id, mint, optOut };
 }
-
-const tokensAccepted = (acc: Account): Promise<Array<Token>> => acc.tokensAccepted();
 
   return {
     ...stdlib,

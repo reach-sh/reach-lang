@@ -12,6 +12,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 + 2022/08/03: Added `{!rsh} isDataVariant`.
 
 + @{rcHead("0.1.11-rc6")}
++ 2022/08/04: Added `{!js} stdlib.tokensAccepted` and `{!js} acc.tokensAccepted`.
 + 2022/07/30: **Backwards Incompatible**: The `{!rsh} this` variable is removed from the scope inside `{!rsh} while` and `{!rsh} parallelReduce` syntax, except for the initialization expressions.
 
   We consider backwards incompatible changes to be very serious and do not introduce them lightly.
