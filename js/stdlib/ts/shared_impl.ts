@@ -792,6 +792,7 @@ export const makeArith = (m:BigNumber): Arith => {
   const mod = liftM('mod');
   const safeMod = liftM('mod', divPreC);
   const mul = liftM('mul');
+  const safeMul = liftM('mul', ["mul overflow", (x: BigNumber, y: BigNumber) => x.gte(m.div(y))]);
   const div = liftM('div');
   const safeDiv = liftM('div', divPreC);
   const band = liftM('and');
@@ -814,7 +815,7 @@ export const makeArith = (m:BigNumber): Arith => {
   return {
     add, sub, mod, mul, div, band, bior, bxor, sqrt,
     add256, sub256, mod256, mul256, div256, band256, bior256, bxor256, sqrt256,
-    cast, muldiv, safeAdd, safeSub, safeMod, safeDiv };
+    cast, muldiv, safeAdd, safeSub, safeMod, safeDiv, safeMul };
 };
 
 export const argsSlice = <T>(args: Array<T>, cnt: number): Array<T> =>
