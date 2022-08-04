@@ -110,117 +110,6 @@
   "Array.zip": {
     "CompletionItemKind": "Method"
   },
-  "Array_empty": {
-    "CompletionItemKind": "Constant"
-  },
-  "Array_empty.all": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.and": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.any": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.average": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.count": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.elemType": {
-    "CompletionItemKind": "TypeParameter"
-  },
-  "Array_empty.find": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.findIndex": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.forEach": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.forEachWithIndex": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.imax": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.imin": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.includes": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.indexOf": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.length": {
-    "CompletionItemKind": "Constant"
-  },
-  "Array_empty.max": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.min": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.or": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.product": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.size": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.slice": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.sum": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_empty.withIndex": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_find": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_find1": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_findIndex": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_findIndex1": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_forEachWithIndex": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_forEachWithIndex1": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_indexOf": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_indexOf1": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_replicate": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_slice": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_slice1": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_withIndex": {
-    "CompletionItemKind": "Function"
-  },
-  "Array_withIndex1": {
-    "CompletionItemKind": "Function"
-  },
   "Bool": {
     "CompletionItemKind": "TypeParameter"
   },
@@ -303,96 +192,6 @@
     "CompletionItemKind": "Function"
   },
   "Foldable.sum": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_all": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_all1": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_and": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_and1": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_any": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_any1": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_average": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_average1": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_count": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_count1": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_forEach": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_forEach1": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_imax": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_imax1": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_imin": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_imin1": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_includes": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_includes1": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_max": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_max1": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_min": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_min1": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_or": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_or1": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_product": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_product1": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_size": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_size1": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_sum": {
-    "CompletionItemKind": "Function"
-  },
-  "Foldable_sum1": {
     "CompletionItemKind": "Function"
   },
   "Fun": {
@@ -480,12 +279,6 @@
     "CompletionItemKind": "Function"
   },
   "Object.setIfUnset": {
-    "CompletionItemKind": "Function"
-  },
-  "Object_set": {
-    "CompletionItemKind": "Function"
-  },
-  "Object_setIfUnset": {
     "CompletionItemKind": "Function"
   },
   "Open": {
@@ -970,12 +763,6 @@
   },
   "intervalWidth": {
     "CompletionItemKind": "Function"
-  },
-  "interval_empty": {
-    "CompletionItemKind": "Constant"
-  },
-  "interval_empty.length": {
-    "CompletionItemKind": "Constant"
   },
   "is": {
     "CompletionItemKind": "Function"
