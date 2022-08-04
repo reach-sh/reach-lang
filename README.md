@@ -20,7 +20,7 @@ If you want to work on the Reach compiler, you'll need:
 - [`goal`](https://github.com/algorand/go-algorand) OR link [`goal-devnet`](https://github.com/reach-sh/reach-lang/blob/master/scripts/goal-devnet) to `goal` in your `PATH`
 - `mo`
 
-The versions of our dependencies are specified in `DEPS`.
+The versions of our dependencies are specified in [`DEPS`](https://github.com/reach-sh/reach-lang/blob/master/DEPS).
 
 Installation on macOS:
 ```
