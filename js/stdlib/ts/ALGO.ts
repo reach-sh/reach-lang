@@ -2295,7 +2295,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   return stdAccount({ ...accObj, balanceOf: balanceOf_, balancesOf: balancesOf_ });
 };
 
-const tokensAccepted = async (addr: Address): Promise<Array<Token>> => {
+const tokensAccepted = async (addr_: Address): Promise<Array<Token>> => {
+  const addr = protect(T_Address, addr_) as Address;
   let assetHoldings: Array<AssetHolding>;
   if (await nodeCanRead()) {
     const accountInfo = await getAddressInfo(addr);
