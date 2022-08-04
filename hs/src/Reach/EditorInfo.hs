@@ -3,6 +3,7 @@ module Reach.EditorInfo (printBaseKeywordInfo) where
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Encode.Pretty as A
 import qualified Data.ByteString.Lazy.Char8 as B
+import qualified Data.List as L
 import qualified Data.Map.Strict as M
 import Generics.Deriving (Generic, conNameOf)
 import Reach.AST.SL
@@ -19,11 +20,12 @@ customConfig = A.Config {
 printBaseKeywordInfo :: (M.Map String SLVal) -> IO ()
 printBaseKeywordInfo env = do
   let baseKinds = M.mapMaybe completionKind env
+  let filtered = M.filterWithKey (\k _ -> not $ L.isInfixOf "_" k) baseKinds
   B.putStr $
     A.encodePretty' customConfig $ A.toJSON $
        M.map
          (\v -> M.singleton ("CompletionItemKind" :: String) $ show v)
-         baseKinds
+         filtered
 
 data CompletionItemKind
   = CK_Text
