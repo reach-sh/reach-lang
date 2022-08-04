@@ -15,8 +15,9 @@ Read the [documentation](https://docs.reach.sh).
 
 If you want to work on the Reach compiler, you'll need:
 - stack v2.7.5
-- z3 v4.8.17
-- solidity v0.8.12
+- `z3`
+- `solc`
+- [`goal`](https://github.com/algorand/go-algorand) OR link [`goal-devnet`](https://github.com/reach-sh/reach-lang/blob/master/scripts/goal-devnet) to `goal` in your `PATH`
 - [mo](https://github.com/tests-always-included/mo) v2.2.0
 
 The versions of our dependencies are specified in `DEPS`.
