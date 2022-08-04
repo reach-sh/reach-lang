@@ -75,6 +75,7 @@ export interface Arith {
   mod: (x: num, y: num) => BigNumber
   safeMod: (x: num, y: num) => BigNumber
   mul: (x: num, y: num) => BigNumber
+  safeMul: (x: num, y: num) => BigNumber
   div: (x: num, y: num) => BigNumber
   safeDiv: (x: num, y: num) => BigNumber
   band: (x: num, y: num) => BigNumber

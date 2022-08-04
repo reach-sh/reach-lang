@@ -281,6 +281,7 @@ jsPrimApply = \case
   ADD t _ -> r $ jsApply_ui t "stdlib.add"
   SUB t (Just PV_Safe) -> r $ jsApply_ui t "stdlib.safeSub"
   SUB t _ -> r $ jsApply_ui t "stdlib.sub"
+  MUL t (Just PV_Safe) -> r $ jsApply_ui t "stdlib.safeMul"
   MUL t _ -> r $ jsApply_ui t "stdlib.mul"
   DIV t (Just PV_Safe) -> r $ jsApply_ui t "stdlib.safeDiv"
   DIV t _ -> r $ jsApply_ui t "stdlib.div"
