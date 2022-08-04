@@ -10,4 +10,4 @@ The Reach compiler uses the following strategy for analysis and compiling progra
 5. An end-point projection of the linearization to produce a perspective for each participant, as well as the consensus.
 6. A single-pass top-down construction of backend and consensus programs.
 
-Reach is proud to: be implemented in [Haskell](https://en.wikipedia.org/wiki/Haskell_(programming_language)) using the [Glorious Haskell Compiler](https://en.wikipedia.org/wiki/Glasgow_Haskell_Compiler); use the [Z3 theorem prover](https://en.wikipedia.org/wiki/Z3_Theorem_Prover) for verification; use  [Racket](https://www.racket-lang.org/)'s [Scribble](https://docs.racket-lang.org/scribble/) tool for documentation; and use [Docker](https://www.docker.com/) for containerization.
+Reach is proud to: be implemented in [Haskell](https://en.wikipedia.org/wiki/Haskell_(programming_language)) using the [Glorious Haskell Compiler](https://en.wikipedia.org/wiki/Glasgow_Haskell_Compiler); use the [Z3 theorem prover](https://en.wikipedia.org/wiki/Z3_Theorem_Prover) for verification; and use [Docker](https://www.docker.com/) for containerization.
