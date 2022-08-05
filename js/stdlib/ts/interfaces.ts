@@ -91,6 +91,7 @@ export interface Arith {
   bior256: (x: num, y: num) => BigNumber
   bxor256: (x: num, y: num) => BigNumber
   sqrt256: (n1: num, n2: num) => BigNumber
+  safeMuldiv: (x: num, y: num, z:num) => BigNumber
   muldiv: (x: num, y: num, z:num) => BigNumber
   cast: (from: UIntTy, to: UIntTy, x: num, truncate: boolean, chkOverflow: boolean) => BigNumber
 };

@@ -388,18 +388,18 @@ instance Optimize DLExpr where
           return $ DLE_Arg at lhs
         (SQRT t, [DLA_Literal (DLL_Int _ _ n)]) ->
           return $ DLE_Arg at $ DLA_Literal $ DLL_Int at t (isqrt n)
-        (MUL_DIV, [l, r, d])
+        (MUL_DIV _, [l, r, d])
           | l == d -> return $ DLE_Arg at r
           | r == d -> return $ DLE_Arg at l
-        (MUL_DIV, [l, r, DLA_Literal (DLL_Int _ _ 1)]) ->
-          opt $ DLE_PrimOp at (MUL UI_Word Nothing) [l, r]
-        (MUL_DIV, [DLA_Literal (DLL_Int _ _ 1), r, d]) ->
-          opt $ DLE_PrimOp at (DIV UI_Word Nothing) [r, d]
-        (MUL_DIV, [l, DLA_Literal (DLL_Int _ _ 1), d]) ->
-          opt $ DLE_PrimOp at (DIV UI_Word Nothing) [l, d]
-        (MUL_DIV, [DLA_Literal (DLL_Int _ _ 0), _, _]) ->
+        (MUL_DIV pv, [l, r, DLA_Literal (DLL_Int _ _ 1)]) ->
+          opt $ DLE_PrimOp at (MUL UI_Word pv) [l, r]
+        (MUL_DIV pv, [DLA_Literal (DLL_Int _ _ 1), r, d]) ->
+          opt $ DLE_PrimOp at (DIV UI_Word pv) [r, d]
+        (MUL_DIV pv, [l, DLA_Literal (DLL_Int _ _ 1), d]) ->
+          opt $ DLE_PrimOp at (DIV UI_Word pv) [l, d]
+        (MUL_DIV _, [DLA_Literal (DLL_Int _ _ 0), _, _]) ->
           return $ DLE_Arg at $ zero UI_Word
-        (MUL_DIV, [_, DLA_Literal (DLL_Int _ _ 0), _, _]) ->
+        (MUL_DIV _, [_, DLA_Literal (DLL_Int _ _ 0), _, _]) ->
           return $ DLE_Arg at $ zero UI_Word
         (IF_THEN_ELSE, [c, (DLA_Literal (DLL_Bool True)), (DLA_Literal (DLL_Bool False))]) ->
           return $ DLE_Arg at $ c

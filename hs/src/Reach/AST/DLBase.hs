@@ -644,18 +644,18 @@ data PrimVM -- Primitive Verification Mode
   deriving (Eq, Generic, NFData, Ord, Show)
 
 data PrimOp
-  = ADD UIntTy (Maybe PrimVM)
-  | SUB UIntTy (Maybe PrimVM)
-  | MUL UIntTy (Maybe PrimVM)
-  | DIV UIntTy (Maybe PrimVM)
-  | MOD UIntTy (Maybe PrimVM)
+  = ADD UIntTy PrimVM
+  | SUB UIntTy PrimVM
+  | MUL UIntTy PrimVM
+  | DIV UIntTy PrimVM
+  | MOD UIntTy PrimVM
   | PLT UIntTy
   | PLE UIntTy
   | PEQ UIntTy
   | PGE UIntTy
   | PGT UIntTy
   | SQRT UIntTy
-  | UCAST UIntTy UIntTy Bool (Maybe PrimVM)
+  | UCAST UIntTy UIntTy Bool PrimVM
   | IF_THEN_ELSE
   | DIGEST_EQ
   | ADDRESS_EQ
@@ -667,7 +667,7 @@ data PrimOp
   | BIOR UIntTy
   | BXOR UIntTy
   | BYTES_ZPAD Integer
-  | MUL_DIV
+  | MUL_DIV PrimVM
   | DIGEST_XOR
   | BYTES_XOR
   | BTOI_LAST8 Bool
@@ -682,25 +682,20 @@ instance Pretty PrimVM where
 
 instance Pretty PrimOp where
   pretty = \case
-    ADD t Nothing -> uitp t <> "+"
-    SUB t Nothing -> uitp t <> "-"
-    MUL t Nothing -> uitp t <> "*"
-    DIV t Nothing -> uitp t <> "/"
-    MOD t Nothing -> uitp t <> "%"
-    ADD t (Just pv) -> pretty pv <> parens (uitp t <> "+")
-    SUB t (Just pv) -> pretty pv <> parens (uitp t <> "-")
-    MUL t (Just pv) -> pretty pv <> parens (uitp t <> "*")
-    DIV t (Just pv) -> pretty pv <> parens (uitp t <> "/")
-    MOD t (Just pv) -> pretty pv <> parens (uitp t <> "%")
+    ADD t _ -> uitp t <> "+"
+    SUB t _ -> uitp t <> "-"
+    MUL t _ -> uitp t <> "*"
+    DIV t _ -> uitp t <> "/"
+    MOD t _ -> uitp t <> "%"
     PLT t -> uitp t <> "<"
     PLE t -> uitp t <> "<="
     PEQ t -> uitp t <> "=="
     PGE t -> uitp t <> ">="
     PGT t -> uitp t <> ">"
     SQRT t -> uitp t <> "sqrt"
-    UCAST dom rng trunc mpv ->
+    UCAST dom rng trunc pv ->
       let s = "cast" <> parens (uitp dom <> "," <> uitp rng <> if trunc then ",Truncate" else "") in
-      maybe s ((<> parens s) . pretty) mpv
+      pretty pv <> parens s
     IF_THEN_ELSE -> "ite"
     DIGEST_EQ -> "=="
     ADDRESS_EQ -> "=="
@@ -712,7 +707,7 @@ instance Pretty PrimOp where
     BIOR t -> uitp t <> "|"
     BXOR t -> uitp t <> "^"
     BYTES_ZPAD x -> "zpad" <> parens (pretty x)
-    MUL_DIV -> "muldiv"
+    MUL_DIV _ -> "muldiv"
     DIGEST_XOR -> "digest_xor"
     BYTES_XOR -> "bytes_xor"
     BTOI_LAST8 isDigest -> "btoiLast8(" <> bool "Bytes" "Digest" isDigest <> ")"
