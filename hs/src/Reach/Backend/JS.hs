@@ -277,27 +277,28 @@ jsUIntTy t = if t == UI_Word then "\"UInt\"" else "\"UInt256\""
 jsPrimApply :: PrimOp -> [Doc] -> App Doc
 jsPrimApply = \case
   SELF_ADDRESS {} -> r $ jsApply "ctc.selfAddress"
-  ADD t (Just PV_Safe) -> r $ jsApply_ui t "stdlib.safeAdd"
-  ADD t _ -> r $ jsApply_ui t "stdlib.add"
-  SUB t (Just PV_Safe) -> r $ jsApply_ui t "stdlib.safeSub"
-  SUB t _ -> r $ jsApply_ui t "stdlib.sub"
-  MUL t (Just PV_Safe) -> r $ jsApply_ui t "stdlib.safeMul"
-  MUL t _ -> r $ jsApply_ui t "stdlib.mul"
-  DIV t (Just PV_Safe) -> r $ jsApply_ui t "stdlib.safeDiv"
-  DIV t _ -> r $ jsApply_ui t "stdlib.div"
-  MOD t (Just PV_Safe) -> r $ jsApply_ui t "stdlib.safeMod"
-  MOD t _ -> r $ jsApply_ui t "stdlib.mod"
+  ADD t PV_Safe -> r $ jsApply_ui t "stdlib.safeAdd"
+  ADD t PV_Veri -> r $ jsApply_ui t "stdlib.add"
+  SUB t PV_Safe -> r $ jsApply_ui t "stdlib.safeSub"
+  SUB t PV_Veri -> r $ jsApply_ui t "stdlib.sub"
+  MUL t PV_Safe -> r $ jsApply_ui t "stdlib.safeMul"
+  MUL t PV_Veri -> r $ jsApply_ui t "stdlib.mul"
+  DIV t PV_Safe -> r $ jsApply_ui t "stdlib.safeDiv"
+  DIV t PV_Veri -> r $ jsApply_ui t "stdlib.div"
+  MOD t PV_Safe -> r $ jsApply_ui t "stdlib.safeMod"
+  MOD t PV_Veri -> r $ jsApply_ui t "stdlib.mod"
   PLT t -> r $ jsApply_ui t "stdlib.lt"
   PLE t -> r $ jsApply_ui t "stdlib.le"
   PEQ t -> r $ jsApply_ui t "stdlib.eq"
   PGE t -> r $ jsApply_ui t "stdlib.ge"
   PGT t -> r $ jsApply_ui t "stdlib.gt"
   SQRT t -> r $ jsApply_ui t "stdlib.sqrt"
-  UCAST dom rng trunc (Just PV_Veri) -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy dom, jsUIntTy rng ] <> a <> [ jsBool trunc, "false" ]
+  UCAST dom rng trunc PV_Veri -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy dom, jsUIntTy rng ] <> a <> [ jsBool trunc, "false" ]
   UCAST dom rng trunc _ -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy dom, jsUIntTy rng ] <> a <> [ jsBool trunc, "true" ]
   LSH -> r $ jsApply "stdlib.lsh"
   RSH -> r $ jsApply "stdlib.rsh"
-  MUL_DIV -> r $ jsApply "stdlib.muldiv"
+  MUL_DIV PV_Safe -> r $ jsApply "stdlib.safeMuldiv"
+  MUL_DIV PV_Veri -> r $ jsApply "stdlib.muldiv"
   BAND t -> r $ jsApply_ui t "stdlib.band"
   BIOR t -> r $ jsApply_ui t "stdlib.bior"
   BXOR t -> r $ jsApply_ui t "stdlib.bxor"
@@ -597,7 +598,7 @@ jsExpr = \case
     zero <- jsArg $ DLA_Literal $ DLL_Int at UI_Word 0
     let bal = "await" <+> jsApply "ctc.getBalance" [tok]
     c' <- jsPrimApply (PLE UI_Word) [bal, tb']
-    f' <- jsPrimApply (SUB UI_Word Nothing) [bal, tb']
+    f' <- jsPrimApply (SUB UI_Word PV_Safe) [bal, tb']
     rhs <- jsPrimApply IF_THEN_ELSE [ c', zero, f' ]
     ctm <- asks ctxt_mode
     let infoSim = case ctm == JM_Simulate && isJust mtok of

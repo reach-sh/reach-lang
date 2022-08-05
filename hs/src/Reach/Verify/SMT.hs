@@ -334,7 +334,7 @@ smtPrimOp at p dargs =
     (BYTES_ZPAD xtra) -> \args -> do
       xtra' <- smt_la at $ bytesZeroLit xtra
       return $ smtApply "bytesAppend" (args <> [xtra'])
-    MUL_DIV -> smtMulDiv
+    MUL_DIV _ -> smtMulDiv
     SELF_ADDRESS pn isClass _ ->
       case dargs of
         [] -> \_ ->
@@ -1206,7 +1206,7 @@ smt_e at_dv mdv de = do
             PGT _ -> do
               let w = DLA_Literal $ DLL_Int at UI_Word 1
               w' <- smt_a at w
-              go smtEq =<< smtPrimOp at (ADD UI_Word Nothing) [o, w] [o', w']
+              go smtEq =<< smtPrimOp at (ADD UI_Word PV_Safe) [o, w] [o', w']
             PGE _ -> go smtGe o'
             _ -> impossible $ "timeOrder: bad op: " <> show op
     DLE_EmitLog at _ lv ->

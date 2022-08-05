@@ -812,7 +812,6 @@ epp (LLProg llp_at (LLOpts {..}) llp_parts llp_init llp_exports llp_views llp_ap
         return $ EPProg llp_at isAPI ie et
   pps <- EPPs llp_apis <$> mapWithKeyM mkep sps_ies'
   -- Step 4: Generate the final PLProg
-  let plo_verifyArithmetic = llo_verifyArithmetic
   let plo_untrustworthyMaps = llo_untrustworthyMaps
   let plo_counter = llo_counter
   return $ PLProg llp_at (PLOpts {..}) llp_init dex' stateToSrcMap pps cp

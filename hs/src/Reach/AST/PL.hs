@@ -304,8 +304,7 @@ instance Pretty EPPs where
       <> hardline
 
 data PLOpts = PLOpts
-  { plo_verifyArithmetic :: Bool
-  , plo_untrustworthyMaps :: Bool
+  { plo_untrustworthyMaps :: Bool
   , plo_counter :: Counter
   }
   deriving (Generic, Eq)

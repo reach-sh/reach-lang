@@ -70,8 +70,7 @@ instance Pretty LLStep where
       prettyToConsensus__ lls_tc_lct lls_tc_send lls_tc_recv lls_tc_mtime
 
 data LLOpts = LLOpts
-  { llo_verifyArithmetic :: Bool
-  , llo_untrustworthyMaps :: Bool
+  {  llo_untrustworthyMaps :: Bool
   , llo_counter :: Counter
   , llo_droppedAsserts :: Counter
   }

@@ -614,7 +614,9 @@ base_env_slvals =
   , ("deploy", SLV_Deprecated (D_Replaced "deploy" "init") $ SLV_Prim SLPrim_init)
   , ("setOptions", SLV_Prim SLPrim_setOptions)
   , (".adaptReachAppTupleArgs", SLV_Prim SLPrim_adaptReachAppTupleArgs)
-  , ("muldiv", SLV_Prim $ SLPrim_op S_MUL_DIV)
+  , ("muldiv", SLV_Prim $ SLPrim_op $ S_MUL_DIV Nothing)
+  , ("safeMuldiv", SLV_Prim $ SLPrim_op $ S_MUL_DIV $ Just PV_Safe)
+  , ("veriMuldiv", SLV_Prim $ SLPrim_op $ S_MUL_DIV $ Just PV_Veri)
   , ("verifyMuldiv", SLV_Prim $ SLPrim_verifyMuldiv)
   , ("unstrict", SLV_Prim $ SLPrim_unstrict)
   , ("getContract", SLV_Prim $ SLPrim_getContract)
@@ -2233,7 +2235,7 @@ evalPrimOp sp sargs = do
     S_BAND -> nn2n (.&.)
     S_BIOR -> nn2n (.|.)
     S_BXOR -> nn2n (xor)
-    S_MUL_DIV -> case args of
+    S_MUL_DIV _ -> case args of
       [SLV_Int _ mt 1, rhs, den] | mtOkay2 mt rhs den ->
         evalPrimOp (S_DIV Nothing) $ map (lvl,) [rhs, den]
       [lhs, SLV_Int _ mt 1, den] | mtOkay2 mt lhs den ->
@@ -2326,7 +2328,8 @@ evalPrimOp sp sargs = do
       let doOp t cp cargs = DLA_Var <$> (ctxt_lift_expr (mkvar t) $ DLE_PrimOp at cp cargs)
       let doCmp = doOp T_Bool
       let uit_rng = uintTyOf rng
-      let p = sprimToPrim uit_dom uit_rng sp
+      usesVerifyArithmetic <- readDlo dlo_verifyArithmetic
+      let p = sprimToPrim uit_dom uit_rng usesVerifyArithmetic sp
       let lim_maxUInt_a = uintTyMax uit_rng
       let chkDiv t denom = do
             ca <- doCmp (PGT t) [denom, DLA_Literal $ DLL_Int sb t 0]
@@ -2335,7 +2338,7 @@ evalPrimOp sp sargs = do
             let (a, b) = case dargs of
                   [a_, b_] -> (a_, b_)
                   _ -> impossible "add args"
-            ra <- doOp (T_UInt t) (SUB t Nothing) [lim_maxUInt_a, b]
+            ra <- doOp (T_UInt t) (SUB t PV_Safe) [lim_maxUInt_a, b]
             ca <- doCmp (PLE t) [a, ra]
             dopClaim ca "add overflow"
       let verifySub t = do
@@ -2354,35 +2357,34 @@ evalPrimOp sp sargs = do
             let a = case dargs of
                   [a_] -> a_
                   _ -> impossible "cast args"
-            wordLimitAs256 <- doOp (T_UInt UI_256) (UCAST UI_Word UI_256 False $ Just PV_Veri) [ uintTyMax UI_Word ]
+            wordLimitAs256 <- doOp (T_UInt UI_256) (UCAST UI_Word UI_256 False PV_Veri) [ uintTyMax UI_Word ]
             ca <- doCmp (PLE UI_256) [a, wordLimitAs256]
             dopClaim ca "cast overflow"
-      let verifyMul t = do
+      let verifyMul t pv = do
             let (a, b) = case dargs of
                   [a_, b_] -> (a_, b_)
-                  _ -> impossible "add args"
-            ra <- doOp (T_UInt t) (DIV t Nothing) [lim_maxUInt_a, b]
+                  _ -> impossible "mul args"
+            ra <- doOp (T_UInt t) (DIV t pv) [lim_maxUInt_a, b]
             ca <- doCmp (PLE t) [a, ra]
             dopClaim ca "mul overflow"
       let shouldVerifyArith = \case
-            Just PV_Veri -> return True
-            Just PV_Safe -> return False
-            _ -> readDlo dlo_verifyArithmetic
-      let whenShouldVerifyArith mpv m = do
-            shouldVerify <- shouldVerifyArith mpv
+            PV_Veri -> True
+            PV_Safe -> False
+      let whenShouldVerifyArith pv m = do
+            let shouldVerify = shouldVerifyArith pv
             when shouldVerify $ m
       case p of
-        ADD t mpv -> whenShouldVerifyArith mpv $ verifyAdd t
-        SUB t mpv -> whenShouldVerifyArith mpv $ verifySub t
-        DIV t mpv -> whenShouldVerifyArith mpv $ verifyDiv t
-        MOD t mpv -> whenShouldVerifyArith mpv $ verifyMod t
-        MUL t mpv -> whenShouldVerifyArith mpv $ verifyMul t
-        MUL_DIV -> do
-          whenShouldVerifyArith Nothing $
+        ADD t pv -> whenShouldVerifyArith pv $ verifyAdd t
+        SUB t pv -> whenShouldVerifyArith pv $ verifySub t
+        DIV t pv -> whenShouldVerifyArith pv $ verifyDiv t
+        MOD t pv -> whenShouldVerifyArith pv $ verifyMod t
+        MUL t pv -> whenShouldVerifyArith pv $ verifyMul t pv
+        MUL_DIV pv -> do
+          whenShouldVerifyArith pv $
             chkDiv UI_Word $ case dargs of
               [_, _, b] -> b
               _ -> impossible "muldiv args"
-        UCAST UI_256 UI_Word trunc mpv -> whenShouldVerifyArith mpv $ verifyUCast trunc
+        UCAST UI_256 UI_Word trunc pv -> whenShouldVerifyArith pv $ verifyUCast trunc
         _ -> return $ mempty
       dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_PrimOp at p dargs)
       let da = DLA_Var dv
@@ -2390,8 +2392,8 @@ evalPrimOp sp sargs = do
             ca <- doCmp (PLE t) [da, lim_maxUInt_a]
             dopClaim ca "mul overflow"
       case p of
-        MUL t mpv -> whenShouldVerifyArith mpv $ chkMul t
-        MUL_DIV -> whenShouldVerifyArith Nothing $ chkMul UI_Word
+        MUL t pv -> whenShouldVerifyArith pv $ chkMul t
+        MUL_DIV pv -> whenShouldVerifyArith pv $ chkMul UI_Word
         _ -> return $ mempty
       return $ (lvl, SLV_DLVar dv)
 
@@ -2569,8 +2571,8 @@ doBalanceUpdate mtok op = \case
     bsv <- getBalanceOf mtok
     -- Assume we can add/sub from balance
     let assumeOps = M.fromList [
-          (S_ADD Nothing, (ADD UI_Word Nothing, assumeLtUMax)),
-          (S_SUB Nothing, (SUB UI_Word Nothing, assumeGtZero)) ]
+          (S_ADD Nothing, (ADD UI_Word PV_Safe, assumeLtUMax)),
+          (S_SUB Nothing, (SUB UI_Word PV_Safe, assumeGtZero)) ]
     whenVerifyArithmetic $ do
       forM_ (M.lookup op assumeOps) $
         assumeBalanceUpdate (snd bsv) rhs
@@ -3889,7 +3891,7 @@ evalPrim p sargs =
       fvBal <- getBalanceOf' mtok
       let trackedBal = DLA_Var fvBal
       untrackedFunds <- ctxt_lift_expr mdv $ DLE_GetUntrackedFunds at mtok trackedBal
-      dv <- ctxt_lift_expr mdv $ DLE_PrimOp at (ADD UI_Word Nothing) [DLA_Var untrackedFunds, trackedBal]
+      dv <- ctxt_lift_expr mdv $ DLE_PrimOp at (ADD UI_Word PV_Safe) [DLA_Var untrackedFunds, trackedBal]
       setBalance TM_Balance mtok (DLA_Var dv)
       return (lvl, SLV_DLVar untrackedFunds)
     SLPrim_isDataVariant -> do

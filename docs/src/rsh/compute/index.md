@@ -597,7 +597,7 @@ Boolean operations, like `{!rsh} &&`, only operate on booleans.
 `{!rsh} polyMod` operates on `{!rsh} UInt`s and `{!rsh} UInt256`. The first argument may be a `{!rsh} Digest` or `{!rsh} Bytes`.
 It is invalid to use binary operations on the wrong types of values.
 
-@{ref("rsh", "and")}@{ref("rsh", "or")}@{ref("rsh", "xor")}@{ref("rsh", "add")}@{ref("rsh", "sub")}@{ref("rsh", "mul")}@{ref("rsh", "div")}@{ref("rsh", "mod")}@{ref("rsh", "polyMod")}@{ref("rsh", "eq")}@{ref("rsh", "lt")}@{ref("rsh", "le")}@{ref("rsh", "ge")}@{ref("rsh", "gt")}@{ref("rsh", "lsh")}@{ref("rsh", "rsh")}@{ref("rsh", "band")}@{ref("rsh", "bior")}@{ref("rsh", "bxor")}@{ref("rsh", "polyEq")}@{ref("rsh", "polyNeq")}@{ref("rsh", "safeAdd")}@{ref("rsh", "safeSub")}@{ref("rsh", "safeMul")}@{ref("rsh", "safeDiv")}@{ref("rsh", "safeMod")}@{ref("rsh", "veriAdd")}@{ref("rsh", "veriSub")}@{ref("rsh", "veriMul")}@{ref("rsh", "veriDiv")}@{ref("rsh", "veriMod")}
+@{ref("rsh", "and")}@{ref("rsh", "or")}@{ref("rsh", "xor")}@{ref("rsh", "add")}@{ref("rsh", "sub")}@{ref("rsh", "mul")}@{ref("rsh", "div")}@{ref("rsh", "mod")}@{ref("rsh", "polyMod")}@{ref("rsh", "eq")}@{ref("rsh", "lt")}@{ref("rsh", "le")}@{ref("rsh", "ge")}@{ref("rsh", "gt")}@{ref("rsh", "lsh")}@{ref("rsh", "rsh")}@{ref("rsh", "band")}@{ref("rsh", "bior")}@{ref("rsh", "bxor")}@{ref("rsh", "polyEq")}@{ref("rsh", "polyNeq")}@{ref("rsh", "safeAdd")}@{ref("rsh", "safeSub")}@{ref("rsh", "safeMul")}@{ref("rsh", "safeDiv")}@{ref("rsh", "safeMod")}@{ref("rsh", "safeMuldiv")}@{ref("rsh", "veriAdd")}@{ref("rsh", "veriSub")}@{ref("rsh", "veriMul")}@{ref("rsh", "veriDiv")}@{ref("rsh", "veriMod")}@{ref("rsh", "veriMuldiv")}
 ```reach
 and(a, b)     // &&
 or(a, b)      // ||
@@ -623,11 +623,13 @@ safeSub(a, b)
 safeMul(a, b)
 safeDiv(a, b)
 safeMod(a, b)
+safeMuldiv(a, b)
 veriAdd(a, b)
 veriSub(a, b)
 veriMul(a, b)
 veriDiv(a, b)
 veriMod(a, b)
+veriMuldiv(a, b)
 ```
 
 All binary expression operators have a corresponding named function in the standard library.
