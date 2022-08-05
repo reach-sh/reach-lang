@@ -914,7 +914,7 @@
   "safeMul": {
     "CompletionItemKind": "Operator"
   },
-  "safeMulDiv": {
+  "safeMuldiv": {
     "CompletionItemKind": "Function"
   },
   "safeSub": {
@@ -986,7 +986,7 @@
   "veriMul": {
     "CompletionItemKind": "Operator"
   },
-  "veriMulDiv": {
+  "veriMuldiv": {
     "CompletionItemKind": "Function"
   },
   "veriSub": {
