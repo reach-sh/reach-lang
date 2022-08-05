@@ -8,8 +8,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{verRC("0.1.11")}
 
 + @{rcHead("0.1.11-rc7")}
++ 2022/08/05: Added `{!rsh} Struct.fields` and `{!rsh} Object.fields`.
 + 2022/08/03: Added `{!rsh} isDataVariant`.
-+ 2022/08/03: Added `{!rsh} Struct.fields` and `{!rsh} Object.fields`.
 
 + @{rcHead("0.1.11-rc6")}
 + 2022/07/30: **Backwards Incompatible**: The `{!rsh} this` variable is removed from the scope inside `{!rsh} while` and `{!rsh} parallelReduce` syntax, except for the initialization expressions.
