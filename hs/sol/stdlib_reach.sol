@@ -52,9 +52,9 @@ contract Stdlib {
   function safeMul(uint256 x, uint256 y) internal pure returns (uint256 z) {
     require(y == 0 || (z = x * y) / y == x, "mul overflow"); }
   function safeDiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y != 0 && (z = x / y) != 0, "div by zero"); }
+    require(y != 0, "div by zero"); z = x / y; }
   function safeMod(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y != 0 && (z = x % y) <= y, "div by zero"); }
+    require(y != 0, "div by zero"); z = x % y; }
 
   function unsafeAdd(uint256 x, uint256 y) internal pure returns (uint256 z) {
     unchecked { z = x + y; } }
