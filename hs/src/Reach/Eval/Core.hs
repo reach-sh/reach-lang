@@ -632,11 +632,11 @@ base_env_slvals =
   , ("safeMul", SLV_Prim $ SLPrim_op (S_MUL $ Just PV_Safe))
   , ("safeDiv", SLV_Prim $ SLPrim_op (S_DIV $ Just PV_Safe))
   , ("safeMod", SLV_Prim $ SLPrim_op (S_MOD $ Just PV_Safe))
-  , ("veriAdd", SLV_Prim $ SLPrim_op (S_ADD $ Just PV_Verified))
-  , ("veriSub", SLV_Prim $ SLPrim_op (S_SUB $ Just PV_Verified))
-  , ("veriMul", SLV_Prim $ SLPrim_op (S_MUL $ Just PV_Verified))
-  , ("veriDiv", SLV_Prim $ SLPrim_op (S_DIV $ Just PV_Verified))
-  , ("veriMod", SLV_Prim $ SLPrim_op (S_MOD $ Just PV_Verified))
+  , ("veriAdd", SLV_Prim $ SLPrim_op (S_ADD $ Just PV_Veri))
+  , ("veriSub", SLV_Prim $ SLPrim_op (S_SUB $ Just PV_Veri))
+  , ("veriMul", SLV_Prim $ SLPrim_op (S_MUL $ Just PV_Veri))
+  , ("veriDiv", SLV_Prim $ SLPrim_op (S_DIV $ Just PV_Veri))
+  , ("veriMod", SLV_Prim $ SLPrim_op (S_MOD $ Just PV_Veri))
   , ( "Reach"
     , (SLV_Object sb (Just $ "Reach") $
          m_fromList_public_builtin
@@ -2354,7 +2354,7 @@ evalPrimOp sp sargs = do
             let a = case dargs of
                   [a_] -> a_
                   _ -> impossible "cast args"
-            wordLimitAs256 <- doOp (T_UInt UI_256) (UCAST UI_Word UI_256 False Nothing) [ uintTyMax UI_Word ]
+            wordLimitAs256 <- doOp (T_UInt UI_256) (UCAST UI_Word UI_256 False $ Just PV_Veri) [ uintTyMax UI_Word ]
             ca <- doCmp (PLE UI_256) [a, wordLimitAs256]
             dopClaim ca "cast overflow"
       let verifyMul t = do
@@ -2365,7 +2365,7 @@ evalPrimOp sp sargs = do
             ca <- doCmp (PLE t) [a, ra]
             dopClaim ca "mul overflow"
       let shouldVerifyArith = \case
-            Just PV_Verified -> return True
+            Just PV_Veri -> return True
             Just PV_Safe -> return False
             _ -> readDlo dlo_verifyArithmetic
       let whenShouldVerifyArith mpv m = do
@@ -2731,7 +2731,7 @@ evalPrim p sargs =
           [i, (_, SLV_Bool _ trunc), (_, SLV_Bool _ shouldVerify)] -> return (Just trunc, Just shouldVerify, [i])
           [i, (_, SLV_Bool _ trunc)] -> return (Just trunc, Nothing, [i])
           _ -> return (Nothing, Nothing, sargs)
-      let mpv = maybe Nothing (Just . bool PV_Safe PV_Verified) mShouldVerify
+      let mpv = maybe Nothing (Just . bool PV_Safe PV_Veri) mShouldVerify
       evalPrimOp (S_UCAST to (fromMaybe False mTrunc) mpv) sargs'
     SLPrim_Token_burn -> do
       (tokv, mamtv) <-

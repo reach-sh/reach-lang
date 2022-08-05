@@ -584,7 +584,7 @@ solPrimApply = \case
     constr = const . return
     safeOp mpv veriFun safeFun args = do
       PLOpts {..} <- ctxt_plo <$> ask
-      case plo_verifyArithmetic || maybe False (== PV_Verified) mpv of
+      case plo_verifyArithmetic || maybe False (== PV_Veri) mpv of
         False -> return $ solApply safeFun args
         True -> return $ solApply veriFun args
     binOp op = \case

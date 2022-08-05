@@ -641,18 +641,18 @@ allKeywords :: [SLKwd]
 allKeywords = enumFrom minBound
 
 data SPrimOp
-  = S_ADD (Maybe PrimVerification)
-  | S_SUB (Maybe PrimVerification)
-  | S_MUL (Maybe PrimVerification)
-  | S_DIV (Maybe PrimVerification)
-  | S_MOD (Maybe PrimVerification)
+  = S_ADD (Maybe PrimVM)
+  | S_SUB (Maybe PrimVM)
+  | S_MUL (Maybe PrimVM)
+  | S_DIV (Maybe PrimVM)
+  | S_MOD (Maybe PrimVM)
   | S_PLT
   | S_PLE
   | S_PEQ
   | S_PGE
   | S_PGT
   | S_SQRT
-  | S_UCAST UIntTy Bool (Maybe PrimVerification)
+  | S_UCAST UIntTy Bool (Maybe PrimVM)
   | S_IF_THEN_ELSE
   | S_DIGEST_EQ
   | S_ADDRESS_EQ
