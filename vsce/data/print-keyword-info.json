@@ -1,4 +1,3 @@
-stack build --fast 
 {
   "API": {
     "CompletionItemKind": "Constructor"
