@@ -1539,6 +1539,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
       M.fromList $
         [ ("toTuple", retV $ public $ SLV_Prim $ SLPrim_Struct_toTuple)
         , ("toObject", retV $ public $ SLV_Prim $ SLPrim_Struct_toObject)
+        , ("fields", retV $ public $ SLV_Prim $ SLPrim_Struct_fields)
         ]
     delayCall :: SLPrimitive -> App SLSVal
     delayCall p = do
@@ -3113,6 +3114,16 @@ evalPrim p sargs =
       sv <- one_arg
       at <- withAt id
       (,) lvl <$> (SLV_Object at Nothing <$> (evalObjEnv =<< evalAsEnv (lvl, sv)))
+    SLPrim_Struct_fields -> do
+      at <- withAt id
+      a <- one_arg
+      ty <- mustBeType a
+      pairs <- case ty of
+        ST_Struct pairs_ -> return pairs_
+        _ -> expect_t a $ Err_Expected "struct type"
+      let pairs' = map (\(n, t) -> SLV_Tuple at
+                         [SLV_Bytes at $ bpack n, SLV_Type t]) pairs
+      retV $ (lvl, SLV_Tuple at pairs')
     SLPrim_Tuple -> do
       vs <- mapM (expect_ty "Tuple argument") $ map snd sargs
       retV $ (lvl, SLV_Type $ ST_Tuple vs)
