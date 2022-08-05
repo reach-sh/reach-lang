@@ -115,6 +115,7 @@ completionKind v =
         SLPrim_Struct_fromObject _ -> Just CK_Method
         SLPrim_Struct_toTuple -> Just CK_Method
         SLPrim_Struct_toObject -> Just CK_Method
+        SLPrim_Struct_fields -> Just CK_Method
         SLPrim_Tuple -> Just CK_TypeParameter
         SLPrim_tuple_length -> Just CK_Method
         SLPrim_tuple_set -> Just CK_Method

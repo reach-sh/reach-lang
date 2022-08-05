@@ -7,7 +7,12 @@ const accA = await stdlib.newTestAccount(startingBalance);
 const ctcA = accA.contract(backend);
 
 const Player = (acc) => ({
-  see: ((o) => {
+  seeObj: ((o) => {
+    if (! Object.keys(o).length == 3) {
+      throw "got bad object"
+    }
+  }),
+  seeStruct: ((o) => {
     if (! Object.keys(o).length == 3) {
       throw "got bad object"
     }

@@ -740,6 +740,7 @@ data SLPrimitive
   | SLPrim_Struct_fromObject [(SLVar, SLType)]
   | SLPrim_Struct_toTuple
   | SLPrim_Struct_toObject
+  | SLPrim_Struct_fields
   | SLPrim_Tuple
   | SLPrim_tuple_length
   | SLPrim_tuple_set
