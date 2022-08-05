@@ -1285,7 +1285,7 @@ Shorthand for `{!rsh} { x: x, z: 5}`, where `{!rsh} x` is any bound identifier.
 ```reach
 const o1 = Object({a: UInt, b: UInt});
 const fields = Object.fields(o1); // {a: UInt, b: UInt}
-const o2 = Object(...fields, c: UInt));
+const o2 = Object({...fields, c: UInt}));
 ```
 
 Takes an object type and returns an object describing the fields of that type.
