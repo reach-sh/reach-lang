@@ -1,3 +1,4 @@
+stack build --fast 
 {
   "API": {
     "CompletionItemKind": "Constructor"
@@ -272,6 +273,9 @@
   "Object": {
     "CompletionItemKind": "TypeParameter"
   },
+  "Object.fields": {
+    "CompletionItemKind": "Method"
+  },
   "Object.has": {
     "CompletionItemKind": "Method"
   },
@@ -313,6 +317,9 @@
   },
   "Struct": {
     "CompletionItemKind": "TypeParameter"
+  },
+  "Struct.fields": {
+    "CompletionItemKind": "Method"
   },
   "Struct.toObject": {
     "CompletionItemKind": "Method"
