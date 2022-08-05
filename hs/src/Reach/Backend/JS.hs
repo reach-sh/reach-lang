@@ -293,7 +293,7 @@ jsPrimApply = \case
   PGE t -> r $ jsApply_ui t "stdlib.ge"
   PGT t -> r $ jsApply_ui t "stdlib.gt"
   SQRT t -> r $ jsApply_ui t "stdlib.sqrt"
-  UCAST dom rng trunc (Just PV_Verified) -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy dom, jsUIntTy rng ] <> a <> [ jsBool trunc, "false" ]
+  UCAST dom rng trunc (Just PV_Veri) -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy dom, jsUIntTy rng ] <> a <> [ jsBool trunc, "false" ]
   UCAST dom rng trunc _ -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy dom, jsUIntTy rng ] <> a <> [ jsBool trunc, "true" ]
   LSH -> r $ jsApply "stdlib.lsh"
   RSH -> r $ jsApply "stdlib.rsh"

@@ -638,24 +638,24 @@ instance Pretty ApiInfo where
         , ("ret", pretty ai_ret_ty)
         ]
 
-data PrimVerification
-  = PV_Safe      -- No static assertion, yes dynamic check
-  | PV_Verified  -- Yes static assertion, no dynamic check
+data PrimVM -- Primitive Verification Mode
+  = PV_Safe -- No static assertion, yes dynamic check
+  | PV_Veri -- Yes static assertion, no dynamic check
   deriving (Eq, Generic, NFData, Ord, Show)
 
 data PrimOp
-  = ADD UIntTy (Maybe PrimVerification)
-  | SUB UIntTy (Maybe PrimVerification)
-  | MUL UIntTy (Maybe PrimVerification)
-  | DIV UIntTy (Maybe PrimVerification)
-  | MOD UIntTy (Maybe PrimVerification)
+  = ADD UIntTy (Maybe PrimVM)
+  | SUB UIntTy (Maybe PrimVM)
+  | MUL UIntTy (Maybe PrimVM)
+  | DIV UIntTy (Maybe PrimVM)
+  | MOD UIntTy (Maybe PrimVM)
   | PLT UIntTy
   | PLE UIntTy
   | PEQ UIntTy
   | PGE UIntTy
   | PGT UIntTy
   | SQRT UIntTy
-  | UCAST UIntTy UIntTy Bool (Maybe PrimVerification)
+  | UCAST UIntTy UIntTy Bool (Maybe PrimVM)
   | IF_THEN_ELSE
   | DIGEST_EQ
   | ADDRESS_EQ
@@ -677,7 +677,7 @@ data PrimOp
   | GET_COMPANION
   deriving (Eq, Generic, Ord, Show)
 
-instance Pretty PrimVerification where
+instance Pretty PrimVM where
   pretty = viaShow
 
 instance Pretty PrimOp where
