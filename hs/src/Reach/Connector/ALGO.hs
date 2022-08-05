@@ -1374,7 +1374,7 @@ cprim = \case
   PGT t -> bcall t ">"
   PGE t -> bcall t ">="
   SQRT t -> bcallz t "sqrt"
-  UCAST from to trunc _ -> \case
+  UCAST from to trunc mpv -> \case
     [v] -> do
       case (from, to) of
         (UI_Word, UI_256) -> do
@@ -1387,7 +1387,7 @@ cprim = \case
           -- [ v ]
           let ext i = cint (8 * i) >> op "extract_uint64"
           PLOpts {..} <- asks ePLO
-          unless (plo_verifyArithmetic || trunc) $ do
+          unless (plo_verifyArithmetic || trunc || mpv == Just PV_Veri) $ do
             dupn 3
             -- [ v, v, v, v ]
             let go i = ext i >> cint 0 >> asserteq

@@ -633,6 +633,7 @@ veriMod(a, b)
 All binary expression operators have a corresponding named function in the standard library.
 The named arithmetic functions prefixed with `{!rsh} safe`, e.g. `{!rsh} safeAdd`, bypass `{!rsh} verifyArithmetic` and are not statically verified; they are only checked at runtime.
 The named arithmetic functions prefixed with `{!rsh} veri`, e.g. `{!rsh} veriAdd`, are statically verified, regardless of `{!rsh} verifyArithmetic`; no runtime checks will be generated for these verified operations.
+The `{!rsh} veri` functions enable you to verify arithmetic in specific parts of a program, as opposed to using `{!rsh} verifyArithmetic` throughout the whole application.
 While `{!rsh} &&` and `{!rsh} ||` may not evaluate their second argument,
 their corresponding named functions `{!rsh} and`, `{!rsh} or`, and `{!rsh} xor`, always do.
 
@@ -711,6 +712,10 @@ This is the default behavior.
 const x = UInt256(/* big number */);
 const x_truncated = UInt(x, true);
 ```
+
+You may specify a third argument, that is of type `{!rsh} Bool`, when performing a cast.
+When `{!rsh} true`, the cast will be statically verified.
+When `{!rsh} false`, the cast will only be checked at runtime.
 
 Numeric literals in your program are considered `{!rsh} UInt`.
 If they are cast to `{!rsh} UInt256`, then your program can contain constant `{!rsh} UInt256` values.
