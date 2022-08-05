@@ -810,12 +810,15 @@ export const makeArith = (m:BigNumber): Arith => {
   const sqrt256 = liftB1('sqrt');
   const muldiv = (a: num, b: num, c: num): BigNumber => {
     const prod = bigNumberify(a).mul(bigNumberify(b));
-    return checkM( prod.div(bigNumberify(c)) );
+    return prod.div(bigNumberify(c));
+  };
+  const safeMuldiv = (a: num, b: num, c: num): BigNumber => {
+    return checkM( muldiv(a, b, c) );
   };
   return {
     add, sub, mod, mul, div, band, bior, bxor, sqrt,
     add256, sub256, mod256, mul256, div256, band256, bior256, bxor256, sqrt256,
-    cast, muldiv, safeAdd, safeSub, safeMod, safeDiv, safeMul };
+    cast, muldiv, safeMuldiv, safeAdd, safeSub, safeMod, safeDiv, safeMul };
 };
 
 export const argsSlice = <T>(args: Array<T>, cnt: number): Array<T> =>

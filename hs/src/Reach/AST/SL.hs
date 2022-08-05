@@ -663,27 +663,27 @@ data SPrimOp
   | S_BIOR
   | S_BXOR
   | S_BYTES_ZPAD Integer
-  | S_MUL_DIV
+  | S_MUL_DIV (Maybe PrimVM)
   | S_DIGEST_XOR
   | S_BYTES_XOR
   | S_BTOI_LAST8 Bool
   | S_CTC_ADDR_EQ
   deriving (Eq, Generic, NFData, Ord, Show)
 
-sprimToPrim :: UIntTy -> UIntTy -> SPrimOp -> PrimOp
-sprimToPrim dom rng = \case
-  S_ADD mpv -> ADD rng mpv
-  S_SUB mpv -> SUB rng mpv
-  S_MUL mpv -> MUL rng mpv
-  S_DIV mpv -> DIV rng mpv
-  S_MOD mpv -> MOD rng mpv
+sprimToPrim :: UIntTy -> UIntTy -> Bool -> SPrimOp -> PrimOp
+sprimToPrim dom rng useVerifyArith = \case
+  S_ADD mpv -> ADD rng $ getPV mpv
+  S_SUB mpv -> SUB rng $ getPV mpv
+  S_MUL mpv -> MUL rng $ getPV mpv
+  S_DIV mpv -> DIV rng $ getPV mpv
+  S_MOD mpv -> MOD rng $ getPV mpv
   S_PLT -> PLT dom
   S_PLE -> PLE dom
   S_PEQ -> PEQ dom
   S_PGE -> PGE dom
   S_PGT -> PGT dom
   S_SQRT -> SQRT dom
-  S_UCAST _ trunc mpv -> UCAST dom rng trunc mpv
+  S_UCAST _ trunc mpv -> UCAST dom rng trunc $ getPV mpv
   S_IF_THEN_ELSE -> IF_THEN_ELSE
   S_DIGEST_EQ -> DIGEST_EQ
   S_ADDRESS_EQ -> ADDRESS_EQ
@@ -694,11 +694,15 @@ sprimToPrim dom rng = \case
   S_BIOR -> BIOR rng
   S_BXOR -> BXOR rng
   S_BYTES_ZPAD n -> BYTES_ZPAD n
-  S_MUL_DIV -> MUL_DIV
+  S_MUL_DIV mpv -> MUL_DIV $ getPV mpv
   S_DIGEST_XOR -> DIGEST_XOR
   S_BYTES_XOR -> BYTES_XOR
   S_BTOI_LAST8 b -> BTOI_LAST8 b
   S_CTC_ADDR_EQ -> CTC_ADDR_EQ
+  where
+    getPV = \case
+      Just pv -> pv
+      Nothing -> if useVerifyArith then PV_Veri else PV_Safe
 
 data RemoteFunMode
   = RFM_Pay
