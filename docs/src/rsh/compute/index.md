@@ -1279,9 +1279,21 @@ these fields may be accompanied by additional fields specified afterwards.
 
 Shorthand for `{!rsh} { x: x, z: 5}`, where `{!rsh} x` is any bound identifier.
 
+#### `Object.fields`
+@{ref("rsh", "Object.fields")}
+
+```reach
+const o1 = Object({a: UInt, b: UInt});
+const fields = Object.fields(o1); // {a: UInt, b: UInt}
+const o2 = Object(...fields, c: UInt));
+```
+
+Takes an object type and returns an object describing the fields of that type.
+It's useful for creating extended type values.
+
 ### {#ref-programs-structs} Structs
 
-@{ref("rsh", "Struct.toObject")}@{ref("rsh", "Struct.toTuple")}
+@{ref("rsh", "Struct.toObject")}@{ref("rsh", "Struct.toTuple")}@{ref("rsh", "Struct.fields")}
 ```reach
 const Posn = Struct([["x", UInt], ["y", UInt]]);
 const p1 = Posn.fromObject({x: 1, y: 2});
@@ -1304,6 +1316,13 @@ assert(Struct.toObject(p2).y == 2);
 ```
 
 The names of elements may be restricted to avoid conflicting with reserved words of the specified connectors.
+
+The `{!rsh} Struct.fields` function takes a struct type and returns a tuple describing a struct's fields that is suitable for creating extended versions of structs.
+
+```reach
+const fields = Struct.fields(Posn); // [["x", UInt], ["y", UInt]]
+const Posn3d = Struct([...fields, ["z", UInt]]);
+```
 
 ### Field reference
 

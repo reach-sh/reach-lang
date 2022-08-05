@@ -1,12 +1,10 @@
 'reach 0.1';
 
 const ot = Object({a: UInt, b: UInt});
-const otf = Object.fields(ot);
-const newobj = Object({...otf, c: UInt});
+const newobj = Object({...Object.fields(ot), c: UInt});
 
 const st = Struct([["x", UInt], ["y", UInt]]);
-const stf = Struct.fields(st);
-const newstruct = Struct([...stf, ["z", UInt]]);
+const newstruct = Struct([...Struct.fields(st), ["z", UInt]]);
 
 export const main = Reach.App(() => {
   const A = Participant('A', {
