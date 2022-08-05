@@ -1456,6 +1456,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
         [ ("set", retStdLib "Object_set")
         , ("setIfUnset", retStdLib "Object_setIfUnset")
         , ("has", retV $ public $ SLV_Prim $ SLPrim_Object_has)
+        , ("fields", retV $ public $ SLV_Prim $ SLPrim_Object_fields)
         ]
   SLV_Type ST_Contract ->
     return $ Just $
@@ -2581,6 +2582,13 @@ mustBeObject = \case
     locAtf (flip srclocOf_ ow) $
       expect_t ow $ Err_Expected "object"
 
+mustBeType :: SLVal -> App SLType
+mustBeType = \case
+  SLV_Type t -> return t
+  ow ->
+    locAtf (flip srclocOf_ ow) $
+      expect_t ow $ Err_Expected "type"
+
 mustBeDataTy :: (DLType -> EvalError) -> DLType -> App (M.Map SLVar DLType)
 mustBeDataTy err = \case
   T_Data x -> return $ x
@@ -3135,6 +3143,15 @@ evalPrim p sargs =
       bs <- mustBeBytes bsv
       vm <- evalAsEnv (lvl, obj)
       retV $ (lvl, SLV_Bool at $ M.member (bunpack bs) vm)
+    SLPrim_Object_fields -> do
+      at <- withAt id
+      a <- one_arg
+      ty <- mustBeType a
+      tm <- case ty of
+        ST_Object m -> return m
+        _ -> expect_t a $ Err_Expected "object type"
+      let tm' = M.map (\t -> SLSSVal at lvl (SLV_Type t)) tm
+      retV $ (lvl, SLV_Object at Nothing tm')
     SLPrim_makeEnum -> do
       at' <- withAt $ srcloc_at "makeEnum" Nothing
       case map snd sargs of

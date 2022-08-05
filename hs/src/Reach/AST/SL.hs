@@ -745,6 +745,7 @@ data SLPrimitive
   | SLPrim_tuple_set
   | SLPrim_Object
   | SLPrim_Object_has
+  | SLPrim_Object_fields
   | SLPrim_App_Delay SrcLoc JSStatement (SLEnv, Bool)
   | SLPrim_op SPrimOp
   | SLPrim_transfer
