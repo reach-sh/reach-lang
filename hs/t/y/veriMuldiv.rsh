@@ -8,7 +8,10 @@ export const main = Reach.App(() => {
     const y = declassify(interact.y);
     const z = declassify(interact.z);
   });
-  A.publish(x, y, z);
+  A.publish(x, y, z).check(() => {
+    check(z != 0);
+    verifyMuldiv(x, y, z);
+  });
   const r1 = veriMuldiv(x, y, z);
   A.interact.show(r1);
   commit();
