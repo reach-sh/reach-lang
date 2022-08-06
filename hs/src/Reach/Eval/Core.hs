@@ -2370,9 +2370,7 @@ evalPrimOp sp sargs = do
       let shouldVerifyArith = \case
             PV_Veri -> True
             PV_Safe -> False
-      let whenShouldVerifyArith pv m = do
-            let shouldVerify = shouldVerifyArith pv
-            when shouldVerify $ m
+      let whenShouldVerifyArith pv = when $ shouldVerifyArith pv
       case p of
         ADD t pv -> whenShouldVerifyArith pv $ verifyAdd t
         SUB t pv -> whenShouldVerifyArith pv $ verifySub t
