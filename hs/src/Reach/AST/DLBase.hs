@@ -694,8 +694,9 @@ instance Pretty PrimOp where
     PGT t -> uitp t <> ">"
     SQRT t -> uitp t <> "sqrt"
     UCAST dom rng trunc pv ->
-      let s = "cast" <> parens (uitp dom <> "," <> uitp rng <> if trunc then ",Truncate" else "") in
-      pretty pv <> parens s
+      let mTruncMsg = if trunc then ",Truncate" else "" in
+      let mVeriMsg = ", " <> pretty pv in
+      "cast" <> parens (uitp dom <> "," <> uitp rng <> mTruncMsg <> mVeriMsg)
     IF_THEN_ELSE -> "ite"
     DIGEST_EQ -> "=="
     ADDRESS_EQ -> "=="

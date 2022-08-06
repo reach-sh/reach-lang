@@ -16,7 +16,7 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v45 = x/41 b<= (PV_Veri(cast(,b))UInt.max);
+  const v45 = x/41 b<= (cast(,b, PV_Veri)UInt.max);
   //    ^ would be false
   assert(v45);
 
