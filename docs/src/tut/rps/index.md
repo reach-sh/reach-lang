@@ -1626,7 +1626,7 @@ because [`rps-9-web/index.rsh`](@{REPO}/examples/rps-9-web/index.rsh) is the sam
 
 ```
 load: /examples/rps-9-web/index.js
-md5: 29b1b17df91e1d49053670f72eebc6b4
+md5: 5e5c8976731882c06e7f094e05ca43b3
 range: 1-9
 ```
 
@@ -1642,7 +1642,7 @@ to achieve the desired effect.
 
 ```
 load: /examples/rps-9-web/index.js
-md5: 29b1b17df91e1d49053670f72eebc6b4
+md5: 5e5c8976731882c06e7f094e05ca43b3
 range: 10-14
 ```
 
@@ -1656,13 +1656,13 @@ and tell it what to do once it mounts, which is the React term for starting.
 
 ```
 load: /examples/rps-9-web/index.js
-md5: 29b1b17df91e1d49053670f72eebc6b4
+md5: 5e5c8976731882c06e7f094e05ca43b3
 range: 15-31
 ```
 
 ```
 load: /examples/rps-9-web/index.js
-md5: 29b1b17df91e1d49053670f72eebc6b4
+md5: 5e5c8976731882c06e7f094e05ca43b3
 range: 39-41
 ```
 
@@ -1686,7 +1686,7 @@ Next, we define callbacks on `{!js} App` for what to do when the user clicks cer
 
 ```
 load: /examples/rps-9-web/index.js
-md5: 29b1b17df91e1d49053670f72eebc6b4
+md5: 5e5c8976731882c06e7f094e05ca43b3
 range: 32-36
 ```
 
@@ -1703,7 +1703,7 @@ When we combine this with the view ([rps-9-web/views/AppViews.js](@{REPO}/exampl
 
 ```
 load: /examples/rps-9-web/index.js
-md5: 29b1b17df91e1d49053670f72eebc6b4
+md5: 5e5c8976731882c06e7f094e05ca43b3
 range: 37-38
 ```
 
@@ -1731,7 +1731,7 @@ We will provide these callbacks via the React component directly.
 
 ```
 load: /examples/rps-9-web/index.js
-md5: 29b1b17df91e1d49053670f72eebc6b4
+md5: 5e5c8976731882c06e7f094e05ca43b3
 range: 42-55
 ```
 
@@ -1784,7 +1784,7 @@ and define some button handlers in order to trigger the deployment of the contra
 
 ```
 load: /examples/rps-9-web/index.js
-md5: 29b1b17df91e1d49053670f72eebc6b4
+md5: 5e5c8976731882c06e7f094e05ca43b3
 range: 56-72
 ```
 
@@ -1837,7 +1837,7 @@ and define some button handlers in order to attach to the deployed contract.
 
 ```
 load: /examples/rps-9-web/index.js
-md5: 29b1b17df91e1d49053670f72eebc6b4
+md5: 5e5c8976731882c06e7f094e05ca43b3
 range: 73-95
 ```
 
@@ -1878,7 +1878,7 @@ The display when waiting for a turn ([rps-9-web/views/AttacherViews.js](@{REPO}/
 
 ```
 load: /examples/rps-9-web/index.js
-md5: 29b1b17df91e1d49053670f72eebc6b4
+md5: 5e5c8976731882c06e7f094e05ca43b3
 range: 96-96
 ```
 
@@ -2034,7 +2034,7 @@ And finally, the Web frontend:
 
 ```
 load: /examples/rps-9-web/index.js
-md5: 29b1b17df91e1d49053670f72eebc6b4
+md5: 5e5c8976731882c06e7f094e05ca43b3
 ```
 
 We wrote about a hundred lines of Reach and two different frontends.
