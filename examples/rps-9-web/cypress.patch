@@ -1,5 +1,5 @@
 diff --git a/examples/rps-9-web/index.js b/examples/rps-9-web/index.js
-index 0d03c6139..c0a15576b 100644
+index 7bdc6bc33..c0a15576b 100644
 --- a/examples/rps-9-web/index.js
 +++ b/examples/rps-9-web/index.js
 @@ -7,6 +7,7 @@ import './index.css';
@@ -23,6 +23,7 @@ index 0d03c6139..c0a15576b 100644
  }
  
 -renderDOM(<App />);
+\ No newline at end of file
 +window.reach = reach;
 +window.backend = backend;
 +
