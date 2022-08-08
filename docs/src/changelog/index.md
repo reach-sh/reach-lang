@@ -8,6 +8,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{verRC("0.1.11")}
 
 + @{rcHead("0.1.11-rc7")}
++ 2022/08/07: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/08/07: Added `{!rsh} safe*` and `{!rsh} veri*` arithmetic functions, e.g. `{!rsh} safeAdd` and `{!rsh} veriAdd`.
 + 2022/08/05: Added `{!rsh} Struct.fields` and `{!rsh} Object.fields`.
 + 2022/08/04: Added `{!js} stdlib.tokensAccepted` and `{!js} acc.tokensAccepted`.

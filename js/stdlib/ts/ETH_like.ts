@@ -92,7 +92,7 @@ type Interface = real_ethers.utils.Interface;
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-const reachBackendVersion = 18;
+const reachBackendVersion = 19;
 const reachEthBackendVersion = 7;
 export type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
@@ -895,7 +895,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return md;
   };
 
-  const accObj = { networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, 
+  const accObj = { networkAccount, getAddress: selfAddress, stdlib, setDebugLabel,
                    tokenAccepted, tokensAccepted: tokensAccepted_, tokenAccept, tokenMetadata,
                    contract, setGasLimit, getGasLimit, setStorageLimit, getStorageLimit };
   const acc = accObj as unknown as Account;
