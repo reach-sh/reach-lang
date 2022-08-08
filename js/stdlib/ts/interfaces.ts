@@ -83,10 +83,15 @@ export interface Arith {
   bxor: (x: num, y: num) => BigNumber
   sqrt: (n1: num, n2: num) => BigNumber
   add256: (x: num, y: num) => BigNumber
+  safeAdd256: (x: num, y: num) => BigNumber
   sub256: (x: num, y: num) => BigNumber
+  safeSub256: (x: num, y: num) => BigNumber
   mod256: (x: num, y: num) => BigNumber
+  safeMod256: (x: num, y: num) => BigNumber
   mul256: (x: num, y: num) => BigNumber
+  safeMul256: (x: num, y: num) => BigNumber
   div256: (x: num, y: num) => BigNumber
+  safeDiv256: (x: num, y: num) => BigNumber
   band256: (x: num, y: num) => BigNumber
   bior256: (x: num, y: num) => BigNumber
   bxor256: (x: num, y: num) => BigNumber
