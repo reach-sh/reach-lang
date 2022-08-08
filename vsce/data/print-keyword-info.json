@@ -282,7 +282,7 @@
     "CompletionItemKind": "Method"
   },
   "Object.setIfUnset": {
-    "CompletionItemKind": "Method"
+    "CompletionItemKind": "Function"
   },
   "Open": {
     "CompletionItemKind": "Constant"
