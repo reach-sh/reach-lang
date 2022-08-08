@@ -477,16 +477,26 @@ export type TokenMetadata = {
 };
 
 export type LaunchTokenOpts = {
-  'decimals'?: number,
-  'supply'?: unknown,
-  'clawback'?: any,
-  'freeze'?: any,
-  'reserve'?: any,
-  'defaultFrozen'?: boolean,
-  'url'?: string,
-  'metadataHash'?: string,
-  'note'?: Uint8Array,
+  // Universal
+  decimals?: number,
+  supply?: unknown,
+  url?: string,
+  metadataHash?: string,
+
+  // Algorand only
+  clawback?: any,
+  freeze?: any,
+  defaultFrozen?: boolean,
+  reserve?: any,
+  note?: Uint8Array,
 };
+
+export type TransferOpts = {
+  // Algorand only
+  closeTo?: any,
+  note?: Uint8Array,
+  tag?: number, // used internally, overridden if a note is specified
+}
 
 export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   networkAccount: NetworkAccount,
