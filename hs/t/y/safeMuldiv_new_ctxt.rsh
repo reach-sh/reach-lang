@@ -11,6 +11,7 @@ export const main = Reach.App(() => {
   });
   A.publish(x, y, z);
   const r1 = safeMuldiv(x, y, z);
+  enforce(z != 0);
   const r2 = muldiv(x, y, z);
   A.interact.show(r1);
   A.interact.show(r2);

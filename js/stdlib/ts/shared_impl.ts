@@ -783,16 +783,19 @@ export const makeArith = (m:BigNumber): Arith => {
   const liftB1 = liftX1(checkB);
   const liftM1 = liftX1(checkM);
 
+  const addPreC = (max: BigNumber) => ["add overflow", (x: BigNumber, y: BigNumber) => x.lte(max.sub(y)) ];
+  const subPreC = ["sub wraparound", (x: BigNumber, y: BigNumber) => x.gte(y) ];
+  const mulPreC = (max: BigNumber) => ["mul overflow", (x: BigNumber, y: BigNumber) => x.lte(max.div(y))];
   const divPreC = ["div by zero", (_: BigNumber, y: BigNumber) => y.gt(0) ];
 
   const add = liftM('add');
-  const safeAdd = liftM('add', ["add overflow", (x: BigNumber, y: BigNumber) => x.lte(m.sub(y)) ]);
+  const safeAdd = liftM('add', addPreC(m));
   const sub = liftM('sub');
-  const safeSub = liftM('sub', ["sub wraparound", (x: BigNumber, y: BigNumber) => x.gte(y) ]);
+  const safeSub = liftM('sub', subPreC);
   const mod = liftM('mod');
   const safeMod = liftM('mod', divPreC);
   const mul = liftM('mul');
-  const safeMul = liftM('mul', ["mul overflow", (x: BigNumber, y: BigNumber) => x.lte(m.div(y))]);
+  const safeMul = liftM('mul', mulPreC(m));
   const div = liftM('div');
   const safeDiv = liftM('div', divPreC);
   const band = liftM('and');
@@ -800,10 +803,15 @@ export const makeArith = (m:BigNumber): Arith => {
   const bxor = liftM('xor');
   const sqrt = liftM1('sqrt');
   const add256 = liftB('add');
+  const safeAdd256 = liftB('add', addPreC(UInt256_max));
   const sub256 = liftB('sub');
+  const safeSub256 = liftB('sub', subPreC);
   const mod256 = liftB('mod');
+  const safeMod256 = liftB('mod', divPreC);
   const mul256 = liftB('mul');
+  const safeMul256 = liftB('mul', mulPreC(UInt256_max));
   const div256 = liftB('div');
+  const safeDiv256 = liftB('div', divPreC);
   const band256 = liftB('and');
   const bior256 = liftB('or');
   const bxor256 = liftB('xor');
@@ -818,6 +826,7 @@ export const makeArith = (m:BigNumber): Arith => {
   return {
     add, sub, mod, mul, div, band, bior, bxor, sqrt,
     add256, sub256, mod256, mul256, div256, band256, bior256, bxor256, sqrt256,
+    safeAdd256, safeSub256, safeMod256, safeMul256, safeDiv256,
     cast, muldiv, safeMuldiv, safeAdd, safeSub, safeMod, safeDiv, safeMul };
 };
 
