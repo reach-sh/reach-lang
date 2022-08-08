@@ -9,6 +9,7 @@ import {
   IBackend,
   SetSigningMonitor,
   UIntTy,
+  TransferOpts,
 } from './shared_impl';
 
 export interface TypeDefs<Ty> {
@@ -172,7 +173,7 @@ export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, Contrac
   balanceOf: (acc: Account, token?: Token) => Promise<BigNumber>
   balancesOf: (acc: Account, tokens: Array<Token | null>) => Promise<Array<BigNumber>>
   minimumBalanceOf: (acc:Account) => Promise<BigNumber>
-  transfer: (from: Account, to: Account, val?: BigNumber, token?: Token) => Promise<unknown>
+  transfer: (from: Account, to: Account, amount: any, token?: Token, opts?: TransferOpts) => Promise<unknown>
   connectAccount: (networkAccount: NetworkAccount) => Promise<Account>
   newAccountFromSecret: (secret: string) => Promise<Account>
   newAccountFromMnemonic: (phrase: string) => Promise<Account>
