@@ -792,7 +792,7 @@ export const makeArith = (m:BigNumber): Arith => {
   const mod = liftM('mod');
   const safeMod = liftM('mod', divPreC);
   const mul = liftM('mul');
-  const safeMul = liftM('mul', ["mul overflow", (x: BigNumber, y: BigNumber) => x.gte(m.div(y))]);
+  const safeMul = liftM('mul', ["mul overflow", (x: BigNumber, y: BigNumber) => x.lte(m.div(y))]);
   const div = liftM('div');
   const safeDiv = liftM('div', divPreC);
   const band = liftM('and');
