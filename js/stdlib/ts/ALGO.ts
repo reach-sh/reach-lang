@@ -2243,7 +2243,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return ( r !== false );
   };
 
-  const tokensAccepted_ = (): Promise<Array<Token>> => tokensAccepted(networkAccount.addr);
+  const tokensAccepted_ = (): Promise<Array<Token>> => tokensAccepted(extractAddr(networkAccount));
 
   const tokenAccept = async (token:Token): Promise<void> => {
     if ( ! (await tokenAccepted(token)) ) {
@@ -2296,7 +2296,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 };
 
 const tokensAccepted = async (addr_: Address): Promise<Array<Token>> => {
-  const addr = addressFromHex(protect(T_Address, addr_) as Address);
+  const addr = cbr2algo_addr(protect(T_Address, addr_) as Address);
   let assetHoldings: Array<AssetHolding>;
   if (await nodeCanRead()) {
     const accountInfo = await getAddressInfo(addr);
