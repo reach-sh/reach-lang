@@ -68,6 +68,7 @@ import {
   hideWarnings,
   hasProp,
   makeParseCurrency,
+  TransferOpts,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -1189,7 +1190,7 @@ const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
 const str2note = (x:string) => new Uint8Array(Buffer.from(x));
 const NOTE_Reach_str = `Reach ${VERSION}`;
 const NOTE_Reach = str2note(NOTE_Reach_str);
-const NOTE_Reach_tag = (tag:number|undefined) => tag ? str2note(NOTE_Reach_str + ` ${tag})`) : NOTE_Reach;
+const NOTE_Reach_tag = (tag?:number) => tag ? str2note(NOTE_Reach_str + ` ${tag})`) : NOTE_Reach;
 
 const makeTransferTxn = (
   from: Address,
@@ -1197,34 +1198,37 @@ const makeTransferTxn = (
   value: BigNumber,
   token: Token|undefined,
   ps: TxnParams,
-  closeTo: Address|undefined = undefined,
-  tag: number|undefined = undefined,
+  closeTo?: Address,
+  tag?: number,
+  note?: Uint8Array,
 ): Transaction => {
   const valuen = bigNumberToBigInt(value);
-  const note = NOTE_Reach_tag(tag);
+  const note_ = note ?? NOTE_Reach_tag(tag);
   const txn =
     token ?
       algosdk.makeAssetTransferTxnWithSuggestedParams(
         from, to, closeTo, undefined,
-        valuen, note, bigNumberToNumber(token), ps)
+        valuen, note_, bigNumberToNumber(token), ps)
     :
       algosdk.makePaymentTxnWithSuggestedParams(
-        from, to, valuen, closeTo, note, ps);
+        from, to, valuen, closeTo, note_, ps);
   return txn;
 };
 
 const transfer = async (
   from: Account,
   to: Account,
-  value: unknown,
-  token: Token|undefined = undefined,
-  tag: number|undefined = undefined,
+  value: any,
+  token?: Token,
+  opts?: TransferOpts,
 ): Promise<RecvTxn> => {
   const sender = from.networkAccount;
   const receiver = extractAddr(to);
   const valuebn = bigNumberify(value);
   const ps = await getTxnParams('transfer');
-  const txn = toWTxn(makeTransferTxn(sender.addr, receiver, valuebn, token, ps, undefined, tag));
+  const closeTo = opts?.closeTo ? cbr2algo_addr(protect(T_Address, opts.closeTo) as Address) : undefined;
+  const txn = toWTxn(makeTransferTxn(sender.addr, receiver, valuebn, token,
+                                     ps, closeTo, opts?.tag, opts?.note));
 
   return await sign_and_send_sync(
     `transfer ${j2s(from)} ${j2s(to)} ${valuebn}`,
@@ -2441,7 +2445,7 @@ const fundFromFaucet = async (account: Account, value: unknown) => {
   const faucet = await getFaucet();
   debug('fundFromFaucet');
   const tag = Math.round(Math.random() * (2 ** 32));
-  await transfer(faucet, account, value, undefined, tag);
+  await transfer(faucet, account, value, undefined, { tag });
 };
 
 const newTestAccount = async (startingBalance: unknown) => {
@@ -2663,7 +2667,6 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
   const clawback = f_addr(opts.clawback);
   const freeze = f_addr(opts.freeze);
   const reserve = f_addr(opts.reserve);
-  const note = opts.note || undefined;
   const defaultFrozen = opts.defaultFrozen ?? false;
   const suggestedParams = await getTxnParams('launchToken');
 
@@ -2672,7 +2675,7 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
     accCreator.networkAccount,
     toWTxn(algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
       assetMetadataHash, assetName: name, assetURL: url, clawback,
-      decimals, defaultFrozen, freeze, note, reserve,
+      decimals, defaultFrozen, freeze, note: opts.note, reserve,
       suggestedParams, total: bigNumberToBigInt(supply), unitName: sym,
       from: addrCreator,
     }))
