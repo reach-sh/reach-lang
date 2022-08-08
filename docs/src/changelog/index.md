@@ -8,6 +8,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{verRC("0.1.11")}
 
 + @{rcHead("0.1.11-rc7")}
++ 2022/08/07: Added `{!js} opts` parameter to `{!js} stdlib.launch`.
 + 2022/08/05: Added `{!rsh} Struct.fields` and `{!rsh} Object.fields`.
 + 2022/08/03: Added `{!rsh} isDataVariant`.
 

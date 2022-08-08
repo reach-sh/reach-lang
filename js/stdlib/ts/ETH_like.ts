@@ -405,7 +405,7 @@ const transfer = async (
   from: AccountTransferable,
   to: AccountTransferable,
   value: any,
-  token: Token|false = false,
+  token?: Token,
 ): Promise<TransactionReceipt> => {
   const sender = from.networkAccount;
   const receiver = (typeof to == 'string') ? to : await getAddr(to);

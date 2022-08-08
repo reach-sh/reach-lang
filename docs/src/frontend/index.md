@@ -730,7 +730,7 @@ On networks that do not, this will always return zero.
 ---
 @{ref("js", "transfer")}
 ```js
-stdlib.transfer(from:acc, to:acc, amount, token?) => Promise<void>
+stdlib.transfer(from: Account, to: Account, amount, token?: Token, opts?: TransferOpts) => Promise<void>
 ```
 
 Performs a transfer of `{!js} amount` from `{!js} from` to `{!js} to`,
@@ -738,6 +738,17 @@ which are accounts, such as those returned by `{!js} connectAccount`.
 If `{!js} token` is not provided, then the transfer is of network tokens;
 otherwise, it is of the designated non-network token.
 The returned `{!js} Promise` will only be resolved after the transfer completes.
+
+Possible options to provide in `{!js} opts` include:
+
+Algorand-only options:
++ `{!js} closeTo` An `{!js} Address` to which all remaining Algo will be sent before the sender account is closed.
+If `{!js} token` is specified, the sender account opts out of the token rather than closing.
+See [this page](https://developer.algorand.org/docs/get-details/transactions/#close-an-account) for more information.
+The default is no close address.
++ `{!js} note` A `{!js} Uint8Array` for the `Note` field of the asset creation transaction.
+The default is a note containing the Reach version used to perform the transfer.
+
 
 Example:
 
@@ -1099,6 +1110,7 @@ The default is `{!js} false`.
 + `{!js} reserve` Address that should hold reserves of the token.
 The default is no reserve address.
 + `{!js} note` A `{!js} Uint8Array` for the `Note` field of the asset creation transaction.
+The default is no note.
 
 For more information on Algorand-only options, see
 https://developer.algorand.org/docs/get-details/transactions/transactions/#asset-parameters.
