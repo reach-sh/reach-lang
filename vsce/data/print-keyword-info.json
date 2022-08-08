@@ -279,10 +279,10 @@
     "CompletionItemKind": "Method"
   },
   "Object.set": {
-    "CompletionItemKind": "Function"
+    "CompletionItemKind": "Method"
   },
   "Object.setIfUnset": {
-    "CompletionItemKind": "Function"
+    "CompletionItemKind": "Method"
   },
   "Open": {
     "CompletionItemKind": "Constant"
