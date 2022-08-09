@@ -3649,15 +3649,20 @@ evalPrim p sargs =
       metam <- mustBeObject =<< one_arg
       metam' <- mapM (ensure_public . sss_sls) metam
       let actual = M.keysSet metam'
-      let valid = S.fromList $ [ "fees", "assets", "addressToAccount", "apps", "onCompletion" ]
+      let valid = S.fromList $ [ "fees", "assets", "addressToAccount", "apps", "onCompletion", "strictPay" ]
       unless (actual `S.isSubsetOf` valid) $ do
         expect_ $ Err_Remote_ALGO_extra $ S.toAscList $
           actual `S.difference` valid
       let metal f k = k (M.lookup f metam')
       at <- withAt id
+      let expectBool lab = metal lab $ \case
+            Nothing -> return $ False
+            Just (SLV_Bool _ b) -> return b
+            Just _ -> expect_ $ Err_Remote_ALGO_extra $ [ lab <> " with non-compile value" ]
       ralgo_fees <- metal "fees" $ \case
         Nothing -> return $ DLA_Literal $ DLL_Int at UI_Word 0
         Just v -> compileCheckType (T_UInt UI_Word) v
+      ralgo_strictPay <- expectBool "strictPay"
       ralgo_assets <- metal "assets" $ \case
         Nothing -> return $ mempty
         Just v -> do
@@ -3668,10 +3673,7 @@ evalPrim p sargs =
         Just v -> do
           vs <- explodeTupleLike "REMOTE_FUN.ALGO.apps" v
           mapM (compileCheckType T_Contract) vs
-      ralgo_addr2acc <- metal "addressToAccount" $ \case
-        Nothing -> return $ False
-        Just (SLV_Bool _ b) -> return $ b
-        Just _ -> expect_ $ Err_Remote_ALGO_extra $ [ "addressToAccount with non-compile value" ]
+      ralgo_addr2acc <- expectBool "addressToAccount"
       ralgo_onCompletion <- metal "onCompletion" $ \case
         Nothing -> return $ RA_NoOp
         Just (SLV_Bytes _ "NoOp") -> return $ RA_NoOp
