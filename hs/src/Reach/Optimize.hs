@@ -314,8 +314,8 @@ instance Optimize DLRemoteALGOOC where
   gcs _ = return ()
 
 instance Optimize DLRemoteALGO where
-  opt (DLRemoteALGO x y z w v) =
-    DLRemoteALGO <$> opt x <*> opt y <*> opt z <*> opt w <*> opt v
+  opt (DLRemoteALGO x y z w v u) =
+    DLRemoteALGO <$> opt x <*> opt y <*> opt z <*> opt w <*> opt v <*> opt u
   gcs _ = return ()
 
 instance Optimize AS.Value where
