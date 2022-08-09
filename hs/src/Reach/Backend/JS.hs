@@ -360,9 +360,9 @@ jsMapKey k =
 
 jsRemote :: SrcLoc -> DLRemote -> App Doc
 jsRemote at (DLRemote _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv _nnZero) malgo) = do
-  let DLRemoteALGO r_fees r_assets _r_addr2acc r_apps _r_oc = malgo
+  let DLRemoteALGO r_fees r_assets _r_addr2acc r_apps _r_oc r_strictPay = malgo
   fees' <- jsArg r_fees
-  let notStaticZero = not . staticZero
+  let notStaticZero = if r_strictPay then const True else not . staticZero
   let pay_ks_nz = filter (notStaticZero . fst) pay_ks
   let l2n x = jsCon $ DLL_Int at UI_Word $ fromIntegral $ length $ x
   pays' <- l2n $ filter notStaticZero $ pay_net : map fst pay_ks_nz

@@ -2109,7 +2109,7 @@ ce = \case
           cla $ mdaToMaybeLA mt mva
           cTupleSet at mdt $ fromIntegral i
   DLE_Remote at fs ro rng_ty (DLRemote rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo) -> do
-    let DLRemoteALGO _fees r_assets r_addr2acc r_apps r_oc = malgo
+    let DLRemoteALGO _fees r_assets r_addr2acc r_apps r_oc r_strictPay = malgo
     warn_lab <- asks eWhich >>= \case
       Just which -> return $ "Step " <> show which
       Nothing -> return $ "This program"
@@ -2157,7 +2157,7 @@ ce = \case
           let mt_at = at
           let mt_mcclose = Nothing
           let mt_mrecv = Just $ Right loadAddr
-          let mt_always = False
+          let mt_always = r_strictPay
           hadNet <- (do
             let mt_amt = pay_net
             let mt_mtok = Nothing
