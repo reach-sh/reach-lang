@@ -614,7 +614,7 @@ In addition, a remote function may be augmented with one of the following operat
     It is dangerous to call this with `OptIn`, because the minimum balance of the calling contract will increase and Reach cannot track that, because it is not statically available.
     The minimum balance will decrease on a `CloseOut` or `ClearState` transaction.
   + `{!rsh} opts.strictPay` does not optimize away `pay` or `axfer` transactions that are statically zero.
-    If this is needed, and not included, then `{!rsh} remote` calls that require a payment could fail.
+    If this is needed, and not included, then `{!rsh} remote` calls that require a payment transaction to always be present, even if the amount is zero, could fail.
 
 If the remote contract is not expected to return non-network tokens then a pair is returned, where the amount of network tokens received is the first element, and the original result is the second element.
 
