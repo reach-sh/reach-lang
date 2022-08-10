@@ -3658,7 +3658,7 @@ evalPrim p sargs =
       let expectBool lab = metal lab $ \case
             Nothing -> return $ False
             Just (SLV_Bool _ b) -> return b
-            Just _ -> expect_ $ Err_Remote_ALGO_extra $ [ lab <> " with non-compile value" ]
+            Just _ -> expect_ $ Err_Remote_ALGO_extra $ [ lab <> " with non-compile time value" ]
       ralgo_fees <- metal "fees" $ \case
         Nothing -> return $ DLA_Literal $ DLL_Int at UI_Word 0
         Just v -> compileCheckType (T_UInt UI_Word) v
