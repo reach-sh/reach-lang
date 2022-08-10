@@ -72,7 +72,7 @@ ci () {
   ${REACH} compile --install-pkgs
   ${REACH} compile --intermediate-files
   make build
-  REACH_DEBUG=Y REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=N REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 

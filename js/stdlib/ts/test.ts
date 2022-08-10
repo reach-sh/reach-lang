@@ -89,12 +89,15 @@ export const one = (lab:string, j:Job<void>): void => {
 export interface RunOpts {
   howManyAtOnce?: number,
   exitOnFail?: boolean,
+  noVarOutput?: boolean,
 };
 export const run = async (opts?:RunOpts): Promise<void> => {
   const exitOnFail = opts?.exitOnFail === undefined ? true : opts.exitOnFail;
   const stop = (): boolean => (exitOnFail && fails > 0);
 
   const howManyAtOnce = opts?.howManyAtOnce || 1;
+  const noVarOutput = opts?.noVarOutput === undefined ? false : opts.noVarOutput;
+  const varOutput = ! noVarOutput;
 
   console.log(`${jobs.length} jobs scheduled, running...`);
   while ( !stop() && jobs.length > 0 ) {
@@ -109,34 +112,37 @@ export const run = async (opts?:RunOpts): Promise<void> => {
   }
   console.log('Done running');
 
-  // Render XML output
-  const xml = [];
-  xml.push('<?xml version="1.0" encoding="UTF-8"?>');
-  xml.push('<testsuite>');
-  cases.forEach(({id, time, err}) => {
-    const mtime = time ? ` time="${time}"` : ``;
-    const mfail = err ? `<failure>${err}</failure>` : ``;
-    const idr =
-      id.replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
-    xml.push(`<testcase name="${idr}"${mtime}>${mfail}</testcase>`);
-  });
-  xml.push('</testsuite>');
-  const xmlb = Buffer.from(xml.join(''));
-
-  // Output a summary
-  const logVar = (k:string, v:string): void =>
-    console.log(`var ${k}='${v}'`);
-
-  logVar(`RESULTS_B64`, xmlb.toString('base64'));
   const failed = fails !== 0;
-  logVar(`SUMMARY`, failed ?
-    `${fails} of ${tests} tests failed!` :
-    `${tests} tests passed!`);
-  logVar(`STATUS`, failed ? ':warning: FAIL' : ':pizza: OKAY');
+
+  if ( varOutput ) {
+    // Render XML output
+    const xml = [];
+    xml.push('<?xml version="1.0" encoding="UTF-8"?>');
+    xml.push('<testsuite>');
+    cases.forEach(({id, time, err}) => {
+      const mtime = time ? ` time="${time}"` : ``;
+      const mfail = err ? `<failure>${err}</failure>` : ``;
+      const idr =
+        id.replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&apos;');
+      xml.push(`<testcase name="${idr}"${mtime}>${mfail}</testcase>`);
+    });
+    xml.push('</testsuite>');
+    const xmlb = Buffer.from(xml.join(''));
+
+    // Output a summary
+    const logVar = (k:string, v:string): void =>
+      console.log(`var ${k}='${v}'`);
+
+    logVar(`RESULTS_B64`, xmlb.toString('base64'));
+    logVar(`SUMMARY`, failed ?
+      `${fails} of ${tests} tests failed!` :
+      `${tests} tests passed!`);
+    logVar(`STATUS`, failed ? ':warning: FAIL' : ':pizza: OKAY');
+  }
   process.exit( failed ? 1 : 0 );
 };
 

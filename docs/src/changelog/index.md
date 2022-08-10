@@ -8,6 +8,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{verRC("0.1.11")}
 
 + @{rcHead("0.1.11-rc8")}
++ 2022/08/16: Added `noVarOutput` option to `{!js} test.run`.
 + 2022/08/15: Added `{!rsh} autoTrackPublishedTokens` to `{!rsh} setOptions`.
 
 + @{rcHead("0.1.11-rc7")}
