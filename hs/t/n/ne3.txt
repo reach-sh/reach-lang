@@ -1,8 +1,8 @@
-reachc: error[RE0033]: Invalid Reach expression syntax: JSDecimal
+reachc: error[RE0003]: Invalid block result type. Expected Null, got Object({"i": Object({"i": UInt, "scale": UInt}), "sign": Bool})
 
-  ./ne3.rsh:2:1:const
+  ./ne3.rsh:4:19:decimal
 
-  2| const x = 1.1E-6.1;
+  4| const x = 1.1E-6.1;
 
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0033
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0003
 
