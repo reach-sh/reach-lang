@@ -1726,3 +1726,6 @@ exit "${EXIT}"
 
 We use this setup generate messages from CircleCI to Slack for continuous integration.
 
+`opts.noVarOutput` may be a boolean that determines whether this print out will NOT be generated.
+It defaults to `{!js} false`.
+

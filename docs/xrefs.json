@@ -1495,6 +1495,26 @@
     "title": "Waiting for Turn display",
     "path": "/tut/rps/#tut-9-WaitingForTurn"
   },
+  "tut-rsvp": {
+    "title": "Répondez S'il Vous Plaît",
+    "path": "/tut/rsvp/#tut-rsvp"
+  },
+  "tut-rsvp1": {
+    "title": "Respond, If You Please",
+    "path": "/tut/rsvp/#tut-rsvp1"
+  },
+  "tut-rsvp2": {
+    "title": "Participate, Please",
+    "path": "/tut/rsvp/#tut-rsvp2"
+  },
+  "tut-rsvp3": {
+    "title": "Yo Dawg...",
+    "path": "/tut/rsvp/#tut-rsvp3"
+  },
+  "tut-rsvp4": {
+    "title": "Test First, but Verify",
+    "path": "/tut/rsvp/#tut-rsvp4"
+  },
   "tuts": {
     "title": "Tutorials",
     "path": "/tut/#tuts"
