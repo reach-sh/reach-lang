@@ -40,7 +40,7 @@ import Reach.Parser
 import Reach.Texty (pretty)
 import Reach.Util
 import Reach.Warning
-import Safe (atMay)
+import Safe (atMay, maximumMay)
 import System.Directory
 import System.FilePath
 import Text.ParserCombinators.Parsec.Number (numberValue)
@@ -4441,59 +4441,63 @@ evalId_ lab x = do
 evalId :: String -> SLVar -> App SLSVal
 evalId lab x = sss_sls <$> evalId_ lab x
 
+parseCoefficient :: String -> EvalError -> App (Rational, Maybe Int)
+parseCoefficient b err = do
+  let parseInt i =
+        (fromIntegral iInt, precision)
+        where precision = Nothing
+              iInt = read i :: Integer
+  case splitOn "." b of
+    [i, f]
+      | f == "" -> return $ parseInt i
+      | otherwise -> do
+        let mPrec = Just $ length f
+        return $ (toRational $ (read b :: Double), mPrec)
+    [i] -> return $ parseInt i
+    _ -> expect_ err
+
+parseExponent :: String -> (Integer, Bool)
+parseExponent x = do
+  let x' = case x of
+            '+':x'' -> x''
+            ow -> ow
+  let xInt = abs $ read x' :: Integer
+  let isNeg = case x of
+                '-':_ -> True
+                _ -> False
+  (xInt, isNeg)
+
+padToPrecision :: String -> Maybe Int -> App String
+padToPrecision rs mPrec = do
+  case splitOn "." rs of
+    wDigits:fDigits ->
+      case mPrec of
+        Nothing -> return $ wDigits
+        Just pr -> return $ wDigits <> "." <> take pr (rightPad pr '0' fDigits')
+          where fDigits' = concat fDigits
+    [] -> return rs
+
 evalExpr :: JSExpression -> App SLSVal
 evalExpr e = case e of
   JSIdentifier a x ->
     locAtf (srcloc_jsa "id ref" a) $
       evalId "expression" x
   JSDecimal a ns -> do
-    let hasLowerE = 'e' `elem` ns
-    let hasUpperE = 'E' `elem` ns
     let handleE chr = do
           case splitOn chr ns of
             [b, x] -> do
-              liftIO $ putStrLn $ "b: " <> b
-              liftIO $ putStrLn $ "x: " <> x
-              let parseInt :: String -> Rational
-                  parseInt i = fromIntegral $ (read i :: Integer)
-              (b', mlen) <- case splitOn "." b of
-                        [i, f]
-                          | f /= "" -> do
-                            liftIO $ putStrLn $ "Parsing double"
-                            return $ (toRational $ (read b :: Double), Just $ length f)
-                          | otherwise -> return $ (parseInt i, Nothing)
-                        [i] -> return $ (parseInt i, Nothing)
-                        _ -> expect_ $ Err_Eval_IllegalJS e
-              liftIO $ putStrLn $ "b': " <> show b'
-              let px = abs $ read x :: Integer
-              liftIO $ putStrLn $ "px: " <> show px
-              let showRational :: Bool -> Rational -> App String
-                  showRational negE r = do
-                    let prec = if negE then Just (fromInteger px) else mlen
-                    liftIO $ putStrLn $ "showRational: " <> show r
-                    liftIO $ putStrLn $ "prec: " <> show prec
-                    let rd = fromRat r :: Double
-                    liftIO $ putStrLn $ "rd: " <> show rd
-                    let res = showFFloat Nothing rd $ ""
-                    case splitOn "." res of
-                      h:rst ->
-                        case prec of
-                          Nothing -> return $ h
-                          Just p -> return $ h <> "." <> take p (concat rst)
-                      [] -> impossible "showRational"
-              case x of
-                '-':_ -> do
-                  r' <- showRational True $ b' / 10 ^ px
-                  liftIO $ putStrLn $ "r': " <> r'
-                  return r'
-                _ -> do
-                  r <- showRational False $ b' * 10 ^ px
-                  liftIO $ putStrLn $ "r: " <> r
-                  return $ r
+              (bRat, mCoefPrec) <- parseCoefficient b $ Err_Eval_IllegalJS e
+              let (posExpo, isNegExpo) = parseExponent x
+              let r = (bool (*) (/) isNegExpo) bRat $ 10 ^ posExpo
+              let mPrec = maximumMay $ catMaybes [mCoefPrec, mExpPrec]
+                          where mExpPrec = bool Nothing mExpInt isNegExpo
+                                mExpInt  = Just $ fromInteger posExpo
+              let rs = showFFloat Nothing (fromRat r :: Double) ""
+              padToPrecision rs mPrec
             _ -> expect_ $ Err_Eval_IllegalJS e
     ns' <- case ns of
-              _ | hasLowerE -> handleE "e"
-                | hasUpperE -> handleE "E"
+              _ | 'e' `elem` ns -> handleE "e"
+                | 'E' `elem` ns -> handleE "E"
               _ -> return ns
     case splitOn "." ns' of
       [iDigits, fDigits] -> do
