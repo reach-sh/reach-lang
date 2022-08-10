@@ -516,13 +516,22 @@ is an expression that evaluates to the given value.
 
 The @{defn("null literal")} may be written as `{!rsh} null`.
 
-@{defn("Numeric literal")}s may be written in decimal, hexadecimal, or octal.
-They may not be written with scientific (exponential) notation.
+@{defn("Numeric literal")}s may be written in decimal, hexadecimal, octal, or scientific (exponential) notation.
 Numeric literals must obey the @{defn("bit width")} of `{!rsh} UInt` if they are used as `{!rsh} UInt` values at runtime, but if they only appear at compile-time, then they may be any positive number.
 Reach provides abstractions for working with `{!rsh} Int`s and signed `{!rsh} FixedPoint` numbers.
 `{!rsh} Int`s may be defined by applying the unary `{!rsh} +` and `{!rsh} -` operators to values of type `{!rsh} UInt`.
 Reach provides syntactic sugar for defining signed `{!rsh} FixedPoint` numbers, in base 10, with decimal syntax.
 Numeric literals may contain underscore separators as a visual aid (e.g. `{!rsh} 123_456` is the same as `{!rsh} 123456`).
+
+@{defn("Exponential notation")} may be written as `{!rsh} <coefficient>(e|E)<exponent>`, where `coefficient` may be of type `UInt, Int, or FixedPoint` and `exponent` may be of type `UInt | Int`.
+The evaluated number will have the precision of the coefficient or negative exponent, whichever is more precise.
+Below are examples of exponential notation:
+
+```reach
+load: /hs/t/y/exponential-notation.rsh
+md5: 5cfb8e6d74757d2e23f736e67ca538f6
+range: 6 - 23
+```
 
 @{defn("Boolean literal")}s may be written as `{!rsh} true` or `{!rsh} false`.
 
