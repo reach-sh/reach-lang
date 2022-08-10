@@ -137,6 +137,9 @@ listDirectoriesRecursive dir = do
 leftPad :: Int -> a -> [a] -> [a]
 leftPad n e xs = replicate (n - length xs) e <> xs
 
+rightPad :: Int -> a -> [a] -> [a]
+rightPad n e xs = xs <> replicate (n - length xs) e
+
 makeErrCode :: Show a => [Char] -> a -> [Char]
 makeErrCode errType errIndex =
   errType <> leftPad 4 '0' (show errIndex)
