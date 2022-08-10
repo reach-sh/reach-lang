@@ -45,6 +45,7 @@ import System.Directory
 import System.FilePath
 import Text.ParserCombinators.Parsec.Number (numberValue)
 import Text.RE.TDFA (RE, compileRegex, matched, (?=~))
+import Numeric (showFFloat, fromRat)
 
 --- New Types
 
@@ -4446,28 +4447,73 @@ evalExpr e = case e of
     locAtf (srcloc_jsa "id ref" a) $
       evalId "expression" x
   JSDecimal a ns -> do
-    when ('e' `elem` ns || 'E' `elem` ns) $
-      expect_ $ Err_Eval_IllegalJS e
-    case splitOn "." ns of
-      [iDigits, fDigits] ->
+    let hasLowerE = 'e' `elem` ns
+    let hasUpperE = 'E' `elem` ns
+    let handleE chr = do
+          case splitOn chr ns of
+            [b, x] -> do
+              liftIO $ putStrLn $ "b: " <> b
+              liftIO $ putStrLn $ "x: " <> x
+              let parseInt :: String -> Rational
+                  parseInt i = fromIntegral $ (read i :: Integer)
+              (b', mlen) <- case splitOn "." b of
+                        [i, f]
+                          | f /= "" -> do
+                            liftIO $ putStrLn $ "Parsing double"
+                            return $ (toRational $ (read b :: Double), Just $ length f)
+                          | otherwise -> return $ (parseInt i, Nothing)
+                        [i] -> return $ (parseInt i, Nothing)
+                        _ -> expect_ $ Err_Eval_IllegalJS e
+              liftIO $ putStrLn $ "b': " <> show b'
+              let px = abs $ read x :: Integer
+              liftIO $ putStrLn $ "px: " <> show px
+              let showRational :: Bool -> Rational -> App String
+                  showRational negE r = do
+                    let prec = if negE then Just (fromInteger px) else mlen
+                    liftIO $ putStrLn $ "showRational: " <> show r
+                    liftIO $ putStrLn $ "prec: " <> show prec
+                    let rd = fromRat r :: Double
+                    liftIO $ putStrLn $ "rd: " <> show rd
+                    let res = showFFloat Nothing rd $ ""
+                    case splitOn "." res of
+                      h:rst ->
+                        case prec of
+                          Nothing -> return $ h
+                          Just p -> return $ h <> "." <> take p (concat rst)
+                      [] -> impossible "showRational"
+              case x of
+                '-':_ -> do
+                  r' <- showRational True $ b' / 10 ^ px
+                  liftIO $ putStrLn $ "r': " <> r'
+                  return r'
+                _ -> do
+                  r <- showRational False $ b' * 10 ^ px
+                  liftIO $ putStrLn $ "r: " <> r
+                  return $ r
+            _ -> expect_ $ Err_Eval_IllegalJS e
+    ns' <- case ns of
+              _ | hasLowerE -> handleE "e"
+                | hasUpperE -> handleE "E"
+              _ -> return ns
+    case splitOn "." ns' of
+      [iDigits, fDigits] -> do
         let i = iDigits <> fDigits
-         in let scale = '1' : replicate (length fDigits) '0'
-             in let signV = \at ->
-                      SLSSVal at Public $ SLV_Bool at True
-                 in let signedInt = \at ->
-                          SLV_Object at Nothing $
-                            M.fromList
-                              [ ("scale", SLSSVal at Public $ SLV_Int at nn $ numberValue 10 scale)
-                              , ("i", SLSSVal at Public $ SLV_Int at nn $ numberValue 10 i)
-                              ]
-                     in let iV = \at -> SLSSVal at Public $ signedInt at
-                         in locAtf (srcloc_jsa "decimal" a) $
-                              withAt $ \at ->
-                                public $
-                                  SLV_Object at Nothing $
-                                    M.fromList [("sign", signV at), ("i", iV at)]
+        let scale = '1' : replicate (length fDigits) '0'
+        let signV = \at -> SLSSVal at Public $ SLV_Bool at True
+        let signedInt = \at ->
+              SLV_Object at Nothing $
+                M.fromList
+                  [ ("scale", SLSSVal at Public $ SLV_Int at nn $ numberValue 10 scale)
+                  , ("i", SLSSVal at Public $ SLV_Int at nn $ numberValue 10 i)
+                  ]
+        let iV = \at -> SLSSVal at Public $ signedInt at
+        locAtf (srcloc_jsa "decimal" a) $
+            withAt $ \at ->
+              public $
+                SLV_Object at Nothing $
+                  M.fromList [("sign", signV at), ("i", iV at)]
       [_] -> locAtf (srcloc_jsa "decimal" a) $
-        withAt $ \at -> public $ SLV_Int at nn $ numberValue 10 ns
+        withAt $ \at -> public $ SLV_Int at nn $ numberValue 10 ns'
       _ -> impossible "Number must have 0 or 1 decimal points."
   JSLiteral a l -> locAtf (srcloc_jsa "literal" a) $ do
     at' <- withAt id
