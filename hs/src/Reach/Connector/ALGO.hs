@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module Reach.Connector.ALGO (connect_algo, AlgoError (..)) where
 
 import Control.Monad.Extra
@@ -49,6 +51,9 @@ import System.FilePath
 import System.IO.Temp
 import System.Process.ByteString
 import Text.Read
+#ifdef REACH_EVEREST
+import qualified Reach.Closed.TAF.Verify as Verify
+#endif
 
 -- Errors for ALGO
 
@@ -3383,7 +3388,11 @@ compile_algo env disp pl = do
   let compileProg lab ts' = do
         t <- renderOut ts'
         tf <- disp (lab <> ".teal") t
-        compileTEAL tf
+        bc <- compileTEAL tf
+#ifdef REACH_EVEREST
+        Verify.run bc [gvSlot GV_svs, gvSlot GV_apiRet]
+#endif
+        return bc
   let addProg lab ts' = do
         tbs <- compileProg lab ts'
         modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
@@ -3807,4 +3816,3 @@ connect_algo env = Connector {..}
     conContractNewOpts mv = do
       (aco :: ALGOCodeOpts) <- aesonParse $ fromMaybe (AS.object mempty) mv
       return $ AS.toJSON aco
-
