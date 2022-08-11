@@ -51,9 +51,8 @@ import System.FilePath
 import System.IO.Temp
 import System.Process.ByteString
 import Text.Read
-#ifdef REACH_EVEREST
-import qualified Reach.Closed.TAF.Verify as Verify
-#endif
+import qualified Reach.Connector.ALGO_Verify as Verify
+
 
 -- Errors for ALGO
 
@@ -3425,9 +3424,7 @@ compile_algo env disp pl = do
         t <- renderOut ts'
         tf <- disp (lab <> ".teal") t
         bc <- compileTEAL tf
-#ifdef REACH_EVEREST
         Verify.run bc [gvSlot GV_svs, gvSlot GV_apiRet]
-#endif
         return bc
   let addProg lab ts' = do
         tbs <- compileProg lab ts'
