@@ -25,9 +25,8 @@ export const main = Reach.App(() => {
   Guest.publish(details).pay(details.reservation);
   const { reservation, deadline, host } = details;
   enforce( thisConsensusTime() < deadline, "too late" );
-  commit();
-
   Guest.interact.registered(getContract());
+  commit();
 
   Host.only(() => {
     const hdetails = declassify(interact.details);
