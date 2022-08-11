@@ -195,3 +195,8 @@ replace :: Integral i => i -> a -> [a] -> [a]
 replace i v l = hd <> (v : tail tl)
   where
     (hd, tl) = splitAt (fromInteger $ toInteger i) l
+
+startsWith :: Eq a => a -> [a] -> Bool
+startsWith x = \case
+  xp:_ | x == xp -> True
+  _ -> False
