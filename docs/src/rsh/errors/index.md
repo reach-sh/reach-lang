@@ -2751,6 +2751,12 @@ This error indicates that you are using a function, like `{!rsh} ContractCode`, 
 
 This error indicates that there was an error while parsing or compiling contract code for `{!rsh} ContractCode`.
 
+## {#RE0138} RE0138
+
+This error indicates that there was an error while parsing a number in exponential notation.
+
+You can fix this error by ensuring you use the correct exponential notation syntax as specified in the numeric literals documentation.
+
 ## {#RETH0001} RETH0001
 
 This error indicates that a View or API uses more arguments than are supported on the ETH connector.

@@ -40,7 +40,7 @@ import Reach.Parser
 import Reach.Texty (pretty)
 import Reach.Util
 import Reach.Warning
-import Safe (atMay, maximumMay)
+import Safe (atMay, maximumMay, readMay)
 import System.Directory
 import System.FilePath
 import Text.ParserCombinators.Parsec.Number (numberValue)
@@ -4441,31 +4441,31 @@ evalId_ lab x = do
 evalId :: String -> SLVar -> App SLSVal
 evalId lab x = sss_sls <$> evalId_ lab x
 
-parseCoefficient :: String -> EvalError -> App (Rational, Maybe Int)
-parseCoefficient b err = do
-  let parseInt i =
-        (fromIntegral iInt, precision)
+parseCoefficient :: String -> App (Rational, Maybe Int)
+parseCoefficient b = do
+  let parseInt i = do
+        let miInt = readMay i :: Maybe Integer
+        iInt <- maybe (expect_ err) return miInt
+        return (fromIntegral iInt, precision)
         where precision = Nothing
-              iInt = read i :: Integer
   case splitOn "." b of
     [i, f]
-      | f == "" -> return $ parseInt i
+      | f == "" -> parseInt i
       | otherwise -> do
         let mPrec = Just $ length f
-        return $ (toRational $ (read b :: Double), mPrec)
-    [i] -> return $ parseInt i
+        bd <- maybe (expect_ err) return (readMay b :: Maybe Double)
+        return $ (toRational bd, mPrec)
+    [i] -> parseInt i
     _ -> expect_ err
+  where err = Err_Invalid_Exponential_Form "coefficient"
 
-parseExponent :: String -> (Integer, Bool)
+parseExponent :: String -> App (Integer, Bool)
 parseExponent x = do
-  let x' = case x of
-            '+':x'' -> x''
-            ow -> ow
-  let xInt = abs $ read x' :: Integer
-  let isNeg = case x of
-                '-':_ -> True
-                _ -> False
-  (xInt, isNeg)
+  let mxInt :: Maybe Integer = readMay $ filter (/= '+') x
+  xInt <- maybe (expect_ err) (return . abs) mxInt
+  let isNeg = startsWith '-' x
+  return (xInt, isNeg)
+  where err = Err_Invalid_Exponential_Form "exponent"
 
 padToPrecision :: String -> Maybe Int -> App String
 padToPrecision rs mPrec = do
@@ -4486,8 +4486,8 @@ evalExpr e = case e of
     let handleE chr = do
           case splitOn chr ns of
             [b, x] -> do
-              (bRat, mCoefPrec) <- parseCoefficient b $ Err_Eval_IllegalJS e
-              let (posExpo, isNegExpo) = parseExponent x
+              (bRat, mCoefPrec) <- parseCoefficient b
+              (posExpo, isNegExpo) <- parseExponent x
               let r = (bool (*) (/) isNegExpo) bRat $ 10 ^ posExpo
               let mPrec = maximumMay $ catMaybes [mCoefPrec, mExpPrec]
                           where mExpPrec = bool Nothing mExpInt isNegExpo
