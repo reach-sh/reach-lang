@@ -1515,9 +1515,17 @@
     "title": "Yo Dawg...",
     "path": "/tut/rsvp/#tut-rsvp3"
   },
-  "tut-rsvp4": {
+  "tut-rsvp4-mjs": {
+    "title": "My Kingdom for a Framework!",
+    "path": "/tut/rsvp/#tut-rsvp4-mjs"
+  },
+  "tut-rsvp4-rsh": {
+    "title": "A Decentralized DApp",
+    "path": "/tut/rsvp/#tut-rsvp4-rsh"
+  },
+  "tut-rsvp4-tests": {
     "title": "Test First, but Verify",
-    "path": "/tut/rsvp/#tut-rsvp4"
+    "path": "/tut/rsvp/#tut-rsvp4-tests"
   },
   "tuts": {
     "title": "Tutorials",
