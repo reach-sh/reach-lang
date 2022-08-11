@@ -1,0 +1,8 @@
+reachc: error[RE0138]: Invalid coefficient in exponential notation
+
+  ./Err_Invalid_Exponential_Form.rsh:3:1:export
+
+  3| export const x = 1.2.3e34;
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0138
+
