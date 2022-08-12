@@ -1,0 +1,74 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: while invariant after loop
+  msg: "howMany accurate"
+  at ./index-fail.rsh:35:17:invariant
+
+  // Violation Witness
+
+  const UInt.max = 2;
+
+  const howMany/737 = <loop variable>;
+  //    ^ could = 1
+  //      from: ./index-fail.rsh:34:19:while
+  const v1105 = <map reduction>;
+  //    ^ could = 1
+  //      from: reach standard library:170:21:application
+
+  // Theorem Formalization
+
+  const v1112 = v1105 == (howMany/737 - 1);
+  //    ^ would be false
+  assert(v1112);
+
+  Verifying when NO participants are honest
+Verification failed:
+  when NO participants are honest
+  of theorem: while invariant after loop
+  msg: "howMany accurate"
+  at ./index-fail.rsh:35:17:invariant
+
+  // Violation Witness
+
+  const UInt.max = 1;
+
+  const howMany/737 = <loop variable>;
+  //    ^ could = 1
+  //      from: ./index-fail.rsh:34:19:while
+  const v1191 = <map reduction>;
+  //    ^ could = 1
+  //      from: reach standard library:170:21:application
+
+  // Theorem Formalization
+
+  const v1198 = v1191 == (howMany/737 - 1);
+  //    ^ would be false
+  assert(v1198);
+
+Verification failed:
+  when NO participants are honest
+  of theorem: while invariant after loop
+  msg: "howMany accurate"
+  at ./index-fail.rsh:35:17:invariant
+
+  // Violation Witness
+
+  const UInt.max = 1;
+
+  const howMany/737 = <loop variable>;
+  //    ^ could = 1
+  //      from: ./index-fail.rsh:34:19:while
+  const v1266 = <map reduction>;
+  //    ^ could = 1
+  //      from: reach standard library:170:21:application
+
+  // Theorem Formalization
+
+  const v1273 = v1266 == (howMany/737 - 1);
+  //    ^ would be false
+  assert(v1273);
+
+Checked 48 theorems; 3 failures :'(

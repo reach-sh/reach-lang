@@ -181,8 +181,19 @@ As mentioned above, the first thing that happens in the program is that the Gues
 They publish the details of the event, which they had to get from the Host somehow.
 (Another "somehow"!)
 And they have to pay the reservation fee.
+
 We enforce that the current time on the network is before the deadline.
 This is not strictly necessary, but it will be convenient and helpful for end users.
+
+:::note
+What is `{!rsh} enforce`?
+
+It is similar to `{!rsh} require`, except that Reach does not guarantee that there is a `{!rsh} assume` that dominates it.
+This means that honest actors may submit publications that will not be satisfied, because they violate the property.
+You should use this sparingly and only for properties that cannot be checked locally, like things related to time (as in this case) or things related to external `{!rsh} remote` objects.
+:::
+
+
 Finally, the Guest is informed, via their `registered` `{!rsh} interact` function, about the contract's identity, so they can share it with the Host.
 
 :::note
@@ -201,6 +212,22 @@ First, the Host checks to see if the details are correct.
 If they are, then the Host publishes a boolean for whether the Guest really showed up or not.
 When they publish, it is checked locally and consensually whether the sender is the specified Host.
 We ensure that the time is after the deadline, and then send the reservation to the appropriate place.
+
+:::note
+What is `{!rsh} check`?
+
+It is like `{!rsh} assume` and `{!rsh} require`, except that it morphs into whichever is appropriate given the context of its use.
+This is convenient for writing functions that validate input data that can be used locally (like `{!rsh} assume`) _and_ in consensus (like `{!rsh} require`).
+:::
+
+:::note
+How does the Guest know that the Host is going to be honest and report that they attended accurately?
+
+There is no way for the Guest to enforce this.
+They must trust the Host to do this correctly, just like they need to trust that the Host is not going to throw a lame party.
+This is an example of the so-called "oracle problem" in consensus networks: when you want to represent on-chain information that is only available off-chain, you must have some trusted party that can bridge the information from the "real" world into the consensus network.
+In this case, the Host is the Oracle.
+:::
 
 ---
 
@@ -332,15 +359,132 @@ The overall structure of our application will be:
 1. The Host repeatedly reports whether Guests come.
 1. The program ends when all reserved Guests are accounted for.
 
-Let's dig into the code!
-
 ## {#tut-rsvp5-rsh} Programming with APIs and Maps
 
+Let's dig into the code!
+
+XXX sample one
+
+We define an object for the details of the Event, but this time we don't need to store the Host's identity, because it is implicit in who created the application.
+If we wanted, we could include it and separate the identities of the "Host" (who manages the check-in process) from the "Administrator" (who creates the Event).
+
+XXX sample two
+
+We define the participant and then the two APIs.
+- The first API, `GuestP`, is for Guests to call and it has just a single function.
+  On-chain, this function will be callable as `GuestP_register`, according to whatever the ABI standard is for the chain.
+  Off-chain, Reach provides an interface in its standard library to call it as `{!js} ctc.apis.GuestP.register()`.
+- The second API, `HostP` is for the Host to call as they check-in (or note the failure to show) of Guests.
+  It takes two arguments: the first for who the Guest is and the second for whether they showed up, or not.
+  It can be called on-chain as `HostP_checkin` and off-chain with `{!js} ctc.apis.HostP.checkin(guest, showed)`.
+
+XXX sample three
+
+We publish the details, unpack them, and signal to the creator that the contract has been launched.
+However, we do _not_ `{!rsh} commit()`, because we are going to do something else in the consensus.
+
+XXX sample four
+
+This is a very dense code sample with lots of new ideas if you're familiar with basic Reach.
+It is worth studying closely, because these ideas are used over and over in complex Reach programs.
+
+First, we define a new `{!rsh} Map` that stores a boolean value for each address used as key.
+We're going to use this to store the set of Guest accounts.
+(There is a `{!rsh} Set` container available too that abstracts this pattern, but we're going to show the "raw" version to explain mappings in detail.)
+
+We can set entries in the mapping by writing `{!rsh} Guests[addr] = bool` (or `{!rsh} delete Guests[addr]` to remove them).
+We will be able to access entries of the mapping by writing `{!rsh} Guests[addr]`, which will evaluate to a `{!rsh} Maybe(Bool)` value.
+It will be `{!rsh} None()` if the value is not set.
+It will be `{!rsh} Some(bool)` if the value is set.
+
+:::note
+Some people find `{!rsh} Maybe`s to be tedious, but they are an important protection against NULL pointer deferences that you see in other systems.
+
+You may enjoy reading Sir Tony Hoare's [explanation](https://en.wikipedia.org/wiki/Null_pointer#History) about how and why he created NULL pointers and why he has regretted it ever since.
+We think his cost estimate of the damage of NULL pointers at one billion dollars is too low by an order of magnitude.
+:::
+
+Second, we start a "parallel reduce" block.
+In computer science, a [reduction](https://en.wikipedia.org/wiki/Reduction_operator) is when a set of data is turned into a single value; i.e. it is _reduced_ to one value.
+For example, if you have a set of numbers, and you add them together, to get the sum, that's a reduction.
+In this case, we are reducing a set of input events (API calls) that occur in _parallel_ to each other (meaning that they are independently chosen by their initiators) into two values, `done` and `howMany`.
+`done` is going to be a boolean that tells us if the Event is over and we can clear it from memory; it starts as `{!rsh} false`.
+`howMany` is a running counter of how many Guests have registered, but have not checked in; it starts as `{!rsh} 0`.
+Shortly, we'll review the code that actually reduces incoming events into updated versions of these values.
+
+XXX sample invariants
+
+Every `{!rsh} parallelReduce` can be written as a `{!rsh} while` loop, but it is often more convenient to think about it as a separate kind of construct.
+Because it is a `{!rsh} while` loop, it must have a condition for when it terminates (a `{!rsh} .while` component) and loop invariants (a sequence of `{!rsh} .invariant` components).
+In our case, we have two invariants and one condition.
+- The first invariant is that the variable `howMany` is the same as the size of the `Guests` mapping.
+- The second invariant is that the contract's balance is the same as `howMany` times the number of reservations; in other words, that we can perfectly predict how much funds are in the contract's account.
+- The condition is that we will continue accepting (and reducing!) input events until
+  we are done _and_ `howMany` is zero; because only then is it safe to turn off the ability to check in Guests.
+
+We can now show the reduction blocks for each different kind of input event.
+
+XXX sample register
+
+This uses a new form you've never seen before: the `{!rsh} .api_` component.
+It has two arguments:
+1. First, there's the API call that is actually being handled; in this case, the `{!rsh} GuestP.register` call.
+1. Second, there's a function that accepts the arguments to call (in this case there are none) and specifies the action.
+
+The action specification function is made of two parts:
+1. First, there's a sequence of `{!rsh} check`s that validate whether the API can be validly called.
+  In this case, we check to ensure that the Event hasn't started and that the Guest has not registered (by using the function `{!rsh} isNone` to test the contents of the mapping).
+  Although we don't in this example, you can define values here that are used later in the reduction handler.
+1. Second, there's a `{!rsh} return` that specifies (a) what should be paid when this call is made, and (b) what happens in the consensus when it is called, specificed as a function.
+  In this case, we have to pay the reservation price.
+
+The consensus reduction specification function accepts an argument (traditionally labeled `ret` (for "return") or `k` (for "continuation")) that must be called with the API call result.
+The function can then perform any additional checks or effects, before yielding the result (by invoking `ret`) and then returning updated values for the reduction.
+
+In this case, the function
+1. ensures that it is not too late;
+1. stores that the Guest is coming in the mapping;
+1. yield `{!rsh} null` to the API caller; and,
+1. increments the count of the number of Guests, `howMany`.
+
+XXX sample checkin
+
+The Host checkin function is similar.
+It accepts the Guest's address and whether the Host is reporting that they showed up or not.
+It ensures that the initiator of the API call is the Host.
+It ensures that the named Guest actually made a reservation.
+It does not make the Host pay anything.
+It ensures that the Host is doing this after the deadline.
+It removes the Guest's entry from the mapping.
+It transfers the reservation fee to either the Guest or the Host, depending on the value of `showed`.
+And, finally, it decrements the Guest counter and indicates that Event has started.
+
+XXX sample end
+
+Finally we close the applications.
+We don't need to do any final `{!rsh} transfer`s or anything like that to satisfy the token linearity property (which enforces that the contract's account is empty when it ends), because we know that we only reach the end of the `{!rsh} parallelReduce` when `howMany` is zero, and we know that the contract balance is `howMany * reservation`, so it must be zero in that case too.
+
+---
+
+Although we did not dwell on the verification of this program, nearly every line in the program is essential in some way and many of them are essential for passing the verification engine.
+
+XXX sample
+
+For example, suppose that we neglected to delete the Guest's reservation entry.
+This means that we will decrement `howMany` without changing the size of the mapping, so one of the loop invariants will be incorrect.
+Reach will detect this error and show the following error during verification:
+
+XXX sample
+
+This program is interesting, because the invariants and assertions are set up in such a way that almost no other program could possibly satisfy them.
+In general, this is a good property to seek when you're writing trust-worthy software: you want any change to be detected by your verification engine and test suite.
+
+## {#tut-rsvp5-mjs} Testing our APIs and Maps
+
+We've just walked through the Reach implementation of the RSVP application using APIs and Maps.
+But, now we need to show the updates to our testing framework that work with the new implementation.
+
 XXX
-
-XXX show centralized version
-
-XXX talk about pros & cons
 
 XXX show test framework
 
@@ -349,7 +493,5 @@ XXX talk about pros & cons
 XXX talk about views & events
 
 XXX show views & events
-
-XXX show interactive version
 
 XXX talk about Web version
