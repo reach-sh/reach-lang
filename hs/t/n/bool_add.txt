@@ -1,0 +1,10 @@
+reachc: error[RE0088]: These types are mismatched:
+  expected: UInt
+       got: Bool
+
+  ./bool_add.rsh:3:12:application
+
+  3| check(true + false > false);
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0088
+

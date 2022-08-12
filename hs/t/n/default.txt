@@ -1,6 +1,6 @@
 reachc: error[RE0088]: These types are mismatched:
-  expected: Data({"None": Null, "Some": UInt})
-       got: UInt
+  expected: UInt
+       got: Data({"None": Null, "Some": UInt})
 
   ./default.rsh:15:27:application
 

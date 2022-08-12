@@ -1,0 +1,10 @@
+reachc: error[RE0088]: These types are mismatched:
+  expected: UInt
+       got: Object({"i": Object({"i": UInt, "scale": UInt}), "sign": Bool})
+
+  ./gh_1328.rsh:6:13:application
+
+  6| check(fooFx + barFx > zeroFx, 'Foo+Bar must be positive');
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0088
+
