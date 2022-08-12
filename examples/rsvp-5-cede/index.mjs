@@ -2,7 +2,7 @@ import { loadStdlib, test } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
 // Basics
-const stdlib = loadStdlib();
+const stdlib = loadStdlib({ REACH_NO_WARN: 'Y' });
 const err = {
   'ETH': 'transaction may fail',
   'ALGO': 'assert failed',
@@ -39,31 +39,28 @@ const makeRSVP = async ({ hostLabel, name, reservation, timeLimit }) => {
   }
 
   const details = {
-    name, reservation, deadline, host: accHost,
+    name, reservation, deadline,
   };
+
+  const ctcHost = accHost.contract(backend);
+  const ctcInfo = await stdlib.withDisconnect(() => ctcHost.p.Host({
+    details,
+    launched: stdlib.disconnect,
+  }));
+  console.log(`${hostLabel} launched contract`);
 
   const makeGuest = async (label) => {
     const acc = await stdlib.newTestAccount(sbal);
     acc.setDebugLabel(label);
 
-    let ctcInfo = undefined;
     const willGo = async () => {
-      const ctcGuest = acc.contract(backend);
-      ctcInfo = await stdlib.withDisconnect(() => ctcGuest.p.Guest({
-        details,
-        registered: stdlib.disconnect,
-      }));
-      console.log(`${label} made reservation: ${ctcInfo}`);
+      const ctcGuest = acc.contract(backend, ctcInfo);
+      await ctcGuest.a.GuestP.register();
+      console.log(`${label} made reservation`);
     };
     const doHost = async (showed) => {
-      if ( ctcInfo === undefined ) {
-        throw new Error('no reservation');
-      }
-      console.log(`Checking in ${label} to ${ctcInfo}...`);
-      const ctcHost = accHost.contract(backend, ctcInfo);
-      await ctcHost.p.Host({
-        details, showed
-      });
+      console.log(`Checking in ${label}...`);
+      await ctcHost.a.HostP.checkin(acc, showed);
       console.log(`${label} did${showed ? '' : ' not'} show.`);
     };
     const showUp = () => doHost(true);
