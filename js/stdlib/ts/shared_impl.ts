@@ -785,7 +785,7 @@ export const makeArith = (m:BigNumber): Arith => {
 
   const addPreC = (max: BigNumber) => ["add overflow", (x: BigNumber, y: BigNumber) => x.lte(max.sub(y)) ];
   const subPreC = ["sub wraparound", (x: BigNumber, y: BigNumber) => x.gte(y) ];
-  const mulPreC = (max: BigNumber) => ["mul overflow", (x: BigNumber, y: BigNumber) => x.lte(max.div(y))];
+  const mulPreC = (max: BigNumber) => ["mul overflow", (x: BigNumber, y: BigNumber) => x.eq(bigNumberify(0)) || y.eq(bigNumberify(0)) || x.lte(max.div(y)) ];
   const divPreC = ["div by zero", (_: BigNumber, y: BigNumber) => y.gt(0) ];
 
   const add = liftM('add');
