@@ -2261,7 +2261,7 @@ evalPrimOp sp sargs = do
     mtOkay mt = mtOkay' mt . uintTyM
     arg1ty n =
       case args of
-        x : _ -> fst <$> typeOf x
+        x : _ -> mustBeUIntTy =<< fst <$> typeOf x
         _ -> do
           at <- withAt id
           expect_ $ Err_Apply_ArgCount at n (length args)
@@ -2633,6 +2633,11 @@ mustBeObjectTy :: (DLType -> EvalError) -> DLType -> App (M.Map SLVar (SecurityL
 mustBeObjectTy err = \case
   T_Object x -> return $ M.mapWithKey (curry $ bimap idLevel id) x
   t -> expect_ $ err t
+
+mustBeUIntTy :: DLType -> App DLType
+mustBeUIntTy ty = case ty of
+  T_UInt {} -> return ty
+  _ -> expect_ $ Err_Type_Mismatch (T_UInt UI_Word) ty
 
 structKeyRegex :: App RE
 structKeyRegex = liftIO $ compileRegex "^([_a-zA-Z][_a-zA-Z0-9]*)$"
