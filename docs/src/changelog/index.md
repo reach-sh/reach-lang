@@ -7,6 +7,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verRC("0.1.11")}
 
++ @{rcHead("0.1.11-rc8")}
+
 + @{rcHead("0.1.11-rc7")}
 + 2022/08/10: Added support for exponential notation for numeric literals.
 + 2022/08/09: Added `strictPay` field to `{!rsh} remote.ALGO`.
