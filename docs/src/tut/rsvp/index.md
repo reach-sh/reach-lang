@@ -483,7 +483,7 @@ It will be `{!rsh} None()` if the value is not set.
 It will be `{!rsh} Some(bool)` if the value is set.
 
 :::note
-Some people find `{!rsh} Maybe`s to be tedious, but they are an important protection against NULL pointer deferences that you see in other systems.
+Some people find `{!rsh} Maybe`s to be tedious, but they are an important protection against NULL pointer dereferences that you see in other systems.
 
 You may enjoy reading Sir Tony Hoare's [explanation](https://en.wikipedia.org/wiki/Null_pointer#History) about how and why he created NULL pointers and why he has regretted it ever since.
 We think his cost estimate of the damage of NULL pointers at one billion dollars is too low by an order of magnitude.
@@ -528,7 +528,7 @@ The action specification function is made of two parts:
 1. First, there's a sequence of `{!rsh} check`s that validate whether the API can be validly called.
   In this case, we check to ensure that the Event hasn't started and that the Guest has not registered (by using the function `{!rsh} isNone` to test the contents of the mapping).
   Although we don't in this example, you can define values here that are used later in the reduction handler.
-1. Second, there's a `{!rsh} return` that specifies (a) what should be paid when this call is made, and (b) what happens in the consensus when it is called, specificed as a function.
+1. Second, there's a `{!rsh} return` that specifies (a) what should be paid when this call is made, and (b) what happens in the consensus when it is called, specified as a function.
   In this case, we have to pay the reservation price.
 
 The consensus reduction specification function accepts an argument (traditionally labeled `ret` (for "return") or `k` (for "continuation")) that must be called with the API call result.
@@ -670,7 +670,7 @@ For example, ideally when you go to `rsvp.app/event?id=bbbb`, you should be able
 This information is embedded in the consensus network's records and in the state of the contract instance, but it requires low-level knowledge to extract.
 We're going to add a `{!rsh} View` to the program to make it easy to access.
 
-Similarly, we'd like to display information about how many people have already made reserverations and, maybe, even who they are and when it happened.
+Similarly, we'd like to display information about how many people have already made reservations and, maybe, even who they are and when it happened.
 For the first of those things, we'll add another `{!rsh} View`; and for the second, we'll add a `{!rsh} Events` that will make it easy to access the record of everything that happened.
 
 :::note
@@ -732,7 +732,7 @@ range: 33-40
 A View can have a different value at each point in the program, including not having any value at all.
 You define the value by calling `{!rsh} View.field.set` and providing a value that satisfies the type.
 For example, here (on line 40) we indicate that the `details` field is always the same as the `details` variable.
-This definition applies to all dominated occurences of the `{!rsh} commit()` keyword.
+This definition applies to all dominated occurrences of the `{!rsh} commit()` keyword.
 Views are not mutable references: instead, they are ways of naming, for external consumption, portions of the consensus state.
 
 ```
@@ -778,7 +778,7 @@ md5: 084ba5fd53e0ff018da15aae7061f9da
 range: 45-55
 ```
 
-First, we'll have the Host monitor all registerations for this event.
+First, we'll have the Host monitor all registrations for this event.
 `{!js} ctcHost.events.register.monitor(f)` is a function that calls `f` once for every event.
 `f` is called with an object that has a `when` field and a `what` field.
 `when` is the time when the event was emitted from the consensus network.
