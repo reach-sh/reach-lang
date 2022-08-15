@@ -1,0 +1,13 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "Token is tracked"
+  at ./token_not_tracked.rsh:10:22:application
+
+  assert(false);
+
+  Verifying when NO participants are honest
+Checked 5 theorems; 2 failures (and 1 omitted repeats) :'(
