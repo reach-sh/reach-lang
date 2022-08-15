@@ -843,6 +843,10 @@ Jonathan has 100.0003 ALGO
 
 ## {#tut-rsvp7} Where Do We Go From Here?
 
+We've implemented a full DApp for managing events RSVPs in less than 80 lines of Reach code.
+In less than a hundred lines of JavaScript, we have a testing system where we can implement test scenarios to ensure it is correct.
+This is a lot to do in an afternoon, but it is better than writing the 3,000 lines of Solidity, TEAL, and JavaScript support code that Reach generated for us!
+
 You should now be asking, [Where Do We Go From Here?](https://www.youtube.com/watch?v=7XdAQpq_1Xw)
 You now understand...
 - How to design decentralized and centralized DApps;
