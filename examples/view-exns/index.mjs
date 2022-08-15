@@ -4,19 +4,14 @@ import * as dapp_plus from './build/index.dapp_plus.mjs';
 import * as dapp_sub from './build/index.dapp_sub.mjs';
 import * as reachsdk from '@reach-sh/stdlib';
 const stdlib = reachsdk.loadStdlib();
-// XXX https://reachsh.atlassian.net/browse/CORE-2056
-if (stdlib.connector !== 'ALGO') {
-  console.log(`skipping test for connector ${stdlib.connector}`);
-  process.exit(0);
-}
 const amt = stdlib.parseCurrency('100');
 const [ deployer, observer ] = await stdlib.newTestAccounts(2, amt);
 const plusD = deployer.contract(dapp_plus);
 const subD = deployer.contract(dapp_sub);
-await Promise.all([
+for (const {ctc, lab, argL, argR} of [
   {ctc: plusD, lab: 'plus', argL: 1, argR: 1},
-  {ctc: subD, lab: 'sub', argL: 2, argR: 2},
-].map(async ({ctc, lab, argL, argR}) => {
+  {ctc: subD,  lab: 'sub',  argL: 2, argR: 2},
+]) {
   console.log(`${lab}: start...`);
   await stdlib.withDisconnect(async () => {
     await ctc.p.D({
@@ -24,7 +19,7 @@ await Promise.all([
     });
   });
   console.log(`${lab}: ready`);
-}));
+}
 const plusInfo = await plusD.getInfo();
 const subInfo = await subD.getInfo();
 // Views on the corresponding contracts work correctly.
@@ -40,7 +35,7 @@ const expectFail = async (p) => {
     console.error(res);
     process.exit(1);
   } catch (e) {
-    console.log(`failed successfully: ${e}`);
+    console.log(`failed successfully: ${e.toString().slice(0,62)}...`);
   }
 };
 expectFail(observer.contract(dapp_sub, plusInfo).v.args());
