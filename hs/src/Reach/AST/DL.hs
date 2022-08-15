@@ -204,6 +204,7 @@ instance SrcLocOf DLSStmt where
 
 instance HasPurity DLSStmt where
   hasPurity = \case
+    DLS_Let _ _ (DLE_PrimOp _ cp _) -> fb $ isPure cp
     DLS_Let _ _ e -> fb $ isPure e
     DLS_ArrayMap {} -> fb $ True
     DLS_ArrayReduce {} -> fb True
