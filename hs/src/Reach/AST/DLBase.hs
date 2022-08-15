@@ -1017,6 +1017,17 @@ pretty_subst :: PrettySubst a => PrettySubstEnv -> a -> Doc
 pretty_subst e x =
   runIdentity $ flip runReaderT e $ prettySubst x
 
+instance IsPure PrimOp where
+  isPure = \case
+    ADD _ PV_Safe -> False
+    SUB _ PV_Safe -> False
+    MUL _ PV_Safe -> False
+    DIV _ PV_Safe -> False
+    MOD _ PV_Safe -> False
+    UCAST _ _ _ PV_Safe -> False
+    MUL_DIV PV_Safe     -> False
+    _ -> True
+
 instance IsPure DLExpr where
   isPure = \case
     DLE_Arg {} -> True
