@@ -506,6 +506,39 @@ Everything else about the program is the same.
 
 ---
 
+When we run the program, we will see output like:
+```
+[... a lot of boilerplate about building images and running them ...]
+Buffy launched contract
+Giles made reservation
+Xander made reservation
+Cordelia made reservation
+Willow made reservation
+Oz made reservation
+Waiting until 5669
+Checking in Xander...
+Xander did show.
+Checking in Willow...
+Willow did show.
+Checking in Cordelia...
+Cordelia did show.
+Checking in Giles...
+Giles did not show.
+Checking in Oz...
+Oz did not show.
+Buffy has 101.9853 ALGO
+Xander has 99.9962 ALGO
+Willow has 99.9962 ALGO
+Cordelia has 99.9962 ALGO
+Giles has 98.9962 ALGO
+Oz has 98.9962 ALGO
+Angel has 99.9993 ALGO
+Jonathan has 100.0003 ALGO
+```
+This is output is effectively identical to the previous version of the program.
+
+---
+
 This program is excellent and we wouldn't need to make any fundamentally different decisions about its design if we were to really launch the `rsvp.app` service.
 However, there are a few things that are difficult to do with the program as it is.
 
@@ -514,7 +547,7 @@ This information is embedded in the consensus network's records and in the state
 We're going to add a `{!rsh} View` to the program to make it easy to access.
 
 Similarly, we'd like to display information about how many people have already made reserverations and, maybe, even who they are and when it happened.
-For the first of those things, we'll add another `{!rsh} View`; and for the second, we'll add a `{!rsh} Event` that will make it easy to access the record of everything that happened.
+For the first of those things, we'll add another `{!rsh} View`; and for the second, we'll add a `{!rsh} Events` that will make it easy to access the record of everything that happened.
 
 :::note
 Although we're going to make changes to the Reach program, we're not actually exposing any information that wasn't already available in the consensus network's records.
@@ -529,10 +562,156 @@ By adding a `{!rsh} View`, we'll produce a usable API that abstracts these kinds
 
 ## {#tut-rsvp6-rsh} A View To An Event
 
-XXX
+First, we'll review the changes to the Reach application code.
 
-XXX talk about views & events
+XXX sample one
 
-XXX show views & events
+We add definitions for the `{!rsh} View` and `{!rsh} Event` objects.
 
-XXX talk about Web version
+Let's look at the `{!rsh} View` first.
+The first argument is a label for it, like how we give labels to APIs and participants.
+Next, we provide an object where the keys are the names of the view components and the fields are their types.
+This object is just like an `{!rsh} interact` object, except that the values are provide _from_ Reach, rather than _to_ Reach.
+In this case, like APIs, these values can be accessed on- and off-chain.
+On-chain, they can be accessed using the normal ABI of the consensus network, just like APIs.
+For example, the details are provided via a function named `Info_details` that takes no arguments and returns a `Details` structure, and there's a function named `Info_reserved` that accepts an address and returns a boolean indicating if they've made a reservation.
+Off-chain, they can be accessed via a frontend function like `{!js} ctc.views.Info.details()`.
+The off-chain function returns the value or an indication that it was not available.
+
+Next, let's look at the `{!rsh} Events` definition.
+It can also be provided with a label, but we've chosen not to include one.
+We don't have to provide labels for `{!rsh} API`s or `{!rsh} View`s either, but we think it is a good idea in those cases.
+The object provided to `{!rsh} Events` is not an interface, where the keys are types, but instead has tuples of types as the values.
+These are the values that will be emitted together.
+For example, the `register` event will contain one address, while the `checkin` event will contain an address and a boolean.
+Like APIs and Views, they are available on- and off-chain.
+On-chain, they are available using the standard ABI for the platform.
+(Although, note, that some chains, like Ethereum, don't provide any on-chain mechanism for consuming events.)
+Off-chain, they are available via a frontend function like `{!js} ctc.events.register`.
+The off-chain function has sub-methods for reading the next instance of the event or monitoring every event, as well as other options.
+
+In both cases, we have not actually defined the values or meaning of these Views and Events.
+We've merely indicated that our application contains them.
+This is similar to how we define a Participant and then later indicate what actions it performs.
+Let's look at the view definitions next.
+
+XXX sample
+
+A View can have a different value at each point in the program, including not having any value at all.
+You define the value by calling `{!rsh} View.field.set` and providing a value that satisfies the type.
+For example, here we indicate that the `details` field is always the same as the `details` variable.
+This definition applies to all dominated occurences of the `{!rsh} commit()` keyword.
+Views are not mutable references: instead, they are ways of naming, for external consumption, portions of the consensus state.
+
+XXX sample
+
+We similarly expose the contents of the `Guests` mapping, as well as the `howMany` variable.
+We use the `{!rsh} .define` feature of `{!rsh} parllelReduce` to introduce a statement that dominates the `{!rsh} commit()`s implicit in the `{!rsh} parallelReduce`.
+This context is the only context that has access to the `howMany` variable, which is why we must place it there.
+
+Next, let's look at the code that emits instances of the `{!rsh} Events` we defined.
+
+XXX sample
+
+We can emit an event by calling `{!rsh} Events.kind(args)` in a consensus step.
+We do so inside of the `{!rsh} .api_` for the `Guest.register` API call.
+
+XXX sample
+
+We do the same for the `Host.checkin` event.
+It is typical to emit events just before or after yield a result to the API caller.
+
+## {#tut-rsvp6-mjs} The Panopticon
+
+We've now exposed information about the state and history of the RSVP application to callers.
+If we were going to build a real version of this application, we'd include calls to the `{!rsh} View` functions in the user interface and provide a event logger that monitors the `{!rsh} Events`.
+However, we'll delay that for another time.
+Instead, we'll just make a few simple changes to the test framework to demonstrate how to use these functions.
+
+XXX sample
+
+First, we'll have the Host monitor all registerations for this event.
+`{!js} ctcHost.events.register.monitor(f)` is a function that calls `f` once for every event.
+`f` is called with an object that has a `when` field and a `what` field.
+`when` is the time when the event was emitted from the consensus network.
+`what` is an array of the values that were included with the event.
+In this code, we extract those fields and print out a message on every registration.
+This is representative of a user interface that shows the Host each registration as it happens.
+
+XXX sample
+
+Next, we modify the `willGo` function so that the Guest, before they register, inspect the event details and look at the reservation price.
+This is representative of a user interface that informs the Guest of how much they'll be expected to pay to make a reservation.
+In this code, we call `{!js} ctcGuest.unsafeViews`, because when the view is not defined, it throws an error, rather than returning a special wrapper object.
+We know that it will always be defined, so it is more convenient to use this, than to worry about decoding the wrapper object.
+
+---
+
+When we run this version of the program, it behaves exactly the same as before in all important ways, but has slightly different output:
+
+```
+[... a lot of boilerplate about building images and running them ...]
+Buffy launched contract
+Xander sees event reservation is 1 ALGO
+Cordelia sees event reservation is 1 ALGO
+Willow sees event reservation is 1 ALGO
+Oz sees event reservation is 1 ALGO
+Giles sees event reservation is 1 ALGO
+Giles made reservation
+Xander made reservation
+Cordelia made reservation
+Willow made reservation
+Oz made reservation
+Waiting until 5669
+Angel sees event reservation is 1 ALGO
+Buffy sees that S5YGHPLCBNX3KWS7U2MPEXQOQJ6H3HTFTAPLAPNFSHXZGKKPMRLLUHJ2SU registered at 5661
+Buffy sees that 7CU32PBE3LFQOBV53BIZZ4BRRKUGJRCKZEKRP5IT3FNXAYIBB6GJSQHGL4 registered at 5662
+Buffy sees that 72MKLYQN56GKZOCGIZHTJ6SQCEDBSRAMCLDPQAGZTZTB6LX6RG4RBR5WGY registered at 5663
+Buffy sees that WEQZOPCRY7VMA5JEJMZPTHYJFFSQIAXO4FJX23RPY3QXV3I53KDGMVBIPQ registered at 5664
+Buffy sees that LMGM4ZA24RTJTV6BCDWHKBMGG533XBVOH4MSTLHMUHYGLCEYOINY6BO5NI registered at 5665
+Checking in Xander...
+Xander did show.
+Checking in Willow...
+Willow did show.
+Checking in Cordelia...
+Cordelia did show.
+Checking in Giles...
+Giles did not show.
+Checking in Oz...
+Oz did not show.
+Buffy has 101.9853 ALGO
+Xander has 99.9962 ALGO
+Willow has 99.9962 ALGO
+Cordelia has 99.9962 ALGO
+Giles has 98.9962 ALGO
+Oz has 98.9962 ALGO
+Angel has 99.9993 ALGO
+Jonathan has 100.0003 ALGO
+```
+
+## {#tut-rsvp7} Where Do We Go From Here?
+
+You should now be asking, [Where Do We Go From Here?](https://www.youtube.com/watch?v=7XdAQpq_1Xw)
+You now understand...
+- How to design decentralized and centralized DApps;
+- How to use `{!rsh} API`s in Reach programs;
+- How to use `{!rsh} Map`s in Reach programs;
+- How to define `{!rsh} View`s, for observing Reach programs internal state;
+- How to define `{!rsh} Events`, for monitoring Reach program actions; and,
+- How to do it all with a testing-first framework.
+
+We find that many many users want to write DApps that are more like @{seclink("tut-rsvp")} than @{seclink("tut")}, so hopefully this tutorial will help you on your way!
+
+If you want to extend this program and make it even better and more interesting, you should create a Web interface to it.
+The interface will work by...
+- Initially showing an "Admin" interface, where an administrator can launch a Event contract instance.
+- Upon launch, it should turn the contract information into a special URL, or QR code, that can be shared with potential Guests and the Host.
+- The Guest view should allow Guests to see the Event details and the current number of reservations.
+  It should do this without requiring the user to attach a wallet, but if they want to make a reservation, they would have to.
+  It should check to make sure they haven't already registered first (by using the `Info.reserved` view).
+- The Host view should allow the Host to see who has registered and provide an interface for checking them in, either by clicking a button associated with each `Notify.register` event, or by scanning their address on their mobile wallet.
+
+There is nothing new you'd need to learn about Reach to write that Web interface, but you'd have to be good at designing and building Web applications.
+If you were using Algorand and wanted to provide a wallet to users who don't have an ARC11 wallet, then you'd use `{!js} stdlib.walletFallback`, but other than that, your code would look almost identical to our test suite, except you'd have lots of Web interface manipulation code.
+
+So remember, there's only one thing on this earth more powerful than evil, and that's us!
