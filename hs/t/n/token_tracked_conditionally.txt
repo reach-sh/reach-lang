@@ -1,0 +1,10 @@
+reachc: error[RE0066]: Incompatible states:
+The expected state of the program varies between branches because:
+  * The non-network tokens vary between states: none vs t/25. Ensure all needed tokens are available before the branch.
+
+  ./token_tracked_conditionally.rsh:10:3:if
+
+  10|   if (b) { Token.track(t); }
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0066
+

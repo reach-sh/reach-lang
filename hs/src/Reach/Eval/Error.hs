@@ -412,7 +412,7 @@ showStateDiff x y =
     showS :: Show v => S.Set v -> String
     showS = showL . S.toAscList
     showL :: Show v => [v] -> String
-    showL = intercalate ", " . map show
+    showL l = if null l then "none" else intercalate ", " $ map show l
 
 instance ErrorMessageForJson EvalError where
   errorMessageForJson = \case

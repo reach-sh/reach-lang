@@ -108,6 +108,23 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
   range: 10 - 15
   ```
 
++ @{ref("rsh", "autoTrackPublishedTokens")} `{!rsh} autoTrackPublishedTokens`
+
+  `{!rsh} true` (default) or `{!rsh} false`
+
+  Enable or disable automatic tracking of the contract's balance of non-network tokens introduced with `{!rsh} publish`.
+  Tracking tokens takes some amount of extra space, and on some networks costs money.
+  The Reach compiler tries to track only tokens which the contract may receive, but it sometimes fails and unnecessarily tracks a token.
+  If you need to publish a token, but your contract will never receive any of that token, disabling this will remove the chance of unnecessarily tracking the token.
+  If this is set to `{!rsh} false`, but you still need to track a published token, you can use `{!rsh} Token.track`.
+
+  Example of manually tracking a published token when `{!rsh} autoTrackPublishedTokens` is turned off:
+  ```reach
+  load: hs/t/y/token_track_publish_2.rsh
+  md5: bbc008ebb7dc3c5b757ce20eb95bbbe9
+  range: 4 - 11
+  ```
+
 ## {#ref-programs-appinit-exprs} Expressions
 
 Any expressions valid for a [computation](##ref-programs-appinit-exprs) are valid for application initialization.
