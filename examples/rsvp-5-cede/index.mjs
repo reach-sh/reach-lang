@@ -39,11 +39,11 @@ const makeRSVP = async ({ hostLabel, name, reservation, timeLimit }) => {
   }
 
   const details = {
-    name, reservation, deadline,
+    name, reservation, deadline, host: accHost,
   };
 
   const ctcHost = accHost.contract(backend);
-  const ctcInfo = await stdlib.withDisconnect(() => ctcHost.p.Host({
+  const ctcInfo = await stdlib.withDisconnect(() => ctcHost.p.Admin({
     details,
     launched: stdlib.disconnect,
   }));
@@ -55,12 +55,12 @@ const makeRSVP = async ({ hostLabel, name, reservation, timeLimit }) => {
 
     const willGo = async () => {
       const ctcGuest = acc.contract(backend, ctcInfo);
-      await ctcGuest.a.GuestP.register();
+      await ctcGuest.a.Guest.register();
       console.log(`${label} made reservation`);
     };
     const doHost = async (showed) => {
       console.log(`Checking in ${label}...`);
-      await ctcHost.a.HostP.checkin(acc, showed);
+      await ctcHost.a.Host.checkin(acc, showed);
       console.log(`${label} did${showed ? '' : ' not'} show.`);
     };
     const showUp = () => doHost(true);

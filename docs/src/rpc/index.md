@@ -141,10 +141,10 @@ If it is not present, the client library must default to the value of the enviro
 + `port` --- This value sets the TCP port to contact for the Reach RPC Server instance.
 If it is not present, the client library must default to the value of the environment variable `REACH_RPC_PORT`.
 + `verify` --- This value determines whether to verify the TLS certificate of the Reach RPC Server instance.
-If it is not present, the client library must default to the value of the environment variable `REACH_RPC_TLS_REJECT_UNVERIFIED`.
-If that is not present, it must default to true.
+  If it is not present, the client library must default to the value of the environment variable `REACH_RPC_TLS_REJECT_UNVERIFIED`.
+  If that is not present, it must default to true.
 
-To disable verification, set this value to the string: `"0"`; any other value will be considered to mean "enable".
+  To disable verification, set this value to the string: `"0"`; any other value will be considered to mean "enable".
 + `timeout` --- This value sets the number of seconds to wait for the Reach RPC Server instance to respond to its first request.
 If it is not present, the client library must default to the value of the environment variable `REACH_RPC_TIMEOUT`.
 If that is not present, it must default to 5 seconds.

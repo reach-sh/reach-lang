@@ -365,18 +365,19 @@ Let's dig into the code!
 
 XXX sample one
 
-We define an object for the details of the Event, but this time we don't need to store the Host's identity, because it is implicit in who created the application.
-If we wanted, we could include it and separate the identities of the "Host" (who manages the check-in process) from the "Administrator" (who creates the Event).
+We define an object for the details of the Event, which is the same as before.
 
 XXX sample two
 
 We define the participant and then the two APIs.
-- The first API, `GuestP`, is for Guests to call and it has just a single function.
-  On-chain, this function will be callable as `GuestP_register`, according to whatever the ABI standard is for the chain.
-  Off-chain, Reach provides an interface in its standard library to call it as `{!js} ctc.apis.GuestP.register()`.
-- The second API, `HostP` is for the Host to call as they check-in (or note the failure to show) of Guests.
+- The participant, `Admin`, is the one that actually creates the instance.
+  In most cases, this will be the Host, but we don't restrict it so it has to be the same person.
+- The first API, `Guest`, is for Guests to call and it has just a single function.
+  On-chain, this function will be callable as `Guest_register`, according to whatever the ABI standard is for the chain.
+  Off-chain, Reach provides an interface in its standard library to call it as `{!js} ctc.apis.Guest.register()`.
+- The second API, `Host` is for the Host to call as they check-in (or note the failure to show) of Guests.
   It takes two arguments: the first for who the Guest is and the second for whether they showed up, or not.
-  It can be called on-chain as `HostP_checkin` and off-chain with `{!js} ctc.apis.HostP.checkin(guest, showed)`.
+  It can be called on-chain as `Host_checkin` and off-chain with `{!js} ctc.apis.Host.checkin(guest, showed)`.
 
 XXX sample three
 
@@ -428,7 +429,7 @@ XXX sample register
 
 This uses a new form you've never seen before: the `{!rsh} .api_` component.
 It has two arguments:
-1. First, there's the API call that is actually being handled; in this case, the `{!rsh} GuestP.register` call.
+1. First, there's the API call that is actually being handled; in this case, the `{!rsh} Guest.register` call.
 1. Second, there's a function that accepts the arguments to call (in this case there are none) and specifies the action.
 
 The action specification function is made of two parts:
@@ -484,11 +485,51 @@ In general, this is a good property to seek when you're writing trust-worthy sof
 We've just walked through the Reach implementation of the RSVP application using APIs and Maps.
 But, now we need to show the updates to our testing framework that work with the new implementation.
 
+The program starts exactly the same as before:
+
+XXX sample one
+
+But after we define the details, there's a difference:
+
+XXX sample two
+
+We define the Host's contract handle and have them run the Admin participant, which creates and launches the single contract instance for everyone.
+As mentioned above, we could have a separate account do this, but we choose not to for simplicity.
+
+XXX sample three
+
+The code for guests is much simpler, because in each case we just have either the Guest call the `register` function or the Host call the `checkin` function.
+
+XXX sample four
+
+Everything else about the program is the same.
+
+---
+
+This program is excellent and we wouldn't need to make any fundamentally different decisions about its design if we were to really launch the `rsvp.app` service.
+However, there are a few things that are difficult to do with the program as it is.
+
+For example, ideally when you go to `rsvp.app/event?id=bbbb`, you should be able to see some information about the Event, like who the Host is, what's the reservation price, and so on.
+This information is embedded in the consensus network's records and in the state of the contract instance, but it requires low-level knowledge to extract.
+We're going to add a `{!rsh} View` to the program to make it easy to access.
+
+Similarly, we'd like to display information about how many people have already made reserverations and, maybe, even who they are and when it happened.
+For the first of those things, we'll add another `{!rsh} View`; and for the second, we'll add a `{!rsh} Event` that will make it easy to access the record of everything that happened.
+
+:::note
+Although we're going to make changes to the Reach program, we're not actually exposing any information that wasn't already available in the consensus network's records.
+
+For example, the `{!rsh} View` is going to make it easy to read the `details` and `howMany` variables.
+These variables are actually stored in the consensus network's memory.
+It is possible, for example, to know that "`howMany` is stored at memory offset 0x8008" and that is encoded as 64 bytes in little-endian order.
+However, those details are extremely low-level and subject to change as the consensus network's implementation improves and Reach discovers more efficient ways to compile your program.
+
+By adding a `{!rsh} View`, we'll produce a usable API that abstracts these kinds of details for the benefit of our colleagues that create the User Interface, our future selves that need to understand the program, and our users that want to have easy access to data about themselves.
+:::
+
+## {#tut-rsvp6-rsh} A View To An Event
+
 XXX
-
-XXX show test framework
-
-XXX talk about pros & cons
 
 XXX talk about views & events
 

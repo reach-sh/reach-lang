@@ -1527,6 +1527,22 @@
     "title": "Test First, but Verify",
     "path": "/tut/rsvp/#tut-rsvp4-tests"
   },
+  "tut-rsvp5-api": {
+    "title": "The API and The Map",
+    "path": "/tut/rsvp/#tut-rsvp5-api"
+  },
+  "tut-rsvp5-mjs": {
+    "title": "Testing our APIs and Maps",
+    "path": "/tut/rsvp/#tut-rsvp5-mjs"
+  },
+  "tut-rsvp5-rsh": {
+    "title": "Programming with APIs and Maps",
+    "path": "/tut/rsvp/#tut-rsvp5-rsh"
+  },
+  "tut-rsvp6-rsh": {
+    "title": "A View To An Event",
+    "path": "/tut/rsvp/#tut-rsvp6-rsh"
+  },
   "tuts": {
     "title": "Tutorials",
     "path": "/tut/#tuts"
