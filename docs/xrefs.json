@@ -1535,9 +1535,17 @@
     "title": "Programming with APIs and Maps",
     "path": "/tut/rsvp/#tut-rsvp5-rsh"
   },
+  "tut-rsvp6-mjs": {
+    "title": "The Panopticon",
+    "path": "/tut/rsvp/#tut-rsvp6-mjs"
+  },
   "tut-rsvp6-rsh": {
     "title": "A View To An Event",
     "path": "/tut/rsvp/#tut-rsvp6-rsh"
+  },
+  "tut-rsvp7": {
+    "title": "Where Do We Go From Here?",
+    "path": "/tut/rsvp/#tut-rsvp7"
   },
   "tuts": {
     "title": "Tutorials",
