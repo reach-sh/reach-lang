@@ -275,6 +275,7 @@ data DLOpts = DLOpts
   { dlo_verifyArithmetic :: Bool
   , dlo_untrustworthyMaps :: Bool
   , dlo_verifyPerConnector :: Bool
+  , dlo_autoTrackPublishedTokens :: Bool
   , dlo_connectors :: Connectors
   , dlo_counter :: Counter
   , dlo_bals :: Int
@@ -290,6 +291,7 @@ instance Pretty DLOpts where
           [ "verifyArithmetic: " <> viaShow dlo_verifyArithmetic
           , "verifyPerConnector: " <> viaShow dlo_verifyPerConnector
           , "connectors: " <> viaShow dlo_connectors
+          , "autoTrackPublishedTokens: " <> viaShow dlo_autoTrackPublishedTokens
           ]
 
 instance HasCounter DLOpts where

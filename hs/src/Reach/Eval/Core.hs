@@ -328,6 +328,7 @@ app_default_opts idxr dar cns =
     { dlo_verifyArithmetic = False
     , dlo_untrustworthyMaps = False
     , dlo_verifyPerConnector = False
+    , dlo_autoTrackPublishedTokens = True
     , dlo_connectors = cns
     , dlo_counter = idxr
     , dlo_bals = 1
@@ -340,6 +341,7 @@ app_options =
     [ ("verifyArithmetic", opt_bool (\opts b -> opts {dlo_verifyArithmetic = b}))
     , ("untrustworthyMaps", opt_bool (\opts b -> opts {dlo_untrustworthyMaps = b}))
     , ("verifyPerConnector", opt_bool (\opts b -> opts {dlo_verifyPerConnector = b}))
+    , ("autoTrackPublishedTokens", opt_bool (\opts b -> opts {dlo_autoTrackPublishedTokens = b}))
     , ("connectors", opt_connectors)
     ]
   where
@@ -5174,7 +5176,9 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
               , st_after_first = True
               }
       setSt st_recv
-      mapM_ (flip trackToken Nothing) $ map DLA_Var toks
+      track <- readDlo dlo_autoTrackPublishedTokens
+      when track $
+        mapM_ (flip trackToken Nothing) $ map DLA_Var toks
       sco_recv <- sco_update_and_mod recv_imode recv_env recv_env_mod
       locSco sco_recv $ do
         evalChecks
