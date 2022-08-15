@@ -95,29 +95,49 @@ We're going to use this exact same testing for each of the different versions of
 
 Let's get started:
 
-XXX sample one
+```
+load: /examples/rsvp-4-tedede/index.mjs
+md5: a570deeae75c2628602286e7814bea0e
+range: 83-89
+```
 
 In this sample, we use `{!js} test.one` to define a single test scenario.
 We use the function `{!js} makeRSVP`, which we will define later, to create a JavaScript object for the Event abstraction.
 When it is created, it has the details of the event in it.
 
-XXX sample two
+```
+load: /examples/rsvp-4-tedede/index.mjs
+md5: a570deeae75c2628602286e7814bea0e
+range: 90-94
+```
 
 Next, we define objects for each of the people involved in the scenario.
 This code uses `{!js} Event.makeGuests`, a function which we will define later, to turn a list of labels into Guest abstractions.
 
-XXX sample three
+```
+load: /examples/rsvp-4-tedede/index.mjs
+md5: a570deeae75c2628602286e7814bea0e
+range: 95-96
+```
 
 Next, we have each one of the Scoobies declare that they will go to the event, and therefore pay the reservation.
 
-XXX sample four
+```
+load: /examples/rsvp-4-tedede/index.mjs
+md5: a570deeae75c2628602286e7814bea0e
+range: 97-108
+```
 
 Next, we wait for the deadline and have people start showing up, or not.
 In the case of Angel, when he says he'll go, there's an error, because he's late.
 `{!js} err` is a constant we'll define later that is the text of the error message from the consensus network indicating that there was a problem submitting the transaction.
 Similarly, in the case of Jonathan, when he tries to show up, there's an error.
 
-XXX sample five
+```
+load: /examples/rsvp-4-tedede/index.mjs
+md5: a570deeae75c2628602286e7814bea0e
+range: 110-116
+```
 
 Finally, we print out the balances of everyone and see that they match our expectations.
 The function `{!js} test.run` instructs Reach to run all of the tests and not print out extra debugging information.
@@ -168,14 +188,22 @@ The Host will have to check to make sure the instance is for the correct Event.
 On the other hand, if the Guest doesn't check in, then the Host has to find out about the instance somehow and claim the reservation.
 (This "somehow" is why this might not be the best design for this application.)
 
-XXX sample one
+```
+load: /examples/rsvp-4-tedede/index.rsh
+md5: fbd2ccb5df12a9467d5214f1e84dbf0c
+range: 1-20
+```
 
 First, we define a type that represents the details of the event.
 It contains the name of the event ("Buffy's Birthday Bash..."), as well as the reservation price, the deadline, and the host's address.
 
 Second, we define the application and the two participants, the Host, and the Guest.
 
-XXX sample two
+```
+load: /examples/rsvp-4-tedede/index.rsh
+md5: fbd2ccb5df12a9467d5214f1e84dbf0c
+range: 22-29
+```
 
 As mentioned above, the first thing that happens in the program is that the Guest launches the instance by doing the first publication.
 They publish the details of the event, which they had to get from the Host somehow.
@@ -205,7 +233,11 @@ This a short-hand for writing `{!rsh} Participant.only(() => interact.f(....))`.
 When a local step (such as the `{!rsh} interact` short-hand) appears in a consensus step, it will run after the consensus step is confirmed, whenever the participant learns about that confirmation.
 :::
 
-XXX sample three
+```
+load: /examples/rsvp-4-tedede/index.rsh
+md5: fbd2ccb5df12a9467d5214f1e84dbf0c
+range: 31-44
+```
 
 It is now time for the Host to show up and declare what should happen to the reservation.
 First, the Host checks to see if the details are correct.
@@ -275,49 +307,85 @@ This framework needs to provide:
 
 We'll talk about each of these in turn.
 
-XXX sample one
+```
+load: /examples/rsvp-4-tedede/index.mjs
+md5: a570deeae75c2628602286e7814bea0e
+range: 1-10
+```
 
 First, we have the basic header that imports and initializes the Reach standard library.
 The only interesting thing here is the definition of the various error messages for each network connector.
 
-XXX sample two
+```
+load: /examples/rsvp-4-tedede/index.mjs
+md5: a570deeae75c2628602286e7814bea0e
+range: 13-16
+```
 
 We define the `{!js} makeRSVP` function and create an initial test account for the host and set its label for debugging.
 
-XXX sample three
+```
+load: /examples/rsvp-4-tedede/index.mjs
+md5: a570deeae75c2628602286e7814bea0e
+range: 18-33
+```
 
 Next, we define the function `stdPerson` which takes an `obj` with an `acc` field and adds a `{!js} Person.getBalance` function that returns the account's current balance as a nice formatted string.
 We use this function to define the `{!js} Event.Host` value.
 
-XXX sample four
+```
+load: /examples/rsvp-4-tedede/index.mjs
+md5: a570deeae75c2628602286e7814bea0e
+range: 33-39
+```
 
 Next, we define the deadline, based on the current time, and the `{!js} Event.waitUntilDeadline` function for waiting until that time has passed.
 
-XXX sample five
+```
+load: /examples/rsvp-4-tedede/index.mjs
+md5: a570deeae75c2628602286e7814bea0e
+range: 41-43
+```
 
 Now, we can define the `details` object that will be consumed by Reach.
 This value will be in scope for each of the Guests, which represents the Event details being shared with all the Guests.
 We use `accHost` for the `host` field, because Reach can convert account abstractions into `{!rsh} Address` values.
 
-XXX sample five
+```
+load: /examples/rsvp-4-tedede/index.mjs
+md5: a570deeae75c2628602286e7814bea0e
+range: 45-47
+```
 
 We define the `{!js} Event.makeGuest` function, which starts by creating a new test account and setting its label.
 
-XXX sample six
+```
+load: /examples/rsvp-4-tedede/index.mjs
+md5: a570deeae75c2628602286e7814bea0e
+range: 49-57
+```
 
 We define the `{!js} Guest.willGo` function, which spawns a new contract that runs as the `Guest` participant.
 It uses `{!js} stdlib.withDisconnect` and `{!js} stdlib.disconnect` to stop running after the `registered` `{!rsh} interact` function has been called with the contract information.
 This information is returned from `{!js} stdlib.withDisconnect`, so `ctcInfo` is set to the actual contract that was deployed.
 In a real deployment, this contract information would be presented the user as something like a QR code for them to save and show to the Host later.
 
-XXX sample seven
+```
+load: /examples/rsvp-4-tedede/index.mjs
+md5: a570deeae75c2628602286e7814bea0e
+range: 58-70
+```
 
 We define the two functions `{!js} Guest.showUp` and `{!js} Guest.noShow` by defining a common function `doHost` that accepts a boolean.
 This function throws an error if there was never a reservation, which we know because the `ctcInfo` variable is undefined.
 Although the function is inside of the Guest object, it uses the Host's account abstraction to attach to an instance of the program.
 It has access to `details` object, so it can ensure that they match.
 
-XXX sample eight
+```
+load: /examples/rsvp-4-tedede/index.mjs
+md5: a570deeae75c2628602286e7814bea0e
+range: 72-80
+```
 
 We close the definition of the Guest abstraction by calling `stdPerson` to add the `{!js} Person.getBalance` function.
 Then, we define `{!js} Event.makeGuests`, which produces a single promise out of the array of promises of Guest abstractions.
@@ -363,11 +431,19 @@ The overall structure of our application will be:
 
 Let's dig into the code!
 
-XXX sample one
+```
+load: /examples/rsvp-5-cede/index.rsh
+md5: 210135131e027cf541a3cf64f3b88ce9
+range: 1-9
+```
 
 We define an object for the details of the Event, which is the same as before.
 
-XXX sample two
+```
+load: /examples/rsvp-5-cede/index.rsh
+md5: 210135131e027cf541a3cf64f3b88ce9
+range: 11-22
+```
 
 We define the participant and then the two APIs.
 - The participant, `Admin`, is the one that actually creates the instance.
@@ -379,12 +455,20 @@ We define the participant and then the two APIs.
   It takes two arguments: the first for who the Guest is and the second for whether they showed up, or not.
   It can be called on-chain as `Host_checkin` and off-chain with `{!js} ctc.apis.Host.checkin(guest, showed)`.
 
-XXX sample three
+```
+load: /examples/rsvp-5-cede/index.rsh
+md5: 210135131e027cf541a3cf64f3b88ce9
+range: 24-30
+```
 
 We publish the details, unpack them, and signal to the creator that the contract has been launched.
 However, we do _not_ `{!rsh} commit()`, because we are going to do something else in the consensus.
 
-XXX sample four
+```
+load: /examples/rsvp-5-cede/index.rsh
+md5: 210135131e027cf541a3cf64f3b88ce9
+range: 32-35
+```
 
 This is a very dense code sample with lots of new ideas if you're familiar with basic Reach.
 It is worth studying closely, because these ideas are used over and over in complex Reach programs.
@@ -413,7 +497,11 @@ In this case, we are reducing a set of input events (API calls) that occur in _p
 `howMany` is a running counter of how many Guests have registered, but have not checked in; it starts as `{!rsh} 0`.
 Shortly, we'll review the code that actually reduces incoming events into updated versions of these values.
 
-XXX sample invariants
+```
+load: /examples/rsvp-5-cede/index.rsh
+md5: 210135131e027cf541a3cf64f3b88ce9
+range: 34-37
+```
 
 Every `{!rsh} parallelReduce` can be written as a `{!rsh} while` loop, but it is often more convenient to think about it as a separate kind of construct.
 Because it is a `{!rsh} while` loop, it must have a condition for when it terminates (a `{!rsh} .while` component) and loop invariants (a sequence of `{!rsh} .invariant` components).
@@ -425,7 +513,11 @@ In our case, we have two invariants and one condition.
 
 We can now show the reduction blocks for each different kind of input event.
 
-XXX sample register
+```
+load: /examples/rsvp-5-cede/index.rsh
+md5: 210135131e027cf541a3cf64f3b88ce9
+range: 38-47
+```
 
 This uses a new form you've never seen before: the `{!rsh} .api_` component.
 It has two arguments:
@@ -448,7 +540,11 @@ In this case, the function
 1. yield `{!rsh} null` to the API caller; and,
 1. increments the count of the number of Guests, `howMany`.
 
-XXX sample checkin
+```
+load: /examples/rsvp-5-cede/index.rsh
+md5: 210135131e027cf541a3cf64f3b88ce9
+range: 48-58
+```
 
 The Host checkin function is similar.
 It accepts the Guest's address and whether the Host is reporting that they showed up or not.
@@ -460,7 +556,11 @@ It removes the Guest's entry from the mapping.
 It transfers the reservation fee to either the Guest or the Host, depending on the value of `showed`.
 And, finally, it decrements the Guest counter and indicates that Event has started.
 
-XXX sample end
+```
+load: /examples/rsvp-5-cede/index.rsh
+md5: 210135131e027cf541a3cf64f3b88ce9
+range: 59-62
+```
 
 Finally we close the applications.
 We don't need to do any final `{!rsh} transfer`s or anything like that to satisfy the token linearity property (which enforces that the contract's account is empty when it ends), because we know that we only reach the end of the `{!rsh} parallelReduce` when `howMany` is zero, and we know that the contract balance is `howMany * reservation`, so it must be zero in that case too.
@@ -469,13 +569,21 @@ We don't need to do any final `{!rsh} transfer`s or anything like that to satisf
 
 Although we did not dwell on the verification of this program, nearly every line in the program is essential in some way and many of them are essential for passing the verification engine.
 
-XXX sample
+```
+load: /examples/rsvp-5-cede/index-fail.rsh
+md5: 5e7a31fdaec3a38cbd4a37a896375fbc
+range: 48-58
+```
 
 For example, suppose that we neglected to delete the Guest's reservation entry.
 This means that we will decrement `howMany` without changing the size of the mapping, so one of the loop invariants will be incorrect.
 Reach will detect this error and show the following error during verification:
 
-XXX sample
+```
+load: /examples/rsvp-5-cede/index-fail.txt
+md5: 798c1a2ef8c49ed49761431ec81cd943
+range: 4-25
+```
 
 This program is interesting, because the invariants and assertions are set up in such a way that almost no other program could possibly satisfy them.
 In general, this is a good property to seek when you're writing trust-worthy software: you want any change to be detected by your verification engine and test suite.
@@ -487,20 +595,36 @@ But, now we need to show the updates to our testing framework that work with the
 
 The program starts exactly the same as before:
 
-XXX sample one
+```
+load: /examples/rsvp-5-cede/index.mjs
+md5: 868c295a5cdd133ed83267ca4f0645d1
+range: 1-43
+```
 
 But after we define the details, there's a difference:
 
-XXX sample two
+```
+load: /examples/rsvp-5-cede/index.mjs
+md5: 868c295a5cdd133ed83267ca4f0645d1
+range: 45-50
+```
 
 We define the Host's contract handle and have them run the Admin participant, which creates and launches the single contract instance for everyone.
 As mentioned above, we could have a separate account do this, but we choose not to for simplicity.
 
-XXX sample three
+```
+load: /examples/rsvp-5-cede/index.mjs
+md5: 868c295a5cdd133ed83267ca4f0645d1
+range: 52-67
+```
 
 The code for guests is much simpler, because in each case we just have either the Guest call the `register` function or the Host call the `checkin` function.
 
-XXX sample four
+```
+load: /examples/rsvp-5-cede/index.mjs
+md5: 868c295a5cdd133ed83267ca4f0645d1
+range: 69-77
+```
 
 Everything else about the program is the same.
 
@@ -564,7 +688,11 @@ By adding a `{!rsh} View`, we'll produce a usable API that abstracts these kinds
 
 First, we'll review the changes to the Reach application code.
 
-XXX sample one
+```
+load: /examples/rsvp-6-vevt/index.rsh
+md5: ed7d96413f2f23224d5ea6081ae4cc78
+range: 11-31
+```
 
 We add definitions for the `{!rsh} View` and `{!rsh} Event` objects.
 
@@ -595,15 +723,23 @@ We've merely indicated that our application contains them.
 This is similar to how we define a Participant and then later indicate what actions it performs.
 Let's look at the view definitions next.
 
-XXX sample
+```
+load: /examples/rsvp-6-vevt/index.rsh
+md5: ed7d96413f2f23224d5ea6081ae4cc78
+range: 33-40
+```
 
 A View can have a different value at each point in the program, including not having any value at all.
 You define the value by calling `{!rsh} View.field.set` and providing a value that satisfies the type.
-For example, here we indicate that the `details` field is always the same as the `details` variable.
+For example, here (on line 40) we indicate that the `details` field is always the same as the `details` variable.
 This definition applies to all dominated occurences of the `{!rsh} commit()` keyword.
 Views are not mutable references: instead, they are ways of naming, for external consumption, portions of the consensus state.
 
-XXX sample
+```
+load: /examples/rsvp-6-vevt/index.rsh
+md5: ed7d96413f2f23224d5ea6081ae4cc78
+range: 42-51
+```
 
 We similarly expose the contents of the `Guests` mapping, as well as the `howMany` variable.
 We use the `{!rsh} .define` feature of `{!rsh} parllelReduce` to introduce a statement that dominates the `{!rsh} commit()`s implicit in the `{!rsh} parallelReduce`.
@@ -611,14 +747,22 @@ This context is the only context that has access to the `howMany` variable, whic
 
 Next, let's look at the code that emits instances of the `{!rsh} Events` we defined.
 
-XXX sample
+```
+load: /examples/rsvp-6-vevt/index.rsh
+md5: ed7d96413f2f23224d5ea6081ae4cc78
+range: 52-62
+```
 
 We can emit an event by calling `{!rsh} Events.kind(args)` in a consensus step.
-We do so inside of the `{!rsh} .api_` for the `Guest.register` API call.
+We do so inside of the `{!rsh} .api_` for the `Guest.register` API call on line 58.
 
-XXX sample
+```
+load: /examples/rsvp-6-vevt/index.rsh
+md5: ed7d96413f2f23224d5ea6081ae4cc78
+range: 63-74
+```
 
-We do the same for the `Host.checkin` event.
+We do the same for the `Host.checkin` event on line 70.
 It is typical to emit events just before or after yield a result to the API caller.
 
 ## {#tut-rsvp6-mjs} The Panopticon
@@ -628,7 +772,11 @@ If we were going to build a real version of this application, we'd include calls
 However, we'll delay that for another time.
 Instead, we'll just make a few simple changes to the test framework to demonstrate how to use these functions.
 
-XXX sample
+```
+load: /examples/rsvp-6-vevt/index.mjs
+md5: 084ba5fd53e0ff018da15aae7061f9da
+range: 45-55
+```
 
 First, we'll have the Host monitor all registerations for this event.
 `{!js} ctcHost.events.register.monitor(f)` is a function that calls `f` once for every event.
@@ -638,7 +786,11 @@ First, we'll have the Host monitor all registerations for this event.
 In this code, we extract those fields and print out a message on every registration.
 This is representative of a user interface that shows the Host each registration as it happens.
 
-XXX sample
+```
+load: /examples/rsvp-6-vevt/index.mjs
+md5: 084ba5fd53e0ff018da15aae7061f9da
+range: 57-67
+```
 
 Next, we modify the `willGo` function so that the Guest, before they register, inspect the event details and look at the reservation price.
 This is representative of a user interface that informs the Guest of how much they'll be expected to pay to make a reservation.
@@ -714,4 +866,4 @@ The interface will work by...
 There is nothing new you'd need to learn about Reach to write that Web interface, but you'd have to be good at designing and building Web applications.
 If you were using Algorand and wanted to provide a wallet to users who don't have an ARC11 wallet, then you'd use `{!js} stdlib.walletFallback`, but other than that, your code would look almost identical to our test suite, except you'd have lots of Web interface manipulation code.
 
-So remember, there's only one thing on this earth more powerful than evil, and that's us!
+So, remember, there's only one thing on this earth more powerful than evil, and that's us!
