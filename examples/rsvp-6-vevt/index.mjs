@@ -36,7 +36,7 @@ const makeRSVP = async ({ hostLabel, name, reservation, timeLimit }) => {
   const waitUntilDeadline = async () => {
     console.log(`Waiting until ${deadline}`);
     await stdlib.waitUntilTime(deadline);
-  }
+  };
 
   const details = {
     name, reservation, deadline, host: accHost,
@@ -89,7 +89,7 @@ test.one('BBBB', async () => {
     hostLabel: 'Buffy',
     name: `Buffy's Birthday Bash at the Bronze`,
     reservation: stdlib.parseCurrency(1),
-    timeLimit: 25,
+    timeLimit: 250,
   });
   const Buffy = Event.Host;
   const People = await Event.makeGuests([
