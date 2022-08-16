@@ -24,5 +24,5 @@ if (stdlib.connector === 'ALGO') {
   await stdlib.transfer(accAlice, accBob, algos(10), undefined, { closeTo: accCharlie.getAddress() });
   await assertBals(0, 115, 185);
 } else {
-  // there is nothing to test on ETH/CFX
+  // there is nothing to test on ETH/CFX, as the opts just will be ignored
 }
