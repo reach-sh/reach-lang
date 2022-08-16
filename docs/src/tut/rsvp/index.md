@@ -61,7 +61,7 @@ The second idea is really bad and we should absolutely not do anything like unto
 The first idea is not always dumb, but it turns out we're going to do something else for this application.
 However, since it is sometimes a good idea, let's elaborate on what it means and why it can be valuable.
 
-## {#tut-rsvp3} Yo Dawg...
+## {#tut-rsvp3} To Decentralize or Not To Decentralize
 
 If we had a Reach application with just two participants, one for the Host and one for the Guest, then if we had many Guests, we would need to have many different instances of the application.
 This is similar to the @{seclink("tut")} application, where each instance plays exactly one game, but you can run the application as many times as you want.
@@ -70,7 +70,7 @@ For our event reservation application, each instance of the application would ha
 This is a "decentralized" decentralized application (a "De-DApp"), because there are many instances of the same application with a common user interface.
 Sometimes people refer to "De-DApp"s as "protocols", because they are trying to emphasize the idea that there are many instances which all speak a common language.
 
-In contrast, there are "centralized" decentralized application ("Ce-DApps") where there is one single instance that manages all interactions with the application.
+In contrast, there are "centralized" decentralized applications ("Ce-DApps") where there is one single instance that manages all interactions within the application.
 
 Some features are easier to build into De-DApps and others are more difficult, but are easier with Ce-DApps.
 For example, we speculate that it is easier to add the feature that Guests who show up can split the abandoned reservations in a Ce-DApp than a De-DApp.
@@ -186,7 +186,7 @@ So, in our design, the Guest will create the instance themselves.
 When the Guest checks in, they have to tell the Host about the instance so the Host can interact with it and return the reservation.
 The Host will have to check to make sure the instance is for the correct Event.
 On the other hand, if the Guest doesn't check in, then the Host has to find out about the instance somehow and claim the reservation.
-(This "somehow" is why this might not be the best design for this application.)
+(This "somehow" is why this may not be the best design for this application.)
 
 ```
 load: /examples/rsvp-4-tedede/index.rsh
@@ -216,7 +216,7 @@ This is not strictly necessary, but it will be convenient and helpful for end us
 :::note
 What is `{!rsh} enforce`?
 
-It is similar to `{!rsh} require`, except that Reach does not guarantee that there is a `{!rsh} assume` that dominates it.
+It is similar to `{!rsh} require`, except that Reach does not guarantee that there is an `{!rsh} assume` that dominates it.
 This means that honest actors may submit publications that will not be satisfied, because they violate the property.
 You should use this sparingly and only for properties that cannot be checked locally, like things related to time (as in this case) or things related to external `{!rsh} remote` objects.
 :::
@@ -281,7 +281,7 @@ In one way, it doesn't matter: the Host doesn't want the money, she just wants t
 That answer is very unsatisfying though.
 There are roughly two alternatives:
 - First, the Guest could tell the Host up-front that they are coming, but they would have to do that off-chain, such as by the RSVP application tracking it in a centralized database or encouraging the Guest to send an automated email or SMS message.
-- Second, the Host could search the consensus network for all instances of the RSVP application with matching details and then deliberately interact with an claim the funds.
+- Second, the Host could search the consensus network for all instances of the RSVP application with matching details and then deliberately interact with and claim the funds.
 The first option is "centralized", while the second option is "decentralized".
 (It appears, we now have a "decentralized, decentralized, decentralized, decentralized application" design, if we go with the second option.)
 
@@ -405,10 +405,10 @@ Recall that our previous version uses one instance for every Guest that goes to 
 The key source of this tediousness is its over decentralization: the information is spread throughout the system and duplicated many times.
 In some ways, this kind of decentralization is very valuable, because it means that there is not a single-point-of-failure, like how your body has many many different immune cells rather than a single giant immune cell.
 However, that benefit is unnecessary when we are already running on a consensus network, where decentralization at the base layer provides trustlessness at the application layer.
-Indeed, the difficulty of the over decentralized model leads some designer to build off-chain centralized database, like a database of the active events, because it is so difficult to query the consensus network for matching application instances.
+Indeed, the difficulty of the over decentralized model leads some designer to build an off-chain centralized database, like a database of the active events, because it is so difficult to query the consensus network for matching application instances.
 Those centralized databases become a trusted point-of-failure that are worthy targets of attack and exploitation.
 
-Instead, we're going to write a version of RSVP that using a single instance.
+Instead, we're going to write a version of RSVP using a single instance.
 
 If you're only familiar with Reach from the @{seclink("tut")} tutorial, then you should be wondering, "But how are you going to let any number of Guests join? And where will you store their information?"
 We're going to use two new concepts to implement this:
@@ -417,7 +417,7 @@ We're going to use two new concepts to implement this:
 
 We will define an API that Guests can call to register for an Event and we'll define another API that the Host can call whenever they want to report whether a Guest showed up.
 
-We will define a Mapping that records whether an Guest has registered and we will clear that record when the Host reports their attendance.
+We will define a Mapping that records whether a Guest has registered and we will clear that record when the Host reports their attendance.
 
 Since API publications do not come from participants, but could come from any number of actors in the consensus network, including other contracts, AND because Mappings can grow linearly in the number of actors that interact with the program, there is no limit to the number of Guests!
 
@@ -470,10 +470,10 @@ md5: 210135131e027cf541a3cf64f3b88ce9
 range: 32-35
 ```
 
-This is a very dense code sample with lots of new ideas if you're familiar with basic Reach.
+This is a very dense code sample with lots of new ideas if you're only familiar with basic Reach.
 It is worth studying closely, because these ideas are used over and over in complex Reach programs.
 
-First, we define a new `{!rsh} Map` that stores a boolean value for each address used as key.
+First, we define a new `{!rsh} Map` that stores a boolean value for each address used as a key.
 We're going to use this to store the set of Guest accounts.
 (There is a `{!rsh} Set` container available too that abstracts this pattern, but we're going to show the "raw" version to explain mappings in detail.)
 
@@ -671,7 +671,7 @@ This information is embedded in the consensus network's records and in the state
 We're going to add a `{!rsh} View` to the program to make it easy to access.
 
 Similarly, we'd like to display information about how many people have already made reservations and, maybe, even who they are and when it happened.
-For the first of those things, we'll add another `{!rsh} View`; and for the second, we'll add a `{!rsh} Events` that will make it easy to access the record of everything that happened.
+For the first of those things, we'll add another `{!rsh} View`; and for the second, we'll add an `{!rsh} Events` that will make it easy to access the record of everything that happened.
 
 :::note
 Although we're going to make changes to the Reach program, we're not actually exposing any information that wasn't already available in the consensus network's records.
@@ -699,7 +699,7 @@ We add definitions for the `{!rsh} View` and `{!rsh} Event` objects.
 Let's look at the `{!rsh} View` first.
 The first argument is a label for it, like how we give labels to APIs and participants.
 Next, we provide an object where the keys are the names of the view components and the fields are their types.
-This object is just like an `{!rsh} interact` object, except that the values are provide _from_ Reach, rather than _to_ Reach.
+This object is just like an `{!rsh} interact` object, except that the values are provided _from_ Reach, rather than _to_ Reach.
 In this case, like APIs, these values can be accessed on- and off-chain.
 On-chain, they can be accessed using the normal ABI of the consensus network, just like APIs.
 For example, the details are provided via a function named `Info_details` that takes no arguments and returns a `Details` structure, and there's a function named `Info_reserved` that accepts an address and returns a boolean indicating if they've made a reservation.
@@ -768,7 +768,7 @@ It is typical to emit events just before or after yield a result to the API call
 ## {#tut-rsvp6-mjs} The Panopticon
 
 We've now exposed information about the state and history of the RSVP application to callers.
-If we were going to build a real version of this application, we'd include calls to the `{!rsh} View` functions in the user interface and provide a event logger that monitors the `{!rsh} Events`.
+If we were going to build a real version of this application, we'd include calls to the `{!rsh} View` functions in the user interface and provide an event logger that monitors the `{!rsh} Events`.
 However, we'll delay that for another time.
 Instead, we'll just make a few simple changes to the test framework to demonstrate how to use these functions.
 
@@ -792,14 +792,14 @@ md5: 6c9ca7f7e8a9cb738005b61cabc1e8b0
 range: 57-67
 ```
 
-Next, we modify the `willGo` function so that the Guest, before they register, inspect the event details and look at the reservation price.
+Next, we modify the `willGo` function so that the Guest, before they register, inspects the event details and looks at the reservation price.
 This is representative of a user interface that informs the Guest of how much they'll be expected to pay to make a reservation.
 In this code, we call `{!js} ctcGuest.unsafeViews`, because when the view is not defined, it throws an error, rather than returning a special wrapper object.
 We know that it will always be defined, so it is more convenient to use this, than to worry about decoding the wrapper object.
 
 ---
 
-When we run this version of the program, it behaves exactly the same as before in all important ways, but has slightly different output:
+When we run this version of the program, it behaves exactly the same as before in all important ways, but has a slightly different output:
 
 ```
 [... a lot of boilerplate about building images and running them ...]
@@ -860,7 +860,7 @@ We find that many many users want to write DApps that are more like @{seclink("t
 
 If you want to extend this program and make it even better and more interesting, you should create a Web interface to it.
 The interface will work by...
-- Initially showing an "Admin" interface, where an administrator can launch a Event contract instance.
+- Initially showing an "Admin" interface, where an administrator can launch an Event contract instance.
 - Upon launch, it should turn the contract information into a special URL, or QR code, that can be shared with potential Guests and the Host.
 - The Guest view should allow Guests to see the Event details and the current number of reservations.
   It should do this without requiring the user to attach a wallet, but if they want to make a reservation, they would have to.
