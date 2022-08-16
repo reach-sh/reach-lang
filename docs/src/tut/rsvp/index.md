@@ -78,7 +78,7 @@ For example, we speculate that it is easier to add the feature that Guests who s
 This concept of Ce-DApps and De-DApps is artistic and humanistic: there is no definitive technical definition.
 In particular, there is a spectrum of centralization.
 For example, just as we can imagine one application for a single Event but for all Guests, we can imagine one application for all Events and all Guests of that Event.
-In that sense, we've just spoken about "De-De-DApps" (decentralized-decentralized-decentralized applications) and "De-Ce-DApps" as opposed to "Ce-Ce-DApps".
+In that sense, we've just spoken about "De-De-DApps" ([decentralized-decentralized-decentralized applications](https://imgflip.com/i/6q5g9u)) and "De-Ce-DApps" as opposed to "Ce-Ce-DApps".
 
 We are going to demonstrate the "decentralized" style, because it introduces fewer new Reach concepts, but we believe that the "centralized" design is more appropriate for this application.
 
