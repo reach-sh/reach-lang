@@ -95,6 +95,7 @@ test_examples = goldenTests "../examples" f
         , "./rps-4-attack/index-bad.rsh"
         , "./rps-4-attack/index-fails.rsh"
         , "./overview/index-error.rsh"
+        , "./rsvp-5-cede/index-fail.rsh"
         ]
     f fp =
       case S.member fp fails of
