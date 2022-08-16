@@ -97,7 +97,7 @@ Let's get started:
 
 ```
 load: /examples/rsvp-4-tedede/index.mjs
-md5: 32afb579baa98891312882b94e8d138a
+md5: abe189d9c995bd717c19301dee5706d9
 range: 83-89
 ```
 
@@ -107,7 +107,7 @@ When it is created, it has the details of the event in it.
 
 ```
 load: /examples/rsvp-4-tedede/index.mjs
-md5: 32afb579baa98891312882b94e8d138a
+md5: abe189d9c995bd717c19301dee5706d9
 range: 90-94
 ```
 
@@ -116,7 +116,7 @@ This code uses `{!js} Event.makeGuests`, a function which we will define later, 
 
 ```
 load: /examples/rsvp-4-tedede/index.mjs
-md5: 32afb579baa98891312882b94e8d138a
+md5: abe189d9c995bd717c19301dee5706d9
 range: 95-96
 ```
 
@@ -124,7 +124,7 @@ Next, we have each one of the Scoobies declare that they will go to the event, a
 
 ```
 load: /examples/rsvp-4-tedede/index.mjs
-md5: 32afb579baa98891312882b94e8d138a
+md5: abe189d9c995bd717c19301dee5706d9
 range: 97-108
 ```
 
@@ -135,7 +135,7 @@ Similarly, in the case of Jonathan, when he tries to show up, there's an error.
 
 ```
 load: /examples/rsvp-4-tedede/index.mjs
-md5: 32afb579baa98891312882b94e8d138a
+md5: abe189d9c995bd717c19301dee5706d9
 range: 110-116
 ```
 
@@ -309,7 +309,7 @@ We'll talk about each of these in turn.
 
 ```
 load: /examples/rsvp-4-tedede/index.mjs
-md5: 32afb579baa98891312882b94e8d138a
+md5: abe189d9c995bd717c19301dee5706d9
 range: 1-10
 ```
 
@@ -318,7 +318,7 @@ The only interesting thing here is the definition of the various error messages 
 
 ```
 load: /examples/rsvp-4-tedede/index.mjs
-md5: 32afb579baa98891312882b94e8d138a
+md5: abe189d9c995bd717c19301dee5706d9
 range: 13-16
 ```
 
@@ -326,7 +326,7 @@ We define the `{!js} makeRSVP` function and create an initial test account for t
 
 ```
 load: /examples/rsvp-4-tedede/index.mjs
-md5: 32afb579baa98891312882b94e8d138a
+md5: abe189d9c995bd717c19301dee5706d9
 range: 18-33
 ```
 
@@ -335,7 +335,7 @@ We use this function to define the `{!js} Event.Host` value.
 
 ```
 load: /examples/rsvp-4-tedede/index.mjs
-md5: 32afb579baa98891312882b94e8d138a
+md5: abe189d9c995bd717c19301dee5706d9
 range: 33-39
 ```
 
@@ -343,7 +343,7 @@ Next, we define the deadline, based on the current time, and the `{!js} Event.wa
 
 ```
 load: /examples/rsvp-4-tedede/index.mjs
-md5: 32afb579baa98891312882b94e8d138a
+md5: abe189d9c995bd717c19301dee5706d9
 range: 41-43
 ```
 
@@ -353,7 +353,7 @@ We use `accHost` for the `host` field, because Reach can convert account abstrac
 
 ```
 load: /examples/rsvp-4-tedede/index.mjs
-md5: 32afb579baa98891312882b94e8d138a
+md5: abe189d9c995bd717c19301dee5706d9
 range: 45-47
 ```
 
@@ -361,7 +361,7 @@ We define the `{!js} Event.makeGuest` function, which starts by creating a new t
 
 ```
 load: /examples/rsvp-4-tedede/index.mjs
-md5: 32afb579baa98891312882b94e8d138a
+md5: abe189d9c995bd717c19301dee5706d9
 range: 49-57
 ```
 
@@ -372,7 +372,7 @@ In a real deployment, this contract information would be presented the user as s
 
 ```
 load: /examples/rsvp-4-tedede/index.mjs
-md5: 32afb579baa98891312882b94e8d138a
+md5: abe189d9c995bd717c19301dee5706d9
 range: 58-70
 ```
 
@@ -383,7 +383,7 @@ It has access to `details` object, so it can ensure that they match.
 
 ```
 load: /examples/rsvp-4-tedede/index.mjs
-md5: 32afb579baa98891312882b94e8d138a
+md5: abe189d9c995bd717c19301dee5706d9
 range: 72-80
 ```
 
@@ -597,7 +597,7 @@ The program starts exactly the same as before:
 
 ```
 load: /examples/rsvp-5-cede/index.mjs
-md5: 750af57f1cfd1747b44ceaf552b328fe
+md5: dfb66d14685af393468aaed525281e51
 range: 1-43
 ```
 
@@ -605,7 +605,7 @@ But after we define the details, there's a difference:
 
 ```
 load: /examples/rsvp-5-cede/index.mjs
-md5: 750af57f1cfd1747b44ceaf552b328fe
+md5: dfb66d14685af393468aaed525281e51
 range: 45-50
 ```
 
@@ -614,7 +614,7 @@ As mentioned above, we could have a separate account do this, but we choose not 
 
 ```
 load: /examples/rsvp-5-cede/index.mjs
-md5: 750af57f1cfd1747b44ceaf552b328fe
+md5: dfb66d14685af393468aaed525281e51
 range: 52-67
 ```
 
@@ -622,7 +622,7 @@ The code for guests is much simpler, because in each case we just have either th
 
 ```
 load: /examples/rsvp-5-cede/index.mjs
-md5: 750af57f1cfd1747b44ceaf552b328fe
+md5: dfb66d14685af393468aaed525281e51
 range: 69-77
 ```
 
@@ -774,7 +774,7 @@ Instead, we'll just make a few simple changes to the test framework to demonstra
 
 ```
 load: /examples/rsvp-6-vevt/index.mjs
-md5: a68d287a8765bb39e67a9cc2d3a49961
+md5: 6c9ca7f7e8a9cb738005b61cabc1e8b0
 range: 45-55
 ```
 
@@ -788,7 +788,7 @@ This is representative of a user interface that shows the Host each registration
 
 ```
 load: /examples/rsvp-6-vevt/index.mjs
-md5: a68d287a8765bb39e67a9cc2d3a49961
+md5: 6c9ca7f7e8a9cb738005b61cabc1e8b0
 range: 57-67
 ```
 
