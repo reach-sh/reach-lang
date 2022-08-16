@@ -14,5 +14,5 @@ At this point, you'll have your [VSCode](https://code.visualstudio.com/download)
 You can now follow the instructions in the [reference manual on installation](##ref-install) or the [first part of the tutorial](##tut-1) to download, install, and execute all Reach commands.
 
 :::note
-You can [watch a five minute video](https://www.youtube.com/watch?v=wczwWvBdMTE) going through these steps on YouTube.
+You can [watch a five minute video](https://youtu.be/mmu6ExmsQVE) going through these steps on YouTube.
 :::
