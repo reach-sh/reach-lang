@@ -6,7 +6,7 @@ const stdlib = loadStdlib();
 const err = {
   'ETH': 'transaction may fail',
   'ALGO': 'assert failed',
-  'CFX': 'transaction may fail',
+  'CFX': 'transaction is reverted',
 }[stdlib.connector];
 
 // Framework
