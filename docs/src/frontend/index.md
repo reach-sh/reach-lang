@@ -752,7 +752,7 @@ The returned `{!js} Promise` will only be resolved after the transfer completes.
 Possible options to provide in `{!js} opts` include:
 
 Algorand-only options:
-+ `{!js} closeTo` An `{!js} Address` to which all remaining Algo will be sent before the sender account is closed.
++ `{!js} closeTo` An `{!js} Address` to which all remaining ALGO will be sent before the sender account is closed.
 If `{!js} token` is specified, the sender account opts out of the token rather than closing.
 See [this page](https://developer.algorand.org/docs/get-details/transactions/#close-an-account) for more information.
 The default is no close address.
