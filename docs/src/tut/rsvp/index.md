@@ -61,7 +61,7 @@ The second idea is really bad and we should absolutely not do anything like unto
 The first idea is not always dumb, but it turns out we're going to do something else for this application.
 However, since it is sometimes a good idea, let's elaborate on what it means and why it can be valuable.
 
-## {#tut-rsvp3} To Decentralize or Not To Decentralize
+## {#tut-rsvp3} Yo Dawg...
 
 If we had a Reach application with just two participants, one for the Host and one for the Guest, then if we had many Guests, we would need to have many different instances of the application.
 This is similar to the @{seclink("tut")} application, where each instance plays exactly one game, but you can run the application as many times as you want.
