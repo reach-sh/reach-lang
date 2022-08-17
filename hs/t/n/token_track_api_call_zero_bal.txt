@@ -20,9 +20,7 @@ Verification failed:
   //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
   const tokInfo/100 = tokInfos'/95[0];
   //    ^ would be [0, 0, false ]
-  const v102 = tokInfo/100[0] + 1;
-  //    ^ would be 1
-  const v115 = 0 == Array.set(tokInfos'/95, 0, Tuple.set(tokInfo/100, 0, v102 ) )[0][0];
+  const v115 = 0 == Array.set(tokInfos'/95, 0, Tuple.set(tokInfo/100, 0, (tokInfo/100[0] + 1) ) )[0][0];
   //    ^ would be false
   assert(v115);
 

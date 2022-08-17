@@ -16,9 +16,7 @@ Verification failed:
 
   const y/45 = v42 - 4;
   //    ^ would be 0
-  const z/46 = y/45 + y/45;
-  //    ^ would be 0
-  const v52 = z/46 == 4;
+  const v52 = (y/45 + y/45) == 4;
   //    ^ would be false
   assert(v52);
 

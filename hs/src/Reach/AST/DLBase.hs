@@ -1107,19 +1107,41 @@ instance IsLocal DLExpr where
     DLE_TupleSet {} -> True
 
 instance CanDupe DLExpr where
-  canDupe e =
-    isPure e && x
-    where
-      x =
-        case e of
-          DLE_Remote {} -> False
-          DLE_TokenNew {} -> False
-          DLE_TokenBurn {} -> False
-          DLE_TokenDestroy {} -> False
-          DLE_TimeOrder {} -> False
-          DLE_EmitLog {} -> False
-          DLE_ContractNew {} -> False
-          _ -> True
+  canDupe = \case
+    DLE_Arg {} -> True
+    DLE_LArg {} -> True
+    DLE_Impossible {} -> True
+    DLE_VerifyMuldiv {} -> False
+    DLE_PrimOp {} -> True
+    DLE_ArrayRef {} -> True
+    DLE_ArraySet {} -> True
+    DLE_ArrayConcat {} -> True
+    DLE_TupleRef {} -> True
+    DLE_TupleSet {} -> True
+    DLE_ObjectRef {} -> True
+    DLE_ObjectSet {} -> True
+    DLE_Interact {} -> False
+    DLE_Digest {} -> True
+    DLE_Claim {} -> False
+    DLE_Transfer {} -> False
+    DLE_TokenInit {} -> False
+    DLE_TokenAccepted {} -> False
+    DLE_CheckPay {} -> False
+    DLE_Wait {} -> False
+    DLE_PartSet {} -> False
+    DLE_MapRef {} -> True
+    DLE_MapSet {} -> False
+    DLE_setApiDetails {} -> False
+    DLE_GetUntrackedFunds {} -> False
+    DLE_DataTag {} -> True
+    DLE_FromSome {} -> True
+    DLE_Remote {} -> False
+    DLE_TokenNew {} -> False
+    DLE_TokenBurn {} -> False
+    DLE_TokenDestroy {} -> False
+    DLE_TimeOrder {} -> False
+    DLE_EmitLog {} -> False
+    DLE_ContractNew {} -> False
 
 newtype DLAssignment
   = DLAssignment (M.Map DLVar DLArg)

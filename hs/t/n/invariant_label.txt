@@ -17,9 +17,7 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v118 = netBalance/98 + 1;
-  //    ^ would be 1
-  const v162 = v118 == 0;
+  const v162 = (netBalance/98 + 1) == 0;
   //    ^ would be false
   assert(v162);
 
@@ -57,9 +55,7 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v118 = netBalance/98 + 1;
-  //    ^ would be 1
-  const v203 = v118 == 0;
+  const v203 = (netBalance/98 + 1) == 0;
   //    ^ would be false
   assert(v203);
 

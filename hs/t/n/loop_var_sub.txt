@@ -19,11 +19,7 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v74 = netBalance/66 + 1;
-  //    ^ would be 7720
-  const v77 = x/62[0] + 2;
-  //    ^ would be 7721
-  const v100 = v74 == [v77, x/62[1] ][0];
+  const v100 = (netBalance/66 + 1) == [(x/62[0] + 2), x/62[1] ][0];
   //    ^ would be false
   assert(v100);
 
@@ -46,11 +42,7 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v74 = netBalance/66 + 1;
-  //    ^ would be 7720
-  const v77 = x/62[0] + 2;
-  //    ^ would be 7721
-  const v119 = v74 == [v77, x/62[1] ][0];
+  const v119 = (netBalance/66 + 1) == [(x/62[0] + 2), x/62[1] ][0];
   //    ^ would be false
   assert(v119);
 

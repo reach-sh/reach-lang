@@ -32,13 +32,9 @@ Verification failed:
   //    ^ would be Token!val!4
   const searchIdx/568 = [false, 0 ][1];
   //    ^ would be 0
-  const searchIdx'/571 = searchIdx/568 + 1;
+  const searchIdx/579 = (([false, 0 ][0] ? true : (tokens'/292[0] == payTok/422)) ? [true, searchIdx/568 ] : [false, (searchIdx/568 + 1) ])[1];
   //    ^ would be 1
-  const searchIdx/579 = (([false, 0 ][0] ? true : (tokens'/292[0] == payTok/422)) ? [true, searchIdx/568 ] : [false, searchIdx'/571 ])[1];
-  //    ^ would be 1
-  const searchIdx'/582 = searchIdx/579 + 1;
-  //    ^ would be 2
-  const isFound'/449 = (((([false, 0 ][0] ? true : (tokens'/292[0] == payTok/422)) ? [true, searchIdx/568 ] : [false, searchIdx'/571 ])[0] ? true : (tokens'/292[1] == payTok/422)) ? [true, searchIdx/579 ] : [false, searchIdx'/582 ])[0];
+  const isFound'/449 = (((([false, 0 ][0] ? true : (tokens'/292[0] == payTok/422)) ? [true, searchIdx/568 ] : [false, (searchIdx/568 + 1) ])[0] ? true : (tokens'/292[1] == payTok/422)) ? [true, searchIdx/579 ] : [false, (searchIdx/579 + 1) ])[0];
   //    ^ would be false
   assert(isFound'/449);
 
