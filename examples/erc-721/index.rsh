@@ -1,66 +1,119 @@
-/**
- * ERC-721 Specification: https://eips.ethereum.org/EIPS/eip-721
- */
+// ERC-721 Specification
+// https://eips.ethereum.org/EIPS/eip-721
+//
+// ERC-165
+// https://eips.ethereum.org/EIPS/eip-165
 'reach 0.1';
 
-const defaultOptions = {
-  metaNameLen: 256,
-  metaSymbolLen: 256,
-  metaTokenURILen: 256,
-}
+const StringDyn = UInt; // XXX
+const BytesDyn = UInt; // XXX
 
-const make = ({ metaNameLen, metaSymbolLen, metaTokenURILen }) => Reach.App(() => {
+const Empty = () => {
+  return { IDs: [], View: {}, Events: {}, API: {} };
+};
+
+const mixin = (args = {}) => {
+  const def = (k, d) => Object.has(args, k) ? args[k] : d;
+  const Base = def('Base', Empty);
+  return (base = Base) => {
+    const { View: v, Events: e, API: a } = base();
+    const mapp = (f, k) => Object.has(args, k) ? f(...args[k]) : {};
+    return {
+      IDs: [...i, ...def('IDs', []) ],
+      View: {...v, ...mapp(View, 'View')},
+      Events: {...e, ...mapp(Events, 'Events')},
+      API: {...a, ...mapp(API, 'API')},
+    };
+  };
+};
+
+const ERC165 = mixin({
+  IDs: [ Bytes.fromHex('0x01ffc9a7'), ],
+  View: [{
+    supportsInterface: Fun([Bytes(4)], Bool),
+  }],
+});
+
+const ERC721 = mixin({
+  Base: ERC165,
+  IDs: [ Bytes.fromHex('0x80ac58cd'), ],
+  View: [{
+    balanceOf: Fun([Address], UInt),
+    ownerOf: Fun([UInt], Address),
+    getApproved: Fun([UInt], Address),
+    isApprovedForAll: Fun([Address, Address], Bool),
+  }],
+  Events: [{
+    Transfer: [Address, Address, UInt],
+    Approval: [Address, Address, UInt],
+    ApprovalForAll: [Address, Address, Bool],
+  }],
+  API: [{
+    safeTransferFrom1: Fun([Address, Address, UInt, BytesDyn], Null),
+    safeTransferFrom2: Fun([Address, Address, UInt], Null),
+    transferFrom: Fun([Address, Address, UInt], Null),
+    approve: Fun([Address, UInt], Null),
+    setApprovalForAll: Fun([Address, Bool], Null),
+  }, {
+    safeTransferFrom1: 'safeTransferFrom',
+    safeTransferFrom2: 'safeTransferFrom',
+  }],
+});
+
+const ERC721Metadata = mixin({
+  Base: ERC721,
+  IDs: [ Bytes.fromHex('0x5b5e139f'), ],
+  View: [{
+    name: StringDyn,
+    symbol: StringDyn,
+    tokenURI: Fun([UInt], StringDyn),
+  }],
+});
+
+const ERC721Enumerable = mixin({
+  Base: ERC721,
+  IDs: [ Bytes.fromHex('0x780e9d63'), ],
+  View: [{
+    totalSupply: UInt,
+    tokenByIndex: Fun([UInt], UInt),
+    tokenOfOwnerByIndex: Fun([Address, UInt], UInt),
+  }],
+});
+
+const ERC721TokenReceiverI = {
+    onERC721Received: Fun([Contract, Address, UInt, BytesDyn], Bytes(4)),
+};
+const ERC721TokenReceiver = mixin({
+  IDs: [ Bytes.fromHex('0x150b7a02'), ],
+  API: [{
+    ...ERC721TokenReceiverI,
+  }],
+});
+
+export const main = Reach.App(() => {
   setOptions({ connectors: [ETH] });
+
+  const { IDs, View: V, Events: E, API: P } =
+    ERC721Enumerable( ERC721Metadata );
 
   const D = Participant('Deployer', {
     meta: Object({
-      // XXX these should all be `string` per spec
-      name: Bytes(metaNameLen),
-      symbol: Bytes(metaSymbolLen),
-      tokenURI: Bytes(metaTokenURILen),
+      name: StringDyn,
+      symbol: StringDyn,
+      tokenURI: StringDyn,
     }),
     enum: Object({
       totalSupply: UInt
     }),
     zeroAddr: Address,
     deployed: Fun([Contract], Null),
-    log: Fun(true, Null),
   });
 
-  const metaViews = {
-    name: Bytes(metaNameLen),
-    symbol: Bytes(metaSymbolLen),
-    tokenURI: Fun([UInt], Bytes(metaTokenURILen))
-  }
-
-  const enumViews = {
-    totalSupply: UInt,
-  }
-
-  const V = View({
-    balanceOf: Fun([Address], UInt),
-    getApproved: Fun([UInt], Address),
-    isApprovedForAll: Fun([Address, Address], Bool),
-    ownerOf: Fun([UInt], Address),
-    supportsInterface: Fun([Bytes(4)], Bool),
-    ...metaViews,
-    ...enumViews,
-  });
-
-  const I = API({
-    approve: Fun([Address, UInt], Null),
-    safeTransferFrom: Fun([Address, Address, UInt], Null),
-    setApprovalForAll: Fun([Address, Bool], Null),
-    transferFrom: Fun([Address, Address, UInt], Null),
+  const Pn = API({
     mint: Fun([Address, UInt], Null),
     burn: Fun([UInt], Null),
   });
-
-  const E = Events({
-    Approval: [Address, Address, UInt],
-    ApprovalForAll: [Address, Address, Bool],
-    Transfer: [Address, Address, UInt]
-  });
+  const I = { ...P, ...Pn };
 
   init();
 
@@ -76,7 +129,7 @@ const make = ({ metaNameLen, metaSymbolLen, metaTokenURILen }) => Reach.App(() =
   V.name.set(name);
   V.symbol.set(symbol);
   V.totalSupply.set(totalSupply);
-  V.supportsInterface.set((id) => true);
+  V.supportsInterface.set(IDs.includes);
 
   const owners = new Map(UInt, Address);
   const balances = new Map(UInt);
@@ -128,13 +181,12 @@ const make = ({ metaNameLen, metaSymbolLen, metaTokenURILen }) => Reach.App(() =
 
         V.tokenURI.set((tokenId) => {
           check(tokenExists(tokenId), "tokenURI: URI query for non-existent token");
-          // XXX tokenURI <> tokenId.toString()
-          return tokenURI;
+          return StringDyn.concat(tokenURI, UInt.toStringDyn(tokenId));
         });
 
       })
       .while(true)
-      .invariant(true)
+      .invariant(balance() == 0)
       .define(() => {
         const approve = (to, tokenId) => {
           const owner = ownerOf(tokenId);
@@ -155,12 +207,23 @@ const make = ({ metaNameLen, metaSymbolLen, metaTokenURILen }) => Reach.App(() =
           E.Transfer(from_, to, tokenId);
         }
       })
-      .api_(I.safeTransferFrom, (from_, to, tokenId) => {
+      .api_(I.safeTransferFrom1, (from_, to, tokenId, data) => {
         check(isApprovedOrOwner(this, tokenId), "ERC721::safeTransferFrom: transfer caller is not owner nor approved");
         transferChecks(from_, to, tokenId);
         return [ (k) => {
           transfer_(from_, to, tokenId);
-          // XXX this is where you'd send the arbitrary data to the `to` contract
+          const to_ctc = remote(to, ERC721TokenReceiverI);
+          const mv = to_ctc.onERC721Received(getContract(), from_, tokenId, data);
+          ensure(mv == Bytes.fromHex('0x150b7a02'));
+          k(null);
+          return [ ];
+        }];
+      })
+      .api_(I.safeTransferFrom2, (from_, to, tokenId) => {
+        check(isApprovedOrOwner(this, tokenId), "ERC721::safeTransferFrom: transfer caller is not owner nor approved");
+        transferChecks(from_, to, tokenId);
+        return [ (k) => {
+          transfer_(from_, to, tokenId);
           k(null);
           return [ ];
         }];
@@ -215,11 +278,7 @@ const make = ({ metaNameLen, metaSymbolLen, metaTokenURILen }) => Reach.App(() =
           k(null);
           return [ ];
         }];
-      })
-      .timeout(false);
-
+      });
   commit();
-
+  exit();
 });
-
-export const main = make({ ...defaultOptions });
