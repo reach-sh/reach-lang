@@ -17,7 +17,11 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v93 = 0 == (request/66 - (request/66 - 1));
+  const v87 = request/66 - 1;
+  //    ^ would be 0
+  const v91 = request/66 - v87;
+  //    ^ would be 1
+  const v93 = 0 == v91;
   //    ^ would be false
   assert(v93);
 

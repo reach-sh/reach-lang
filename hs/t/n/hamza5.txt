@@ -21,11 +21,15 @@ Verification failed:
   //    ^ would be [8855, 8856, false ]
   const v234 = tokInfo/233[0];
   //    ^ would be 8855
-  const tokInfos'/246 = Array.set(tokenInfos/212, 0, Tuple.set(tokInfo/233, 0, (v234 - v234) ) );
+  const v243 = v234 - v234;
+  //    ^ would be 0
+  const tokInfos'/246 = Array.set(tokenInfos/212, 0, Tuple.set(tokInfo/233, 0, v243 ) );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 8856, false ] ] )
   const tokInfo/247 = tokInfos'/246[0];
   //    ^ would be [0, 8856, false ]
-  const v261 = 0 == Array.set(tokInfos'/246, 0, Tuple.set(tokInfo/247, 1, (tokInfo/247[1] - v234) ) )[0][1];
+  const v249 = tokInfo/247[1] - v234;
+  //    ^ would be 1
+  const v261 = 0 == Array.set(tokInfos'/246, 0, Tuple.set(tokInfo/247, 1, v249 ) )[0][1];
   //    ^ would be false
   assert(v261);
 
