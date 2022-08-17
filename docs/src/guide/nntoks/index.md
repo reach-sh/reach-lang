@@ -82,3 +82,38 @@ This means that you need to audit its code, or configuration, and decide if you 
 Second, if your token requires pre-authorization of receipt, and if this pre-authorization can be revoked, you need to remove atomic simultaneous transfers of non-network tokens from your program and replace them with phases where each party can receive their tokens individually, so that one party cannot maliciously opt-out to prevent the other party from receiving their funds.
 
 Finally, you can advocate, perhaps with your money and support, that consensus networks pursue giving non-network tokens feature parity with network tokens so that there will be a consensus network that can faithfully implement the token semantics users expect.
+
+## Are there any situations where I can't do anything about it?
+
+On Algorand, when a Reach program is ending, it closes out all of its accounts.
+This returns any funds that were part of the minimum balance back to the deployer, as well as any rewards or other funds that were received outside of the scope of the program's operation.
+
+Since you cannot close an account until you have de-authorized receipt of all non-network tokens (because that authorization increases your minimum balance), we close out each one of those non-network token accounts to the deployer too.
+
+This means that the deployer has the ability to block the destruction of contracts by de-authorizing themselves as a recipient of the non-network token.
+
+For example, this sequence of actions will block a Reach program from destruction on Algorand:
+```
+Aang creates contract A.
+Contract A opts-in to Zorkmids.
+Katara opts-in to Zorkmids and receives 10 Zorkmids somehow.
+Contract A receives 10 Zorkmids from Katara via a payment.
+Zuko opts-in to Zorkmids and receives 1 Zorkmid somehow.
+Contract A receives 1 Zorkmid from Zuko outside of the control of the application.
+Sokka opts-in to Zorkmids.
+Contract A sends 10 Zorkmids to Sokka via a transfer.
+Contract A tries to exit.
+```
+
+This will fail because the contract will try to close out its Zorkmid account (which contains 1 Zorkmid) to Aang, who has never authorized receipt of Zorkmids.
+Thus, Zuko can disrupt the otherwise safe activity of Aang, Katara, and Sokka.
+
+The remedies for this are:
+1. Reach can switch to a model where contracts have to be "lazily" destroyed.
+  In this model, rather than exitting, Reach contracts would transition to a "zombie" state where each resource can be individually freed, until all are free, whereupon they are actually deleted.
+1. Reach users can change their programs to always end by running `{!rsh} getUntrackedFunds(Zorkmids)` and transferring the funds to a known receiver agent.
+1. Reach users can ensure that the deployer will always accept the same non-network tokens as the contract.
+  (This is a special case of #2.)
+
+We expect to eventually implement an option for #1, but it is very expensive for end-users, so we don't expect users will always want it.
+(It is expensive, because these "zombies" have to be found and destroyed manually.)
