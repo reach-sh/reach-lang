@@ -279,9 +279,11 @@ When the Guest arrives at the event, they show the QR code, which the Host scans
 But, how does the Host find out about Guests that reserved, but never came?
 In one way, it doesn't matter: the Host doesn't want the money, she just wants the Guest to have an incentive to come.
 That answer is very unsatisfying though.
+
 There are roughly two alternatives:
 - First, the Guest could tell the Host up-front that they are coming, but they would have to do that off-chain, such as by the RSVP application tracking it in a centralized database or encouraging the Guest to send an automated email or SMS message.
 - Second, the Host could search the consensus network for all instances of the RSVP application with matching details and then deliberately interact with and claim the funds.
+
 The first option is "centralized", while the second option is "decentralized".
 (It appears, we now have a "decentralized, decentralized, decentralized, decentralized application" design, if we go with the second option.)
 
