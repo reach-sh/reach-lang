@@ -3,3 +3,5 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 116 theorems; No failures!
+WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
+ * Step 2 may use up to 10 transaction references, but the limit is 8. Step 2 starts at ./token_track_container.rsh:24:5:dot.

@@ -17,7 +17,11 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v359 = 0 == ((10 + data_id/292) - 10);
+  const v303 = 10 + data_id/292;
+  //    ^ would be 20
+  const v348 = v303 - 10;
+  //    ^ would be 10
+  const v359 = 0 == v348;
   //    ^ would be false
   assert(v359);
 
@@ -52,17 +56,23 @@ Verification failed:
   //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
   const tokInfo/203 = tokInfos'/196[0];
   //    ^ would be [0, 0, false ]
-  const tokInfos'/208 = Array.set(tokInfos'/196, 0, Tuple.set(tokInfo/203, 0, (tokInfo/203[0] + 10) ) );
+  const v205 = tokInfo/203[0] + 10;
+  //    ^ would be 10
+  const tokInfos'/208 = Array.set(tokInfos'/196, 0, Tuple.set(tokInfo/203, 0, v205 ) );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[10, 0, false ] ] )
   const tokIdx/317 = ((Array.set(array(Token, [Token.zero ]), 0, tok/191 )[0] == tok/191) ? [true, 0 ] : [false, 1 ])[1];
   //    ^ would be 0
   const tokInfo/319 = tokInfos'/208[tokIdx/317];
   //    ^ would be [10, 0, false ]
-  const tokInfos'/339 = Array.set(tokInfos'/208, tokIdx/317, Tuple.set(tokInfo/319, 0, (tokInfo/319[0] + 10) ) );
+  const v321 = tokInfo/319[0] + 10;
+  //    ^ would be 20
+  const tokInfos'/339 = Array.set(tokInfos'/208, tokIdx/317, Tuple.set(tokInfo/319, 0, v321 ) );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[20, 0, false ] ] )
   const tokInfo/349 = tokInfos'/339[0];
   //    ^ would be [20, 0, false ]
-  const v362 = 0 == Array.set(tokInfos'/339, 0, Tuple.set(tokInfo/349, 0, (tokInfo/349[0] - 10) ) )[0][0];
+  const v354 = tokInfo/349[0] - 10;
+  //    ^ would be 10
+  const v362 = 0 == Array.set(tokInfos'/339, 0, Tuple.set(tokInfo/349, 0, v354 ) )[0][0];
   //    ^ would be false
   assert(v362);
 

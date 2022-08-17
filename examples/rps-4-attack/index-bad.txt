@@ -23,11 +23,25 @@ Verification failed:
 
   // Theorem Formalization
 
-  const outcome/103 = (handAlice/84 + (4 - handBob/94)) % 3;
+  const v100 = wager/81 + wager/81;
+  //    ^ would be 2
+  const v101 = 4 - handBob/94;
+  //    ^ would be 2
+  const v102 = handAlice/84 + v101;
+  //    ^ would be 2
+  const outcome/103 = v102 % 3;
   //    ^ would be 2
   const v110 = ((outcome/103 == 2) ? [1, 0 ] : ((outcome/103 == 0) ? [0, 2 ] : [1, 1 ]));
   //    ^ would be [1, 0 ]
-  const v124 = 0 == (((wager/81 + wager/81) - (v110[0] * wager/81)) - (v110[1] * wager/81));
+  const v113 = v110[0] * wager/81;
+  //    ^ would be 1
+  const v117 = v100 - v113;
+  //    ^ would be 1
+  const v118 = v110[1] * wager/81;
+  //    ^ would be 0
+  const v122 = v117 - v118;
+  //    ^ would be 1
+  const v124 = 0 == v122;
   //    ^ would be false
   assert(v124);
 

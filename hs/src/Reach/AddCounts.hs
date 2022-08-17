@@ -93,6 +93,7 @@ isPure' de = do
     -- HACK: Treat MapRefs as impure in simulation so they will not be dropped.
     -- This op needs to be simulated so ALGO can get account info
     (True, DLE_MapRef {}) -> return False
+    (_, DLE_PrimOp {}) -> return True
     (_, _) -> return $ isPure de
 
 instance AC DLStmt where

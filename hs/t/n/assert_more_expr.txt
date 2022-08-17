@@ -20,7 +20,11 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v43 = (_x1/39 + _x2/40) == (_x1/39 * 2);
+  const _2x/41 = _x1/39 * 2;
+  //    ^ would be 0
+  const v42 = _x1/39 + _x2/40;
+  //    ^ would be 1
+  const v43 = v42 == _2x/41;
   //    ^ would be false
   assert(v43);
 
