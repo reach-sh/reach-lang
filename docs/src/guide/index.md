@@ -8,6 +8,7 @@ The following guides are available:
 + @{seclink("guide-windows")}
 + @{seclink("guide-versions")}
 + @{seclink("guide-solidity")}
++ @{seclink("guide-lifecycle")}
 + @{seclink("guide-rpc")}
 + @{seclink("guide-logging")}
 + @{seclink("guide-testing")}

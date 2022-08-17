@@ -783,6 +783,10 @@
     "title": "Install VSCode",
     "path": "/guide/editor-support/#guide-install-VSCode"
   },
+  "guide-lifecycle": {
+    "title": "Contract Development Lifecycle and Best Practices for Building Reach DApps",
+    "path": "/guide/lifecycle/#guide-lifecycle"
+  },
   "guide-limits": {
     "title": "What are Reach's limitations?",
     "path": "/guide/limits/#guide-limits"
