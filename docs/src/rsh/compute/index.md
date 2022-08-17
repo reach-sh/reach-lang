@@ -1602,9 +1602,9 @@ choosesFirst ? [ heap1 - amount, heap2 ] : [ heap1, heap2 - amount ]
 
 A @{defn("conditional expression")}, written `{!rsh} COND_E ? NOT_FALSE_E : FALSE_E`, where `{!rsh} COND_E`, `{!rsh} NOT_FALSE_E`, and `{!rsh} FALSE_E` are expressions, selects between the values which `{!rsh} NOT_FALSE_E` and `{!rsh} FALSE_E` evaluate to based on whether `{!rsh} COND_E` evaluates to `{!rsh} false`.
 This expression will evaluate both the false and not-false sides of the
-computation is they are considered pure.
-Arithmetic is considered pure if you do not enable `{!rsh} verifyArithmetic}`,
-but it is actually not because of arithmetic faults.
+computation if they are considered pure.
+Arithmetic is considered pure if you enable `{!rsh} verifyArithmetic}` or use `{!rsh} veri*` functions, like `{!rsh} safeAdd`.
+Arithmetic is not considered pure if you do not enable `{!rsh} verifyArithmetic`, or use `{!rsh} safe*` functions, like `{!rsh} safeAdd`, which may cause arithmetic faults.
 
 @{ref("rsh", "ite")}
 ```reach
