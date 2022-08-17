@@ -27,49 +27,29 @@ Verification failed:
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[35424, 35424, false ] ] )
   const tokInfos'/357 = Array.set(tokInfos'/354, 0, Tuple.set(tokInfos'/354[0], 2, false ) );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[35424, 35424, false ] ] )
-  const v369 = 2 * v304.amt;
-  //    ^ would be 17712
   const tokInfo/370 = tokInfos'/357[0];
   //    ^ would be [35424, 35424, false ]
-  const v375 = tokInfo/370[0] - v369;
-  //    ^ would be 17712
-  const tokInfos'/378 = Array.set(tokInfos'/357, 0, Tuple.set(tokInfo/370, 0, v375 ) );
+  const tokInfos'/378 = Array.set(tokInfos'/357, 0, Tuple.set(tokInfo/370, 0, (tokInfo/370[0] - (2 * v304.amt)) ) );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[17712, 35424, false ] ] )
-  const v381 = 2 * v304.amt;
-  //    ^ would be 17712
   const tokInfo/382 = tokInfos'/378[0];
   //    ^ would be [17712, 35424, false ]
-  const v387 = tokInfo/382[0] - v381;
-  //    ^ would be 0
-  const tokInfos'/390 = Array.set(tokInfos'/378, 0, Tuple.set(tokInfo/382, 0, v387 ) );
+  const tokInfos'/390 = Array.set(tokInfos'/378, 0, Tuple.set(tokInfo/382, 0, (tokInfo/382[0] - (2 * v304.amt)) ) );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 35424, false ] ] )
-  const v398 = 2 * v304.amt;
-  //    ^ would be 17712
   const tokInfo/399 = tokInfos'/390[0];
   //    ^ would be [0, 35424, false ]
-  const v401 = tokInfo/399[0] + v398;
-  //    ^ would be 17712
-  const tokInfos'/404 = Array.set(tokInfos'/390, 0, Tuple.set(tokInfo/399, 0, v401 ) );
+  const tokInfos'/404 = Array.set(tokInfos'/390, 0, Tuple.set(tokInfo/399, 0, (tokInfo/399[0] + (2 * v304.amt)) ) );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[17712, 35424, false ] ] )
-  const v410 = 2 * v304.amt;
-  //    ^ would be 17712
   const tokInfo/411 = tokInfos'/404[0];
   //    ^ would be [17712, 35424, false ]
-  const v413 = tokInfo/411[0] + v410;
-  //    ^ would be 35424
-  const tokInfos'/416 = Array.set(tokInfos'/404, 0, Tuple.set(tokInfo/411, 0, v413 ) );
+  const tokInfos'/416 = Array.set(tokInfos'/404, 0, Tuple.set(tokInfo/411, 0, (tokInfo/411[0] + (2 * v304.amt)) ) );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[35424, 35424, false ] ] )
   const tokInfo/418 = tokInfos'/416[0];
   //    ^ would be [35424, 35424, false ]
-  const v423 = tokInfo/418[0] - v304.supply;
-  //    ^ would be 0
-  const tokInfos'/426 = Array.set(tokInfos'/416, 0, Tuple.set(tokInfo/418, 0, v423 ) );
+  const tokInfos'/426 = Array.set(tokInfos'/416, 0, Tuple.set(tokInfo/418, 0, (tokInfo/418[0] - v304.supply) ) );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 35424, false ] ] )
   const tokInfo/427 = tokInfos'/426[0];
   //    ^ would be [0, 35424, false ]
-  const v429 = tokInfo/427[1] - v304.supply;
-  //    ^ would be 0
-  const tokInfos'/432 = Array.set(tokInfos'/426, 0, Tuple.set(tokInfo/427, 1, v429 ) );
+  const tokInfos'/432 = Array.set(tokInfos'/426, 0, Tuple.set(tokInfo/427, 1, (tokInfo/427[1] - v304.supply) ) );
   //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
   const tokInfos'/441 = Array.set(tokInfos'/432, 0, Tuple.set(tokInfos'/432[0], 2, true ) );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, true ] ] )
@@ -79,35 +59,23 @@ Verification failed:
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, true ], [35424, 35424, false ] ] )
   const tokInfos'/466 = Array.set(tokInfos'/463, 1, Tuple.set(tokInfos'/463[1], 2, false ) );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, true ], [35424, 35424, false ] ] )
-  const v475 = 2 * v304.amt;
-  //    ^ would be 17712
   const tokInfo/476 = tokInfos'/466[1];
   //    ^ would be [35424, 35424, false ]
-  const v481 = tokInfo/476[0] - v475;
-  //    ^ would be 17712
-  const tokInfos'/484 = Array.set(tokInfos'/466, 1, Tuple.set(tokInfo/476, 0, v481 ) );
+  const tokInfos'/484 = Array.set(tokInfos'/466, 1, Tuple.set(tokInfo/476, 0, (tokInfo/476[0] - (2 * v304.amt)) ) );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, true ], [17712, 35424, false ] ] )
-  const v487 = 2 * v304.amt;
-  //    ^ would be 17712
   const tokInfo/488 = tokInfos'/484[1];
   //    ^ would be [17712, 35424, false ]
-  const v493 = tokInfo/488[0] - v487;
-  //    ^ would be 0
-  const tokInfos'/496 = Array.set(tokInfos'/484, 1, Tuple.set(tokInfo/488, 0, v493 ) );
+  const tokInfos'/496 = Array.set(tokInfos'/484, 1, Tuple.set(tokInfo/488, 0, (tokInfo/488[0] - (2 * v304.amt)) ) );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, true ], [0, 35424, false ] ] )
   const tokInfo/500 = tokInfos'/496[1];
   //    ^ would be [0, 35424, false ]
   const v501 = tokInfo/500[0];
   //    ^ would be 0
-  const v507 = v501 - v501;
-  //    ^ would be 0
-  const tokInfos'/510 = Array.set(tokInfos'/496, 1, Tuple.set(tokInfo/500, 0, v507 ) );
+  const tokInfos'/510 = Array.set(tokInfos'/496, 1, Tuple.set(tokInfo/500, 0, (v501 - v501) ) );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, true ], [0, 35424, false ] ] )
   const tokInfo/511 = tokInfos'/510[1];
   //    ^ would be [0, 35424, false ]
-  const v513 = tokInfo/511[1] - v501;
-  //    ^ would be 35424
-  const v522 = 0 == Array.set(tokInfos'/510, 1, Tuple.set(tokInfo/511, 1, v513 ) )[1][1];
+  const v522 = 0 == Array.set(tokInfos'/510, 1, Tuple.set(tokInfo/511, 1, (tokInfo/511[1] - v501) ) )[1][1];
   //    ^ would be false
   assert(v522);
 

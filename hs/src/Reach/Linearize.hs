@@ -445,7 +445,7 @@ lookupTokenIdx at tok toks = do
         DT_Com (asn idx $ DLE_TupleRef at (DLA_Var acc_dv) 1) $
         DT_Com (asn toks_eq $ DLE_PrimOp at TOKEN_EQ [DLA_Var elem_dv, tok]) $
         DT_Com (asn cnd $ DLE_PrimOp at IF_THEN_ELSE [DLA_Var found, DLA_Literal $ DLL_Bool True, DLA_Var toks_eq]) $
-        DT_Com (asn idx' $ DLE_PrimOp at (ADD UI_Word PV_Safe) [DLA_Var idx, DLA_Literal $ DLL_Int at UI_Word 1]) $
+        DT_Com (asn idx' $ DLE_PrimOp at (ADD UI_Word PV_Veri) [DLA_Var idx, DLA_Literal $ DLL_Int at UI_Word 1]) $
         DT_Com (asn fail_acc $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool False, DLA_Var idx']) $
         DT_Com (asn succ_acc $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool True, DLA_Var idx]) $
         DT_Com (asn bl_res $ DLE_PrimOp at IF_THEN_ELSE [DLA_Var cnd, DLA_Var succ_acc, DLA_Var fail_acc]) $

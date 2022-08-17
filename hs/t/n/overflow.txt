@@ -17,9 +17,7 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v51 = UInt.max - 1;
-  //    ^ would be 0
-  const v52 = x/46 <= v51;
+  const v52 = x/46 <= (UInt.max - 1);
   //    ^ would be false
   assert(v52);
 
