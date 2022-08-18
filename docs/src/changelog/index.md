@@ -8,6 +8,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{verRC("0.1.11")}
 
 + @{rcHead("0.1.11-rc8")}
++ 2022/08/18: Added `{!rsh} BytesDyn` type.
++ 2022/08/18: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/08/16: Added `{!js} opts` parameter to `{!js} stdlib.transfer`.
 + 2022/08/16: Added `noVarOutput` option to `{!js} test.run`.
 + 2022/08/15: Added `{!rsh} autoTrackPublishedTokens` to `{!rsh} setOptions`.

@@ -13,41 +13,42 @@ import {
 } from './shared_impl';
 
 export interface TypeDefs<Ty> {
-  T_Null: Ty
-  T_Bool: Ty
-  T_UInt: Ty
-  T_UInt256: Ty
-  T_Bytes: (len:number) => Ty
-  T_Address: Ty
-  T_Contract: Ty
-  T_Digest: Ty
-  T_Token: Ty
-  T_Object: (tyMap: {[key: string]: Ty}) => Ty
-  T_Data: (tyMap: {[key: string]: Ty}) => Ty
-  T_Array: (ty: Ty, size: number) => Ty
-  T_Tuple: (tys: Ty[]) => Ty
-  T_Struct: (nameTyPairs: [string, Ty][]) => Ty
+  T_Null: Ty,
+  T_Bool: Ty,
+  T_UInt: Ty,
+  T_UInt256: Ty,
+  T_Bytes: (len:number) => Ty,
+  T_BytesDyn: Ty,
+  T_Address: Ty,
+  T_Contract: Ty,
+  T_Digest: Ty,
+  T_Token: Ty,
+  T_Object: (tyMap: {[key: string]: Ty}) => Ty,
+  T_Data: (tyMap: {[key: string]: Ty}) => Ty,
+  T_Array: (ty: Ty, size: number) => Ty,
+  T_Tuple: (tys: Ty[]) => Ty,
+  T_Struct: (nameTyPairs: [string, Ty][]) => Ty,
 };
 
 export interface Stdlib_Backend_Shared_User<Ty> {
-  protect: (ty: Ty, v: unknown, m?: string) => unknown
-  assert: (b: boolean, message: string) => void
-  Array_set: <A>(arr: A[], idx: number, val: A) => A[]
-  eq: (n1: num, n2: num) => boolean
-  ge: (n1: num, n2: num) => boolean
-  gt: (n1: num, n2: num) => boolean
-  le: (n1: num, n2: num) => boolean
-  lt: (n1: num, n2: num) => boolean
-  eq256: (n1: num, n2: num) => boolean
-  ge256: (n1: num, n2: num) => boolean
-  gt256: (n1: num, n2: num) => boolean
-  le256: (n1: num, n2: num) => boolean
-  lt256: (n1: num, n2: num) => boolean
-  bytesEq: (s1: string, s2: string) => boolean
-  digest_xor: (x: string, y:string) => string
-  bytes_xor: (x: string, y:string) => string
-  btoiLast8: (b: string) => BigNumber
-}
+  protect: (ty: Ty, v: unknown, m?: string) => unknown,
+  assert: (b: boolean, message: string) => void,
+  Array_set: <A>(arr: A[], idx: number, val: A) => A[],
+  eq: (n1: num, n2: num) => boolean,
+  ge: (n1: num, n2: num) => boolean,
+  gt: (n1: num, n2: num) => boolean,
+  le: (n1: num, n2: num) => boolean,
+  lt: (n1: num, n2: num) => boolean,
+  eq256: (n1: num, n2: num) => boolean,
+  ge256: (n1: num, n2: num) => boolean,
+  gt256: (n1: num, n2: num) => boolean,
+  le256: (n1: num, n2: num) => boolean,
+  lt256: (n1: num, n2: num) => boolean,
+  bytesEq: (s1: string, s2: string) => boolean,
+  digest_xor: (x: string, y:string) => string,
+  bytes_xor: (x: string, y:string) => string,
+  btoiLast8: (b: string) => BigNumber,
+};
 
 export interface Stdlib_Backend_Shared<Ty> extends Stdlib_Backend_Shared_User<Ty> {
   checkedBigNumberify: (at: string, max: BigNumber, n: any) => BigNumber

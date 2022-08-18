@@ -63,6 +63,7 @@ instance CollectsTypes DLType where
         T_Bool -> mempty
         T_UInt _ -> mempty
         T_Bytes _ -> mempty
+        T_BytesDyn -> mempty
         T_Digest -> mempty
         T_Address -> mempty
         T_Contract -> mempty
