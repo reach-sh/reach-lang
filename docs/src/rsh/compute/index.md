@@ -412,8 +412,10 @@ Reach's @{defn("type")}s are represented in programs by the following identifier
   @{ref("rsh", "UInt256.max")} `{!rsh} UInt256.max` is the largest value that may be assigned to a `{!rsh} UInt256`.
 + `{!rsh} Int`, which denotes a signed integer.
 + `{!rsh} FixedPoint`, which denotes a fractional number.
-+ @{ref("rsh", "Bytes")} `{!rsh} Bytes(length)`, which denotes a string of bytes of length at most `{!rsh} length`.
-Bytes of different lengths are not compatible; however the shorter bytes may be [padded](##padding).
++ @{ref("rsh", "Bytes")} `{!rsh} Bytes(length)`, which denotes a sequence of bytes of length at most `{!rsh} length`.
+  Bytes of different lengths are not compatible; however the shorter bytes may be [padded](##padding).
++ @{ref("rsh", "BytesDyn")} `{!rsh} Bytes`, which denotes a sequence of bytes of dynamic length.
+  Bytes of fixed length and bytes of dynamic length are totally incompatible.
 + @{ref("rsh", "Digest")} `{!rsh} Digest`, which denotes a digest.
 + @{ref("rsh", "Address")} `{!rsh} Address`, which denotes an account address.
 + @{ref("rsh", "Contract")} `{!rsh} Contract`, which denotes the identifying information of a contract.

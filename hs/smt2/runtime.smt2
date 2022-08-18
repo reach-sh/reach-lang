@@ -42,6 +42,9 @@
 ;;          (= (bytesAppend x (bytesAppend y z))
 ;;             (bytesAppend (bytesAppend x y) z))))
 
+(declare-sort BytesDyn 0)
+(declare-fun BytesDyn_toBytes (BytesDyn) Bytes)
+
 (declare-sort Digest 0)
 (declare-fun digest (Bytes) Digest)
 (declare-fun Digest_toBytes (Digest) Bytes)

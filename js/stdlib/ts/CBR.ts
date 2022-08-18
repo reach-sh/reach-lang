@@ -122,6 +122,17 @@ export const BT_Bytes = (len: number): BackendTy<CBR_Bytes> => ({
   },
 });
 
+export const BT_BytesDyn: BackendTy<CBR_Bytes> = ({
+  name: `BytesDyn`,
+  defaultValue: '',
+  canonicalize: (val: unknown): CBR_Bytes => {
+    if (typeof(val) !== 'string') {
+      throw Error(`Bytes expected string, but got ${j2s(val)}`);
+    }
+    return val;
+  },
+});
+
 // TODO: check digest length, or something similar?
 // That's probably best left to connector-specific code.
 export const BT_Digest: BackendTy<CBR_Digest> = {

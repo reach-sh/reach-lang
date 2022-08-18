@@ -367,6 +367,7 @@ typeSig_ addr2acc = \case
   T_UInt UI_Word -> "uint64"
   T_UInt UI_256 -> "uint256"
   T_Bytes sz -> "byte" <> array sz
+  T_BytesDyn -> "bytes"
   T_Digest -> "digest"
   T_Address -> if addr2acc then "account" else "address"
   T_Contract -> typeSig $ T_UInt UI_Word
@@ -392,6 +393,7 @@ typeSizeOf = \case
   T_UInt UI_Word -> word
   T_UInt UI_256 -> 32
   T_Bytes sz -> sz
+  T_BytesDyn -> impossible "xxx bytesdyn"
   T_Digest -> 32
   T_Address -> 32
   T_Contract -> typeSizeOf $ T_UInt UI_Word
@@ -1272,6 +1274,7 @@ ctobs = \case
   T_Bool -> output (Titob True) >> output (TSubstring 7 8)
   T_Null -> nop
   T_Bytes _ -> nop
+  T_BytesDyn -> nop
   T_Digest -> nop
   T_Address -> nop
   T_Contract -> ctobs $ T_UInt UI_Word
@@ -1289,6 +1292,7 @@ cfrombs = \case
   T_Bool -> op "btoi"
   T_Null -> nop
   T_Bytes _ -> nop
+  T_BytesDyn -> nop
   T_Digest -> nop
   T_Address -> nop
   T_Contract -> cfrombs $ T_UInt UI_Word

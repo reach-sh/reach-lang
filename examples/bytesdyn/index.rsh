@@ -1,7 +1,5 @@
 'reach 0.1';
 
-const BytesDyn = Bytes(128);
-
 export const main = Reach.App(() => {
   setOptions({ connectors: [ ETH ] });
   const A = Participant('A', { t: BytesDyn });
@@ -9,7 +7,28 @@ export const main = Reach.App(() => {
   init();
   A.only(() => { const t = declassify(interact.t); });
   A.publish(t);
+  const u = digest(t);
   B.interact.chk(t);
   commit();
+  A.only(() => { const t2 = t; });
+  A.publish(t2);
+  check(t == t2);
+  commit();
+  A.only(() => { const v = digest(t); });
+  A.publish(v);
+  check(u == v);
+  commit();
+
+  const go = (f, g) => {
+    A.only(() => { const x = f(t); });
+    A.publish(x);
+    B.interact.chk(g(x));
+    commit();
+  };
+  go((x) => [ 1, true, x, 3 ],
+     (o) => o[2]);
+  go((x) => Array.replicate(3, x),
+     (o) => o[2]);
+
   exit();
 });
