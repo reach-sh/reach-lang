@@ -53,6 +53,7 @@ data DLType
   | T_Bool
   | T_UInt UIntTy
   | T_Bytes Integer
+  | T_BytesDyn
   | T_Digest
   | T_Address
   | T_Contract
@@ -145,16 +146,17 @@ instance Show DLType where
     T_Bool -> "Bool"
     T_UInt UI_Word -> "UInt"
     T_UInt UI_256 -> "UInt256"
-    (T_Bytes sz) -> "Bytes(" <> show sz <> ")"
+    T_Bytes sz -> "Bytes(" <> show sz <> ")"
+    T_BytesDyn -> "BytesDyn"
     T_Digest -> "Digest"
     T_Address -> "Address"
     T_Contract -> "Contract"
     T_Token -> "Token"
-    (T_Array ty i) -> "Array(" <> show ty <> ", " <> show i <> ")"
-    (T_Tuple tys) -> "Tuple(" <> showTys tys <> ")"
-    (T_Object tyMap) -> "Object({" <> showTyMap tyMap <> "})"
-    (T_Data tyMap) -> "Data({" <> showTyMap tyMap <> "})"
-    (T_Struct tys) -> "Struct([" <> showTyList tys <> "])"
+    T_Array ty i -> "Array(" <> show ty <> ", " <> show i <> ")"
+    T_Tuple tys -> "Tuple(" <> showTys tys <> ")"
+    T_Object tyMap -> "Object({" <> showTyMap tyMap <> "})"
+    T_Data tyMap -> "Data({" <> showTyMap tyMap <> "})"
+    T_Struct tys -> "Struct([" <> showTyList tys <> "])"
 
 instance Pretty DLType where
   pretty = viaShow

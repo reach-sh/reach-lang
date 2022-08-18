@@ -158,6 +158,22 @@ const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, ETH_Bytes> => {
   return me;
 };
 
+type ETH_BytesDyn = Array<number>;
+const T_BytesDyn: ETH_Ty<CBR_Bytes, ETH_BytesDyn> = (() => {
+  const me = {
+    ...CBR.BT_BytesDyn,
+    munge: ((bv: CBR_Bytes): ETH_BytesDyn => {
+      return Array.from(ethers.utils.toUtf8Bytes(bv));
+    }),
+    unmunge: ((nv: ETH_BytesDyn): CBR_Bytes => {
+      const nv_s = hexToString(ethers.utils.hexlify(unBigInt(nv)));
+      return me.canonicalize(nv_s);
+    }),
+    paramType: 'bytes',
+  };
+  return me;
+})();
+
 const T_Digest: ETH_Ty<CBR_Digest, BigNumber> = {
   ...CBR.BT_Digest,
   defaultValue: ethers.utils.keccak256([]),
@@ -373,6 +389,7 @@ const typeDefs: TypeDefs<AnyETH_Ty> = {
   T_UInt,
   T_UInt256,
   T_Bytes,
+  T_BytesDyn,
   T_Address,
   T_Contract,
   T_Digest,

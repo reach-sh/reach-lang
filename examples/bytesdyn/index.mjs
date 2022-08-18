@@ -7,10 +7,9 @@ const startingBalance = stdlib.parseCurrency(100);
 const [ accA, accB ] =
   await stdlib.newTestAccounts(2, startingBalance);
 
-const ctcA = accA.contract(backend);
-const ctcB = accB.contract(backend, ctcA.getInfo());
-
 const run = async (t) => {
+  const ctcA = accA.contract(backend);
+  const ctcB = accB.contract(backend, ctcA.getInfo());
   await Promise.all([
     ctcA.p.A({ t }),
     ctcB.p.B({ chk: (y) => {

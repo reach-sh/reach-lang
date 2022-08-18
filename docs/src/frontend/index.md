@@ -34,21 +34,22 @@ Whenever you are interacting with the Reach standard library, you need to rememb
 
 @{ref("js", "Contract")}
 ```js
-// Reach  => JavaScript
-Null      => null
-Bool      => 'boolean'
-UInt      => 'BigNumber'
-UInt256   => 'BigNumber'
-Bytes     => 'string'
-Digest    => 'BigNumber'
-Address   => NetworkAccount
-Contract  => Address on ETH; UInt on ALGO
-Token     => Address on ETH; UInt on ALGO
-Array     => array
-Tuple     => array
-Object    => object
-Data      => ['variant', value]
-Struct    => object
+// Reach   => JavaScript
+Null       => null
+Bool       => 'boolean'
+UInt       => 'BigNumber'
+UInt256    => 'BigNumber'
+Bytes(len) => 'string'
+BytesDyn   => 'string'
+Digest     => 'BigNumber'
+Address    => NetworkAccount
+Contract   => Address on ETH; UInt on ALGO
+Token      => Address on ETH; UInt on ALGO
+Array      => array
+Tuple      => array
+Object     => object
+Data       => ['variant', value]
+Struct     => object
 ```
 
 For example, the Reach type `{!rsh} MInt = Data({None: Null, Some: UInt})` inhabitant `{!rsh} MInt.Some(42)` is represented as `{!rsh} ['Some', 42]` in JavaScript.
@@ -1261,6 +1262,7 @@ stdlib.T_Null // : ReachType
 stdlib.T_Bool // : ReachType
 stdlib.T_UInt // ReachType
 stdlib.T_Bytes(number) // : ReachType
+stdlib.T_BytesDyn // : ReachType
 stdlib.T_Digest // : ReachType
 stdlib.T_Address // : ReachType
 stdlib.T_Array(ReachType, number) // : ReachType

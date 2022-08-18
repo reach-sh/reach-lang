@@ -136,6 +136,18 @@ export const T_Bytes = (len:number): ALGO_Ty<CBR_Bytes> => ({
   netName: `byte[${len}]`,
 });
 
+export const T_BytesDyn: ALGO_Ty<CBR_Bytes> = ({
+  ...CBR.BT_BytesDyn,
+  toNet: (bv: CBR_Bytes): NV => (
+    ethers.utils.toUtf8Bytes(bv)
+  ),
+  fromNet: (nv: NV): CBR_Bytes => (
+    ethers.utils.toUtf8String(nv)
+  ),
+  netSize: 32, // XXX
+  netName: `byte[]`,
+});
+
 export const T_Digest: ALGO_Ty<CBR_Digest> = {
   ...CBR.BT_Digest,
   ...bytestringyNet(32),
@@ -358,6 +370,7 @@ export const typeDefs = {
   T_UInt,
   T_UInt256,
   T_Bytes,
+  T_BytesDyn,
   T_Address,
   T_Contract,
   T_Digest,
