@@ -368,6 +368,7 @@ typeSig_ addr2acc = \case
   T_UInt UI_256 -> r "uint256"
   T_Bytes sz -> r $ "byte" <> array sz
   T_BytesDyn -> r "bytes"
+  T_StringDyn -> r "string"
   T_Digest -> r "digest"
   T_Address -> r $ if addr2acc then "account" else "address"
   T_Contract -> typeSig $ T_UInt UI_Word
@@ -401,6 +402,7 @@ typeSizeOf_ = \case
   T_UInt UI_256 -> r 32
   T_Bytes sz -> r sz
   T_BytesDyn -> Nothing
+  T_StringDyn -> Nothing
   T_Digest -> r 32
   T_Address -> r 32
   T_Contract -> typeSizeOf_ $ T_UInt UI_Word
@@ -419,7 +421,7 @@ maybeOrDynType notify d mx =
   case mx of
     Just x -> return x
     Nothing -> do
-      notify $ "Uses a dynamically sized type, like BytesDyn."
+      notify $ "Uses a dynamically sized type, like BytesDyn or StringDyn."
       return d
 
 typeSizeOf__ :: Monad m => NotifyFm m -> DLType -> m Integer
@@ -1303,6 +1305,7 @@ ctobs = \case
   T_Null -> nop
   T_Bytes _ -> nop
   T_BytesDyn -> nop
+  T_StringDyn -> nop
   T_Digest -> nop
   T_Address -> nop
   T_Contract -> ctobs $ T_UInt UI_Word
@@ -1321,6 +1324,7 @@ cfrombs = \case
   T_Null -> nop
   T_Bytes _ -> nop
   T_BytesDyn -> nop
+  T_StringDyn -> nop
   T_Digest -> nop
   T_Address -> nop
   T_Contract -> cfrombs $ T_UInt UI_Word

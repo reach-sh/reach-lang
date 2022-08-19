@@ -19,6 +19,7 @@ export interface TypeDefs<Ty> {
   T_UInt256: Ty,
   T_Bytes: (len:number) => Ty,
   T_BytesDyn: Ty,
+  T_StringDyn: Ty,
   T_Address: Ty,
   T_Contract: Ty,
   T_Digest: Ty,

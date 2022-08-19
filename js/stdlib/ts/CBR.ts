@@ -127,7 +127,18 @@ export const BT_BytesDyn: BackendTy<CBR_Bytes> = ({
   defaultValue: '',
   canonicalize: (val: unknown): CBR_Bytes => {
     if (typeof(val) !== 'string') {
-      throw Error(`Bytes expected string, but got ${j2s(val)}`);
+      throw Error(`BytesDyn expected string, but got ${j2s(val)}`);
+    }
+    return val;
+  },
+});
+
+export const BT_StringDyn: BackendTy<CBR_Bytes> = ({
+  name: `StringDyn`,
+  defaultValue: '',
+  canonicalize: (val: unknown): CBR_Bytes => {
+    if (typeof(val) !== 'string') {
+      throw Error(`StringDyn expected string, but got ${j2s(val)}`);
     }
     return val;
   },

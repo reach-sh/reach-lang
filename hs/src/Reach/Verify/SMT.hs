@@ -518,6 +518,10 @@ parseVal env sdt v = do
               case v of
                 Atom i -> return $ SMV_BytesDyn $ bpack i
                 _ -> impossible $ "parseVal: BytesDyn: " <> show v
+            T_StringDyn -> do
+              case v of
+                Atom i -> return $ SMV_StringDyn $ bpack i
+                _ -> impossible $ "parseVal: StringDyn: " <> show v
             T_Array ty sz ->
               case v of
                 List [List (Atom "as" : Atom "const" : _), e] ->
@@ -1565,6 +1569,7 @@ _smtDefineTypes smt ts = do
          , (T_UInt UI_Word, ("UInt", uintWord_inv))
          , (T_UInt UI_256, ("UInt", uint256_inv))
          , (T_BytesDyn, ("BytesDyn", none))
+         , (T_StringDyn, ("StringDyn", none))
          , (T_Digest, ("Digest", none))
          , (T_Address, ("Address", none))
          , (T_Contract, ("Contract", none))
@@ -1579,6 +1584,7 @@ _smtDefineTypes smt ts = do
           T_UInt _ -> base
           T_Bytes {} -> base
           T_BytesDyn -> base
+          T_StringDyn -> base
           T_Digest -> base
           T_Address -> base
           T_Contract -> base

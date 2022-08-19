@@ -573,6 +573,7 @@ base_env_slvals =
   , ("UInt256", SLV_Type $ ST_UInt UI_256)
   , ("Bytes", SLV_Prim SLPrim_Bytes)
   , ("BytesDyn", SLV_Type $ ST_BytesDyn)
+  , ("StringDyn", SLV_Type $ ST_StringDyn)
   , ("Contract", SLV_Type ST_Contract)
   , ("ContractCode", SLV_Prim $ SLPrim_ContractCode)
   , ("Address", SLV_Type ST_Address)
@@ -840,6 +841,7 @@ applyType ct v = \case
   ST_UInt {} -> meh
   ST_Bytes {} -> meh
   ST_BytesDyn -> meh
+  ST_StringDyn -> meh
   ST_Digest -> meh
   ST_Address -> meh
   ST_Contract -> meh
@@ -5299,6 +5301,7 @@ typeToExpr = \case
   T_UInt UI_256 -> var "UInt256"
   T_Bytes i -> call "Bytes" [ie i]
   T_BytesDyn -> var "BytesDyn"
+  T_StringDyn -> var "StringDyn"
   T_Digest -> var "Digest"
   T_Address -> var "Address"
   T_Contract -> var "Contract"
