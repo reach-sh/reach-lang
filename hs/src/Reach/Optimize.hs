@@ -631,6 +631,8 @@ optLet at x e = do
                 meh
   case (extract x, (isPure e && canDupe e), e) of
     (Just dv, True, _) -> doit dv
+    -- Optimize arithmetic even if it is impure (PV_Safe).
+    -- It may trap as an effect, but we don't need to worry about it happening multiple times
     (Just dv, _, DLE_PrimOp {}) -> doit dv
     (_, _, DLE_MapSet _ mv fa nva) -> do
       let ref = DLE_MapRef sb mv fa
