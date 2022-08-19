@@ -54,6 +54,7 @@ data DLType
   | T_UInt UIntTy
   | T_Bytes Integer
   | T_BytesDyn
+  | T_StringDyn
   | T_Digest
   | T_Address
   | T_Contract
@@ -148,6 +149,7 @@ instance Show DLType where
     T_UInt UI_256 -> "UInt256"
     T_Bytes sz -> "Bytes(" <> show sz <> ")"
     T_BytesDyn -> "BytesDyn"
+    T_StringDyn -> "StringDyn"
     T_Digest -> "Digest"
     T_Address -> "Address"
     T_Contract -> "Contract"

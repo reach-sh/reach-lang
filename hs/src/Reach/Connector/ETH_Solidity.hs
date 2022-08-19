@@ -493,6 +493,7 @@ mustBeMem = \case
   T_UInt _ -> False
   T_Bytes _ -> True
   T_BytesDyn -> True
+  T_StringDyn -> True
   T_Digest -> False
   T_Address -> False
   T_Contract -> False
@@ -1535,6 +1536,7 @@ solDefineType t = case t of
     let x = fromMaybe (impossible "bytes") $ solStruct name atsn
     addDef i x
   T_BytesDyn -> base
+  T_StringDyn -> base
   T_Digest -> base
   T_Address -> base
   T_Contract -> base
@@ -1656,6 +1658,7 @@ baseTypes =
     , (T_UInt UI_Word, "uint256")
     , (T_UInt UI_256, "uint256")
     , (T_BytesDyn, "bytes")
+    , (T_StringDyn, "string")
     , (T_Digest, "uint256")
     , (T_Address, "address")
     , (T_Contract, "address")

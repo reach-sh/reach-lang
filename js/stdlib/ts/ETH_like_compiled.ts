@@ -178,6 +178,21 @@ const T_BytesDyn: ETH_Ty<CBR_Bytes, ETH_BytesDyn> = (() => {
   return me;
 })();
 
+type ETH_StringDyn = string;
+const T_StringDyn: ETH_Ty<CBR_Bytes, ETH_StringDyn> = (() => {
+  const me = {
+    ...CBR.BT_StringDyn,
+    munge: ((bv: CBR_Bytes): ETH_StringDyn => {
+      return bv;
+    }),
+    unmunge: ((nv: ETH_StringDyn): CBR_Bytes => {
+      return nv;
+    }),
+    paramType: 'string',
+  };
+  return me;
+})();
+
 const T_Digest: ETH_Ty<CBR_Digest, BigNumber> = {
   ...CBR.BT_Digest,
   defaultValue: ethers.utils.keccak256([]),
@@ -394,6 +409,7 @@ const typeDefs: TypeDefs<AnyETH_Ty> = {
   T_UInt256,
   T_Bytes,
   T_BytesDyn,
+  T_StringDyn,
   T_Address,
   T_Contract,
   T_Digest,

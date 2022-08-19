@@ -36,6 +36,7 @@ export const {
   T_UInt256,
   T_Bytes,
   T_BytesDyn,
+  T_StringDyn,
   T_Address,
   T_Contract,
   T_Digest,

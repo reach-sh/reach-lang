@@ -414,8 +414,10 @@ Reach's @{defn("type")}s are represented in programs by the following identifier
 + `{!rsh} FixedPoint`, which denotes a fractional number.
 + @{ref("rsh", "Bytes")} `{!rsh} Bytes(length)`, which denotes a sequence of bytes of length at most `{!rsh} length`.
   Bytes of different lengths are not compatible; however the shorter bytes may be [padded](##padding).
-+ @{ref("rsh", "BytesDyn")} `{!rsh} Bytes`, which denotes a sequence of bytes of dynamic length.
++ @{ref("rsh", "BytesDyn")} `{!rsh} BytesDyn`, which denotes a sequence of bytes of dynamic length.
   Bytes of fixed length and bytes of dynamic length are totally incompatible.
++ @{ref("rsh", "StringDyn")} `{!rsh} StringDyn`, which denotes a string of UTF-8 code points of dynamic length.
+  Strings and bytes are totally incompatible.
 + @{ref("rsh", "Digest")} `{!rsh} Digest`, which denotes a digest.
 + @{ref("rsh", "Address")} `{!rsh} Address`, which denotes an account address.
 + @{ref("rsh", "Contract")} `{!rsh} Contract`, which denotes the identifying information of a contract.

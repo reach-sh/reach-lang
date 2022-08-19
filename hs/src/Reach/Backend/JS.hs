@@ -133,6 +133,7 @@ jsContract_ = \case
     sz' <- jsCon $ DLL_Int sb UI_Word sz
     return $ jsApply "stdlib.T_Bytes" [sz']
   T_BytesDyn -> return $ "stdlib.T_BytesDyn"
+  T_StringDyn -> return $ "stdlib.T_StringDyn"
   T_Digest -> return $ "stdlib.T_Digest"
   T_Address -> return $ "stdlib.T_Address"
   T_Contract -> return $ "stdlib.T_Contract"
@@ -348,6 +349,7 @@ shouldHashMapKey = \case
   T_Token -> False
   T_Bytes {} -> True
   T_BytesDyn -> True
+  T_StringDyn -> True
   T_Array {} -> True
   T_Data {} -> True
   T_Tuple {} -> True
@@ -1191,7 +1193,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 20
+reachBackendVersion = 21
 
 jsPIProg :: ConnectorObject -> PLProg -> App Doc
 jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do

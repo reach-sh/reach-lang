@@ -41,6 +41,7 @@ UInt       => 'BigNumber'
 UInt256    => 'BigNumber'
 Bytes(len) => 'string'
 BytesDyn   => 'string'
+String     => 'string'
 Digest     => 'BigNumber'
 Address    => NetworkAccount
 Contract   => Address on ETH; UInt on ALGO
