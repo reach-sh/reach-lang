@@ -1,0 +1,58 @@
+Verifying knowledge assertions
+Verifying for ALGO connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "Token.burn"
+  at ./token_burn.rsh:18:11:application
+
+  // Violation Witness
+
+
+  // Theorem Formalization
+
+  const tokInfos/106 = array(Tuple(UInt, UInt, Bool), [[0, 0, false ] ]);
+  //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
+  const tokInfos'/130 = Array.set(tokInfos/106, 0, Tuple.set(tokInfos/106[0], 0, UInt.max ) );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[18446744073709551615, 0, false ] ] )
+  const tokInfos'/134 = Array.set(tokInfos'/130, 0, Tuple.set(tokInfos'/130[0], 1, UInt.max ) );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[18446744073709551615, 18446744073709551615, false ] ] )
+  const tokInfos'/137 = Array.set(tokInfos'/134, 0, Tuple.set(tokInfos'/134[0], 2, false ) );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[18446744073709551615, 18446744073709551615, false ] ] )
+  const tokInfo/142 = tokInfos'/137[0];
+  //    ^ would be [18446744073709551615, 18446744073709551615, false ]
+  const v157 = UInt.max <= Array.set(tokInfos'/137, 0, Tuple.set(tokInfo/142, 0, (tokInfo/142[0] - 20) ) )[0][0];
+  //    ^ would be false
+  assert(v157);
+
+  Verifying when NO participants are honest
+Verifying for ETH connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "Token.burn"
+  at ./token_burn.rsh:18:11:application
+
+  // Violation Witness
+
+
+  // Theorem Formalization
+
+  const tokInfos/106 = array(Tuple(UInt, UInt, Bool), [[0, 0, false ] ]);
+  //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
+  const tokInfos'/130 = Array.set(tokInfos/106, 0, Tuple.set(tokInfos/106[0], 0, UInt.max ) );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[115792089237316195423570985008687907853269984665640564039457584007913129639935, 0, false ] ] )
+  const tokInfos'/134 = Array.set(tokInfos'/130, 0, Tuple.set(tokInfos'/130[0], 1, UInt.max ) );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639935, false ] ] )
+  const tokInfos'/137 = Array.set(tokInfos'/134, 0, Tuple.set(tokInfos'/134[0], 2, false ) );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639935, false ] ] )
+  const tokInfo/142 = tokInfos'/137[0];
+  //    ^ would be [115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639935, false ]
+  const v157 = UInt.max <= Array.set(tokInfos'/137, 0, Tuple.set(tokInfo/142, 0, (tokInfo/142[0] - 20) ) )[0][0];
+  //    ^ would be false
+  assert(v157);
+
+  Verifying when NO participants are honest
+Checked 38 theorems; 4 failures (and 2 omitted repeats) :'(

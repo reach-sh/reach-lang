@@ -641,6 +641,7 @@ instance Pretty ApiInfo where
 data PrimVM -- Primitive Verification Mode
   = PV_Safe -- No static assertion, yes dynamic check
   | PV_Veri -- Yes static assertion, no dynamic check
+  | PV_None
   deriving (Eq, Generic, NFData, Ord, Show)
 
 data PrimOp

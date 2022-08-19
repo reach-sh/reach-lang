@@ -345,6 +345,10 @@ instance Optimize DLRemote where
   opt (DLRemote m amta as wbill malgo) = DLRemote <$> pure m <*> opt amta <*> opt as <*> opt wbill <*> opt malgo
   gcs _ = return ()
 
+instance Optimize Integer where
+  opt i = return i
+  gcs _ = return ()
+
 instance Optimize DLExpr where
   opt = \case
     DLE_Arg at a -> DLE_Arg at <$> opt a
@@ -415,7 +419,7 @@ instance Optimize DLExpr where
             return $ DLE_Arg at $ DLA_Literal $ DLL_Bool True
         _ -> meh
     DLE_ArrayRef at a i -> DLE_ArrayRef at <$> opt a <*> opt i
-    DLE_ArraySet at a i v -> DLE_ArraySet at <$> opt a <*> opt i <*> opt v
+    DLE_ArraySet at a i v -> optSet DLE_ArraySet DLE_ArrayRef at a i v
     DLE_ArrayConcat at x0 y0 -> DLE_ArrayConcat at <$> opt x0 <*> opt y0
     DLE_TupleRef at t i -> do
       t' <- opt t
@@ -483,10 +487,25 @@ instance Optimize DLExpr where
         _ -> meh
     DLE_ContractNew at cns dr -> DLE_ContractNew at <$> opt cns <*> opt dr
     DLE_ObjectSet at o k v -> DLE_ObjectSet at <$> opt o <*> pure k <*> opt v
-    DLE_TupleSet at t k v -> DLE_TupleSet at <$> opt t <*> pure k <*> opt v
+    DLE_TupleSet at t k v -> optSet DLE_TupleSet DLE_TupleRef at t k v
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
   gcs _ = return ()
+
+-- Opt:
+--  const x = xs[idx];
+--  const xs' = xs.set(idx, x);
+-- =>
+--  const xs' = xs
+optSet :: Optimize t => (SrcLoc -> DLArg -> t -> DLArg -> DLExpr) -> (SrcLoc -> DLArg -> t -> DLExpr) -> SrcLoc -> DLArg -> t -> DLArg -> App DLExpr
+optSet setE refE at a i v = do
+  a' <- opt a
+  i' <- opt i
+  v' <- opt v
+  v'' <- repeated $ sani $ refE at a' i'
+  case v'' of
+    Just (Left dv) | dv == v' -> opt $ DLE_Arg at a'
+    _ -> return $ setE at a' i' v'
 
 instance Optimize DLAssignment where
   opt (DLAssignment m) = DLAssignment <$> opt m
@@ -612,6 +631,7 @@ optLet at x e = do
                 meh
   case (extract x, (isPure e && canDupe e), e) of
     (Just dv, True, _) -> doit dv
+    (Just dv, _, DLE_PrimOp {}) -> doit dv
     (_, _, DLE_MapSet _ mv fa nva) -> do
       let ref = DLE_MapRef sb mv fa
       mmt <- getMapTy mv

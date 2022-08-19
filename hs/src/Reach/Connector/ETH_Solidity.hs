@@ -586,7 +586,7 @@ solPrimApply = \case
       return $ flip solApply args $
         case pv of
           PV_Safe -> safeFun
-          PV_Veri -> veriFun
+          _ -> veriFun
     binOp op = \case
       [l, r] -> return $ solBinOp op l r
       _ -> impossible $ "emitSol: bin op args"
