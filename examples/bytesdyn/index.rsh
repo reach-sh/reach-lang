@@ -1,7 +1,7 @@
 'reach 0.1';
 
 export const main = Reach.App(() => {
-  setOptions({ connectors: [ ETH ] });
+  //setOptions({ connectors: [ ETH ] });
   const A = Participant('A', { t: BytesDyn });
   const B = Participant('B', { chk: Fun([BytesDyn], Null) });
   const E = Events({ u: [BytesDyn, Digest] });

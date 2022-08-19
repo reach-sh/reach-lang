@@ -357,54 +357,79 @@ minimumBalance_app (AppInfo {..}) = \case
   ApplTxn_OptIn ->
     100000 + (25000+3500)*ai_LocalNumUint + (25000+25000)*ai_LocalNumByteSlice
 
-maxTypeSize :: M.Map a DLType -> Integer
-maxTypeSize m = fromMaybe 0 $ maximumMay $ map typeSizeOf $ M.elems m
+maxTypeSize_ :: M.Map a DLType -> Maybe Integer
+maxTypeSize_ m = maximumMay =<< (mapM typeSizeOf_ $ M.elems m)
 
-typeSig_ :: Bool -> DLType -> String
+typeSig_ :: Bool -> DLType -> App String
 typeSig_ addr2acc = \case
-  T_Null -> "byte[0]"
-  T_Bool -> "byte" -- "bool"
-  T_UInt UI_Word -> "uint64"
-  T_UInt UI_256 -> "uint256"
-  T_Bytes sz -> "byte" <> array sz
-  T_BytesDyn -> "bytes"
-  T_Digest -> "digest"
-  T_Address -> if addr2acc then "account" else "address"
+  T_Null -> r "byte[0]"
+  T_Bool -> r "byte" -- "bool"
+  T_UInt UI_Word -> r "uint64"
+  T_UInt UI_256 -> r "uint256"
+  T_Bytes sz -> r $ "byte" <> array sz
+  T_BytesDyn -> r "bytes"
+  T_Digest -> r "digest"
+  T_Address -> r $ if addr2acc then "account" else "address"
   T_Contract -> typeSig $ T_UInt UI_Word
   T_Token -> typeSig $ T_UInt UI_Word
-  T_Array t sz -> typeSig t <> array sz
-  T_Tuple ts -> "(" <> intercalate "," (map typeSig ts) <> ")"
+  T_Array t sz -> do
+    s <- typeSig t
+    r $ s <> array sz
+  T_Tuple ts -> do
+    s <- mapM typeSig ts
+    r $ "(" <> intercalate "," s <> ")"
   T_Object m -> typeSig $ T_Tuple $ M.elems m
-  T_Data m -> "(byte,byte" <> array (maxTypeSize m) <> ")"
+  T_Data m -> do
+    m' <- maxTypeSize m
+    r $ "(byte,byte" <> array m' <> ")"
   T_Struct ts -> typeSig $ T_Tuple $ map snd ts
   where
-    --The ABI allows us to do this, but we don't know how to do in the remote
-    --call generator
-    --rec = typeSig_ addr2acc
+    r = return
+    -- The ABI allows us to do this, but we don't know how to do in the remote
+    -- call generator
+    -- rec = typeSig_ addr2acc
     array sz = "[" <> show sz <> "]"
 
-typeSig :: DLType -> String
+typeSig :: DLType -> App String
 typeSig = typeSig_ False
 
-typeSizeOf :: DLType -> Integer
-typeSizeOf = \case
-  T_Null -> 0
-  T_Bool -> 1
-  T_UInt UI_Word -> word
-  T_UInt UI_256 -> 32
-  T_Bytes sz -> sz
-  T_BytesDyn -> impossible "xxx bytesdyn"
-  T_Digest -> 32
-  T_Address -> 32
-  T_Contract -> typeSizeOf $ T_UInt UI_Word
-  T_Token -> typeSizeOf $ T_UInt UI_Word
-  T_Array t sz -> sz * typeSizeOf t
-  T_Tuple ts -> sum $ map typeSizeOf ts
-  T_Object m -> sum $ map typeSizeOf $ M.elems m
-  T_Data m -> 1 + maxTypeSize m
-  T_Struct ts -> sum $ map (typeSizeOf . snd) ts
+typeSizeOf_ :: DLType -> Maybe Integer
+typeSizeOf_ = \case
+  T_Null -> r 0
+  T_Bool -> r 1
+  T_UInt UI_Word -> r word
+  T_UInt UI_256 -> r 32
+  T_Bytes sz -> r sz
+  T_BytesDyn -> Nothing
+  T_Digest -> r 32
+  T_Address -> r 32
+  T_Contract -> typeSizeOf_ $ T_UInt UI_Word
+  T_Token -> typeSizeOf_ $ T_UInt UI_Word
+  T_Array t sz -> (*) sz <$> typeSizeOf_ t
+  T_Tuple ts -> sum <$> mapM typeSizeOf_ ts
+  T_Object m -> sum <$> (mapM typeSizeOf_ $ M.elems m)
+  T_Data m -> (+) 1 <$> maxTypeSize_ m
+  T_Struct ts -> sum <$> mapM (typeSizeOf_ . snd) ts
   where
+    r = return
     word = 8
+
+maybeOrDynType :: Monad m => NotifyFm m -> a -> Maybe a -> m a
+maybeOrDynType notify d mx =
+  case mx of
+    Just x -> return x
+    Nothing -> do
+      notify $ "Uses a dynamically sized type, like BytesDyn."
+      return d
+
+typeSizeOf__ :: Monad m => NotifyFm m -> DLType -> m Integer
+typeSizeOf__ notify t = maybeOrDynType notify 32 (typeSizeOf_ t)
+
+typeSizeOf :: DLType -> App Integer
+typeSizeOf = typeSizeOf__ bad_nc
+
+maxTypeSize :: M.Map SLVar DLType -> App Integer
+maxTypeSize m = maybeOrDynType bad_nc 0 (maxTypeSize_ m)
 
 encodeBase64 :: B.ByteString -> LT.Text
 encodeBase64 bs = LT.pack $ B.unpack $ encodeBase64' bs
@@ -1182,9 +1207,12 @@ badlike eGet lab = do
   r <- asks eGet
   liftIO $ bad_io r lab
 
+bad_nc :: LT.Text -> App ()
+bad_nc = badlike eFailuresR
+
 bad :: LT.Text -> App ()
 bad lab = do
-  badlike eFailuresR lab
+  bad_nc lab
   mapM_ comment $ LT.lines $ "BAD " <> lab
 
 warn :: LT.Text -> App ()
@@ -1307,7 +1335,7 @@ ctzero :: DLType -> App ()
 ctzero = \case
   T_UInt UI_Word -> cint 0
   t -> do
-    padding $ typeSizeOf t
+    padding =<< typeSizeOf t
     cfrombs t
 
 chkint :: SrcLoc -> Integer -> Integer
@@ -1424,7 +1452,7 @@ cprim = \case
   TOKEN_EQ -> call "=="
   BTOI_LAST8 {} -> \case
     [x] -> do
-      let bl = fromIntegral $ typeSizeOf $ argTypeOf x
+      bl <- fromIntegral <$> (typeSizeOf $ argTypeOf x)
       let (start, len) = if bl > 8 then (bl - 8, 8) else (0, 0)
       ca x
       output $ TExtract start len
@@ -1492,7 +1520,7 @@ cprim = \case
         libCall LF_checkUInt256ResultLen $ do
           op "dup"
           op "len"
-          cint $ typeSizeOf $ T_UInt UI_256
+          cint =<< (typeSizeOf $ T_UInt UI_256)
           op "swap"
           op "-"
           -- This traps on purpose when the result is longer than 256
@@ -1511,7 +1539,7 @@ cContractToAddr ctca = do
 
 cconcatbs_ :: (DLType -> App ()) -> [(DLType, App ())] -> App ()
 cconcatbs_ f l = do
-  let totlen = typeSizeOf $ T_Tuple $ map fst l
+  totlen <- typeSizeOf $ T_Tuple $ map fst l
   check_concat_len totlen
   case l of
     [] -> padding 0
@@ -1665,7 +1693,7 @@ csplice3 cnew mcbig = \case
 
 cArraySet :: SrcLoc -> (DLType, Integer) -> Maybe (App ()) -> Either Integer (App ()) -> App () -> App ()
 cArraySet _at (t, alen) mcbig eidx cnew = do
-  let tsz = typeSizeOf t
+  tsz <- typeSizeOf t
   let spr =
         case eidx of
           Left ii ->
@@ -1692,17 +1720,15 @@ cArraySet _at (t, alen) mcbig eidx cnew = do
                 op "substring3"
   csplice3 cnew mcbig spr
 
-computeExtract :: [DLType] -> Integer -> (DLType, Integer, Integer)
-computeExtract ts idx = (t, start, sz)
-  where
-    szs = map typeSizeOf ts
-    starts = scanl (+) 0 szs
-    idx' = fromIntegral idx
-    tsz = zip3 ts starts szs
-    (t, start, sz) =
-      case atMay tsz idx' of
-        Nothing -> impossible "bad idx"
-        Just x -> x
+computeExtract :: [DLType] -> Integer -> App (DLType, Integer, Integer)
+computeExtract ts idx = do
+  szs <- mapM typeSizeOf ts
+  let starts = scanl (+) 0 szs
+  let idx' = fromIntegral idx
+  let tsz = zip3 ts starts szs
+  case atMay tsz idx' of
+    Nothing -> impossible "bad idx"
+    Just x -> return x
 
 cfor :: Integer -> (App () -> App ()) -> App ()
 cfor 0 _ = return ()
@@ -1737,7 +1763,7 @@ doArrayRef at aa frombs ie = do
 
 cArrayRef :: SrcLoc -> DLType -> Bool -> Either DLArg (App ()) -> App ()
 cArrayRef _at t frombs ie = do
-  let tsz = typeSizeOf t
+  tsz <- typeSizeOf t
   let ie' =
         case ie of
           Left ia -> ca ia
@@ -1785,9 +1811,9 @@ cla = \case
     cbs $ B.singleton $ BI.w2c vi
     ca va
     ctobs vt
-    let vlen = 1 + typeSizeOf (argTypeOf va)
+    vlen <- (+) 1 <$> typeSizeOf (argTypeOf va)
     op "concat"
-    let dlen = typeSizeOf $ T_Data tm
+    dlen <- typeSizeOf $ T_Data tm
     czpad $ fromIntegral $ dlen - vlen
     check_concat_len dlen
   DLLA_Struct kvs ->
@@ -1801,7 +1827,7 @@ cTupleRef :: SrcLoc -> DLType -> Integer -> App ()
 cTupleRef _at tt idx = do
   -- [ Tuple ]
   let ts = tupleTypes tt
-  let (t, start, sz) = computeExtract ts idx
+  (t, start, sz) <- computeExtract ts idx
   case (ts, idx) of
     ([_], 0) ->
       return ()
@@ -1812,18 +1838,18 @@ cTupleRef _at tt idx = do
   -- [ Value ]
   return ()
 
-computeSubstring :: [DLType] -> Integer -> (DLType, Integer, Integer)
-computeSubstring ts idx = (t, start, end)
-  where
-    (t, start, sz) = computeExtract ts idx
-    end = start + sz
+computeSubstring :: [DLType] -> Integer -> App (DLType, Integer, Integer)
+computeSubstring ts idx = do
+  (t, start, sz) <- computeExtract ts idx
+  let end = start + sz
+  return (t, start, end)
 
 cTupleSet :: SrcLoc -> DLType -> Integer -> App ()
 cTupleSet at tt idx = do
   -- [ Tuple, Value' ]
-  let tot = typeSizeOf tt
+  tot <- typeSizeOf tt
   let ts = tupleTypes tt
-  let (t, start, end) = computeSubstring ts idx
+  (t, start, end) <- computeSubstring ts idx
   ctobs t
   -- [ Tuple, Value'Bs ]
   csplice at start end tot
@@ -1945,7 +1971,7 @@ cSvsSave :: SrcLoc -> [DLArg] -> App ()
 cSvsSave _at svs = do
   let la = DLLA_Tuple svs
   let lat = largeArgTypeOf la
-  let size = typeSizeOf lat
+  size <- typeSizeOf lat
   cla la
   ctobs lat
   (_, keysl) <- computeStateSizeAndKeys bad "svs" size algoMaxGlobalSchemaEntries_usable
@@ -2027,7 +2053,8 @@ ce = \case
     let (_, ylen) = argArrTypeLen y
     ca x
     ca y
-    check_concat_len $ (xlen + ylen) * typeSizeOf xt
+    xtz <- typeSizeOf xt
+    check_concat_len $ (xlen + ylen) * xtz
     op "concat"
   DLE_TupleRef at ta idx -> do
     ca ta
@@ -2125,7 +2152,7 @@ ce = \case
       warn_lab <> " calls a remote object at " <> show at <> ". This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object. Furthermore, the remote object may require special transaction parameters which are not expressed in the Reach API or the Algorand ABI standards."
     let ts = map argTypeOf as
     let rm = fromMaybe (impossible "XXX") rm'
-    let sig = signatureStr r_addr2acc rm ts (Just rng_ty)
+    sig <- signatureStr r_addr2acc rm ts (Just rng_ty)
     remoteTxns <- liftIO $ newCounter 0
     let mayIncTxn m = do
           b <- m
@@ -2444,11 +2471,11 @@ splitArgs l =
     False -> (l, Nothing)
     True -> (before, Just after) where (before, after) = splitAt 14 l
 
-signatureStr :: Bool -> String -> [DLType] -> Maybe DLType -> String
-signatureStr addr2acc f args mret = sig
-  where
-    rets = fromMaybe "" $ fmap typeSig mret
-    sig = f <> "(" <> intercalate "," (map (typeSig_ addr2acc) args) <> ")" <> rets
+signatureStr :: Bool -> String -> [DLType] -> Maybe DLType -> App String
+signatureStr addr2acc f args mret = do
+  args' <- mapM (typeSig_ addr2acc) args
+  rets <- fromMaybe "" <$> traverse typeSig mret
+  return $ f <> "(" <> intercalate "," args' <> ")" <> rets
 
 sigStrToBytes :: String -> BS.ByteString
 sigStrToBytes sig = shabs
@@ -2461,11 +2488,12 @@ sigStrToInt = fromIntegral . btoi . sigStrToBytes
 
 clogEvent :: String -> [DLVar] -> App ()
 clogEvent eventName vs = do
-  let sigStr = signatureStr False eventName (map varType vs) Nothing
+  sigStr <- signatureStr False eventName (map varType vs) Nothing
   let as = map DLA_Var vs
   let cheader = cbs (bpack sigStr) >> op "sha512_256" >> output (TSubstring 0 4)
   cconcatbs $ (T_Bytes 4, cheader) : map (\a -> (argTypeOf a, ca a)) as
-  clog_ $ 4 + (typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as)
+  sz <- typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as
+  clog_ $ 4 + sz
 
 clog_ :: Integer -> App ()
 clog_ = output . TLog
@@ -2474,7 +2502,8 @@ clog :: [DLArg] -> App ()
 clog as = do
   let la = DLLA_Tuple as
   cla la
-  clog_ $ typeSizeOf $ largeArgTypeOf la
+  sz <- typeSizeOf $ largeArgTypeOf la
+  clog_ sz
 
 data CheckTxn = CheckTxn
   { ct_at :: SrcLoc
@@ -2617,7 +2646,7 @@ makeTxn (MakeTxn {..}) =
 cextractDataOf :: App () -> DLArg -> App ()
 cextractDataOf cd va = do
   let vt = argTypeOf va
-  let sz = typeSizeOf vt
+  sz <- typeSizeOf vt
   case sz == 0 of
     True -> padding 0
     False -> do
@@ -2676,7 +2705,7 @@ cm km = \case
       addNewTok $ DLA_Var dv
     sallocVarLet (DLVarLet (Just vc) dv) sm (ce de) km
   DL_ArrayMap at ansv as xs iv (DLBlock _ _ body ra) -> do
-    let anssz = typeSizeOf $ argTypeOf $ DLA_Var ansv
+    anssz <- typeSizeOf $ argTypeOf $ DLA_Var ansv
     let xlen = arraysLength as
     let rt = argTypeOf ra
     check_concat_len anssz
@@ -2977,7 +3006,8 @@ apiLabel w = "api_" <> (LT.pack $ bunpack w)
 
 bindFromSvs_ :: SrcLoc -> [DLVarLet] -> App a -> App a
 bindFromSvs_ at svs m = do
-  let ensure = cSvsLoad $ typeSizeOf $ T_Tuple $ map varLetType svs
+  sz <- typeSizeOf $ T_Tuple $ map varLetType svs
+  let ensure = cSvsLoad $ sz
   bindFromGV GV_svs ensure at svs m
 
 data CompanionCall
@@ -3062,7 +3092,7 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
   freeResource R_Account $ DLA_Var from
   let msg = map varLetVar msgl
   let isCtor = which == 0
-  let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ msg)
+  argSize <- (+) 1 <$> (typeSizeOf $ T_Tuple $ map varType $ msg)
   when (argSize > algoMaxAppTotalArgLen) $
     bad $ LT.pack $
       "Step " <> show which <> "'s argument length is " <> show argSize
@@ -3215,17 +3245,19 @@ cmethIsView = \case
 
 capi :: Bool -> (SLPart, ApiInfo) -> App [(String, CMeth)]
 capi qualify (who, (ApiInfo {..})) = do
+  let f = adjustApiName (bunpack who) ai_which qualify
   capi_label <- freshLabel f
+  let capi_who = who
+  let capi_which = ai_which
+  let mk_sig n = signatureStr False n capi_arg_tys mret
+  capi_sig <- mk_sig f
   let c = CApi {..}
   let apis = [(capi_sig, c)]
-  let mk_alias alias = apis <> [(mk_sig $ bunpack alias, CAlias alias c)]
-  return $ maybe apis mk_alias ai_alias
+  let mk_alias a = do
+        a' <- mk_sig $ bunpack a
+        return $ apis <> [(a', CAlias a c)]
+  maybe (return apis) mk_alias ai_alias
   where
-    capi_who = who
-    capi_which = ai_which
-    mk_sig n = signatureStr False n capi_arg_tys mret
-    capi_sig = mk_sig f
-    f = adjustApiName (bunpack who) ai_which qualify
     imp = impossible "apiSig"
     (capi_arg_tys, capi_doWrap) =
       case ai_compile of
@@ -3260,7 +3292,7 @@ genApiJump who ms = do
   let whichs = map capi_which ms'
   let labels = map capi_label ms'
   let (arg_tys, mret) = apiArgsAndRet m
-  let sig = signatureStr False (bunpack who) arg_tys $ Just mret
+  sig <- signatureStr False (bunpack who) arg_tys $ Just mret
   return $ (sig, CApi {
       capi_who = who
     , capi_label = capi_label m
@@ -3286,13 +3318,16 @@ capis (p, ms) = do
 
 cview :: (SLPart, VSITopInfo) -> App [(String, CMeth)]
 cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs aliases) = do
+    cview_sig <- mk_sig f
     cview_lab <- freshLabel $ bunpack who
     let v = CView {..}
-    return $ (cview_sig, v) : concatMap (\ alias -> [(mk_sig $ bunpack alias, CAlias alias v)]) aliases
+    let mka a = do
+          a' <- mk_sig $ bunpack a
+          return [(a', CAlias a v)]
+    (:) (cview_sig, v) <$> concatMapM mka aliases
   where
     cview_who = who
     f = bunpack who
-    cview_sig = mk_sig f
     mk_sig n = signatureStr False n cview_arg_tys $ Just cview_ret_ty
 
 doWrapData :: [DLType] -> (DLArg -> App ()) -> App ()
@@ -3466,7 +3501,7 @@ compile_algo env disp pl = do
   (gWarningsR, gwarn) <- newErrorSetRef
   eMaps <- verifyMapTypes gbad $ dli_maps dli
   let eMapDataTy = mapDataTy eMaps
-  let eMapDataSize = typeSizeOf eMapDataTy
+  eMapDataSize <- typeSizeOf__ gbad eMapDataTy
   let PLOpts {..} = ePLO
   let eSP = 255
   let eVars = mempty
@@ -3574,7 +3609,7 @@ compile_algo env disp pl = do
     vsi_sm <- M.fromList <$> concatMapM cview (M.toAscList vsiTop)
     let meth_sm = M.union ai_sm vsi_sm
     liftIO $ writeIORef meth_sm_r meth_sm
-    let maxApiRetSize = maxTypeSize $ M.map cmethRetTy meth_sm
+    maxApiRetSize <- maxTypeSize $ M.map cmethRetTy meth_sm
     let meth_im = M.mapKeys sigStrToInt meth_sm
     mGV_companion <- asks eCompanion >>= \case
       Nothing -> return []
