@@ -2369,7 +2369,9 @@ evalPrimOp sp sargs = do
                   _ -> impossible "mul args"
             ra <- doOp (T_UInt t) (DIV t pv) [lim_maxUInt_a, b]
             ca <- doCmp (PLE t) [a, ra]
-            dopClaim ca "mul overflow"
+            denomZero <- doCmp (PEQ t) [(DLA_Literal $ DLL_Int at t 0), b]
+            orDenomZeroCa <- doOp (T_Bool) IF_THEN_ELSE [denomZero, (DLA_Literal $ DLL_Bool True), ca]
+            dopClaim orDenomZeroCa "mul overflow"
       let shouldVerifyArith = \case
             PV_Veri -> True
             _ -> False
