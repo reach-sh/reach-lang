@@ -10,6 +10,7 @@ const [ accA, accB ] =
 const run = async (t) => {
   const ctcA = accA.contract(backend);
   const ctcB = accB.contract(backend, ctcA.getInfo());
+  //ctcA.e.u.monitor((evt) => console.log(`LOOK! u is`, evt));
   await Promise.all([
     ctcA.p.A({ t }),
     ctcB.p.B({ chk: (y) => {

@@ -60,7 +60,7 @@ const {
 
 const UInt_max: BigNumber = UInt256_max;
 
-const digest = makeDigest('keccak256', (t:AnyETH_Ty, v:any) => {
+const digest = makeDigest('keccak256', (t:any, v:any) => {
   // Note: abiCoder.encode doesn't correctly handle an empty tuple type
   if (t.paramType === 'tuple()') {
     if (Array.isArray(v) && v.length === 0) {
@@ -69,7 +69,11 @@ const digest = makeDigest('keccak256', (t:AnyETH_Ty, v:any) => {
       throw Error(`impossible: digest tuple() with non-empty array: ${j2s(v)}`);
     }
   }
-  return ethers.utils.defaultAbiCoder.encode([t.paramType], [t.munge(v)])
+  // t must be a tuple type, so we pull out its contents and use those
+  const pt = t.paramType;
+  const pts = pt.slice(6, pt.length-1).split(',');
+  const mvs = t.munge(v);
+  return ethers.utils.defaultAbiCoder.encode(pts, mvs);
 });
 
 const V_Null: CBR_Null = null;
