@@ -8,6 +8,9 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{verRC("0.1.11")}
 
 + @{rcHead("0.1.11-rc8")}
++ 2022/08/20: **Backwards Incompatible**: The utility function `{!js} stdlib.digest`'s type has changed.
+  The previous version gave incorrect answers and the only solution was to modify the type.
+  We expect that few users are relying on this internal function.
 + 2022/08/19: Added `{!rsh} StringDyn` type.
 + 2022/08/19: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/08/18: Added `{!rsh} BytesDyn` type.

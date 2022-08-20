@@ -111,7 +111,7 @@ export interface Stdlib_Backend_Base<Ty> extends Stdlib_Backend_Shared<Ty>, Arit
   digestEq: (x: unknown, y: unknown) => boolean
   digest_xor: (x: string, y: string) => string
   tokenEq: (x: unknown, y: unknown) => boolean
-  digest: (t: Ty, a: unknown) => string // TODO typing
+  digest: (ts: Ty[], vs: unknown[]) => string // TODO typing
   emptyContractInfo: (number | string),
 };
 
@@ -159,7 +159,7 @@ export interface Stdlib_User_Shared {
 // The thing as composed by each connector
 export interface Stdlib_User_Base<Ty> extends Stdlib_Backend_Shared_User<Ty>, Stdlib_User_Shared, Arith, TypeDefs<Ty> {
   addressEq: (addr1: string, addr2: string) => boolean
-  digest: (t: any, a: unknown) => string
+  digest: (ts: any[], vs: any[]) => string
 };
 
 // The real thing

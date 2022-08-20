@@ -263,15 +263,15 @@ jsLargeArg = \case
 jsBytes :: B.ByteString -> Doc
 jsBytes = jsString . bunpack
 
-jsContractAndVals :: [DLArg] -> App [Doc]
-jsContractAndVals as = do
+jsContractsAndVals :: [DLArg] -> App [Doc]
+jsContractsAndVals as = do
   let la = DLLA_Tuple as
-  ctc <- jsContract $ largeArgTypeOf la
+  ctcs <- jsArray <$> (mapM jsContract $ map argTypeOf as)
   as' <- jsLargeArg la
-  return $ [ctc, as']
+  return $ [ctcs, as']
 
 jsDigest :: AppT [DLArg]
-jsDigest as = jsApply "stdlib.digest" <$> jsContractAndVals as
+jsDigest as = jsApply "stdlib.digest" <$> jsContractsAndVals as
 
 jsUIntTy :: UIntTy -> Doc
 jsUIntTy t = if t == UI_Word then "\"UInt\"" else "\"UInt256\""

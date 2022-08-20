@@ -699,15 +699,15 @@ export const envDefaultNoEmpty = <T>(v: string|undefined|null, d: T): string|T =
 }
 
 type DigestMode = 'keccak256' | 'sha256';
-export const makeDigest = (mode: DigestMode, prep: any) => (t:any, v:any) => {
+export const makeDigest = (mode: DigestMode, prep: any) => (ts:any[], vs:any[]) => {
   void(hexlify);
   // const args = [t, v];
   // debug('digest(', args, ') =>');
-  const kekCat = prep(t, v);
+  const kekCat = prep(ts, vs);
   // debug('digest(', args, ') => internal(', hexlify(kekCat), ')');
   const f = mode === 'keccak256' ? ethers.utils.keccak256 : ethers.utils.sha256;
   const r = f(kekCat);
-  debug('digest', {mode, prep, t, v, kekCat, f, r});
+  debug('digest', {mode, prep, ts, vs, kekCat, f, r});
   // debug('keccak(', args, ') => internal(', hexlify(kekCat), ') => ', r);
   return r;
 };
