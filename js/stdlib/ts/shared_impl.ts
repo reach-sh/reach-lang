@@ -699,7 +699,8 @@ export const envDefaultNoEmpty = <T>(v: string|undefined|null, d: T): string|T =
 }
 
 type DigestMode = 'keccak256' | 'sha256';
-export const makeDigest = (mode: DigestMode, prep: any) => (ts:any[], vs:any[]) => {
+export const makeDigest = (mode: DigestMode, prep: any) => (ts_:any, vs_:any) => {
+  const [ ts, vs ] = Array.isArray(ts_) ? [ ts_, vs_ ] : [ [ts_], [vs_] ];
   void(hexlify);
   // const args = [t, v];
   // debug('digest(', args, ') =>');
