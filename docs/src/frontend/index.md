@@ -1349,7 +1349,7 @@ These are additional conversion and comparison utilities.
 ---
 @{ref("js", "digest")}
 ```js
-stdlib.digest(ty:Type, x:ty) => Digest
+stdlib.digest(tys:Type[], vs:ty[]) => Digest
 ```
 
 Hashes the value.

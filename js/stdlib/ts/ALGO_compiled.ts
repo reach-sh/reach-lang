@@ -53,7 +53,7 @@ export interface ALGO_Ty<BV extends CBR_Val> extends BackendTy<BV> {
 };
 
 export const digest =
-  makeDigest('sha256', <X extends CBR_Val>(t:ALGO_Ty<X>, v:X) => t.toNet(v));
+  makeDigest('sha256', (ts:any[], vs:any[]) => T_Tuple(ts).toNet(vs));
 
 export const T_Null: ALGO_Ty<CBR_Null> = {
   ...CBR.BT_Null,
