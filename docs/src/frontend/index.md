@@ -1349,15 +1349,17 @@ These are additional conversion and comparison utilities.
 ---
 @{ref("js", "digest")}
 ```js
-stdlib.digest(tys:Type[], vs:ty[]) => Digest
+stdlib.digest(ty:Type, v:ty) => Digest
+stdlib.digest(tys:Type[], vs:tys) => Digest
 ```
 
-Hashes the value.
+Hashes the values.
+If given one type and one value, the result is the same as if the arguments were each wrapped in an array.
 
 ```js
 load: /examples/digest-mod/index.mjs
-md5: 73fef9371959b81f0609bd7622a9eb27
-range: 14-15
+md5: e53eb004657f03e541768cdbb6e39123
+range: 23-25
 ```
 
 The `ExampleeExampleeExampleeExamplee` is a string of the Reach type that `{!rsh} digest` turns into a hash.
