@@ -358,7 +358,9 @@ minimumBalance_app (AppInfo {..}) = \case
     100000 + (25000+3500)*ai_LocalNumUint + (25000+25000)*ai_LocalNumByteSlice
 
 maxTypeSize_ :: M.Map a DLType -> Maybe Integer
-maxTypeSize_ m = maximumMay =<< (mapM typeSizeOf_ $ M.elems m)
+maxTypeSize_ m = do
+  ts <- mapM typeSizeOf_ $ M.elems m
+  return $ fromMaybe 0 $ maximumMay ts
 
 typeSig_ :: Bool -> DLType -> App String
 typeSig_ addr2acc = \case
