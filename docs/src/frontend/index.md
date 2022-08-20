@@ -1264,6 +1264,7 @@ stdlib.T_Bool // : ReachType
 stdlib.T_UInt // ReachType
 stdlib.T_Bytes(number) // : ReachType
 stdlib.T_BytesDyn // : ReachType
+stdlib.T_StringDyn // : ReachType
 stdlib.T_Digest // : ReachType
 stdlib.T_Address // : ReachType
 stdlib.T_Array(ReachType, number) // : ReachType
