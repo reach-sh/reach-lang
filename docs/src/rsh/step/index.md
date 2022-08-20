@@ -105,12 +105,13 @@ will indicate that `{!rsh} fork` payments should be of the format:
 Reach assumes that network tokens and non-network tokens behave identically, but often they do not; [this article](##guide-nntoks) discusses the causes and consequences of this.
 :::
 
-### `publish`, `pay`, `when`, and `timeout`
+### `publish`, `pay`, `when`, `check` and `timeout`
 
 @{ref("rsh", "publish")}@{ref("rsh", "pay")}@{ref("rsh", "when")}@{ref("rsh", "timeout")}
 ```reach
 Alice.publish(wagerAmount)
      .pay(wagerAmount)
+     .check(() => { check(wagerAmount > 0); })
      .timeout(DELAY, () => {
        Bob.publish();
        commit();
@@ -120,12 +121,14 @@ Alice.publish(wagerAmount)
 ```reach
 Alice.publish(wagerAmount)
      .pay(wagerAmount)
+     .check(() => { check(wagerAmount > 0); })
      .timeout(DELAY, () => closeTo(Bob, false));
 ```
 
 ```reach
 Alice.publish(wagerAmount)
      .pay(wagerAmount)
+     .check(() => { check(wagerAmount > 0); })
      .timeout(false);
 ```
 
@@ -138,6 +141,7 @@ A consensus transfer is written
 PART_EXPR.publish(ID_0, ..., ID_n)
  .pay(PAY_EXPR, ?PAY_REQUIRE_EXPR)
  .when(WHEN_EXPR)
+ .check(() => CHECK_BLOCK)
  .timeout(DELAY_EXPR, () =>
    TIMEOUT_BLOCK)
  // or
@@ -149,6 +153,8 @@ where `{!rsh} PART_EXPR` is an expression that evaluates to a participant or rac
 `{!rsh} PAY_EXPR` is a public expression that evaluates to a pay amount.
 `{!rsh} PAY_REQUIRE_EXPR` is an optional nullary function that can be used to make `{!rsh} require` claims about the `PAY_EXPR`.
 `{!rsh} WHEN_EXPR` is a public expression evaluating to a boolean and determines if the consensus transfer takes place,
+`{!rsh} CHECK_BLOCK` is a block that may contain `{!rsh} check`s about the published values.
+These checks are applied as assumptions and requirements.
 `{!rsh} DELAY_EXPR` is a public expression that depends on only consensus state and evaluates to a time argument,
 `{!rsh} TIMEOUT_BLOCK` is a timeout block, which will be executed after the `{!rsh} DELAY_EXPR` time argument passes without `{!rsh} PART` executing this consensus transfer.
 
