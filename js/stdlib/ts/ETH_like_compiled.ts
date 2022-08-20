@@ -73,6 +73,7 @@ const digest = makeDigest('keccak256', (t:any, v:any) => {
   const pt = t.paramType;
   const pts = pt.slice(6, pt.length-1).split(',');
   const mvs = t.munge(v);
+  debug('digest prep', { t, v, pt, pts, mvs });
   return ethers.utils.defaultAbiCoder.encode(pts, mvs);
 });
 

@@ -4,4 +4,4 @@ Verifying for generic connector
   Verifying when NO participants are honest
 Checked 15 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
- * Uses a dynamically sized type, like BytesDyn.
+ * Uses a dynamically sized type, like BytesDyn or StringDyn.
