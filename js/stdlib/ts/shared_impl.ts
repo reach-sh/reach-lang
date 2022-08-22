@@ -86,12 +86,13 @@ export const debug = (...msgs: any) => {
 };
 
 export type IBackendViewInfo<ConnectorTy extends AnyBackendTy> = {
-  ty: ConnectorTy,
+  dom: [ConnectorTy],
+  rng: ConnectorTy,
   decode: (i:number, svs:Array<any>, args:Array<any>) => Promise<any>,
 };
 
 const isUntaggedView = (x: any) => {
-  return 'ty' in x && 'decode' in x;
+  return 'dom' in x && 'rng' in x && 'decode' in x;
 }
 
 export type IBackendViewsInfo<ConnectorTy extends AnyBackendTy> =
@@ -427,7 +428,7 @@ export const stdContract =
       return (typeof am === 'object')
         ? objectMap(am, f)
         : f(undefined, am);
-  }));
+    }));
 
   const apis = mkApis(false);
   const safeApis = mkApis(true);

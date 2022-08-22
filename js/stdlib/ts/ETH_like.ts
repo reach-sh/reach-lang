@@ -800,15 +800,17 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo, isSafe = true) =>
         async (...args: any[]): Promise<any> => {
           void(vs);
-          const { ty } = vim;
+          const { dom, rng } = vim;
           const ethersC = await getC();
           const vnv = views_namesm[v];
           const vkn = (typeof vnv === 'string') ? vnv : vnv[k!];
-          debug(label, 'getView1', v, k, 'args', args, vkn, ty);
+          const mungedArgs = args.map((arg, i) => dom[i].munge(arg));
+          debug(label, 'getView1', v, k, 'args', args, vkn, dom, rng);
+          debug(label, `getView1 mungedArgs = ${mungedArgs}`);
           try {
-            const val = await ethersC[vkn](...args);
+            const val = await ethersC[vkn](...mungedArgs);
             debug(label, 'getView1', v, k, 'val', val);
-            const uv = ty.unmunge(val);
+            const uv = rng.unmunge(val);
             return isSafe ? ['Some', uv] : uv;
           } catch (e) {
             debug(label, 'getView1', v, k, 'error', e);

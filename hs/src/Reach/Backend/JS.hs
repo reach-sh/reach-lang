@@ -1136,7 +1136,8 @@ jsViews (cvs, vis) = do
             return $ jsWhen c $ vsep [let', ret']
       let enInfo' :: Maybe SLPart -> (SLVar, DLView) -> App ([(SLVar, Doc)], Doc)
           enInfo' v (k, (vt, aliases)) = do
-            let (_, rng) = itype2arr vt
+            let (dom, rng) = itype2arr vt
+            dom' <- jsArray <$> mapM jsContract dom
             rng' <- jsContract rng
             body <- (vsep . M.elems) <$> mapWithKeyM (enDecode v k) vis
             let body' = vsep [body, illegal]
@@ -1145,7 +1146,8 @@ jsViews (cvs, vis) = do
             let view_asn = "const " <> name <> " = " <> decode' <> ";"
             let val = jsObject $
                         M.fromList $
-                          [ ("ty" :: String, rng')
+                          [ ("dom" :: String, dom')
+                          , ("rng", rng')
                           , ("decode", name)
                           ]
             return $ (,view_asn) $ map (, val) $ k : map bunpack aliases
