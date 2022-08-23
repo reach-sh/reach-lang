@@ -10,3 +10,4 @@ devnet-algo:
     ${LABELS}
   environment:
     - REACH_DEBUG
+    - REACH_NO_WARN
