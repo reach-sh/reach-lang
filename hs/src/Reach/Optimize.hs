@@ -17,6 +17,7 @@ import Reach.Util
 import Safe (atMay)
 import qualified Data.ByteString as B
 import Reach.CollectSvs
+import Reach.AST.SL
 
 type App = ReaderT Env IO
 
@@ -538,8 +539,8 @@ instance Learn DLExpr where
     DLE_PrimOp _ IF_THEN_ELSE [DLA_Var dv, lhs, rhs]
       -- r = true, x ? true : true  => []
       -- r = v2  , x ? v2 : y       => [(x, true)]
-      | lhs == result && rhs /= result -> [(dv, true)]
-      | rhs == result && lhs /= result -> [(dv, false)]
+      | lhs `equiv` result && not (rhs `equiv` result) -> [(dv, true)]
+      | rhs `equiv` result && not (lhs `equiv` result) -> [(dv, false)]
       -- r = false, x ? true : v3   => [(x, false), (v3, false)]
       | areBool [result, lhs] && (lhs /= result) -> (dv, false) : mAsn result rhs
       | areBool [result, rhs] && (rhs /= result) -> (dv, true) : mAsn result lhs
@@ -573,7 +574,6 @@ optIf mkDo mkIf at c t f =
     DLA_Literal (DLL_Bool True) -> mkDo <$> opt t
     DLA_Literal (DLL_Bool False) -> mkDo <$> opt f
     c' -> do
-      -- XXX We could see if c' is something like `DLVar x == DLArg y` and add x -> y to the optimization environment. A general way to do this would be to have something that says "If this variable were True, you'd know _this_. So `z = x && y` would say `z => x` and `z => y`. And `x == y` would say `x = y`.
       let learnC b =
             case c' of
               DLA_Var v -> recLearn v $ DLA_Literal $ DLL_Bool b
@@ -676,11 +676,12 @@ optLet at x e = do
                     return ()
                 meh
   svs <- asks eSvs
+  let allowedToRemove = not . flip S.member svs
   case (extract x, (isPure e && canDupe e), e) of
-    (Just dv, True, _) | not (S.member dv svs) -> doit dv
+    (Just dv, True, _) | allowedToRemove dv -> doit dv
     -- Optimize arithmetic even if it is impure (PV_Safe).
     -- It may trap as an effect, but we don't need to worry about it happening multiple times
-    (Just dv, _, DLE_PrimOp {}) | not (S.member dv svs) -> doit dv
+    (Just dv, _, DLE_PrimOp {}) | allowedToRemove dv -> doit dv
     (_, _, DLE_MapSet _ mv fa nva) -> do
       let ref = DLE_MapRef sb mv fa
       mmt <- getMapTy mv
