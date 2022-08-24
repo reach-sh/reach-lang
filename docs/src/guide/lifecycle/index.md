@@ -29,7 +29,7 @@ Start with the 'Why'.
   * Is the persona documented?
   * Who is it trying to impress and why?
   * Who will find value in using this DApp? What pain will it solve?
-  * Will incentives algin for people to use the DApp in the intended manner?
+  * Will incentives align for people to use the DApp in the intended manner?
   * Does this DApp fulfill grant requirements, appeal to certain investors, or potential partner networks?
 * **When** should it be delivered?
   * Does this deadline have a high opportunity cost?
