@@ -5,6 +5,7 @@ module Reach.Eval.Types where
 import qualified Data.ByteString as B
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
+import qualified Data.Text as T
 import Generics.Deriving
 import Reach.AST.Base
 import Reach.AST.DL (DLSBlock)
@@ -91,6 +92,7 @@ data DLValue
   | DLV_Data SrcLoc (M.Map SLVar DLType) String DLValue
   | DLV_Struct SrcLoc [(SLVar, DLValue)]
   | DLV_Bytes SrcLoc B.ByteString
+  | DLV_StringDyn SrcLoc T.Text
 
 instance SrcLocOf DLValue where
   srclocOf = \case
@@ -102,6 +104,7 @@ instance SrcLocOf DLValue where
     DLV_Data at _ _ _ -> at
     DLV_Struct at _ -> at
     DLV_Bytes at _ -> at
+    DLV_StringDyn at _ -> at
 
 data TransferType
   = TT_Pay

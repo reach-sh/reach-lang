@@ -107,6 +107,7 @@ instance Freshen DLLargeArg where
     DLLA_Data t v a -> DLLA_Data t v <$> fu a
     DLLA_Struct kvs -> DLLA_Struct <$> mapM go kvs
     DLLA_Bytes b -> return $ DLLA_Bytes b
+    DLLA_StringDyn t -> return $ DLLA_StringDyn t
     where
       go (k, v) = (,) k <$> fu v
 

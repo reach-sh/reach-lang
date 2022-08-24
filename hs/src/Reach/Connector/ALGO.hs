@@ -1515,6 +1515,15 @@ cprim = \case
     code "txn" ["ApplicationID"]
   GET_ADDRESS -> const $ cContractAddr
   GET_COMPANION -> const $ callCompanion sb CompanionGet
+  STRINGDYN_CONCAT -> call "concat" -- assumes two-args/type safe
+  UINT_TO_STRINGDYN ui -> \case
+    [i] -> do
+      ca i
+      case ui of
+        UI_256 -> return ()
+        UI_Word -> output $ Titob False
+      bad "Uses UInt.toStringDyn"
+    _ -> impossible "UInt.toStringDyn"
   where
     call o = \args -> do
       forM_ args ca
@@ -1825,6 +1834,7 @@ cla = \case
   DLLA_Struct kvs ->
     cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd kvs
   DLLA_Bytes bs -> cbs bs
+  DLLA_StringDyn t -> cbs $ bpack $ T.unpack t
 
 cbs :: B.ByteString -> App ()
 cbs = output . TBytes

@@ -259,6 +259,7 @@ jsLargeArg = \case
   DLLA_Struct kvs ->
     jsLargeArg $ DLLA_Obj $ M.fromList kvs
   DLLA_Bytes b -> return $ jsBytes b
+  DLLA_StringDyn t -> return $ jsString $ T.unpack t
 
 jsBytes :: B.ByteString -> Doc
 jsBytes = jsString . bunpack
@@ -314,6 +315,8 @@ jsPrimApply = \case
   ADDRESS_EQ -> r $ jsApply "stdlib.addressEq"
   TOKEN_EQ -> r $ jsApply "stdlib.tokenEq"
   BYTES_ZPAD xtra -> \args -> return $ jsApply "stdlib.bytesConcat" (args <> [jsBytes $ bytesZero xtra])
+  STRINGDYN_CONCAT -> r $ jsApply "stdlib.stringDynConcat"
+  UINT_TO_STRINGDYN t -> r $ jsApply_ui t "stdlib.uintToStringDyn"
   BTOI_LAST8 _ -> r $ jsApply "stdlib.btoiLast8"
   CTC_ADDR_EQ -> r $ jsApply "stdlib.ctcAddrEq"
   GET_CONTRACT -> const $ do
@@ -1195,7 +1198,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 22
+reachBackendVersion = 23
 
 jsPIProg :: ConnectorObject -> PLProg -> App Doc
 jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do

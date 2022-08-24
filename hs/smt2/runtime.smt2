@@ -46,7 +46,10 @@
 (declare-fun BytesDyn_toBytes (BytesDyn) Bytes)
 
 (declare-sort StringDyn 0)
+(declare-fun stringDyn (Int) StringDyn)
 (declare-fun StringDyn_toBytes (StringDyn) Bytes)
+(declare-fun StringDyn_Concat (StringDyn StringDyn) StringDyn)
+(declare-fun UInt_toStringDyn (UInt) StringDyn)
 
 (declare-sort Digest 0)
 (declare-fun digest (Bytes) Digest)

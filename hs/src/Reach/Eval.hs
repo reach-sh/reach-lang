@@ -233,6 +233,7 @@ instance Pandemic DLLargeArg where
     DLLA_Data m s a -> DLLA_Data m s <$> pan a
     DLLA_Struct vars_args -> DLLA_Struct <$> pan vars_args
     DLLA_Bytes s -> return $ DLLA_Bytes s
+    DLLA_StringDyn s -> return $ DLLA_StringDyn s
 
 instance Pandemic DLSend where
   pan (DLSend b r s t) =
