@@ -362,8 +362,14 @@ readDepth v = do
 
 uint8ArrayToString :: Integer -> Doc -> App Doc
 uint8ArrayToString len x = do
-  let xs = solBytesSplit len $ \i _ -> x <> ".elem" <> pretty i
-  return $ solApply "string" [solApply "bytes.concat" xs]
+  let xs =
+        case len > byteChunkSize of
+          True ->
+            solApply "bytes.concat" $
+              solBytesSplit len (const $ impossible "uint8ArrayToString") $
+                \ i -> const $ x <> ".elem" <> pretty i
+          False -> solApply "abi.encodePacked" [x]
+  return $ solApply "string" [xs]
 
 class DepthOf a where
   depthOf :: a -> App Int
@@ -492,7 +498,7 @@ mustBeMem = \case
   T_Null -> False
   T_Bool -> False
   T_UInt _ -> False
-  T_Bytes _ -> True
+  T_Bytes sz -> sz > byteChunkSize
   T_BytesDyn -> True
   T_StringDyn -> True
   T_Digest -> False
@@ -1081,21 +1087,30 @@ solCom = \case
     addMemVar dv
     dv' <- solVar dv
     x' <- solArg x
-    let x_sz = arraySize x
-    let go i _ = dv' <> ei <+> "=" <> x' <> ei <> semi
-          where
-            ei = ".elem" <> pretty i
-    return $ vsep $ solBytesSplit x_sz go
+    let sz = arraySize $ DLA_Var dv
+    let xHowMany = fst $ solBytesInfo $ arraySize x
+    let xIsStruct = xHowMany > 1
+    let goSmall _ = dv' <+> "=" <> x' <> semi
+    let goBig i _ = case i of
+          _
+            -- When x is Bytes(<= 32), assign all of x to the first element of dv
+            | i == 0 && 1 == xHowMany -> dv' <> ".elem0" <+> "=" <> x' <> semi
+            -- When x is Bytes(> 32) and we have yet to assign all of x to dv
+            | xIsStruct && i <= xHowMany -> dv' <> ei <+> "=" <> x' <> ei <> semi
+            -- Nothing left to take from x, no more assignments, rest of bytes will be null
+            | otherwise -> ""
+          where ei = ".elem" <> pretty i
+    return $ vsep $ solBytesSplit sz goSmall goBig
   DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ BYTES_XOR [x, y]) -> do
     addMemVar dv
     dv' <- solVar dv
     let bl = bytesTypeLen $ argTypeOf x
     x' <- solArg x
     y' <- solArg y
-    let go i _ = dv' <> ei <+> "=" <+> x' <> ei <+> "^" <+> y' <+> ei <> semi
-          where
-            ei = ".elem" <> pretty i
-    return $ vsep $ solBytesSplit bl go
+    let goSmall _ = dv' <+> "=" <+> x' <+> "^" <+> y' <> semi
+    let goBig i _ =  dv' <> ei <+> "=" <+> x' <> ei <+> "^" <+> y' <+> ei <> semi
+            where ei = ".elem" <> pretty i
+    return $ vsep $ solBytesSplit bl goSmall goBig
   DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ (BTOI_LAST8 True) [x]) -> do
     addMemVar dv
     dv' <- solVar dv
@@ -1108,10 +1123,12 @@ solCom = \case
     let (howMany, lastLen) = solBytesInfo $ bytesTypeLen $ argTypeOf x
     let go :: Integer -> Integer -> Integer -> Doc
         go elemIdx from to =  "for(uint i = " <> pretty from <> "; i < " <> pretty to <> "; i++) {" <> hardline <>
-                                  dv' <+> "=" <+> parens (dv' <+> "* 256") <+> "+" <+> "uint8" <> parens ("bytes1" <> parens (x' <> ei <> brackets "i")) <> semi <>
+                                  dv' <+> "=" <+> parens (dv' <+> "* 256") <+> "+" <+> "uint8" <> parens ("bytes1" <> parens (x'' <> brackets "i")) <> semi <>
                                   hardline <> "}"
           where
-            ei = ".elem" <> pretty elemIdx
+            x'' = case howMany == 1 of
+                  True -> x'
+                  False -> x' <> ".elem" <> pretty elemIdx
     let (res:: [Doc]) = case (lastLen < 8, howMany == 1) of
               -- The last chunk is >= 8 bytes: take 8 bytes
               (False, _) -> [go lastChunk (lastLen - 8) lastLen]
@@ -1400,12 +1417,16 @@ solBytesInfo sz = (howMany, lastLen)
         True -> byteChunkSize
         False -> szRem
 
-solBytesSplit :: Integer -> (Integer -> Integer -> a) -> [a]
-solBytesSplit sz f = map go [0 .. lastOne]
+-- `goSmall` handles the case where `bytes` is not a struct
+solBytesSplit :: Integer -> (Integer -> a) -> (Integer -> Integer -> a) -> [a]
+solBytesSplit sz goSmall goBig =
+  case lastOne of
+    0 -> [goSmall lastLen]
+    _ -> map go [0 .. lastOne]
   where
     (howMany, lastLen) = solBytesInfo sz
     lastOne = howMany - 1
-    go i = f i len
+    go i = goBig i len
       where
         len = case i == lastOne of
           True -> lastLen
@@ -1533,11 +1554,13 @@ solDefineType t = case t of
   T_Null -> base
   T_Bool -> base
   T_UInt _ -> base
-  T_Bytes sz -> do
+  T_Bytes sz
+    | sz <= byteChunkSize -> base
+    | otherwise -> do
     -- NOTE: Get rid of this stupidity when
     -- https://github.com/ethereum/solidity/issues/8772
-    let atsn = solBytesSplit sz $ \i n ->
-          ("elem" <> pretty i, "bytes" <> pretty n)
+    let atsn = solBytesSplit sz (const $ impossible "atsn") $
+                  \ i n -> ("elem" <> pretty i, "bytes" <> pretty n)
     (name, i) <- addName
     let x = fromMaybe (impossible "bytes") $ solStruct name atsn
     addDef i x
@@ -1658,7 +1681,7 @@ createAPIRng env =
 
 baseTypes :: M.Map DLType Doc
 baseTypes =
-  M.fromList
+  M.fromList $
     [ (T_Null, "bool")
     , (T_Bool, "bool")
     , (T_UInt UI_Word, "uint256")
@@ -1669,7 +1692,7 @@ baseTypes =
     , (T_Address, "address")
     , (T_Contract, "address")
     , (T_Token, "address")
-    ]
+    ] <> map (\ sz -> (T_Bytes sz, "bytes" <> pretty sz)) [0..byteChunkSize]
 
 contractId :: String
 contractId = "ReachContract"
