@@ -2,6 +2,7 @@ depends_on:
   - devnet-algo
 environment:
   - REACH_DEBUG
+  - REACH_NO_WARN
   - REACH_CONNECTOR_MODE=ALGO-devnet
   - ALGO_SERVER=http://reach-devnet-algo
   - ALGO_PORT=4180

@@ -10,6 +10,7 @@ devnet-algo:
     ${LABELS}
   environment:
     - REACH_DEBUG
+    - REACH_NO_WARN
     - REACH_VERSION=${REACH_VERSION}
     - REACHC_ID
     - REACH_CONNECTOR_MODE=ALGO-devnet

@@ -116,6 +116,9 @@
   "Bytes": {
     "CompletionItemKind": "TypeParameter"
   },
+  "BytesDyn": {
+    "CompletionItemKind": "TypeParameter"
+  },
   "Closed": {
     "CompletionItemKind": "Constant"
   },
@@ -313,6 +316,9 @@
   },
   "Set.new": {
     "CompletionItemKind": "Function"
+  },
+  "StringDyn": {
+    "CompletionItemKind": "TypeParameter"
   },
   "Struct": {
     "CompletionItemKind": "TypeParameter"

@@ -10,10 +10,10 @@ Verification failed:
   // Violation Witness
 
   const x/61 = "A".interact.x;
-  //    ^ could = Token!val!0
+  //    ^ could = Token!val!1
   //      from: ./distinctToks.rsh:5:6:property binding
   const y/62 = "A".interact.y;
-  //    ^ could = Token!val!0
+  //    ^ could = Token!val!1
   //      from: ./distinctToks.rsh:6:6:property binding
 
   // Theorem Formalization

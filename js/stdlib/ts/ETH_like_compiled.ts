@@ -60,16 +60,19 @@ const {
 
 const UInt_max: BigNumber = UInt256_max;
 
-const digest = makeDigest('keccak256', (t:AnyETH_Ty, v:any) => {
+const digest = makeDigest('keccak256', (ts:any[], vs:any[]) => {
   // Note: abiCoder.encode doesn't correctly handle an empty tuple type
-  if (t.paramType === 'tuple()') {
-    if (Array.isArray(v) && v.length === 0) {
-      return v;
+  if (Array.isArray(ts) && ts.length === 0) {
+    if (Array.isArray(vs) && vs.length === 0) {
+      return vs;
     } else {
-      throw Error(`impossible: digest tuple() with non-empty array: ${j2s(v)}`);
+      throw Error(`impossible: digest tuple() with non-empty array: ${j2s(vs)}`);
     }
   }
-  return ethers.utils.defaultAbiCoder.encode([t.paramType], [t.munge(v)])
+  const pts = ts.map((t:any) => t.paramType);
+  const mvs = ts.map((t:any, i:number) => t.munge(vs[i]));
+  debug('digest prep', { ts, vs, pts, mvs });
+  return ethers.utils.defaultAbiCoder.encode(pts, mvs);
 });
 
 const V_Null: CBR_Null = null;
@@ -157,6 +160,37 @@ const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, ETH_Bytes> => {
   };
   return me;
 };
+
+type ETH_BytesDyn = Array<number>;
+const T_BytesDyn: ETH_Ty<CBR_Bytes, ETH_BytesDyn> = (() => {
+  const me = {
+    ...CBR.BT_BytesDyn,
+    munge: ((bv: CBR_Bytes): ETH_BytesDyn => {
+      return Array.from(ethers.utils.toUtf8Bytes(bv));
+    }),
+    unmunge: ((nv: ETH_BytesDyn): CBR_Bytes => {
+      const nv_s = hexToString(ethers.utils.hexlify(unBigInt(nv)));
+      return me.canonicalize(nv_s);
+    }),
+    paramType: 'bytes',
+  };
+  return me;
+})();
+
+type ETH_StringDyn = string;
+const T_StringDyn: ETH_Ty<CBR_Bytes, ETH_StringDyn> = (() => {
+  const me = {
+    ...CBR.BT_StringDyn,
+    munge: ((bv: CBR_Bytes): ETH_StringDyn => {
+      return bv;
+    }),
+    unmunge: ((nv: ETH_StringDyn): CBR_Bytes => {
+      return nv;
+    }),
+    paramType: 'string',
+  };
+  return me;
+})();
 
 const T_Digest: ETH_Ty<CBR_Digest, BigNumber> = {
   ...CBR.BT_Digest,
@@ -373,6 +407,8 @@ const typeDefs: TypeDefs<AnyETH_Ty> = {
   T_UInt,
   T_UInt256,
   T_Bytes,
+  T_BytesDyn,
+  T_StringDyn,
   T_Address,
   T_Contract,
   T_Digest,

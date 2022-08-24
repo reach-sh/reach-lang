@@ -27,6 +27,8 @@ data SLType
   | ST_Bool
   | ST_UInt UIntTy
   | ST_Bytes Integer
+  | ST_BytesDyn
+  | ST_StringDyn
   | ST_Digest
   | ST_Address
   | ST_Contract
@@ -59,6 +61,8 @@ instance Show SLType where
     ST_UInt UI_Word  -> "UInt"
     ST_UInt UI_256 -> "UInt256"
     ST_Bytes sz -> "Bytes(" <> show sz <> ")"
+    ST_BytesDyn -> "BytesDyn"
+    ST_StringDyn -> "StringDyn"
     ST_Digest -> "Digest"
     ST_Address -> "Address"
     ST_Contract -> "Contract"
@@ -86,6 +90,8 @@ st2dt = \case
   ST_Bool -> pure T_Bool
   ST_UInt t -> pure $ T_UInt t
   ST_Bytes i -> pure $ T_Bytes i
+  ST_BytesDyn -> pure $ T_BytesDyn
+  ST_StringDyn -> pure $ T_StringDyn
   ST_Digest -> pure T_Digest
   ST_Address -> pure T_Address
   ST_Contract -> pure T_Contract
@@ -106,6 +112,8 @@ dt2st = \case
   T_Bool -> ST_Bool
   T_UInt t -> ST_UInt t
   T_Bytes i -> ST_Bytes i
+  T_BytesDyn -> ST_BytesDyn
+  T_StringDyn -> ST_StringDyn
   T_Digest -> ST_Digest
   T_Address -> ST_Address
   T_Contract -> ST_Contract

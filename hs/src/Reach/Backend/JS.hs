@@ -132,6 +132,8 @@ jsContract_ = \case
   T_Bytes sz -> do
     sz' <- jsCon $ DLL_Int sb UI_Word sz
     return $ jsApply "stdlib.T_Bytes" [sz']
+  T_BytesDyn -> return $ "stdlib.T_BytesDyn"
+  T_StringDyn -> return $ "stdlib.T_StringDyn"
   T_Digest -> return $ "stdlib.T_Digest"
   T_Address -> return $ "stdlib.T_Address"
   T_Contract -> return $ "stdlib.T_Contract"
@@ -261,15 +263,15 @@ jsLargeArg = \case
 jsBytes :: B.ByteString -> Doc
 jsBytes = jsString . bunpack
 
-jsContractAndVals :: [DLArg] -> App [Doc]
-jsContractAndVals as = do
+jsContractsAndVals :: [DLArg] -> App [Doc]
+jsContractsAndVals as = do
   let la = DLLA_Tuple as
-  ctc <- jsContract $ largeArgTypeOf la
+  ctcs <- jsArray <$> (mapM jsContract $ map argTypeOf as)
   as' <- jsLargeArg la
-  return $ [ctc, as']
+  return $ [ctcs, as']
 
 jsDigest :: AppT [DLArg]
-jsDigest as = jsApply "stdlib.digest" <$> jsContractAndVals as
+jsDigest as = jsApply "stdlib.digest" <$> jsContractsAndVals as
 
 jsUIntTy :: UIntTy -> Doc
 jsUIntTy t = if t == UI_Word then "\"UInt\"" else "\"UInt256\""
@@ -278,27 +280,27 @@ jsPrimApply :: PrimOp -> [Doc] -> App Doc
 jsPrimApply = \case
   SELF_ADDRESS {} -> r $ jsApply "ctc.selfAddress"
   ADD t PV_Safe -> r $ jsApply_ui t "stdlib.safeAdd"
-  ADD t PV_Veri -> r $ jsApply_ui t "stdlib.add"
+  ADD t _ -> r $ jsApply_ui t "stdlib.add"
   SUB t PV_Safe -> r $ jsApply_ui t "stdlib.safeSub"
-  SUB t PV_Veri -> r $ jsApply_ui t "stdlib.sub"
+  SUB t _ -> r $ jsApply_ui t "stdlib.sub"
   MUL t PV_Safe -> r $ jsApply_ui t "stdlib.safeMul"
-  MUL t PV_Veri -> r $ jsApply_ui t "stdlib.mul"
+  MUL t _ -> r $ jsApply_ui t "stdlib.mul"
   DIV t PV_Safe -> r $ jsApply_ui t "stdlib.safeDiv"
-  DIV t PV_Veri -> r $ jsApply_ui t "stdlib.div"
+  DIV t _ -> r $ jsApply_ui t "stdlib.div"
   MOD t PV_Safe -> r $ jsApply_ui t "stdlib.safeMod"
-  MOD t PV_Veri -> r $ jsApply_ui t "stdlib.mod"
+  MOD t _ -> r $ jsApply_ui t "stdlib.mod"
   PLT t -> r $ jsApply_ui t "stdlib.lt"
   PLE t -> r $ jsApply_ui t "stdlib.le"
   PEQ t -> r $ jsApply_ui t "stdlib.eq"
   PGE t -> r $ jsApply_ui t "stdlib.ge"
   PGT t -> r $ jsApply_ui t "stdlib.gt"
   SQRT t -> r $ jsApply_ui t "stdlib.sqrt"
-  UCAST dom rng trunc PV_Veri -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy dom, jsUIntTy rng ] <> a <> [ jsBool trunc, "false" ]
-  UCAST dom rng trunc _ -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy dom, jsUIntTy rng ] <> a <> [ jsBool trunc, "true" ]
+  UCAST dom rng trunc PV_Safe -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy dom, jsUIntTy rng ] <> a <> [ jsBool trunc, "true" ]
+  UCAST dom rng trunc _ -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy dom, jsUIntTy rng ] <> a <> [ jsBool trunc, "false" ]
   LSH -> r $ jsApply "stdlib.lsh"
   RSH -> r $ jsApply "stdlib.rsh"
   MUL_DIV PV_Safe -> r $ jsApply "stdlib.safeMuldiv"
-  MUL_DIV PV_Veri -> r $ jsApply "stdlib.muldiv"
+  MUL_DIV _ -> r $ jsApply "stdlib.muldiv"
   BAND t -> r $ jsApply_ui t "stdlib.band"
   BIOR t -> r $ jsApply_ui t "stdlib.bior"
   BXOR t -> r $ jsApply_ui t "stdlib.bxor"
@@ -346,6 +348,8 @@ shouldHashMapKey = \case
   T_Contract -> False
   T_Token -> False
   T_Bytes {} -> True
+  T_BytesDyn -> True
+  T_StringDyn -> True
   T_Array {} -> True
   T_Data {} -> True
   T_Tuple {} -> True
@@ -1132,7 +1136,8 @@ jsViews (cvs, vis) = do
             return $ jsWhen c $ vsep [let', ret']
       let enInfo' :: Maybe SLPart -> (SLVar, DLView) -> App ([(SLVar, Doc)], Doc)
           enInfo' v (k, (vt, aliases)) = do
-            let (_, rng) = itype2arr vt
+            let (dom, rng) = itype2arr vt
+            dom' <- jsArray <$> mapM jsContract dom
             rng' <- jsContract rng
             body <- (vsep . M.elems) <$> mapWithKeyM (enDecode v k) vis
             let body' = vsep [body, illegal]
@@ -1141,7 +1146,8 @@ jsViews (cvs, vis) = do
             let view_asn = "const " <> name <> " = " <> decode' <> ";"
             let val = jsObject $
                         M.fromList $
-                          [ ("ty" :: String, rng')
+                          [ ("dom" :: String, dom')
+                          , ("rng", rng')
                           , ("decode", name)
                           ]
             return $ (,view_asn) $ map (, val) $ k : map bunpack aliases
@@ -1189,7 +1195,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 19
+reachBackendVersion = 22
 
 jsPIProg :: ConnectorObject -> PLProg -> App Doc
 jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do

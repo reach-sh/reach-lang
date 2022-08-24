@@ -439,6 +439,7 @@ mkScript connectorMode' wrapped = do
 
           export REACH_CONNECTOR_MODE
           export REACH_DEBUG
+          export REACH_NO_WARN
           export REACH_IDE
           export REACH_RPC_KEY
           export REACH_RPC_PORT
@@ -759,6 +760,7 @@ withCompose DockerMeta {..} wrapped = do
       tty: true
       environment:
         - REACH_DEBUG
+        - REACH_NO_WARN
         - REACH_CONNECTOR_MODE
         - REACH_ISOLATED_NETWORK
         - REACT_APP_REACH_DEBUG=$debug'
@@ -779,6 +781,7 @@ withCompose DockerMeta {..} wrapped = do
       tty: true
       environment:
         - REACH_DEBUG
+        - REACH_NO_WARN
         - REACH_CONNECTOR_MODE=$reachConnectorMode
         - REACH_ISOLATED_NETWORK
         - REACH_RPC_PORT
@@ -1099,6 +1102,7 @@ compile = command "compile" $ info f d
             -e REACH_CONNECTOR_MODE \
             -e REACH_IDE \
             -e REACH_DEBUG \
+            -e REACH_NO_WARN \
             -e "REACHC_ID=$whoami'" \
             -e "CI=$ci'" \
             "$$cid" reachc $args

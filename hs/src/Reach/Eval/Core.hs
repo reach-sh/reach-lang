@@ -572,6 +572,8 @@ base_env_slvals =
   , ("UInt", SLV_Type $ ST_UInt UI_Word)
   , ("UInt256", SLV_Type $ ST_UInt UI_256)
   , ("Bytes", SLV_Prim SLPrim_Bytes)
+  , ("BytesDyn", SLV_Type $ ST_BytesDyn)
+  , ("StringDyn", SLV_Type $ ST_StringDyn)
   , ("Contract", SLV_Type ST_Contract)
   , ("ContractCode", SLV_Prim $ SLPrim_ContractCode)
   , ("Address", SLV_Type ST_Address)
@@ -838,6 +840,8 @@ applyType ct v = \case
   ST_Bool -> meh
   ST_UInt {} -> meh
   ST_Bytes {} -> meh
+  ST_BytesDyn -> meh
+  ST_StringDyn -> meh
   ST_Digest -> meh
   ST_Address -> meh
   ST_Contract -> meh
@@ -2369,10 +2373,12 @@ evalPrimOp sp sargs = do
                   _ -> impossible "mul args"
             ra <- doOp (T_UInt t) (DIV t pv) [lim_maxUInt_a, b]
             ca <- doCmp (PLE t) [a, ra]
-            dopClaim ca "mul overflow"
+            denomZero <- doCmp (PEQ t) [(DLA_Literal $ DLL_Int at t 0), b]
+            orDenomZeroCa <- doOp (T_Bool) IF_THEN_ELSE [denomZero, (DLA_Literal $ DLL_Bool True), ca]
+            dopClaim orDenomZeroCa "mul overflow"
       let shouldVerifyArith = \case
             PV_Veri -> True
-            PV_Safe -> False
+            _ -> False
       let whenShouldVerifyArith pv = when $ shouldVerifyArith pv
       case p of
         ADD t pv -> whenShouldVerifyArith pv $ verifyAdd t
@@ -2572,8 +2578,8 @@ doBalanceUpdate mtok op = \case
     bsv <- getBalanceOf mtok
     -- Assume we can add/sub from balance
     let assumeOps = M.fromList [
-          (S_ADD Nothing, (ADD UI_Word PV_Safe, assumeLtUMax)),
-          (S_SUB Nothing, (SUB UI_Word PV_Safe, assumeGtZero)) ]
+          (S_ADD (Just PV_None), (ADD UI_Word PV_None, assumeLtUMax)),
+          (S_SUB (Just PV_None), (SUB UI_Word PV_None, assumeGtZero)) ]
     whenVerifyArithmetic $ do
       forM_ (M.lookup op assumeOps) $
         assumeBalanceUpdate (snd bsv) rhs
@@ -2651,7 +2657,7 @@ tokenPay :: Maybe DLArg -> DLArg -> B.ByteString -> ReaderT Env IO ()
 tokenPay mtok_a amt_a msg = do
   amt_sv <- argToSV amt_a
   doBalanceAssert mtok_a amt_sv S_PLE msg
-  doBalanceUpdate mtok_a (S_SUB Nothing) amt_sv
+  doBalanceUpdate mtok_a (S_SUB $ Just PV_None) amt_sv
 
 getBillTokens :: Maybe (Either SLVal SLVal) -> DLPayAmt -> App (Bool, [DLArg])
 getBillTokens mbill billAmt = do
@@ -2759,8 +2765,8 @@ evalPrim p sargs =
       let mtok_a = Just toka
       amt_sv <- argToSV amta
       doBalanceAssert mtok_a amt_sv S_PLE (bpack lab)
-      doBalanceUpdate mtok_a (S_SUB Nothing) amt_sv
-      tokenMetaUpdate TM_Supply toka (S_SUB Nothing) amt_sv
+      doBalanceUpdate mtok_a (S_SUB $ Just PV_None) amt_sv
+      tokenMetaUpdate TM_Supply toka (S_SUB $ Just PV_None) amt_sv
       ctxt_lift_eff $ DLE_TokenBurn at toka amta
       return $ public $ SLV_Null at lab
     SLPrim_Token_destroy -> do
@@ -3746,21 +3752,21 @@ evalPrim p sargs =
                 return (2, Just nnTokAmts)
       (resi, mNonNetToksRecv) <- getRemoteResults
       res <- doArrRef_ res' $ SLV_Int at nn resi
-      doBalanceUpdate Nothing (S_ADD Nothing) apdvv
+      doBalanceUpdate Nothing (S_ADD $ Just PV_None) apdvv
       case fromMaybe (Right zero) mbill of
         Left _ -> do
           forM_ (zip nntbRecv [0 .. length nntbRecv - 1]) $ \(t, i) ->
             case mNonNetToksRecv of
               Nothing -> return ()
               Just nnTokAmts -> do
-                doBalanceUpdate (Just t) (S_ADD Nothing)
+                doBalanceUpdate (Just t) (S_ADD $ Just PV_None)
                   =<< doArrRef_ nnTokAmts (SLV_Int at nn $ fromIntegral i)
           return $ public res'
         Right _ -> do
           sv <- argToSV $ pa_net billAmt
           forM_ (pa_ks billAmt) $ \(a, t) -> do
             a' <- argToSV a
-            doBalanceUpdate (Just t) (S_ADD Nothing) a'
+            doBalanceUpdate (Just t) (S_ADD $ Just PV_None) a'
           -- Ensure we're paid expected network tokens
           cmp_v <- evalApplyVals' (SLV_Prim $ SLPrim_op S_PEQ) [public sv, public apdvv]
           void $
@@ -5194,7 +5200,7 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
         fs <- e_stack <$> ask
         let checkPayAmt1 mtok pa = do
               sv <- argToSV pa
-              doBalanceUpdate mtok (S_ADD Nothing) sv
+              doBalanceUpdate mtok (S_ADD $ Just PV_None) sv
               ctxt_lift_eff $ DLE_CheckPay at fs pa mtok
         checkPayAmt1 Nothing pa_net
         forM_ pa_ks $ uncurry $ flip $ checkPayAmt1 . Just
@@ -5294,6 +5300,8 @@ typeToExpr = \case
   T_UInt UI_Word -> var "UInt"
   T_UInt UI_256 -> var "UInt256"
   T_Bytes i -> call "Bytes" [ie i]
+  T_BytesDyn -> var "BytesDyn"
+  T_StringDyn -> var "StringDyn"
   T_Digest -> var "Digest"
   T_Address -> var "Address"
   T_Contract -> var "Contract"

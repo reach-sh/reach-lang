@@ -86,12 +86,13 @@ export const debug = (...msgs: any) => {
 };
 
 export type IBackendViewInfo<ConnectorTy extends AnyBackendTy> = {
-  ty: ConnectorTy,
+  dom: [ConnectorTy],
+  rng: ConnectorTy,
   decode: (i:number, svs:Array<any>, args:Array<any>) => Promise<any>,
 };
 
 const isUntaggedView = (x: any) => {
-  return 'ty' in x && 'decode' in x;
+  return 'dom' in x && 'rng' in x && 'decode' in x;
 }
 
 export type IBackendViewsInfo<ConnectorTy extends AnyBackendTy> =
@@ -427,7 +428,7 @@ export const stdContract =
       return (typeof am === 'object')
         ? objectMap(am, f)
         : f(undefined, am);
-  }));
+    }));
 
   const apis = mkApis(false);
   const safeApis = mkApis(true);
@@ -699,15 +700,16 @@ export const envDefaultNoEmpty = <T>(v: string|undefined|null, d: T): string|T =
 }
 
 type DigestMode = 'keccak256' | 'sha256';
-export const makeDigest = (mode: DigestMode, prep: any) => (t:any, v:any) => {
+export const makeDigest = (mode: DigestMode, prep: any) => (ts_:any, vs_:any) => {
+  const [ ts, vs ] = Array.isArray(ts_) ? [ ts_, vs_ ] : [ [ts_], [vs_] ];
   void(hexlify);
   // const args = [t, v];
   // debug('digest(', args, ') =>');
-  const kekCat = prep(t, v);
+  const kekCat = prep(ts, vs);
   // debug('digest(', args, ') => internal(', hexlify(kekCat), ')');
   const f = mode === 'keccak256' ? ethers.utils.keccak256 : ethers.utils.sha256;
   const r = f(kekCat);
-  debug('digest', {mode, prep, t, v, kekCat, f, r});
+  debug('digest', {mode, prep, ts, vs, kekCat, f, r});
   // debug('keccak(', args, ') => internal(', hexlify(kekCat), ') => ', r);
   return r;
 };

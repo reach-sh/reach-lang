@@ -34,21 +34,23 @@ Whenever you are interacting with the Reach standard library, you need to rememb
 
 @{ref("js", "Contract")}
 ```js
-// Reach  => JavaScript
-Null      => null
-Bool      => 'boolean'
-UInt      => 'BigNumber'
-UInt256   => 'BigNumber'
-Bytes     => 'string'
-Digest    => 'BigNumber'
-Address   => NetworkAccount
-Contract  => Address on ETH; UInt on ALGO
-Token     => Address on ETH; UInt on ALGO
-Array     => array
-Tuple     => array
-Object    => object
-Data      => ['variant', value]
-Struct    => object
+// Reach   => JavaScript
+Null       => null
+Bool       => 'boolean'
+UInt       => 'BigNumber'
+UInt256    => 'BigNumber'
+Bytes(len) => 'string'
+BytesDyn   => 'string'
+String     => 'string'
+Digest     => 'BigNumber'
+Address    => NetworkAccount
+Contract   => Address on ETH; UInt on ALGO
+Token      => Address on ETH; UInt on ALGO
+Array      => array
+Tuple      => array
+Object     => object
+Data       => ['variant', value]
+Struct     => object
 ```
 
 For example, the Reach type `{!rsh} MInt = Data({None: Null, Some: UInt})` inhabitant `{!rsh} MInt.Some(42)` is represented as `{!rsh} ['Some', 42]` in JavaScript.
@@ -1261,6 +1263,8 @@ stdlib.T_Null // : ReachType
 stdlib.T_Bool // : ReachType
 stdlib.T_UInt // ReachType
 stdlib.T_Bytes(number) // : ReachType
+stdlib.T_BytesDyn // : ReachType
+stdlib.T_StringDyn // : ReachType
 stdlib.T_Digest // : ReachType
 stdlib.T_Address // : ReachType
 stdlib.T_Array(ReachType, number) // : ReachType
@@ -1345,15 +1349,17 @@ These are additional conversion and comparison utilities.
 ---
 @{ref("js", "digest")}
 ```js
-stdlib.digest(ty:Type, x:ty) => Digest
+stdlib.digest(ty:Type, v:ty) => Digest
+stdlib.digest(tys:Type[], vs:tys) => Digest
 ```
 
-Hashes the value.
+Hashes the values.
+If given one type and one value, the result is the same as if the arguments were each wrapped in an array.
 
 ```js
 load: /examples/digest-mod/index.mjs
-md5: 73fef9371959b81f0609bd7622a9eb27
-range: 14-15
+md5: e53eb004657f03e541768cdbb6e39123
+range: 23-25
 ```
 
 The `ExampleeExampleeExampleeExamplee` is a string of the Reach type that `{!rsh} digest` turns into a hash.

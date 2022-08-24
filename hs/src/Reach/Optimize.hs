@@ -16,6 +16,8 @@ import Reach.UnrollLoops
 import Reach.Util
 import Safe (atMay)
 import qualified Data.ByteString as B
+import Reach.CollectSvs
+import Reach.AST.SL
 
 type App = ReaderT Env IO
 
@@ -43,6 +45,7 @@ data CommonEnv = CommonEnv
   , cePrev :: M.Map DLExpr RepeatedT
   , ceNots :: M.Map DLVar DLArg
   , ceKnownLargeArgs :: M.Map DLVar DLLargeArg
+  , ceExpr :: M.Map DLVar DLExpr
   }
 
 instance Show CommonEnv where
@@ -55,12 +58,13 @@ instance Semigroup CommonEnv where
       , cePrev = g cePrev
       , ceNots = g ceNots
       , ceKnownLargeArgs = g ceKnownLargeArgs
+      , ceExpr = g ceExpr
       }
     where
       g f = f x <> f y
 
 instance Monoid CommonEnv where
-  mempty = CommonEnv mempty mempty mempty mempty
+  mempty = CommonEnv mempty mempty mempty mempty mempty
 
 data Env = Env
   { eFocus :: Focus
@@ -72,6 +76,7 @@ data Env = Env
   , eMaps :: DLMapInfos
   , eClearMaps :: Bool
   , eSimulate :: Bool
+  , eSvs :: S.Set DLVar
   }
 
 updateClearMaps :: Bool -> Env -> Env
@@ -161,7 +166,7 @@ recordKnownLargeArg dv v =
 
 remember_ :: Bool -> DLVar -> DLExpr -> App ()
 remember_ always v e =
-  updateLookup (\cenv -> cenv {cePrev = up $ cePrev cenv})
+  updateLookup (\cenv -> cenv {cePrev = up $ cePrev cenv, ceExpr = M.insert v e $ ceExpr cenv })
   where
     up prev =
       case always || not (M.member e prev) of
@@ -201,8 +206,8 @@ updateLookup up = do
           F_One _ -> f == eFocus
   updateLookupWhen writeHuh up
 
-mkEnv0 :: Counter -> Counter -> S.Set DLVar -> [SLPart] -> DLMapInfos -> Bool -> IO Env
-mkEnv0 eCounter eDroppedAsserts eConst eParts eMaps eSimulate = do
+mkEnv0 :: Counter -> Counter -> S.Set DLVar -> [SLPart] -> DLMapInfos -> Bool -> S.Set DLVar -> IO Env
+mkEnv0 eCounter eDroppedAsserts eConst eParts eMaps eSimulate eSvs = do
   let eFocus = F_Ctor
   let eClearMaps = False
   let eEnvs =
@@ -345,6 +350,10 @@ instance Optimize DLRemote where
   opt (DLRemote m amta as wbill malgo) = DLRemote <$> pure m <*> opt amta <*> opt as <*> opt wbill <*> opt malgo
   gcs _ = return ()
 
+instance Optimize Integer where
+  opt i = return i
+  gcs _ = return ()
+
 instance Optimize DLExpr where
   opt = \case
     DLE_Arg at a -> DLE_Arg at <$> opt a
@@ -415,7 +424,7 @@ instance Optimize DLExpr where
             return $ DLE_Arg at $ DLA_Literal $ DLL_Bool True
         _ -> meh
     DLE_ArrayRef at a i -> DLE_ArrayRef at <$> opt a <*> opt i
-    DLE_ArraySet at a i v -> DLE_ArraySet at <$> opt a <*> opt i <*> opt v
+    DLE_ArraySet at a i v -> optSet DLE_ArraySet DLE_ArrayRef at a i v
     DLE_ArrayConcat at x0 y0 -> DLE_ArrayConcat at <$> opt x0 <*> opt y0
     DLE_TupleRef at t i -> do
       t' <- opt t
@@ -483,10 +492,25 @@ instance Optimize DLExpr where
         _ -> meh
     DLE_ContractNew at cns dr -> DLE_ContractNew at <$> opt cns <*> opt dr
     DLE_ObjectSet at o k v -> DLE_ObjectSet at <$> opt o <*> pure k <*> opt v
-    DLE_TupleSet at t k v -> DLE_TupleSet at <$> opt t <*> pure k <*> opt v
+    DLE_TupleSet at t k v -> optSet DLE_TupleSet DLE_TupleRef at t k v
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
   gcs _ = return ()
+
+-- Opt:
+--  const x = xs[idx];
+--  const xs' = xs.set(idx, x);
+-- =>
+--  const xs' = xs
+optSet :: Optimize t => (SrcLoc -> DLArg -> t -> DLArg -> DLExpr) -> (SrcLoc -> DLArg -> t -> DLExpr) -> SrcLoc -> DLArg -> t -> DLArg -> App DLExpr
+optSet setE refE at a i v = do
+  a' <- opt a
+  i' <- opt i
+  v' <- opt v
+  v'' <- repeated $ sani $ refE at a' i'
+  case v'' of
+    Just (Left dv) | dv == v' -> opt $ DLE_Arg at a'
+    _ -> return $ setE at a' i' v'
 
 instance Optimize DLAssignment where
   opt (DLAssignment m) = DLAssignment <$> opt m
@@ -501,17 +525,58 @@ instance Extract (Maybe DLVar) where
 allTheSame :: (Eq a, Sanitize a) => [a] -> Either (Maybe (a, a)) a
 allTheSame = allEqual . map sani
 
+-- Given that the result of `a` is `DLArg`, learn new bindings
+class Learn a where
+  learn :: DLArg -> a -> [(DLVar, DLArg)]
+
+instance Learn DLArg where
+  learn result = \case
+    DLA_Var dv -> [(dv, result)]
+    _ -> []
+
+instance Learn DLExpr where
+  learn result = \case
+    DLE_PrimOp _ IF_THEN_ELSE [DLA_Var dv, lhs, rhs]
+      -- r = true, x ? true : true  => []
+      -- r = v2  , x ? v2 : y       => [(x, true)]
+      | lhs `equiv` result && not (rhs `equiv` result) -> [(dv, true)]
+      | rhs `equiv` result && not (lhs `equiv` result) -> [(dv, false)]
+      -- r = false, x ? true : v3   => [(x, false), (v3, false)]
+      | areBool [result, lhs] && (lhs /= result) -> (dv, false) : mAsn result rhs
+      | areBool [result, rhs] && (rhs /= result) -> (dv, true) : mAsn result lhs
+    DLE_PrimOp _ op [DLA_Var dv, other]
+      | chkEq op -> [(dv, other)]
+    DLE_PrimOp _ op [other, DLA_Var dv]
+      | chkEq op -> [(dv, other)]
+    DLE_Arg _ darg -> learn result darg
+    _ -> []
+    where
+      chkEq op = isAnEqual op && result == true
+      false = DLA_Literal $ DLL_Bool False
+      true  = DLA_Literal $ DLL_Bool True
+      mAsn v = \case
+        DLA_Var dv' -> [(dv', v)]
+        _ -> []
+      areBool = all isBool
+      isBool = \case
+        DLA_Literal (DLL_Bool {}) -> True
+        _ -> False
+
+recLearn :: DLVar -> DLArg -> App ()
+recLearn v inst = do
+  mExpr <- lookupCommon ceExpr v
+  void $ rememberVarIsArg sb v inst
+  mapM_ (uncurry recLearn) $ maybe [] (learn inst) mExpr
+
 optIf :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (SrcLoc -> DLArg -> k -> k -> r) -> SrcLoc -> DLArg -> k -> k -> App r
 optIf mkDo mkIf at c t f =
   opt c >>= \case
     DLA_Literal (DLL_Bool True) -> mkDo <$> opt t
     DLA_Literal (DLL_Bool False) -> mkDo <$> opt f
     c' -> do
-      -- XXX We could see if c' is something like `DLVar x == DLArg y` and add x -> y to the optimization environment. A general way to do this would be to have something that says "If this variable were True, you'd know _this_. So `z = x && y` would say `z => x` and `z => y`. And `x == y` would say `x = y`.
       let learnC b =
             case c' of
-              DLA_Var v ->
-                void $ rememberVarIsArg at v $ DLA_Literal $ DLL_Bool b
+              DLA_Var v -> recLearn v $ DLA_Literal $ DLL_Bool b
               _ -> return ()
       t' <- newScope $ learnC True >> opt t
       f' <- newScope $ learnC False >> opt f
@@ -610,8 +675,13 @@ optLet at x e = do
                   _ ->
                     return ()
                 meh
+  svs <- asks eSvs
+  let allowedToRemove = not . flip S.member svs
   case (extract x, (isPure e && canDupe e), e) of
-    (Just dv, True, _) -> doit dv
+    (Just dv, True, _) | allowedToRemove dv -> doit dv
+    -- Optimize arithmetic even if it is impure (PV_Safe).
+    -- It may trap as an effect, but we don't need to worry about it happening multiple times
+    (Just dv, _, DLE_PrimOp {}) | allowedToRemove dv -> doit dv
     (_, _, DLE_MapSet _ mv fa nva) -> do
       let ref = DLE_MapRef sb mv fa
       mmt <- getMapTy mv
@@ -802,7 +872,7 @@ instance Optimize LLProg where
     let psl = M.keys sps_ies
     cs <- asks eConst
     let mis = dli_maps llp_init
-    env0 <- liftIO $ mkEnv0 (getCounter llp_opts) (llo_droppedAsserts llp_opts) cs psl mis False
+    env0 <- liftIO $ mkEnv0 (getCounter llp_opts) (llo_droppedAsserts llp_opts) cs psl mis False mempty
     local (const env0) $ local (updateClearMaps $ llo_untrustworthyMaps llp_opts) $
       focus_ctor $
         LLProg llp_at llp_opts llp_parts <$> opt llp_init <*> opt llp_exports <*> pure llp_views
@@ -872,11 +942,14 @@ instance Optimize CTail where
     CT_Jump {} -> return ()
 
 instance Optimize CHandler where
-  opt = \case
-    C_Handler {..} -> do
-      C_Handler ch_at ch_int ch_from ch_last ch_svs ch_msg ch_timev ch_secsv <$> opt ch_body
-    C_Loop {..} -> do
-      C_Loop cl_at cl_svs cl_vars <$> opt cl_body
+  opt ch = do
+    let svs = collectSvs ch
+    local (\e -> e { eSvs = svs }) $
+      case ch of
+        C_Handler {..} ->
+          C_Handler ch_at ch_int ch_from ch_last ch_svs ch_msg ch_timev ch_secsv <$> opt ch_body
+        C_Loop {..} -> do
+          C_Loop cl_at cl_svs cl_vars <$> opt cl_body
   gcs = \case
     C_Handler {..} -> gcs ch_body
     C_Loop {..} -> gcs cl_body
@@ -907,19 +980,19 @@ instance Optimize PLProg where
              <*> opt plp_epps <*> opt plp_cpprog
   gcs PLProg {..} = gcs plp_epps >> gcs plp_cpprog
 
-optimize_ :: (Optimize a) => Counter -> Bool -> a -> IO a
-optimize_ c sim t = do
+optimize_ :: (Optimize a) => Counter -> Bool -> S.Set DLVar -> a -> IO a
+optimize_ c sim svs t = do
   eConstR <- newIORef $ mempty
   flip runReaderT (ConstEnv {..}) $ gcs t
   cs <- readIORef eConstR
   let csvs = M.keysSet $ M.filter (\x -> x < 2) cs
   dac <- newCounter 0
-  env0 <- mkEnv0 c dac csvs [] mempty sim
+  env0 <- mkEnv0 c dac csvs [] mempty sim svs
   flip runReaderT env0 $
     opt t
 
 opt_sim :: (Optimize a) => Counter -> a -> IO a
-opt_sim c t = optimize_ c True t
+opt_sim c t = optimize_ c True mempty t
 
 optimize :: (HasCounter a, Optimize a) => a -> IO a
-optimize t = optimize_ (getCounter t) False t
+optimize t = optimize_ (getCounter t) False mempty t
