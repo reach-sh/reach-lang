@@ -156,7 +156,7 @@ The output of the compiler can be committed so that UI developers don't need to 
 
 * Use the designated Reach version to compile: `REACH_VERSION=x.x reach compile`
 * Commit `build/index.main.mjs` and any other files in `build/` that are needed
-* Commit any additional artifacts, such as audits
+* Commit any additional artifacts, such as those useful for auditors
 * gitignore everything else in `build/`
 
 ### Artifacts for Auditors
