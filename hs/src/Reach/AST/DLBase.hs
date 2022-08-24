@@ -403,6 +403,7 @@ data DLLargeArg
   | DLLA_Data (M.Map SLVar DLType) String DLArg
   | DLLA_Struct [(SLVar, DLArg)]
   | DLLA_Bytes B.ByteString
+  | DLLA_StringDyn T.Text
   deriving (Eq, Ord, Generic, Show)
 
 bytesZero :: Integer -> B.ByteString
@@ -422,6 +423,7 @@ instance CanDupe DLLargeArg where
     DLLA_Data _ _ x -> canDupe x
     DLLA_Struct m -> canDupe $ map snd m
     DLLA_Bytes _ -> False
+    DLLA_StringDyn _ -> False
 
 render_dasM :: PrettySubst a => [a] -> PrettySubstApp Doc
 render_dasM as = do
@@ -460,6 +462,7 @@ instance PrettySubst DLLargeArg where
       kvs' <- render_dasM kvs
       return $ "struct" <> brackets kvs'
     DLLA_Bytes bs -> return $ dquotes (pretty $ bunpack bs)
+    DLLA_StringDyn t -> return $ dquotes (pretty t)
 
 mdaToMaybeLA :: DLType -> Maybe DLArg -> DLLargeArg
 mdaToMaybeLA t = \case
@@ -476,6 +479,7 @@ data DLArgExpr
   | DLAE_Data (M.Map SLVar DLType) String DLArgExpr
   | DLAE_Struct [(SLVar, DLArgExpr)]
   | DLAE_Bytes B.ByteString
+  | DLAE_StringDyn T.Text
   deriving (Show)
 
 argExprToArgs :: DLArgExpr -> [DLArg]
@@ -487,6 +491,7 @@ argExprToArgs = \case
   DLAE_Data _ _ ae -> one ae
   DLAE_Struct aes -> many $ map snd aes
   DLAE_Bytes _ -> []
+  DLAE_StringDyn _ -> []
   where
     one = argExprToArgs
     many = concatMap one
@@ -499,6 +504,7 @@ largeArgToArgExpr = \case
   DLLA_Data m v a -> DLAE_Data m v $ DLAE_Arg a
   DLLA_Struct kvs -> DLAE_Struct $ map (\(k, v) -> (,) k $ DLAE_Arg v) kvs
   DLLA_Bytes b -> DLAE_Bytes b
+  DLLA_StringDyn t -> DLAE_StringDyn t
 
 largeArgTypeOf :: DLLargeArg -> DLType
 largeArgTypeOf = argExprTypeOf mempty . largeArgToArgExpr
@@ -512,6 +518,7 @@ argExprTypeOf menv = \case
   DLAE_Data t _ _ -> T_Data t
   DLAE_Struct kvs -> T_Struct $ map (second rec) kvs
   DLAE_Bytes bs -> T_Bytes $ fromIntegral $ B.length bs
+  DLAE_StringDyn _ -> T_StringDyn
   where
     rec = argExprTypeOf menv
 
@@ -672,6 +679,8 @@ data PrimOp
   | BIOR UIntTy
   | BXOR UIntTy
   | BYTES_ZPAD Integer
+  | STRINGDYN_CONCAT
+  | UINT_TO_STRINGDYN UIntTy
   | MUL_DIV PrimVM
   | DIGEST_XOR
   | BYTES_XOR
@@ -717,6 +726,8 @@ instance Pretty PrimOp where
     DIGEST_XOR -> "digest_xor"
     BYTES_XOR -> "bytes_xor"
     BTOI_LAST8 isDigest -> "btoiLast8(" <> bool "Bytes" "Digest" isDigest <> ")"
+    STRINGDYN_CONCAT -> "StringDyn.concat"
+    UINT_TO_STRINGDYN t -> "UInt" <> uitp t <> ".toStringDyn"
     CTC_ADDR_EQ -> "Contract.addressEq"
     GET_CONTRACT -> "getContract()"
     GET_ADDRESS -> "getAddress()"

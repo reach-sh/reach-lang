@@ -294,6 +294,7 @@ instance Optimize DLLargeArg where
     DLLA_Data t vn vv -> DLLA_Data t vn <$> opt vv
     DLLA_Struct kvs -> DLLA_Struct <$> mapM go kvs
     DLLA_Bytes b -> return $ DLLA_Bytes b
+    DLLA_StringDyn t -> return $ DLLA_StringDyn t
     where
       go (k, v) = (,) k <$> opt v
   gcs _ = return ()

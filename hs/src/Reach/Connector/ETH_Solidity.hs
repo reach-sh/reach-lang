@@ -392,6 +392,7 @@ instance DepthOf DLLargeArg where
     DLLA_Data _ _ x -> depthOf x
     DLLA_Struct kvs -> depthOf $ map snd kvs
     DLLA_Bytes {} -> return 1
+    DLLA_StringDyn {} -> return 1
 
 instance DepthOf DLTokenNew where
   depthOf (DLTokenNew {..}) =
@@ -553,7 +554,7 @@ solPrimApply = \case
   PEQ _ -> binOp "=="
   PGE _ -> binOp ">="
   PGT _ -> binOp ">"
-  SQRT _ -> \args -> return $ solApply "safeSqrt" args
+  SQRT _ -> app "safeSqrt"
   UCAST _ _ _ _ -> \case
     [x] -> return x
     _ -> impossible "ucast"
@@ -578,11 +579,14 @@ solPrimApply = \case
   TOKEN_EQ -> binOp "=="
   BYTES_ZPAD {} -> impossible "bytes concat"
   BTOI_LAST8 {} -> impossible "btoiLast8"
+  STRINGDYN_CONCAT -> app "string.concat"
+  UINT_TO_STRINGDYN _ -> app "uintToStringDyn"
   CTC_ADDR_EQ -> binOp "=="
   GET_CONTRACT -> constr "payable(address(this))"
   GET_ADDRESS -> constr "payable(address(this))"
   GET_COMPANION -> impossible "GET_COMPANION"
   where
+    app f args = return $ solApply f args
     constr = const . return
     safeOp pv veriFun safeFun args = do
       return $ flip solApply args $
@@ -629,6 +633,8 @@ solLargeArg' dv la =
       let g2 x = "hex" <> solString (B.foldr g3 "" x)
       let go i x = one (".elem" <> pretty i) (g2 x)
       return $ c $ zipWith go ([0 ..] :: [Int]) cs
+    DLLA_StringDyn s ->
+      return $ one "" $ solString $ T.unpack s
   where
     one :: Doc -> Doc -> Doc
     one f v = dv <> f <+> "=" <+> v <> semi

@@ -87,6 +87,7 @@ instance FreeVars DLLargeArg where
     DLLA_Data _ _ a -> freeVars a
     DLLA_Struct m -> freeVars $ map snd m
     DLLA_Bytes {} -> mempty
+    DLLA_StringDyn {} -> mempty
 
 instance FreeVars DLPayAmt where
   freeVars (DLPayAmt a b) = freeVars a <> freeVars b

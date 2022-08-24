@@ -119,6 +119,7 @@ instance Countable DLLargeArg where
     DLLA_Data _ _ v -> counts v
     DLLA_Struct kvs -> counts $ map snd kvs
     DLLA_Bytes _ -> mempty
+    DLLA_StringDyn _ -> mempty
 
 instance Countable DLTokenNew where
   counts (DLTokenNew a b c d e f) =

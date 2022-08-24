@@ -147,6 +147,7 @@ data SLVal
   | SLV_Bool SrcLoc Bool
   | SLV_Int SrcLoc (Maybe UIntTy) Integer
   | SLV_Bytes SrcLoc B.ByteString
+  | SLV_String SrcLoc T.Text
   | SLV_Array SrcLoc DLType [SLVal]
   | SLV_Tuple SrcLoc [SLVal]
   | SLV_Object SrcLoc (Maybe String) SLEnv
@@ -394,6 +395,7 @@ instance Pretty SLVal where
     SLV_Bool _ b -> pretty b
     SLV_Int _ _ i -> pretty i
     SLV_Bytes _ b -> pretty b
+    SLV_String _ t -> pretty t
     SLV_Array at t as ->
       "array" <> parens (pretty t <> comma <+> pretty (SLV_Tuple at as))
     SLV_Tuple _ as ->
@@ -428,6 +430,7 @@ instance SrcLocOf SLVal where
     SLV_Bool a _ -> a
     SLV_Int a _ _ -> a
     SLV_Bytes a _ -> a
+    SLV_String a _ -> a
     SLV_Array a _ _ -> a
     SLV_Tuple a _ -> a
     SLV_Object a _ _ -> a
@@ -671,6 +674,8 @@ data SPrimOp
   | S_BIOR
   | S_BXOR
   | S_BYTES_ZPAD Integer
+  | S_STRINGDYN_CONCAT
+  | S_UINT_TO_STRINGDYN UIntTy
   | S_MUL_DIV (Maybe PrimVM)
   | S_DIGEST_XOR
   | S_BYTES_XOR
@@ -707,6 +712,8 @@ sprimToPrim dom rng useVerifyArith = \case
   S_BYTES_XOR -> BYTES_XOR
   S_BTOI_LAST8 b -> BTOI_LAST8 b
   S_CTC_ADDR_EQ -> CTC_ADDR_EQ
+  S_STRINGDYN_CONCAT -> STRINGDYN_CONCAT
+  S_UINT_TO_STRINGDYN _dom -> UINT_TO_STRINGDYN dom
   where
     getPV = \case
       Just pv -> pv
@@ -820,6 +827,7 @@ data SLPrimitive
   | SLPrim_ContractCode
   | SLPrim_Contract_new
   | SLPrim_Contract_new_ctor DLContractNews
+  | SLPrim_toStringDyn
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

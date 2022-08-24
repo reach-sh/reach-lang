@@ -50,6 +50,7 @@ instance Sanitize DLLargeArg where
     DLLA_Data t v va -> DLLA_Data t v (sani va)
     DLLA_Struct kvs -> DLLA_Struct $ map go kvs
     DLLA_Bytes b -> DLLA_Bytes b
+    DLLA_StringDyn t -> DLLA_StringDyn t
     where
       go (k, v) = (,) k (sani v)
 

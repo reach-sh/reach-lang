@@ -22,6 +22,7 @@ import Data.Maybe
 import Data.Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
+import qualified Data.Text as T
 import Data.Tuple.Extra (fst3, snd3, thd3)
 import qualified Data.Vector as Vector
 import GHC.Stack (HasCallStack)
@@ -696,6 +697,7 @@ dlvToDL = \case
   DLV_Struct _ menv -> DLAE_Struct <$> all_just (map recAssoc menv)
   DLV_Data _ t s mdv -> DLAE_Data t s <$> dlvToDL mdv
   DLV_Bytes _ b -> return $ DLAE_Bytes b
+  DLV_StringDyn _ s -> return $ DLAE_StringDyn s
   _ -> Nothing
   where
     recAssoc (k, v) = (,) k <$> dlvToDL v
@@ -726,6 +728,7 @@ slToDLV = \case
   SLV_Bool at b -> lit at $ DLL_Bool b
   SLV_Int at mt i -> lit at $ DLL_Int at (fromMaybe UI_Word mt) i
   SLV_Bytes at bs -> return $ Just $ DLV_Bytes at bs
+  SLV_String at t -> return $ Just $ DLV_StringDyn at t
   SLV_DLC c -> arg sb $ DLA_Constant c
   SLV_DLVar dv -> arg (srclocOf dv) $ DLA_Var dv
   SLV_Array at dt vs -> do
@@ -782,6 +785,7 @@ slToJSON v =
     SLV_Bool _ b -> return $ Aeson.Bool b
     SLV_Int _ _ n -> return $ Aeson.Number $ fromIntegral n
     SLV_Bytes _ bs -> return $ Aeson.String $ b2t bs
+    SLV_String _ t -> return $ Aeson.String $ t
     SLV_Array _ _ vs -> arr vs
     SLV_Tuple _ vs -> arr vs
     SLV_Object _ _ oe -> obj $ M.map sss_val oe
@@ -937,6 +941,8 @@ compileArgExpr mt = \case
     mk $ DLLA_Struct kvs'
   DLAE_Bytes b -> do
     mk $ DLLA_Bytes b
+  DLAE_StringDyn t -> do
+    mk $ DLLA_StringDyn t
   where
     mk la = do
       at <- withAt id
@@ -1491,6 +1497,10 @@ evalAsEnvM sv@(lvl, obj) = case obj of
     return $ Just $
       M.fromList
         [("max", retV $ public $ SLV_Int sb (Just UI_256) uint256_Max)]
+  SLV_Type ST_StringDyn ->
+    return $ Just $
+      M.fromList
+        [("concat", retV $ public $ SLV_Prim $ SLPrim_op S_STRINGDYN_CONCAT)]
   SLV_Type (ST_Data varm) ->
     return $ Just $
       flip M.mapWithKey varm $ \k t ->
@@ -2256,6 +2266,8 @@ evalPrimOp sp sargs = do
       where
         mtOkay2 x y z = mtOkay x y && mtOkay x z && mtOkay (uintTyM y) z
     S_CTC_ADDR_EQ -> make_var [T_Contract, T_Address] T_Bool args
+    S_STRINGDYN_CONCAT -> make_var [T_StringDyn, T_StringDyn] T_StringDyn args
+    S_UINT_TO_STRINGDYN ui -> make_var [T_UInt ui] T_StringDyn args
   where
     args = map snd sargs
     lvl = mconcat $ map fst sargs
@@ -4067,6 +4079,13 @@ evalPrim p sargs =
           DLE_ContractNew at dcns dr
       ctcdv <- doInternalLog_ Nothing ctcdv_
       return $ public $ SLV_DLVar ctcdv
+    SLPrim_toStringDyn -> first_arg >>= \case
+      SLV_Bytes at bs -> return $ (lvl, SLV_String at $ T.pack $ bunpack bs)
+      v -> do
+        (dt, _) <- compileTypeOf v
+        case dt of
+          T_UInt ui -> evalPrimOp (S_UINT_TO_STRINGDYN ui) [ (lvl, v) ]
+          _ -> expect_t v $ Err_Expected "Bytes or UInt"
     -- END OF evalPrim cases
   where
     lvl = mconcatMap fst sargs
@@ -4351,6 +4370,8 @@ evalApplyValsAux assumePrecondition rator randvs =
   case rator of
     SLV_Type (ST_UInt to) ->
       evalApplyValsAux assumePrecondition (SLV_Prim $ SLPrim_castOrTrunc to) randvs
+    SLV_Type ST_StringDyn ->
+      evalApplyValsAux assumePrecondition (SLV_Prim $ SLPrim_toStringDyn) randvs
     SLV_Prim p -> do
       sco <- e_sco <$> ask
       SLAppRes sco <$> evalPrim p randvs

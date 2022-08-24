@@ -334,6 +334,8 @@ smtPrimOp at p dargs =
     (BYTES_ZPAD xtra) -> \args -> do
       xtra' <- smt_la at $ bytesZeroLit xtra
       return $ smtApply "bytesAppend" (args <> [xtra'])
+    STRINGDYN_CONCAT -> app "StringDyn_Concat"
+    UINT_TO_STRINGDYN _ -> app "UInt_toStringDyn"
     MUL_DIV _ -> smtMulDiv
     SELF_ADDRESS pn isClass _ ->
       case dargs of
@@ -1081,6 +1083,8 @@ smt_la at_de dla = do
     DLLA_Struct kvs -> cons $ map snd kvs
     DLLA_Bytes bs -> do
       return $ smtApply "bytes" [Atom (show $ crc32 bs)]
+    DLLA_StringDyn st -> do
+      return $ smtApply "stringDyn" [Atom (show $ crc32 $ bpack $ T.unpack st)]
 
 smt_e :: SrcLoc -> Maybe DLVar -> DLExpr -> App ()
 smt_e at_dv mdv de = do

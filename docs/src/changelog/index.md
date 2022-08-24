@@ -8,6 +8,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{verRC("0.1.11")}
 
 + @{rcHead("0.1.11-rc8")}
++ 2022/08/24: Added `{!rsh} StringDyn.concat` function and `{!rsh} StringDyn` cast application.
++ 2022/08/24: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/08/19: Added `{!rsh} StringDyn` type.
 + 2022/08/19: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/08/18: Added `{!rsh} BytesDyn` type.

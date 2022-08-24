@@ -1,0 +1,8 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 5 theorems; No failures!
+WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
+ * Uses UInt.toStringDyn
+ * Uses a dynamically sized type, like BytesDyn or StringDyn.

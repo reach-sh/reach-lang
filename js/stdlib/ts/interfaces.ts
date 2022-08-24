@@ -49,6 +49,9 @@ export interface Stdlib_Backend_Shared_User<Ty> {
   digest_xor: (x: string, y:string) => string,
   bytes_xor: (x: string, y:string) => string,
   btoiLast8: (b: string) => BigNumber,
+  stringDynConcat: (s1: string, s2: string) => string,
+  uintToStringDyn: (n1: num) => string,
+  uintToStringDyn256: (n1: num) => string,
 };
 
 export interface Stdlib_Backend_Shared<Ty> extends Stdlib_Backend_Shared_User<Ty> {
