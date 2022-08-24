@@ -417,7 +417,7 @@ Reach's @{defn("type")}s are represented in programs by the following identifier
 + @{ref("rsh", "BytesDyn")} `{!rsh} BytesDyn`, which denotes a sequence of bytes of dynamic length.
   Bytes of fixed length and bytes of dynamic length are totally incompatible.
 + @{ref("rsh", "StringDyn")} `{!rsh} StringDyn`, which denotes a string of UTF-8 code points of dynamic length.
-  Strings and bytes are totally incompatible.
+  Strings and bytes are totally incompatible, but static bytes can be casted into dynamic strings with `{!rsh} StringDyn` applied as function.
 + @{ref("rsh", "Digest")} `{!rsh} Digest`, which denotes a digest.
 + @{ref("rsh", "Address")} `{!rsh} Address`, which denotes an account address.
 + @{ref("rsh", "Contract")} `{!rsh} Contract`, which denotes the identifying information of a contract.
@@ -544,6 +544,8 @@ may be written between double or single quotes
 (with no distinction between the different styles)
 and use the same escaping rules as JavaScript.
 Since `{!rsh} Bytes` types are specialized in their length, literals typically need to be [padded](##padding) to be useful.
+
+Static byte strings can be converted into static strings by calling `{!rsh} StringDyn` as a function, like `{!rsh} StringDyn("normally bytes")`.
 
 ### Operator expression
 
@@ -734,6 +736,17 @@ If unspecified, it will default to whatever `{!rsh} verifyArithmetic` is set to.
 Numeric literals in your program are considered `{!rsh} UInt`.
 If they are cast to `{!rsh} UInt256`, then your program can contain constant `{!rsh} UInt256` values.
 
+### String Conversion
+
+Some values, specifically unsigned integers and bytes, can be converted into dynamically sized strings by calling `{!rsh} StringDyn` as a function.
+For example:
+
+```reach
+"Four" // => the bytes "Four" (i.e. 46, 6F, 75, 72)
+StringDyn("Four") // => the string "Four" (same bytes)
+StringDyn(4) // => "4"
+```
+
 ### Contract and Address Comparisons
 
 @{ref("rsh", "Contract.addressEq")}
@@ -789,6 +802,15 @@ load: /examples/dan-storage/index.rsh
 md5: 10a27da3d0db49a29e29f79b6fd57dad
 range: 9 - 9
 ```
+
+### String Concatenation
+
+@{ref("rsh", "StringDyn.concat")}
+```reach
+StringDyn.concat(x, y);
+```
+
+Concatenates two `{!rsh} StringDyn` values into a single dynamically sized string.
 
 ### Parenthesized expression
 
