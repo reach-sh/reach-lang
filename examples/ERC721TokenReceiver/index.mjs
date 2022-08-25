@@ -64,6 +64,7 @@ rch_erc721tr.on("GotAToken", evHandler("Reach", rch_gotAToken));
 
 // ===== Demonstration of ERC721TokenReceiver functionality =====
 const assert = stdlib.assert;
+const gasLimit = { gasLimit: 5000000 };
 const [oz, rch] = [true, false];
 const msg = (from, to) =>
   stdlib.stringToHex(`${from ? "OpenZeppelin" : "Reach"} to ${to ? "OpenZeppelin" : "Reach"}`);
@@ -72,13 +73,13 @@ let operator, from, tokenId, data;
 void(operator, from);
 
 console.log("OpenZeppelin ERC721 to OpenZeppelin ERC721TokenReceiver");
-await oz_erc721.mint(oz_erc721tr.address, 123, msg(oz, oz));
+await oz_erc721.mint(oz_erc721tr.address, 123, msg(oz, oz), gasLimit);
 [operator, from, tokenId, data] = await oz_gotAToken.wait;
 assert(tokenId.eq(123));
 assert(data === msg(oz, oz));
 
 console.log("\nOpenZeppelin ERC721 to Reach ERC721TokenReceiver");
-await oz_erc721.mint(rch_erc721tr.address, 456, msg(oz, rch));
+await oz_erc721.mint(rch_erc721tr.address, 456, msg(oz, rch), gasLimit);
 [operator, from, tokenId, data] = await rch_gotAToken.wait;
 assert(tokenId.eq(456));
 assert(data === msg(oz, rch));
@@ -87,13 +88,13 @@ oz_gotAToken.reset();
 rch_gotAToken.reset();
 
 console.log("\nReach ERC721 to OpenZeppelin ERC721TokenReceiver");
-await rch_erc721.mint(oz_erc721tr.address, 42, msg(rch, oz));
+await rch_erc721.mint(oz_erc721tr.address, 42, msg(rch, oz), gasLimit);
 [operator, from, tokenId, data] = await oz_gotAToken.wait;
 assert(tokenId.eq(42));
 assert(data === msg(rch, oz));
 
 console.log("\nReach ERC721 to Reach ERC721TokenReceiver");
-await rch_erc721.mint(rch_erc721tr.address, 5318008, msg(rch, rch));
+await rch_erc721.mint(rch_erc721tr.address, 5318008, msg(rch, rch), gasLimit);
 [operator, from, tokenId, data] = await rch_gotAToken.wait;
 assert(tokenId.eq(5318008));
 assert(data === msg(rch, rch));
