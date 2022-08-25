@@ -57,6 +57,7 @@ compile env (CompilerOpts {..}) = do
         Nothing -> \_ _ -> return ()
   dirDotReach' <- makeAbsolute co_dirDotReach
   djp <- gatherDeps_top source co_installPkgs dirDotReach'
+  -- interOut co_output "bundle.js" $ render $ pretty djp
   unless co_installPkgs $ do
     let all_connectors = make_connectors env
     (run, shared_lifts, exe_ex) <- evalBundle all_connectors djp co_printKeywordInfo
@@ -78,7 +79,6 @@ compile env (CompilerOpts {..}) = do
             let x'' = render x'
             loud $ "showp " <> show l
             interOut woutn l x''
-      -- showp "bundle.js" $ render $ pretty djp
       dl <- compileDApp which
       let DLProg { dlp_opts = DLOpts {..} } = dl
       showp "dl" dl

@@ -20,7 +20,7 @@ lookupDep :: ReachSource -> SLLibs -> App SLEnv
 lookupDep rs libm =
   case M.lookup rs libm of
     Just x -> return x
-    Nothing -> impossible $ "dependency not found"
+    Nothing -> impossible $ "dependency, '" <> show rs <> "' not found in " <> (show $ M.keys libm)
 
 evalFromClause :: SLLibs -> JSFromClause -> App SLEnv
 evalFromClause libm (JSFromClause _ _ libn) =
@@ -133,6 +133,7 @@ evalTopBody libm env exenv = \case
 
 evalLib :: Connectors -> SLMod -> SLLibs -> App SLLibs
 evalLib cns (src, body) libm = do
+  -- liftIO $ putStrLn $ "Evaluating " <> show src
   let at = srcloc_src src
   let base_env' =
         M.union base_env $
