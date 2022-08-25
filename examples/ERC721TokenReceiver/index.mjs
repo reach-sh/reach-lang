@@ -71,29 +71,29 @@ const msg = (from, to) =>
 let operator, from, tokenId, data;
 void(operator, from);
 
-// console.log("OpenZeppelin ERC721 to OpenZeppelin ERC721TokenReceiver");
-// await oz_erc721.mint(oz_erc721tr.address, 123, msg(oz, oz));
-// [operator, from, tokenId, data] = await oz_gotAToken.wait;
-// assert(tokenId.eq(123));
-// assert(data === msg(oz, oz));
+console.log("OpenZeppelin ERC721 to OpenZeppelin ERC721TokenReceiver");
+await oz_erc721.mint(oz_erc721tr.address, 123, msg(oz, oz));
+[operator, from, tokenId, data] = await oz_gotAToken.wait;
+assert(tokenId.eq(123));
+assert(data === msg(oz, oz));
 
-// console.log("\nOpenZeppelin ERC721 to Reach ERC721TokenReceiver");
-// await oz_erc721.mint(rch_erc721tr.address, 456, msg(oz, rch));
-// [operator, from, tokenId, data] = await rch_gotAToken.wait;
-// assert(tokenId.eq(456));
-// assert(data === msg(oz, rch));
+console.log("\nOpenZeppelin ERC721 to Reach ERC721TokenReceiver");
+await oz_erc721.mint(rch_erc721tr.address, 456, msg(oz, rch));
+[operator, from, tokenId, data] = await rch_gotAToken.wait;
+assert(tokenId.eq(456));
+assert(data === msg(oz, rch));
 
-// oz_gotAToken.reset();
-// rch_gotAToken.reset();
+oz_gotAToken.reset();
+rch_gotAToken.reset();
 
-// console.log("\nReach ERC721 to OpenZeppelin ERC721TokenReceiver");
-// await rch_erc721.mint(oz_erc721tr.address, 42, msg(rch, oz));
-// [operator, from, tokenId, data] = await oz_gotAToken.wait;
-// assert(tokenId.eq(42));
-// assert(data === msg(rch, oz));
+console.log("\nReach ERC721 to OpenZeppelin ERC721TokenReceiver");
+await rch_erc721.mint(oz_erc721tr.address, 42, msg(rch, oz));
+[operator, from, tokenId, data] = await oz_gotAToken.wait;
+assert(tokenId.eq(42));
+assert(data === msg(rch, oz));
 
 console.log("\nReach ERC721 to Reach ERC721TokenReceiver");
-await rch_erc721.mint(rch_erc721tr.address, 5318008, msg(rch, rch), { gasLimit: 1000000000000000 });
+await rch_erc721.mint(rch_erc721tr.address, 5318008, msg(rch, rch));
 [operator, from, tokenId, data] = await rch_gotAToken.wait;
 assert(tokenId.eq(5318008));
 assert(data === msg(rch, rch));
