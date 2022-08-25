@@ -12,10 +12,10 @@ const acc = await stdlib.newTestAccount(stdlib.parseCurrency(100));
 
 // ===== Helper functions =====
 const lock = () => {
-  let unlock, wait;
-  const reset = () => wait = new Promise(r => { unlock = r; });
-  reset();
-  return { unlock, wait, reset };
+  let lockObj = {};
+  lockObj.reset = () => lockObj.wait = new Promise(r => { lockObj.unlock = r; });
+  lockObj.reset();
+  return lockObj;
 };
 
 const deploy = (abi, bin, args = []) =>
@@ -41,41 +41,61 @@ const oz_erc721 = await solDeploy("build/oz_erc721.json", "oz_erc721.sol:OZ_ERC7
 const oz_erc721tr = await solDeploy("build/oz_erc721_tokenreceiver.json",
                                     "oz_erc721_tokenreceiver.sol:OZ_ERC721_TokenReceiver");
 
+// Reach based (dummy) ERC721
+const rch_erc721 = await rchDeploy("./build/index.rch_ERC721.mjs",
+                                   [[/* time: */ 0, [/* selector: */ "0x150b7a02",
+                                                     /* zeroAddr: */ "0x" + "0".repeat(40)]]]);
+
 // Reach based ERC721TokenReceiver
 const rch_erc721tr = await rchDeploy("./build/index.rch_ERC721_TokenReceiver.mjs",
-                                     [[/* time: */0, [ /* selector: */ "0x150b7a02"]]]);
+                                     [[/* time: */ 0, [ /* selector: */ "0x150b7a02"]]]);
 
-// Setup event listener for GotAToken on OpenZeppelin TokenReceiver
+// Setup event handlers for GotAToken events
+const evHandler = (name, lck) => (operator, from, tokenId, data) => {
+  const dataStr = Buffer.from(data.slice(2), "hex").toString("utf8");
+  console.log(`${name} GotAToken(${operator}, ${from}, ${tokenId}, "${dataStr}")`);
+  lck.unlock([operator, from, tokenId, data]);
+}
+
 let oz_gotAToken = lock();
-oz_erc721tr.on("GotAToken", (...args) => {
-  console.log(`OpenZeppelin GotAToken ${args}`);
-  oz_gotAToken.unlock(args);
-});
-
-// Setup event listener for GotAToken on Reach TokenReceiver
 let rch_gotAToken = lock();
-rch_erc721tr.on("GotAToken", (...args) => {
-  console.log(`Reach GotAToken ${args}`);
-  rch_gotAToken.unlock(args);
-});
+oz_erc721tr.on("GotAToken", evHandler("OpenZeppelin", oz_gotAToken));
+rch_erc721tr.on("GotAToken", evHandler("Reach", rch_gotAToken));
 
 // ===== Demonstration of ERC721TokenReceiver functionality =====
+const assert = stdlib.assert;
+const [oz, rch] = [true, false];
+const msg = (from, to) =>
+  stdlib.stringToHex(`${from ? "OpenZeppelin" : "Reach"} to ${to ? "OpenZeppelin" : "Reach"}`);
+
 let operator, from, tokenId, data;
-void(operator);
-void(from);
+void(operator, from);
 
-console.log("OpenZeppelin ERC721 to OpenZeppelin ERC721TokenReceiver");
-await oz_erc721.mint(oz_erc721tr.address, 0x1234, "0x1234");
-[operator, from, tokenId, data] = await oz_gotAToken.wait;
-oz_gotAToken.reset();
-stdlib.assert(tokenId.eq(0x1234));
-stdlib.assert(data === "0x1234");
+// console.log("OpenZeppelin ERC721 to OpenZeppelin ERC721TokenReceiver");
+// await oz_erc721.mint(oz_erc721tr.address, 123, msg(oz, oz));
+// [operator, from, tokenId, data] = await oz_gotAToken.wait;
+// assert(tokenId.eq(123));
+// assert(data === msg(oz, oz));
 
-console.log("OpenZeppelin ERC721 to Reach ERC721TokenReceiver");
-await oz_erc721.mint(rch_erc721tr.address, 0x5678, "0x5678");
+// console.log("\nOpenZeppelin ERC721 to Reach ERC721TokenReceiver");
+// await oz_erc721.mint(rch_erc721tr.address, 456, msg(oz, rch));
+// [operator, from, tokenId, data] = await rch_gotAToken.wait;
+// assert(tokenId.eq(456));
+// assert(data === msg(oz, rch));
+
+// oz_gotAToken.reset();
+// rch_gotAToken.reset();
+
+// console.log("\nReach ERC721 to OpenZeppelin ERC721TokenReceiver");
+// await rch_erc721.mint(oz_erc721tr.address, 42, msg(rch, oz));
+// [operator, from, tokenId, data] = await oz_gotAToken.wait;
+// assert(tokenId.eq(42));
+// assert(data === msg(rch, oz));
+
+console.log("\nReach ERC721 to Reach ERC721TokenReceiver");
+await rch_erc721.mint(rch_erc721tr.address, 5318008, msg(rch, rch), { gasLimit: 1000000000000000 });
 [operator, from, tokenId, data] = await rch_gotAToken.wait;
-rch_gotAToken.reset();
-stdlib.assert(tokenId.eq(0x5678));
-stdlib.assert(data === "0x5678");
+assert(tokenId.eq(5318008));
+assert(data === msg(rch, rch));
 
 process.exit(0);
