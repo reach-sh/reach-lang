@@ -8,7 +8,10 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{verRC("0.1.12")}
 
 + @{rcHead("0.1.12-rc1")}
-+ 2022/08/25: Upgraded to Algorand node v3.8.1 and indexer 2.13.0.
++ 2022/08/25: Upgraded to Algorand node v3.9.1-beta and indexer 2.14.0-rc3.
+
+XXX Ensure these are the final release versions!
+XXX Actually make 0.1.12
 
 @{verRC("0.1.11")}
 
