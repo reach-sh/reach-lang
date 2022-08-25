@@ -1,5 +1,5 @@
 {
-	"Version": 22,
+	"Version": 23,
 	"GossipFanout": 0,
 	"NetAddress": "127.0.0.1:0",
 	"DNSBootstrapID": "",
