@@ -153,6 +153,12 @@ export const ge256 = ge;
 export const gt256 = gt;
 export const le256 = le;
 export const lt256 = lt;
+
+export const stringDynConcat = (s1: string, s2: string): string => `${s1}${s2}`;
+
+export const uintToStringDyn = (n1: num): string => n1.toString();
+export const uintToStringDyn256 = uintToStringDyn;
+
 export const digest_xor = (xd: string, yd: string): string => {
   const clean = (s: string) => s.slice(0, 2) === '0x' ? s.slice(2) : s;
   const xc = clean(xd);

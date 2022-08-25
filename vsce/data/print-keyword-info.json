@@ -320,6 +320,9 @@
   "StringDyn": {
     "CompletionItemKind": "TypeParameter"
   },
+  "StringDyn.concat": {
+    "CompletionItemKind": "Operator"
+  },
   "Struct": {
     "CompletionItemKind": "TypeParameter"
   },
