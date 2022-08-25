@@ -71,5 +71,6 @@ b done
 
 done:
 int 1
+return
 EOF
 

@@ -11,7 +11,7 @@ import qualified Data.Aeson as AS
 import Data.Bits (shiftL, shiftR, (.|.))
 import qualified Data.ByteArray as BA
 import qualified Data.ByteString as BS
-import Data.ByteString.Base64 (encodeBase64')
+import Data.ByteString.Base64 (encodeBase64', decodeBase64)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Internal as BI
 import qualified Data.DList as DL
@@ -259,6 +259,9 @@ appGlobalStateNumUInt = 0
 
 appGlobalStateNumBytes :: Integer
 appGlobalStateNumBytes = 1
+
+algoMaxStringSize :: Integer
+algoMaxStringSize = 4096
 
 algoMinTxnFee :: Integer
 algoMinTxnFee = 1000
@@ -1576,13 +1579,11 @@ cconcatbs = cconcatbs_ ctobs
 
 check_concat_len :: Integer -> App ()
 check_concat_len totlen =
-  case totlen <= 4096 of
-    True -> nop
-    False ->
-      bad $
-        "Cannot `concat` " <> texty totlen
-          <> " bytes; the resulting byte array must be <= 4096 bytes."
-          <> " This is caused by a Reach data type being too large."
+  unless (totlen <= algoMaxStringSize) $ do
+    bad $
+      "Cannot `concat` " <> texty totlen
+        <> " bytes; the resulting byte array must be <= 4096 bytes."
+        <> " This is caused by a Reach data type being too large."
 
 cdigest :: [(DLType, App ())] -> App ()
 cdigest l = cconcatbs l >> op "sha256"
@@ -1735,7 +1736,10 @@ cla = \case
   DLLA_StringDyn t -> cbs $ bpack $ T.unpack t
 
 cbs :: B.ByteString -> App ()
-cbs = output . TBytes
+cbs bs = do
+  when (B.length bs > fromIntegral algoMaxStringSize) $
+    bad $ "Cannot create raw bytes of length greater than " <> texty algoMaxStringSize <> "."
+  output $ TBytes bs
 
 cTupleRef :: SrcLoc -> DLType -> Integer -> App ()
 cTupleRef _at tt idx = do
@@ -2301,14 +2305,14 @@ ce = \case
   DLE_ContractNew at cns dr -> do
     block_ "ContractNew" $ do
       let DLContractNew {..} = cns M.! conName'
-      let ALGOCode {..} = either impossible id $ aesonParse dcn_code
+      let ALGOCodeOut {..} = either impossible id $ aesonParse dcn_code
       let ALGOCodeOpts {..} = either impossible id $ aesonParse dcn_opts
       let ai_GlobalNumUint = aco_globalUints
       let ai_GlobalNumByteSlice = aco_globalBytes
       let ai_LocalNumUint = aco_localUints
       let ai_LocalNumByteSlice = aco_localBytes
       let ai_ExtraProgramPages =
-            extraPages $ length ac_approval + length ac_clearState
+            extraPages $ length aco_approval + length aco_clearState
       let appInfo = AppInfo {..}
       let ct_at = at
       let ct_mtok = Nothing
@@ -2318,10 +2322,14 @@ ce = \case
       let vTypeEnum = "appl"
       output $ TConst vTypeEnum
       makeTxn1 "TypeEnum"
-      cbs $ B.pack ac_approval
-      makeTxn1 "ApprovalProgram"
-      cbs $ B.pack ac_clearState
-      makeTxn1 "ClearStateProgram"
+      let cbss f bs = do
+            let (before, after) = B.splitAt (fromIntegral algoMaxStringSize) bs
+            cbs before
+            makeTxn1 f
+            unless (B.null after) $
+              cbss f after
+      cbss "ApprovalProgramPages" $ B.pack aco_approval
+      cbss "ClearStateProgramPages" $ B.pack aco_clearState
       let unz f n = unless (n == 0) $ cint n >> makeTxn1 f
       unz "GlobalNumUint" $ ai_GlobalNumUint
       unz "GlobalNumByteSlice" $ ai_GlobalNumByteSlice
@@ -2729,7 +2737,7 @@ ct = \case
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
-reachAlgoBackendVersion = 10
+reachAlgoBackendVersion = 11
 
 -- State:
 keyState :: B.ByteString
@@ -3245,7 +3253,7 @@ sigDump :: Int -> String
 sigDump sigi =
    i "i" (show sigi)
    <> i "h" (showHex sigi "")
-   <> i "b64" (B.unpack $ encodeBase64' $ itob 4 $ fromIntegral sigi)
+   <> i "b64" (LT.unpack $ encodeBase64 $ itob 4 $ fromIntegral sigi)
   where
     i l s = " " <> l <> "(" <> s <> ")"
 
@@ -3706,23 +3714,49 @@ verifyMapTypes badx = mapM $ \ DLMapInfo {..} -> do
       badx $ LT.pack $ "Cannot use '" <> show dlmi_kt <> "' as Map key. Only 'Address' keys are allowed."
     return $ DLMapInfo {..}
 
-data ALGOCode = ALGOCode
-  { ac_approval :: String
-  , ac_clearState :: String
+data ALGOCodeIn = ALGOCodeIn
+  { aci_approval :: String
+  , aci_clearState :: String
   }
   deriving (Show)
 
-instance AS.ToJSON ALGOCode where
-  toJSON (ALGOCode {..}) = AS.object $
-    [ "approval" .= ac_approval
-    , "clearState" .= ac_clearState
+instance AS.ToJSON ALGOCodeIn where
+  toJSON (ALGOCodeIn {..}) = AS.object $
+    [ "approval" .= aci_approval
+    , "clearState" .= aci_clearState
     ]
 
-instance AS.FromJSON ALGOCode where
-  parseJSON = AS.withObject "ALGOCode" $ \obj -> do
-    ac_approval <- obj .: "approval"
-    ac_clearState <- obj .: "clearState"
-    return $ ALGOCode {..}
+instance AS.FromJSON ALGOCodeIn where
+  parseJSON = AS.withObject "ALGOCodeIn" $ \obj -> do
+    aci_approval <- obj .: "approval"
+    aci_clearState <- obj .: "clearState"
+    return $ ALGOCodeIn {..}
+
+data ALGOCodeOut = ALGOCodeOut
+  { aco_approval :: String
+  , aco_clearState :: String
+  }
+  deriving (Show)
+
+instance AS.ToJSON ALGOCodeOut where
+  toJSON (ALGOCodeOut {..}) = AS.object $
+    [ "approvalB64" .= toBase64 aco_approval
+    , "clearStateB64" .= toBase64 aco_clearState
+    ]
+    where
+      toBase64 :: String -> String
+      toBase64 = LT.unpack . encodeBase64 . B.pack
+
+instance AS.FromJSON ALGOCodeOut where
+  parseJSON = AS.withObject "ALGOCodeOut" $ \obj -> do
+    let fromBase64 :: String -> String
+        fromBase64 x =
+          case decodeBase64 $ B.pack x of
+           Left y -> impossible $ "bad base64: " <> show y
+           Right y -> B.unpack y
+    aco_approval <- fromBase64 <$> (obj .: "approvalB64")
+    aco_clearState <- fromBase64 <$> (obj .: "clearStateB64")
+    return $ ALGOCodeOut {..}
 
 data ALGOCodeOpts = ALGOCodeOpts
   { aco_globalUints :: Integer
@@ -3784,10 +3818,10 @@ connect_algo env = Connector {..}
           return f
     conReserved = const False
     conCompileCode v = runExceptT $ do
-      ALGOCode {..} <- aesonParse' v
-      a' <- ccPath ac_approval
-      cs' <- ccPath ac_clearState
-      return $ AS.toJSON $ ALGOCode a' cs'
+      ALGOCodeIn {..} <- aesonParse' v
+      a' <- ccPath aci_approval
+      cs' <- ccPath aci_clearState
+      return $ AS.toJSON $ ALGOCodeOut a' cs'
     conContractNewOpts :: Maybe AS.Value -> Either String AS.Value
     conContractNewOpts mv = do
       (aco :: ALGOCodeOpts) <- aesonParse $ fromMaybe (AS.object mempty) mv
