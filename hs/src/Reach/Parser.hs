@@ -233,23 +233,28 @@ updatePartialAvoidCycles mfrom def_a get_key ret_key err_key proc_key = do
   let res = ret_key key
   Env {..} <- ask
   (dm, fm) <- liftIO $ readIORef e_bm
+  let update_bm mcontent = do
+        (dm', fm') <- liftIO $ readIORef e_bm
+        let fm'' = case mcontent of
+                     Nothing -> fm'
+                     Just content -> M.insert key (Just content) fm'
+            add_key ml = Just $ key : (maybe [] id ml)
+            dm'' = case mfrom of
+              Just from -> (M.alter add_key from dm')
+              Nothing -> dm'
+        liftIO $ writeIORef e_bm (dm'', fm'')
   case (M.lookup key fm) of
     Nothing -> do
       liftIO $
         writeIORef e_bm $
           ((M.insert key def_a dm), (M.insert key Nothing fm))
       content <- proc_key key
-      (dm', fm') <- liftIO $ readIORef e_bm
-      let fm'' = (M.insert key (Just content) fm')
-          add_key ml = Just $ key : (maybe [] id ml)
-          dm'' = case mfrom of
-            Just from -> (M.alter add_key from dm')
-            Nothing -> dm'
-      liftIO $ writeIORef e_bm (dm'', fm'')
+      update_bm $ Just content
       return res
     Just Nothing ->
       expect_thrown e_at $ err_key key
-    Just (Just _) ->
+    Just (Just _) -> do
+      update_bm Nothing
       return res
 
 gatherDeps_from :: SrcLoc -> Maybe ReachSource
@@ -331,14 +336,16 @@ gatherDeps_stdlib = do
     ret_key _ = ()
     err_key x = Err_Parse_CyclicImport x
 
-map_order :: Ord a => M.Map a [a] -> [a]
-map_order dm = order
-  where
-    order = map (getNodePart . nodeFromVertex) order_v
-    order_v = G.topSort graph
-    (graph, nodeFromVertex, _vertexFromKey) = G.graphFromEdges edgeList
-    edgeList = map (\(from, to) -> (from, from, to)) $ M.toList dm
-    getNodePart (n, _, _) = n
+map_order :: (Ord a) => M.Map a [a] -> IO [a]
+map_order dm = do
+  let getNodePart (n, _, _) = n
+  let edgeList = map (\(from, to) -> (from, from, to)) $ M.toList dm
+  -- putStrLn $ "edges = " <> show edgeList
+  let (graph, nodeFromVertex, _vertexFromKey) = G.graphFromEdges edgeList
+  let order_v = G.topSort graph
+  let order = map (getNodePart . nodeFromVertex) order_v
+  -- putStrLn $ "order = " <> show order
+  return $ order
 
 gatherDeps_top :: ReachSource -> Bool -> FilePath -> IO JSBundle
 gatherDeps_top src_p e_install e_dreachp = do
@@ -350,7 +357,8 @@ gatherDeps_top src_p e_install e_dreachp = do
       ReachStdLib -> return ()
     gatherDeps_stdlib
     (dm, fm) <- liftIO $ readIORef e_bm
-    return $ JSBundle $ map (\k -> (k, ensureJust (fm M.! k))) $ map_order dm
+    mo <- liftIO $ map_order dm
+    return $ JSBundle $ map (\k -> (k, ensureJust (fm M.! k))) mo
   where
     ensureJust Nothing = impossible "gatherDeps: Did not close all Reach files"
     ensureJust (Just x) = x
