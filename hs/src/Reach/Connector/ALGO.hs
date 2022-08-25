@@ -467,6 +467,7 @@ data TEAL
   | TConst LT.Text
   | TBytes B.ByteString
   | TExtract Word8 Word8
+  | TReplace2 Word8
   | TSubstring Word8 Word8
   | TComment IndentDir LT.Text
   | TLabel Label
@@ -492,6 +493,7 @@ render ilvlr = \case
   TConst x -> r ["int", x]
   TBytes bs -> r ["byte", "base64(" <> encodeBase64 bs <> ")"]
   TExtract x y -> r ["extract", texty x, texty y]
+  TReplace2 x -> r ["replace2", texty x]
   TSubstring x y -> r ["substring", texty x, texty y]
   Titob _ -> r ["itob"]
   TCode f args ->
@@ -570,6 +572,7 @@ opType = \case
   TConst {} -> _2u
   TBytes {} -> _2b
   TExtract {} -> b2b
+  TReplace2 {} -> b2b
   TSubstring {} -> b2b
   TComment {} -> Nothing
   TLabel {} -> Nothing
@@ -787,6 +790,7 @@ buildCFG rlab ts = do
     TLoad {} -> recCost 1
     TInt _ -> recCost 1
     TExtract {} -> recCost 1
+    TReplace2 {} -> recCost 1
     TSubstring {} -> recCost 1
     Titob {} -> recCost 1
     TResource r -> recResource r 1
@@ -799,9 +803,11 @@ buildCFG rlab ts = do
     TCode f _ ->
       case f of
         "sha256" -> recCost 35
+        "sha3_256" -> recCost 130
         "keccak256" -> recCost 130
         "sha512_256" -> recCost 45
         "ed25519verify" -> recCost 1900
+        "ed25519verify_bare" -> recCost 1900
         "ecdsa_verify" -> recCost 1700
         "ecdsa_pk_decompress" -> recCost 650
         "ecdsa_pk_recover" -> recCost 2000
@@ -818,6 +824,9 @@ buildCFG rlab ts = do
         "b^" -> recCost 6
         "b~" -> recCost 4
         "bsqrt" -> recCost 40
+        "bn256_add" -> recCost 70
+        "bn256_scalar_mul" -> recCost 970
+        "bn256_pairing" -> recCost 8700
         "itxn_begin" -> do
           recResource R_ITxn 1
           recCost 1
@@ -1591,149 +1600,38 @@ cextract s l =
       cint l
       op "extract3"
 
-csubstring :: Integer -> Integer -> App ()
-csubstring s e = cextract s (e - s)
-
-data SpliceRange
-  = SR_Both (App ()) (App ())
-  | SR_After (App ())
-  | SR_Before (App ())
-  | SR_None
-computeSplice :: Integer -> Integer -> Integer -> SpliceRange
-computeSplice start end tot =
-  case (start == 0, afterLen == 0) of
-    (True, True) -> SR_None
-    (True, False) -> SR_After after
-    (False, True) -> SR_Before before
-    (False, False) -> SR_Both before after
-  where
-    before = cextract 0 start
-    afterLen = tot - end
-    after = cextract end afterLen
-
-csplice :: SrcLoc -> Integer -> Integer -> Integer -> App ()
-csplice _at b c e = do
-  -- [ Bytes  = X b Y c Z e , NewBytes = Y' ]
-  let len = c - b
-  case len == 1 of
+creplace :: Integer -> App () -> App ()
+creplace s cnew = do
+  case s < 256 of
     True -> do
-      -- [ Bytes, NewByteBS ]
-      op "btoi"
-      -- [ Bytes, NewByte ]
-      cint b
-      -- [ Bytes, NewByte, Offset ]
-      op "swap"
-      -- [ Bytes, Offset, NewByte ]
-      op "setbyte"
-    False -> salloc_ "spliceNew" $ \store_new load_new -> do
-      -- [ Big, New ]
-      store_new
-      -- [ Big ]
-      csplice3 load_new Nothing (computeSplice b c e)
-  -- [ Big' ]
-  -- [ Bytes' = X b Y'c Z e]
-  return ()
+      cnew
+      output $ TReplace2 (fromIntegral s)
+    False -> do
+      cint s
+      cnew
+      op "replace3"
 
--- csplice3... what does it mean?
---
--- csplice3 cnew (Just cbig) (SR_Both cbefore cafter)
---
--- is the simplest use to understand. We are supposed to turn
---
--- BIG
---
--- into
---
--- BIG[before] new BIG[after]
---
--- + cnew computes the NEW piece
--- + cbefore extracts the before piece from the big
--- + cafter extracts the after piece from the big
--- + The Just means that we can compute the big when we need it (because it is
---   small)
---
--- If the Just were a Nothing, then the big would be on the stack
-csplice3 :: App () -> Maybe (App ()) -> SpliceRange -> App ()
-csplice3 cnew mcbig = \case
-  SR_None -> do
-    case mcbig of
-      Nothing -> op "pop"
-      Just _ -> return ()
-    cnew
-  SR_Before cbefore -> do
-    case mcbig of
-      Nothing -> return ()
-      Just cbig -> cbig
-    cbefore
-    cnew
-    op "concat"
-  SR_After cafter -> do
-    case mcbig of
-      Nothing -> do
-        cafter
-        cnew
-        op "swap"
-      Just cbig -> do
-        cnew
-        cbig
-        cafter
-    op "concat"
-  SR_Both cbefore cafter ->
-    case mcbig of
-      Nothing -> do
-        -- [ Big ]
-        op "dup"
-        -- [ Big, Big ]
-        cbefore
-        -- [ Big, Before ]
-        cnew
-        -- [ Big, Before, New ]
-        op "concat"
-        -- [ Big, Mid' ]
-        op "swap"
-        -- [ Mid', Big ]
-        cafter
-        -- [ Mid', After ]
-        op "concat"
-        -- [ Big' ]
-        return ()
-      Just cbig -> do
-        cbig
-        cbefore
-        cnew
-        op "concat"
-        cbig
-        cafter
-        op "concat"
-
-cArraySet :: SrcLoc -> (DLType, Integer) -> Maybe (App ()) -> Either Integer (App ()) -> App () -> App ()
-cArraySet _at (t, alen) mcbig eidx cnew = do
+cArraySet :: SrcLoc -> DLType -> Maybe (App ()) -> Either Integer (App ()) -> App () -> App ()
+cArraySet _at t mcbig eidx cnew = do
+  --- []
+  case mcbig of
+    Nothing -> return ()
+    Just cbig -> cbig
+  --- [ big ]
   tsz <- typeSizeOf t
-  let spr =
-        case eidx of
-          Left ii ->
-            computeSplice start end tot
-            where
-              start = ii * tsz
-              end = start + tsz
-              tot = alen * tsz
-          Right cidx -> SR_Both b a
-            where
-              b = do
-                cint 0
-                cint tsz
-                cidx
-                op "*"
-                op "substring3"
-              a = do
-                cint tsz
-                op "dup"
-                cidx
-                op "*"
-                op "+"
-                cint $ alen * tsz
-                op "substring3"
-  csplice3 cnew mcbig spr
+  case eidx of
+    -- Static index
+    Left ii -> do
+      --- [ big ]
+      creplace (ii * tsz) cnew
+    Right cidx -> do
+      --- [ big ]
+      cidx
+      cint tsz
+      op "*"
+      --- [ big, start ]
+      cnew
+      op "replace3"
 
 computeExtract :: [DLType] -> Integer -> App (DLType, Integer, Integer)
 computeExtract ts idx = do
@@ -1854,23 +1752,12 @@ cTupleRef _at tt idx = do
   -- [ Value ]
   return ()
 
-computeSubstring :: [DLType] -> Integer -> App (DLType, Integer, Integer)
-computeSubstring ts idx = do
-  (t, start, sz) <- computeExtract ts idx
-  let end = start + sz
-  return (t, start, end)
-
-cTupleSet :: SrcLoc -> DLType -> Integer -> App ()
-cTupleSet at tt idx = do
-  -- [ Tuple, Value' ]
-  tot <- typeSizeOf tt
+cTupleSet :: SrcLoc -> App () -> DLType -> Integer -> App ()
+cTupleSet _at cnew tt idx = do
+  -- [ Tuple ]
   let ts = tupleTypes tt
-  (t, start, end) <- computeSubstring ts idx
-  ctobs t
-  -- [ Tuple, Value'Bs ]
-  csplice at start end tot
-  -- [ Tuple' ]
-  return ()
+  (t, start, _) <- computeExtract ts idx
+  creplace start $ cnew >> ctobs t
 
 cMapLoad :: App ()
 cMapLoad = libCall LF_cMapLoad $ do
@@ -2043,7 +1930,7 @@ ce = \case
   DLE_PrimOp _ p args -> cprim p args
   DLE_ArrayRef at aa ia -> doArrayRef at aa True (Left ia)
   DLE_ArraySet at aa ia va -> do
-    let (t, alen) = argArrTypeLen aa
+    let (t, _) = argArrTypeLen aa
     case t of
       T_Bool -> do
         ca aa
@@ -2063,7 +1950,7 @@ ce = \case
               case ia of
                 DLA_Literal (DLL_Int _ UI_Word ii) -> Left ii
                 _ -> Right $ ca ia
-        cArraySet at (t, alen) mcbig eidx cnew
+        cArraySet at t mcbig eidx cnew
   DLE_ArrayConcat _ x y -> do
     let (xt, xlen) = argArrTypeLen x
     let (_, ylen) = argArrTypeLen y
@@ -2077,15 +1964,13 @@ ce = \case
     cTupleRef at (argTypeOf ta) idx
   DLE_TupleSet at tup_a index val_a -> do
     ca tup_a
-    ca val_a
-    cTupleSet at (argTypeOf tup_a) index
+    cTupleSet at (ca val_a) (argTypeOf tup_a) index
   DLE_ObjectRef at obj_a fieldName -> do
     ca obj_a
     uncurry (cTupleRef at) $ objectRefAsTupleRef obj_a fieldName
   DLE_ObjectSet at obj_a fieldName val_a -> do
     ca obj_a
-    ca val_a
-    uncurry (cTupleSet at) $ objectRefAsTupleRef obj_a fieldName
+    uncurry (cTupleSet at (ca val_a)) $ objectRefAsTupleRef obj_a fieldName
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> cdigest $ map go args
     where
@@ -2157,8 +2042,8 @@ ce = \case
         cMapStore at $ do
           ca fa
           cMapLoad
-          cla $ mdaToMaybeLA mt mva
-          cTupleSet at mdt $ fromIntegral i
+          let cnew = cla $ mdaToMaybeLA mt mva
+          cTupleSet at cnew mdt $ fromIntegral i
   DLE_Remote at fs ro rng_ty (DLRemote rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo) -> do
     let DLRemoteALGO _fees r_assets r_addr2acc r_apps r_oc r_strictPay r_rawCall = malgo
     warn_lab <- asks eWhich >>= \case
@@ -3194,7 +3079,9 @@ cStateSlice :: Integer -> Word8 -> App ()
 cStateSlice size iw = do
   let i = fromIntegral iw
   let k = algoMaxAppBytesValueLen_usable
-  csubstring (k * i) (min size $ k * (i + 1))
+  let s = k * i
+  let e = min size $ k * (i + 1)
+  cextract s (e - s)
 
 compileTEAL_ :: String -> IO (Either BS.ByteString BS.ByteString)
 compileTEAL_ tealf = do
