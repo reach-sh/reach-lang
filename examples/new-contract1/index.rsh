@@ -46,6 +46,15 @@ export const main1 = make({
   },
 });
 
+// We can parse compiled output and deal with big ALGO programs
+export const main1_big = make({
+  ETH: 'child.sol.bin',
+  ALGO: {
+    approval: 'child.approve.teal.big.tok',
+    clearState: 'child.clear.teal.tok',
+  },
+});
+
 // (Including the JSON that Solidity produces)
 export const main2 = make({
   ETH: 'child.sol.json:child.sol:Contract',

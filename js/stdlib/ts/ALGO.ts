@@ -177,7 +177,7 @@ const defaultALGO_TOKEN_HEADER = 'X-Algo-API-Token';
 const defaultALGO_INDEXER_TOKEN_HEADER = 'X-Indexer-API-Token';
 
 const reachBackendVersion = 24;
-const reachAlgoBackendVersion = 10;
+const reachAlgoBackendVersion = 11;
 export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
   ABI: any,
@@ -2486,7 +2486,9 @@ const appFlatOptInMinBalance: BigNumber = bigNumberify(AppFlatOptInMinBalance)
 
 const minimumBalance_app_create = (cns:any): BigNumber => {
   const { code, opts } = cns;
-  const { approval, clearState } = code;
+  const { approvalB64, clearStateB64 } = code;
+  const approval = Buffer.from(approvalB64, 'base64');
+  const clearState = Buffer.from(clearStateB64, 'base64');
   const totalLen = approval.length + clearState.length;
   const ai_ExtraProgramPages = Math.ceil(totalLen / MaxAppProgramLen) - 1;
   const { globalBytes: ai_GlobalNumByteSlice, globalUints: ai_GlobalNumUint } = opts;

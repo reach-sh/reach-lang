@@ -3,17 +3,20 @@
 Below is a list of changes to Reach.
 Versions and changes-within-versions are listed in reverse-chronological order: newest things first.
 
-## 0.1.11: 2022/06 - present
+## 0.1.12: 2022/09 - present
 
 @{verRC("0.1.12")}
 
 + @{rcHead("0.1.12-rc1")}
 + 2022/08/25: Upgraded to Algorand node v3.9.1-beta and indexer 2.14.0-rc3.
++ 2022/08/25: ALGO-only: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 
 XXX Ensure these are the final release versions!
 XXX Actually make 0.1.12
 
-@{verRC("0.1.11")}
+## 0.1.11: 2022/06 - 2022/08
+
+@{verCur("0.1.11")}
 
 + @{rcHead("0.1.11-rc11")}
 + @{rcHead("0.1.11-rc10")}
@@ -73,7 +76,7 @@ XXX Actually make 0.1.12
 
 ## 0.1.10: 2022/04 - 2022/05
 
-@{verCur("0.1.10")}
+@{verOld("0.1.10")}
 
 + 2022/05/14: Added `{!cmd} reach support` sub-command.
 + 2022/05/13: Support custom violation messages for `{!rsh} invariant`s.
