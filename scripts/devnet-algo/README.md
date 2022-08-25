@@ -17,7 +17,5 @@ git diff algorand_data
 make generate-network
 ```
 
-Add and remove sqlite wallet
-
-## Update rawFaucetDefaultMnemonic in /js/stdlib/ts/ALGO.ts
+Then look at the modified genesis.json and config.json files and port the changes (to preserve the faucet address)
 
