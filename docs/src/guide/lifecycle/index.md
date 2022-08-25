@@ -190,7 +190,7 @@ The Reach contract should incorporate a robust test suite to ensure its security
   * Tests should be included in build processes
   * PRs should not be merged until the CI passes correctly
 * Tests should be self-contained and avoid relying on outside setup
-* Test should not rely on a fresh devnet, being the only thing running on devnet, and should avoid checking for exact block numbers
+* Tests should not rely on a fresh devnet, being the only thing running on devnet, and should avoid checking for exact block numbers
   * Sometimes this is unavoidable when the contract has differing behavior based on entering new states or ending based on elapsed block time
 * Tests should demonstrate that the happy path leads to the desired outcomes
 * Tests should demonstrate that unauthorized and invalid API calls are rejected by the contract
@@ -244,11 +244,12 @@ Join our [Discord](@{DISCORD}) for access to personalized help and guidance.
 ## Audits
 
 Commission an audit of the smart contracts to provide peace of mind to your stakeholders. 
-Reach has used Kudelski and EKA Silicon for audits. 
+Reach has used FYEO and EKA Silicon for audits. 
 They are prepared to audit Reach contracts and are able to provide such services for a lower fee and at a faster turn around time then other low-level language audits. 
 
 Ensure the highest confidence in the contract before securing an audit.
 Ideally, this confidence should be reinforced with successful UI tests before an audit is secured.
+Reach is happy to offer code reviews and advice as part of our [in]Reach Partner Program.
 
 ## Launch
 
