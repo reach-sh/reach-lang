@@ -626,21 +626,27 @@ solLargeArg' dv la =
       where
         go (k, a) = one ("." <> pretty k) <$> solArg a
     DLLA_Bytes s -> do
-      let chunks :: Int -> B.ByteString -> [B.ByteString]
-          chunks n xs =
-            case B.length xs > n of
-              False -> [xs]
-              True -> ys : chunks n zs
-                where
-                  (ys, zs) = B.splitAt n xs
-      let cs = chunks 32 s
       let g3 :: Char -> String -> String
           g3 a b = (printf "%02x" a) <> b
       let g2 x = "hex" <> solString (B.foldr g3 "" x)
-      let go i x = one (".elem" <> pretty i) (g2 x)
-      return $ c $ zipWith go ([0 ..] :: [Int]) cs
+      let bcs = fromIntegral byteChunkSize
+      case B.length s <= bcs of
+        True -> do
+          return $ one "" (g2 s)
+        False -> do
+          let chunks :: Int -> B.ByteString -> [B.ByteString]
+              chunks n xs =
+                case B.length xs > n of
+                  False -> [xs]
+                  True -> ys : chunks n zs
+                    where
+                      (ys, zs) = B.splitAt n xs
+          let cs = chunks bcs s
+          let go i x = one (".elem" <> pretty i) (g2 x)
+          return $ c $ zipWith go ([0 ..] :: [Int]) cs
     DLLA_StringDyn s ->
       return $ one "" $ solString $ T.unpack s
+
   where
     one :: Doc -> Doc -> Doc
     one f v = dv <> f <+> "=" <+> v <> semi
