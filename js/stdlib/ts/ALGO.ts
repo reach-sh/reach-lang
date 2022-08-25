@@ -1817,8 +1817,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             const appn = bigNumberToNumber(app);
             if ( ! foreignArr.includes(appn) ) {
               foreignArr.push(appn);
-              const addr = algosdk.getApplicationAddress(bigNumberToBigInt(app));
-              recordAccount_(addr);
             }
           };
           const assetsArr: number[] = [];

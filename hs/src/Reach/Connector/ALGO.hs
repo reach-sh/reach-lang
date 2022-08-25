@@ -2179,8 +2179,6 @@ ce = \case
     salloc_ "remote address" $ \storeAddr loadAddr -> do
       cContractToAddr ro
       storeAddr
-      -- XXX remove this when JJ changes stuff for us
-      incResource R_Account ro
       salloc_ "minb" $ \storeMinB loadMinB -> do
         cContractAddr
         op "min_balance"
