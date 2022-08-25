@@ -1923,7 +1923,7 @@ compile_sol_extract solf cn stdout = do
     _ -> Left $ "Expected contracts object to have unique key " <> show k <> " but had " <> show ks
 
 reachEthBackendVersion :: Int
-reachEthBackendVersion = 7
+reachEthBackendVersion = 8
 
 compile_sol_ :: FilePath -> String -> IO (Either String (String, CompiledSolRec))
 compile_sol_ solf cn = do

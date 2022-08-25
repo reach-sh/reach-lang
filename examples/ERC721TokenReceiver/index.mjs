@@ -43,7 +43,7 @@ const oz_erc721tr = await solDeploy("build/oz_erc721_tokenreceiver.json",
 
 // Reach based ERC721TokenReceiver
 const rch_erc721tr = await rchDeploy("./build/index.rch_ERC721_TokenReceiver.mjs",
-                                     [[/* time: */0, [[ /* selector: */ "0x150b7a02"]]]]);
+                                     [[/* time: */0, [ /* selector: */ "0x150b7a02"]]]);
 
 // Setup event listener for GotAToken on OpenZeppelin TokenReceiver
 let oz_gotAToken = lock();
