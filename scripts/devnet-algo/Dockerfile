@@ -48,9 +48,6 @@ RUN git clone https://github.com/algorand/indexer && cd indexer && git checkout 
 WORKDIR ${SRC_PARENT}/indexer
 
 RUN make
-#COPY indexer1.patch .
-#RUN patch -p1 < indexer1.patch
-#RUN make
 RUN cp cmd/algorand-indexer/algorand-indexer /go/bin
 
 FROM $ALPINE_IMAGE as prepare
@@ -80,10 +77,10 @@ COPY --from=build /go/bin/goal /go/bin/algod /go/bin/kmd /bin/
 COPY network_template.json .
 COPY generate.sh .
 
-ENV ALGORAND_NETWORK=algorand_network
-ENV ALGORAND_DATA=${ALGORAND_NETWORK}/Primary
+#ENV ALGORAND_NETWORK=algorand_network
+#ENV ALGORAND_DATA=${ALGORAND_NETWORK}/Primary
 #COPY ${ALGORAND_NETWORK}/FAUCET.0.3000000.partkey ${ALGORAND_NETWORK}/
-COPY ${ALGORAND_NETWORK}/FAUCET.rootkey ${ALGORAND_NETWORK}/
+#COPY ${ALGORAND_NETWORK}/FAUCET.rootkey ${ALGORAND_NETWORK}/
 #COPY ${ALGORAND_NETWORK}/FAUCET.0.3000000.partkey ${ALGORAND_DATA}/devnet-v1/
 #COPY ${ALGORAND_NETWORK}/FAUCET.rootkey ${ALGORAND_DATA}/devnet-v1/
 #COPY ${ALGORAND_DATA}/kmd-v0.5/sqlite_wallets/ {ALGORAND_DATA}/sqlite_wallets/
