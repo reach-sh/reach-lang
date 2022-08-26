@@ -3,6 +3,7 @@ orbs:
   jq: "circleci/jq@2.2.0"
   shellcheck: "circleci/shellcheck@2.2.0"
   slack: "circleci/slack@4.3.3"
+  aws-cli: "circleci/aws-cli@3.1.3"
 
 executors:
   fake:
@@ -64,17 +65,7 @@ commands:
     steps:
       - run: |
           source ./VERSION
-          for img in << parameters.deps >>; do
-            if [ $img != "" ]; then
-              TRIES=0
-              while ! docker pull reachsh/$img:circleci-$CIRCLE_SHA1 && ((TRIES < 5)); do
-                sleep 3
-                TRIES=$((TRIES + 1))
-              done
-              docker tag reachsh/$img:circleci-$CIRCLE_SHA1 reachsh/$img:latest
-              docker tag reachsh/$img:circleci-$CIRCLE_SHA1 reachsh/$img:$VERSION
-            fi
-          done
+          "${ROOT}/scripts/image-cache-pull.sh" << parameters.deps >>
 jobs:
   "do-release":
     executor: fake
@@ -87,9 +78,10 @@ jobs:
         deps: "stdlib runner react-runner rpc-server reach reach-cli devnet-eth devnet-cfx devnet-algo"
     # Publish images
     - run: |
+        # Log into the real DockerHub account to publish to the world
         docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
-        for IMG in stdlib runner react-runner rpc-server reach reach-cli devnet-algo devnet-eth devnet-cfx; do
-          ./scripts/docker-push.sh reachsh/${IMG}
+        for IMAGE in stdlib runner react-runner rpc-server reach reach-cli devnet-algo devnet-eth devnet-cfx; do
+          ./scripts/docker-push.sh "reachsh/${IMAGE}"
         done
     # Publish stdlib
     - run: |
@@ -228,9 +220,12 @@ jobs:
         deps: <<parameters.deps>>
     - run: |
         ROOT=$(pwd)
+        # Log into the caching service to save this into cache
         docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
+        # Build the image
         IMAGE="<<parameters.image>>"
         cd .circleci && ./image.sh "${IMAGE}"
+        # Save it into cache
         "${ROOT}/scripts/cache-image.sh" "${IMAGE}"
     - slack_fail
   "examples":
