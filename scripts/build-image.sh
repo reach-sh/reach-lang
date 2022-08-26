@@ -54,7 +54,7 @@ fi
 
 IMAGEC="${IMAGE}:circleci"
 if [ "${REGISTRYC}" != "" ] ; then
-  IMAGEC=$(echo "${IMAGEC}" | sed -e "s/^reachsh/${REGISTRYC}")
+  IMAGEC=$(echo "${IMAGEC}" | sed -e "s/^reachsh/${REGISTRYC}/")
 fi
 
 CACHE_FROM=()
