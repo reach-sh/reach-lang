@@ -65,8 +65,8 @@ commands:
     steps:
       - aws-cli/setup
       - run: |
-          export REGISTRYC="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-          aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${REGISTRYC}"
+          export REGISTRYC="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+          aws ecr get-login-password | docker login --username AWS --password-stdin "${REGISTRYC}"
           source ./VERSION
           "./scripts/image-cache-pull.sh" << parameters.deps >>
 jobs:
@@ -223,7 +223,7 @@ jobs:
         deps: <<parameters.deps>>
     - run: |
         ROOT=$(pwd)
-        export REGISTRYC="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        export REGISTRYC="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
         # Build the image
         IMAGE="<<parameters.image>>"
         cd .circleci && ./image.sh "${IMAGE}"
