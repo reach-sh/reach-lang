@@ -63,7 +63,10 @@ commands:
         description: "which images"
         type: string
     steps:
+      - aws-cli/setup
       - run: |
+          export REGISTRYC="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${REGISTRYC}"
           source ./VERSION
           "${ROOT}/scripts/image-cache-pull.sh" << parameters.deps >>
 jobs:
@@ -220,8 +223,7 @@ jobs:
         deps: <<parameters.deps>>
     - run: |
         ROOT=$(pwd)
-        # Log into the caching service to save this into cache
-        docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
+        export REGISTRYC="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         # Build the image
         IMAGE="<<parameters.image>>"
         cd .circleci && ./image.sh "${IMAGE}"
