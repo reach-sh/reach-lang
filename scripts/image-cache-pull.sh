@@ -1,6 +1,4 @@
 #!/bin/bash -xe
-REGISTRYC="reachsh"
-
 for IMAGE in "$@"; do
   if [ "$IMAGE" != "" ]; then
     IMAGEC="${REGISTRYC}/${IMAGE}:circleci"

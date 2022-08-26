@@ -52,25 +52,28 @@ else
   MD5_BRANCH="${CIRCLE_BRANCH}"
 fi
 
+IMAGEC="${IMAGE}:circleci"
+if [ "${REGISTRYC}" != "" ] ; then
+  IMAGEC=$(echo "${IMAGEC}" | sed -e "s/^reachsh/${REGISTRYC}")
+fi
+
 CACHE_FROM=()
 dp () {
-  if [ "${REACH_BUILD_NO_CACHE}" = "" ] ; then
-    docker pull "$1" || true
-    CACHE_FROM+=("--cache-from=${1}")
-  fi
+  docker pull "$1" || true
+  CACHE_FROM+=("--cache-from=${1}")
 }
-IMAGEC="${IMAGE}:circleci"
 dpb () {
   dp "${IMAGEC}-${1}-${MD5_BRANCH}"
   if [ "${CIRCLE_BRANCH}" != "master" ] ; then
     dp "${IMAGEC}-${1}-master"
   fi
 }
-
-dpb ""
-for i in $LAYERS; do
-  dpb "$i"
-done
+if [ "${REACH_BUILD_NO_CACHE}" = "" ] ; then
+  dpb ""
+  for i in $LAYERS; do
+    dpb "$i"
+  done
+fi
 
 DOCKER_BUILDKIT=1
 export DOCKER_BUILDKIT
