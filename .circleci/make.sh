@@ -37,6 +37,9 @@ image () {
         name: "${NAME}"
         image: "${IMAGE}"
         exec: "${EXEC}"
+        context:
+          # XXX Use a smaller context
+          - reachdevbot-on-dockerhub
 END
   deps "$@"
 }
