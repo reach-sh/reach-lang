@@ -95,4 +95,4 @@ done
 
 build_image ""
 docker tag "${IMAGEC}--${MD5_BRANCH}" "${IMAGE}:latest"
-docker tag "${IMAGEC}--${MD5_BRANCH}" "${IMAGE}:circleci-${CIRCLE_SHA1}"
+docker tag "${IMAGEC}--${MD5_BRANCH}" "${IMAGEC}-${CIRCLE_SHA1}"
