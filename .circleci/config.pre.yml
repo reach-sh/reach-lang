@@ -67,7 +67,6 @@ commands:
       - run: |
           export REGISTRYC="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
           aws ecr get-login-password | docker login --username AWS --password-stdin "${REGISTRYC}"
-          source ./VERSION
           "./scripts/image-cache-pull.sh" << parameters.deps >>
 jobs:
   "do-release":

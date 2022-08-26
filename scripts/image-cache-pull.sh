@@ -1,4 +1,10 @@
 #!/bin/bash -xe
+
+HERE=$(dirname "$0")
+ROOT="${HERE}"/..
+# shellcheck source=/dev/null
+. "${ROOT}"/VERSION
+
 for IMAGE in "$@"; do
   if [ "$IMAGE" != "" ]; then
     IMAGEC="${REGISTRYC}/${IMAGE}:circleci"
