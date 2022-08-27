@@ -8,7 +8,7 @@ where
 
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
-import Data.List (isInfixOf)
+import Data.List (intersperse, isInfixOf)
 import qualified Data.Set as S
 import Reach.Util
 import System.Directory
@@ -42,7 +42,7 @@ filterOutLines prefix bs0 = bs'
   where
     bs1s = BS.split 10 bs0
     p = not . BS.isPrefixOf prefix
-    bs2s = map (\b -> BS.snoc b 10) $ filter p bs1s
+    bs2s = intersperse (BS.singleton 10) $ filter p bs1s
     bs' = BS.concat $ bs2s
 
 testCompileOut :: FilePath -> FilePath -> IO CompileOutput
