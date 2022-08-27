@@ -87,11 +87,15 @@ hs-clean: expand
 hs-build: expand
 	stack build --fast --test --no-run-tests $(MEVEREST) reach:test:reach-test reach:exe:reachc
 
+.PHONY: hs-build-all
+hs-build-all: expand
+	stack build --fast --test --no-run-tests $(MEVEREST)
+
 .PHONY: hs-test
 hs-test: hs-build
 	# these are gitignored, so just delete them
 	rm -f $(ROOT)/examples/init/index.{rsh,mjs,txt}
-	stack test --fast --test-arguments '+RTS -N -RTS'
+	stack test --fast $(MEVEREST) --test-arguments '+RTS -N -RTS $(HS_TEST_ARGS)'
 
 .PHONY: hs-test-xml
 hs-test-xml: hs-build
@@ -101,11 +105,11 @@ hs-test-xml: hs-build
 .PHONY: hs-test-html
 hs-test-html: hs-build
 	mkdir -p test-reports
-	stack test --fast --test-arguments '--html=test-reports/results.html'
+	stack test --fast $(MEVEREST) --test-arguments '--html=test-reports/results.html'
 
 .PHONY: hs-test-accept
 hs-test-accept: hs-build
-	stack test --fast --test-arguments '+RTS -N -RTS --accept'
+	stack test --fast $(MEVEREST) --test-arguments '+RTS -N -RTS --accept $(HS_TEST_ARGS)'
 
 .PHONY: hs-deps
 hs-deps: expand
