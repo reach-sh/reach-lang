@@ -40,10 +40,10 @@ stripCallStack x =
 filterOutLines :: Output -> Output -> Output
 filterOutLines prefix bs0 = bs'
   where
-    bs1s = BS.lines bs0
-    p = BS.isPrefixOf prefix
-    bs2s = filter (negate p) bs1s
-    bs' = BS.unlines bs2s
+    bs1s = BS.split 10 bs0
+    p = not . BS.isPrefixOf prefix
+    bs2s = map (\b -> BS.snoc b 10) $ filter p bs1s
+    bs' = BS.concat $ bs2s
 
 testCompileOut :: FilePath -> FilePath -> IO CompileOutput
 testCompileOut cwd afp = do
