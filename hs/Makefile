@@ -20,10 +20,13 @@ expand: package.yaml src/Reach/Version.hs sol/stdlib.sol
 clean: hs-clean
 	rm -f package.yaml
 
-.PHONY: build-haskell-build-artifacts
-build-haskell-build-artifacts:
-	$(ROOT)/scripts/build-image.sh $(IMG_HASKELL_BUILD_ARTIFACTS) Dockerfile.haskell-build-artifacts
-	docker container rm -f repo
+.PHONY: build-haskell-build-artifacts-open
+build-haskell-build-artifacts-open:
+	$(ROOT)/scripts/build-image.sh $(IMG_HASKELL_BUILD_ARTIFACTS)-open Dockerfile.haskell-build-artifacts
+
+.PHONY: build-haskell-build-artifacts-closed
+build-haskell-build-artifacts-closed:
+	$(ROOT)/scripts/build-image.sh $(IMG_HASKELL_BUILD_ARTIFACTS)-closed Dockerfile.haskell-build-artifacts
 
 .PHONY: build-reach-cli
 build-reach-cli:
@@ -36,7 +39,7 @@ build-reach:
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
 
 .PHONY: build
-build: build-haskell-build-artifacts build-reach-cli build-reach
+build: build-haskell-build-artifacts-open build-reach-cli build-reach
 
 .PHONY: build-m1
 build-m1:

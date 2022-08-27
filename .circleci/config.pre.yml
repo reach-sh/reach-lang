@@ -33,6 +33,11 @@ commands:
     steps:
       - attach_workspace:
           at: /tmp/workspace
+  checkout_closed:
+    description: "Maybe checkout closed repository"
+    steps:
+      - run: |
+          ./.circleci/maybe-closed.sh "${CIRCLE_JOB}"
   slack_fail:
     steps:
       - slack/notify:
@@ -77,12 +82,12 @@ jobs:
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
-        deps: "stdlib runner react-runner rpc-server reach reach-cli devnet-eth devnet-cfx devnet-algo"
+        deps: "runner react-runner rpc-server reach reach-cli devnet-eth devnet-cfx devnet-algo"
     # Publish images
     - run: |
         # Log into the real DockerHub account to publish to the world
         docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
-        for IMAGE in stdlib runner react-runner rpc-server reach reach-cli devnet-algo devnet-eth devnet-cfx; do
+        for IMAGE in runner react-runner rpc-server reach reach-cli devnet-algo devnet-eth devnet-cfx; do
           ./scripts/docker-push.sh "reachsh/${IMAGE}"
         done
     # Publish stdlib
@@ -172,31 +177,43 @@ jobs:
         make sh-lint
     - slack_fail
   "hs-test":
+    parameters:
+      mode:
+        description: "whether open or closed"
+        type: string
+      deps:
+        description: "docker dependencies"
+        type: string
     executor: real
     steps:
     - checkout
+    - checkout_closed
     - workattach
     - and_restore_docker:
-        deps: "haskell-build-artifacts"
-    - run: |
-        docker run --rm -ti reachsh/haskell-build-artifacts make ROOT=.docker-root docker-check
+        deps: <<parameters.deps>>
     - run:
         command: |
+          MODE="<<parameters.mode>>"
+          docker run --rm \
+            -ti reachsh/haskell-build-artifacts-${MODE} \
+            make ROOT=.docker-root docker-check
           mkdir -p hs/test-reports
-          docker run --rm -v $(pwd)/examples:/examples/ -v $(pwd)/docs/src:/docs/src/ \
-                          -v $(pwd)/hs/t:/build/t -v $(pwd)/hs/test-reports:/build/test-reports \
-                          -v $(pwd)/vsce/data:/vsce/data -ti reachsh/haskell-build-artifacts \
-                          make ROOT=.docker-root docker-test-xml || true
-          echo "${CIRCLE_BUILD_URL}" > /tmp/workspace/hs-test-url
-          cp hs/test-reports/junit.xml /tmp/workspace/hs-test.xml
+          docker run --rm \
+            -v $(pwd)/examples:/examples/ -v $(pwd)/docs/src:/docs/src/ \
+            -v $(pwd)/hs/t:/build/t -v $(pwd)/hs/test-reports:/build/test-reports \
+            -v $(pwd)/vsce/data:/vsce/data \
+            -ti reachsh/haskell-build-artifacts-${MODE} \
+            make ROOT=.docker-root docker-test-xml || true
+          echo "${CIRCLE_BUILD_URL}" > /tmp/workspace/hs-test-${MODE}url
+          cp hs/test-reports/junit.xml /tmp/workspace/hs-test-${MODE}.xml
         no_output_timeout: 30m
     - store_test_results:
         path: "hs/test-reports"
     - persist_to_workspace:
         root: /tmp/workspace
         paths:
-          - hs-test.xml
-          - hs-test-url
+          - hs-test-<<parameters.mode>>.xml
+          - hs-test-<<parameters.mode>>-url
     - slack_fail
   "build-image":
     parameters:
@@ -212,6 +229,7 @@ jobs:
     executor: <<parameters.exec>>
     steps:
     - checkout
+    - checkout_closed
     - when:
         condition:
           equal: [ fake, << parameters.exec >> ]
@@ -349,21 +367,16 @@ workflows:
   build:
     jobs:
     - "sh-check"
-    - "hs-test":
-        requires:
-          - "build-haskell-build-artifacts"
-        context:
-          - reachdevbot-aws-ecr
-    - "do-release":
-       requires:
-         - "approve-release"
-       context:
-         - reachdevbot-on-dockerhub
-    - "approve-release":
-        type: approval
-        requires:
-          - "build-sink"
-        filters:
-          branches:
-            only: master
+    # - "approve-release":
+    #     type: approval
+    #     requires:
+    #       - "build-sink"
+    #     filters:
+    #       branches:
+    #         only: master
+    # - "do-release":
+    #    requires:
+    #      - "approve-release"
+    #    context:
+    #      - reachdevbot-on-dockerhub
     # Sink and examples follow

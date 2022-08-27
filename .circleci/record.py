@@ -78,20 +78,28 @@ nxftc = len(nxft)
 ftc = len(fail.union(time))
 xftc = ftc - nxftc
 
-# tally data from hs-test job
 def count(itr): return sum(1 for _ in itr)
-hs_test_xml = xml.parse("/tmp/workspace/hs-test.xml").getroot()
-hs_test_total = count(hs_test_xml.iter('testcase'))
-hs_test_fails = count(hs_test_xml.iter('failure'))
-total += hs_test_total
-
-fails = ftc + hs_test_fails
-nxfails = nxftc + hs_test_fails
-
 SYM = ":jayparfait: OKAY"
-PRE = f"{total} passed!"
 POST = ""
 EXIT = 0
+fails = ftc
+nxfails = nxftc
+
+def extrajob(lab):
+    this_xml = xml.parse(f"/tmp/workspace/{lab}.xml").getroot()
+    this_total = count(this_xml.iter('testcase'))
+    this_fails = count(this_xml.iter('failure'))
+    total += this_total
+    fails += this_fails
+    nxfails += this_fails
+    if this_fails > 0:
+        this_url = open(f"/tmp/workspace/{lab}-url", 'r').read().strip()
+        POST += f"\\n- *{lab}* {this_fails}: <{this_url}|more...>"
+
+extrajob("hs-test-open")
+extrajob("hs-test-closed")
+
+PRE = f"{total} passed!"
 
 if fails > 0:
     EXIT = 1
@@ -100,9 +108,6 @@ if fails > 0:
     if xftc > 0:
         PRE += f" ({xftc} expected)"
 
-if hs_test_fails > 0:
-    hs_test_url = open('/tmp/workspace/hs-test-url', 'r').read().strip()
-    POST += f"\\n- *hs-test* {hs_test_fails}: <{hs_test_url}|more...>"
 
 for c in conns:
     def fmte(e):
