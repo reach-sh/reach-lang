@@ -8,6 +8,10 @@ if ! (echo "$JOB" | grep closed > /dev/null) ; then
   exit 0
 fi
 
+RPZ=$(realpath "$0")
+ROOT="$(dirname "$RPZ")/.."
+cd "${ROOT}"
+
 go () {
   BRANCH="$1"
   echo "Making shallow clone of '$BRANCH'"
@@ -20,6 +24,4 @@ else
   go "master"
 fi
 
-RPZ=$(realpath "$0")
-HERE="$(dirname "$RPZ")"
-exec "${HERE}/link.sh"
+exec "./reach-everest/link.sh"
