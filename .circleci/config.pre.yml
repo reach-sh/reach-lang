@@ -352,6 +352,8 @@ workflows:
     - "hs-test":
         requires:
           - "build-haskell-build-artifacts"
+        context:
+          - reachdevbot-aws-ecr
     - "do-release":
        requires:
          - "approve-release"

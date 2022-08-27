@@ -72,6 +72,8 @@ conn () {
         name: "${NAME}"
         connector: "${CONN}"
         size: ${SIZE}
+        context:
+          - reachdevbot-aws-ecr
 END
   deps "reach" "reach-cli" "runner" "react-runner" "rpc-server" "${IMAGE}"
   BT_NAME="browser-tests.${CONN}"
@@ -79,6 +81,8 @@ END
     - "browser-tests":
         name: "${BT_NAME}"
         connector: "${CONN}"
+        context:
+          - reachdevbot-aws-ecr
 END
   deps "reach" "reach-cli" "react-runner" "${IMAGE}"
   cat >>"${END}" <<END
