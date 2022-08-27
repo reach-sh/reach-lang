@@ -4,7 +4,7 @@ ROOT=".."
 TARGET="build-${WHICH}"
 
 case "$WHICH" in
-  "haskell-build-artifacts"|"reach"|"reach-cli")
+  "haskell-build-artifacts-open"|"haskell-build-artifacts-closed"|"reach"|"reach-cli")
     DIR="hs"
     ;;
   "js-deps"|"stdlib"|"runner"|"react-runner"|"rpc-server")

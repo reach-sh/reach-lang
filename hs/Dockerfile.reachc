@@ -1,5 +1,5 @@
 ARG ALPINE_IMAGE
-FROM reachsh/haskell-build-artifacts AS build
+FROM reachsh/haskell-build-artifacts-open AS build
 
 FROM $ALPINE_IMAGE
 RUN apk add gmp libgmpxx git mariadb-connector-c-dev pcre-dev
