@@ -8,9 +8,9 @@ import Data.Word
 import qualified Reach.Closed.TAF.Verify
 #endif
 
-run :: BS.ByteString -> [Word8] -> IO ()
+run :: String -> BS.ByteString -> [Word8] -> IO ()
 #ifdef REACH_EVEREST
 run = Reach.Closed.TAF.Verify.run
 #else
-run _ _ = return ()
+run _ _ _ = return ()
 #endif

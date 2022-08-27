@@ -3479,7 +3479,7 @@ compile_algo env disp pl = do
         t <- renderOut ts'
         tf <- disp (lab <> ".teal") t
         bc <- compileTEAL tf
-        Verify.run bc [gvSlot GV_svs, gvSlot GV_apiRet]
+        Verify.run lab bc [gvSlot GV_svs, gvSlot GV_apiRet]
         return bc
   let addProg lab ts' = do
         tbs <- compileProg lab ts'

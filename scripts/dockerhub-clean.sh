@@ -4,7 +4,7 @@ HT="${HOME}/Dev/dist/hub-tool/hub-tool"
 
 while IFS= read -r TAG; do
     "${HT}" tag rm -f "$TAG"
-    sleep 3
+    sleep 5
 done < dockerhub-circleci.txt
 
 exit 0
