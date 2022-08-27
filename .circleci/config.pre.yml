@@ -204,7 +204,7 @@ jobs:
             -v $(pwd)/vsce/data:/vsce/data \
             -ti reachsh/haskell-build-artifacts-${MODE} \
             make ROOT=.docker-root docker-test-xml || true
-          echo "${CIRCLE_BUILD_URL}" > /tmp/workspace/hs-test-${MODE}url
+          echo "${CIRCLE_BUILD_URL}" > /tmp/workspace/hs-test-${MODE}-url
           cp hs/test-reports/junit.xml /tmp/workspace/hs-test-${MODE}.xml
         no_output_timeout: 30m
     - store_test_results:
