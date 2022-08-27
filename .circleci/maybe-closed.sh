@@ -3,7 +3,7 @@ REPO=reach-everest
 REMOTE="git@github.com:reach-sh/${REPO}.git"
 
 JOB="$1"
-if ! (grep closed "$JOB" > /dev/null) ; then
+if ! (echo "$JOB" | grep closed > /dev/null) ; then
   echo "Not closed"
   exit 0
 fi
