@@ -102,11 +102,6 @@ hs-test-xml: hs-build
 	mkdir -p test-reports
 	$(MAKE) MAYBE_FAST=--fast docker-test-xml
 
-.PHONY: hs-test-html
-hs-test-html: hs-build
-	mkdir -p test-reports
-	stack test --fast $(MEVEREST) --test-arguments '--html=test-reports/results.html'
-
 .PHONY: hs-test-accept
 hs-test-accept: hs-build
 	stack test --fast $(MEVEREST) --test-arguments '+RTS -N -RTS --accept $(HS_TEST_ARGS)'
