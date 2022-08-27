@@ -37,6 +37,14 @@ stripCallStack :: Output -> Output
 stripCallStack x =
   fst $ BS.breakSubstring "CallStack (from HasCallStack):" x
 
+filterOutLines :: Output -> Output -> Output
+filterOutLines prefix bs0 = bs'
+  where
+    bs1s = BS.lines bs0
+    p = BS.isPrefixOf prefix
+    bs2s = filter (negate p) bs1s
+    bs' = BS.unlines bs2s
+
 testCompileOut :: FilePath -> FilePath -> IO CompileOutput
 testCompileOut cwd afp = do
   cfp <- canonicalizePath $ cwd </> afp
@@ -47,7 +55,11 @@ testCompileOut cwd afp = do
       readProcessWithExitCode "reachc" ["--disable-reporting", rfp] ""
   let out = bpack outs
   let err = bpack errs
-  let fmt = replaceBs (bpack dir) "." $ stripCallStack $ out <> err
+  let fmt0 = out <> err
+  let fmt1 = stripCallStack fmt0
+  let fmt2 = replaceBs (bpack dir) "." fmt1
+  let fmt3 = filterOutLines "*Premium*" fmt2
+  let fmt = fmt3
   case ec of
     ExitSuccess -> return $ Right fmt
     ExitFailure _ -> return $ Left fmt
