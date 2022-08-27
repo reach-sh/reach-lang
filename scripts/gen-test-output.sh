@@ -35,10 +35,13 @@ SED_COMMAND="gsed"
 if [ "$(which gsed)" = "" ]; then
   SED_COMMAND="sed"
 fi
-$SED_COMMAND --quiet "/CallStack (from HasCallStack):/q;p " "$STDERR_F" >> "$OUTPUT_F"
+"$SED_COMMAND" --quiet "/CallStack (from HasCallStack):/q;p " "$STDERR_F" >> "$OUTPUT_F"
 
 # full directory paths are replaced with "."
 ESCAPED="$(echo "$DIRNAME" | $SED_COMMAND 's/\./\\\./g')"
-$SED_COMMAND --in-place "s#$ESCAPED#.#g" "$OUTPUT_F"
+"$SED_COMMAND" --in-place "s#$ESCAPED#.#g" "$OUTPUT_F"
+
+# Remove Premium lines
+"$SED_COMMAND" --in-place '/^\*Premium\*/d' "$OUTPUT_F"
 
 cat "$OUTPUT_F"
