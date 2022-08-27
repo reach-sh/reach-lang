@@ -86,6 +86,7 @@ fails = ftc
 nxfails = nxftc
 
 def extrajob(lab):
+    global total, fails, nxfails
     this_xml = xml.parse(f"/tmp/workspace/{lab}.xml").getroot()
     this_total = count(this_xml.iter('testcase'))
     this_fails = count(this_xml.iter('failure'))
@@ -107,7 +108,6 @@ if fails > 0:
     PRE = f"{fails} of {total} failed!"
     if xftc > 0:
         PRE += f" ({xftc} expected)"
-
 
 for c in conns:
     def fmte(e):
