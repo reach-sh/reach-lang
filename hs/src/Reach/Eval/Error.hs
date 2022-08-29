@@ -168,6 +168,8 @@ data EvalError
   | Err_JSON SLValTy
   | Err_ContractCode ConnectorName String SLValTy
   | Err_Invalid_Exponential_Form String
+  | Err_BytesFromHex_WrongLength Integer String
+  | Err_BytesFromHex_Invalid
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -317,6 +319,8 @@ instance HasErrorCode EvalError where
     Err_JSON {} -> 136
     Err_ContractCode {} -> 137
     Err_Invalid_Exponential_Form {} -> 138
+    Err_BytesFromHex_WrongLength {} -> 139
+    Err_BytesFromHex_Invalid {} -> 140
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -781,5 +785,9 @@ instance Show EvalError where
       "Failed to compile or parse contract code for " <> show cn <> ": " <> msg <> ": " <> show_sv sv
     Err_Invalid_Exponential_Form t ->
       "Invalid " <> t <> " in exponential notation"
+    Err_BytesFromHex_WrongLength l s ->
+      "Bytes(" <> show l <> ").fromHex expects a hex string of length " <> show (l * 2) <> ". '0x" <> s <> "' is of length " <> show (length s)
+    Err_BytesFromHex_Invalid ->
+      "Bytes.fromHex received a string that does not contain valid hex characters"
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

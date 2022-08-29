@@ -714,7 +714,13 @@ export const makeDigest = (mode: DigestMode, prep: any) => (ts_:any, vs_:any) =>
   return r;
 };
 
-export const hexToString = ethers.utils.toUtf8String;
+export const hexToString = (x:any) => {
+  try {
+    return ethers.utils.toUtf8String(x);
+  } catch(_) {
+    return '0x' + Buffer.from(x).toString('hex');
+  }
+}
 
 const byteToHex = (b: number): string => (b & 0xFF).toString(16).padStart(2, '0');
 const byteArrayToHex = (b: any): string => Array.from(b, byteToHex).join('');

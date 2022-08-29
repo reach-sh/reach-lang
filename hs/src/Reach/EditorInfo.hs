@@ -187,6 +187,7 @@ completionKind v =
         SLPrim_Contract_new -> Just CK_Function
         SLPrim_Contract_new_ctor {} -> Just CK_Function
         SLPrim_toStringDyn -> Just CK_Function
+        SLPrim_Bytes_fromHex _ -> Just CK_Method
     SLV_Form slf ->
       case slf of
         SLForm_App -> Just CK_Constructor

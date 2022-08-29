@@ -461,7 +461,7 @@ instance PrettySubst DLLargeArg where
     DLLA_Struct kvs -> do
       kvs' <- render_dasM kvs
       return $ "struct" <> brackets kvs'
-    DLLA_Bytes bs -> return $ dquotes (pretty $ bunpack bs)
+    DLLA_Bytes bs -> return $ pretty bs
     DLLA_StringDyn t -> return $ dquotes (pretty t)
 
 mdaToMaybeLA :: DLType -> Maybe DLArg -> DLLargeArg
