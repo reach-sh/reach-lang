@@ -51,6 +51,8 @@ export type { // =>
 export type Token = CBR_Address;
 export type PayAmt = MkPayAmt<Token>;
 
+export { makeDigest };
+
 // TODO: restore return type annotation once types are in place
 export function makeEthLikeCompiled(ethLikeCompiledArgs: EthLikeCompiledArgs) {
 // ...............................................
@@ -140,11 +142,17 @@ const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, ETH_Bytes> => {
   const me = {
     ...CBR.BT_Bytes(len),
     munge: ((bv: CBR_Bytes): ETH_Bytes => {
-      const bs = Array.from(ethers.utils.toUtf8Bytes(bv));
+      const ubs = bv.startsWith('0x')
+                  ? ethers.utils.arrayify(bv)
+                  : ethers.utils.toUtf8Bytes(bv);
+      const bs = Array.from(ubs);
       return (len <= byteChunkSize) ? bs : splitToChunks(bs, byteChunkSize);
     }),
     unmunge: ((nvs: ETH_Bytes): CBR_Bytes => {
-      const go = (nv:any) => hexToString(ethers.utils.hexlify(unBigInt(nv)))
+      const go = (nv:any) => {
+        const r = ethers.utils.hexlify(unBigInt(nv));
+        return r.startsWith('0x') ? r : hexToString(r);
+      }
       const nvs_s = (len <= byteChunkSize) ? go(nvs) : nvs.map(go);
       const nvss = "".concat(...nvs_s);
       // debug(me.name, nvs, nvss);

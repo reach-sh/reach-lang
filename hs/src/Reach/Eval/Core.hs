@@ -47,6 +47,7 @@ import System.FilePath
 import Text.ParserCombinators.Parsec.Number (numberValue)
 import Text.RE.TDFA (RE, compileRegex, matched, (?=~))
 import Numeric (showFFloat, fromRat)
+import qualified Data.ByteString.Base16 as B16
 
 --- New Types
 
@@ -1444,7 +1445,8 @@ evalAsEnvM sv@(lvl, obj) = case obj of
   SLV_Type (ST_Bytes len) -> do
     return $ Just $
       M.fromList
-        [("pad", retV $ public $ SLV_Prim $ SLPrim_padTo len)]
+        [ ("pad", retV $ public $ SLV_Prim $ SLPrim_padTo len)
+        , ("fromHex", retV $ public $ SLV_Prim $ SLPrim_Bytes_fromHex len)]
   SLV_Prim SLPrim_Participant ->
     return $ Just $
       M.fromList
@@ -4087,6 +4089,14 @@ evalPrim p sargs =
         case dt of
           T_UInt ui -> evalPrimOp (S_UINT_TO_STRINGDYN ui) [ (lvl, v) ]
           _ -> expect_t v $ Err_Expected "Bytes or UInt"
+    SLPrim_Bytes_fromHex len -> do
+      at <- withAt id
+      hs <- mustBeBytes =<< one_arg
+      let hsNoPrefix = B.drop 2 hs
+      when (B.length hsNoPrefix /= fromIntegral (len * 2)) $ do
+          expect_ $ Err_BytesFromHex_WrongLength len $ bunpack hsNoPrefix
+      bs <- either (const $ expect_ Err_BytesFromHex_Invalid) return $ B16.decodeBase16 hsNoPrefix
+      return (lvl, SLV_Bytes at bs)
     -- END OF evalPrim cases
   where
     lvl = mconcatMap fst sargs

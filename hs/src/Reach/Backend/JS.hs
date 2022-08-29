@@ -21,6 +21,8 @@ import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Version
 import Reach.BigOpt
+import qualified Data.Text.Encoding as BS
+import qualified Data.ByteString.Base16 as B16
 
 --- JS Helpers
 
@@ -260,7 +262,11 @@ jsLargeArg = \case
     return $ jsArray [jsString vn, vv']
   DLLA_Struct kvs ->
     jsLargeArg $ DLLA_Obj $ M.fromList kvs
-  DLLA_Bytes b -> return $ jsBytes b
+  DLLA_Bytes b -> do
+    case BS.decodeUtf8' b of
+      Left _ -> do
+        return $ dquotes $ "0x" <> pretty (B16.encodeBase16 b) -- printHex $ (B.foldr bs "" b)
+      Right _ -> return $ jsBytes b
   DLLA_StringDyn t -> return $ jsString $ T.unpack t
 
 jsBytes :: B.ByteString -> Doc

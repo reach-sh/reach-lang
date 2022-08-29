@@ -803,6 +803,16 @@ md5: 10a27da3d0db49a29e29f79b6fd57dad
 range: 9 - 9
 ```
 
+### `Bytes.fromHex`
+
+@{ref("rsh", "Bytes.fromHex")}
+```reach
+Bytes(4).fromHex('0x01ffc9a7');
+```
+
+`{!rsh} Bytes(n).fromHex(BYTES)` allows a value of `{!rsh} Bytes(n)` to be constructed with hexadecimal notation.
+The value of, `BYTES`, must be known at compile time.
+
 ### String Concatenation
 
 @{ref("rsh", "StringDyn.concat")}
