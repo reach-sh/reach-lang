@@ -265,7 +265,7 @@ jsLargeArg = \case
   DLLA_Bytes b -> do
     case BS.decodeUtf8' b of
       Left _ -> do
-        return $ dquotes $ "0x" <> pretty (B16.encodeBase16 b) -- printHex $ (B.foldr bs "" b)
+        return $ dquotes $ "0x" <> pretty (B16.encodeBase16 b)
       Right _ -> return $ jsBytes b
   DLLA_StringDyn t -> return $ jsString $ T.unpack t
 

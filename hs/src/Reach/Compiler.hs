@@ -117,7 +117,6 @@ compile env (CompilerOpts {..}) = do
         crs <- mapM runConnector dlo_connectors
         loud $ "running backend js"
         backend_js woutn crs pl
-        loud $ "done"
         return ()
 
 doIf :: a -> Bool -> Maybe a

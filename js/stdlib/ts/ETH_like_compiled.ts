@@ -51,8 +51,6 @@ export type { // =>
 export type Token = CBR_Address;
 export type PayAmt = MkPayAmt<Token>;
 
-export { makeDigest };
-
 // TODO: restore return type annotation once types are in place
 export function makeEthLikeCompiled(ethLikeCompiledArgs: EthLikeCompiledArgs) {
 // ...............................................
