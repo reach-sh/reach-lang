@@ -119,7 +119,7 @@ instance CollectsTypes DLRemoteALGOOC where
   cts = const mempty
 
 instance CollectsTypes DLRemoteALGO where
-  cts (DLRemoteALGO x y z w v u) = cts x <> cts y <> cts z <> cts w <> cts v <> cts u
+  cts (DLRemoteALGO x y z w v u t) = cts x <> cts y <> cts z <> cts w <> cts v <> cts u <> cts t
 
 instance CollectsTypes AS.Value where
   cts = const mempty
