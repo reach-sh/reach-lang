@@ -12,14 +12,18 @@ const acc = await stdlib.newTestAccount(stdlib.parseCurrency(100));
 
 // ===== Helper functions =====
 const lock = () => {
-  let lockObj = {};
+  const lockObj = {};
   lockObj.reset = () => lockObj.wait = new Promise(r => { lockObj.unlock = r; });
   lockObj.reset();
   return lockObj;
 };
 
-const deploy = (abi, bin, args = []) =>
-  (new ethers.ContractFactory(abi, bin, acc.networkAccount)).deploy(...args);
+const deploy = async (abi, bin, args = []) => {
+  const factory = new ethers.ContractFactory(abi, bin, acc.networkAccount);
+  const contract = await factory.deploy(...args);
+  await contract.deployTransaction.wait();
+  return contract;
+}
 
 const solDeploy = async (solOutputPath, ctcName) => {
   const ctcJson = await fs.promises.readFile(solOutputPath);
