@@ -64,7 +64,7 @@ instance Sanitize DLRemoteALGOOC where
   sani = id
 
 instance Sanitize DLRemoteALGO where
-  sani (DLRemoteALGO x y z w v u) = DLRemoteALGO (sani x) (sani y) (sani z) (sani w) (sani v) (sani u)
+  sani (DLRemoteALGO x y z w v u t) = DLRemoteALGO (sani x) (sani y) (sani z) (sani w) (sani v) (sani u) (sani t)
 
 instance Sanitize AS.Value where
   sani = id

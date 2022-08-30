@@ -2160,7 +2160,7 @@ ce = \case
           cla $ mdaToMaybeLA mt mva
           cTupleSet at mdt $ fromIntegral i
   DLE_Remote at fs ro rng_ty (DLRemote rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo) -> do
-    let DLRemoteALGO _fees r_assets r_addr2acc r_apps r_oc r_strictPay = malgo
+    let DLRemoteALGO _fees r_assets r_addr2acc r_apps r_oc r_strictPay r_rawCall = malgo
     warn_lab <- asks eWhich >>= \case
       Just which -> return $ "Step " <> show which
       Nothing -> return $ "This program"
@@ -2227,8 +2227,9 @@ ce = \case
           ca ro
           incResource R_App ro
           makeTxn1 "ApplicationID"
-          cbs $ sigStrToBytes sig
-          makeTxn1 "ApplicationArgs"
+          when (not r_rawCall) $ do
+            cbs $ sigStrToBytes sig
+            makeTxn1 "ApplicationArgs"
           accountsR <- liftIO $ newCounter 1
           let processArg a = do
                 ca a

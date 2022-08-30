@@ -139,7 +139,7 @@ instance Freshen DLRemoteALGOOC where
   fu = return
 
 instance Freshen DLRemoteALGO where
-  fu (DLRemoteALGO x y z w v u) = DLRemoteALGO <$> fu x <*> fu y <*> fu z <*> fu w <*> fu v <*> fu u
+  fu (DLRemoteALGO x y z w v u t) = DLRemoteALGO <$> fu x <*> fu y <*> fu z <*> fu w <*> fu v <*> fu u <*> fu t
 
 instance Freshen AS.Value where
   fu = return

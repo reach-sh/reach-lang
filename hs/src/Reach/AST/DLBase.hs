@@ -753,11 +753,12 @@ data DLRemoteALGO = DLRemoteALGO
   , ralgo_apps :: [DLArg]
   , ralgo_onCompletion :: DLRemoteALGOOC
   , ralgo_strictPay :: Bool
+  , ralgo_rawCall :: Bool
   }
   deriving (Eq, Ord)
 
 zDLRemoteALGO :: DLRemoteALGO
-zDLRemoteALGO = DLRemoteALGO argLitZero mempty False mempty RA_NoOp False
+zDLRemoteALGO = DLRemoteALGO argLitZero mempty False mempty RA_NoOp False False
 
 instance PrettySubst DLRemoteALGO where
   prettySubst (DLRemoteALGO {..}) = do
@@ -774,6 +775,7 @@ instance PrettySubst DLRemoteALGO where
           , ("addr2acc", pretty a2a')
           , ("apps", render_das p')
           , ("strictPay", pretty sp)
+          , ("rawCall", pretty ralgo_rawCall)
           ]
 
 data DLContractNew = DLContractNew

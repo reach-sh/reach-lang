@@ -3675,7 +3675,7 @@ evalPrim p sargs =
       metam <- mustBeObject =<< one_arg
       metam' <- mapM (ensure_public . sss_sls) metam
       let actual = M.keysSet metam'
-      let valid = S.fromList $ [ "fees", "assets", "addressToAccount", "apps", "onCompletion", "strictPay" ]
+      let valid = S.fromList $ [ "fees", "assets", "addressToAccount", "apps", "onCompletion", "strictPay", "rawCall" ]
       unless (actual `S.isSubsetOf` valid) $ do
         expect_ $ Err_Remote_ALGO_extra $ S.toAscList $
           actual `S.difference` valid
@@ -3689,6 +3689,7 @@ evalPrim p sargs =
         Nothing -> return $ DLA_Literal $ DLL_Int at UI_Word 0
         Just v -> compileCheckType (T_UInt UI_Word) v
       ralgo_strictPay <- expectBool "strictPay"
+      ralgo_rawCall <- expectBool "rawCall"
       ralgo_assets <- metal "assets" $ \case
         Nothing -> return $ mempty
         Just v -> do

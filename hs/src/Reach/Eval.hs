@@ -204,7 +204,7 @@ instance Pandemic DLRemoteALGOOC where
   pan = return
 
 instance Pandemic DLRemoteALGO where
-  pan (DLRemoteALGO x y z w v u) = DLRemoteALGO <$> pan x <*> pan y <*> pan z <*> pan w <*> pan v <*> pan u
+  pan (DLRemoteALGO x y z w v u t) = DLRemoteALGO <$> pan x <*> pan y <*> pan z <*> pan w <*> pan v <*> pan u <*> pan t
 
 instance Pandemic DLPayAmt where
   pan (DLPayAmt net ks) = do
