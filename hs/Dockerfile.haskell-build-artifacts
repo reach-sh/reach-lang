@@ -43,6 +43,7 @@ COPY .docker-root ./.docker-root
 COPY Makefile.docker ./Makefile
 RUN make ROOT=.docker-root install-mo
 COPY package.open.yaml ./
+COPY package.closed.yaml ./
 RUN make ROOT=.docker-root package.yaml
 
 COPY stack.yaml stack.yaml.lock ./
@@ -57,7 +58,9 @@ ADD test ./test/
 
 RUN make ROOT=.docker-root src/Reach/Version.hs
 
-RUN set -o pipefail ; stack build 2>&1 | tee build-log.txt
+ARG REACH_HS_STACK_ARGS
+ENV REACH_HS_STACK_ARGS=${REACH_HS_STACK_ARGS}
+RUN set -o pipefail ; stack build ${REACH_HS_STACK_ARGS} 2>&1 | tee build-log.txt
 RUN mv "$(stack path --local-install-root)/bin" /build/bin/
 
 COPY --from=solc /usr/local/bin/solc /usr/bin/solc

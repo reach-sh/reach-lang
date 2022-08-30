@@ -5,6 +5,14 @@ export REACH="${ROOT}/reach"
 export REACH_DOCKER=0
 ${REACH} -h
 
+# Call like... hta "$@"
+ht () {
+  cd hs && HS_TEST_ARGS="-p $*" make
+}
+hta () {
+  cd hs && HS_TEST_ARGS="-p $*" make hs-test-accept
+}
+
 gf () {
   echo gf "$@"
   "${ROOT}"/scripts/gen-test-output.sh "$@"
