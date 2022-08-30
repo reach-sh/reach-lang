@@ -645,6 +645,7 @@ base_env_slvals =
   , ("veriMul", SLV_Prim $ SLPrim_op (S_MUL $ Just PV_Veri))
   , ("veriDiv", SLV_Prim $ SLPrim_op (S_DIV $ Just PV_Veri))
   , ("veriMod", SLV_Prim $ SLPrim_op (S_MOD $ Just PV_Veri))
+  , ("makeSeal", SLV_Prim $ SLPrim_makeSeal)
   , ( "Reach"
     , (SLV_Object sb (Just $ "Reach") $
          m_fromList_public_builtin
@@ -771,6 +772,7 @@ slToDLV = \case
   SLV_Map {} -> no
   SLV_Deprecated _ v -> slToDLV v
   SLV_ContractCode {} -> no
+  SLV_Sealed _ _ _ v -> slToDLV v
   where
     recs = mapM slToDLV
     lit at = arg at . DLA_Literal
@@ -805,6 +807,7 @@ slToJSON v =
     SLV_Map {} -> no
     SLV_Deprecated _ x -> slToJSON x
     SLV_ContractCode {} -> no
+    SLV_Sealed _ _ _ x -> slToJSON x
   where
     no = expect_t v Err_JSON
     arr vs = (Aeson.Array . Vector.fromList) <$> mapM slToJSON vs
@@ -2616,6 +2619,13 @@ doArrayBoundsCheck sz idxv = do
     evalApplyVals' (SLV_Prim $ SLPrim_claim CT_Assert) $
       [cmp_v, public $ SLV_Bytes at "array bounds check"]
 
+mustBeUint :: SLVal -> App Integer
+mustBeUint = \case
+  SLV_Int _ _ i -> return i
+  ow ->
+    locAtf (flip srclocOf_ ow) $
+      expect_t ow $ Err_Expected "uint"
+
 mustBeBytes :: SLVal -> App B.ByteString
 mustBeBytes = \case
   SLV_Bytes _ x -> return $ x
@@ -4086,6 +4096,35 @@ evalPrim p sargs =
         case dt of
           T_UInt ui -> evalPrimOp (S_UINT_TO_STRINGDYN ui) [ (lvl, v) ]
           _ -> expect_t v $ Err_Expected "Bytes or UInt"
+    SLPrim_makeSeal -> do
+      at <- withAt id
+      labelBytes <- one_arg >>= mustBeBytes
+      key <- ctxt_alloc
+      let labelStr = t2s $ b2t labelBytes
+      -- TODO - be sure to escape this string properly, or restrict input
+      let mkCode f = "(v) => " <> f <> "('" <> labelStr <> "', " <> show key <> ", v)"
+      let wrapClo = jsClo at "seal" (mkCode "wrapSeal") (M.fromList [("wrapSeal", SLV_Prim SLPrim_wrapSeal)])
+      let unwrapClo = jsClo at "unseal" (mkCode "unwrapSeal") (M.fromList [("unwrapSeal", SLV_Prim SLPrim_unwrapSeal)])
+      return $ (lvl, SLV_Tuple at [wrapClo, unwrapClo])
+    SLPrim_wrapSeal -> do
+      at <- withAt id
+      (label, key, val) <- three_args
+      keyInt <- mustBeUint key
+      labelBytes <- mustBeBytes label
+      let labelStr = t2s $ b2t $ labelBytes
+      return $ (lvl, SLV_Sealed at labelStr keyInt val)
+    SLPrim_unwrapSeal -> do
+      (labelSlv, unwrapkeySlv, sealedVal) <- three_args
+      labelBytes <- mustBeBytes labelSlv
+      let expectLabel = (t2s $ b2t labelBytes)
+      unwrapKey <- mustBeUint unwrapkeySlv
+      case sealedVal of
+        SLV_Sealed _ _ sealKey val -> do
+          case sealKey == unwrapKey of
+            -- TODO - this is probably not the right error, maybe I need to make a new one that can show the two labels.
+            False -> expect_t sealedVal $ Err_Expected expectLabel
+            True -> return (lvl, val)
+        _ -> expect_t sealedVal $ Err_Expected expectLabel
     -- END OF evalPrim cases
   where
     lvl = mconcatMap fst sargs

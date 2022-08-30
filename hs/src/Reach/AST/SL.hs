@@ -174,6 +174,7 @@ data SLVal
   | SLV_Map DLMVar
   | SLV_Deprecated Deprecation SLVal
   | SLV_ContractCode SrcLoc ConnectorObject
+  | SLV_Sealed SrcLoc String Integer SLVal
   deriving (Eq, Generic)
 
 uintTyM :: SLVal -> Maybe UIntTy
@@ -423,6 +424,7 @@ instance Pretty SLVal where
     SLV_Anybody -> "Anybody"
     SLV_Deprecated d s -> "<deprecated: " <> viaShow d <> ">(" <> pretty s <> ")"
     SLV_ContractCode {} -> "<contractCode>"
+    SLV_Sealed _ label _ v -> "<sealed: " <> viaShow label <> " " <> pretty v <> ">"
 
 instance SrcLocOf SLVal where
   srclocOf = \case
@@ -450,6 +452,7 @@ instance SrcLocOf SLVal where
     SLV_Map _ -> sb
     SLV_Deprecated _ v -> srclocOf v
     SLV_ContractCode a _ -> a
+    SLV_Sealed a _ _ _ -> a
 
 isSmallLiteralArray :: SLVal -> Bool
 isSmallLiteralArray = \case
@@ -828,6 +831,9 @@ data SLPrimitive
   | SLPrim_Contract_new
   | SLPrim_Contract_new_ctor DLContractNews
   | SLPrim_toStringDyn
+  | SLPrim_makeSeal
+  | SLPrim_wrapSeal
+  | SLPrim_unwrapSeal
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

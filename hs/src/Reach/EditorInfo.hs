@@ -83,6 +83,7 @@ completionKind v =
     SLV_Kwd _ -> Just CK_Keyword
     SLV_DLVar _ -> Just CK_Variable
     SLV_Anybody -> Just CK_Keyword
+    SLV_Sealed {} -> Just CK_Variable
     SLV_Prim slp ->
       case slp of
         SLPrim_makeEnum -> Just CK_Function
@@ -187,6 +188,9 @@ completionKind v =
         SLPrim_Contract_new -> Just CK_Function
         SLPrim_Contract_new_ctor {} -> Just CK_Function
         SLPrim_toStringDyn -> Just CK_Function
+        SLPrim_makeSeal -> Just CK_Function
+        SLPrim_wrapSeal -> Just CK_Function
+        SLPrim_unwrapSeal -> Just CK_Function
     SLV_Form slf ->
       case slf of
         SLForm_App -> Just CK_Constructor
