@@ -1,18 +1,20 @@
 #!/bin/bash -e
 
 HT="${HOME}/Dev/dist/hub-tool/hub-tool"
+FILE=dockerhub
 
+# Grab all of them
+echo -n > "${FILE}"
+for IMG in reach reach-cli runner react-runner rpc-server devnet-algo devnet-eth devnet-cfx ; do
+  "${HT}" tag ls "reachsh/${IMG}" --sort updated=desc --format json --all >> "${FILE}.${IMG}.json"
+done
+exit 0
+
+# Delete from file
 while IFS= read -r TAG; do
     "${HT}" tag rm -f "$TAG"
     sleep 5
-done < dockerhub-circleci.txt
-
-exit 0
-
-# Grab all of them
-for IMG in reach reach-cli runner react-runner rpc-server devnet-algo devnet-eth devnet-cfx ; do
-  "${HT}" tag ls "reachsh/${IMG}" --sort updated=desc --format json --all | jq -r '.[] | .Name' > dockerhub.${IMG}.txt
-done
+done < "${FILE}.rm"
 exit 0
 
 # Delete the old ones
