@@ -2253,7 +2253,6 @@ ce = \case
                 processArg a
                 makeTxn1 "ApplicationArgs"
           let processArgTuple tas = do
-                --cconcatbs_ processArg $ map (\a -> (argTypeOf a, ca a)) tas
                 cconcatbs_ (const $ return ()) $
                   map (\a -> (argTypeOf a, processArg a)) tas
                 makeTxn1 "ApplicationArgs"
