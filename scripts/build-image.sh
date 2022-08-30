@@ -40,6 +40,12 @@ ARGS+=( "--build-arg" "REACH_VERSION=${VERSION}" )
 
 ARGS+=( "--build-arg" "Z3_VERSION=${Z3_VERSION}" )
 
+REACH_OPEN=${REACH_OPEN:-Y}
+if [ "${REACH_OPEN}" = "n" ] ; then
+  REACH_HS_STACK_ARGS="--flag reach:everest"
+fi
+ARGS+=( "--build-arg" "REACH_HS_STACK_ARGS=${REACH_HS_STACK_ARGS}" )
+
 LAYERS=$(grep -E 'FROM .* (as|AS)' "${FILE}" | grep -v ignore | awk -F ' (as|AS) ' '{print $2}')
 
 if [ "${CIRCLE_BRANCH}" = "" ] ; then
@@ -88,7 +94,10 @@ build_image () {
 
     # linux/arm64
     # docker build --platform=linux/amd64 "$TAG" "${TARGET[@]}" "${CACHE_FROM[@]}" "${ARGS[@]}" --file "$FILE" --build-arg BUILDKIT_INLINE_CACHE=1 .
-    docker build "$TAG" "${TARGET[@]}" "${CACHE_FROM[@]}" "${ARGS[@]}" --file "$FILE" --build-arg BUILDKIT_INLINE_CACHE=1 --pull=false .
+
+    # We are using `tar` so that we can have symlinks in the repo, which are
+    # used right now for Everest
+    tar -ch . | docker build "$TAG" "${TARGET[@]}" "${CACHE_FROM[@]}" "${ARGS[@]}" --file "$FILE" --build-arg BUILDKIT_INLINE_CACHE=1 --pull=false -
     # ^ that inline cache might be a bad idea for the "final" one
 }
 

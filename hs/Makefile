@@ -26,7 +26,7 @@ build-haskell-build-artifacts-open:
 
 .PHONY: build-haskell-build-artifacts-closed
 build-haskell-build-artifacts-closed:
-	$(ROOT)/scripts/build-image.sh $(IMG_HASKELL_BUILD_ARTIFACTS)-closed Dockerfile.haskell-build-artifacts
+	REACH_OPEN=N $(ROOT)/scripts/build-image.sh $(IMG_HASKELL_BUILD_ARTIFACTS)-closed Dockerfile.haskell-build-artifacts
 
 .PHONY: build-reach-cli
 build-reach-cli:
