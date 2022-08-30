@@ -266,31 +266,38 @@ export const Foldable_imax1 = (c) => () => Foldable_imax(c);
 
 export const FixedPoint = Object({ sign: Bool, i: Object({ scale: UInt, i: UInt }) });
 
+const [fxSeal, fxUnseal] = makeSeal("FixedPoint");
 export const fx = (scale) => (sign, i) =>
-  ({sign, i: { scale, i }});
+  // TODO - if we use seals here, then we need to make the literal syntax also use the fx function.
+  fxSeal({sign, i: { scale, i }});
 
 export const fxint = (i) =>
-  ({ sign: i.sign, i: { i: i.i, scale: 1 }})
+  fxSeal({ sign: i.sign, i: { i: i.i, scale: 1 }})
 
-const fxi2int = (x) =>
-  int(x.sign, x.i.i);
+const fxi2int = (x_) => {
+  const x = fxUnseal(x_);
+  return int(x.sign, x.i.i);
+}
 
 // do not export, but count it as used in strict mode
 void fxi2int;
 
-export const fxrescale = (x, scale) => {
+export const fxrescale = (x_, scale) => {
+  const x = fxUnseal(x_);
   if (x.i.scale == scale) {
-    return x
+    return x_
   } else {
-    const r = idiv( imul( fxi2int(x), + scale ), int(Pos, x.i.scale) );
+    const r = idiv( imul( fxi2int(x_), + scale ), int(Pos, x.i.scale) );
     return fx(scale)(r.sign, r.i);
   }
 }
 
-export const fxunify = (x, y) => {
+export const fxunify = (x__, y__) => {
+  const x = fxUnseal(x__);
+  const y = fxUnseal(y__);
   const scale = x.i.scale < y.i.scale ? y.i.scale : x.i.scale;
-  const x_ = fxrescale(x, scale);
-  const y_ = fxrescale(y, scale);
+  const x_ = fxrescale(x__, scale);
+  const y_ = fxrescale(y__, scale);
   return [ scale, x_, y_ ];
 }
 
