@@ -5,6 +5,7 @@ import { ethers } from 'ethers';
 import {
   CBR_Address,
   bigNumberify,
+  CBR_Bytes,
 } from './CBR';
 import util from 'util';
 import {
@@ -718,7 +719,7 @@ export const hexToString = (x:any) => {
   try {
     return ethers.utils.toUtf8String(x);
   } catch(_) {
-    return '0x' + Buffer.from(x).toString('hex');
+    return ethers.utils.arrayify(x);
   }
 }
 
@@ -1286,3 +1287,8 @@ export const makeParseCurrency = (defaultDecs: number) => (amt: CurrencyAmount, 
   const amtStr = `${amtL}.${(amtR || '').slice(0, decimals)}`;
   return bigNumberify(ethers.utils.parseUnits(amtStr, decimals));
 };
+
+export const canonicalToBytes = (bv: CBR_Bytes) =>
+  (typeof bv == 'string')
+    ? ethers.utils.toUtf8Bytes(bv)
+    : bv;

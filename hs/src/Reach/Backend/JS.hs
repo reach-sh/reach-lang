@@ -262,15 +262,14 @@ jsLargeArg = \case
     return $ jsArray [jsString vn, vv']
   DLLA_Struct kvs ->
     jsLargeArg $ DLLA_Obj $ M.fromList kvs
-  DLLA_Bytes b -> do
-    case BS.decodeUtf8' b of
-      Left _ -> do
-        return $ dquotes $ "0x" <> pretty (B16.encodeBase16 b)
-      Right _ -> return $ jsBytes b
+  DLLA_Bytes b -> return $ jsBytes b
   DLLA_StringDyn t -> return $ jsString $ T.unpack t
 
 jsBytes :: B.ByteString -> Doc
-jsBytes = jsString . bunpack
+jsBytes b =
+  case BS.decodeUtf8' b of
+    Left _ -> jsApply "stdlib.bytesFromHex" [dquotes $ "0x" <> pretty (B16.encodeBase16 b)]
+    Right _ -> jsString . bunpack $ b
 
 jsContractsAndVals :: [DLArg] -> App [Doc]
 jsContractsAndVals as = do

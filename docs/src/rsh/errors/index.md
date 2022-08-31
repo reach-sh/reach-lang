@@ -2759,14 +2759,6 @@ You can fix this error by ensuring you use the correct exponential notation synt
 
 ## {#RE0139} RE0139
 
-This error indicates that you provided an argument to `{!rsh} Bytes.fromHex` that was the wrong length.
-Since a hexadecimal number represents a single [nibble](https://en.wikipedia.org/wiki/Nibble), two hexadecimal numbers represent a single [byte](https://en.wikipedia.org/wiki/Byte).
-Therefore, the length of the hexadecimal string provided, excluding the leading `{!rsh} 0x`, must be twice the length of the Bytes you are targeting.
-
-You can fix this error by providing the correct number of characters in the hex string.
-
-## {#RE0140} RE0140
-
 This error indicates that you called `{!rsh} Bytes.fromHex` with an invalid hex string.
 A hex string may only contain characters `0-9` and `a-f`.
 

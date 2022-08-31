@@ -118,6 +118,10 @@ export function protect (ctc: AnyBackendTy, v: unknown, ai: unknown = null) {
   }
 };
 
+export function bytesFromHex(v:any) {
+  return ethers.utils.arrayify(v);
+}
+
 const {
   toUtf8Bytes,
   isHexString,
