@@ -2227,7 +2227,7 @@ ce = \case
           ca ro
           incResource R_App ro
           makeTxn1 "ApplicationID"
-          when (not r_rawCall) $ do
+          unless r_rawCall $ do
             cbs $ sigStrToBytes sig
             makeTxn1 "ApplicationArgs"
           accountsR <- liftIO $ newCounter 1
