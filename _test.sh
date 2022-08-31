@@ -7,7 +7,7 @@ ${REACH} -h
 
 # Call like... hta "$@"
 ht () {
-  cd hs && HS_TEST_ARGS="-p $*" make
+  cd hs && HS_TEST_ARGS="-p $*" make hs-test
 }
 hta () {
   cd hs && HS_TEST_ARGS="-p $*" make hs-test-accept
