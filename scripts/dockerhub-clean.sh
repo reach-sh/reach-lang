@@ -3,6 +3,14 @@
 HT="${HOME}/Dev/dist/hub-tool/hub-tool"
 FILE=dockerhub
 
+# Delete the old ones
+for IMG in reach reach-cli runner react-runner rpc-server devnet-algo devnet-eth devnet-cfx ; do
+  for TAG in $("${HT}" tag ls "reachsh/${IMG}" --sort updated=asc --format json | jq -r '.[] | .Name' | grep -e 'circleci') ; do
+    "${HT}" tag rm -f "$TAG"
+  done
+done
+exit 0
+
 # Grab all of them
 echo -n > "${FILE}"
 for IMG in reach reach-cli runner react-runner rpc-server devnet-algo devnet-eth devnet-cfx ; do
@@ -17,13 +25,3 @@ while IFS= read -r TAG; do
 done < "${FILE}.rm"
 exit 0
 
-# Delete the old ones
-while sleep 60 ; do
-for IMG in reach reach-cli runner react-runner rpc-server devnet-algo devnet-eth devnet-cfx ; do
-  for TAG in $("${HT}" tag ls "reachsh/${IMG}" --sort updated=desc --format json | jq -r '.[] | .Name' | grep -e ':circleci' -e 'test_dlc') ; do
-    if ! (echo "$TAG" | grep master >/dev/null) ; then
-      "${HT}" tag rm -f "$TAG"
-    fi
-  done
-done
-done
