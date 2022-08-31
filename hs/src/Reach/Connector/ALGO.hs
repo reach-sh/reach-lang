@@ -3364,16 +3364,17 @@ sigDump sigi =
 cmeth :: Int -> CMeth -> App ()
 cmeth sigi = \case
   CAlias alias (CApi {..}) -> do
-    comment $ LT.pack $ "API: " <> capi_sig
+    let alias' = bunpack alias
+    comment $ LT.pack $ "API Alias: " <> alias'
     comment $ LT.pack $ sigDump sigi
-    block_' (bunpack alias) $ do
+    block_' alias' $ do
       code "b" [capi_label]
   CAlias alias (CView {..}) -> do
-    comment $ LT.pack $ "View: " <> cview_sig
+    let alias' = bunpack alias
+    comment $ LT.pack $ "View Alias: " <> alias'
     comment $ LT.pack $ sigDump sigi
-    block_' (bunpack alias) $ do
-      let go _ _ = code "b" [cview_lab]
-      cblt "viewAlias" go (bltM cview_hs)
+    block_' alias' $ do
+      code "b" [cview_lab]
   CApi _ sig _ which tys doWrap lab [] -> do
     block lab $ do
       comment $ LT.pack $ "API: " <> sig
