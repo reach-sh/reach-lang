@@ -22,6 +22,8 @@ clean: hs-clean
 
 .PHONY: build-haskell-build-artifacts-open
 build-haskell-build-artifacts-open:
+	touch package.closed.yaml
+	mkdir -p app-closed
 	$(ROOT)/scripts/build-image.sh $(IMG_HASKELL_BUILD_ARTIFACTS)-open Dockerfile.haskell-build-artifacts
 
 .PHONY: build-haskell-build-artifacts-closed
