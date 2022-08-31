@@ -5,8 +5,6 @@
 // https://eips.ethereum.org/EIPS/eip-165
 'reach 0.1';
 
-const StringDyn = UInt; // XXX
-const BytesDyn = UInt; // XXX
 
 const Empty = () => {
   return { IDs: [], View: {}, Events: {}, API: {} };
@@ -16,7 +14,7 @@ const mixin = (args = {}) => {
   const def = (k, d) => Object.has(args, k) ? args[k] : d;
   const Base = def('Base', Empty);
   return (base = Base) => {
-    const { View: v, Events: e, API: a } = base();
+    const { IDs: i, View: v, Events: e, API: a } = base();
     const mapp = (f, k) => Object.has(args, k) ? f(...args[k]) : {};
     return {
       IDs: [...i, ...def('IDs', []) ],
@@ -27,8 +25,11 @@ const mixin = (args = {}) => {
   };
 };
 
+// TODO - undo this workaround when Bytes.fromHex is working, and turn all Bytes_fromHex back into Bytes.fromHex.  For now this needs to be 4 bytes long to fit the defined interface.
+const Bytes_fromHex = (x) => "byte";
+
 const ERC165 = mixin({
-  IDs: [ Bytes.fromHex('0x01ffc9a7'), ],
+  IDs: [ Bytes_fromHex('0x01ffc9a7'), ],
   View: [{
     supportsInterface: Fun([Bytes(4)], Bool),
   }],
@@ -36,7 +37,7 @@ const ERC165 = mixin({
 
 const ERC721 = mixin({
   Base: ERC165,
-  IDs: [ Bytes.fromHex('0x80ac58cd'), ],
+  IDs: [ Bytes_fromHex('0x80ac58cd'), ],
   View: [{
     balanceOf: Fun([Address], UInt),
     ownerOf: Fun([UInt], Address),
@@ -51,18 +52,20 @@ const ERC721 = mixin({
   API: [{
     safeTransferFrom1: Fun([Address, Address, UInt, BytesDyn], Null),
     safeTransferFrom2: Fun([Address, Address, UInt], Null),
+    //safeTransferFrom3: Fun([Address, Contract, UInt, BytesDyn], Null),
     transferFrom: Fun([Address, Address, UInt], Null),
     approve: Fun([Address, UInt], Null),
     setApprovalForAll: Fun([Address, Bool], Null),
   }, {
     safeTransferFrom1: 'safeTransferFrom',
     safeTransferFrom2: 'safeTransferFrom',
+    //safeTransferFrom3: 'safeTransferFrom',
   }],
 });
 
 const ERC721Metadata = mixin({
   Base: ERC721,
-  IDs: [ Bytes.fromHex('0x5b5e139f'), ],
+  IDs: [ Bytes_fromHex('0x5b5e139f'), ],
   View: [{
     name: StringDyn,
     symbol: StringDyn,
@@ -72,7 +75,7 @@ const ERC721Metadata = mixin({
 
 const ERC721Enumerable = mixin({
   Base: ERC721,
-  IDs: [ Bytes.fromHex('0x780e9d63'), ],
+  IDs: [ Bytes_fromHex('0x780e9d63'), ],
   View: [{
     totalSupply: UInt,
     tokenByIndex: Fun([UInt], UInt),
@@ -84,7 +87,7 @@ const ERC721TokenReceiverI = {
     onERC721Received: Fun([Contract, Address, UInt, BytesDyn], Bytes(4)),
 };
 const ERC721TokenReceiver = mixin({
-  IDs: [ Bytes.fromHex('0x150b7a02'), ],
+  IDs: [ Bytes_fromHex('0x150b7a02'), ],
   API: [{
     ...ERC721TokenReceiverI,
   }],
@@ -129,7 +132,8 @@ export const main = Reach.App(() => {
   V.name.set(name);
   V.symbol.set(symbol);
   V.totalSupply.set(totalSupply);
-  V.supportsInterface.set(IDs.includes);
+  const IDsArray = array(Bytes(4), IDs);
+  V.supportsInterface.set(IDsArray.includes);
 
   const owners = new Map(UInt, Address);
   const balances = new Map(UInt);
@@ -181,7 +185,7 @@ export const main = Reach.App(() => {
 
         V.tokenURI.set((tokenId) => {
           check(tokenExists(tokenId), "tokenURI: URI query for non-existent token");
-          return StringDyn.concat(tokenURI, UInt.toStringDyn(tokenId));
+          return StringDyn.concat(tokenURI, StringDyn(tokenId));
         });
 
       })
@@ -212,9 +216,10 @@ export const main = Reach.App(() => {
         transferChecks(from_, to, tokenId);
         return [ (k) => {
           transfer_(from_, to, tokenId);
-          const to_ctc = remote(to, ERC721TokenReceiverI);
-          const mv = to_ctc.onERC721Received(getContract(), from_, tokenId, data);
-          ensure(mv == Bytes.fromHex('0x150b7a02'));
+          // TODO - this should be a remote call if and only if the to address is a contract.  We need to use the future feature Contract.fromAddress here to determine that.
+          //const to_ctc = remote(to, ERC721TokenReceiverI);
+          //const mv = to_ctc.onERC721Received(getContract(), from_, tokenId, data);
+          //ensure(mv == Bytes_fromHex('0x150b7a02'));
           k(null);
           return [ ];
         }];
@@ -228,6 +233,19 @@ export const main = Reach.App(() => {
           return [ ];
         }];
       })
+      //.api_(I.safeTransferFrom3, (from_, to, tokenId, data) => {
+      //  // TODO - temporary - "You should make safeTransferFrom3 which has a Contract rather than an Address or just have a Contract in safeTransferFrom1 and try to make progress with the current test suite" -- IE this is a duplicate of safeTransferFrom1, but that takes different types until we sort out conversion between Addresses and Contracts. 
+      //  check(isApprovedOrOwner(this, tokenId), "ERC721::safeTransferFrom: transfer caller is not owner nor approved");
+      //  transferChecks(from_, to, tokenId);
+      //  return [ (k) => {
+      //    transfer_(from_, to, tokenId);
+      //    const to_ctc = remote(to, ERC721TokenReceiverI);
+      //    const mv = to_ctc.onERC721Received(getContract(), from_, tokenId, data);
+      //    ensure(mv == Bytes_fromHex('0x150b7a02'));
+      //    k(null);
+      //    return [ ];
+      //  }];
+      //})
       .api_(I.transferFrom, (from_, to, tokenId) => {
         check(isApprovedOrOwner(this, tokenId), "ERC721::transferFrom: transfer caller is not owner nor approved");
         transferChecks(from_, to, tokenId);

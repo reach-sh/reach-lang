@@ -94,7 +94,7 @@ await Promise.all([
 
     const transferFrom = async (from, to, tokenId) => {
       console.log(`transferFrom ${from} to ${to} : Token ${tokenId}`);
-      await I.safeTransferFrom(from, to, tokenId);
+      await I.safeTransferFrom2(from, to, tokenId);
     }
 
     for (let i = 0; i < totalSupply; i++) {
