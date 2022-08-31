@@ -8,6 +8,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{verRC("0.1.11")}
 
 + @{rcHead("0.1.11-rc9")}
++ 2022/08/31: Added `rawCall` field to `{!rsh} remote.ALGO`.
 + @{rcHead("0.1.11-rc8")}
 + 2022/08/25: Ethereum-like-only: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
 + 2022/08/24: Added `{!rsh} StringDyn.concat` function and `{!rsh} StringDyn` cast application.
