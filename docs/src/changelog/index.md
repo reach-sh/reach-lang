@@ -8,11 +8,10 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{verRC("0.1.12")}
 
 + @{rcHead("0.1.12-rc1")}
-+ 2022/08/25: Upgraded to Algorand node v3.9.1-beta and indexer 2.14.0-rc3.
-+ 2022/08/25: ALGO-only: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
++ 2022/08/31: Upgraded to Algorand node v3.9.2-beta and indexer 2.14.0-rc4.
++ 2022/08/31: Algorand-only: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 
 XXX Ensure these are the final release versions!
-XXX Actually make 0.1.12
 
 ## 0.1.11: 2022/06 - 2022/08
 
