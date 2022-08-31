@@ -43,13 +43,18 @@ COPY .docker-root ./.docker-root
 COPY Makefile.docker ./Makefile
 RUN make ROOT=.docker-root install-mo
 COPY package.open.yaml ./
-COPY package.closed.yaml ./
 RUN make ROOT=.docker-root package.yaml
 
 COPY stack.yaml stack.yaml.lock ./
 RUN stack build --dependencies-only
+
+# Make the package.yaml twice so that we share more build cache
+COPY package.closed.yaml ./
+RUN make ROOT=.docker-root package.yaml
+
 COPY hie.yaml Setup.hs ./
 ADD app ./app/
+ADD app-closed ./app-closed/
 ADD rsh ./rsh/
 ADD smt2 ./smt2/
 COPY --from=solc /sol/stdlib.sol ./sol/
