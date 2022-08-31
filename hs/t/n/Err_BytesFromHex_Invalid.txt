@@ -1,8 +1,8 @@
-reachc: error[RE0139]: Bytes(2).fromHex expects a hex string of length 4. '0xt' is of length 1
+reachc: error[RE0140]: Bytes.fromHex received a string that does not contain valid hex characters
 
-  ./Err_BytesFromHex_Invalid.rsh:4:29:application
+  ./Err_BytesFromHex_Invalid.rsh:4:26:application
 
-  4|   const x = Bytes(2).fromHex('0xt');
+  4|   const x = Bytes.fromHex('0xt');
 
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0139
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0140
 

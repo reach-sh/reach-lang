@@ -8,6 +8,7 @@ import {
   MkPayAmt,
   makeArith,
   UInt256_max,
+  canonicalToBytes,
 } from './shared_impl';
 import {
   bigNumberToNumber,
@@ -109,12 +110,13 @@ export const T_UInt256: ALGO_Ty<CBR_UInt> = {
 
 /** @description For arbitrary utf8 strings */
 const stringyNet = (len:number) => ({
-  toNet: (bv: CBR_Bytes): NV => (
-    ethers.utils.toUtf8Bytes(bv)
-  ),
-  fromNet: (nv: NV): CBR_Bytes => (
-    ethers.utils.toUtf8String(nv.slice(0, len))
-  ),
+  toNet: canonicalToBytes,
+  fromNet: (nv: NV): CBR_Bytes => {
+    const nvp = nv.slice(0, len);
+    // XXX temporary while we do not distingiush between raw bytes / utf8 strings.
+    try { return ethers.utils.toUtf8String(nvp); }
+    catch (_) { return ethers.utils.arrayify(nvp); }
+  },
 });
 
 /** @description For hex strings representing bytes */
@@ -138,9 +140,7 @@ export const T_Bytes = (len:number): ALGO_Ty<CBR_Bytes> => ({
 
 export const T_BytesDyn: ALGO_Ty<CBR_Bytes> = ({
   ...CBR.BT_BytesDyn,
-  toNet: (bv: CBR_Bytes): NV => (
-    ethers.utils.toUtf8Bytes(bv)
-  ),
+  toNet: canonicalToBytes,
   fromNet: (nv: NV): CBR_Bytes => (
     ethers.utils.toUtf8String(nv)
   ),
@@ -150,9 +150,7 @@ export const T_BytesDyn: ALGO_Ty<CBR_Bytes> = ({
 
 export const T_StringDyn: ALGO_Ty<CBR_Bytes> = ({
   ...CBR.BT_StringDyn,
-  toNet: (bv: CBR_Bytes): NV => (
-    ethers.utils.toUtf8Bytes(bv)
-  ),
+  toNet: canonicalToBytes,
   fromNet: (nv: NV): CBR_Bytes => (
     ethers.utils.toUtf8String(nv)
   ),

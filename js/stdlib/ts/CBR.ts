@@ -16,7 +16,7 @@ export const bigNumberToNumber = (x: any) =>
 export type CBR_Null = null;
 export type CBR_Bool = boolean;
 export type CBR_UInt = BigNumber;
-export type CBR_Bytes = string;
+export type CBR_Bytes = Uint8Array | string;
 export type CBR_Address = string;
 export type CBR_Digest = string;
 export type CBR_Object = {[key: string]: CBR_Val};
@@ -102,22 +102,27 @@ export const BV_UInt = (val: BigNumber, max: BigNumber): CBR_UInt => {
 
 export const BT_Bytes = (len: number): BackendTy<CBR_Bytes> => ({
   name: `Bytes(${len})`,
-  defaultValue: ''.padEnd(len, '\0'),
+  defaultValue: ''.padEnd(len, '\0'), // new Uint8Array(Array.from({length: len}).fill('\0')),
   canonicalize: (val: unknown): CBR_Bytes => {
-    const lenn = bigNumberToNumber(len);
-    if (typeof(val) !== 'string') {
-      throw Error(`Bytes expected string, but got ${j2s(val)}`);
-    }
-    const checkLen = (label:string, alen:number, fill:string): string => {
-      if ( val.length > alen ) {
-        throw Error(`Bytes(${len}) must be a ${label}string less than or equal to ${alen}, but given ${label}string of length ${val.length}`);
+    const isUint8Array = (val as any)?.constructor?.name === 'Uint8Array';
+    if (typeof(val) == 'string') {
+      const lenn = bigNumberToNumber(len);
+      const checkLen = (label:string, alen:number, fill:string): string => {
+        const v = val as string;
+        if ( v.length > alen ) {
+          throw Error(`Bytes(${len}) must be a ${label}string less than or equal to ${alen}, but given ${label}string of length ${v.length}`);
+        }
+        return v.padEnd(alen, fill);
+      };
+      if ( val.slice(0,2) === '0x' ) {
+        return ethers.utils.arrayify(checkLen('hex ', lenn*2+2, '0'));
+      } else {
+        return checkLen('', lenn, '\0');
       }
-      return val.padEnd(alen, fill);
-    };
-    if ( val.slice(0,2) === '0x' ) {
-      return checkLen('hex ', lenn*2+2, '0');
+    } else if (isUint8Array) {
+      return val as Uint8Array;
     } else {
-      return checkLen('', lenn, '\0');
+      throw Error(`Bytes expected string or Uint8Array, but got ${j2s(val)}`);
     }
   },
 });

@@ -41,6 +41,7 @@ import {
   makeArith,
   j2s,
   UInt256_max,
+  canonicalToBytes,
 } from './shared_impl';
 export type { // =>
   ETH_Ty,
@@ -140,21 +141,17 @@ const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, ETH_Bytes> => {
   const me = {
     ...CBR.BT_Bytes(len),
     munge: ((bv: CBR_Bytes): ETH_Bytes => {
-      const ubs = bv.startsWith('0x')
-                  ? ethers.utils.arrayify(bv)
-                  : ethers.utils.toUtf8Bytes(bv);
-      const bs = Array.from(ubs);
+      const bs = Array.from(canonicalToBytes(bv));
       return (len <= byteChunkSize) ? bs : splitToChunks(bs, byteChunkSize);
     }),
     unmunge: ((nvs: ETH_Bytes): CBR_Bytes => {
-      const go = (nv:any) => {
+      const go = (nv:any, i: number) => {
         const r = ethers.utils.hexlify(unBigInt(nv));
-        return r.startsWith('0x') ? r : hexToString(r);
+        return (i > 0 && r.startsWith('0x')) ? r.slice(2) : r;
       }
-      const nvs_s = (len <= byteChunkSize) ? go(nvs) : nvs.map(go);
-      const nvss = "".concat(...nvs_s);
-      // debug(me.name, nvs, nvss);
-      return me.canonicalize(nvss);
+      return hexToString((len <= byteChunkSize)
+              ? go(nvs, 0)
+              : nvs.map(go).join(''));
     }),
     paramType: (() => {
       let n = len;
@@ -177,7 +174,7 @@ const T_BytesDyn: ETH_Ty<CBR_Bytes, ETH_BytesDyn> = (() => {
   const me = {
     ...CBR.BT_BytesDyn,
     munge: ((bv: CBR_Bytes): ETH_BytesDyn => {
-      return Array.from(ethers.utils.toUtf8Bytes(bv));
+      return Array.from(canonicalToBytes(bv));
     }),
     unmunge: ((nv: ETH_BytesDyn): CBR_Bytes => {
       const nv_s = hexToString(ethers.utils.hexlify(unBigInt(nv)));
@@ -193,10 +190,11 @@ const T_StringDyn: ETH_Ty<CBR_Bytes, ETH_StringDyn> = (() => {
   const me = {
     ...CBR.BT_StringDyn,
     munge: ((bv: CBR_Bytes): ETH_StringDyn => {
-      return bv;
+      return ethers.utils.toUtf8String(bv);
     }),
     unmunge: ((nv: ETH_StringDyn): CBR_Bytes => {
-      return nv;
+      const nv_s = hexToString(ethers.utils.hexlify(unBigInt(nv)));
+      return me.canonicalize(nv_s);
     }),
     paramType: 'string',
   };
