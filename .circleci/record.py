@@ -86,7 +86,7 @@ fails = ftc
 nxfails = nxftc
 
 def extrajob(lab):
-    global total, fails, nxfails
+    global total, fails, nxfails, POST
     this_xml = xml.parse(f"/tmp/workspace/{lab}.xml").getroot()
     this_total = count(this_xml.iter('testcase'))
     this_fails = count(this_xml.iter('failure'))

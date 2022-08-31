@@ -22,11 +22,13 @@ clean: hs-clean
 
 .PHONY: build-haskell-build-artifacts-open
 build-haskell-build-artifacts-open:
+	touch package.closed.yaml
+	mkdir -p app-closed
 	$(ROOT)/scripts/build-image.sh $(IMG_HASKELL_BUILD_ARTIFACTS)-open Dockerfile.haskell-build-artifacts
 
 .PHONY: build-haskell-build-artifacts-closed
 build-haskell-build-artifacts-closed:
-	$(ROOT)/scripts/build-image.sh $(IMG_HASKELL_BUILD_ARTIFACTS)-closed Dockerfile.haskell-build-artifacts
+	REACH_OPEN=N $(ROOT)/scripts/build-image.sh $(IMG_HASKELL_BUILD_ARTIFACTS)-closed Dockerfile.haskell-build-artifacts
 
 .PHONY: build-reach-cli
 build-reach-cli:
@@ -101,11 +103,6 @@ hs-test: hs-build
 hs-test-xml: hs-build
 	mkdir -p test-reports
 	$(MAKE) MAYBE_FAST=--fast docker-test-xml
-
-.PHONY: hs-test-html
-hs-test-html: hs-build
-	mkdir -p test-reports
-	stack test --fast $(MEVEREST) --test-arguments '--html=test-reports/results.html'
 
 .PHONY: hs-test-accept
 hs-test-accept: hs-build

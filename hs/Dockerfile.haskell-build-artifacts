@@ -47,8 +47,14 @@ RUN make ROOT=.docker-root package.yaml
 
 COPY stack.yaml stack.yaml.lock ./
 RUN stack build --dependencies-only
+
+# Make the package.yaml twice so that we share more build cache
+COPY package.closed.yaml ./
+RUN make ROOT=.docker-root package.yaml
+
 COPY hie.yaml Setup.hs ./
 ADD app ./app/
+ADD app-closed ./app-closed/
 ADD rsh ./rsh/
 ADD smt2 ./smt2/
 COPY --from=solc /sol/stdlib.sol ./sol/
@@ -57,7 +63,9 @@ ADD test ./test/
 
 RUN make ROOT=.docker-root src/Reach/Version.hs
 
-RUN set -o pipefail ; stack build 2>&1 | tee build-log.txt
+ARG REACH_HS_STACK_ARGS
+ENV REACH_HS_STACK_ARGS=${REACH_HS_STACK_ARGS}
+RUN set -o pipefail ; stack build ${REACH_HS_STACK_ARGS} 2>&1 | tee build-log.txt
 RUN mv "$(stack path --local-install-root)/bin" /build/bin/
 
 COPY --from=solc /usr/local/bin/solc /usr/bin/solc

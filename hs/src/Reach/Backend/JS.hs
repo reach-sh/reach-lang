@@ -91,7 +91,7 @@ data JSContracts = JSContracts
 data JSCtxtWhile
   = JWhile_None
   | JWhile_Diverge
-  | JWhile_Some JSCtxtWhile DLBlock ETail ETail
+  | JWhile_Some JSCtxtWhile DLBlock ETail ETail Doc
 
 data JSMode
   = JM_Simulate
@@ -122,6 +122,8 @@ instance Monoid a => Monoid (App a) where
 
 jsTxn :: App Doc
 jsTxn = ("txn" <>) . pretty . ctxt_txn <$> ask
+incTxn :: App a -> App a
+incTxn = local (\e -> e {ctxt_txn = (ctxt_txn e) + 1})
 
 jsContract_ :: DLType -> App Doc
 jsContract_ = \case
@@ -819,7 +821,7 @@ jsETail = \case
   ET_ToConsensus _at fs_ok _prev lct_v which from_me msg_vs _out timev secsv didSendv mto k_ok -> do
     msg_ctcs <- mapM (jsContract . argTypeOf) $ map DLA_Var msg_vs
     msg_vs' <- mapM jsVar msg_vs
-    let withCtxt = local (\e -> e {ctxt_txn = (ctxt_txn e) + 1})
+    let withCtxt = incTxn
     txn <- withCtxt jsTxn
     timev' <- jsVar timev
     secsv' <- jsVar secsv
@@ -917,32 +919,38 @@ jsETail = \case
     return $ vsep [defp, k_p]
   ET_While at asn cond body k -> do
     oldWhile <- ctxt_while <$> ask
-    let newWhile = JWhile_Some oldWhile cond body k
-    let newCtxt' = local (\e -> e {ctxt_while = newWhile})
-    cond' <- jsBlockNewScope cond
+    oldTxn <- jsTxn
+    let withNewTxn = incTxn
+    newTxn <- withNewTxn $ jsTxn
+    let newTxnDef = "let" <+> newTxn <+> "=" <+> oldTxn <> semi <> hardline
+    let newWhile = JWhile_Some oldWhile cond body k newTxn
+    let newCtxt' = withNewTxn . local (\e -> e {ctxt_while = newWhile})
+    cond' <- withNewTxn $ jsBlockNewScope cond
     body' <- newCtxt' $ jsETail body
-    k' <- jsETail k
+    k' <- withNewTxn $ jsETail k
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> do
         asn' <- jsAsn AM_While asn
-        return $ asn' <> hardline <> jsWhile cond' body' <> hardline <> k'
+        return $ asn' <> hardline <> newTxnDef <> jsWhile cond' body' <> hardline <> k'
       JM_Simulate -> do
         asn' <- jsAsn AM_WhileSim asn
         return $ asn' <> hardline <> jsIf cond' body' k'
       JM_View -> impossible $ "view while " <> show at
   ET_Continue at asn -> do
-    asn'o <- jsAsn AM_ContinueOuter asn
-    asn'i <-
-      (ctxt_mode <$> ask) >>= \case
-        JM_View -> impossible "view continue"
-        JM_Backend -> do
-          asn_ <- jsAsn AM_ContinueInner asn
-          return $ asn_ <> hardline <> "continue" <> semi
-        JM_Simulate ->
-          (ctxt_while <$> ask) >>= \case
-            JWhile_None -> impossible $ "continue not in while: " <> show at
-            JWhile_Diverge -> impossible $ "diverging while " <> show at
-            JWhile_Some woldWhile wcond wbody wk -> do
+    (ctxt_while <$> ask) >>= \case
+      JWhile_None -> impossible $ "continue not in while: " <> show at
+      JWhile_Diverge -> impossible $ "diverging while " <> show at
+      JWhile_Some woldWhile wcond wbody wk wtxn -> do
+        asn'o <- jsAsn AM_ContinueOuter asn
+        asn'i <-
+          (ctxt_mode <$> ask) >>= \case
+            JM_View -> impossible "view continue"
+            JM_Backend -> do
+              asn_ <- jsAsn AM_ContinueInner asn
+              ttxn <- jsTxn
+              let asnWTxn = wtxn <+> "=" <+> ttxn <> semi <> hardline
+              return $ asn_ <> hardline <> asnWTxn <> "continue" <> semi
+            JM_Simulate -> do
               let newCtxt_noWhile = local (\e -> e {ctxt_while = JWhile_Diverge})
               let newCtxt_oldWhile = local (\e -> e {ctxt_while = woldWhile})
               asn_ <- jsAsn AM_ContinueInnerSim asn
@@ -950,7 +958,7 @@ jsETail = \case
               wbody' <- newCtxt_noWhile $ jsETail wbody
               wk' <- newCtxt_oldWhile $ jsETail wk
               return $ (jsNewScope $ asn_ <> hardline <> jsIf wcond' wbody' wk') <> semi
-    return $ asn'o <> hardline <> asn'i
+        return $ asn'o <> hardline <> asn'i
 
 newJsContract :: App JSContracts
 newJsContract = do

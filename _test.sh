@@ -5,6 +5,14 @@ export REACH="${ROOT}/reach"
 export REACH_DOCKER=0
 ${REACH} -h
 
+# Call like... hta "$@"
+ht () {
+  cd hs && HS_TEST_ARGS="-p $*" make hs-test
+}
+hta () {
+  cd hs && HS_TEST_ARGS="-p $*" make hs-test-accept
+}
+
 gf () {
   echo gf "$@"
   "${ROOT}"/scripts/gen-test-output.sh "$@"
@@ -88,11 +96,11 @@ r () {
   make build
 
   #REACH_CONNECTOR_MODE=ETH ${REACH} run
-  #REACH_DEBUG=1 REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  REACH_DEBUG=1 REACH_CONNECTOR_MODE=ALGO ${REACH} run
   #REACH_CONNECTOR_MODE=CFX ${REACH} run
 
   # Ganache
-  REACH_DEBUG=1 REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
+  #REACH_DEBUG=1 REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
 
 )
 }
