@@ -615,7 +615,7 @@ In addition, a remote function may be augmented with one of the following operat
     The minimum balance will decrease on a `CloseOut` or `ClearState` transaction.
   + `{!rsh} opts.strictPay` does not optimize away `pay` or `axfer` transactions that are statically zero.
     If this is needed, and not included, then `{!rsh} remote` calls that require a payment transaction to always be present, even if the amount is zero, could fail.
-  + `{!rsh} opts.rawCall` is a bool (default false) that when true omits the method selector from the call.
+  + `{!rsh} opts.rawCall` is a boolean (default `{!rsh} false`) that when `{!rsh} true` omits the ABI method selector from the call.
 
 If the remote contract is not expected to return non-network tokens then a pair is returned, where the amount of network tokens received is the first element, and the original result is the second element.
 
