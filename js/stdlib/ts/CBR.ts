@@ -102,7 +102,7 @@ export const BV_UInt = (val: BigNumber, max: BigNumber): CBR_UInt => {
 
 export const BT_Bytes = (len: number): BackendTy<CBR_Bytes> => ({
   name: `Bytes(${len})`,
-  defaultValue: ''.padEnd(len, '\0'), // new Uint8Array(Array.from({length: len}).fill('\0')),
+  defaultValue: ''.padEnd(len, '\0'),
   canonicalize: (val: unknown): CBR_Bytes => {
     const isUint8Array = (val as any)?.constructor?.name === 'Uint8Array';
     if (typeof(val) == 'string') {
@@ -115,7 +115,7 @@ export const BT_Bytes = (len: number): BackendTy<CBR_Bytes> => ({
         return v.padEnd(alen, fill);
       };
       if ( val.slice(0,2) === '0x' ) {
-        return ethers.utils.arrayify(checkLen('hex ', lenn*2+2, '0'));
+        return checkLen('hex ', lenn*2+2, '0');
       } else {
         return checkLen('', lenn, '\0');
       }

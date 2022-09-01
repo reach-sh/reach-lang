@@ -190,11 +190,10 @@ const T_StringDyn: ETH_Ty<CBR_Bytes, ETH_StringDyn> = (() => {
   const me = {
     ...CBR.BT_StringDyn,
     munge: ((bv: CBR_Bytes): ETH_StringDyn => {
-      return ethers.utils.toUtf8String(bv);
+      return typeof bv == 'string' ? bv : ethers.utils.toUtf8String(bv);
     }),
     unmunge: ((nv: ETH_StringDyn): CBR_Bytes => {
-      const nv_s = hexToString(ethers.utils.hexlify(unBigInt(nv)));
-      return me.canonicalize(nv_s);
+      return nv;
     }),
     paramType: 'string',
   };
