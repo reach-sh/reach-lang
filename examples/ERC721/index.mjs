@@ -19,6 +19,7 @@ const assert = stdlib.assert;
 const bigNumberify = ethers.BigNumber.from;
 const waitTxn = async callPromise => await (await callPromise).wait();
 
+console.log("addrDeploy =", _addrDeploy);
 console.log("addr1 =", addr1);
 console.log("addr2 =", addr2);
 console.log("addr3 =", addr3);
@@ -70,7 +71,7 @@ const solDeploy = async (solOutputPath, ctcName, args = []) => {
 //   return deploy(ctc.ABI, ctc.Bytecode, args);
 // }
 
-const test = async (ctc, expected) => {
+const test = async (ctc, expected, testInterfaceSupport, testEnumerable) => {
   console.log(`Testing ${expected.name}`);
 
   // ===== ERC165 =====
@@ -81,12 +82,13 @@ const test = async (ctc, expected) => {
     ERC721Enumerable: "0x780e9d63",
   };
 
-  for (const iface in interfaceIds) {
-    // TODO - The Reach contract is failing this right now.
-    //assert(await ctc.supportsInterface(interfaceIds[iface]), `Supports ${iface}`);
+  if (testInterfaceSupport){
+    // TODO - The Reach contract is failing this right now.  This needs Bytes.fromHex to work.
+    for (const iface in interfaceIds) {
+      assert(await ctc.supportsInterface(interfaceIds[iface]), `Supports ${iface}`);
+    }
   }
 
-  console.log("Here after interface test")
   // ===== ERC721 =====
   // add event listeners
   const evLocks = {};
@@ -104,7 +106,6 @@ const test = async (ctc, expected) => {
       expectedArgs.forEach((expectedArg, i) => assertEq(args[i], expectedArg, `${ev} field ${i}`));
     }
   }
-  console.log("Here after Transfer, Approval, ApprovalForAll test")
 
   // A few other helpers
   const assertOwners = async (...owners) => {
@@ -130,19 +131,17 @@ const test = async (ctc, expected) => {
 
   // zero addr balance should throw
   await assertFail(ctc.balanceOf(zeroAddr));
-  console.log("Here after zero addr balance should throw test")
 
   // Tokens not minted yet should throw
   await forEachTok(t => assertFail(ctc.ownerOf(t)));
-  console.log("Here after tokens not minted yet should throw test")
 
   // A minting method is not specified in ERC721, so we are just expecting
   // a method "mint" to exist on the contract. (It IS specified that minting
   // produces a Transfer event from the zero addr)
   await forEachTok(t => waitTxn(ctc.mint(addr1, t, gasLimit))
-                          .then(_ => assertEvent.Transfer(zeroAddr, addr1, t)));
+                   .then(_ => assertEvent.Transfer(zeroAddr, addr1, t))
+                  );
   await assertOwners(addr1, addr1, addr1);
-  console.log("Here after minting method test")
 
   // non-owner transfer should fail
   await forEachTok(t => assertFail(safeTransferFrom(addr2, addr1, t)));
@@ -155,16 +154,19 @@ const test = async (ctc, expected) => {
   // transfer to zero addr should fail
   await forEachTok(t => assertFail(safeTransferFrom(addr1, zeroAddr, t)));
   await forEachTok(t => assertFail(transferFrom(addr1, zeroAddr, t)));
-  console.log("Here after transfer to zero addr should fail test")
 
 
   // transfer all tokens from addr1 to addr2 using safeTransferFrom
+  console.log("Before safeTransfer 1");
+  console.log("ownerOf(1) before:", await ctc.ownerOf(tok1));
   await safeTransferFrom(addr1, addr2, tok1);
+  console.log("getOwner(1) after:", await ctc.ownerOf(tok1));
   await assertOwners(addr2, addr1, addr1);
   await safeTransferFrom(addr1, addr2, tok2);
   await assertOwners(addr2, addr2, addr1);
   await safeTransferFrom(addr1, addr2, tok3);
   await assertOwners(addr2, addr2, addr2);
+
 
   // transfer all tokens from addr2 to addr1 using transferFrom
   await transferFrom(addr2, addr1, tok1);
@@ -208,32 +210,35 @@ const test = async (ctc, expected) => {
   // Operator can transfer
   await safeTransferFrom(addr3, addr2, tok1, ctc2);
 
-  // ===== ERC721Enumerable =====
-  assertEq(await ctc.totalSupply(), 3, "totalSupply");
+  // TODO - the Reach implementation does not yet support ERC721Enumerable
+  if (testEnumerable){
+    // ===== ERC721Enumerable =====
+    assertEq(await ctc.totalSupply(), 3, "totalSupply");
 
-  // addr1 has no tokens
-  await assertFail(ctc.tokenOfOwnerByIndex(addr1, 0));
+    // addr1 has no tokens
+    await assertFail(ctc.tokenOfOwnerByIndex(addr1, 0));
 
-  // addr2 has 1 token
-  assertEq(await ctc.tokenOfOwnerByIndex(addr2, 0), tok1, "tokenOfOwnerByIndex(addr2)");
+    // addr2 has 1 token
+    assertEq(await ctc.tokenOfOwnerByIndex(addr2, 0), tok1, "tokenOfOwnerByIndex(addr2)");
 
-  // addr3 has 2 tokens
-  let seen = {};
-  seen[await ctc.tokenOfOwnerByIndex(addr3, 0)] = true;
-  seen[await ctc.tokenOfOwnerByIndex(addr3, 1)] = true;
-  assert(seen[tok2] && seen[tok3], "tokenOfOwnerByIndex(addr3)");
+    // addr3 has 2 tokens
+    let seen = {};
+    seen[await ctc.tokenOfOwnerByIndex(addr3, 0)] = true;
+    seen[await ctc.tokenOfOwnerByIndex(addr3, 1)] = true;
+    assert(seen[tok2] && seen[tok3], "tokenOfOwnerByIndex(addr3)");
 
-  // 3 total tokens exist, can be found with tokenByIndex
-  seen = {};
-  for (let i = 0; i < 3; i++) {
-    const tokId = await ctc.tokenByIndex(i);
-    seen[tokId] = true;
+    // 3 total tokens exist, can be found with tokenByIndex
+    seen = {};
+    for (let i = 0; i < 3; i++) {
+      const tokId = await ctc.tokenByIndex(i);
+      seen[tokId] = true;
+    }
+    assert(seen[tok1] && seen[tok2] && seen[tok3], "tokenByIndex");
+
+    // index >= totalSupply
+    await assertFail(ctc.tokenByIndex(3));
+    await assertFail(ctc.tokenByIndex(100));
   }
-  assert(seen[tok1] && seen[tok2] && seen[tok3], "tokenByIndex");
-
-  // index >= totalSupply
-  await assertFail(ctc.tokenByIndex(3));
-  await assertFail(ctc.tokenByIndex(100));
 
   // ===== ERC721Metadata =====
   assertEq(await ctc.name(), expected.name, "name()");
@@ -255,54 +260,25 @@ const oz_erc721_expected = {
     [tok3]: "OZ_ERC721/3",
   },
 };
-// TODO - I'm disabling this for now for faster turnaround testing the reach contract...
-//await test(oz_erc721, oz_erc721_expected);
+await test(oz_erc721, oz_erc721_expected, true, true);
 
 
 //// Test Reach based ERC721
 console.log("Starting Reach contract...")
 
-//const reach_erc721 = await accDeploy.contract(reachErc721Backend);
-//const deployFlag = 42;
-//const reach_erc721_interact = {
-//  zeroAddr: zeroAddr,
-//  enum: {totalSupply: 3},
-//  meta: {
-//    name: "Reach_ERC721",
-//    symbol: "RCH",
-//    tokenURI: "Reach_ERC721"
-//  },
-//  deployed: (ctc) => {
-//    throw deployFlag;
-//  },
-//};
-//const startMeUp = async (deployer, interact, flagValue) => {
-//  try {
-//    await deployer(interact);
-//  } catch (e) {
-//    if ( e !== flagValue) {
-//      throw e;
-//    }
-//  }
-//}
-//startMeUp(reach_erc721.p.Deployer, reach_erc721_interact, deployFlag);
-//const reach_ctc = {...reach_erc721.a, ...reach_erc721.v};
 
-
-// Trying to launch the reach contract in the same way that the OpenZeppelin contract was launched...
-// This needs extra args in the deploy call... I'm not immediately sure how to push on this.
+// Launch the Reach contract in the same way that the OpenZeppelin contract was launched...
 const reach_erc721_constructor_args = [
   [
     // time
     0,
     [
-      // These 3 strings should be name, symbol, and tokenURI, but I'm not certain of the order...
-      // v3236, string
+      // v3236, string, name
       "Reach_ERC721",
-      // v3237, string
+      // v3237, string, symbol
       "RCH",
-      // v3238, string
-      "Reach_ERC721",
+      // v3238, string, tokenURI
+      "Reach_ERC721/",
       // v3239, uint256, I think this is totalSupply
       3,
       // v3240, address payable, I think this is the zero address
@@ -311,9 +287,7 @@ const reach_erc721_constructor_args = [
   ],
 ];
 const reach_erc721 = await solDeploy("build/index.main.sol.json", "build/index.main.sol:ReachContract", reach_erc721_constructor_args);
-const reach_ctc = reach_erc721;
-
-await test(reach_ctc, {
+const reach_erc721_expected = {
   name: "Reach_ERC721",
   symbol: "RCH",
   tokenURIs: {
@@ -321,7 +295,15 @@ await test(reach_ctc, {
     [tok2]: "Reach_ERC721/2",
     [tok3]: "Reach_ERC721/3",
   },
-});
+};
+const reach_ctc = reach_erc721;
+
+await test(reach_ctc, reach_erc721_expected
+           // TODO - the reach contract doesn't support querying interfaces until Bytes.fromHex is supported.
+           , false
+           // TODO - the reach contract doesn't yet support the ERC721Enumerable interface.
+           , false
+          );
 
 process.exit(0);
 
