@@ -166,9 +166,7 @@ instance Unroll LLConsensus where
       LLC_While at asn inv' <$> ul cond <*> ul body <*> ul k
     LLC_Continue at asn -> return $ LLC_Continue at asn
     LLC_ViewIs at vn vk a k ->
-      -- Note: We're making a choice here to *not* unroll the view function.
-      -- It's plausible that would be a good idea in the future.
-      LLC_ViewIs at vn vk a <$> ul k
+      LLC_ViewIs at vn vk <$> ul a <*> ul k
 
 instance Unroll k => Unroll (a, k) where
   ul (a, k) = (,) a <$> ul k
@@ -194,8 +192,7 @@ instance Unroll LLStep where
 
 instance Unroll LLProg where
   ul (LLProg llp_at llp_opts llp_parts llp_init llp_exports llp_views llp_apis llp_aliases llp_events llp_step) =
-    LLProg llp_at llp_opts llp_parts llp_init <$> ul llp_exports <*> pure llp_views
-           <*> pure llp_apis <*> pure llp_aliases <*> pure llp_events <*> ul llp_step
+    LLProg llp_at llp_opts llp_parts llp_init <$> ul llp_exports <*> pure llp_views <*> pure llp_apis <*> pure llp_aliases <*> pure llp_events <*> ul llp_step
 
 instance Unroll CTail where
   ul = \case
