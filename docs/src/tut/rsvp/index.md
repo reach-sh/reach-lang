@@ -1,7 +1,7 @@
 # {#tut-rsvp} Répondez S'il Vous Plaît
 
 This tutorial walks through the creation of a simple, but real, decentralized application.
-It assumes a basic familiarity with Reach, as though you've gone @{seclink("tut")} tutorial, but does not dwell on intimate details of it.
+It assumes a basic familiarity with Reach, as though you've completed the @{seclink("tut")} tutorial, but does not dwell on intimate details of it.
 Similarly, it assumes that you [have Reach installed](##quickstart) and are comfortable using it.
 
 ## {#tut-rsvp1} Respond, If You Please
