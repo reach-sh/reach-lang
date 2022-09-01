@@ -5,4 +5,4 @@ mkdir -p build
 solc --pretty-json --optimize --combined-json abi,bin oz_erc721.sol > build/oz_erc721.json
 
 #REACH_DOCKER=0 REACH_DEBUG=1 reach compile index.rsh
-#solc --pretty-json --optimize --combined-json abi,bin build/index.main.sol > build/index.main.sol.json
+solc --pretty-json --optimize --combined-json abi,bin build/index.main.sol > build/index.main.sol.json
