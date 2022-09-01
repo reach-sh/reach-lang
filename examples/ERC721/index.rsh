@@ -219,6 +219,7 @@ export const main = Reach.App(() => {
           // TODO - this should be a remote call if and only if the to address is a contract.  We need to use the future feature Contract.fromAddress here to determine that.
           //const to_ctc = remote(to, ERC721TokenReceiverI);
           //const mv = to_ctc.onERC721Received(getContract(), from_, tokenId, data);
+          //// This hex string is bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
           //ensure(mv == Bytes_fromHex('0x150b7a02'));
           k(null);
           return [ ];
