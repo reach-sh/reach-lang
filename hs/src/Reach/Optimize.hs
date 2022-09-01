@@ -526,33 +526,60 @@ instance Extract (Maybe DLVar) where
 allTheSame :: (Eq a, Sanitize a) => [a] -> Either (Maybe (a, a)) a
 allTheSame = allEqual . map sani
 
--- Given that the result of `a` is `DLArg`, learn new bindings
+-- Given that the result of `a` is the given `DLArg`, learn new bindings
 class Learn a where
   learn :: DLArg -> a -> [(DLVar, DLArg)]
 
 instance Learn DLArg where
   learn result = \case
+    -- Trivial base case: a var is equal to a value
     DLA_Var dv -> [(dv, result)]
     _ -> []
 
 instance Learn DLExpr where
   learn result = \case
     DLE_PrimOp _ IF_THEN_ELSE [DLA_Var dv, lhs, rhs]
-      -- r = true, x ? true : true  => []
-      -- r = v2  , x ? v2 : y       => [(x, true)]
-      | lhs `equiv` result && not (rhs `equiv` result) -> [(dv, true)]
-      | rhs `equiv` result && not (lhs `equiv` result) -> [(dv, false)]
+      -- You might think that we can go from
+      --
+      -- lhs == result && rhs != result => dv = true
+      --
+      -- based on the idea that "We must have chosen lhs", like:
+      --
+      -- x := v ? true : false
+      -- x = true
+      -- =>
+      -- v = true
+      --
+      -- And the reverse, but learning `dv = false`.
+      -- However, this is not generally true, because...
+      --
+      -- x1 := v1 ? false : true
+      -- x2 := v2 ? false : x1
+      -- x2 = false
+      --
+      -- Notice that...
+      --   lhs (false) = result (x2/false)
+      --   rhs (x1) != result (x2/false)
+      --
+      -- But, we cannot conclude that `v2 = false`, because `x1` might be
+      -- false!
+      --
+      -- This rule only applies when lhs & rhs are bools!
+      | areBool [lhs, rhs] && lhs `equiv` result && not (rhs `equiv` result) -> [(dv, true)]
+      | areBool [lhs, rhs] && rhs `equiv` result && not (lhs `equiv` result) -> [(dv, false)]
+
       -- r = false, x ? true : v3   => [(x, false), (v3, false)]
       | areBool [result, lhs] && (lhs /= result) -> (dv, false) : mAsn result rhs
       | areBool [result, rhs] && (rhs /= result) -> (dv, true) : mAsn result lhs
     DLE_PrimOp _ op [DLA_Var dv, other]
-      | chkEq op -> [(dv, other)]
+      | chkOpEqAndResultTrue op -> [(dv, other)]
     DLE_PrimOp _ op [other, DLA_Var dv]
-      | chkEq op -> [(dv, other)]
+      | chkOpEqAndResultTrue op -> [(dv, other)]
+    -- Base case, it's an arg, so they are the same
     DLE_Arg _ darg -> learn result darg
     _ -> []
     where
-      chkEq op = isAnEqual op && result == true
+      chkOpEqAndResultTrue op = isAnEqual op && result == true
       false = DLA_Literal $ DLL_Bool False
       true  = DLA_Literal $ DLL_Bool True
       mAsn v = \case
@@ -563,11 +590,14 @@ instance Learn DLExpr where
         DLA_Literal (DLL_Bool {}) -> True
         _ -> False
 
+-- Record what we know about v if it is the same as vIs
 recLearn :: DLVar -> DLArg -> App ()
-recLearn v inst = do
+recLearn v vIs = do
   mExpr <- lookupCommon ceExpr v
-  void $ rememberVarIsArg sb v inst
-  mapM_ (uncurry recLearn) $ maybe [] (learn inst) mExpr
+  void $ rememberVarIsArg sb v vIs
+  -- Given that v is really mExpr, and that it is vIs, then record what else we
+  -- know
+  mapM_ (uncurry recLearn) $ maybe [] (learn vIs) mExpr
 
 optIf :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (SrcLoc -> DLArg -> k -> k -> r) -> SrcLoc -> DLArg -> k -> k -> App r
 optIf mkDo mkIf at c t f =
