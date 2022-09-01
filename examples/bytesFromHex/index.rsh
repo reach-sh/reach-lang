@@ -2,7 +2,7 @@
 
 export const main = Reach.App(() => {
   const A = Participant('Alice', {
-    b4: Bytes(4)
+    b4: Bytes(4),
   });
   init();
 

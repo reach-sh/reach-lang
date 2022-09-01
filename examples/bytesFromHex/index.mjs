@@ -13,7 +13,7 @@ const ctcAlice = accAlice.contract(backend);
 
 await Promise.all([
   backend.Alice(ctcAlice, {
-    b4
+    b4,
   })
 ]);
 

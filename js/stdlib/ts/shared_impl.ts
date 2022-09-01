@@ -1292,3 +1292,5 @@ export const canonicalToBytes = (bv: CBR_Bytes) =>
   (typeof bv == 'string')
     ? ethers.utils.toUtf8Bytes(bv)
     : bv;
+
+export const isUint8Array = (val: any) => val?.constructor?.name === 'Uint8Array';

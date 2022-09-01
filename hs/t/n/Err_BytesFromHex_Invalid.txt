@@ -4,5 +4,5 @@ reachc: error[RE0140]: Bytes.fromHex received a string that does not contain val
 
   4|   const x = Bytes.fromHex('0xt');
 
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0140
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0139
 
