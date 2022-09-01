@@ -1,4 +1,4 @@
-reachc: error[RE0140]: Bytes.fromHex received a string that does not contain valid hex characters
+reachc: error[RE0139]: Bytes.fromHex received a string that does not contain valid hex characters
 
   ./Err_BytesFromHex_Invalid.rsh:4:26:application
 
