@@ -70,6 +70,8 @@ const rchDeploy = async (rchModulePath, args) => {
 
 const test = async (ctc, expected, testInterfaceSupport, testEnumerable) => {
   console.log(`Testing ${expected.name}`);
+  const getWei = async () => (await accDeploy.balanceOf()).add(await _acc1.balanceOf()).add(await _acc2.balanceOf()).add(await _acc3.balanceOf());
+  const weiPre = await getWei();
 
   // ===== ERC165 =====
   const interfaceIds = {
@@ -244,6 +246,10 @@ const test = async (ctc, expected, testInterfaceSupport, testEnumerable) => {
 
   // invalid token id has no uri
   await assertFail(ctc.tokenURI(4));
+
+  const weiPost = await getWei();
+  const weiDiff = weiPre.sub(weiPost).toNumber();
+  return weiDiff;
 };
 
 // OpenZeppelin based ERC721
@@ -257,12 +263,9 @@ const oz_erc721_expected = {
     [tok3]: "OZ_ERC721/3",
   },
 };
-await test(oz_erc721, oz_erc721_expected, true, true);
 
 
 //// Test Reach based ERC721
-console.log("Starting Reach contract...")
-
 
 // Launch the Reach contract in the same way that the OpenZeppelin contract was launched...
 const reach_erc721_constructor_args = [
@@ -295,12 +298,14 @@ const reach_erc721_expected = {
 };
 const reach_ctc = reach_erc721;
 
-await test(reach_ctc, reach_erc721_expected
-           // TODO - the reach contract doesn't support querying interfaces until Bytes.fromHex is supported.
-           , false
-           // TODO - the reach contract doesn't yet support the ERC721Enumerable interface.
-           , false
-          );
+
+
+// Actually run the tests, side by side.
+//await test(oz_erc721, oz_erc721_expected, true, true);
+const ozCost = await test(oz_erc721, oz_erc721_expected, false, false);
+const reachCost = await test(reach_ctc, reach_erc721_expected, false, false);
+
+console.log("Cost of Reach contract as percentage of OZ contract: ", (reachCost * 100.0) / ozCost);
 
 process.exit(0);
 
