@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import { loadStdlib } from "@reach-sh/stdlib";
-import * as reachErc721Backend from './build/index.main.mjs';
 const stdlib = loadStdlib(process.env);
 const ethers = stdlib.ethers;
 
@@ -63,13 +62,11 @@ const solDeploy = async (solOutputPath, ctcName, args = []) => {
   return deploy(ctc.abi, ctc.bin, args);
 }
 
-// TODO: test a Reach ERC721 with this test suite. Use this function to launch the reach contract
-// (See examples/ERC721TokenReceiver/index.mjs for example usage)
-// const rchDeploy = async (rchModulePath, args) => {
-//   const mod = await import(rchModulePath);
-//   const ctc = mod._Connectors.ETH;
-//   return deploy(ctc.ABI, ctc.Bytecode, args);
-// }
+const rchDeploy = async (rchModulePath, args) => {
+  const mod = await import(rchModulePath);
+  const ctc = mod._Connectors.ETH;
+  return deploy(ctc.ABI, ctc.Bytecode, args);
+}
 
 const test = async (ctc, expected, testInterfaceSupport, testEnumerable) => {
   console.log(`Testing ${expected.name}`);
@@ -160,7 +157,7 @@ const test = async (ctc, expected, testInterfaceSupport, testEnumerable) => {
   console.log("Before safeTransfer 1");
   console.log("ownerOf(1) before:", await ctc.ownerOf(tok1));
   await safeTransferFrom(addr1, addr2, tok1);
-  console.log("getOwner(1) after:", await ctc.ownerOf(tok1));
+  console.log("ownerOf(1) after:", await ctc.ownerOf(tok1));
   await assertOwners(addr2, addr1, addr1);
   await safeTransferFrom(addr1, addr2, tok2);
   await assertOwners(addr2, addr2, addr1);
@@ -286,7 +283,7 @@ const reach_erc721_constructor_args = [
     ],
   ],
 ];
-const reach_erc721 = await solDeploy("build/index.main.sol.json", "build/index.main.sol:ReachContract", reach_erc721_constructor_args);
+const reach_erc721 = await rchDeploy("./build/index.main.mjs", reach_erc721_constructor_args);
 const reach_erc721_expected = {
   name: "Reach_ERC721",
   symbol: "RCH",
