@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { checkedBigNumberify } from './shared_backend';
-import { j2s, labelMaps, hasProp } from './shared_impl';
+import { j2s, labelMaps, hasProp, isUint8Array } from './shared_impl';
 // "CBR", canonical backend representation
 
 type BigNumber = ethers.BigNumber;
@@ -104,7 +104,6 @@ export const BT_Bytes = (len: number): BackendTy<CBR_Bytes> => ({
   name: `Bytes(${len})`,
   defaultValue: ''.padEnd(len, '\0'),
   canonicalize: (val: unknown): CBR_Bytes => {
-    const isUint8Array = (val as any)?.constructor?.name === 'Uint8Array';
     if (typeof(val) == 'string') {
       const lenn = bigNumberToNumber(len);
       const checkLen = (label:string, alen:number, fill:string): string => {
@@ -119,7 +118,7 @@ export const BT_Bytes = (len: number): BackendTy<CBR_Bytes> => ({
       } else {
         return checkLen('', lenn, '\0');
       }
-    } else if (isUint8Array) {
+    } else if (isUint8Array(val)) {
       return val as Uint8Array;
     } else {
       throw Error(`Bytes expected string or Uint8Array, but got ${j2s(val)}`);
@@ -131,10 +130,13 @@ export const BT_BytesDyn: BackendTy<CBR_Bytes> = ({
   name: `BytesDyn`,
   defaultValue: '',
   canonicalize: (val: unknown): CBR_Bytes => {
-    if (typeof(val) !== 'string') {
-      throw Error(`BytesDyn expected string, but got ${j2s(val)}`);
+    if (typeof val == 'string') {
+      return val;
+    } else if (isUint8Array(val)) {
+      return val as Uint8Array;
+    } else {
+      throw Error(`BytesDyn expected string or Uint8Array, but got ${j2s(val)}`);
     }
-    return val;
   },
 });
 

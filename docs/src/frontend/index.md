@@ -55,8 +55,10 @@ Struct     => object
 
 For example, the Reach type `{!rsh} MInt = Data({None: Null, Some: UInt})` inhabitant `{!rsh} MInt.Some(42)` is represented as `{!rsh} ['Some', 42]` in JavaScript.
 
-`{!rsh} Bytes(len)` and `{!rsh} BytesDyn} will be represented as a `'string'` if the values are able to be encoded in UTF-8.
-Otherwise, they will be represented as `Uint8Array` byte arrays.
+`{!rsh} Bytes(len)` and `{!rsh} BytesDyn} may be represented as either a `'string'` or a `Uint8Array` byte array.
+Both types are accepted as input.
+Reach will output a value as a `'string'` if the value is able to be encoded in UTF-8.
+Otherwise, the value will be represented as `Uint8Array` byte array.
 
 # {#ref-frontends-js-loader} Loading the Standard Library
 
