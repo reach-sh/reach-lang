@@ -631,8 +631,9 @@ be_c = \case
       loop_svs <- ce_readSave this_loopsp
       looptop' <- loop_top
       let svs = collectSvs looptop'
-      loopc <- (liftIO . optimize_ cnt False svs) =<< addVars at =<< loop_top
-      return $ C_Loop at (map v2vl loop_svs) (map v2vl loop_vars) loopc
+      loopc <- addVars at =<< loop_top
+      loopc_opt <- liftIO $ optimize_ cnt False svs loopc
+      return $ C_Loop at (map v2vl loop_svs) (map v2vl loop_vars) loopc_opt
     fg_saves $ this_loopsp
     let cm = CT_Jump at this_loopj <$> ce_readSave this_loopsp <*> pure asn
     let cond'l = DLBlock cond_at cond_fs <$> cond_l'l <*> pure cond_a
