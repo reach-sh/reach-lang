@@ -57,6 +57,7 @@ For example, the Reach type `{!rsh} MInt = Data({None: Null, Some: UInt})` inhab
 
 `{!rsh} Bytes(len)` and `{!rsh} BytesDyn} may be represented as either a `'string'` or a `Uint8Array` byte array.
 Both types are accepted as input.
+If the input string is prefixed with `{!rsh} 0x`, the string will be interpreted as hex.
 Reach will output a value as a `'string'` if the value is able to be encoded in UTF-8.
 Otherwise, the value will be represented as `Uint8Array` byte array.
 
