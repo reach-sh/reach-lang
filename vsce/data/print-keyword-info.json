@@ -116,6 +116,9 @@
   "Bytes": {
     "CompletionItemKind": "TypeParameter"
   },
+  "Bytes.fromHex": {
+    "CompletionItemKind": "Method"
+  },
   "BytesDyn": {
     "CompletionItemKind": "TypeParameter"
   },
