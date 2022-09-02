@@ -9,8 +9,8 @@ export { ALGO_MyAlgoConnect };
 import ALGO_WalletConnect from './ALGO_WalletConnect';
 export { ALGO_WalletConnect };
 
-import ALGO_PeraConnect from './ALGO_PeraConnect';
-export { ALGO_PeraConnect };
+import ALGO_MakePeraConnect from './ALGO_MakePeraConnect';
+export { ALGO_MakePeraConnect };
 
 export * as test from './test';
 

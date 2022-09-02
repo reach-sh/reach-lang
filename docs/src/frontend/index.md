@@ -212,16 +212,18 @@ stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', WalletConnect }));
 ```
 
-Alternatively, you can bind it to the `ALGO_PeraConnect` export of `@reach-sh/stdlib`, then PeraConnect is used to connect to the [PeraWallet](https://perawallet.app/) for signing.
+Alternatively, you can call the `ALGO_MakePeraConnect` export of `@reach-sh/stdlib`, with `PeraWalletConnect` from `@perawallet/connect`, then PeraConnect is used to connect to the [PeraWallet](https://perawallet.app/) for signing.
 For example, this sets the wallet fallback to be PeraConnect and the Algorand TestNet:
 ```js
-import { ALGO_PeraConnect as PeraConnect } from '@reach-sh/stdlib';
+import { ALGO_MakePeraConnect as MakePeraConnect } from '@reach-sh/stdlib';
+import { PeraWalletConnect } from "@perawallet/connect";
 stdlib.setWalletFallback(stdlib.walletFallback({
-  providerEnv: 'TestNet', WalletConnect: PeraConnect }));
+  providerEnv: 'TestNet', WalletConnect: MakePeraConnect(PeraWalletConnect) }));
 ```
 
 This fallback exposes the underlying WalletConnect wrapper object as the `wc` property on the wallet.
 Furthermore, it supports using an existing WalletConnect wrapper object by providing the key `WalletConnect_wc` in the `{!js} stdlib.walletFallback` options object.
+(When you're using PeraConnect, the same object/keys/etc are used for the `PeraWalletConnect` object.)
 
 ---
 

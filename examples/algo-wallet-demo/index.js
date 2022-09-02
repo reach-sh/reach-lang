@@ -6,7 +6,8 @@ import { loadStdlib } from '@reach-sh/stdlib';
 // We are going to use all of the different Wallets in this program...
 import { ALGO_MyAlgoConnect as MyAlgoConnect } from '@reach-sh/stdlib';
 import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
-import { ALGO_PeraConnect as PeraConnect } from '@reach-sh/stdlib';
+import { ALGO_MakePeraConnect as MakePeraConnect } from '@reach-sh/stdlib';
+import { PeraWalletConnect } from "@perawallet/connect";
 
 // This program is intended to be used on the Algorand TestNet.
 const providerEnv = 'TestNet';
@@ -96,7 +97,7 @@ class App extends React.Component {
     stdlib = loadStdlib(process.env);
     stdlib.setWalletFallback(reach.walletFallback({
       // ...we use a different fallback here:
-      providerEnv, WalletConnect: PeraConnect }));
+      providerEnv, WalletConnect: MakePeraConnect(PeraWalletConnect) }));
     this.appendMsg('Using PeraConnect');
   }
 
