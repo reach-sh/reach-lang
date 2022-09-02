@@ -51,7 +51,7 @@ Please use this guide to aid you in learning how to do that.
 You have to actually read and try to understand these messages.
 They will never be "Google-able", because they are intimately connected with your particular program.
 
-For this guide, we will take as an example the errorneous program from the fourth step of the _Rock, Paper, Scisssors!_ tutorial, @{seclink("tut-5")}.
+For this guide, we will take as an example the erroneous program from the fourth step of the _Rock, Paper, Scissors!_ tutorial, @{seclink("tut-5")}.
 Here's a sample of and link to that program:
 
 ```
