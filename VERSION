@@ -1,7 +1,7 @@
 MAJOR=0
 MINOR=1
 PATCH=11
-DRAFT=9
+DRAFT=10
 # ^ when you change this, add an `rcHead` line to docs/src/changelog/index.md
 
 STABLE=0.1.11
