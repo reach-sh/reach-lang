@@ -302,8 +302,8 @@ const reach_ctc = reach_erc721;
 
 // Actually run the tests, side by side.
 //await test(oz_erc721, oz_erc721_expected, true, true);
-const ozCost = await test(oz_erc721, oz_erc721_expected, false, false);
-const reachCost = await test(reach_ctc, reach_erc721_expected, false, false);
+const ozCost = await test(oz_erc721, oz_erc721_expected, true, false);
+const reachCost = await test(reach_ctc, reach_erc721_expected, true, false);
 
 console.log("Cost of Reach contract as percentage of OZ contract: ", (reachCost * 100.0) / ozCost);
 

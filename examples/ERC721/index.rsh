@@ -25,11 +25,9 @@ const mixin = (args = {}) => {
   };
 };
 
-// TODO - undo this workaround when Bytes.fromHex is working, and turn all Bytes_fromHex back into Bytes.fromHex.  For now this needs to be 4 bytes long to fit the defined interface.
-const Bytes_fromHex = (x) => "byte";
 
 const ERC165 = mixin({
-  IDs: [ Bytes_fromHex('0x01ffc9a7'), ],
+  IDs: [ Bytes.fromHex('0x01ffc9a7'), ],
   View: [{
     supportsInterface: Fun([Bytes(4)], Bool),
   }],
@@ -37,7 +35,7 @@ const ERC165 = mixin({
 
 const ERC721 = mixin({
   Base: ERC165,
-  IDs: [ Bytes_fromHex('0x80ac58cd'), ],
+  IDs: [ Bytes.fromHex('0x80ac58cd'), ],
   View: [{
     balanceOf: Fun([Address], UInt),
     ownerOf: Fun([UInt], Address),
@@ -65,7 +63,7 @@ const ERC721 = mixin({
 
 const ERC721Metadata = mixin({
   Base: ERC721,
-  IDs: [ Bytes_fromHex('0x5b5e139f'), ],
+  IDs: [ Bytes.fromHex('0x5b5e139f'), ],
   View: [{
     name: StringDyn,
     symbol: StringDyn,
@@ -75,7 +73,7 @@ const ERC721Metadata = mixin({
 
 const ERC721Enumerable = mixin({
   Base: ERC721,
-  IDs: [ Bytes_fromHex('0x780e9d63'), ],
+  IDs: [ Bytes.fromHex('0x780e9d63'), ],
   View: [{
     totalSupply: UInt,
     tokenByIndex: Fun([UInt], UInt),
@@ -87,7 +85,7 @@ const ERC721TokenReceiverI = {
     onERC721Received: Fun([Contract, Address, UInt, BytesDyn], Bytes(4)),
 };
 const ERC721TokenReceiver = mixin({
-  IDs: [ Bytes_fromHex('0x150b7a02'), ],
+  IDs: [ Bytes.fromHex('0x150b7a02'), ],
   API: [{
     ...ERC721TokenReceiverI,
   }],
@@ -221,7 +219,7 @@ export const main = Reach.App(() => {
           //const to_ctc = remote(to, ERC721TokenReceiverI);
           //const mv = to_ctc.onERC721Received(getContract(), from_, tokenId, data);
           //// This hex string is bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
-          //ensure(mv == Bytes_fromHex('0x150b7a02'));
+          //ensure(mv == Bytes.fromHex('0x150b7a02'));
           k(null);
           return [ ];
         }];
@@ -244,7 +242,7 @@ export const main = Reach.App(() => {
       //    transfer_(from_, to, tokenId);
       //    const to_ctc = remote(to, ERC721TokenReceiverI);
       //    const mv = to_ctc.onERC721Received(getContract(), from_, tokenId, data);
-      //    ensure(mv == Bytes_fromHex('0x150b7a02'));
+      //    ensure(mv == Bytes.fromHex('0x150b7a02'));
       //    k(null);
       //    return [ ];
       //  }];
