@@ -47,3 +47,5 @@ Verification failed:
   assert(v119);
 
 Checked 10 theorems; 2 failures :'(
+
+For a guide to understanding verification failures, see: https://docs.reach.sh/rsh/errors/#how-to-read-verification-failures

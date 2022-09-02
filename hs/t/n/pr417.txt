@@ -67,3 +67,5 @@ Verification failed:
   assert(v362);
 
 Checked 37 theorems; 4 failures (and 1 omitted repeats) :'(
+
+For a guide to understanding verification failures, see: https://docs.reach.sh/rsh/errors/#how-to-read-verification-failures

@@ -685,7 +685,7 @@ When we run `./reach compile rps-4-attack/index-bad.rsh`, it gives details about
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: d5d9cb9d86446f5139a7565f1c8aa5d4
+md5: c05213f485c1095beb47b850f37cc77e
 range: 4-31
 ```
 
@@ -694,6 +694,10 @@ There's a lot of information in the compiler output that can help an experienced
 + Line 7 says that this is an attempt to prove the theorem that the balance at the end of the program is zero, which means that no network tokens are sealed in the contract forever.
 + Lines 10-20 describe the values that could cause the theorem to fail.
 + Lines 23-31 outline the theorem that failed.
+
+:::note
+Refer to @{seclink("how-to-read-verification-failures")} if you'd like to learn more about the details of this output.
+:::
 
 These kinds of [automatic verifications](##guide-assert) are helpful for Reach programmers, because they don't need to remember to put them in their program, and they will still be protected from entire categories of errors.
 
@@ -720,7 +724,7 @@ When we run `./reach run`, it reports that this assertion is false:
 
 ```
 load: /examples/rps-4-attack/index-fails.txt
-md5: b0b80d19e5358713c90b7734431b5b3d
+md5: e9d3a82d42cf23117555b918f9f78b28
 range: 2-6
 ```
 
