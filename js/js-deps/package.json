@@ -24,7 +24,6 @@
     "webpack-cli": "^4.7.0"
   },
   "dependencies": {
-    "@perawallet/connect": "^0.2.0",
     "algosdk": "^1.19.0",
     "hi-base32": "^0.5.1",
     "@randlabs/myalgo-connect": "^1.2.0",
