@@ -27,3 +27,5 @@ Verification failed:
 
   Verifying when NO participants are honest
 Checked 4 theorems; 1 failures :'(
+
+For a guide to understanding verification failures, see: https://docs.reach.sh/rsh/errors/#how-to-read-verification-failures

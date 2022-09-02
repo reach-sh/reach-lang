@@ -39,6 +39,203 @@ This was being run inside the function defined on line 8 column 17 (the `{!rsh} 
 
 Finally, the last block (line 13) contains a link to the explanation of the given error.
 
+## {#how-to-read-verification-failures} How to read verification failures
+
+If you use Reach for anything but the most trivial programs, you are going to see some verification failure messages.
+Every time you compile your program, Reach is going to attempt to prove a variety of theorems about your code.
+If it cannot prove those theorems, then it will generate a description of what went wrong.
+
+This description can be exhaustively exhausting and learning how to interpret them effectively is extremely valuable in writing Reach programs effectively.
+Please use this guide to aid you in learning how to do that.
+
+You have to actually read and try to understand these messages.
+They will never been "Google-able", because they are intimately connected with your particular program.
+
+For this guide, we will take as an example the errorneous program from the fourth step of the _Rock, Paper, Scisssors!_ tutorial, @{seclink("tut-5")}.
+Here's a sample of and link to that program:
+
+```
+load: /examples/rps-4-attack/index-bad.rsh
+md5: c0015df1e967946be01b3bdab70c9c12
+range: 35-41
+```
+
+The problem with this program is that it pays out only one wager when Alice wins, rather than two.
+When you compile this program, Reach detects the problem and produces a lot of output; let's look at each line and explain it.
+
+```
+load: /examples/rps-4-attack/index-bad.txt
+md5: c05213f485c1095beb47b850f37cc77e
+range: 1-1
+```
+
+First, Reach will perform checking of knowledge assertions that are introduced by `{!rsh} unknowable`.
+This program does not have an violation of knowledge assertions, so there is no message.
+
+```
+load: /examples/rps-4-attack/index-bad.txt
+md5: c05213f485c1095beb47b850f37cc77e
+range: 2-2
+```
+
+Next, Reach begins checking the body of your code.
+Normally, it performs this checking abstractly with a "generic" network.
+The generic network is more abstract (and thus more strict) than any particular connector.
+For example, the value of `{!rsh} UInt.max` could be anything.
+If you want to check with the actual connectors you will use, then you can use the `{!rsh} verifyPerConnector` option to `{!rsh} setOptions`.
+
+```
+load: /examples/rps-4-attack/index-bad.txt
+md5: c05213f485c1095beb47b850f37cc77e
+range: 3-3
+```
+
+Next, Reach will check your program when the participants in it are "honest".
+This means that it will trust `{!rsh} assume` statements and try to enforce `{!rsh} require` statements.
+You will get extra errors in this mode if you include a `{!rsh} require`, but forget the corresponding `{!rsh} assume`.
+
+Later (line 34), Reach will check when all the participants are not honest.
+This means that it will ignore all `{!rsh} assume` statements and instead turn the `{!rsh} require` statements into assumptions.
+You will get extra errors in this mode if you include an `{!rsh} assume`, but forget the corresponding `{!rsh} require`.
+
+```
+load: /examples/rps-4-attack/index-bad.txt
+md5: c05213f485c1095beb47b850f37cc77e
+range: 4-8
+```
+
+When Reach finds a problem, it will output a block of text that starts like this.
+First, it tells you that the verification failed (line 4) and what the mode is (line 5).
+Next (line 6), it tells you what kind of theorem it was.
+This is typically `assert` for an assertion that you put in your program or that Reach put in.
+It is also very common to see `invariant` for when a loop invariant is being checked.
+Finally (lines 7 and 8), Reach will tell you the message that was attached to the theorem and where it occurred in your program.
+If Reach inserted the theorem in for you, then the line number may not be in an intuitive place to you.
+
+In this case, the error says that at the end of the program ("application exit"), the balance of the contract was supposed to be zero, but that the proof failed.
+
+```
+load: /examples/rps-4-attack/index-bad.txt
+md5: c05213f485c1095beb47b850f37cc77e
+range: 10-10
+```
+
+In the next section of text, Reach is going to provide information about the "violation witness".
+Every theorem failure means that there is input to your program that would result in something bad happening.
+The failure is called a "violation", because the theorem was supposed to always be true, but that assumption was "violated".
+Reach can always synthesize example input to provide evidence that the violation is possible; that evidence is called a "witness".
+
+```
+load: /examples/rps-4-attack/index-bad.txt
+md5: c05213f485c1095beb47b850f37cc77e
+range: 12-12
+```
+
+Reach will report the values of all the variables that are unconstrained by your program; that is, the ones that are input.
+In this case, since we are checking with a generic connector, it first tells us that the maximum value of numbers on this connector is 2.
+This is a ridiculously small number.
+You should rarely read too much into this number... effectively, Reach is telling you that it didn't need to do a lot of numeric exploration to find this program, since your program uses so few numbers.
+
+```
+load: /examples/rps-4-attack/index-bad.txt
+md5: c05213f485c1095beb47b850f37cc77e
+range: 14-16
+```
+
+This is a more interesting witness.
+Line 14 says that Alice's `wager` field of her `{!rsh} interact` object is bound inside the program to the variable `wager`.
+(`wager` is annotated with `81`, because Reach will index every variable in your program with a number, in case you use the same variable (I'm looking at you, `x`!) in different places, so that you and Reach can keep track of them.)
+Line 15 says that it could equal `1`, meaning that 1 atomic network unit is being wagered.
+Line 16 gives you source location information for where this variable was actually defined.
+It is referring to this line:
+
+```
+load: /examples/rps-4-attack/index-bad.rsh
+md5: c0015df1e967946be01b3bdab70c9c12
+range: 11-11
+```
+
+This variable is free, because Alice can choose anything she wants for the wager.
+
+```
+load: /examples/rps-4-attack/index-bad.txt
+md5: c05213f485c1095beb47b850f37cc77e
+range: 17-22
+```
+
+Next, we see two more free variables: the handles that Alice and Bob choose when they play the game.
+In this case (line 18), Alice chose 0 (Rock) and Bob chose 2 (Scissors), which means that Alice won, which is exactly when the problem we know is in the program happens.
+When Reach prints out the definition of the variable, it adds more information than you normally see in your program.
+For example, we see that `getHand` has to be a `{!rsh} UInt`.
+This information is in your program in the definition of `getHand`, but we can't see that right here, so Reach is adding extra context for you to better understand the witness.
+
+```
+load: /examples/rps-4-attack/index-bad.txt
+md5: c05213f485c1095beb47b850f37cc77e
+range: 24
+```
+
+After showing the violation witness, Reach switches and shows you the way that it has represented the theorem "balance zero at application exit" as a program.
+This is called the "formalization" of the theorem.
+
+This section looks like the witness section, except that the phrase `could` is going to be replaced with `would`, because these variables are not freely chosen by your users, but instead are determined by the program text.
+
+```
+load: /examples/rps-4-attack/index-bad.txt
+md5: c05213f485c1095beb47b850f37cc77e
+range: 26-27
+```
+
+Here we see Reach reporting that the `outcome` of the game would be 2 (Alice wins), which we expect.
+It also reports the definition of the variable, so we can remind ourselves of that.
+
+```
+load: /examples/rps-4-attack/index-bad.txt
+md5: c05213f485c1095beb47b850f37cc77e
+range: 28-29
+```
+
+Next, we see Reach reporting what the internal variable `v110` would be.
+This variable is the tuple that is on the right-hand side of line 35 of the source program (shown above) that is immediately deconstructed into the variables `forAlice` and `forBob`.
+Since the program doesn't give this variable a name, Reach can't show a name and instead uses the generic `v110`.
+
+```
+load: /examples/rps-4-attack/index-bad.txt
+md5: c05213f485c1095beb47b850f37cc77e
+range: 30-32
+```
+
+Finally, we see the definition of the property being checked.
+The property is that 0 must be equal to `wager + wager` (the total number of wagers) less what Alice gets (`v110[0] * wager`) and what Bob gets (`v110[1] * wager`).
+Reach reports that this would be `{!rsh} false`.
+
+If you step through these definitions, you can see why:
+```
+Given
+  wager/81 = 1
+      v110 = [1, 0]
+
+Evaluate
+  0 == (((wager/81 + wager/81) - (v110[0] * wager/81)) - (v110[1] * wager/81))
+  0 == (((1 + 1) - (1 * 1)) - (0 * 1))
+  0 == ((2 - 1) - 0)
+  0 == (1 - 0)
+  0 == 1
+  false
+```
+
+Basically, we've been shown that there would be 1 atomic network unit left in the contract if we ran this program, so the theorem is false.
+
+```
+load: /examples/rps-4-attack/index-bad.txt
+md5: c05213f485c1095beb47b850f37cc77e
+range: 34-37
+```
+
+The rest of the output shows that the other mode is checked and summarizes the run.
+Reach will not print the same violation multiple times.
+That's why this violation is only printed in one mode, but Reach did check it and that's why Reach reports that there were 2 errors, but 1 was repeated and so its report is omitted.
+
 ## {#RA0000} RA0000
 
 This error indicates that a program, targeting the Algorand connector, is attempting to

@@ -855,6 +855,10 @@
     "title": "How to read error messages and stack traces",
     "path": "/rsh/errors/#how-to-read-errors"
   },
+  "how-to-read-verification-failures": {
+    "title": "How to read verification failures",
+    "path": "/rsh/errors/#how-to-read-verification-failures"
+  },
   "over-compile": {
     "title": "Compile",
     "path": "/tut/overview/#over-compile"

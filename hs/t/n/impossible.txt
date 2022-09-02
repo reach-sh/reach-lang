@@ -18,6 +18,8 @@ Verification failed:
 
   Verifying when NO participants are honest
 Checked 2 theorems; 1 failures :'(
+
+For a guide to understanding verification failures, see: https://docs.reach.sh/rsh/errors/#how-to-read-verification-failures
 warning[RW0004]: There are no publications in the application.
 
   ./impossible.rsh:3:30:application

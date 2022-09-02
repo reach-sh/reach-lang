@@ -77,6 +77,8 @@ Verification failed:
   assert(v210);
 
 Checked 21 theorems; 4 failures :'(
+
+For a guide to understanding verification failures, see: https://docs.reach.sh/rsh/errors/#how-to-read-verification-failures
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs.
 
   ./invariant_label.rsh:20:13:application

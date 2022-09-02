@@ -64,4 +64,6 @@ verify vst_vo lp@(LLProg { llp_opts }) = do
       when (rs > 0) $ do
         putStr $ " (and " ++ show rs ++ " omitted repeats)"
       putStrLn $ " :'("
+      putStrLn $ ""
+      putStrLn $ "For a guide to understanding verification failures, see: https://docs.reach.sh/rsh/errors/#how-to-read-verification-failures"
       return $ ExitFailure 1
