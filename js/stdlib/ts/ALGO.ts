@@ -2442,6 +2442,7 @@ const canFundFromFaucet = async (): Promise<boolean> => {
 };
 
 const fundFromFaucet = async (account: Account, value: unknown) => {
+  console.error("Warning: your program uses stdlib.fundFromFaucet. That means it only works on Reach devnets!");
   const faucet = await getFaucet();
   debug('fundFromFaucet');
   const tag = Math.round(Math.random() * (2 ** 32));

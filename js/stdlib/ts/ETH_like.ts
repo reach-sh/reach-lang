@@ -950,6 +950,7 @@ const createAccount = async () => {
 }
 
 const fundFromFaucet = async (account: AccountTransferable, value: any) => {
+  console.error("Warning: your program uses stdlib.fundFromFaucet. That means it only works on Reach devnets!");
   const f = await _specialFundFromFaucet();
   if (f) {
     return await f(account, value);
