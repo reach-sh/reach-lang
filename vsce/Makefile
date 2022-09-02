@@ -25,7 +25,24 @@ package.json: base.package.json
 	cp package.json base.package.json
 	node build.package.json.js
 
-publish:
+K2DF=kToD.ts
+K2DD=../docs
+K2D=${K2DD}/${K2DF}
+KDP=./server/src/keywordToDocumentation.ts
+
+.PHONY: check
+check:
+	(cd "${K2DD}" && rm -f "${K2DF}" && make "${K2DF}")
+	@if ! cmp "${K2D}" "${KDP}"; then \
+		echo Fix with \`make check-accept\` && exit 1; \
+	else echo looks good; \
+	fi
+
+.PHONY: check-accept
+check-accept: ${K2D}
+	mv "${K2D}" "${KDP}"
+
+publish: check
 	@echo
 	@echo "Now attempting to publish version $(VSCE_VER)"
 	@echo "of the extension using $(NODE_IMAGE)..."
