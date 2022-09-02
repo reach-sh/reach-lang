@@ -150,8 +150,6 @@ export const main = Reach.App(() => {
         V.balanceOf.set((owner) => {
           check(owner != zeroAddr, "ERC721::balanceOf: Address zero is not a valid owner");
           const m_bal = balances[owner];
-          // TODO - I don't understand why we would want this check.  I think it's wrong, we want to return 0 if they own none.
-          //check(isSome(m_bal), "ERC721::balanceOf: No balance for address");
           return fromSome(m_bal, 0);
         });
         const tokenExists = (tokenId) => isSome(owners[tokenId]);
