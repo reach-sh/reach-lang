@@ -68,7 +68,7 @@ const rchDeploy = async (rchModulePath, args) => {
   return deploy(ctc.ABI, ctc.Bytecode, args);
 }
 
-const test = async (ctc, expected, testInterfaceSupport, testEnumerable) => {
+const test = async (ctc, expected, testEnumerable) => {
   console.log(`Testing ${expected.name}`);
   const getWei = async () => (await accDeploy.balanceOf()).add(await _acc1.balanceOf()).add(await _acc2.balanceOf()).add(await _acc3.balanceOf());
   const weiPre = await getWei();
@@ -81,11 +81,8 @@ const test = async (ctc, expected, testInterfaceSupport, testEnumerable) => {
     ERC721Enumerable: "0x780e9d63",
   };
 
-  if (testInterfaceSupport){
-    // TODO - The Reach contract is failing this right now.  This needs Bytes.fromHex to work.
-    for (const iface in interfaceIds) {
-      assert(await ctc.supportsInterface(interfaceIds[iface]), `Supports ${iface}`);
-    }
+  for (const iface in interfaceIds) {
+    assert(await ctc.supportsInterface(interfaceIds[iface]), `Supports ${iface}`);
   }
 
   // ===== ERC721 =====
@@ -301,9 +298,8 @@ const reach_ctc = reach_erc721;
 
 
 // Actually run the tests, side by side.
-//await test(oz_erc721, oz_erc721_expected, true, true);
-const ozCost = await test(oz_erc721, oz_erc721_expected, true, false);
-const reachCost = await test(reach_ctc, reach_erc721_expected, true, false);
+const ozCost = await test(oz_erc721, oz_erc721_expected, false);
+const reachCost = await test(reach_ctc, reach_erc721_expected, false);
 
 console.log("Cost of Reach contract as percentage of OZ contract: ", (reachCost * 100.0) / ozCost);
 
