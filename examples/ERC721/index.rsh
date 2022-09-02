@@ -142,10 +142,6 @@ export const main = Reach.App(() => {
     parallelReduce([ ])
       .define(() => {
 
-        const modAt = (dict, key, f) => {
-          const value = dict[key];
-          fromMaybe(value, () => {}, (x) => { dict[key] = f(x); });
-        }
 
         V.balanceOf.set((owner) => {
           check(owner != zeroAddr, "ERC721::balanceOf: Address zero is not a valid owner");
@@ -277,7 +273,7 @@ export const main = Reach.App(() => {
       .api_(I.mint, (to, tokenId) => {
         check(to != zeroAddr, "Cannot mint to zero address");
         check(!tokenExists(tokenId), "Token already exists");
-        // TODO - shouldn't minting only be available to the deployer or something like that?
+        check(this == D, "mint can only be called by deployer")
         return [ (k) => {
           balances[to] = fromMaybe(balances[to], () => 1, (x) => x + 1);
           owners[tokenId] = to;
@@ -287,11 +283,17 @@ export const main = Reach.App(() => {
         }];
       })
       .api_(I.burn, (tokenId) => {
-        // TODO - I don't see any check here that only the owner can burn it...
         const owner = ownerOf(tokenId);
+        check(isApprovedOrOwner(this, tokenId), "ERC721::burn: caller is not owner nor approved");
         return [ (k) => {
           approve(zeroAddr, tokenId);
-          modAt(balances, owner, (x) => x - 1);
+          const curBal = balances[owner];
+          const newBal = fromMaybe(curBal, () => 0, (x) => x-1);
+          if (newBal == 0) {
+            delete balances[owner];
+          } else {
+            balances[owner] = newBal;
+          }
           delete owners[tokenId];
           E.Transfer(owner, zeroAddr, tokenId);
           k(null);
