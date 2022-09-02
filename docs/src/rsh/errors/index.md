@@ -49,7 +49,7 @@ This description can be exhaustively exhausting and learning how to interpret th
 Please use this guide to aid you in learning how to do that.
 
 You have to actually read and try to understand these messages.
-They will never been "Google-able", because they are intimately connected with your particular program.
+They will never be "Google-able", because they are intimately connected with your particular program.
 
 For this guide, we will take as an example the errorneous program from the fourth step of the _Rock, Paper, Scisssors!_ tutorial, @{seclink("tut-5")}.
 Here's a sample of and link to that program:
@@ -69,8 +69,8 @@ md5: c05213f485c1095beb47b850f37cc77e
 range: 1-1
 ```
 
-First, Reach will perform checking of knowledge assertions that are introduced by `{!rsh} unknowable`.
-This program does not have an violation of knowledge assertions, so there is no message.
+First, Reach will check knowledge assertions that are introduced by `{!rsh} unknowable`.
+This program does not have a violation of knowledge assertions, so there is no message.
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
@@ -79,10 +79,10 @@ range: 2-2
 ```
 
 Next, Reach begins checking the body of your code.
-Normally, it performs this checking abstractly with a "generic" network.
+Normally, it performs this check abstractly with a "generic" network.
 The generic network is more abstract (and thus more strict) than any particular connector.
 For example, the value of `{!rsh} UInt.max` could be anything.
-If you want to check with the actual connectors you will use, then you can use the `{!rsh} verifyPerConnector` option to `{!rsh} setOptions`.
+If you want to check with the actual connectors you will use, then you can use the `{!rsh} verifyPerConnector` option in `{!rsh} setOptions`.
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
@@ -110,7 +110,7 @@ Next (line 6), it tells you what kind of theorem it was.
 This is typically `assert` for an assertion that you put in your program or that Reach put in.
 It is also very common to see `invariant` for when a loop invariant is being checked.
 Finally (lines 7 and 8), Reach will tell you the message that was attached to the theorem and where it occurred in your program.
-If Reach inserted the theorem in for you, then the line number may not be in an intuitive place to you.
+If Reach inserted the theorem for you, then the line number may not be in an intuitive place.
 
 In this case, the error says that at the end of the program ("application exit"), the balance of the contract was supposed to be zero, but that the proof failed.
 
@@ -123,7 +123,7 @@ range: 10-10
 In the next section of text, Reach is going to provide information about the "violation witness".
 Every theorem failure means that there is input to your program that would result in something bad happening.
 The failure is called a "violation", because the theorem was supposed to always be true, but that assumption was "violated".
-Reach can always synthesize example input to provide evidence that the violation is possible; that evidence is called a "witness".
+Reach can synthesize example inputs to provide evidence that the violation is possible; that evidence is called a "witness".
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
@@ -134,7 +134,7 @@ range: 12-12
 Reach will report the values of all the variables that are unconstrained by your program; that is, the ones that are input.
 In this case, since we are checking with a generic connector, it first tells us that the maximum value of numbers on this connector is 2.
 This is a ridiculously small number.
-You should rarely read too much into this number... effectively, Reach is telling you that it didn't need to do a lot of numeric exploration to find this program, since your program uses so few numbers.
+You should rarely read too much into this number... effectively, Reach is telling you that it didn't need to do a lot of numeric exploration to find this problem, since your program uses so few numbers.
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
@@ -164,7 +164,7 @@ range: 17-22
 ```
 
 Next, we see two more free variables: the handles that Alice and Bob choose when they play the game.
-In this case (line 18), Alice chose 0 (Rock) and Bob chose 2 (Scissors), which means that Alice won, which is exactly when the problem we know is in the program happens.
+In this case (line 18), Alice chose 0 (Rock) and Bob chose 2 (Scissors), which means that Alice won, which is exactly where we know the problem in the program happens.
 When Reach prints out the definition of the variable, it adds more information than you normally see in your program.
 For example, we see that `getHand` has to be a `{!rsh} UInt`.
 This information is in your program in the definition of `getHand`, but we can't see that right here, so Reach is adding extra context for you to better understand the witness.
