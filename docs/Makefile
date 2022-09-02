@@ -2,7 +2,7 @@ ROOT=..
 include $(ROOT)/DEPS
 
 .PHONY: build
-build: check
+build: kToD.ts
 	DOCKER_BUILDKIT=1 docker build \
 	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
 	  --build-arg DOCS_IMAGE=${DOCS_IMAGE} \
@@ -17,17 +17,6 @@ kToD.ts:
 	  --pull=false \
 	  -o $$(pwd) \
 	  -f update_ext_hover_doc/Dockerfile ..
-
-KDP=../vsce/server/src/keywordToDocumentation.ts
-.PHONY: check
-check: kToD.ts
-	@if ! cmp $^ "${KDP}"; then \
-		echo Fix with \`make check-accept\` && exit 1; \
-	fi
-
-.PHONY: check-accept
-check-accept: kToD.ts
-	mv $^ "${KDP}"
 
 .PHONY: update-search
 update-search:
