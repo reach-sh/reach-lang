@@ -462,6 +462,7 @@ instance DepthOf DLExpr where
     DLE_DataTag _ d -> add1 $ depthOf d
     DLE_FromSome _ mo da -> add1 $ depthOf [mo, da]
     DLE_ContractNew _ cns dr -> add1 $ max <$> depthOf cns <*> depthOf dr
+    DLE_ContractFromAddress _ a -> add1 $ depthOf a
     where
       add1 = addN 1
       addN n m = (+) n <$> m
@@ -795,6 +796,7 @@ solExpr sp = \case
     return $ parens $ c <+> "?" <+> (mo' <> "._" <> pretty vn) <+> ":" <+> da'
   DLE_GetUntrackedFunds {} -> impossible "getUntrackedFunds"
   DLE_ContractNew {} -> impossible "contractNew"
+  DLE_ContractFromAddress _ _a -> impossible "TODO - implement ContractFromAddress"
   where
     spa m = (<> sp) <$> m
 

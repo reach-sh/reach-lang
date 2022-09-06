@@ -272,6 +272,7 @@ kgq_e ctxt mv = \case
     kgq_a_all ctxt dr
   DLE_ObjectSet _ o _ v -> kgq_la ctxt mv (DLLA_Tuple [o, v])
   DLE_TupleSet _ t _ v -> kgq_la ctxt mv (DLLA_Tuple [t, v])
+  DLE_ContractFromAddress _ a -> kgq_a_all ctxt a
 
 kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case

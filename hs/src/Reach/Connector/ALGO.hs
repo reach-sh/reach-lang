@@ -2452,6 +2452,8 @@ ce = \case
         makeTxn1 "ApplicationArgs"
       op "itxn_submit"
       code "itxn" ["CreatedApplicationID"]
+  DLE_ContractFromAddress _at _addr -> do
+    impossible "TODO - implement ContractFromAddress"
   where
     -- On ALGO, objects are represented identically to tuples of their fields in ascending order.
     -- Consequently, we can pretend objects are tuples and use tuple functions as a shortcut.

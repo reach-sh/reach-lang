@@ -829,6 +829,7 @@ data SLPrimitive
   | SLPrim_Contract_new_ctor DLContractNews
   | SLPrim_toStringDyn
   | SLPrim_Bytes_fromHex
+  | SLPrim_Contract_fromAddress
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

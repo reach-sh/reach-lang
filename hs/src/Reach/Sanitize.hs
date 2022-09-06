@@ -111,6 +111,7 @@ instance Sanitize DLExpr where
     DLE_ContractNew _ cns dr -> DLE_ContractNew sb (sani cns) (sani dr)
     DLE_ObjectSet _ o k v -> DLE_ObjectSet sb (sani o) k (sani v)
     DLE_TupleSet _ t i v -> DLE_TupleSet sb (sani t) i (sani v)
+    DLE_ContractFromAddress _ a -> DLE_ContractFromAddress sb (sani a)
 
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m

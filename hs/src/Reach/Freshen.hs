@@ -186,6 +186,7 @@ instance Freshen DLExpr where
     DLE_ContractNew at tns dr -> DLE_ContractNew at <$> fu tns <*> fu dr
     DLE_ObjectSet at a b c -> DLE_ObjectSet at <$> fu a <*> pure b <*> fu c
     DLE_TupleSet at a b c -> DLE_TupleSet at <$> fu a <*> pure b <*> fu c
+    DLE_ContractFromAddress at a -> DLE_ContractFromAddress at <$> fu a
 
 instance {-# OVERLAPS #-} Freshen k => Freshen (SwitchCases k) where
   fu = mapM (\(vn, vnu, k) -> (,,) <$> fu_v vn <*> pure vnu <*> (newScope $ fu k))
