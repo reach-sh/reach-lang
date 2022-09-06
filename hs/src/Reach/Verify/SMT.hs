@@ -1244,6 +1244,7 @@ smt_e at_dv mdv de = do
       let nonec = List [nonep, da']
       bound at $ smtApply "match" [mo', List [nonec, somec]]
     DLE_ContractNew at _ _ -> unbound at
+    DLE_ContractFromAddress at _addr -> unbound at
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)

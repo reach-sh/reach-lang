@@ -4098,6 +4098,17 @@ evalPrim p sargs =
       let hsNoPrefix = B.drop 2 hs
       bs <- either (const $ expect_ Err_BytesFromHex_Invalid) return $ B16.decodeBase16 hsNoPrefix
       return (lvl, SLV_Bytes at bs)
+    SLPrim_Contract_fromAddress -> do
+      at <- withAt id
+      x <- one_arg
+      (xt, xa) <- compileTypeOf x
+      case xt of
+        T_Address -> do
+          let mkv = DLVar at Nothing $ maybeT T_Contract
+          let e = DLE_ContractFromAddress at xa
+          fsv <- ctxt_lift_expr mkv e
+          return (lvl, SLV_DLVar fsv)
+        _ -> expect_t x $ Err_Expected "Address"
     -- END OF evalPrim cases
   where
     lvl = mconcatMap fst sargs

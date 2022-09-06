@@ -627,6 +627,8 @@ jsExpr = \case
     mo' <- jsArg mo
     da' <- jsArg da
     return $ jsApply "stdlib.fromSome" [mo', da']
+  DLE_ContractFromAddress _at _addr -> do
+    impossible "TODO - implement ContractFromAddress"
   DLE_ContractNew at cns dr -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> return "undefined /* ContractNew */"

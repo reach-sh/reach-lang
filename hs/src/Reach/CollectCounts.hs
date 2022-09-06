@@ -182,6 +182,7 @@ instance Countable DLExpr where
     DLE_ContractNew _ cns dr -> counts cns <> counts dr
     DLE_ObjectSet _ o _ v -> counts [o, v]
     DLE_TupleSet _ t _ v -> counts [t, v]
+    DLE_ContractFromAddress _ a -> counts a
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m
