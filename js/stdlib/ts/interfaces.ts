@@ -175,10 +175,10 @@ export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, Contrac
   randomUInt: () => BigNumber
   hasRandom: { random: () => BigNumber }
   hasConsoleLogger: { log: (...a: any) => void }
-  balanceOf: (acc: Account, token?: Token) => Promise<BigNumber>
-  balancesOf: (acc: Account, tokens: Array<Token | null>) => Promise<Array<BigNumber>>
-  minimumBalanceOf: (acc:Account) => Promise<BigNumber>
-  transfer: (from: Account, to: Account, amount: any, token?: Token, opts?: TransferOpts) => Promise<unknown>
+  balanceOf: (acc: Account | Address, token?: Token) => Promise<BigNumber>
+  balancesOf: (acc: Account | Address, tokens: Array<Token | null>) => Promise<Array<BigNumber>>
+  minimumBalanceOf: (acc: Account | Address) => Promise<BigNumber>
+  transfer: (from: Account, to: Account | Address, amount: any, token?: Token, opts?: TransferOpts) => Promise<unknown>
   connectAccount: (networkAccount: NetworkAccount) => Promise<Account>
   newAccountFromSecret: (secret: string) => Promise<Account>
   newAccountFromMnemonic: (phrase: string) => Promise<Account>
@@ -186,7 +186,7 @@ export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, Contrac
   createAccount: () => Promise<Account>
   getFaucet: () => Promise<Account> // XXX
   canFundFromFaucet: () => Promise<boolean>
-  fundFromFaucet: (acc: Account, balance: BigNumber) => Promise<void>
+  fundFromFaucet: (acc: Account | Address, balance: BigNumber) => Promise<void>
   newTestAccount: (balance: BigNumber) => Promise<Account>
   newTestAccounts: (num: number, balance: BigNumber) => Promise<Array<Account>>
   getNetworkTime: () => Promise<BigNumber>
@@ -203,7 +203,7 @@ export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, Contrac
   parseCurrency: (amtDesc: any) => BigNumber
   minimumBalance: BigNumber
   formatCurrency: (amt: BigNumber, decimals: number) => string
-  formatAddress: (acc: Account|string) => string
+  formatAddress: (acc: Account | Address | string) => string
   formatWithDecimals: (amt: unknown, decimals: number) => string
   unsafeGetMnemonic: (acc: Account) => string
   launchToken: (acc: Account, name: string, sym: string, opts?: LaunchTokenOpts) => any
@@ -211,5 +211,5 @@ export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, Contrac
   setMinMillisBetweenRequests: (n: number) => void
   setCustomHttpEventHandler: (h: (e: any) => Promise<void>) => void
   setSigningMonitor: SetSigningMonitor
-  tokensAccepted: (acc: Address) => Promise<Array<Token>>
+  tokensAccepted: (acc: Account | Address) => Promise<Array<Token>>
 }
