@@ -171,7 +171,7 @@ export const digest_xor = (xd: string, yd: string): string => {
   const parseHex = (xs: string) => {
     const ret = [];
     for (let i = 0; i < xs.length; i += 2) {
-      ret.push(hexToInt(xs.substr(i, 2)));
+      ret.push(hexToInt(xs.substring(i, i + 2)));
     }
     return ret;
   }
