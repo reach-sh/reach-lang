@@ -2413,6 +2413,9 @@ ce = \case
     -- [ Default, Object, Tag ]
     -- [ False, True, Cond ]
     op "select"
+  DLE_ContractFromAddress _at _addr -> do
+    size <- typeSizeOf $ T_Data (M.fromList [("None", T_Null), ("Some", T_Address)])
+    padding size
   DLE_ContractNew at cns dr -> do
     block_ "ContractNew" $ do
       let DLContractNew {..} = cns M.! conName'
@@ -2452,8 +2455,6 @@ ce = \case
         makeTxn1 "ApplicationArgs"
       op "itxn_submit"
       code "itxn" ["CreatedApplicationID"]
-  DLE_ContractFromAddress _at _addr -> do
-    impossible "TODO - implement ContractFromAddress"
   where
     -- On ALGO, objects are represented identically to tuples of their fields in ascending order.
     -- Consequently, we can pretend objects are tuples and use tuple functions as a shortcut.
