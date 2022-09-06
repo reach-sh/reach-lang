@@ -796,7 +796,17 @@ solExpr sp = \case
     return $ parens $ c <+> "?" <+> (mo' <> "._" <> pretty vn) <+> ":" <+> da'
   DLE_GetUntrackedFunds {} -> impossible "getUntrackedFunds"
   DLE_ContractNew {} -> impossible "contractNew"
-  DLE_ContractFromAddress _ _a -> impossible "TODO - implement ContractFromAddress"
+  DLE_ContractFromAddress at addr -> do
+    let maybeMap = (M.fromList [("None", T_Null), ("Some", T_Address)])
+    addr' <- solArg addr
+    -- TODO - address.code.length returns 0 for addresses of contracts under construction, addresses of contracts that were destroyed, and addresses where a contract will be created.  IE it isn't a perfect predicate.
+    let isContract = parens $ addr' <> ".code.length > 0"
+    r <- allocMemVar at (T_Data maybeMap)
+    trueCase <- solLargeArg' r $ DLLA_Data maybeMap "Some" addr
+    falseCase <- solLargeArg' r $ DLLA_Data maybeMap "None" $ DLA_Literal DLL_Null
+    _ <- return $ solIf isContract trueCase falseCase
+    impossible "TODO - how can I lift this solIf since I'm generating an expression and not a statement?  I'm not sure how I can lift a function definition, especially if I want it to be lifted only once."
+    --return r
   where
     spa m = (<> sp) <$> m
 
