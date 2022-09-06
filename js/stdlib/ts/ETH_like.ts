@@ -403,7 +403,7 @@ const doCall = async (
 /** @description Arg order follows "src before dst" convention */
 const transfer = async (
   from: AccountTransferable,
-  to: AccountTransferable,
+  to: AccountTransferable | Address,
   value: any,
   token?: Token,
 ): Promise<TransactionReceipt> => {
@@ -907,7 +907,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   return stdAccount({ ...accObj, balanceOf: balanceOf_, balancesOf: balancesOf_ });
 };
 
-const tokensAccepted = async (_addr: Address): Promise<Array<Token>> => {
+const tokensAccepted = async (_: Account | Address): Promise<Array<Token>> => {
   debug(`tokensAccepted: Unnecessary on ETHlike`);
   return [];
 };
@@ -949,7 +949,7 @@ const createAccount = async () => {
   return await connectAccount(networkAccount);
 }
 
-const fundFromFaucet = async (account: AccountTransferable, value: any) => {
+const fundFromFaucet = async (account: AccountTransferable | Address, value: any) => {
   console.error("Warning: your program uses stdlib.fundFromFaucet. That means it only works on Reach devnets!");
   const f = await _specialFundFromFaucet();
   if (f) {
@@ -1121,13 +1121,13 @@ function formatCurrency(amt: any, decimals: number = standardDigits): string {
  * @param acc Account, NetworkAccount, or hex-encoded address
  * @returns the address formatted as a hex-encoded string
  */
-function formatAddress(acc: string|NetworkAccount|Account): string {
+function formatAddress(acc: string|NetworkAccount|Account|Address): string {
   return T_Address.canonicalize(acc) as string; // TODO: typing
 }
 
 async function launchToken (accCreator:Account, name:string, sym:string, opts:LaunchTokenOpts = {}) {
   debug(`Launching token, ${name} (${sym})`);
-  const addr = (acc:Account) => acc.networkAccount.address;
+  // const addr = (acc: Account | Address) => ;
   const remoteCtc = ETHstdlib["contracts"]["sol/stdlib.sol:ReachToken"];
   const remoteABI = remoteCtc["abi"];
   const remoteBytecode = remoteCtc["bin"];
@@ -1143,9 +1143,10 @@ async function launchToken (accCreator:Account, name:string, sym:string, opts:La
   debug(`${sym}: saw deploy: ${deploy_r.blockNumber}`);
   const id = contract.address;
   debug(`${sym}: deployed: ${id}`);
-  const mint = async (accTo:Account, amt:any) => {
-    debug(`${sym}: transferring ${amt} ${sym} for ${addr(accTo)}`);
-    await transfer(accCreator, accTo, amt, id);
+  const mint = async (to: Account | Address, amt: any) => {
+    const addrTo = typeof to === "string" ? to : to?.networkAccount?.address;
+    debug(`${sym}: transferring ${amt} ${sym} for ${addrTo}`);
+    await transfer(accCreator, to, amt, id);
   };
   const optOut = async (accFrom:Account, accTo:Account = accCreator) => {
     debug(`${sym}: optOut unnecessary on ETHlike`, accFrom, accTo);

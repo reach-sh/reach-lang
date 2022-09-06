@@ -421,6 +421,10 @@ async function httpEventHandler(e: RHC.Event): Promise<void> {
 const cbr2algo_addr = (x:string): Address =>
   algosdk.encodeAddress(Buffer.from(x.slice(2), 'hex'));
 
+// Takes a CBR Account or CBR Address and converts it into an Algod acceptable pubkey
+const extractAddrConvert = (a: Account | Address): Address =>
+  cbr2algo_addr(protect(T_Address, extractAddr(a)) as Address);
+
 const txnFromAddress = (t:Transaction): Address =>
   algosdk.encodeAddress(t.from.publicKey);
 
@@ -1217,13 +1221,13 @@ const makeTransferTxn = (
 
 const transfer = async (
   from: Account,
-  to: Account,
+  to: Account | Address,
   value: any,
   token?: Token,
   opts?: TransferOpts,
 ): Promise<RecvTxn> => {
   const sender = from.networkAccount;
-  const receiver = extractAddr(to);
+  const receiver = extractAddrConvert(to);
   const valuebn = bigNumberify(value);
   const ps = await getTxnParams('transfer');
   const closeTo = opts?.closeTo ? cbr2algo_addr(protect(T_Address, opts.closeTo) as Address) : undefined;
@@ -1279,15 +1283,15 @@ const reNetify = (x: string): NV => {
   return ethers.utils.arrayify('0x' + s);
 };
 
-const getAccountInfo = (acc:Account): Promise<AccountInfo> => getAddressInfo(extractAddr(acc));
-const getAddressInfo = async (a:Address): Promise<AccountInfo> => {
+const getAccountInfo  = async (acc: Account | Address): Promise<AccountInfo> => {
   // Note restrictions on AccountInfo responses due to 'MaxAPIResourcesPerAccount' setting in the node and indexer
   // https://developer.algorand.org/articles/algorand-unlimited-assets-and-smart-contracts/
+  const addr = extractAddrConvert(acc);
   const dhead = 'getAddressInfo';
   try {
     await ensureNodeCanRead();
     const client = await getAlgodClient();
-    const req = client.accountInformation(a);
+    const req = client.accountInformation(addr);
     debug(dhead, req);
     const res = (await req.do()) as AccountInfo;
     debug(dhead, 'node', res);
@@ -1308,7 +1312,7 @@ const getAddressInfo = async (a:Address): Promise<AccountInfo> => {
       return { exn: x };
     }
   };
-  const query = indexer.lookupAccountByID(a) as unknown as ApiCall<IndexerAccountInfoRes>;
+  const query = indexer.lookupAccountByID(addr) as unknown as ApiCall<IndexerAccountInfoRes>;
   const res = await doQuery_(dhead, query, 0, failOk);
   debug(dhead, res);
   return res.account;
@@ -2299,11 +2303,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   return stdAccount({ ...accObj, balanceOf: balanceOf_, balancesOf: balancesOf_ });
 };
 
-const tokensAccepted = async (addr_: Address): Promise<Array<Token>> => {
-  const addr = cbr2algo_addr(protect(T_Address, addr_) as Address);
+const tokensAccepted = async (acc: Account | Address): Promise<Array<Token>> => {
+  const addr = extractAddrConvert(acc);
   let assetHoldings: Array<AssetHolding>;
   if (await nodeCanRead()) {
-    const accountInfo = await getAddressInfo(addr);
+    const accountInfo = await getAccountInfo(addr);
     assetHoldings = accountInfo['assets'] ?? [];
   } else {
     const indexer = await getIndexer();
@@ -2313,7 +2317,7 @@ const tokensAccepted = async (addr_: Address): Promise<Array<Token>> => {
   return assetHoldings.map(ah => bigNumberify(ah["asset-id"]));
 }
 
-const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
+const minimumBalanceOf = async (acc: Account | Address): Promise<BigNumber> => {
   const ai = await getAccountInfo(acc);
   if ( ai.amount === BigInt(0) ) { return bigNumberify(0); }
   const createdAppCount = bigNumberify((ai['created-apps']??[]).length);
@@ -2332,14 +2336,15 @@ const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
   return accMinBalance;
 };
 
-const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber|false>> => {
+const balancesOfM = async (acc: Account | Address, tokens: Array<Token|null>): Promise<Array<BigNumber|false>> => {
   const bn = bigNumberify;
   const tokenbs = tokens.map((tr) => tr == null ? tr : bn(tr));
+  const addr = extractAddrConvert(acc);
 
   // Querying Algod for balances
   if (await nodeCanRead()) {
     const client = await getAlgodClient();
-    const query = client.accountInformation(extractAddr(acc)) as unknown as ApiCall<AccountInfo>;
+    const query = client.accountInformation(addr) as unknown as ApiCall<AccountInfo>;
     const accountInfoM = await doQueryM_('balancesOfM', query);
     if ('val' in accountInfoM) {
       const accountInfo = accountInfoM['val'];
@@ -2358,7 +2363,6 @@ const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Arr
 
   // If Algod failed, (eg if query response exceeded MaxAPIResourcesPerAccount), query the indexer
   const indexer = await getIndexer();
-  const addr = extractAddr(acc);
   const query = indexer.lookupAccountAssets(addr) as unknown as ApiCall<IndexerAccountAssetsRes>;
   const accountAssets = (await doQuery_('balancesOfM', query))['assets'];
   const tokenBalances = tokenbs.map(async tb => {
@@ -2372,9 +2376,9 @@ const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Arr
   return Promise.all(tokenBalances);
 };
 
-const balanceOfM = async (acc: Account, token: Token | null): Promise<BigNumber | false> => {
+const balanceOfM = async (acc: Account | Address, token: Token | null): Promise<BigNumber | false> => {
   const dhead = 'balanceOfM';
-  const addr = extractAddr(acc);
+  const addr = extractAddrConvert(acc);
   if (token == null) {
     if (await nodeCanRead()) {
       const client = await getAlgodClient();
@@ -2411,11 +2415,11 @@ const balanceOfMNonNet = async (addr:string, token:Token) => {
   }
 }
 
-const balancesOf = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber>> => {
+const balancesOf = async (acc: Account | Address, tokens: Array<Token|null>): Promise<Array<BigNumber>> => {
   return (await balancesOfM(acc, tokens)).map(bal => bal == false ? bigNumberify(0) : bal);
 };
 
-const balanceOf = async (acc: Account, token?: Token): Promise<BigNumber> => {
+const balanceOf = async (acc: Account | Address, token?: Token): Promise<BigNumber> => {
   return (await balanceOfM(acc, token || null)) || bigNumberify(0);
 };
 
@@ -2441,12 +2445,12 @@ const canFundFromFaucet = async (): Promise<boolean> => {
   return gt(fbal, 0);
 };
 
-const fundFromFaucet = async (account: Account, value: unknown) => {
+const fundFromFaucet = async (acc: Account | Address, value: unknown) => {
   console.error("Warning: your program uses stdlib.fundFromFaucet. That means it only works on Reach devnets!");
   const faucet = await getFaucet();
   debug('fundFromFaucet');
   const tag = Math.round(Math.random() * (2 ** 32));
-  await transfer(faucet, account, value, undefined, { tag });
+  await transfer(faucet, acc, value, undefined, { tag });
 };
 
 const newTestAccount = async (startingBalance: unknown) => {
@@ -2647,7 +2651,7 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
  * @param acc Account, NetworkAccount, base32-encoded address, or hex-encoded address
  * @returns the address formatted as a base32-encoded string with checksum
  */
-function formatAddress(acc: string|NetworkAccount|Account): string {
+function formatAddress(acc: string|NetworkAccount|Account|Address): string {
   return addressFromHex(T_Address.canonicalize(acc));
 }
 
@@ -2686,7 +2690,7 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
   if (!assetIndex) throw Error(`${sym} no asset-index!`);
   const id = bigNumberify(assetIndex);
 
-  const mint = (accTo: Account, amt: any) => transfer(accCreator, accTo, amt, id);
+  const mint = (to: Account | Address, amt: any) => transfer(accCreator, to, amt, id);
   const optOut = async (accFrom: Account, accTo: Account = accCreator) => {
     // Opting out = sending all of your current balance to accTo
     const addrFrom = accFrom.networkAccount.addr;
