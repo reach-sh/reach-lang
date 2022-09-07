@@ -523,7 +523,7 @@ This code creates an account for `accD` without a starting balance.
 ---
 @{ref("js", "fundFromFaucet")}
 ```js
-stdlib.fundFromFaucet(account, balance) => Promise<void>
+stdlib.fundFromFaucet(acc: Account | Address, balance: BigNumber) => Promise<void>
 ```
 
 Adds the given balance of network tokens to a Reach account abstraction.
@@ -677,11 +677,11 @@ This does nothing on some consensus networks, but should always be used to ensur
 ---
 @{ref("js", "acc.tokensAccepted")}@{ref("js", "stdlib.tokensAccepted")}
 ```js
-stdlib.tokensAccepted(addr: Address) => Promise<Array<Token>>
+stdlib.tokensAccepted(acc: Account | Address) => Promise<Array<Token>>
 acc.tokensAccepted() => Promise<Array<Token>>
 ```
 
-Returns a Promise for an array of tokens that are accepted by `addr` or `acc`.
+Returns a Promise for an array of tokens that are accepted by `acc`.
 On networks which do not keep track of this information (e.g. Ethereum), this returns an empty array.
 
 ---
@@ -695,8 +695,8 @@ Returns a Promise of the metadata for a non-network token specified by the `{!js
 ---
 @{ref("js", "balanceOf")}@{ref("js", "stdlib.balanceOf")}@{ref("js", "acc.balanceOf")}
 ```js
-acc.balanceOf(token?) => Promise<BigNumber>
-stdlib.balanceOf(acc, token?) => Promise<BigNumber>
+acc.balanceOf(token?: Token) => Promise<BigNumber>
+stdlib.balanceOf(acc: Account | Address, token?: Token) => Promise<BigNumber>
 ```
 
 Promises the balance of network tokens (or non-network tokens if `{!js} token` is provided) held by given Reach account abstraction `{!js} acc`.
@@ -716,7 +716,7 @@ This makes the account balance simpler to reference later in the code, such as d
 @{ref("js", "balancesOf")}@{ref("js", "stdlib.balancesOf")}@{ref("js", "acc.balancesOf")}
 ```js
 acc.balancesOf(tokens: Array<Token | null>) => Promise<Array<BigNumber>>
-stdlib.balancesOf(acc: Account, tokens: Array<Token | null>) => Promise<Array<BigNumber>>
+stdlib.balancesOf(acc: Account | Address, tokens: Array<Token | null>) => Promise<Array<BigNumber>>
 ```
 Promises an array of balances that corresponds with the provided array of tokens, `{!js} tokens`,
 for a given Reach account `{!js} acc`.
@@ -748,7 +748,7 @@ On networks that do not, this will always return zero.
 ---
 @{ref("js", "transfer")}
 ```js
-stdlib.transfer(from: Account, to: Account, amount, token?: Token, opts?: TransferOpts) => Promise<void>
+stdlib.transfer(from: Account, to: Account | Address, amount, token?: Token, opts?: TransferOpts) => Promise<void>
 ```
 
 Performs a transfer of `{!js} amount` from `{!js} from` to `{!js} to`,
@@ -1540,7 +1540,7 @@ in the token's atomic unit.
 ---
 @{ref("js", "formatAddress")}@{ref("js", "stdlib.formatAddress")}
 ```js
-stdlib.formatAddress(acc) => string
+stdlib.formatAddress(acc: Account | Address) => string
 ```
 
 Formats the address in the way the user would expect to see it:
