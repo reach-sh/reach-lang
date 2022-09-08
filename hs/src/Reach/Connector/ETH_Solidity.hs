@@ -1063,16 +1063,13 @@ solCom = \case
       , solSet (solMemVar dv) ite
       ]
   DL_Let _ (DLV_Let _ dv) (DLE_ContractFromAddress _at addr) -> do
-    maybeMap <- case maybeT T_Address of
-      T_Data mm -> return mm
-      _ -> impossible "maybe not maybe"
     addr' <- solArg addr
     -- TODO - address.code.length returns 0 for addresses of contracts under construction, addresses of contracts that were destroyed, and addresses where a contract will be created.  IE it isn't a perfect predicate.
     let isContract = parens $ addr' <> ".code.length > 0"
     addMemVar dv
     dv' <- solVar dv
-    trueCase <- solLargeArg' dv' $ DLLA_Data maybeMap "Some" addr
-    falseCase <- solLargeArg' dv' $ DLLA_Data maybeMap "None" $ DLA_Literal DLL_Null
+    trueCase <- solLargeArg' dv' $ mdaToMaybeLA T_Contract $ Just addr
+    falseCase <- solLargeArg' dv' $ mdaToMaybeLA T_Contract Nothing
     return $ solIf isContract trueCase falseCase
   DL_Let _ (DLV_Eff) (DLE_ContractFromAddress _at _addr) -> do
     return ""
