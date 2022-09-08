@@ -280,6 +280,8 @@ const reach_erc721_constructor_args = [
       3,
       // v3240, address payable, I think this is the zero address
       zeroAddr,
+      // Empty BytesDyn
+      [],
     ],
   ],
 ];
