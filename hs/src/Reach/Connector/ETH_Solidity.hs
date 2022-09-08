@@ -1064,7 +1064,6 @@ solCom = \case
       ]
   DL_Let _ (DLV_Let _ dv) (DLE_ContractFromAddress _at addr) -> do
     addr' <- solArg addr
-    -- TODO - address.code.length returns 0 for addresses of contracts under construction, addresses of contracts that were destroyed, and addresses where a contract will be created.  IE it isn't a perfect predicate.
     let isContract = parens $ addr' <> ".code.length > 0"
     addMemVar dv
     dv' <- solVar dv

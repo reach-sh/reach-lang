@@ -8,6 +8,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{verRC("0.1.11")}
 
 + @{rcHead("0.1.11-rc10")}
++ 2022/09/08: Added `Contract.fromAddress`.
 + @{rcHead("0.1.11-rc9")}
 + 2022/08/31: Added `rawCall` field to `{!rsh} remote.ALGO`.
 + @{rcHead("0.1.11-rc8")}
