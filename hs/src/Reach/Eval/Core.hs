@@ -4103,15 +4103,12 @@ evalPrim p sargs =
       at <- withAt id
       ensure_mode SLM_ConsensusStep "Contract.fromAddress"
       x <- one_arg
-      (xt, xa) <- compileTypeOf x
-      case xt of
-        T_Address -> do
-          let mkv = DLVar at Nothing $ maybeT T_Contract
-          let e = DLE_ContractFromAddress at xa
-          fsv <- ctxt_lift_expr mkv e
-          fsv' <- doInternalLog_ Nothing fsv
-          return (lvl, SLV_DLVar fsv')
-        _ -> expect_t x $ Err_Expected "Address"
+      xa <- compileCheckType T_Address x
+      let mkv = DLVar at Nothing $ maybeT T_Contract
+      let e = DLE_ContractFromAddress at xa
+      fsv <- ctxt_lift_expr mkv e
+      fsv' <- doInternalLog_ Nothing fsv
+      return (lvl, SLV_DLVar fsv')
     -- END OF evalPrim cases
   where
     lvl = mconcatMap fst sargs
