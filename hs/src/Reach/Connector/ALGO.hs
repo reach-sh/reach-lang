@@ -1429,12 +1429,12 @@ cprim = \case
           -- [ v ]
           let ext i = cint (8 * i) >> op "extract_uint64"
           unless (trunc || pv == PV_Veri) $ do
-            dupn 3
-            -- [ v, v, v, v ]
-            let go i = ext i >> cint 0 >> asserteq
-            go 2
-            go 1
-            go 0
+            op "// Truncation check"
+            op "dup"
+            op "bitlen"
+            cint 64
+            op "<="
+            assert
           ext 3
         x -> impossible $ "ucast " <> show x
     _ -> impossible "cprim: UCAST args"
