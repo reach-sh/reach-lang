@@ -80,7 +80,7 @@ const ERC721Enumerable = mixin({
 });
 
 const ERC721TokenReceiverI = {
-    onERC721Received: Fun([Contract, Address, UInt, BytesDyn], Bytes(4)),
+    onERC721Received: Fun([Address, Address, UInt, BytesDyn], Bytes(4)),
 };
 const ERC721TokenReceiver = mixin({
   IDs: [ Bytes.fromHex('0x150b7a02'), ],
@@ -105,6 +105,7 @@ export const main = Reach.App(() => {
       totalSupply: UInt
     }),
     zeroAddr: Address,
+    emptyBytesDyn: BytesDyn,
     deployed: Fun([Contract], Null),
   });
 
@@ -120,8 +121,9 @@ export const main = Reach.App(() => {
     const { name, symbol, tokenURI } = declassify(interact.meta);
     const { totalSupply } = declassify(interact.enum);
     const zeroAddr = declassify(interact.zeroAddr);
+    const emptyBytesDyn = declassify(interact.emptyBytesDyn);
   })
-  D.publish(name, symbol, tokenURI, totalSupply, zeroAddr);
+  D.publish(name, symbol, tokenURI, totalSupply, zeroAddr, emptyBytesDyn);
 
   D.interact.deployed(getContract());
 
@@ -204,11 +206,16 @@ export const main = Reach.App(() => {
         }
         const doSafeTransferFrom = (caller, from_, to, tokenId, data) => {
           transfer_(caller, from_, to, tokenId);
-          // TODO - this should be a remote call if and only if the to address is a contract.  We need to use the future feature Contract.fromAddress here to determine that.
-          //const to_ctc = remote(to, ERC721TokenReceiverI);
-          //const mv = to_ctc.onERC721Received(getContract(), from_, tokenId, data);
-          //// This hex string is bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
-          //ensure(mv == Bytes.fromHex('0x150b7a02'));
+          const ctcMaybe = Contract.fromAddress(to);
+          ctcMaybe.match({
+            Some: (ctc) => {
+              const r = remote(ctc, ERC721TokenReceiverI);
+              const mv = r.onERC721Received(getAddress(), from_, tokenId, data);
+              // This hex string is bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
+              enforce(mv == Bytes.fromHex('0x150b7a02'));
+            },
+            None: () => {},
+          });
         }
       })
       .api_(I.safeTransferFrom1, (from_, to, tokenId, data) => {
@@ -222,7 +229,7 @@ export const main = Reach.App(() => {
       .api_(I.safeTransferFrom2, (from_, to, tokenId) => {
         transferChecks(this, from_, to, tokenId);
         return [ (k) => {
-          doSafeTransferFrom(this, from_, to, tokenId, "");
+          doSafeTransferFrom(this, from_, to, tokenId, emptyBytesDyn);
           k(null);
           return [ ];
         }];
