@@ -633,6 +633,31 @@ const [ netRecv, [gilRecv, zmdRecv], randomValue ] =
 might be the way to communicate with a random oracle that receives a conservative approximation of its actual cost and returns what it does not use, along with some amount of network tokens, `GIL`, and `ZMD`.
 This operation may not be used with `{!rsh} REMOTE_FUN.bill`.
 
+### Contract.fromAddress
+@{ref("rsh", "Contract.fromAddress")}
+
+Takes an `{!rsh} Address}` and returns a `{!rsh} Maybe(Contract)`.
+
+On Algorand this always returns `{!rsh} None`.
+On Ethereum and Conflux, it returns `{!rsh} None` for addresses of externally owned accounts, and it returns `{!rsh} Some` for addresses of contracts under most circumstances.
+However, it also returns `{!rsh} None` for addresses of contracts that are under construction, for addresses of contracts that have been destroyed, and for addresses of contracts that have not yet been created.
+
+```reach
+bob.publish(addr);
+const ctcMaybe = Contract.fromAddress(addr);
+const result = ctcMaybe.match({
+  Some: (ctc) => {
+    const r = remote( ctc, {
+      f: Fun([UInt], UInt),
+    });
+    return r.f(5);
+  },
+  None: () => {
+    return 0;
+  },
+});
+```
+
 ### Mappings: creation and modification
 
 @{ref("rsh", "Map")}
