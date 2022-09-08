@@ -2414,8 +2414,11 @@ ce = \case
     -- [ False, True, Cond ]
     op "select"
   DLE_ContractFromAddress _at _addr -> do
-    size <- typeSizeOf $ T_Data (M.fromList [("None", T_Null), ("Some", T_Address)])
-    padding size
+    case maybeT T_Address of
+      T_Data maybeMap -> do
+        let la = DLLA_Data maybeMap "None" $ DLA_Literal DLL_Null
+        cla la
+      _ -> impossible "maybe not maybe"
   DLE_ContractNew at cns dr -> do
     block_ "ContractNew" $ do
       let DLContractNew {..} = cns M.! conName'
