@@ -131,6 +131,9 @@
   "Contract.addressEq": {
     "CompletionItemKind": "Operator"
   },
+  "Contract.fromAddress": {
+    "CompletionItemKind": "Method"
+  },
   "Contract.new": {
     "CompletionItemKind": "Function"
   },
