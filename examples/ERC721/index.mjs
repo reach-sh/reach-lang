@@ -10,7 +10,7 @@ if (stdlib.connector !== "ETH") {
 
 const accs = await stdlib.newTestAccounts(4, stdlib.parseCurrency(100));
 const [accDeploy, _acc1, _acc2, _acc3] = accs;
-const [_addrDeploy, addr1, addr2, addr3] = accs.map(a => a.getAddress());
+const [addrDeploy, addr1, addr2, addr3] = accs.map(a => a.getAddress());
 const [tok1, tok2, tok3] = [1, 2, 3];
 const gasLimit = { gasLimit: 5_000_000 };
 const zeroAddr = "0x" + "0".repeat(40);
@@ -18,7 +18,7 @@ const assert = stdlib.assert;
 const bigNumberify = ethers.BigNumber.from;
 const waitTxn = async callPromise => await (await callPromise).wait();
 
-console.log("addrDeploy =", _addrDeploy);
+console.log("addrDeploy =", addrDeploy);
 console.log("addr1 =", addr1);
 console.log("addr2 =", addr2);
 console.log("addr3 =", addr3);
@@ -52,8 +52,8 @@ const lock = () => {
 const deploy = async (abi, bin, args = []) => {
   const factory = new ethers.ContractFactory(abi, bin, accDeploy.networkAccount);
   const contract = await factory.deploy(...args);
-  await contract.deployTransaction.wait();
-  return contract;
+  const txn = await contract.deployTransaction.wait();
+  return [contract, txn.gasUsed];
 }
 
 const solDeploy = async (solOutputPath, ctcName, args = []) => {
@@ -256,7 +256,9 @@ const test = async (ctc, expected, testEnumerable) => {
 };
 
 // OpenZeppelin based ERC721
-const oz_erc721 = await solDeploy("build/oz_erc721.json", "oz_erc721.sol:OZ_ERC721");
+const ozERC721Deploy = async () => {
+  return await solDeploy("build/oz_erc721.json", "oz_erc721.sol:OZ_ERC721");
+}
 const oz_erc721_expected = {
   name: "OZ_ERC721",
   symbol: "OZ",
@@ -291,7 +293,9 @@ const reach_erc721_constructor_args = [
     ],
   ],
 ];
-const reach_erc721 = await rchDeploy("./build/index.main.mjs", reach_erc721_constructor_args);
+const reachERC721Deploy = async () => {
+  return await rchDeploy("./build/index.main.mjs", reach_erc721_constructor_args);
+}
 const reach_erc721_expected = {
   name: "Reach_ERC721",
   symbol: "RCH",
@@ -301,15 +305,55 @@ const reach_erc721_expected = {
     [tok3]: "Reach_ERC721/3",
   },
 };
-const reach_ctc = reach_erc721;
 
 
 
 // Actually run the tests, side by side.
-const ozCost = await test(oz_erc721, oz_erc721_expected, false);
-const reachCost = await test(reach_ctc, reach_erc721_expected, false);
+const ozCost = await test((await ozERC721Deploy())[0], oz_erc721_expected, false);
+const reachCost = await test((await reachERC721Deploy())[0], reach_erc721_expected, false);
 
-console.log("Cost of Reach contract as percentage of OZ contract: ", (reachCost * 100.0) / ozCost);
+console.log("Cost of Reach contract as percentage of OZ contract (for a test suite run): ", (reachCost * 100.0) / ozCost);
+
+
+// More granular gas benchmark
+const bench = async (deployFunc) => {
+  console.log("Benchmarking...")
+  const card = {};
+  const [ctc, deployGas] = await deployFunc();
+  card["Deploy"] = deployGas.toNumber();
+
+  const g = async (addr, f, ...args) => {
+    const cWithAddr = ctc.attach(addr);
+    const fn = cWithAddr[f];
+    if(fn) {
+      return (await (await fn(...args, gasLimit)).wait()).gasUsed.toNumber();
+    } else {
+      return "N/A";
+    }
+  }
+
+  //card["Mint 1"] = (await (await ctc.mint(addr1, 1, gasLimit)).wait()).gasUsed
+  card["mint_1"] = await g(addrDeploy, "mint", addr1, 1);
+  card["mint_2"] = await g(addrDeploy, "mint", addr1, 2);
+  card["mint_3"] = await g(addrDeploy, "mint", addr1, 3);
+
+  card["transferFrom"] = await g(addr1, "transferFrom", addr1, addr2, 1);
+
+  card["safeTransferFrom_noBytes_eoa"] = await g(addr1, "safeTransferFrom(address,address,uint256)", addr2, addr1, 1);
+  card["safeTransferFrom_bytes_eoa"] = await g(addr1, "safeTransferFrom(address,address,uint256,bytes)", addr1, addr2, 1, []);
+
+  // TODO - I'm not sure that the OZ contract has a burn function...
+  card["burn"] = await g(addr1, "burn", 3);
+
+
+  return card;
+}
+const ozBenchCard = await bench(ozERC721Deploy);
+console.log("ozcard: ", ozBenchCard);
+const reachBenchCard = await bench(reachERC721Deploy);
+console.log("reachcard: ", reachBenchCard);
+
+
 
 process.exit(0);
 
