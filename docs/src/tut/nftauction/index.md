@@ -103,3 +103,93 @@ Let's move on to defining the Bidder API
 - Line 27 is used to initialize the application and finalize all the available participants and API interfaces
 
 Next we would start by looking at an interact object
+
+```js
+29    Owner.only(() => {
+30        const { nftId } = declassify(interact.setNFT());
+31    });
+
+33    Owner.publish(nftId);
+34    commit();
+```
+
+- Line 29 to 31 is the owner participant interacting with the setNFT function from the frontend. It returns the nftId provided by the owner participant.
+- Line 33 is used to broadcast/publish the following inputs by the owner participant to the blockchain so it can be seen that the owner has set the nftId to be auctioned
+- Line 34 signifies the end of the current consensus step.
+
+```js
+36    Auctioneer.only(() => {
+37        const { minPrice, minBidDiff, lengthInBlocks } = declassify(interact.startAuction());
+38    });
+
+
+41    Auctioneer.publish(minPrice, minBidDiff, lengthInBlocks);
+42    const nftAmt = 1;
+43    commit();
+
+```
+- Line 36 to 38: The Auctioneer interacts with the application, starting the auction by providing the miniumum starting price for the auction `minPrice`, The minimum  price difference allowed between the current and next bid `minBidDiff` and the length of the auction through the `lengthInBlocks` variable.
+- Line 41 publishes/broadcasts the inputs from the Auctioneer to the blockchain
+- Line 42 creates a constant that sets the quantity of the NFT to be auctioned
+- Line 43 signifies the end of the current consensus step
+
+```js
+45    Owner.pay([[nftAmt, nftId]]);
+46    assert(balance(nftId) == nftAmt, "balance of NFT is wrong");
+47    const [timeRemaining, keepGoing] = makeDeadline(lengthInBlocks);
+
+49    var [highestBidder, lastPrice, isFirstBid] = [Auctioneer, minPrice, true];
+
+51    invariant(balance(nftId) == nftAmt);
+52    invariant(balance() == (isFirstBid ? 0 : lastPrice));
+```
+
+- On line 45 the owner pays the quantity of NFT into the contract
+- Line 46 checks to make sure the nft in the contract has the right quantity
+- Going to Line 47, we create an absolute deadline using the `makeDeadline` function. The function takes the `lengthINBloocks` value set by the auctioneer as a parameter. It returns to values `timeRemaining` and a boolean value `keepGoing`.
+
+
+- On line 49, we set the initial values for the auction. The `highestBidder` is set to the `Auctioneer` object, `lastPrice` is set to the `minPrice` specified and a boolean `isFirstBid` set to `true`
+- Line 51 we define an invariant expression. It is an expression that must be true for each iteration of the while loop. If this expression returns false at any point, it returns a theorem violation error.
+- We also have another invariant expression on Line 52 that checks if the current balance is 0 for the first bid and the last bid price for subsequent bids
+
+Let's define the actual auction interaction for the bidders. The auction will continue to run as bidders bid for the nft throughout the duration set by the auctioneer. This will be made possible with the help of a while loop.
+
+In reach, the syntax to follow while using a while loop is stated below
+
+var LHS = INIT_EXPR;
+DEFINE_BLOCK; // optional
+invariant(INVARIANT_EXPR, ?INVARIANT_MSG);
+while( COND_EXPR ) BLOCK
+
+```js
+    while (keepGoing()) {
+        commit();
+        fork()
+            .api_(Bidder.bid,
+                (bid) => {
+                    check(bid > lastPrice, "bid is too low");
+                    check(sub(bid, lastPrice) >= minBidDiff, "bid difference is too low");
+
+                    return [bid, (notify) => {
+                        notify([highestBidder, lastPrice]);
+
+                        if (!isFirstBid) {
+                            transfer(lastPrice).to(highestBidder)
+                        }
+
+                        each([Owner, Auctioneer], () => {
+                            interact.seeBid(this, bid);
+                        });
+
+                        [highestBidder, lastPrice, isFirstBid] = [this, bid, false];
+
+
+                    }];
+                }
+            );
+
+        continue;
+    }
+
+```
