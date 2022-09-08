@@ -50,14 +50,12 @@ const ERC721 = mixin({
   API: [{
     safeTransferFrom1: Fun([Address, Address, UInt, BytesDyn], Null),
     safeTransferFrom2: Fun([Address, Address, UInt], Null),
-    //safeTransferFrom3: Fun([Address, Contract, UInt, BytesDyn], Null),
     transferFrom: Fun([Address, Address, UInt], Null),
     approve: Fun([Address, UInt], Null),
     setApprovalForAll: Fun([Address, Bool], Null),
   }, {
     safeTransferFrom1: 'safeTransferFrom',
     safeTransferFrom2: 'safeTransferFrom',
-    //safeTransferFrom3: 'safeTransferFrom',
   }],
 });
 
@@ -180,7 +178,6 @@ export const main = Reach.App(() => {
           check(tokenExists(tokenId), "tokenURI: URI query for non-existent token");
           return StringDyn.concat(tokenURI, StringDyn(tokenId));
         });
-
       })
       .while(true)
       .invariant(balance() == 0)
@@ -203,44 +200,36 @@ export const main = Reach.App(() => {
           owners[tokenId] = to;
           E.Transfer(from_, to, tokenId);
         }
-      })
-      .api_(I.safeTransferFrom1, (from_, to, tokenId, data) => {
-        check(isApprovedOrOwner(this, tokenId), "ERC721::safeTransferFrom: transfer caller is not owner nor approved");
-        transferChecks(from_, to, tokenId);
-        return [ (k) => {
+        const safeTransferFromChecks = (self, from_, to, tokenId) => {
+          //// TODO - this check is important, but no transfers are working with it on.  So something is wrong with it (or with how I'm calling this method).
+          //check(isApprovedOrOwner(self, tokenId), "ERC721::safeTransferFrom: transfer caller is not owner nor approved");
+          transferChecks(from_, to, tokenId);
+        }
+        const doSafeTransferFrom = (from_, to, tokenId, data) => {
           transfer_(from_, to, tokenId);
           // TODO - this should be a remote call if and only if the to address is a contract.  We need to use the future feature Contract.fromAddress here to determine that.
           //const to_ctc = remote(to, ERC721TokenReceiverI);
           //const mv = to_ctc.onERC721Received(getContract(), from_, tokenId, data);
           //// This hex string is bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
           //ensure(mv == Bytes.fromHex('0x150b7a02'));
+        }
+      })
+      .api_(I.safeTransferFrom1, (from_, to, tokenId, data) => {
+        safeTransferFromChecks(this, from_, to, tokenId);
+        return [ (k) => {
+          doSafeTransferFrom(from_, to, tokenId, data);
           k(null);
           return [ ];
         }];
       })
       .api_(I.safeTransferFrom2, (from_, to, tokenId) => {
-        // TODO - this check is important, but no transfers are working with it on.  So something is wrong with it (or with how I'm calling this method).
-        //check(isApprovedOrOwner(this, tokenId), "ERC721::safeTransferFrom: transfer caller is not owner nor approved");
-        transferChecks(from_, to, tokenId);
+        safeTransferFromChecks(this, from_, to, tokenId);
         return [ (k) => {
-          transfer_(from_, to, tokenId);
+          doSafeTransferFrom(from_, to, tokenId, "");
           k(null);
           return [ ];
         }];
       })
-      //.api_(I.safeTransferFrom3, (from_, to, tokenId, data) => {
-      //  // TODO - temporary - "You should make safeTransferFrom3 which has a Contract rather than an Address or just have a Contract in safeTransferFrom1 and try to make progress with the current test suite" -- IE this is a duplicate of safeTransferFrom1, but that takes different types until we sort out conversion between Addresses and Contracts. 
-      //  check(isApprovedOrOwner(this, tokenId), "ERC721::safeTransferFrom: transfer caller is not owner nor approved");
-      //  transferChecks(from_, to, tokenId);
-      //  return [ (k) => {
-      //    transfer_(from_, to, tokenId);
-      //    const to_ctc = remote(to, ERC721TokenReceiverI);
-      //    const mv = to_ctc.onERC721Received(getContract(), from_, tokenId, data);
-      //    ensure(mv == Bytes.fromHex('0x150b7a02'));
-      //    k(null);
-      //    return [ ];
-      //  }];
-      //})
       .api_(I.transferFrom, (from_, to, tokenId) => {
         check(isApprovedOrOwner(this, tokenId), "ERC721::transferFrom: transfer caller is not owner nor approved");
         transferChecks(from_, to, tokenId);
