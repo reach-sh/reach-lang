@@ -244,6 +244,12 @@ const test = async (ctc, expected, testEnumerable) => {
   // invalid token id has no uri
   await assertFail(ctc.tokenURI(4));
 
+  // TODO - more things to test
+  // * safeTransferFrom to a contract
+  // * burn
+  // * approve
+  // * setApprovalForAll
+
   const weiPost = await getWei();
   const weiDiff = weiPre.sub(weiPost).toNumber();
   return weiDiff;
