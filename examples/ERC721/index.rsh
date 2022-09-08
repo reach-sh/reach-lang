@@ -187,26 +187,23 @@ export const main = Reach.App(() => {
           tokenApprovals[tokenId] = to;
           E.Approval(owner, to, tokenId);
         }
-        const transferChecks = (from_, to, tokenId) => {
+        const transferChecks = (caller, from_, to, tokenId) => {
           const owner = ownerOf(tokenId);
           check(owner == from_, "ERC721::transfer: transfer from incorrect owner");
           check(to != zeroAddr, "ERC721::transfer: transfer to the zero address");
+          //// TODO - this check is important, but no transfers are working with it on.  So something is wrong with it (or with how I'm calling this method).
+          //check(isApprovedOrOwner(caller, tokenId), "ERC721::transfer: caller is not owner nor approved");
         }
-        const transfer_ = (from_, to, tokenId) => {
-          transferChecks(from_, to, tokenId);
+        const transfer_ = (caller, from_, to, tokenId) => {
+          transferChecks(caller, from_, to, tokenId);
           approve(zeroAddr, tokenId);
           balances[from_] = maybe(balances[from_], 0, (b) => b - 1);
           balances[to]    = maybe(balances[to]   , 1, (b) => b + 1);
           owners[tokenId] = to;
           E.Transfer(from_, to, tokenId);
         }
-        const safeTransferFromChecks = (self, from_, to, tokenId) => {
-          //// TODO - this check is important, but no transfers are working with it on.  So something is wrong with it (or with how I'm calling this method).
-          //check(isApprovedOrOwner(self, tokenId), "ERC721::safeTransferFrom: transfer caller is not owner nor approved");
-          transferChecks(from_, to, tokenId);
-        }
-        const doSafeTransferFrom = (from_, to, tokenId, data) => {
-          transfer_(from_, to, tokenId);
+        const doSafeTransferFrom = (caller, from_, to, tokenId, data) => {
+          transfer_(caller, from_, to, tokenId);
           // TODO - this should be a remote call if and only if the to address is a contract.  We need to use the future feature Contract.fromAddress here to determine that.
           //const to_ctc = remote(to, ERC721TokenReceiverI);
           //const mv = to_ctc.onERC721Received(getContract(), from_, tokenId, data);
@@ -215,26 +212,25 @@ export const main = Reach.App(() => {
         }
       })
       .api_(I.safeTransferFrom1, (from_, to, tokenId, data) => {
-        safeTransferFromChecks(this, from_, to, tokenId);
+        transferChecks(this, from_, to, tokenId);
         return [ (k) => {
-          doSafeTransferFrom(from_, to, tokenId, data);
+          doSafeTransferFrom(this, from_, to, tokenId, data);
           k(null);
           return [ ];
         }];
       })
       .api_(I.safeTransferFrom2, (from_, to, tokenId) => {
-        safeTransferFromChecks(this, from_, to, tokenId);
+        transferChecks(this, from_, to, tokenId);
         return [ (k) => {
-          doSafeTransferFrom(from_, to, tokenId, "");
+          doSafeTransferFrom(this, from_, to, tokenId, "");
           k(null);
           return [ ];
         }];
       })
       .api_(I.transferFrom, (from_, to, tokenId) => {
-        check(isApprovedOrOwner(this, tokenId), "ERC721::transferFrom: transfer caller is not owner nor approved");
-        transferChecks(from_, to, tokenId);
+        transferChecks(this, from_, to, tokenId);
         return [ (k) => {
-          transfer_(from_, to, tokenId);
+          transfer_(this, from_, to, tokenId);
           k(null);
           return [ ];
         }];
