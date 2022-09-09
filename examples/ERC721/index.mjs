@@ -153,10 +153,7 @@ const test = async (ctc, expected, testEnumerable) => {
 
 
   // transfer all tokens from addr1 to addr2 using safeTransferFrom
-  console.log("Before safeTransfer 1");
-  console.log("ownerOf(1) before:", await ctc.ownerOf(tok1));
   await safeTransferFrom(addr1, addr2, tok1);
-  console.log("ownerOf(1) after:", await ctc.ownerOf(tok1));
   await assertOwners(addr2, addr1, addr1);
   await safeTransferFrom(addr1, addr2, tok2);
   await assertOwners(addr2, addr2, addr1);
@@ -317,7 +314,6 @@ console.log("Cost of Reach contract as percentage of OZ contract (for a test sui
 
 // More granular gas benchmark
 const bench = async (deployFunc) => {
-  console.log("Benchmarking...")
   const card = {};
   const [ctc, deployGas] = await deployFunc();
   card["Deploy"] = deployGas.toNumber();
@@ -349,9 +345,9 @@ const bench = async (deployFunc) => {
   return card;
 }
 const ozBenchCard = await bench(ozERC721Deploy);
-console.log("ozcard: ", ozBenchCard);
+console.log("OpenZeppelin costs: ", ozBenchCard);
 const reachBenchCard = await bench(reachERC721Deploy);
-console.log("reachcard: ", reachBenchCard);
+console.log("Reach costs: ", reachBenchCard);
 
 
 
