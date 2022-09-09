@@ -328,7 +328,6 @@ const bench = async (deployFunc) => {
     }
   }
 
-  //card["Mint 1"] = (await (await ctc.mint(addr1, 1, gasLimit)).wait()).gasUsed
   card["mint_1"] = await g(addrDeploy, "mint", addr1, 1);
   card["mint_2"] = await g(addrDeploy, "mint", addr1, 2);
   card["mint_3"] = await g(addrDeploy, "mint", addr1, 3);
@@ -338,7 +337,6 @@ const bench = async (deployFunc) => {
   card["safeTransferFrom_noBytes_eoa"] = await g(addr1, "safeTransferFrom(address,address,uint256)", addr2, addr1, 1);
   card["safeTransferFrom_bytes_eoa"] = await g(addr1, "safeTransferFrom(address,address,uint256,bytes)", addr1, addr2, 1, []);
 
-  // TODO - I'm not sure that the OZ contract has a burn function...
   card["burn"] = await g(addr1, "burn", 3);
 
 
