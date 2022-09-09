@@ -1429,7 +1429,7 @@ cprim = \case
           -- [ v ]
           let ext i = cint (8 * i) >> op "extract_uint64"
           unless (trunc || pv == PV_Veri) $ do
-            op "// Truncation check"
+            comment "Truncation check"
             op "dup"
             op "bitlen"
             cint 64
