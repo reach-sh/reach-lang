@@ -162,34 +162,56 @@ DEFINE_BLOCK; // optional
 invariant(INVARIANT_EXPR, ?INVARIANT_MSG);
 while( COND_EXPR ) BLOCK
 
+where `LHS` is a valid left-hand side of an identifier definition where the expression `INIT_EXPR` is the right-hand side, and  `DEFINE_BLOCK` is an optional block that may define bindings that use the `LHS` values which are bound inside the rest of the while and its tail, and  `INVARIANT_EXPR` is an expression, called the loop invariant, that must be true before and after every execution of the block `BLOCK`—it may be specified multiple times, `INVARIANT_MSG` is an optional bytes argument, which is included in any reported violation, and if `COND_EXPR` is true, then the block executes, and if not, then the loop terminates and control transfers to the continuation of the while statement. The identifiers bound by LHS are bound within `DEFINE_BLOCK`, `INVARIANT_EXPR`, `COND_EXPR`, `BLOCK`, and the tail of the while statement.
+
+
 ```js
-    while (keepGoing()) {
-        commit();
-        fork()
-            .api_(Bidder.bid,
-                (bid) => {
-                    check(bid > lastPrice, "bid is too low");
-                    check(sub(bid, lastPrice) >= minBidDiff, "bid difference is too low");
-
-                    return [bid, (notify) => {
-                        notify([highestBidder, lastPrice]);
-
-                        if (!isFirstBid) {
-                            transfer(lastPrice).to(highestBidder)
-                        }
-
-                        each([Owner, Auctioneer], () => {
-                            interact.seeBid(this, bid);
-                        });
-
-                        [highestBidder, lastPrice, isFirstBid] = [this, bid, false];
-
-
-                    }];
-                }
-            );
-
-        continue;
-    }
+54    while (keepGoing()) {
+55        commit();
+56        fork()
+57            .api_(Bidder.bid,
+58                (bid) => {
+59                    check(bid > lastPrice, "bid is too low");
+60                    check(sub(bid, lastPrice) >= minBidDiff, "bid difference is too low");
+61
+62                    return [bid, (notify) => {
+63                        notify([highestBidder, lastPrice]);
+64
+65                        if (!isFirstBid) {
+66                           transfer(lastPrice).to(highestBidder)
+67                        }
+68
+69                        each([Owner, Auctioneer], () => {
+70                            interact.seeBid(this, bid);
+71                        });
+72
+73                        [highestBidder, lastPrice, isFirstBid] = [this, bid, false];
+74
+75
+76                    }];
+77                }
+78            );
+79
+80        continue;
+81    }
 
 ```
+
+- On Line 56, we define a fork statement. From the official documentation - "A fork statement is an abbreviation of a common race and switch pattern you could write yourself."
+- From Line 57, we chain an `api_` component to the fork statment. The `api_` component listens for the bid function call from the frontend, with access to the returned bid.
+- Line 59 uses a check statement "A dynamic assertion that claim evaluates to true, which expands to either a require or assume depending on where it is used in a program. It accepts an optional bytes argument, which is included in any reported violation."
+- The check statement, ensures the current bid is greater than the last price `lastPrice` bidded for the NFT
+- We also write another check statement to make sure the difference between the current bid `bid` and last price `lastPrice` is greater than or equal to the minimum bid difference `minBidDiff` set by the Auctioneer participant.
+- The `api_` statement is required to return an `API_CHECKED_CONSENSUS_EXPR` "A function parameterized over the input to the API member function" according to the documentation.
+- The function takes the current bid placed by the `API` individual as the first parameter, and a function as the second parameter
+- The second function parameter is parameterized with the `notify` expression.
+- On Line 63, we make use of the notify expression. The notify expression takes an array as an argument. The elements of the array must match the return values of the `bid` function set on the Bidder API expression. The notify expression returns the values specified in its block to the frontend anytime the `bid` function is called with no errors.
+
+```js
+65   if (!isFirstBid) {
+66      transfer(lastPrice).to(highestBidder)
+67   }
+
+```
+
+- Line 65 to 67
