@@ -193,8 +193,7 @@ export const main = Reach.App(() => {
           const owner = ownerOf(tokenId);
           check(owner == from_, "ERC721::transfer: transfer from incorrect owner");
           check(to != zeroAddr, "ERC721::transfer: transfer to the zero address");
-          //// TODO - this check is important, but no transfers are working with it on.  So something is wrong with it (or with how I'm calling this method).
-          //check(isApprovedOrOwner(caller, tokenId), "ERC721::transfer: caller is not owner nor approved");
+          check(isApprovedOrOwner(caller, tokenId), "ERC721::transfer: caller is not owner nor approved");
         }
         const transfer_ = (caller, from_, to, tokenId) => {
           transferChecks(caller, from_, to, tokenId);
