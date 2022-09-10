@@ -138,7 +138,7 @@ $ ./reach version
 ```
 
 You are now ready to start programming in Reach.
-Check out our [tutorials](##tuts) to get started.
+Begin with the @{seclink("wfs")} tutorial.
 
 # {#qs-linux} Linux
 
@@ -209,7 +209,7 @@ $ ./reach version
 ```
 
 You are now ready to start programming in Reach.
-Check out our [tutorials](##tuts) to get started.
+Begin with the @{seclink("wfs")} tutorial.
 
 # {#qs-mac} MacOS
 
@@ -257,4 +257,4 @@ $ ./reach version
 ```
 
 You are now ready to start programming in Reach.
-Check out our [tutorials](##tuts) to get started.
+Begin with the @{seclink("wfs")} tutorial.
