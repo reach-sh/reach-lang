@@ -38,7 +38,7 @@ Lets start by answering a few questions
 
 At the end of this tutorial you will be able to create a decentralized GUI app on the algorand developer network using the reach rpc server and react
 
-Lets start with the `index.rsh` file which is the backend file and also the smart contract of this NFT timed auction app. In this application we have an individual acting as the NFT Owner, an Auctioneer and Bidders. It is much better to follow along and write the code than just copying and pasting. Let's dive in.
+Lets start with the `index.rsh` file which is the backend file and also the smart contract of this NFT timed auction app. In this application we have an individual acting as the NFT Owner, an Auctioneer and Bidders.
 
 ```js
 1 "reach 0.1";
@@ -214,4 +214,176 @@ where `LHS` is a valid left-hand side of an identifier definition where the expr
 
 ```
 
-- Line 65 to 67
+- Line 65 to 67, we use an if statement to check if the bid is the first bid placed. If it's not the first bid, the last bidder is refunded his bid amount
+
+```js
+69   each([Owner, Auctioneer], () => {
+70      interact.seeBid(this, bid);
+71   });
+
+```
+
+- From Line 69 to 71, we use the each statement to loop through each participant passed in the array argument, and call the `interact.seeBid` function defined in both the `Owner` and `Auctioneer` Participant interface. Line 69 to 71 allows the Owner and Auctioneer interact with the `seeBid` function.
+
+```js
+73   [highestBidder, lastPrice, isFirstBid] = [this, bid, false];
+```
+
+- On line 73, we change the values specified on the `LHS` to its corresponding new values.
+- the `highestBidder` variable is set to the `this` keyword which is available in the `api_` statement. The `this` keyword returns the address of the API individually calling the particular function, in this case `bid`
+- The `lastPrice` variable is set to the latest bid placed by `this`
+- While `isFirstBid` is always set to false after every bid.
+
+
+```js
+83    commit();
+84    Owner.publish();
+
+86    transfer(nftAmt, nftId).to(highestBidder);
+
+```
+
+- At the end of the auction (deadline), all consensus step will be ended by calling the commit expression on Line 83
+- The Owner publishes and boradcasts all changes on the blockchain
+- And on Line 86, The NFT with the number of quantity specified is transfered to the wallet of the highest bidder `transfer(nftAmt, nftId).to(highestBidder);`
+
+
+```js
+88    const auctioneerFee = div(mul(lastPrice, 1), 100);
+89    const ownerMoney = sub(lastPrice, auctioneerFee);
+
+```
+
+- On Line 88, we calculate the 1% fee from the last bid price `lastPrice` that will be transfered to the auctioneer
+- The total price going to the NFT owner will be the difference between the `lastPrice` and the `auctioneerFee`
+
+
+```js
+91    if (!isFirstBid) {
+92        transfer(ownerMoney).to(Owner);
+93        transfer(auctioneerFee).to(Auctioneer);
+94    }
+```
+
+- From Line 91 to 94, the application checks if the `isFirstBid` variable is false. If it returns false, the `ownerMoney` is transferred to the `Owner` Participant, while the `auctioneerFee` is transferred to the `Auctioneer` Participant
+
+
+```js
+96    each([Auctioneer, Owner], () => {
+97        interact.showOutcome(highestBidder, lastPrice);
+98    });
+99    commit();
+100    exit();
+
+```
+
+- Line 96 to 98 allows the `Auctioneer` and `Owner` Participant interact with the `showOutcome` function
+- Line 100 signifies the end of the smart contract and the NFT timed auction application.
+
+Let's take a look at our final backend code `index.rsh`
+
+```js
+'reach 0.1'
+
+export const main = Reach.App(() => {
+
+    const Owner = Participant('Owner', {
+        setNFT: Fun([], Object({
+            nftId: Token
+        })),
+        seeBid: Fun([Address, UInt], Null),
+        showOutcome: Fun([Address, UInt], Null)
+    });
+
+    const Auctioneer = Participant('Auctioneer', {
+        startAuction: Fun([], Object({
+            minPrice: UInt,
+            minBidDiff: UInt,
+            lengthInBlocks: UInt
+        })),
+        seeBid: Fun([Address, UInt], Null),
+        showOutcome: Fun([Address, UInt], Null)
+    });
+
+    const Bidder = API('Bidder', {
+        bid: Fun([UInt], Tuple(Address, UInt))
+    })
+
+    init();
+
+    Owner.only(() => {
+        const { nftId } = declassify(interact.setNFT());
+    });
+
+    Owner.publish(nftId);
+    commit();
+
+    Auctioneer.only(() => {
+        const { minPrice, minBidDiff, lengthInBlocks } = declassify(interact.startAuction());
+    });
+
+
+    Auctioneer.publish(minPrice, minBidDiff, lengthInBlocks);
+    const nftAmt = 1;
+    commit();
+
+    Owner.pay([[nftAmt, nftId]]);
+    assert(balance(nftId) == nftAmt, "balance of NFT is wrong");
+    const [timeRemaining, keepGoing] = makeDeadline(lengthInBlocks);
+
+    var [highestBidder, lastPrice, isFirstBid] = [Auctioneer, minPrice, true];
+
+    invariant(balance(nftId) == nftAmt);
+    invariant(balance() == (isFirstBid ? 0 : lastPrice));
+
+    while (keepGoing()) {
+        commit();
+        fork()
+            .api_(Bidder.bid, 
+                (bid) => {
+                    check(bid > lastPrice, "bid is too low");
+                    check(sub(bid, lastPrice) >= minBidDiff, "bid difference is too low");
+
+                    return [bid, (notify) => {
+                        notify([highestBidder, lastPrice]);
+
+                        if (!isFirstBid) {
+                            transfer(lastPrice).to(highestBidder)
+                        }
+
+                        each([Owner, Auctioneer], () => {
+                            interact.seeBid(this, bid);
+                        });
+
+                        [highestBidder, lastPrice, isFirstBid] = [this, bid, false];
+
+
+                    }];
+                }
+            );
+
+        continue;
+    }
+
+    commit();
+    Owner.publish();
+
+    transfer(nftAmt, nftId).to(highestBidder);
+
+    const auctioneerFee = div(mul(lastPrice, 1), 100);
+    const ownerMoney = sub(lastPrice, auctioneerFee);
+
+    if (!isFirstBid) {
+        transfer(ownerMoney).to(Owner);
+        transfer(auctioneerFee).to(Auctioneer);
+    }
+
+    each([Auctioneer, Owner], () => {
+        interact.showOutcome(highestBidder, lastPrice);
+    });
+    commit();
+    exit();
+
+});
+
+```git 
