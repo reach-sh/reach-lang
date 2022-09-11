@@ -17,7 +17,7 @@ deps () {
           - reachdevbot-aws-ecr
         deps: "$DEPS"
 END
-  if [ "x${DEPS}" != "x" ] ; then
+  if [ -n "$DEPS" ] ; then
   cat >>"${MID}" <<END
         requires:
 END
