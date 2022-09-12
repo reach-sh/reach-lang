@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-import os, sys
-from pprint import pprint
+import os, sys, examples
 from pathlib import Path
 
 if os.environ.get("CIRCLECI"):
@@ -38,7 +37,7 @@ def hs_test(mode):
   })
   build_sink_deps.append(name)
 
-def connector(executor, connector, parallelism):
+def connector(executor, connector):
   examples_name = f"examples.{connector}"
   browser_tests_name = f"browser-tests.{connector}"
   devnet_name = f"devnet-{connector.lower()}"
@@ -47,7 +46,7 @@ def connector(executor, connector, parallelism):
   add_build_job("examples", {
     "name": examples_name,
     "connector": connector,
-    "size": parallelism,
+    "size": examples.parallel_jobs_for(connector),
     **dependencies([devnet_name, "reach", "reach-cli",
                     "runner", "react-runner", "rpc-server"])
   })
@@ -58,9 +57,6 @@ def connector(executor, connector, parallelism):
   })
   build_sink_deps.append(examples_name)
   build_sink_deps.append(browser_tests_name)
-
-def build_sink():
-  add_build_job("build-sink", { "requires": build_sink_deps })
 
 build_image("real", "haskell-build-artifacts-open",   ["devnet-algo"])
 build_image("real", "haskell-build-artifacts-closed", ["devnet-algo"])
@@ -75,10 +71,10 @@ build_image("fake", "rpc-server",                     ["runner"])
 hs_test("open")
 hs_test("closed")
 
-connector("fake", "ETH", 16)
-connector("fake", "ALGO", 16)
-connector("fake", "CFX", 16)
+connector("fake", "ALGO")
+connector("fake", "ETH")
+connector("fake", "CFX")
 
-build_sink()
+add_build_job("build-sink", { "requires": build_sink_deps })
 
 yaml.dump(config, Path("config.gen.yml"))
