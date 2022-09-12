@@ -68,6 +68,12 @@ const rchDeploy = async (rchModulePath, args) => {
   return deploy(ctc.ABI, ctc.Bytecode, args);
 }
 
+const deployReceiver = async () => {
+  const [receiverCtc, receiverCtcGasUsed]
+        = await rchDeploy("./build/index.testTokenReceiver.mjs", [[0, false]]);
+  return receiverCtc;
+}
+
 const test = async (ctc, expected, testEnumerable) => {
   console.log(`Testing ${expected.name}`);
   const getWei = async () => (await accDeploy.balanceOf()).add(await _acc1.balanceOf()).add(await _acc2.balanceOf()).add(await _acc3.balanceOf());
@@ -247,8 +253,16 @@ const test = async (ctc, expected, testEnumerable) => {
   // * approve
   // * setApprovalForAll
 
+  // Test safeTransferFrom to a contract
+  const receiverCtc = await deployReceiver()
+  await safeTransferFrom(addr2, receiverCtc.address, tok1);
+  await safeTransferFrom(addr3, receiverCtc.address, tok2);
+  await safeTransferFrom(addr3, receiverCtc.address, tok3);
+  await assertOwners(receiverCtc.address, receiverCtc.address, receiverCtc.address);
+  await receiverCtc.transfer(ctc.address, addr1, tok1, []);
+
   const weiPost = await getWei();
-  const weiDiff = weiPre.sub(weiPost).toNumber();
+  const weiDiff = weiPre.sub(weiPost);
   return weiDiff;
 };
 
@@ -309,7 +323,7 @@ const reach_erc721_expected = {
 const ozCost = await test((await ozERC721Deploy())[0], oz_erc721_expected, false);
 const reachCost = await test((await reachERC721Deploy())[0], reach_erc721_expected, false);
 
-console.log("Cost of Reach contract as percentage of OZ contract (for a test suite run): ", (reachCost * 100.0) / ozCost);
+console.log("Cost of Reach contract as percentage of OZ contract (for a test suite run): ", reachCost.mul(100_000.0).div(ozCost).toNumber() / 1000);
 
 
 // More granular gas benchmark
@@ -336,6 +350,12 @@ const bench = async (deployFunc) => {
 
   card["safeTransferFrom_noBytes_eoa"] = await g(addr1, "safeTransferFrom(address,address,uint256)", addr2, addr1, 1);
   card["safeTransferFrom_bytes_eoa"] = await g(addr1, "safeTransferFrom(address,address,uint256,bytes)", addr1, addr2, 1, []);
+
+  const receiverCtc = await deployReceiver();
+  card["safeTransferFrom_bytes_eoa"] = await g(addr1, "safeTransferFrom(address,address,uint256,bytes)", addr1, receiverCtc.address, 1, []);
+  await receiverCtc.transfer(ctc.address, addr2, 1, [], gasLimit);
+  card["safeTransferFrom_noBytes_eoa"] = await g(addr1, "safeTransferFrom(address,address,uint256)", addr1, receiverCtc.address, 1);
+  await receiverCtc.transfer(ctc.address, addr2, 1, [], gasLimit);
 
   card["burn"] = await g(addr1, "burn", 3);
 
