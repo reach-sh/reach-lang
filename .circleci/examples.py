@@ -26,7 +26,7 @@ def get_special_for(connector):
   for_connector = lambda l: any(c == connector or c == "all" for c in l[1:])
   for_connector = filter(for_connector, parsed)
   example_names = map(lambda l: l[0], for_connector)
-  return list(example_names)
+  return list(set(example_names))
 
 # Return names of all examples that can be run in parallel / that are not
 # written in "special-examples.txt"
