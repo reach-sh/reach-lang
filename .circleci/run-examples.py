@@ -77,7 +77,7 @@ assert len(split_args) == int(os.environ["CIRCLE_NODE_TOTAL"])
 split_args_bytes = "\n".join(split_args).encode('utf-8')
 circleci_split = subprocess.run(["circleci", "tests", "split"], input=split_args_bytes,
                                  stdout=subprocess.PIPE, check=True)
-job = circleci_split.stdout.read()
+job = circleci_split.stdout.decode('utf-8')
 assert job.count("\n") == 1
 job = job.strip()
 
