@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-import os, math, functools
-
-def memoize(fn):
-  return functools.lru_cache(fn, maxsize=None)
+import os, math
+from functools import lru_cache
 
 EXAMPLES_DIVISOR = 16
 circleci_dir = os.path.realpath(os.path.dirname(__file__))
 
 # Return names of all examples in <repo>/examples
-@memoize
+@lru_cache
 def get_all():
   examples_dir = f"{circleci_dir}/../examples/"
   examples_ls = os.listdir(examples_dir)
@@ -17,7 +15,7 @@ def get_all():
 
 # Return names of special examples that should not run with other examples / that are
 # written in "special-examples.txt"
-@memoize
+@lru_cache
 def get_special_for(connector):
   with open(f"{circleci_dir}/special-examples.txt", "r") as f:
     lines = f.readlines()
@@ -29,7 +27,7 @@ def get_special_for(connector):
 
 # Return names of all examples that can be run in parallel / that are not
 # written in "special-examples.txt"
-@memoize
+@lru_cache
 def get_regular_for(connector):
   all_examples = get_all()
   special_examples = get_special_for(connector)
