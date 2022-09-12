@@ -8,20 +8,21 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{verRC("0.1.12")}
 
 + @{rcHead("0.1.12-rc1")}
-+ 2022/08/31: Upgraded to Algorand node v3.9.2-beta and indexer 2.14.0-rc4.
++ 2022/08/31: Upgraded to Algorand node v3.9.2, indexer 2.14.0, SDK 1.20.0.
 + 2022/08/31: Algorand-only: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 
-XXX Ensure these are the final release versions!
-
-## 0.1.11: 2022/06 - 2022/08
+## 0.1.11: 2022/06 - 2022/09
 
 @{verCur("0.1.11")}
 
 + @{rcHead("0.1.11-rc11")}
+
 + @{rcHead("0.1.11-rc10")}
 + 2022/09/08: Added `Contract.fromAddress`.
+
 + @{rcHead("0.1.11-rc9")}
 + 2022/08/31: Added `rawCall` field to `{!rsh} remote.ALGO`.
+
 + @{rcHead("0.1.11-rc8")}
 + 2022/08/29: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/08/29: Added `{!rsh} Bytes.fromHex`.
