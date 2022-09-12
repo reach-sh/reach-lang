@@ -247,12 +247,6 @@ const test = async (ctc, expected, testEnumerable) => {
   // invalid token id has no uri
   await assertFail(ctc.tokenURI(4));
 
-  // TODO - more things to test
-  // * safeTransferFrom to a contract
-  // * burn
-  // * approve
-  // * setApprovalForAll
-
   // Test safeTransferFrom to a contract
   const receiverCtc = await deployReceiver()
   await safeTransferFrom(addr2, receiverCtc.address, tok1);
