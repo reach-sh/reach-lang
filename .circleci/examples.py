@@ -60,16 +60,12 @@ def split_examples_into_jobs(connector):
   regular_example_jobs = parallel_jobs - len(special_examples)
   return (special_examples, divide_list(regular_examples, regular_example_jobs))
 
-# Call `circleci tests split` using information from split_examples_into_jobs.
-# The split command takes some lines, then magically splits the lines evenly
-# between runners and prints which lines the current runner is assigned.
-# We pass it exactly the same number of lines as there are parallel runners,
-# so we get exactly one line back per runner.
+# Decide which examples to run on the current runner using `circleci tests split`
 #
-# This passes every special example on its own line, and
-# for every group of regular examples, passes "job-group-<n>".
-# Then, it decodes "job-group-*" lines back into a list of examples, 
-# and returns a list of examples for the current runner to execute.
+# This passes every special example on its own line,
+# and "job-group-<n>" for every set of regular examples.
+# Then, this decodes the line printed by the split command into a list
+# of examples to run, and returns that list.
 def circleci_split_examples(connector):
   (special_examples, regular_examples) = split_examples_into_jobs(connector)
   split_args = special_examples + [f"job-group-{n}" for n in range(len(regular_examples))]
