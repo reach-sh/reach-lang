@@ -11,7 +11,8 @@ def cmd(command, redirect=None, timeout=None):
 
 def run_example(name):
   print("Running", name)
-  artifact_path = f"/tmp/artifacts/{name}"
+  artifact_name = f"{connector}.{name}"
+  artifact_path = f"/tmp/artifacts/{artifact_name}"
   start_time = time.time()
 
   with open(artifact_path, "w") as artifact:
@@ -48,11 +49,8 @@ def run_example(name):
     """)
 
   rank = os.environ["CIRCLE_NODE_INDEX"]
-  with open(f'/tmp/workspace/record/{name}', "w") as record:
+  with open(f'/tmp/workspace/record/{artifact_name}', "w") as record:
     record.write(f'["{status}", "{connector}.{rank}"]')
-
-def run_multiple_examples(examples):
-  multiprocessing.Pool(len(examples)).map(run_example, examples)
 
 connector = sys.argv[1]
 os.environ["REACH_DEBUG"] = "1"
@@ -62,6 +60,8 @@ os.chdir("../examples")
 cmd("mkdir -p /tmp/artifacts /tmp/test_results /tmp/workspace/record")
 cmd("../reach devnet --await-background")
 
+(special_examples, regular_example_lists) = examples.split_examples_into_jobs(connector)
+
 # Generate what to pass to stdin for `circleci tests split`
 # The split command takes some lines, then magically splits the lines
 # between runners and prints which lines the current runner is assigned.
@@ -70,10 +70,8 @@ cmd("../reach devnet --await-background")
 #
 # This passes every special example on its own line, and
 # for every group of regular examples, passes "job-group-<n>".
-(special_examples, regular_example_lists) = examples.split_examples_into_jobs(connector)
 split_args = special_examples + [f"job-group-{n}" for n in range(len(regular_example_lists))]
 assert len(split_args) == int(os.environ["CIRCLE_NODE_TOTAL"])
-
 split_args_bytes = "\n".join(split_args).encode('utf-8')
 circleci_split = subprocess.run(["circleci", "tests", "split"], input=split_args_bytes,
                                  stdout=subprocess.PIPE, check=True)
@@ -83,9 +81,10 @@ job = job.strip()
 
 if job.startswith("job-group-"):
   # Running a group of regular examples
-  index = int(job.rsplit("-", maxsplit=1)[-1])
+  index = int(job.split("-")[-1])
   examples = regular_example_lists[index]
-  run_multiple_examples(examples)
+  with multiprocessing.Pool(len(examples)) as pool:
+    pool.map(run_example, examples)
 else:
   # Running a special example
   run_example(job)
