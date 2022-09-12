@@ -277,14 +277,14 @@ jobs:
           - record
     # This should only notify if something goes fatally wrong.
     # Regular test failures go through to the sink.
-    # - slack/notify:
-    #     event: fail
-    #     custom: |
-    #       { "blocks": [
-    #           { "type": "section",
-    #             "text": {
-    #               "type": "mrkdwn",
-    #               "text": "*CATASTROPHIC* ${CIRCLE_USERNAME}/<https://github.com/reach-sh/reach-lang/tree/${CIRCLE_BRANCH}|${CIRCLE_BRANCH}>${CIRCLE_PULL_REQUEST:+/<$CIRCLE_PULL_REQUEST|PR>} > examples.<<parameters.connector>> <${CIRCLE_BUILD_URL}|more...>" }}]}
+    - slack/notify:
+        event: fail
+        custom: |
+          { "blocks": [
+              { "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*CATASTROPHIC* ${CIRCLE_USERNAME}/<https://github.com/reach-sh/reach-lang/tree/${CIRCLE_BRANCH}|${CIRCLE_BRANCH}>${CIRCLE_PULL_REQUEST:+/<$CIRCLE_PULL_REQUEST|PR>} > examples.<<parameters.connector>> <${CIRCLE_BUILD_URL}|more...>" }}]}
   "build-sink":
     executor: fake
     steps:
