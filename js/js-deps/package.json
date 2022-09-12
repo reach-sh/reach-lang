@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@perawallet/connect": "^0.2.0",
-    "algosdk": "^1.19.0",
+    "algosdk": "^1.20.0",
     "hi-base32": "^0.5.1",
     "@randlabs/myalgo-connect": "^1.2.0",
     "@walletconnect/client": "^1.7.8",
