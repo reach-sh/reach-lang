@@ -7,7 +7,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verRC("0.1.12")}
 
-+ @{rcHead("0.1.12-rc.0")}
+@{rcHead("0.1.12-rc.0")}
+
 + 2022/08/31: Upgraded to Algorand node v3.9.2, indexer 2.14.0, SDK 1.20.0.
 + 2022/08/31: Algorand-only: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 
@@ -15,13 +16,16 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verCur("0.1.11")}
 
-+ @{rcHead("0.1.11-rc.10")}
+@{rcHead("0.1.11-rc.10")}
+
 + 2022/09/08: Added `Contract.fromAddress`.
 
-+ @{rcHead("0.1.11-rc.9")}
+@{rcHead("0.1.11-rc.9")}
+
 + 2022/08/31: Added `rawCall` field to `{!rsh} remote.ALGO`.
 
-+ @{rcHead("0.1.11-rc.8")}
+@{rcHead("0.1.11-rc.8")}
+
 + 2022/08/29: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/08/29: Added `{!rsh} Bytes.fromHex`.
 + 2022/08/25: Ethereum-like-only: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
@@ -34,7 +38,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 + 2022/08/16: Added `noVarOutput` option to `{!js} test.run`.
 + 2022/08/15: Added `{!rsh} autoTrackPublishedTokens` to `{!rsh} setOptions`.
 
-+ @{rcHead("0.1.11-rc.7")}
+@{rcHead("0.1.11-rc.7")}
+
 + 2022/08/10: Added support for exponential notation for numeric literals.
 + 2022/08/09: Added `strictPay` field to `{!rsh} remote.ALGO`.
 + 2022/08/07: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
@@ -43,7 +48,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 + 2022/08/04: Added `{!js} stdlib.tokensAccepted` and `{!js} acc.tokensAccepted`.
 + 2022/08/03: Added `{!rsh} isDataVariant`.
 
-+ @{rcHead("0.1.11-rc.6")}
+@{rcHead("0.1.11-rc.6")}
+
 + 2022/07/30: **Backwards Incompatible**: The `{!rsh} this` variable is removed from the scope inside `{!rsh} while` and `{!rsh} parallelReduce` syntax, except for the initialization expressions.
 
   We consider backwards incompatible changes to be very serious and do not introduce them lightly.
@@ -59,12 +65,14 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 + 2022/07/30: Added `{!rsh} Token.accepted`.
 + 2022/07/29: Allow `{!js} loadStdlib` to be called multiple times to get separate standard library instances.
 
-+ @{rcHead("0.1.11-rc.5")}
+@{rcHead("0.1.11-rc.5")}
+
 + 2022/07/22: Added support for `{!rsh} View` aliases.
 + 2022/07/22: Added `freeze`, `reserve`, and `defaultFrozen` options to `{!js} stdlib.launchToken`.
 + 2022/07/13: Added `{!rsh} Token.track`.
 
-+ @{rcHead("0.1.11-rc.4")}
+@{rcHead("0.1.11-rc.4")}
+
 + 2022/06/18: Added `{!rsh} enforce`.
 + 2022/06/18: Added `{!rsh} currentMode`.
 + 2022/06/01: Added `onCompletion` field to `{!rsh} remote.ALGO`.
