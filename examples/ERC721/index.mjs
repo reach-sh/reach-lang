@@ -350,9 +350,9 @@ const bench = async (deployFunc) => {
   card["safeTransferFrom_bytes_eoa"] = await g(addr1, "safeTransferFrom(address,address,uint256,bytes)", addr1, addr2, 1, []);
 
   const receiverCtc = await deployReceiver();
-  card["safeTransferFrom_bytes_eoa"] = await g(addr1, "safeTransferFrom(address,address,uint256,bytes)", addr1, receiverCtc.address, 1, []);
+  card["safeTransferFrom_bytes_ctc"] = await g(addr1, "safeTransferFrom(address,address,uint256,bytes)", addr1, receiverCtc.address, 1, []);
   await receiverCtc.transfer(ctc.address, addr2, 1, [], gasLimit);
-  card["safeTransferFrom_noBytes_eoa"] = await g(addr1, "safeTransferFrom(address,address,uint256)", addr1, receiverCtc.address, 1);
+  card["safeTransferFrom_noBytes_ctc"] = await g(addr1, "safeTransferFrom(address,address,uint256)", addr1, receiverCtc.address, 1);
   await receiverCtc.transfer(ctc.address, addr2, 1, [], gasLimit);
 
   card["burn"] = await g(addr1, "burn", 3);
