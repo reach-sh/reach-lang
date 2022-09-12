@@ -60,31 +60,6 @@ os.chdir("../examples")
 cmd("mkdir -p /tmp/artifacts /tmp/test_results /tmp/workspace/record")
 cmd("../reach devnet --await-background")
 
-(special_examples, regular_example_lists) = examples.split_examples_into_jobs(connector)
-
-# Generate what to pass to stdin for `circleci tests split`
-# The split command takes some lines, then magically splits the lines
-# between runners and prints which lines the current runner is assigned.
-# We pass it exactly the same number of lines as there are parallel runners,
-# so we get exactly one line back per runner.
-#
-# This passes every special example on its own line, and
-# for every group of regular examples, passes "job-group-<n>".
-split_args = special_examples + [f"job-group-{n}" for n in range(len(regular_example_lists))]
-assert len(split_args) == int(os.environ["CIRCLE_NODE_TOTAL"])
-split_args_bytes = "\n".join(split_args).encode('utf-8')
-circleci_split = subprocess.run(["circleci", "tests", "split"], input=split_args_bytes,
-                                 stdout=subprocess.PIPE, check=True)
-job = circleci_split.stdout.decode('utf-8')
-assert job.count("\n") == 1
-job = job.strip()
-
-if job.startswith("job-group-"):
-  # Running a group of regular examples
-  index = int(job.split("-")[-1])
-  examples = regular_example_lists[index]
-  with multiprocessing.Pool(len(examples)) as pool:
-    pool.map(run_example, examples)
-else:
-  # Running a special example
-  run_example(job)
+examples_to_run = examples.circleci_split_examples(connector)
+with multiprocessing.Pool(len(examples_to_run)) as pool:
+  pool.map(run_example, examples_to_run)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, math
+import os, math, subprocess
 from functools import lru_cache
 
 EXAMPLES_DIVISOR = 16
@@ -58,3 +58,32 @@ def split_examples_into_jobs(connector):
   parallel_jobs = parallel_jobs_for(connector)
   regular_example_jobs = parallel_jobs - len(special_examples)
   return (special_examples, divide_list(regular_examples, regular_example_jobs))
+
+# Call `circleci tests split` using information from split_examples_into_jobs.
+# The split command takes some lines, then magically splits the lines evenly
+# between runners and prints which lines the current runner is assigned.
+# We pass it exactly the same number of lines as there are parallel runners,
+# so we get exactly one line back per runner.
+#
+# This passes every special example on its own line, and
+# for every group of regular examples, passes "job-group-<n>".
+# Then, it decodes "job-group-*" lines back into a list of examples, 
+# and returns a list of examples for the current runner to execute.
+def circleci_split_examples(connector):
+  (special_examples, regular_examples) = split_examples_into_jobs(connector)
+  split_args = special_examples + [f"job-group-{n}" for n in range(len(regular_examples))]
+  assert len(split_args) == int(os.environ["CIRCLE_NODE_TOTAL"])
+  split_args_bytes = "\n".join(split_args).encode('utf-8')
+  circleci_split = subprocess.run(["circleci", "tests", "split"], input=split_args_bytes,
+                                   stdout=subprocess.PIPE, check=True)
+  job = circleci_split.stdout.decode('utf-8')
+  assert job.count("\n") == 1
+  job = job.strip()
+
+  if job.startswith("job-group-"):
+    # Running a group of regular examples
+    index = int(job.split("-")[-1])
+    return regular_examples[index]
+  else:
+    return [job]
+
