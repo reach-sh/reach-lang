@@ -52,6 +52,7 @@ def divide_list(lst, n):
 # Returns a 2-elem tuple, the first element is the list of special examples, the second is
 #   a list of lists of regular jobs, divided into <parallel_jobs - special_jobs> chunks
 #   (i.e. divided evenly into remaining parallel jobs)
+@lru_cache
 def split_examples_into_jobs(connector):
   special_examples = get_special_for(connector)
   regular_examples = get_regular_for(connector)
