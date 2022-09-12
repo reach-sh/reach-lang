@@ -1,4 +1,2 @@
-/config.gen.yml
-/config.mid.yml
-/config.end.yml
-/config.iend.yml
+config.gen.yml
+__pycache__

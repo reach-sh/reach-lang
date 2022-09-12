@@ -3,7 +3,7 @@ check: config.gen.yml
 	circleci config validate $<
 
 clean:
-	rm -f config.gen.yml config.end.yml config.mid.yml
+	rm -rf config.gen.yml __pycache__
 
-config.gen.yml: make.sh config.pre.yml
+config.gen.yml: generate-ci.py config.pre.yml
 	./$<

@@ -4,15 +4,14 @@ orbs:
 
 jobs:
   setup:
-    parallelism: 3
     executor: continuation/default
     steps:
       - checkout
       - run:
           name: Generate config
           command: cd .circleci && python3 generate-ci.py
-      # - continuation/continue:
-      #     configuration_path: ./.circleci/config.gen.yml
+      - continuation/continue:
+          configuration_path: ./.circleci/config.gen.yml
 
 setup: true
 workflows:
