@@ -307,7 +307,6 @@ export const testTokenReceiver = Reach.App(() => {
   init();
 
   D.publish();
-  const inventory = new Map(Tuple(Address, UInt), Null);
   D.interact.deployed(getContract());
 
   const implIface = {
@@ -319,34 +318,17 @@ export const testTokenReceiver = Reach.App(() => {
         .while(true)
         .invariant(balance() == 0)
         .api_(A.onERC721Received, (ercCtcAddr, from_, tokenId, data) => {
-          // I think this API should only be called by the implementing contract...
-          check(this == ercCtcAddr);
           return [ (k) => {
-            const ercCtcM = Contract.fromAddress(ercCtcAddr);
-            ercCtcM.match({
-              Some: (ercCtc) => {
-                const impl = remote(ercCtc, implIface);
-                const owner = impl.ownerOf(tokenId);
-                enforce(owner == getAddress(), "onERC721Received: must have been set as owner of token");
-                inventory[[ercCtcAddr, tokenId]] = null;
-              },
-              None: () => {
-                enforce(false, "onERC721Received called with a bad contract address")
-              },
-            });
             k(Bytes.fromHex('0x150b7a02'));
             return [ ];
           }];
         })
         .api_(A.transfer, (ercCtcAddr, to, tokenId, data) => {
-          // A serious contract for receiving NFTs should probably either include a manual override besides onERC721Received to check to add tokens to its inventory, or should dynamically check when transferring like this.  IE maybe I should remove the inventory and just do dynamic checks when transferring?
-          check(isSome(inventory[[ercCtcAddr, tokenId]]));
           return [ (k) => {
             const ercCtcM = Contract.fromAddress(ercCtcAddr);
             ercCtcM.match({
               Some: (ercCtc) => {
                 const impl = remote(ercCtc, implIface);
-                delete inventory[[ercCtcAddr, tokenId]];
                 impl.safeTransferFrom(getAddress(), to, tokenId, data);
               },
               None: () => {
