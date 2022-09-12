@@ -10,6 +10,14 @@ yaml = YAML(typ="rt")
 config = yaml.load(Path("config.pre.yml"))
 build_sink_deps = []
 
+# Insert an entry into config.gen.yml in the build workflow:
+# workflows:
+#   build:
+#     jobs:
+#       - <base_job>:
+#           <prop_1_key>: <prop_1_val>
+#           <prop_2_key>: <prop_2_val>
+#         ...
 def add_build_job(base_job, properties):
   properties["context"] = ["reachdevbot-aws-ecr"]
   config["workflows"]["build"]["jobs"].append({ base_job: properties })
