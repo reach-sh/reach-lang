@@ -3,3 +3,11 @@
 
 ERC721.ETH
 ERC721TokenReceiver.ETH
+ttt.ETH
+ttt.ALGO
+ttt.CFX
+rps-8-interact.ALGO
+workshop-fomo-generalized.ALGO
+workshop-fomo-generalized.ETH
+workshop-fomo-generalized.CFX
+rpc-mint-basic.ALGO
