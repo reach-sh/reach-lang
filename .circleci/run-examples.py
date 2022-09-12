@@ -48,7 +48,7 @@ def run_example(name):
     """)
 
   rank = os.environ["CIRCLE_NODE_INDEX"]
-  with open(f'/tmp/workspace/record/"{name}"') as record:
+  with open(f'/tmp/workspace/record/{name}', "w") as record:
     record.write(f'["{status}", "{connector}.{rank}"]')
 
 def run_multiple_examples(examples):
