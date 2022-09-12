@@ -11,7 +11,7 @@ if (stdlib.connector !== "ETH") {
 const accs = await stdlib.newTestAccounts(4, stdlib.parseCurrency(100));
 const [accDeploy, _acc1, _acc2, _acc3] = accs;
 const [addrDeploy, addr1, addr2, addr3] = accs.map(a => a.getAddress());
-const [tok1, tok2, tok3] = [1, 2, 3];
+const [tok1, tok2, tok3, tok4, tok5] = [1, 2, 3, 4, 5];
 const gasLimit = { gasLimit: 5_000_000 };
 const zeroAddr = "0x" + "0".repeat(40);
 const assert = stdlib.assert;
@@ -271,6 +271,8 @@ const oz_erc721_expected = {
     [tok1]: "OZ_ERC721/1",
     [tok2]: "OZ_ERC721/2",
     [tok3]: "OZ_ERC721/3",
+    [tok4]: "OZ_ERC721/4",
+    [tok5]: "OZ_ERC721/5",
   },
 };
 
@@ -290,7 +292,7 @@ const reach_erc721_constructor_args = [
       // v3238, string, tokenURI
       "Reach_ERC721/",
       // v3239, uint256, I think this is totalSupply
-      3,
+      5,
       // v3240, address payable, I think this is the zero address
       zeroAddr,
       // Empty BytesDyn
@@ -339,6 +341,8 @@ const bench = async (deployFunc) => {
   card["mint_1"] = await g(addrDeploy, "mint", addr1, 1);
   card["mint_2"] = await g(addrDeploy, "mint", addr1, 2);
   card["mint_3"] = await g(addrDeploy, "mint", addr1, 3);
+  card["mint_4"] = await g(addrDeploy, "mint", addr1, 4);
+  card["mint_5"] = await g(addrDeploy, "mint", addr1, 5);
 
   card["transferFrom"] = await g(addr1, "transferFrom", addr1, addr2, 1);
 
