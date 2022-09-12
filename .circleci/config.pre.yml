@@ -257,7 +257,7 @@ jobs:
         mkdir -p /tmp/workspace/artifacts /tmp/test_results /tmp/workspace/record /tmp/artifacts
     - run:
         command: |
-          cd .circleci && ./example.sh <<parameters.connector>> "${CIRCLE_NODE_TOTAL}" "${CIRCLE_NODE_INDEX}"
+          cd .circleci && ./run-examples.py <<parameters.connector>>
         no_output_timeout: 30m
     - store_artifacts:
         path: /tmp/artifacts
@@ -277,14 +277,14 @@ jobs:
           - record
     # This should only notify if something goes fatally wrong.
     # Regular test failures go through to the sink.
-    - slack/notify:
-        event: fail
-        custom: |
-          { "blocks": [
-              { "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*CATASTROPHIC* ${CIRCLE_USERNAME}/<https://github.com/reach-sh/reach-lang/tree/${CIRCLE_BRANCH}|${CIRCLE_BRANCH}>${CIRCLE_PULL_REQUEST:+/<$CIRCLE_PULL_REQUEST|PR>} > examples.<<parameters.connector>> <${CIRCLE_BUILD_URL}|more...>" }}]}
+    # - slack/notify:
+    #     event: fail
+    #     custom: |
+    #       { "blocks": [
+    #           { "type": "section",
+    #             "text": {
+    #               "type": "mrkdwn",
+    #               "text": "*CATASTROPHIC* ${CIRCLE_USERNAME}/<https://github.com/reach-sh/reach-lang/tree/${CIRCLE_BRANCH}|${CIRCLE_BRANCH}>${CIRCLE_PULL_REQUEST:+/<$CIRCLE_PULL_REQUEST|PR>} > examples.<<parameters.connector>> <${CIRCLE_BUILD_URL}|more...>" }}]}
   "build-sink":
     executor: fake
     steps:

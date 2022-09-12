@@ -1,0 +1,5 @@
+# Special examples are run by themselves on their own parallel runner by CircleCI
+# The format is <example name>.<connector>, e.g. ERC721.ETH
+
+ERC721.ETH
+ERC721TokenReceiver.ETH
