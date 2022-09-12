@@ -47,7 +47,7 @@ def run_example(name):
       </testsuite>
     """)
 
-  rank = os.environ["CIRCLECI_NODE_INDEX"]
+  rank = os.environ["CIRCLE_NODE_INDEX"]
   with open(f'/tmp/workspace/record/"{name}"') as record:
     record.write(f'["{status}", "{connector}.{rank}"]')
 
@@ -72,7 +72,7 @@ cmd("../reach devnet --await-background")
 # for every group of regular examples, passes "job-group-<n>".
 (special_examples, regular_example_lists) = examples.split_examples_into_jobs(connector)
 split_args = special_examples + [f"job-group-{n}" for n in range(len(regular_example_lists))]
-assert len(split_args) == int(os.environ["CIRCLECI_NODE_TOTAL"])
+assert len(split_args) == int(os.environ["CIRCLE_NODE_TOTAL"])
 
 split_args_bytes = "\n".join(split_args).encode('utf-8')
 circleci_split = subprocess.run(["circleci", "tests", "split"], input=split_args_bytes,
