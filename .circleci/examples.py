@@ -19,10 +19,13 @@ def get_all():
 def get_special_for(connector):
   with open(f"{circleci_dir}/special-examples.txt", "r") as f:
     lines = f.readlines()
-  no_comments = filter(lambda s: (len(s) > 1) and (not s.startswith("#")), lines)
-  split_lines = map(lambda s: s.strip().rsplit(".", maxsplit=1), no_comments)
-  only_for_connector = filter(lambda l: connector == l[1], split_lines)
-  example_names = map(lambda l: l[0], only_for_connector)
+  entry = lambda s: (len(s) > 1) and (not s.startswith("#"))
+  entries = filter(entry, lines)
+  parse = lambda s: s.strip().split(" ")
+  parsed = map(parse, entries)
+  for_connector = lambda l: any(c == connector or c == "all" for c in l[1:])
+  for_connector = filter(for_connector, parsed)
+  example_names = map(lambda l: l[0], for_connector)
   return list(example_names)
 
 # Return names of all examples that can be run in parallel / that are not
