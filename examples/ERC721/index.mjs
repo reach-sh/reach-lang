@@ -84,7 +84,7 @@ const test = async (ctc, expected, testEnumerable) => {
     ERC165: "0x01ffc9a7",
     ERC721: "0x80ac58cd",
     ERC721Metadata: "0x5b5e139f",
-    ERC721Enumerable: "0x780e9d63",
+    ...(testEnumerable ? {ERC721Enumerable: "0x780e9d63"} : {})
   };
 
   for (const iface in interfaceIds) {
