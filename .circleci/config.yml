@@ -4,7 +4,7 @@ orbs:
 
 jobs:
   setup:
-    parallelism: 16
+    parallelism: 3
     executor: continuation/default
     steps:
       - checkout
