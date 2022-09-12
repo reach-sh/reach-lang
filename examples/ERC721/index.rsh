@@ -78,6 +78,11 @@ const ERC721Enumerable = mixin({
     tokenOfOwnerByIndex: Fun([Address, UInt], UInt),
   }],
 });
+const ERC721EnumerablePartial = mixin({
+  View: [{
+    totalSupply: UInt,
+  }],
+});
 
 const ERC721TokenReceiverI = {
     onERC721Received: Fun([Address, Address, UInt, BytesDyn], Bytes(4)),
@@ -93,7 +98,7 @@ export const main = Reach.App(() => {
   setOptions({ connectors: [ETH] });
 
   const { IDs, View: V, Events: E, API: P } =
-    ERC721Enumerable( ERC721Metadata );
+    ERC721EnumerablePartial( ERC721Metadata );
 
   const D = Participant('Deployer', {
     meta: Object({
