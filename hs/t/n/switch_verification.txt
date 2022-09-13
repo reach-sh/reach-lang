@@ -11,15 +11,15 @@ Verification failed:
   const u/45 = "A".interact.amt;
   //    ^ could = Some(0 )
   //      from: ./switch_verification.rsh:4:36:property binding
-  const x/56 = <switch case binding for Some(0 )>;
+  const x/54 = <switch case binding for Some(0 )>;
   //    ^ could = 0
   //      from: ./switch_verification.rsh:11:3:switch
 
   // Theorem Formalization
 
-  const v57 = x/56 == 5;
+  const v55 = x/54 == 5;
   //    ^ would be false
-  assert(v57);
+  assert(v55);
 
   Verifying when NO participants are honest
 Checked 5 theorems; 2 failures (and 1 omitted repeats) :'(
