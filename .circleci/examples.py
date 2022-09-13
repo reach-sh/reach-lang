@@ -43,8 +43,6 @@ def parallel_jobs_for(connector):
   n_special = len(get_special_for(connector))
   n_regular = len(get_regular_for(connector))
   answer = n_special + math.ceil(n_regular / EXAMPLES_DIVISOR)
-  if nodes := os.environ.get("CIRCLE_NODE_TOTAL"):
-    assert nodes == answer
   return answer
 
 # Divide list into n approximately equal chunks
@@ -59,6 +57,7 @@ def get_examples_to_run(connector):
   special_examples = get_special_for(connector)
   regular_examples = get_regular_for(connector)
   parallelism = parallel_jobs_for(connector)
+  assert parallelism == os.environ["CIRCLE_NODE_TOTAL"]
   num_regular_jobs = parallelism - len(special_examples)
   regular_jobs = divide_list(regular_examples, num_regular_jobs)
   special_jobs = divide_list(special_examples, len(special_examples))
