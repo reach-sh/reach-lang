@@ -61,7 +61,7 @@ os.chdir("../examples")
 cmd("mkdir -p /tmp/artifacts /tmp/test_results /tmp/workspace/record /tmp/workspace/artifacts")
 cmd("../reach devnet --await-background")
 
-examples_to_run = examples.circleci_split_examples(connector)
+examples_to_run = examples.get_examples_to_run(connector)
 for ex in examples_to_run:
   print("Running", ex)
 
