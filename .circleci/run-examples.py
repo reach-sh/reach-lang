@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, sys, time, shlex, subprocess, multiprocessing, examples
+import os, sys, time, shlex, subprocess, multiprocessing, datetime, examples
 
 def cmd(command, redirect=None, timeout=None):
   print(">", command)
@@ -70,4 +70,4 @@ with multiprocessing.Pool(len(examples_to_run)) as pool:
 
 print("Timing information (h:mm:ss):")
 for ex, dur in zip(examples_to_run, times):
-  print(ex, str(dur))
+  print(ex, str(datetime.timedelta(seconds=dur)))
