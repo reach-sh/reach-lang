@@ -10,7 +10,6 @@ def cmd(command, redirect=None, timeout=None):
     return 'timeout'
 
 def run_example(name):
-  print("Running", name)
   artifact_name = f"{connector}.{name}"
   artifact_path = f"/tmp/artifacts/{artifact_name}"
   start_time = time.time()
@@ -51,15 +50,24 @@ def run_example(name):
   rank = os.environ["CIRCLE_NODE_INDEX"]
   with open(f'/tmp/workspace/record/{artifact_name}', "w") as record:
     record.write(f'["{status}", "{connector}.{rank}"]')
+  
+  return duration
 
 connector = sys.argv[1]
 os.environ["REACH_DEBUG"] = "1"
 os.environ["REACH_CONNECTOR_MODE"] = connector
 
 os.chdir("../examples")
-cmd("mkdir -p /tmp/artifacts /tmp/test_results /tmp/workspace/record")
+cmd("mkdir -p /tmp/artifacts /tmp/test_results /tmp/workspace/record /tmp/workspace/artifacts")
 cmd("../reach devnet --await-background")
 
 examples_to_run = examples.circleci_split_examples(connector)
+for ex in examples_to_run:
+  print("Running", ex)
+
 with multiprocessing.Pool(len(examples_to_run)) as pool:
-  pool.map(run_example, examples_to_run)
+  times = pool.map(run_example, examples_to_run)
+
+print("Timing information (h:mm:ss):")
+for ex, dur in zip(examples_to_run, times):
+  print(ex, str(dur))
