@@ -57,11 +57,11 @@ def get_examples_to_run(connector):
   special_examples = get_special_for(connector)
   regular_examples = get_regular_for(connector)
   parallelism = parallel_jobs_for(connector)
-  assert parallelism == os.environ["CIRCLE_NODE_TOTAL"]
+  assert parallelism == int(os.environ["CIRCLE_NODE_TOTAL"])
   num_regular_jobs = parallelism - len(special_examples)
   regular_jobs = divide_list(regular_examples, num_regular_jobs)
   special_jobs = divide_list(special_examples, len(special_examples))
   jobs = special_jobs + regular_jobs
-  i = os.environ["CIRCLE_NODE_INDEX"]
+  i = int(os.environ["CIRCLE_NODE_INDEX"])
   return jobs[i]
 
