@@ -2967,13 +2967,13 @@ The returned function also takes an optional `Base` parameter, which will be use
 Example ERC721, defining interfaces using `mixin`:
 ```reach
 load: /examples/ERC721/index.rsh
-md5: 7eb118c9ad802395f4fd1281e4b7bbb3
+md5: b594f1a05c289b9196e041dd8855ada1
 range: 8 - 59
 ```
 
 Constructing the final mixed contract, and overriding `ERC721EnumerablePartial`'s base with `ERC721Metadata`:
 ```reach
 load: /examples/ERC721/index.rsh
-md5: 7eb118c9ad802395f4fd1281e4b7bbb3
+md5: b594f1a05c289b9196e041dd8855ada1
 range: 79 - 80
 ```
