@@ -57,11 +57,6 @@ const ERC721Enumerable = mixin({
     tokenOfOwnerByIndex: Fun([Address, UInt], UInt),
   }],
 });
-const ERC721EnumerablePartial = mixin({
-  View: [{
-    totalSupply: UInt,
-  }],
-});
 
 const ERC721TokenReceiverI = {
     onERC721Received: Fun([Address, Address, UInt, BytesDyn], Bytes(4)),
@@ -77,7 +72,7 @@ export const main = Reach.App(() => {
   setOptions({ connectors: [ETH] });
 
   const { IDs, View: V, Events: E, API: P } =
-    ERC721EnumerablePartial( ERC721Metadata );
+    ERC721Enumerable( ERC721Metadata );
 
   const D = Participant('Deployer', {
     meta: Object({
@@ -113,7 +108,13 @@ export const main = Reach.App(() => {
 
   V.name.set(name);
   V.symbol.set(symbol);
+  // TODO - I think totalSupply should maybe only return the minted supply, but I'm not certain.
   V.totalSupply.set(totalSupply);
+  const tokenByIndex = (index) => {
+    check(index < totalSupply);
+    return index + 1;
+  };
+  V.tokenByIndex.set(tokenByIndex);
   const IDsArray = array(Bytes(4), IDs);
   V.supportsInterface.set(IDsArray.includes);
 
@@ -121,6 +122,16 @@ export const main = Reach.App(() => {
   const balances = new Map(UInt);
   const tokenApprovals = new Map(UInt, Address);
   const operatorApprovals = new Map(Tuple(Address, Address), Bool);
+  const ownerIndexToId = new Map(Tuple(Address, UInt), UInt);
+  const idToOwnerIndex = new Map(UInt, UInt);
+
+  const tokenOfOwnerByIndex = (owner, index) => {
+    const mId = ownerIndexToId[[owner, index]];
+    return fromMaybe(mId,
+                     () => {enforce(false, "tokenOfOwnerByIndex: bad args"); return 0;},
+                     (x) => x);
+  };
+  V.tokenOfOwnerByIndex.set(tokenOfOwnerByIndex);
 
   const [ ] =
     parallelReduce([ ])
@@ -179,12 +190,32 @@ export const main = Reach.App(() => {
           check(to != zeroAddr, "ERC721::transfer: transfer to the zero address");
           check(isApprovedOrOwner(caller, tokenId), "ERC721::transfer: caller is not owner nor approved");
         }
+        const rmFromOwnerIndex = (owner, tokenId, balancePostRm) => {
+          const mOldIndex = idToOwnerIndex[tokenId];
+          const oldIndex = fromMaybe(mOldIndex, () => 0, (x) => x)
+          const maxIndex = balancePostRm;
+          if (oldIndex != maxIndex) {
+            const oldIdAtMaxIndex = fromMaybe(ownerIndexToId[[owner, maxIndex]], () => 0, (x) => x);
+            ownerIndexToId[[owner, oldIndex]] = oldIdAtMaxIndex;
+            idToOwnerIndex[oldIdAtMaxIndex] = oldIndex;
+          }
+          delete ownerIndexToId[[owner, maxIndex]];
+        }
+        const addToOwnerIndex = (owner, tokenId, balancePostAdd) => {
+          const newIndex = balancePostAdd - 1;
+          ownerIndexToId[[owner, newIndex]] = tokenId;
+          idToOwnerIndex[tokenId] = newIndex;
+        }
         const transfer_ = (caller, from_, to, tokenId) => {
           transferChecks(caller, from_, to, tokenId);
           approve(zeroAddr, tokenId);
-          balances[from_] = maybe(balances[from_], 0, (b) => b - 1);
-          balances[to]    = maybe(balances[to]   , 1, (b) => b + 1);
+          const newBalanceFrom = maybe(balances[from_], 0, (b) => b - 1);
+          const newBalanceTo = maybe(balances[to], 1, (b) => b + 1);
+          balances[from_] = newBalanceFrom;
+          balances[to]    = newBalanceTo;
           owners[tokenId] = to;
+          rmFromOwnerIndex(from_, tokenId, newBalanceFrom);
+          addToOwnerIndex(to, tokenId, newBalanceTo);
           E.Transfer(from_, to, tokenId);
         }
         const doSafeTransferFrom = (caller, from_, to, tokenId, data) => {
@@ -250,7 +281,9 @@ export const main = Reach.App(() => {
         check(!tokenExists(tokenId), "Token already exists");
         check(this == D, "mint can only be called by deployer")
         return [ (k) => {
-          balances[to] = fromMaybe(balances[to], () => 1, (x) => x + 1);
+          const newBalance = fromMaybe(balances[to], () => 1, (x) => x + 1);
+          balances[to] = newBalance;
+          addToOwnerIndex(to, tokenId, newBalance);
           owners[tokenId] = to;
           E.Transfer(zeroAddr, to, tokenId);
           k(null);
@@ -264,6 +297,8 @@ export const main = Reach.App(() => {
           approve(zeroAddr, tokenId);
           const curBal = balances[owner];
           const newBal = fromMaybe(curBal, () => 0, (x) => x-1);
+          rmFromOwnerIndex(owner, tokenId, newBal);
+          idToOwnerIndex[tokenId] = 0;
           if (newBal == 0) {
             delete balances[owner];
           } else {

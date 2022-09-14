@@ -322,8 +322,8 @@ const reach_erc721_expected = {
 
 
 // Actually run the tests, side by side.
-const ozCost = await test((await ozERC721Deploy())[0], oz_erc721_expected, false);
-const reachCost = await test((await reachERC721Deploy())[0], reach_erc721_expected, false);
+const ozCost = await test((await ozERC721Deploy())[0], oz_erc721_expected, true);
+const reachCost = await test((await reachERC721Deploy())[0], reach_erc721_expected, true);
 
 console.log("Cost of Reach contract as percentage of OZ contract (for a test suite run): ", reachCost.mul(100_000.0).div(ozCost).toNumber() / 1000);
 
@@ -372,6 +372,7 @@ const bench = async (deployFunc) => {
 
   return card;
 }
+console.log("Benchmarking...")
 const ozBenchCard = await bench(ozERC721Deploy);
 console.log("OpenZeppelin costs: ", ozBenchCard);
 const reachBenchCard = await bench(reachERC721Deploy);
