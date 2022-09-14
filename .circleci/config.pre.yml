@@ -253,11 +253,11 @@ jobs:
     - workattach
     - and_restore_docker:
         deps: <<parameters.deps>>
-    - run: |
-        mkdir -p /tmp/workspace/artifacts /tmp/test_results /tmp/workspace/record /tmp/artifacts
     - run:
+        name: Run examples
         command: |
-          cd .circleci && ./example.sh <<parameters.connector>> "${CIRCLE_NODE_TOTAL}" "${CIRCLE_NODE_INDEX}"
+          cd .circleci 
+          ./run-examples.py <<parameters.connector>>
         no_output_timeout: 30m
     - store_artifacts:
         path: /tmp/artifacts
@@ -265,11 +265,13 @@ jobs:
         path: /tmp/test_results
     - store_test_results:
         path: /tmp/test_results
-    - run: |
-        CIRCLE_ARTIFACTS_URL=$(curl -X GET "https://circleci.com/api/v2/project/github/reach-sh/reach-lang/${CIRCLE_BUILD_NUM}/artifacts" \
-          -H "Accept: application/json" \
-          -u "${CIRCLE_API_TOKEN}:")
-        echo "${CIRCLE_ARTIFACTS_URL}" > /tmp/workspace/artifacts/<<parameters.connector>>."${CIRCLE_NODE_INDEX}"
+    - run: 
+        name: Store artifacts url
+        command: |
+          CIRCLE_ARTIFACTS_URL=$(curl -X GET "https://circleci.com/api/v2/project/github/reach-sh/reach-lang/${CIRCLE_BUILD_NUM}/artifacts" \
+            -H "Accept: application/json" \
+            -u "${CIRCLE_API_TOKEN}:")
+          echo "${CIRCLE_ARTIFACTS_URL}" > /tmp/workspace/artifacts/<<parameters.connector>>."${CIRCLE_NODE_INDEX}"
     - persist_to_workspace:
         root: /tmp/workspace
         paths:

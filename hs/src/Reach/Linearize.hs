@@ -19,6 +19,7 @@ import Reach.Counter
 import Reach.Freshen
 import Reach.Texty
 import Reach.Util
+import Data.Tuple.Extra
 
 data Error
   = Err_Unreachable String
@@ -113,7 +114,10 @@ dk1 k s =
           DKBM_Con -> return $ (con, k)
           DKBM_Do -> return $ (loc, mt)
       let cm1 (dv', b, l) = (,,) dv' b <$> dk_ k' l
-      mk <$> mapM cm1 csm
+      csm' <- mapM cm1 csm
+      case all ((== k) . thd3) csm' of
+        True -> return k
+        False -> return $ mk csm'
     DLS_Return at ret da ->
       asks eRet >>= \case
         Nothing -> impossible $ "return not in prompt"

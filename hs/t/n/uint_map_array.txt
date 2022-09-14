@@ -17,13 +17,13 @@ Verification failed:
 
   // Theorem Formalization
 
-  const map0_1/108 = new Map()[0 <- Some v73[0]];
+  const map0_1/104 = new Map()[0 <- Some v73[0]];
   //    ^ would be <map: (None(null ))>[0 <- Some(2 )]
-  const map0_2/109 = map0_1/108[1 <- Some v73[1]];
+  const map0_2/105 = map0_1/104[1 <- Some v73[1]];
   //    ^ would be <map: (None(null ))>[0 <- Some(2 )][1 <- Some(1 )]
-  const v98 = digest(map0_2/109[v73[0]] ) == digest(<Some v73[1]> );
+  const v94 = digest(map0_2/105[v73[0]] ) == digest(<Some v73[1]> );
   //    ^ would be false
-  require(v98);
+  require(v94);
 
   Verifying when NO participants are honest
 Checked 4 theorems; 1 failures :'(

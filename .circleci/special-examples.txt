@@ -1,0 +1,11 @@
+# Special examples are run by themselves on their own parallel runner by CircleCI
+# The format is "<example name> <connector>..." OR "<example name> all" 
+
+ERC721 ETH
+ERC721TokenReceiver ETH
+rps-8-interact ALGO
+rpc-mint-basic ALGO
+ttt all
+workshop-fomo-generalized all
+rsvp-5-cede all
+rsvp-6-vevt all
