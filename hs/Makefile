@@ -87,7 +87,7 @@ hs-clean: expand
 
 .PHONY: hs-build
 hs-build: expand
-	stack build --fast --test --no-run-tests $(MEVEREST) reach:test:reach-test reach:exe:reachc
+	stack build --fast --test --no-run-tests $(MEVEREST) reach:test:reach-test reach:exe:reachc reach:exe:reach
 
 .PHONY: hs-build-all
 hs-build-all: expand
