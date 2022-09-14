@@ -11,7 +11,7 @@ def get_all():
   examples_dir = f"{circleci_dir}/../examples/"
   examples_ls = os.listdir(examples_dir)
   dirs_only = filter(lambda ex: os.path.isdir(f"{examples_dir}/{ex}"), examples_ls)
-  return list(dirs_only)
+  return sorted(list(dirs_only))
 
 # Return names of special examples that should not run with other examples / that are
 # written in "special-examples.txt"
@@ -26,7 +26,7 @@ def get_special_for(connector):
   for_connector = lambda l: any(c == connector or c == "all" for c in l[1:])
   for_connector = filter(for_connector, parsed)
   example_names = map(lambda l: l[0], for_connector)
-  return list(set(example_names))
+  return sorted(list(set(example_names)))
 
 # Return names of all examples that can be run in parallel / that are not
 # written in "special-examples.txt"
@@ -63,9 +63,4 @@ def get_examples_to_run(connector):
   special_jobs = divide_list(special_examples, len(special_examples))
   jobs = special_jobs + regular_jobs
   i = int(os.environ["CIRCLE_NODE_INDEX"])
-  print("jobs:")
-  pprint.pprint(jobs)
-  print(f"{i=}")
-  pprint.pprint(os.environ)
   return jobs[i]
-
