@@ -5,27 +5,6 @@
 // https://eips.ethereum.org/EIPS/eip-165
 'reach 0.1';
 
-
-const Empty = () => {
-  return { IDs: [], View: {}, Events: {}, API: {} };
-};
-
-const mixin = (args = {}) => {
-  const def = (k, d) => Object.has(args, k) ? args[k] : d;
-  const Base = def('Base', Empty);
-  return (base = Base) => {
-    const { IDs: i, View: v, Events: e, API: a } = base();
-    const mapp = (f, k) => Object.has(args, k) ? f(...args[k]) : {};
-    return {
-      IDs: [...i, ...def('IDs', []) ],
-      View: {...v, ...mapp(View, 'View')},
-      Events: {...e, ...mapp(Events, 'Events')},
-      API: {...a, ...mapp(API, 'API')},
-    };
-  };
-};
-
-
 const ERC165 = mixin({
   IDs: [ Bytes.fromHex('0x01ffc9a7'), ],
   View: [{

@@ -1342,6 +1342,18 @@ these fields may be accompanied by additional fields specified afterwards.
 
 Shorthand for `{!rsh} { x: x, z: 5}`, where `{!rsh} x` is any bound identifier.
 
+#### Field reference
+
+```reach
+obj.x
+```
+
+An @{defn("object reference")},
+written `{!rsh} OBJ.FIELD`,
+where `{!rsh} OBJ` is an expression that evaluates to an object or a struct,
+and `{!rsh} FIELD` is a valid identifier,
+accesses the `FIELD` @{defn("field")} of object OBJ.
+
 #### `Object.fields`
 @{ref("rsh", "Object.fields")}
 
@@ -1353,6 +1365,41 @@ const o2 = Object({...fields, c: UInt}));
 
 Takes an object type and returns an object describing the fields of that type.
 It's useful for creating extended type values.
+
+
+#### `Object.set`
+
+@{ref("rsh", "Object.set")}@{ref("rsh", "Object_set")}
+```reach
+Object.set(obj, fld, val);
+Object_set(obj, fld, val);
+{ ...obj, [fld]: val };
+```
+
+ Returns a new object identical to `{!rsh} obj`,
+except that field `{!rsh} fld` is replaced with `{!rsh} val`.
+
+#### `Object.setIfUnset`
+
+@{ref("rsh", "Object.setIfUnset")}@{ref("rsh", "Object_setIfUnset")}
+```reach
+Object.setIfUnset(obj, fld, val);
+Object_setIfUnset(obj, fld, val);
+```
+
+ Returns a new object identical to `{!rsh} obj`,
+except that field `{!rsh} fld` is `{!rsh} val` if `{!rsh} fld` is not already present in `{!rsh} obj`.
+
+#### `Object.has`
+
+@{ref("rsh", "Object.has")}
+```reach
+Object.has(obj, fld);
+```
+
+ Returns a boolean indicating whether the object has the field `{!rsh} fld`.
+This is statically known.
+
 
 ### {#ref-programs-structs} Structs
 
@@ -1386,51 +1433,6 @@ The `{!rsh} Struct.fields` function takes a struct type and returns a tuple desc
 const fields = Struct.fields(Posn); // [["x", UInt], ["y", UInt]]
 const Posn3d = Struct([...fields, ["z", UInt]]);
 ```
-
-### Field reference
-
-```reach
-obj.x
-```
-
-An @{defn("object reference")},
-written `{!rsh} OBJ.FIELD`,
-where `{!rsh} OBJ` is an expression that evaluates to an object or a struct,
-and `{!rsh} FIELD` is a valid identifier,
-accesses the `FIELD` @{defn("field")} of object OBJ.
-
-### `Object.set`
-
-@{ref("rsh", "Object.set")}@{ref("rsh", "Object_set")}
-```reach
-Object.set(obj, fld, val);
-Object_set(obj, fld, val);
-{ ...obj, [fld]: val };
-```
-
- Returns a new object identical to `{!rsh} obj`,
-except that field `{!rsh} fld` is replaced with `{!rsh} val`.
-
-### `Object.setIfUnset`
-
-@{ref("rsh", "Object.setIfUnset")}@{ref("rsh", "Object_setIfUnset")}
-```reach
-Object.setIfUnset(obj, fld, val);
-Object_setIfUnset(obj, fld, val);
-```
-
- Returns a new object identical to `{!rsh} obj`,
-except that field `{!rsh} fld` is `{!rsh} val` if `{!rsh} fld` is not already present in `{!rsh} obj`.
-
-### `Object.has`
-
-@{ref("rsh", "Object.has")}
-```reach
-Object.has(obj, fld);
-```
-
- Returns a boolean indicating whether the object has the field `{!rsh} fld`.
-This is statically known.
 
 ### {#ref-programs-data} Data
 
@@ -2937,3 +2939,41 @@ currentMode();
 ```
 
 `{!rsh} currentMode()` evaluates to a `{!rsh} Data` instance with variants `Module`, `AppInit`, `Step`, `Local`, `Consensus`, and `Export`, corresponding to the current mode of the Reach application.
+
+### `mixin`
+@{ref("rsh", "mixin")}
+```reach
+const makeMixed = mixin({ Base: ..., IDs: ..., View: ..., Events: ..., API: ... });
+
+const mixedCtc = makeMixed();
+// or, to override `Base` in the definition with above with otherMakeMixed:
+const mixedCtc = makeMixed(otherMakeMixed);
+
+// mixed fields
+mixedCtc.IDs
+mixedCtc.View
+mixedCtc.Events
+mixedCtc.API
+```
+
+`mixin` is an implementation of mixins (see [Wikipedia](https://en.wikipedia.org/wiki/Mixin), [Racket Documentation](https://docs.racket-lang.org/guide/classes.html#%28part._.Mixins%29)) for mixing contract interfaces.
+The function takes an object that optionally contains the fields `IDs`, `View`, `Events`, and `API`.
+This object represents the interface of a contract, where `IDs` is a `Tuple` of constants, `View` is a `Tuple` of view interfaces, `Events` is a `Tuple` of event interfaces, and `API` is a `Tuple` of API interfaces.
+The object optionally also contains a `Base` field, which will be used as a default base interface when constructing the mixed contract.
+
+`mixin` returns a function, which, when called, mixes all of the base interfaces and constructs the final `API`, `View`, and `Events` (using the `{!rsh} API`, `{!rsh} View`, and `{!rsh} Events` constructors respectively).
+The returned function also takes an optional `Base` parameter, which will be used instead of the base interface found in the `Base` field passed to `mixin`.
+
+Example ERC721, defining interfaces using `mixin`:
+```reach
+load: /examples/ERC721/index.rsh
+md5: 7eb118c9ad802395f4fd1281e4b7bbb3
+range: 8 - 59
+```
+
+Constructing the final mixed contract, and overriding `ERC721EnumerablePartial`'s base with `ERC721Metadata`:
+```reach
+load: /examples/ERC721/index.rsh
+md5: 7eb118c9ad802395f4fd1281e4b7bbb3
+range: 79 - 80
+```
