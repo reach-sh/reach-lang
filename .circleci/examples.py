@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, math, subprocess
+import os, math, subprocess, pprint
 from functools import lru_cache
 
 EXAMPLES_DIVISOR = 16
@@ -63,5 +63,9 @@ def get_examples_to_run(connector):
   special_jobs = divide_list(special_examples, len(special_examples))
   jobs = special_jobs + regular_jobs
   i = int(os.environ["CIRCLE_NODE_INDEX"])
+  print("jobs:")
+  pprint.pprint(jobs)
+  print(f"{i=}")
+  pprint.pprint(os.environ)
   return jobs[i]
 
