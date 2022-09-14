@@ -492,6 +492,7 @@ instance Optimize DLExpr where
             _ -> meh
         _ -> meh
     DLE_ContractNew at cns dr -> DLE_ContractNew at <$> opt cns <*> opt dr
+    DLE_ContractFromAddress at addr -> DLE_ContractFromAddress at <$> opt addr
     DLE_ObjectSet at o k v -> DLE_ObjectSet at <$> opt o <*> pure k <*> opt v
     DLE_TupleSet at t k v -> optSet DLE_TupleSet DLE_TupleRef at t k v
     where

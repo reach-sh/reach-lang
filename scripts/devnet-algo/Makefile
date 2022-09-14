@@ -3,6 +3,14 @@ ROOT=../..
 
 include $(ROOT)/DEPS
 
+# When you upgrade Algorand, you don't always need to do generate-network.
+# You probably need to upgrade the config.json file. You look at this file...
+#
+# https://github.com/algorand/go-algorand/blob/v3.8.1-stable/installer/config.json.example
+#
+# But for the version you want!
+# Then you see what is different
+
 .PHONY: build
 build:
 	if ! [ -d algorand_network ] ; then \

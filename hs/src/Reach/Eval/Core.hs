@@ -1489,6 +1489,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
       M.fromList
         [ ("addressEq", retV $ public $ SLV_Prim $ SLPrim_op S_CTC_ADDR_EQ)
         , ("new", retV $ public $ SLV_Prim $ SLPrim_Contract_new)
+        , ("fromAddress", retV $ public $ SLV_Prim $ SLPrim_Contract_fromAddress)
         ]
   SLV_Type (ST_UInt UI_Word) ->
     return $ Just $
@@ -4098,6 +4099,16 @@ evalPrim p sargs =
       let hsNoPrefix = B.drop 2 hs
       bs <- either (const $ expect_ Err_BytesFromHex_Invalid) return $ B16.decodeBase16 hsNoPrefix
       return (lvl, SLV_Bytes at bs)
+    SLPrim_Contract_fromAddress -> do
+      at <- withAt id
+      ensure_mode SLM_ConsensusStep "Contract.fromAddress"
+      x <- one_arg
+      xa <- compileCheckType T_Address x
+      let mkv = DLVar at Nothing $ maybeT T_Contract
+      let e = DLE_ContractFromAddress at xa
+      fsv <- ctxt_lift_expr mkv e
+      fsv' <- doInternalLog_ Nothing fsv
+      return (lvl, SLV_DLVar fsv')
     -- END OF evalPrim cases
   where
     lvl = mconcatMap fst sargs

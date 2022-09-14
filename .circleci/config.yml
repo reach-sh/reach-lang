@@ -9,7 +9,7 @@ jobs:
       - checkout
       - run:
           name: Generate config
-          command: cd .circleci && ./make.sh
+          command: cd .circleci && python3 generate-ci.py
       - continuation/continue:
           configuration_path: ./.circleci/config.gen.yml
 

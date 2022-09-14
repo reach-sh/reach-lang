@@ -1,6 +1,6 @@
 REACH = ../../reach
 
-pre-build: child.sol.json child.sol.bin child.approve.teal.tok child.clear.teal.tok build/child.main.mjs
+pre-build: child.sol.json child.sol.bin child.approve.teal.tok child.clear.teal.tok build/child.main.mjs child.approve.teal.big.tok
 
 build/%.main.mjs: %.rsh
 	$(REACH) compile $<
@@ -19,3 +19,7 @@ build/%.main.mjs: %.rsh
 
 %.teal.tok: %.teal
 	goal clerk compile -o $@ $<
+
+%.teal.big.tok: %.teal.tok
+	cat $< > $@
+	head -c 4096 /dev/null >> $@

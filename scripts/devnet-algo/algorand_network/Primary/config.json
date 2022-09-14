@@ -1,7 +1,8 @@
 {
-	"Version": 21,
+	"Version": 23,
 	"GossipFanout": 0,
 	"NetAddress": "127.0.0.1:0",
 	"DNSBootstrapID": "",
-	"EnableProfiler": true
+	"EnableProfiler": true,
+	"EnableRuntimeMetrics": true
 }

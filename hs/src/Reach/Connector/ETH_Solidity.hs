@@ -462,6 +462,7 @@ instance DepthOf DLExpr where
     DLE_DataTag _ d -> add1 $ depthOf d
     DLE_FromSome _ mo da -> add1 $ depthOf [mo, da]
     DLE_ContractNew _ cns dr -> add1 $ max <$> depthOf cns <*> depthOf dr
+    DLE_ContractFromAddress _ a -> add1 $ depthOf a
     where
       add1 = addN 1
       addN n m = (+) n <$> m
@@ -795,6 +796,7 @@ solExpr sp = \case
     return $ parens $ c <+> "?" <+> (mo' <> "._" <> pretty vn) <+> ":" <+> da'
   DLE_GetUntrackedFunds {} -> impossible "getUntrackedFunds"
   DLE_ContractNew {} -> impossible "contractNew"
+  DLE_ContractFromAddress _at _addr -> impossible "ContractFromAddress"
   where
     spa m = (<> sp) <$> m
 
@@ -1060,6 +1062,16 @@ solCom = \case
       [ solSet ("uint256" <+> actBalV) bal
       , solSet (solMemVar dv) ite
       ]
+  DL_Let _ (DLV_Let _ dv) (DLE_ContractFromAddress _at addr) -> do
+    addr' <- solArg addr
+    let isContract = parens $ addr' <> ".code.length > 0"
+    addMemVar dv
+    dv' <- solVar dv
+    trueCase <- solLargeArg' dv' $ mdaToMaybeLA T_Contract $ Just addr
+    falseCase <- solLargeArg' dv' $ mdaToMaybeLA T_Contract Nothing
+    return $ solIf isContract trueCase falseCase
+  DL_Let _ (DLV_Eff) (DLE_ContractFromAddress _at _addr) -> do
+    return ""
   DL_Let _ (DLV_Eff) (DLE_ContractNew {}) ->
     return ""
   DL_Let _ (DLV_Let _ dv) (DLE_ContractNew _at cns dr) -> do
@@ -1438,11 +1450,14 @@ solBytesSplit sz goSmall goBig =
           True -> lastLen
           False -> byteChunkSize
 
-funRetSig :: DLType -> App Doc
-funRetSig ret_ty = do
+funRetSig :: DLType -> Bool -> App Doc
+funRetSig ret_ty ext = do
   ret_ty' <- solType_ ret_ty
   let ret_ty'' = ret_ty' <+> withArgLoc ret_ty
-  return $ "external payable returns" <+> parens ret_ty''
+  let external = case ext of
+        True -> "external payable returns"
+        False -> "internal returns"
+  return $ external <+> parens ret_ty''
 
 apiArgs :: Doc -> ApiInfo -> App ([Doc], [Doc], [Doc], Doc)
 apiArgs tyMsg (ApiInfo {..}) = do
@@ -1515,14 +1530,16 @@ apiDef who qualify ApiInfo {..} = do
             , pretty ("return _r." <> who_s) <> semi
             ])
           ]
-  ret <- funRetSig ai_ret_ty
-  let mk w = solFunction (pretty w) argDefns ret
+  retExt <- funRetSig ai_ret_ty True
+  retInt <- funRetSig ai_ret_ty False
+  let internalName = "_reach_internal_" <> pretty who_s
+  let mk w ret = solFunction (pretty w) argDefns ret
+  let extBody = "return " <> solApply internalName args <> semi
   let alias = case bunpack <$> ai_alias of
               Just ai -> do
-                let body' = "return " <> solApply ("this." <> pretty who_s) args <> semi
-                [mk ai body']
+                [mk ai retExt extBody]
               Nothing -> []
-  return $ vsep $ mk who_s body : alias
+  return $ vsep $ mk internalName retInt body : (mk who_s retExt extBody) : alias
 
 genApiJump :: SLPart -> M.Map Int ApiInfo -> App Doc
 genApiJump p ms = do
@@ -1538,7 +1555,7 @@ genApiJump p ms = do
           thn = "return " <> solApply ("this." <> inst) args <> semi <> hardline
           inst = "_" <> who <> pretty w
   let go = vsep $ map (mk . fst) $ M.toAscList ms
-  ret <- funRetSig $ ai_ret_ty ai
+  ret <- funRetSig (ai_ret_ty ai) True
   let body = vsep $ require : [go]
   return $ solFunction who argDefns ret $ body
 

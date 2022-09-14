@@ -854,6 +854,7 @@ data DLExpr
   | DLE_FromSome SrcLoc DLArg DLArg
   -- Maybe try to generalize FromSome into a Match
   | DLE_ContractNew SrcLoc DLContractNews DLRemote
+  | DLE_ContractFromAddress SrcLoc DLArg
   deriving (Eq, Ord, Generic)
 
 data LogKind
@@ -1009,6 +1010,9 @@ instance PrettySubst DLExpr where
       mo' <- prettySubst mo
       da' <- prettySubst da
       return $ "fromSome" <> parens (render_das [mo', da'])
+    DLE_ContractFromAddress _ addr -> do
+      addr' <- prettySubst addr
+      return $ "ContractFromAddress" <> parens (render_das [addr'])
     DLE_ContractNew _ cns dr -> do
       cns' <- prettySubst cns
       dr' <- prettySubst dr
@@ -1086,6 +1090,7 @@ instance IsPure DLExpr where
     DLE_ContractNew {} -> False
     DLE_ObjectSet {} -> True
     DLE_TupleSet {} -> True
+    DLE_ContractFromAddress {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -1123,6 +1128,7 @@ instance IsLocal DLExpr where
     DLE_ContractNew {} -> False
     DLE_ObjectSet {} -> True
     DLE_TupleSet {} -> True
+    DLE_ContractFromAddress {} -> False
 
 instance CanDupe DLExpr where
   canDupe = \case
@@ -1160,6 +1166,7 @@ instance CanDupe DLExpr where
     DLE_TimeOrder {} -> False
     DLE_EmitLog {} -> False
     DLE_ContractNew {} -> False
+    DLE_ContractFromAddress {} -> True
 
 newtype DLAssignment
   = DLAssignment (M.Map DLVar DLArg)

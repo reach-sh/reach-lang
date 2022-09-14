@@ -703,6 +703,9 @@ instance Interp DLExpr where
       setGlobal $ g {e_nctc = ctcId}
       -- XXX make an interact point with dr
       return $ V_Contract $ fromIntegral ctcId
+    DLE_ContractFromAddress _at _addr -> do
+      -- A better implementation is to make it a choice or consult the table of apps
+      return $ V_Data "None" V_Null
 
 instance Interp DLStmt where
   interp = \case

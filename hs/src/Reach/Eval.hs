@@ -174,6 +174,7 @@ instance Pandemic DLExpr where
     DLE_DataTag at d -> DLE_DataTag at <$> pan d
     DLE_FromSome at mo da -> DLE_FromSome at <$> pan mo <*> pan da
     DLE_ContractNew at cns dr -> DLE_ContractNew at <$> pan cns <*> pan dr
+    DLE_ContractFromAddress at a -> DLE_ContractFromAddress at <$> pan a
     DLE_ObjectSet at o k v -> DLE_ObjectSet at <$> pan o <*> pan k <*> pan v
     DLE_TupleSet at t i v -> DLE_TupleSet at <$> pan t <*> pure i <*> pan v
 

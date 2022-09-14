@@ -3,14 +3,29 @@
 Below is a list of changes to Reach.
 Versions and changes-within-versions are listed in reverse-chronological order: newest things first.
 
-## 0.1.11: 2022/06 - present
+## 0.1.12: 2022/09 - present
 
-@{verRC("0.1.11")}
+@{verRC("0.1.12")}
 
-+ @{rcHead("0.1.11-rc10")}
-+ @{rcHead("0.1.11-rc9")}
+@{rcHead("0.1.12-rc.0")}
+
++ 2022/08/31: Upgraded to Algorand node v3.9.2, indexer 2.14.0, SDK 1.20.0.
++ 2022/08/31: Algorand-only: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
+
+## 0.1.11: 2022/06 - 2022/09
+
+@{verCur("0.1.11")}
+
+@{rcHead("0.1.11-rc.10")}
+
++ 2022/09/08: Added `Contract.fromAddress`.
+
+@{rcHead("0.1.11-rc.9")}
+
 + 2022/08/31: Added `rawCall` field to `{!rsh} remote.ALGO`.
-+ @{rcHead("0.1.11-rc8")}
+
+@{rcHead("0.1.11-rc.8")}
+
 + 2022/08/29: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/08/29: Added `{!rsh} Bytes.fromHex`.
 + 2022/08/25: Ethereum-like-only: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
@@ -23,7 +38,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 + 2022/08/16: Added `noVarOutput` option to `{!js} test.run`.
 + 2022/08/15: Added `{!rsh} autoTrackPublishedTokens` to `{!rsh} setOptions`.
 
-+ @{rcHead("0.1.11-rc7")}
+@{rcHead("0.1.11-rc.7")}
+
 + 2022/08/10: Added support for exponential notation for numeric literals.
 + 2022/08/09: Added `strictPay` field to `{!rsh} remote.ALGO`.
 + 2022/08/07: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
@@ -32,13 +48,15 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 + 2022/08/04: Added `{!js} stdlib.tokensAccepted` and `{!js} acc.tokensAccepted`.
 + 2022/08/03: Added `{!rsh} isDataVariant`.
 
-+ @{rcHead("0.1.11-rc6")}
+@{rcHead("0.1.11-rc.6")}
+
 + 2022/07/30: **Backwards Incompatible**: The `{!rsh} this` variable is removed from the scope inside `{!rsh} while` and `{!rsh} parallelReduce` syntax, except for the initialization expressions.
 
   We consider backwards incompatible changes to be very serious and do not introduce them lightly.
   In this case, we have observed too many programs containing major errors because they confuse `{!rsh} this`, which would refer to the _previous_ actor in these contexts with the _current_ actor.
   This confusion creates scenarios where applications are incorrectly protected: either they are overly protected, by enforcing that an actor do two things in a row; or they are under protected, by allowing anyone to perform any action after the desired actor does something else first.
   Given this danger, we are introducing this backwards incompatible change.
+=======
 + 2022/07/30: Added support for [PeraWallet Connect](https://github.com/perawallet/connect) as wallet fallback for Algorand.
 + 2022/07/30: Upgraded React to 18.2.0 in `{!cmd} reach react`.
 + 2022/07/30: Many more customization options were added to `{!js} stdlib.setWalletFallback`.
@@ -46,11 +64,15 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 + 2022/07/30: Added support for customize `ALGO_TOKEN_HEADER` in Algorand provider configuration.
 + 2022/07/30: Added `{!rsh} Token.accepted`.
 + 2022/07/29: Allow `{!js} loadStdlib` to be called multiple times to get separate standard library instances.
-+ @{rcHead("0.1.11-rc5")}
+
+@{rcHead("0.1.11-rc.5")}
+
 + 2022/07/22: Added support for `{!rsh} View` aliases.
 + 2022/07/22: Added `freeze`, `reserve`, and `defaultFrozen` options to `{!js} stdlib.launchToken`.
 + 2022/07/13: Added `{!rsh} Token.track`.
-+ @{rcHead("0.1.11-rc4")}
+
+@{rcHead("0.1.11-rc.4")}
+
 + 2022/06/18: Added `{!rsh} enforce`.
 + 2022/06/18: Added `{!rsh} currentMode`.
 + 2022/06/01: Added `onCompletion` field to `{!rsh} remote.ALGO`.
@@ -60,7 +82,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 ## 0.1.10: 2022/04 - 2022/05
 
-@{verCur("0.1.10")}
+@{verOld("0.1.10")}
 
 + 2022/05/14: Added `{!cmd} reach support` sub-command.
 + 2022/05/13: Support custom violation messages for `{!rsh} invariant`s.

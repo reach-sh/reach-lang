@@ -10,14 +10,15 @@ if (stdlib.connector !== "ETH") {
 
 const accs = await stdlib.newTestAccounts(4, stdlib.parseCurrency(100));
 const [accDeploy, _acc1, _acc2, _acc3] = accs;
-const [_addrDeploy, addr1, addr2, addr3] = accs.map(a => a.getAddress());
-const [tok1, tok2, tok3] = [1, 2, 3];
+const [addrDeploy, addr1, addr2, addr3] = accs.map(a => a.getAddress());
+const [tok1, tok2, tok3, tok4, tok5] = [1, 2, 3, 4, 5];
 const gasLimit = { gasLimit: 5_000_000 };
 const zeroAddr = "0x" + "0".repeat(40);
 const assert = stdlib.assert;
 const bigNumberify = ethers.BigNumber.from;
 const waitTxn = async callPromise => await (await callPromise).wait();
 
+console.log("addrDeploy =", addrDeploy);
 console.log("addr1 =", addr1);
 console.log("addr2 =", addr2);
 console.log("addr3 =", addr3);
@@ -51,33 +52,39 @@ const lock = () => {
 const deploy = async (abi, bin, args = []) => {
   const factory = new ethers.ContractFactory(abi, bin, accDeploy.networkAccount);
   const contract = await factory.deploy(...args);
-  await contract.deployTransaction.wait();
-  return contract;
+  const txn = await contract.deployTransaction.wait();
+  return [contract, txn.gasUsed];
 }
 
-const solDeploy = async (solOutputPath, ctcName) => {
+const solDeploy = async (solOutputPath, ctcName, args = []) => {
   const ctcJson = await fs.promises.readFile(solOutputPath);
   const ctc = JSON.parse(ctcJson)["contracts"][ctcName];
-  return deploy(ctc.abi, ctc.bin);
+  return deploy(ctc.abi, ctc.bin, args);
 }
 
-// TODO: test a Reach ERC721 with this test suite. Use this function to launch the reach contract
-// (See examples/ERC721TokenReceiver/index.mjs for example usage)
-// const rchDeploy = async (rchModulePath, args) => {
-//   const mod = await import(rchModulePath);
-//   const ctc = mod._Connectors.ETH;
-//   return deploy(ctc.ABI, ctc.Bytecode, args);
-// }
+const rchDeploy = async (rchModulePath, args) => {
+  const mod = await import(rchModulePath);
+  const ctc = mod._Connectors.ETH;
+  return deploy(ctc.ABI, ctc.Bytecode, args);
+}
 
-const test = async (ctc, expected) => {
+const deployReceiver = async () => {
+  const [receiverCtc, receiverCtcGasUsed]
+        = await rchDeploy("./build/index.testTokenReceiver.mjs", [[0, false]]);
+  return receiverCtc;
+}
+
+const test = async (ctc, expected, testEnumerable) => {
   console.log(`Testing ${expected.name}`);
+  const getWei = async () => (await accDeploy.balanceOf()).add(await _acc1.balanceOf()).add(await _acc2.balanceOf()).add(await _acc3.balanceOf());
+  const weiPre = await getWei();
 
   // ===== ERC165 =====
   const interfaceIds = {
     ERC165: "0x01ffc9a7",
     ERC721: "0x80ac58cd",
     ERC721Metadata: "0x5b5e139f",
-    ERC721Enumerable: "0x780e9d63",
+    ...(testEnumerable ? {ERC721Enumerable: "0x780e9d63"} : {})
   };
 
   for (const iface in interfaceIds) {
@@ -134,7 +141,8 @@ const test = async (ctc, expected) => {
   // a method "mint" to exist on the contract. (It IS specified that minting
   // produces a Transfer event from the zero addr)
   await forEachTok(t => waitTxn(ctc.mint(addr1, t, gasLimit))
-                          .then(_ => assertEvent.Transfer(zeroAddr, addr1, t)));
+                   .then(_ => assertEvent.Transfer(zeroAddr, addr1, t))
+                  );
   await assertOwners(addr1, addr1, addr1);
 
   // non-owner transfer should fail
@@ -157,6 +165,7 @@ const test = async (ctc, expected) => {
   await assertOwners(addr2, addr2, addr1);
   await safeTransferFrom(addr1, addr2, tok3);
   await assertOwners(addr2, addr2, addr2);
+
 
   // transfer all tokens from addr2 to addr1 using transferFrom
   await transferFrom(addr2, addr1, tok1);
@@ -200,32 +209,35 @@ const test = async (ctc, expected) => {
   // Operator can transfer
   await safeTransferFrom(addr3, addr2, tok1, ctc2);
 
-  // ===== ERC721Enumerable =====
-  assertEq(await ctc.totalSupply(), 3, "totalSupply");
+  // TODO - the Reach implementation does not yet support ERC721Enumerable
+  if (testEnumerable){
+    // ===== ERC721Enumerable =====
+    assertEq(await ctc.totalSupply(), 3, "totalSupply");
 
-  // addr1 has no tokens
-  await assertFail(ctc.tokenOfOwnerByIndex(addr1, 0));
+    // addr1 has no tokens
+    await assertFail(ctc.tokenOfOwnerByIndex(addr1, 0));
 
-  // addr2 has 1 token
-  assertEq(await ctc.tokenOfOwnerByIndex(addr2, 0), tok1, "tokenOfOwnerByIndex(addr2)");
+    // addr2 has 1 token
+    assertEq(await ctc.tokenOfOwnerByIndex(addr2, 0), tok1, "tokenOfOwnerByIndex(addr2)");
 
-  // addr3 has 2 tokens
-  let seen = {};
-  seen[await ctc.tokenOfOwnerByIndex(addr3, 0)] = true;
-  seen[await ctc.tokenOfOwnerByIndex(addr3, 1)] = true;
-  assert(seen[tok2] && seen[tok3], "tokenOfOwnerByIndex(addr3)");
+    // addr3 has 2 tokens
+    let seen = {};
+    seen[await ctc.tokenOfOwnerByIndex(addr3, 0)] = true;
+    seen[await ctc.tokenOfOwnerByIndex(addr3, 1)] = true;
+    assert(seen[tok2] && seen[tok3], "tokenOfOwnerByIndex(addr3)");
 
-  // 3 total tokens exist, can be found with tokenByIndex
-  seen = {};
-  for (let i = 0; i < 3; i++) {
-    const tokId = await ctc.tokenByIndex(i);
-    seen[tokId] = true;
+    // 3 total tokens exist, can be found with tokenByIndex
+    seen = {};
+    for (let i = 0; i < 3; i++) {
+      const tokId = await ctc.tokenByIndex(i);
+      seen[tokId] = true;
+    }
+    assert(seen[tok1] && seen[tok2] && seen[tok3], "tokenByIndex");
+
+    // index >= totalSupply
+    await assertFail(ctc.tokenByIndex(3));
+    await assertFail(ctc.tokenByIndex(100));
   }
-  assert(seen[tok1] && seen[tok2] && seen[tok3], "tokenByIndex");
-
-  // index >= totalSupply
-  await assertFail(ctc.tokenByIndex(3));
-  await assertFail(ctc.tokenByIndex(100));
 
   // ===== ERC721Metadata =====
   assertEq(await ctc.name(), expected.name, "name()");
@@ -234,19 +246,126 @@ const test = async (ctc, expected) => {
 
   // invalid token id has no uri
   await assertFail(ctc.tokenURI(4));
+
+  // Test safeTransferFrom to a contract
+  const receiverCtc = await deployReceiver()
+  await safeTransferFrom(addr2, receiverCtc.address, tok1);
+  await safeTransferFrom(addr3, receiverCtc.address, tok2);
+  await safeTransferFrom(addr3, receiverCtc.address, tok3);
+  await assertOwners(receiverCtc.address, receiverCtc.address, receiverCtc.address);
+  await receiverCtc.transfer(ctc.address, addr1, tok1, []);
+
+  const weiPost = await getWei();
+  const weiDiff = weiPre.sub(weiPost);
+  return weiDiff;
 };
 
 // OpenZeppelin based ERC721
-const oz_erc721 = await solDeploy("build/oz_erc721.json", "oz_erc721.sol:OZ_ERC721");
-await test(oz_erc721, {
+const ozERC721Deploy = async () => {
+  return await solDeploy("build/oz_erc721.json", "oz_erc721.sol:OZ_ERC721");
+}
+const oz_erc721_expected = {
   name: "OZ_ERC721",
   symbol: "OZ",
   tokenURIs: {
     [tok1]: "OZ_ERC721/1",
     [tok2]: "OZ_ERC721/2",
     [tok3]: "OZ_ERC721/3",
+    [tok4]: "OZ_ERC721/4",
+    [tok5]: "OZ_ERC721/5",
   },
-});
+};
+
+
+//// Test Reach based ERC721
+
+// Launch the Reach contract in the same way that the OpenZeppelin contract was launched...
+const reach_erc721_constructor_args = [
+  [
+    // time
+    0,
+    [
+      // v3236, string, name
+      "Reach_ERC721",
+      // v3237, string, symbol
+      "RCH",
+      // v3238, string, tokenURI
+      "Reach_ERC721/",
+      // v3239, uint256, I think this is totalSupply
+      5,
+      // v3240, address payable, I think this is the zero address
+      zeroAddr,
+      // Empty BytesDyn
+      [],
+    ],
+  ],
+];
+const reachERC721Deploy = async () => {
+  return await rchDeploy("./build/index.main.mjs", reach_erc721_constructor_args);
+}
+const reach_erc721_expected = {
+  name: "Reach_ERC721",
+  symbol: "RCH",
+  tokenURIs: {
+    [tok1]: "Reach_ERC721/1",
+    [tok2]: "Reach_ERC721/2",
+    [tok3]: "Reach_ERC721/3",
+  },
+};
+
+
+
+// Actually run the tests, side by side.
+const ozCost = await test((await ozERC721Deploy())[0], oz_erc721_expected, false);
+const reachCost = await test((await reachERC721Deploy())[0], reach_erc721_expected, false);
+
+console.log("Cost of Reach contract as percentage of OZ contract (for a test suite run): ", reachCost.mul(100_000.0).div(ozCost).toNumber() / 1000);
+
+
+// More granular gas benchmark
+const bench = async (deployFunc) => {
+  const card = {};
+  const [ctc, deployGas] = await deployFunc();
+  card["Deploy"] = deployGas.toNumber();
+
+  const g = async (addr, f, ...args) => {
+    const cWithAddr = ctc.attach(addr);
+    const fn = cWithAddr[f];
+    if(fn) {
+      return (await (await fn(...args, gasLimit)).wait()).gasUsed.toNumber();
+    } else {
+      return "N/A";
+    }
+  }
+
+  card["mint_1"] = await g(addrDeploy, "mint", addr1, 1);
+  card["mint_2"] = await g(addrDeploy, "mint", addr1, 2);
+  card["mint_3"] = await g(addrDeploy, "mint", addr1, 3);
+  card["mint_4"] = await g(addrDeploy, "mint", addr1, 4);
+  card["mint_5"] = await g(addrDeploy, "mint", addr1, 5);
+
+  card["transferFrom"] = await g(addr1, "transferFrom", addr1, addr2, 1);
+
+  card["safeTransferFrom_noBytes_eoa"] = await g(addr1, "safeTransferFrom(address,address,uint256)", addr2, addr1, 1);
+  card["safeTransferFrom_bytes_eoa"] = await g(addr1, "safeTransferFrom(address,address,uint256,bytes)", addr1, addr2, 1, []);
+
+  const receiverCtc = await deployReceiver();
+  card["safeTransferFrom_bytes_ctc"] = await g(addr1, "safeTransferFrom(address,address,uint256,bytes)", addr1, receiverCtc.address, 1, []);
+  await receiverCtc.transfer(ctc.address, addr2, 1, [], gasLimit);
+  card["safeTransferFrom_noBytes_ctc"] = await g(addr1, "safeTransferFrom(address,address,uint256)", addr1, receiverCtc.address, 1);
+  await receiverCtc.transfer(ctc.address, addr2, 1, [], gasLimit);
+
+  card["burn"] = await g(addr1, "burn", 3);
+
+
+  return card;
+}
+const ozBenchCard = await bench(ozERC721Deploy);
+console.log("OpenZeppelin costs: ", ozBenchCard);
+const reachBenchCard = await bench(reachERC721Deploy);
+console.log("Reach costs: ", reachBenchCard);
+
+
 
 process.exit(0);
 

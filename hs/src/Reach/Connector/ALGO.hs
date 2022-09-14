@@ -11,7 +11,7 @@ import qualified Data.Aeson as AS
 import Data.Bits (shiftL, shiftR, (.|.))
 import qualified Data.ByteArray as BA
 import qualified Data.ByteString as BS
-import Data.ByteString.Base64 (encodeBase64')
+import Data.ByteString.Base64 (encodeBase64', decodeBase64)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Internal as BI
 import qualified Data.DList as DL
@@ -260,6 +260,9 @@ appGlobalStateNumUInt = 0
 appGlobalStateNumBytes :: Integer
 appGlobalStateNumBytes = 1
 
+algoMaxStringSize :: Integer
+algoMaxStringSize = 4096
+
 algoMinTxnFee :: Integer
 algoMinTxnFee = 1000
 
@@ -331,7 +334,7 @@ minimumBalance_l :: DLLiteral
 minimumBalance_l = DLL_Int sb UI_Word algoMinimumBalance
 
 tealVersionPragma :: LT.Text
-tealVersionPragma = "#pragma version 6"
+tealVersionPragma = "#pragma version 7"
 
 -- Algo specific stuff
 
@@ -467,6 +470,7 @@ data TEAL
   | TConst LT.Text
   | TBytes B.ByteString
   | TExtract Word8 Word8
+  | TReplace2 Word8
   | TSubstring Word8 Word8
   | TComment IndentDir LT.Text
   | TLabel Label
@@ -492,6 +496,7 @@ render ilvlr = \case
   TConst x -> r ["int", x]
   TBytes bs -> r ["byte", "base64(" <> encodeBase64 bs <> ")"]
   TExtract x y -> r ["extract", texty x, texty y]
+  TReplace2 x -> r ["replace2", texty x]
   TSubstring x y -> r ["substring", texty x, texty y]
   Titob _ -> r ["itob"]
   TCode f args ->
@@ -570,6 +575,7 @@ opType = \case
   TConst {} -> _2u
   TBytes {} -> _2b
   TExtract {} -> b2b
+  TReplace2 {} -> b2b
   TSubstring {} -> b2b
   TComment {} -> Nothing
   TLabel {} -> Nothing
@@ -787,6 +793,7 @@ buildCFG rlab ts = do
     TLoad {} -> recCost 1
     TInt _ -> recCost 1
     TExtract {} -> recCost 1
+    TReplace2 {} -> recCost 1
     TSubstring {} -> recCost 1
     Titob {} -> recCost 1
     TResource r -> recResource r 1
@@ -799,9 +806,11 @@ buildCFG rlab ts = do
     TCode f _ ->
       case f of
         "sha256" -> recCost 35
+        "sha3_256" -> recCost 130
         "keccak256" -> recCost 130
         "sha512_256" -> recCost 45
         "ed25519verify" -> recCost 1900
+        "ed25519verify_bare" -> recCost 1900
         "ecdsa_verify" -> recCost 1700
         "ecdsa_pk_decompress" -> recCost 650
         "ecdsa_pk_recover" -> recCost 2000
@@ -818,6 +827,9 @@ buildCFG rlab ts = do
         "b^" -> recCost 6
         "b~" -> recCost 4
         "bsqrt" -> recCost 40
+        "bn256_add" -> recCost 70
+        "bn256_scalar_mul" -> recCost 970
+        "bn256_pairing" -> recCost 8700
         "itxn_begin" -> do
           recResource R_ITxn 1
           recCost 1
@@ -1429,12 +1441,12 @@ cprim = \case
           -- [ v ]
           let ext i = cint (8 * i) >> op "extract_uint64"
           unless (trunc || pv == PV_Veri) $ do
-            dupn 3
-            -- [ v, v, v, v ]
-            let go i = ext i >> cint 0 >> asserteq
-            go 2
-            go 1
-            go 0
+            comment "Truncation check"
+            op "dup"
+            op "bitlen"
+            cint 64
+            op "<="
+            assert
           ext 3
         x -> impossible $ "ucast " <> show x
     _ -> impossible "cprim: UCAST args"
@@ -1567,13 +1579,11 @@ cconcatbs = cconcatbs_ ctobs
 
 check_concat_len :: Integer -> App ()
 check_concat_len totlen =
-  case totlen <= 4096 of
-    True -> nop
-    False ->
-      bad $
-        "Cannot `concat` " <> texty totlen
-          <> " bytes; the resulting byte array must be <= 4096 bytes."
-          <> " This is caused by a Reach data type being too large."
+  unless (totlen <= algoMaxStringSize) $ do
+    bad $
+      "Cannot `concat` " <> texty totlen
+        <> " bytes; the resulting byte array must be <= 4096 bytes."
+        <> " This is caused by a Reach data type being too large."
 
 cdigest :: [(DLType, App ())] -> App ()
 cdigest l = cconcatbs l >> op "sha256"
@@ -1591,149 +1601,38 @@ cextract s l =
       cint l
       op "extract3"
 
-csubstring :: Integer -> Integer -> App ()
-csubstring s e = cextract s (e - s)
-
-data SpliceRange
-  = SR_Both (App ()) (App ())
-  | SR_After (App ())
-  | SR_Before (App ())
-  | SR_None
-computeSplice :: Integer -> Integer -> Integer -> SpliceRange
-computeSplice start end tot =
-  case (start == 0, afterLen == 0) of
-    (True, True) -> SR_None
-    (True, False) -> SR_After after
-    (False, True) -> SR_Before before
-    (False, False) -> SR_Both before after
-  where
-    before = cextract 0 start
-    afterLen = tot - end
-    after = cextract end afterLen
-
-csplice :: SrcLoc -> Integer -> Integer -> Integer -> App ()
-csplice _at b c e = do
-  -- [ Bytes  = X b Y c Z e , NewBytes = Y' ]
-  let len = c - b
-  case len == 1 of
+creplace :: Integer -> App () -> App ()
+creplace s cnew = do
+  case s < 256 of
     True -> do
-      -- [ Bytes, NewByteBS ]
-      op "btoi"
-      -- [ Bytes, NewByte ]
-      cint b
-      -- [ Bytes, NewByte, Offset ]
-      op "swap"
-      -- [ Bytes, Offset, NewByte ]
-      op "setbyte"
-    False -> salloc_ "spliceNew" $ \store_new load_new -> do
-      -- [ Big, New ]
-      store_new
-      -- [ Big ]
-      csplice3 load_new Nothing (computeSplice b c e)
-  -- [ Big' ]
-  -- [ Bytes' = X b Y'c Z e]
-  return ()
+      cnew
+      output $ TReplace2 (fromIntegral s)
+    False -> do
+      cint s
+      cnew
+      op "replace3"
 
--- csplice3... what does it mean?
---
--- csplice3 cnew (Just cbig) (SR_Both cbefore cafter)
---
--- is the simplest use to understand. We are supposed to turn
---
--- BIG
---
--- into
---
--- BIG[before] new BIG[after]
---
--- + cnew computes the NEW piece
--- + cbefore extracts the before piece from the big
--- + cafter extracts the after piece from the big
--- + The Just means that we can compute the big when we need it (because it is
---   small)
---
--- If the Just were a Nothing, then the big would be on the stack
-csplice3 :: App () -> Maybe (App ()) -> SpliceRange -> App ()
-csplice3 cnew mcbig = \case
-  SR_None -> do
-    case mcbig of
-      Nothing -> op "pop"
-      Just _ -> return ()
-    cnew
-  SR_Before cbefore -> do
-    case mcbig of
-      Nothing -> return ()
-      Just cbig -> cbig
-    cbefore
-    cnew
-    op "concat"
-  SR_After cafter -> do
-    case mcbig of
-      Nothing -> do
-        cafter
-        cnew
-        op "swap"
-      Just cbig -> do
-        cnew
-        cbig
-        cafter
-    op "concat"
-  SR_Both cbefore cafter ->
-    case mcbig of
-      Nothing -> do
-        -- [ Big ]
-        op "dup"
-        -- [ Big, Big ]
-        cbefore
-        -- [ Big, Before ]
-        cnew
-        -- [ Big, Before, New ]
-        op "concat"
-        -- [ Big, Mid' ]
-        op "swap"
-        -- [ Mid', Big ]
-        cafter
-        -- [ Mid', After ]
-        op "concat"
-        -- [ Big' ]
-        return ()
-      Just cbig -> do
-        cbig
-        cbefore
-        cnew
-        op "concat"
-        cbig
-        cafter
-        op "concat"
-
-cArraySet :: SrcLoc -> (DLType, Integer) -> Maybe (App ()) -> Either Integer (App ()) -> App () -> App ()
-cArraySet _at (t, alen) mcbig eidx cnew = do
+cArraySet :: SrcLoc -> DLType -> Maybe (App ()) -> Either Integer (App ()) -> App () -> App ()
+cArraySet _at t mcbig eidx cnew = do
+  --- []
+  case mcbig of
+    Nothing -> return ()
+    Just cbig -> cbig
+  --- [ big ]
   tsz <- typeSizeOf t
-  let spr =
-        case eidx of
-          Left ii ->
-            computeSplice start end tot
-            where
-              start = ii * tsz
-              end = start + tsz
-              tot = alen * tsz
-          Right cidx -> SR_Both b a
-            where
-              b = do
-                cint 0
-                cint tsz
-                cidx
-                op "*"
-                op "substring3"
-              a = do
-                cint tsz
-                op "dup"
-                cidx
-                op "*"
-                op "+"
-                cint $ alen * tsz
-                op "substring3"
-  csplice3 cnew mcbig spr
+  case eidx of
+    -- Static index
+    Left ii -> do
+      --- [ big ]
+      creplace (ii * tsz) cnew
+    Right cidx -> do
+      --- [ big ]
+      cidx
+      cint tsz
+      op "*"
+      --- [ big, start ]
+      cnew
+      op "replace3"
 
 computeExtract :: [DLType] -> Integer -> App (DLType, Integer, Integer)
 computeExtract ts idx = do
@@ -1837,7 +1736,10 @@ cla = \case
   DLLA_StringDyn t -> cbs $ bpack $ T.unpack t
 
 cbs :: B.ByteString -> App ()
-cbs = output . TBytes
+cbs bs = do
+  when (B.length bs > fromIntegral algoMaxStringSize) $
+    bad $ "Cannot create raw bytes of length greater than " <> texty algoMaxStringSize <> "."
+  output $ TBytes bs
 
 cTupleRef :: SrcLoc -> DLType -> Integer -> App ()
 cTupleRef _at tt idx = do
@@ -1854,23 +1756,12 @@ cTupleRef _at tt idx = do
   -- [ Value ]
   return ()
 
-computeSubstring :: [DLType] -> Integer -> App (DLType, Integer, Integer)
-computeSubstring ts idx = do
-  (t, start, sz) <- computeExtract ts idx
-  let end = start + sz
-  return (t, start, end)
-
-cTupleSet :: SrcLoc -> DLType -> Integer -> App ()
-cTupleSet at tt idx = do
-  -- [ Tuple, Value' ]
-  tot <- typeSizeOf tt
+cTupleSet :: SrcLoc -> App () -> DLType -> Integer -> App ()
+cTupleSet _at cnew tt idx = do
+  -- [ Tuple ]
   let ts = tupleTypes tt
-  (t, start, end) <- computeSubstring ts idx
-  ctobs t
-  -- [ Tuple, Value'Bs ]
-  csplice at start end tot
-  -- [ Tuple' ]
-  return ()
+  (t, start, _) <- computeExtract ts idx
+  creplace start $ cnew >> ctobs t
 
 cMapLoad :: App ()
 cMapLoad = libCall LF_cMapLoad $ do
@@ -2043,7 +1934,7 @@ ce = \case
   DLE_PrimOp _ p args -> cprim p args
   DLE_ArrayRef at aa ia -> doArrayRef at aa True (Left ia)
   DLE_ArraySet at aa ia va -> do
-    let (t, alen) = argArrTypeLen aa
+    let (t, _) = argArrTypeLen aa
     case t of
       T_Bool -> do
         ca aa
@@ -2063,7 +1954,7 @@ ce = \case
               case ia of
                 DLA_Literal (DLL_Int _ UI_Word ii) -> Left ii
                 _ -> Right $ ca ia
-        cArraySet at (t, alen) mcbig eidx cnew
+        cArraySet at t mcbig eidx cnew
   DLE_ArrayConcat _ x y -> do
     let (xt, xlen) = argArrTypeLen x
     let (_, ylen) = argArrTypeLen y
@@ -2077,15 +1968,13 @@ ce = \case
     cTupleRef at (argTypeOf ta) idx
   DLE_TupleSet at tup_a index val_a -> do
     ca tup_a
-    ca val_a
-    cTupleSet at (argTypeOf tup_a) index
+    cTupleSet at (ca val_a) (argTypeOf tup_a) index
   DLE_ObjectRef at obj_a fieldName -> do
     ca obj_a
     uncurry (cTupleRef at) $ objectRefAsTupleRef obj_a fieldName
   DLE_ObjectSet at obj_a fieldName val_a -> do
     ca obj_a
-    ca val_a
-    uncurry (cTupleSet at) $ objectRefAsTupleRef obj_a fieldName
+    uncurry (cTupleSet at (ca val_a)) $ objectRefAsTupleRef obj_a fieldName
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> cdigest $ map go args
     where
@@ -2157,8 +2046,8 @@ ce = \case
         cMapStore at $ do
           ca fa
           cMapLoad
-          cla $ mdaToMaybeLA mt mva
-          cTupleSet at mdt $ fromIntegral i
+          let cnew = cla $ mdaToMaybeLA mt mva
+          cTupleSet at cnew mdt $ fromIntegral i
   DLE_Remote at fs ro rng_ty (DLRemote rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo) -> do
     let DLRemoteALGO _fees r_assets r_addr2acc r_apps r_oc r_strictPay r_rawCall = malgo
     warn_lab <- asks eWhich >>= \case
@@ -2179,8 +2068,6 @@ ce = \case
     salloc_ "remote address" $ \storeAddr loadAddr -> do
       cContractToAddr ro
       storeAddr
-      -- XXX remove this when JJ changes stuff for us
-      incResource R_Account ro
       salloc_ "minb" $ \storeMinB loadMinB -> do
         cContractAddr
         op "min_balance"
@@ -2413,17 +2300,19 @@ ce = \case
     -- [ Default, Object, Tag ]
     -- [ False, True, Cond ]
     op "select"
+  DLE_ContractFromAddress _at _addr -> do
+    cla $ mdaToMaybeLA T_Contract Nothing
   DLE_ContractNew at cns dr -> do
     block_ "ContractNew" $ do
       let DLContractNew {..} = cns M.! conName'
-      let ALGOCode {..} = either impossible id $ aesonParse dcn_code
+      let ALGOCodeOut {..} = either impossible id $ aesonParse dcn_code
       let ALGOCodeOpts {..} = either impossible id $ aesonParse dcn_opts
       let ai_GlobalNumUint = aco_globalUints
       let ai_GlobalNumByteSlice = aco_globalBytes
       let ai_LocalNumUint = aco_localUints
       let ai_LocalNumByteSlice = aco_localBytes
       let ai_ExtraProgramPages =
-            extraPages $ length ac_approval + length ac_clearState
+            extraPages $ length aco_approval + length aco_clearState
       let appInfo = AppInfo {..}
       let ct_at = at
       let ct_mtok = Nothing
@@ -2433,10 +2322,14 @@ ce = \case
       let vTypeEnum = "appl"
       output $ TConst vTypeEnum
       makeTxn1 "TypeEnum"
-      cbs $ B.pack ac_approval
-      makeTxn1 "ApprovalProgram"
-      cbs $ B.pack ac_clearState
-      makeTxn1 "ClearStateProgram"
+      let cbss f bs = do
+            let (before, after) = B.splitAt (fromIntegral algoMaxStringSize) bs
+            cbs before
+            makeTxn1 f
+            unless (B.null after) $
+              cbss f after
+      cbss "ApprovalProgramPages" $ B.pack aco_approval
+      cbss "ClearStateProgramPages" $ B.pack aco_clearState
       let unz f n = unless (n == 0) $ cint n >> makeTxn1 f
       unz "GlobalNumUint" $ ai_GlobalNumUint
       unz "GlobalNumByteSlice" $ ai_GlobalNumByteSlice
@@ -2844,7 +2737,7 @@ ct = \case
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
-reachAlgoBackendVersion = 10
+reachAlgoBackendVersion = 11
 
 -- State:
 keyState :: B.ByteString
@@ -3194,7 +3087,9 @@ cStateSlice :: Integer -> Word8 -> App ()
 cStateSlice size iw = do
   let i = fromIntegral iw
   let k = algoMaxAppBytesValueLen_usable
-  csubstring (k * i) (min size $ k * (i + 1))
+  let s = k * i
+  let e = min size $ k * (i + 1)
+  cextract s (e - s)
 
 compileTEAL_ :: String -> IO (Either BS.ByteString BS.ByteString)
 compileTEAL_ tealf = do
@@ -3358,7 +3253,7 @@ sigDump :: Int -> String
 sigDump sigi =
    i "i" (show sigi)
    <> i "h" (showHex sigi "")
-   <> i "b64" (B.unpack $ encodeBase64' $ itob 4 $ fromIntegral sigi)
+   <> i "b64" (LT.unpack $ encodeBase64 $ itob 4 $ fromIntegral sigi)
   where
     i l s = " " <> l <> "(" <> s <> ")"
 
@@ -3819,23 +3714,49 @@ verifyMapTypes badx = mapM $ \ DLMapInfo {..} -> do
       badx $ LT.pack $ "Cannot use '" <> show dlmi_kt <> "' as Map key. Only 'Address' keys are allowed."
     return $ DLMapInfo {..}
 
-data ALGOCode = ALGOCode
-  { ac_approval :: String
-  , ac_clearState :: String
+data ALGOCodeIn = ALGOCodeIn
+  { aci_approval :: String
+  , aci_clearState :: String
   }
   deriving (Show)
 
-instance AS.ToJSON ALGOCode where
-  toJSON (ALGOCode {..}) = AS.object $
-    [ "approval" .= ac_approval
-    , "clearState" .= ac_clearState
+instance AS.ToJSON ALGOCodeIn where
+  toJSON (ALGOCodeIn {..}) = AS.object $
+    [ "approval" .= aci_approval
+    , "clearState" .= aci_clearState
     ]
 
-instance AS.FromJSON ALGOCode where
-  parseJSON = AS.withObject "ALGOCode" $ \obj -> do
-    ac_approval <- obj .: "approval"
-    ac_clearState <- obj .: "clearState"
-    return $ ALGOCode {..}
+instance AS.FromJSON ALGOCodeIn where
+  parseJSON = AS.withObject "ALGOCodeIn" $ \obj -> do
+    aci_approval <- obj .: "approval"
+    aci_clearState <- obj .: "clearState"
+    return $ ALGOCodeIn {..}
+
+data ALGOCodeOut = ALGOCodeOut
+  { aco_approval :: String
+  , aco_clearState :: String
+  }
+  deriving (Show)
+
+instance AS.ToJSON ALGOCodeOut where
+  toJSON (ALGOCodeOut {..}) = AS.object $
+    [ "approvalB64" .= toBase64 aco_approval
+    , "clearStateB64" .= toBase64 aco_clearState
+    ]
+    where
+      toBase64 :: String -> String
+      toBase64 = LT.unpack . encodeBase64 . B.pack
+
+instance AS.FromJSON ALGOCodeOut where
+  parseJSON = AS.withObject "ALGOCodeOut" $ \obj -> do
+    let fromBase64 :: String -> String
+        fromBase64 x =
+          case decodeBase64 $ B.pack x of
+           Left y -> impossible $ "bad base64: " <> show y
+           Right y -> B.unpack y
+    aco_approval <- fromBase64 <$> (obj .: "approvalB64")
+    aco_clearState <- fromBase64 <$> (obj .: "clearStateB64")
+    return $ ALGOCodeOut {..}
 
 data ALGOCodeOpts = ALGOCodeOpts
   { aco_globalUints :: Integer
@@ -3897,10 +3818,10 @@ connect_algo env = Connector {..}
           return f
     conReserved = const False
     conCompileCode v = runExceptT $ do
-      ALGOCode {..} <- aesonParse' v
-      a' <- ccPath ac_approval
-      cs' <- ccPath ac_clearState
-      return $ AS.toJSON $ ALGOCode a' cs'
+      ALGOCodeIn {..} <- aesonParse' v
+      a' <- ccPath aci_approval
+      cs' <- ccPath aci_clearState
+      return $ AS.toJSON $ ALGOCodeOut a' cs'
     conContractNewOpts :: Maybe AS.Value -> Either String AS.Value
     conContractNewOpts mv = do
       (aco :: ALGOCodeOpts) <- aesonParse $ fromMaybe (AS.object mempty) mv

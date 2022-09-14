@@ -38,10 +38,14 @@ done
 
 echo Starting indexer
 touch algorand-indexer.yaml
+ALGORAND_INDEXER_DATA="${ALGORAND_DATA}/indexer.data"
+mkdir -p "${ALGORAND_INDEXER_DATA}"
 ILOG="${ALGORAND_DATA}/indexer.log"
 (while true ; do
  algorand-indexer daemon \
+  --enable-all-parameters \
   --algod "${ALGORAND_DATA}" \
+  --data-dir "${ALGORAND_INDEXER_DATA}" \
   --pidfile "${ALGORAND_DATA}/indexer.pid" \
   --dev-mode \
   --token "reach-devnet" \
