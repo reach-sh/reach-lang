@@ -9,6 +9,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcHead("0.1.12-rc.0")}
 
++ 2022/09/14: Added `{!rsh} mixin`.
 + 2022/08/31: Upgraded to Algorand node v3.9.2, indexer 2.14.0, SDK 1.20.0.
 + 2022/08/31: Algorand-only: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 
@@ -18,7 +19,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcHead("0.1.11-rc.10")}
 
-+ 2022/09/08: Added `Contract.fromAddress`.
++ 2022/09/08: Added `{!rsh} Contract.fromAddress`.
 
 @{rcHead("0.1.11-rc.9")}
 
