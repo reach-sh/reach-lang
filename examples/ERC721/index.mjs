@@ -364,6 +364,11 @@ const bench = async (deployFunc) => {
 
   card["burn"] = await g(acc1, "burn", 3);
 
+  if(card["burn"] !== "N/A"){
+    // Test that re-minting after burning fails.
+    await assertFail(g(accDeploy, "mint", addr1, 3));
+  }
+
 
   return card;
 }

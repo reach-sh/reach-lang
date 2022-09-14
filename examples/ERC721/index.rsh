@@ -290,7 +290,7 @@ export const main = Reach.App(() => {
           } else {
             balances[owner] = newBal;
           }
-          delete owners[tokenId];
+          owners[tokenId] = zeroAddr;
           E.Transfer(owner, zeroAddr, tokenId);
           k(null);
           return [ ];
