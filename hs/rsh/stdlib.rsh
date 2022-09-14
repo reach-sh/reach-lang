@@ -602,3 +602,18 @@ export const makeDeadline = (deadline) => {
   return [ timeRemaining, keepGoing ];
 };
 
+export const mixin = (args = {}) => {
+  const def = (k, d) => unstrict(() => Object.has(args, k) ? args[k] : d);
+  const mapp = (f, k) => unstrict(() => Object.has(args, k) ? f(...args[k]) : {});
+  const Empty = () => { return { IDs: [], View: {}, Events: {}, API: {} }; };
+  const DefaultBase = def('Base', Empty);
+  return (base = DefaultBase) => {
+    const { IDs: i, View: v, Events: e, API: a } = base();
+    return {
+      IDs: [...i, ...def('IDs', []) ],
+      View: {...v, ...mapp(View, 'View')},
+      Events: {...e, ...mapp(Events, 'Events')},
+      API: {...a, ...mapp(API, 'API')},
+    };
+  };
+};
