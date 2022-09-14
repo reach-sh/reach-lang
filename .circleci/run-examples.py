@@ -39,7 +39,6 @@ def run_example(name):
   with open(f"/tmp/test_results/{name}.xml", "w") as xml:
     maybe_fail = "" if status == "pass" else f'<failure message="{status}">{outcome}</failure>'
     xml.write(f"""
-      <?xml version="1.0" encoding="UTF-8"?>
       <testsuite name="examples.{connector}">
         <testcase name="{name}" time="{duration}">
         {maybe_fail}
