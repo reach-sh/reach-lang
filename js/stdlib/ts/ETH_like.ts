@@ -1172,9 +1172,6 @@ function setCustomHttpEventHandler() {
   console.warn(`setCustomHttpEventHandler is not supported on this connector`);
 }
 
-const contract = (bin: Backend, ctcInfo?: Promise<ContractInfo>): Promise<Contract> =>
-  createAccount().then(acc => acc.contract(bin, ctcInfo));
-
 // TODO: restore type ann once types are in place
 // const ethLike: EthLike = {
 const ethLike = {
@@ -1224,7 +1221,6 @@ const ethLike = {
   setSigningMonitor,
   getTimeSecs,
   tokensAccepted,
-  contract,
 };
 return ethLike;
 }

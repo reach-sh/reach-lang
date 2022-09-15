@@ -14,6 +14,7 @@ import * as ethers from './cfxers';
 import * as shared_user from './shared_user';
 import * as CFX_compiled from './CFX_compiled';
 import * as ETH_compiled_impl from './ETH_compiled_impl';
+import { stdlibShared } from './shared_impl';
 
 const _ETH_compiled_impl: EthLikeCompiledArgs = ETH_compiled_impl;
 void(_ETH_compiled_impl);
@@ -25,12 +26,12 @@ export const load = (): Stdlib_User<Provider, ProviderEnv, ProviderName, Token, 
   const CFX_compiled_: EthLikeCompiled = CFX_compiled;
 
   const connector = 'CFX';
-  return {
+  return stdlibShared({
     ...ethers_,
     ...ethLike,
     ...ethLike.reachStdlib,
     ...shared_user,
     ...CFX_compiled_,
     connector,
-  };
+  });
 };
