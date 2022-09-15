@@ -2956,22 +2956,31 @@ mixedCtc.Events
 mixedCtc.API
 ```
 
-`mixin` is an implementation of mixins (see [Wikipedia](https://en.wikipedia.org/wiki/Mixin), [Racket Documentation](https://docs.racket-lang.org/guide/classes.html#%28part._.Mixins%29)) for mixing contract interfaces.
+`mixin` is an implementation of mixins (see [Wikipedia](https://en.wikipedia.org/wiki/Mixin) or the [Racket Documentation](https://docs.racket-lang.org/guide/classes.html#%28part._.Mixins%29) for an explanation of mixins) for composing contract interfaces.
+(These mixins are _only_ for the interface, not the implementation.)
+
 The function takes an object that optionally contains the fields `IDs`, `View`, `Events`, and `API`.
-This object represents the interface of a contract, where `IDs` is a `Tuple` of constants, `View` is a `Tuple` of view interfaces, `Events` is a `Tuple` of event interfaces, and `API` is a `Tuple` of API interfaces.
-The object optionally also contains a `Base` field, which will be used as a default base interface when constructing the mixed contract.
+This object represents the interface of a contract, where `IDs` is a `{!rsh} Tuple` of constants, `View` is a `{!rsh} Tuple` of arguments to `{!rsh} View`, `Events` is a `{!rsh} Tuple` of arguments to `{!rsh} Events`, and `API` is a `{!rsh} Tuple` of arguments to `{!rsh} API`.
+The object optionally also contains a `Base` field, which will be used as a default base interface when constructing the combined contract interface.
 
-`mixin` returns a function, which, when called, mixes all of the base interfaces and constructs the final `API`, `View`, and `Events` (using the `{!rsh} API`, `{!rsh} View`, and `{!rsh} Events` constructors respectively).
-The returned function also takes an optional `Base` parameter, which will be used instead of the base interface found in the `Base` field passed to `mixin`.
+`{!rsh} mixin` returns a function, which, when called, combines all of the base interfaces and constructs the final `API`, `View`, and `Events` (using the `{!rsh} API`, `{!rsh} View`, and `{!rsh} Events` constructors respectively).
+The returned function also takes an optional `Base` parameter, which will be used instead of the base interface found in the `Base` field passed to `{!rsh} mixin`.
+(It is useful to modify the `Base` to implement a specific order of instantiation to implement multiple inheritance.)
 
-Example ERC721, defining interfaces using `mixin`:
+After composition, the individual components can be access normally.
+For example, `{!rsh} mixin(....)().View.v.set(vv)` would set the `v` `{!rsh} View` regardless of where the interface was defined.
+The `IDs` component is intended to hold byte strings that represent ERC-165 interface identifiers.
+
+---
+
+For example, we define all of the interfaces that are part of the [ERC-721](https://eips.ethereum.org/EIPS/eip-721) NFT specification using `{!rsh} mixin`:
 ```reach
 load: /examples/ERC721/index.rsh
 md5: b594f1a05c289b9196e041dd8855ada1
 range: 8 - 59
 ```
 
-Constructing the final mixed contract, and overriding `ERC721EnumerablePartial`'s base with `ERC721Metadata`:
+Then, we construct the final mixed contract, and overriding `ERC721EnumerablePartial`'s base with `ERC721Metadata` (because we want _both_ extensions to ERC-721):
 ```reach
 load: /examples/ERC721/index.rsh
 md5: b594f1a05c289b9196e041dd8855ada1
