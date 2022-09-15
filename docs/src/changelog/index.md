@@ -10,7 +10,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{rcHead("0.1.12-rc.0")}
 
 + 2022/09/15: **Backwards Incompatible**:
-  In rc6, we introduced the PeraWallet fallback for Algorand wallets.
+  In 0.1.11-rc.6, we introduced the PeraWallet fallback for Algorand wallets.
   This introduced a dependency of the standard library on React, which was too onerous.
   We've removed it and thus, there is a slightly different way to enable PeraWallet as fallback.
   We apologize for this incompatibility.
