@@ -358,7 +358,7 @@ interface ALGOHacks {
   makeTransferTxn: any,
   setFaucet: any,
 };
-interface ALGOStdlib extends Stdlib_User<Provider, ProviderEnv, ProviderName, Token, ContractInfo, Address, NetworkAccount, Ty, Backend, Account>, ALGOHacks {
+interface ALGOStdlib extends Stdlib_User<Provider, ProviderEnv, ProviderName, Token, ContractInfo, Address, NetworkAccount, Ty, Backend, Contract, Account>, ALGOHacks {
 };
 export const load = (): ALGOStdlib => {
 
@@ -2707,6 +2707,9 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
   return { name, sym, id, mint, optOut };
 }
 
+const contract = (bin: Backend, ctcInfo?: Promise<ContractInfo>): Promise<Contract> =>
+  createAccount().then(acc => acc.contract(bin, ctcInfo));
+
   return {
     ...stdlib,
     ...typeDefs,
@@ -2730,6 +2733,6 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
     parseCurrency, minimumBalance, formatCurrency,
     reachStdlib, algosdk,
     connector, standardUnit, atomicUnit,
-    tokensAccepted,
+    tokensAccepted, contract,
   };
 };
