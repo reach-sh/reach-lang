@@ -59,3 +59,7 @@ export function loadStdlib(connectorModeOrEnv?: string | {[key: string]: string}
   window.reach = stdlib;
   return stdlib;
 }
+
+export function Reach(this: {}, connectorModeOrEnv?: string | {[key: string]: string}) {
+  Object.assign(this, loadStdlib(connectorModeOrEnv));
+}
