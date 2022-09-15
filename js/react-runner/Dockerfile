@@ -21,6 +21,7 @@ COPY package.json \
 RUN npm install
 
 COPY public/ /app/public/
+COPY config-overrides.js /app/
 
 FROM $NODE_IMAGE
 
