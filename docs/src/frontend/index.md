@@ -833,13 +833,16 @@ The third thing you should do in a frontend is create a contract handle, so you 
 ---
 
 ```js
-acc.contract(bin, ?info) => ctc
+acc.contract(bin: Backend, info?: Promise<ContractInfo>) => Contract
+stdlib.contract(bin: Backend, info?: Promise<ContractInfo>) => Promise<Contract>
 ```
 
-Returns a Reach contract handle based on the `{!js} bin` argument provided with access to the account `{!js} acc`.
+Returns a Reach contract handle based on the `{!js} bin` argument, and optional `ContractInfo` provided.
+The `{!js} acc.contract` form will use the account `{!js} acc` to interact with the returned contract.
+The `{!js} stdlib.contract` form is equivalent to `{!js} (await stdlib.createAccount()).contract`, generating an account on demand.
 This `{!js} bin` argument is the module produced by `{!cmd} reach compile`.
 
-If `{!js} info` is provided, it must be a `{!rsh} Contract` value, or a `{!js} Promise` that eventually yields a `{!rsh} Contract` value.
+If `{!js} info` is provided, it must be a `{!js} ContractInfo` value, or a `{!js} Promise` that eventually yields a `{!js} ContractInfo` value.
 When provided, Reach will verify that the contract given actually matches the bytecode produced by `{!cmd} reach compile` and will error if it is different in any way.
 
 Typically, the deployer of a contract will not provide `{!js} info`, while users of a contract will.
@@ -853,16 +856,16 @@ This deployment can only happen one time, so subsequent attempts will fail with 
 This function may emit warnings if there is any danger, risk, or subtlety to using this contract on your chosen consensus network.
 You can omit this warning by setting `{!cmd} REACH_NO_WARN`, but we recommend that you do not.
 
-This function does not block.
+The `acc.contract` form of the function does not block.
 
 ---
 
 @{ref("js", "getInfo")}
 ```js
-ctc.getInfo() => Promise<Contract>
+ctc.getInfo() => Promise<ContractInfo>
 ```
 
-Returns a Promise for a `{!rsh} Contract` value that may be given to `{!js} contract` to construct a Reach contract handle for this contract.
+Returns a Promise for a `{!js} ContractInfo` value that may be given to `{!js} contract` to construct a Reach contract handle for this contract.
 This object may be stringified with `{!js} JSON.stringify` for printing and parsed again with `{!js} JSON.parse` without any loss of information.
 
 If `{!js} ctc` will deploy the program, then the Promise will only be resolved after the contract is actually deployed on the network,
