@@ -839,7 +839,8 @@ stdlib.contract(bin: Backend, info?: Promise<ContractInfo>) => Promise<Contract>
 
 Returns a Reach contract handle based on the `{!js} bin` argument, and optional `ContractInfo` provided.
 The `{!js} acc.contract` form will use the account `{!js} acc` to interact with the returned contract.
-The `{!js} stdlib.contract` form is equivalent to `{!js} (await stdlib.createAccount()).contract`, generating an account on demand.
+The `{!js} stdlib.contract` form is equivalent to `{!js} (await stdlib.createAccount()).contract`, generating an account on demand
+(this means the contract can only be used for read-only operations).
 This `{!js} bin` argument is the module produced by `{!cmd} reach compile`.
 
 If `{!js} info` is provided, it must be a `{!js} ContractInfo` value, or a `{!js} Promise` that eventually yields a `{!js} ContractInfo` value.
@@ -856,7 +857,7 @@ This deployment can only happen one time, so subsequent attempts will fail with 
 This function may emit warnings if there is any danger, risk, or subtlety to using this contract on your chosen consensus network.
 You can omit this warning by setting `{!cmd} REACH_NO_WARN`, but we recommend that you do not.
 
-The `acc.contract` form of the function does not block.
+The `{!js} acc.contract` form of the function does not block.
 
 ---
 
