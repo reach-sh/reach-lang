@@ -6,8 +6,11 @@ const T_onERC721Received = Fun(
     UInt256, // tokenId
     BytesDyn // data
   ],
-  Bytes(4) // Magic value 0x150b7a02 specified in EIP721
+  Bytes(4) 
 );
+
+// Magic value specified in EIP721
+const onERC721Received_selector = Bytes.fromHex("0x150b7a02");
 
 export const rch_ERC721_TokenReceiver = Reach.App(() => {
   const O = Participant("Owner", { sel: Bytes(4) });
@@ -15,11 +18,7 @@ export const rch_ERC721_TokenReceiver = Reach.App(() => {
   const A = API({ onERC721Received: T_onERC721Received });
   init();
 
-  // TODO: replace selector with Bytes(4).fromHex
-  // const onERC721Received_selector = Bytes4.fromHex("0x150b7a02");
-  // == bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
-  O.only(() => { const selector = declassify(interact.sel); });
-  O.publish(selector);
+  O.publish();
   const _ =
     parallelReduce(null)
     .while(true)
@@ -27,7 +26,7 @@ export const rch_ERC721_TokenReceiver = Reach.App(() => {
     .api_(A.onERC721Received, (operator, from_, tokenId, data) => {
       return [k => {
         E.GotAToken(operator, from_, tokenId, data);
-        k(selector);
+        k(onERC721Received_selector);
       }];
     })
 
@@ -41,11 +40,8 @@ export const rch_ERC721 = Reach.App(() => {
   const A = API({ mint: Fun([Contract, UInt256, BytesDyn], Null) });
   init();
 
-  O.only(() => {
-    const selector = declassify(interact.sel);
-    const zeroAddr = declassify(interact.zeroAddr);
-  });
-  O.publish(selector, zeroAddr);
+  O.only(() => { const zeroAddr = declassify(interact.zeroAddr); });
+  O.publish(zeroAddr);
   const _ =
     parallelReduce(null)
     .while(true)
@@ -54,7 +50,7 @@ export const rch_ERC721 = Reach.App(() => {
       return [k => {
         const recipient = remote(to, { onERC721Received: T_onERC721Received });
         const result = recipient.onERC721Received(O, zeroAddr, tokenId, data);
-        enforce(result == selector);
+        enforce(result == onERC721Received_selector);
         k(null);
       }];
     });
