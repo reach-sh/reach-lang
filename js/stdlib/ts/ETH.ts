@@ -14,6 +14,7 @@ import * as ethers from 'ethers';
 import * as shared_user from './shared_user';
 import * as ETH_compiled from './ETH_compiled';
 import * as ETH_compiled_impl from './ETH_compiled_impl';
+import { stdlibShared } from './shared_impl';
 
 const _ETH_compiled_impl: EthLikeCompiledArgs = ETH_compiled_impl;
 void(_ETH_compiled_impl);
@@ -25,12 +26,12 @@ export const load = (): Stdlib_User<Provider, ProviderEnv, ProviderName, Token, 
   const ETH_compiled_: EthLikeCompiled = ETH_compiled;
 
   const connector = 'ETH';
-  return {
+  return stdlibShared({
     ...ethers_,
     ...ethLike,
     ...ethLike.reachStdlib,
     ...shared_user,
     ...ETH_compiled_,
     connector,
-  };
+  });
 };

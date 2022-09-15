@@ -69,6 +69,7 @@ import {
   hasProp,
   makeParseCurrency,
   TransferOpts,
+  stdlibShared,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -2707,10 +2708,7 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
   return { name, sym, id, mint, optOut };
 }
 
-const contract = (bin: Backend, ctcInfo?: Promise<ContractInfo>): Promise<Contract> =>
-  createAccount().then(acc => acc.contract(bin, ctcInfo));
-
-  return {
+  return stdlibShared({
     ...stdlib,
     ...typeDefs,
     ...shared_user,
@@ -2733,6 +2731,6 @@ const contract = (bin: Backend, ctcInfo?: Promise<ContractInfo>): Promise<Contra
     parseCurrency, minimumBalance, formatCurrency,
     reachStdlib, algosdk,
     connector, standardUnit, atomicUnit,
-    tokensAccepted, contract,
-  };
+    tokensAccepted
+  });
 };
