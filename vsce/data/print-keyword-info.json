@@ -851,6 +851,9 @@
   "minus": {
     "CompletionItemKind": "Function"
   },
+  "mixin": {
+    "CompletionItemKind": "Function"
+  },
   "mod": {
     "CompletionItemKind": "Function"
   },
