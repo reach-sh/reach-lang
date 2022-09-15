@@ -2976,13 +2976,13 @@ The `IDs` component is intended to hold byte strings that represent ERC-165 inte
 For example, we define all of the interfaces that are part of the [ERC-721](https://eips.ethereum.org/EIPS/eip-721) NFT specification using `{!rsh} mixin`:
 ```reach
 load: /examples/ERC721/index.rsh
-md5: b594f1a05c289b9196e041dd8855ada1
+md5: c31c20d4e9add1a3ef3038596d965089
 range: 8 - 59
 ```
 
 Then, we construct the final mixed contract, and overriding `ERC721EnumerablePartial`'s base with `ERC721Metadata` (because we want _both_ extensions to ERC-721):
 ```reach
 load: /examples/ERC721/index.rsh
-md5: b594f1a05c289b9196e041dd8855ada1
+md5: c31c20d4e9add1a3ef3038596d965089
 range: 79 - 80
 ```
