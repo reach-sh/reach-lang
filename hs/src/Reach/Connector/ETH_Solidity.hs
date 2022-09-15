@@ -604,28 +604,83 @@ solPrimApply = \case
       [l, r] -> return $ solBinOp op l r
       _ -> impossible $ "emitSol: bin op args"
 
-solLargeArg' :: Doc -> DLLargeArg -> App Doc
-solLargeArg' dv la =
+-- Sol cannot copy struct array to storage
+canAssignToStorage :: DLType -> Bool
+canAssignToStorage = \case
+  T_Array dt _ -> not $ mustBeMem dt
+  T_Tuple dts -> all (canAssignToStorage) dts
+  T_Object m -> all (canAssignToStorage . snd) $ M.toList m
+  T_Data m -> all (canAssignToStorage . snd) $ M.toList m
+  T_Struct m -> all (canAssignToStorage . snd) m
+  T_Bytes _ -> True
+  T_BytesDyn -> True
+  T_StringDyn -> True
+  T_Null {} -> True
+  T_Bool {} -> True
+  T_UInt {} -> True
+  T_Digest -> True
+  T_Address -> True
+  T_Contract -> True
+  T_Token -> True
+
+-- Assigns `x = y;` using `x.f = y.f; ...` pattern, if necessary
+asnArg' :: Bool -> Doc -> DLType -> Doc -> App Doc
+asnArg' usesStorage dv dt av = do
+  case usesStorage && not (canAssignToStorage dt) of
+    True -> do
+      let go (field, ty, access) = do
+            let lhs = dv <> access field
+            let rhs = av <> access field
+            asnArg' usesStorage lhs ty rhs
+      let asnMapLike field_x_types = do
+            map (\(f, ty) -> ( pretty f, ty, ("." <>) )) field_x_types
+      let fieldAssigns = case dt of
+            T_Object m -> asnMapLike $ map (first objPrefix) $ M.toList m
+            T_Data m   -> asnMapLike $ M.toList m
+            T_Struct m -> asnMapLike m
+            T_Array t i -> do
+              let go' i' = (pretty i', t, brackets)
+              map go' [ 0 .. i - 1 ]
+            T_Bytes i -> do
+              let (howMany, lastLen) = solBytesInfo i
+              let arrOfLengths = take (fromIntegral $ howMany - 1) (repeat byteChunkSize) <> [lastLen]
+              let go' (i', sz) = (pretty i', T_Bytes sz, brackets)
+              map go' $ zip [0 :: Int ..] arrOfLengths
+            _ -> []
+      vsep <$> mapM go fieldAssigns
+    False ->
+      return $ dv <+> "=" <+> av <> semi
+
+asnArg :: Bool -> Doc -> DLArg -> App Doc
+asnArg usesStorage dv a = do
+  let dt = argTypeOf a
+  av <- solArg a
+  asnArg' usesStorage dv dt av
+
+solLargeArg' :: Bool -> Doc -> DLLargeArg -> App Doc
+solLargeArg' usesStorage dv la =
   case la of
     DLLA_Array _ as -> c <$> (zipWithM go ([0 ..] :: [Int]) as)
       where
-        go i a = one ("[" <> pretty i <> "]") <$> solArg a
+        go i a = do
+          let name = dv <> "[" <> pretty i <> "]"
+          asnArg usesStorage name a
     DLLA_Tuple as -> c <$> (zipWithM go ([0 ..] :: [Int]) as)
       where
-        go i a = one (".elem" <> pretty i) <$> solArg a
+        go i a = do
+          let name = dv <> ".elem" <> pretty i
+          asnArg usesStorage name a
     DLLA_Obj m ->
-      solLargeArg' dv $ DLLA_Struct $ map (first objPrefix) $ M.toAscList m
+      solLargeArg' usesStorage dv $ DLLA_Struct $ map (first objPrefix) $ M.toAscList m
     DLLA_Data _ vn vv -> do
       t <- solType $ largeArgTypeOf la
-      vv' <- solArg vv
-      return $
-        c
-          [ one ".which" (solVariant t vn)
-          , one ("._" <> pretty vn) vv'
-          ]
+      asnFields <- asnArg usesStorage (dv <> "._" <> pretty vn) vv
+      return $ c [ one ".which" (solVariant t vn), asnFields ]
     DLLA_Struct kvs -> c <$> (mapM go kvs)
       where
-        go (k, a) = one ("." <> pretty k) <$> solArg a
+        go (k, a) = do
+          let name = dv <> "." <> pretty k
+          asnArg usesStorage name a
     DLLA_Bytes s -> do
       let g3 :: Char -> String -> String
           g3 a b = (printf "%02x" a) <> b
@@ -647,14 +702,13 @@ solLargeArg' dv la =
           return $ c $ zipWith go ([0 ..] :: [Int]) cs
     DLLA_StringDyn s ->
       return $ one "" $ solString $ T.unpack s
-
   where
     one :: Doc -> Doc -> Doc
     one f v = dv <> f <+> "=" <+> v <> semi
     c = vsep
 
-solLargeArg :: DLVar -> DLLargeArg -> App Doc
-solLargeArg dv la = flip solLargeArg' la =<< solVar dv
+solLargeArg :: Bool -> DLVar -> DLLargeArg -> App Doc
+solLargeArg usesStorage dv la = flip (solLargeArg' usesStorage) la =<< solVar dv
 
 mapRefArg :: DLArg -> App Doc
 mapRefArg a = do
@@ -755,7 +809,7 @@ solExpr sp = \case
     return $ solApply (solMapRefInt mpv) [fa'] <> sp
   DLE_MapSet _ mpv fa (Just na) -> do
     fa' <- mapRefArg fa
-    solLargeArg' (solArrayRef (solMapVar mpv) fa') nla
+    solLargeArg' True (solArrayRef (solMapVar mpv) fa') nla
     where
       nla = mdaToMaybeLA na_t (Just na)
       na_t = argTypeOf na
@@ -1041,10 +1095,10 @@ solCom = \case
         return $ vsep [solSet (solMemVar dv) v', emitl, asn]
   DL_Let _ (DLV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv
-    solLargeArg dv la
+    solLargeArg False dv la
   DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ GET_COMPANION []) -> do
     addMemVar dv
-    solLargeArg dv $ mdaToMaybeLA T_Contract Nothing
+    solLargeArg False dv $ mdaToMaybeLA T_Contract Nothing
   DL_Let _ (DLV_Eff) (DLE_GetUntrackedFunds {}) ->
     return ""
   DL_Let _ (DLV_Let _ dv) (DLE_GetUntrackedFunds at mtok tb) -> do
@@ -1067,8 +1121,8 @@ solCom = \case
     let isContract = parens $ addr' <> ".code.length > 0"
     addMemVar dv
     dv' <- solVar dv
-    trueCase <- solLargeArg' dv' $ mdaToMaybeLA T_Contract $ Just addr
-    falseCase <- solLargeArg' dv' $ mdaToMaybeLA T_Contract Nothing
+    trueCase <- solLargeArg' False dv' $ mdaToMaybeLA T_Contract $ Just addr
+    falseCase <- solLargeArg' False dv' $ mdaToMaybeLA T_Contract Nothing
     return $ solIf isContract trueCase falseCase
   DL_Let _ (DLV_Eff) (DLE_ContractFromAddress _at _addr) -> do
     return ""
@@ -1752,7 +1806,7 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
           let ext_ret = "external " <> ret
           let int_ret = "internal " <> ret
           let ref = (solArrayRef (solMapVar mpv) "addr")
-          do_none <- solLargeArg' "res" $ mdaToMaybeLA (dlmi_ty mi) Nothing
+          do_none <- solLargeArg' False "res" $ mdaToMaybeLA (dlmi_ty mi) Nothing
           let do_some = solSet "res" ref
           eq <- solEq (ref <> ".which") (solVariant valTy "Some")
           let int_defn =
