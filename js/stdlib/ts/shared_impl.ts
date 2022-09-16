@@ -1309,3 +1309,23 @@ export const canonicalToBytes = (bv: CBR_Bytes) =>
     : bv;
 
 export const isUint8Array = (val: any) => val?.constructor?.name === 'Uint8Array';
+
+export type SecretKeyInput = Uint8Array | string; // Or anything that is ethers.utils.DataHexStringOrArrayish
+export type SecretKey = Uint8Array;
+export type Mnemonic = string; // Space separated words
+
+export const protectSecretKey = (secret: SecretKeyInput, numBytes: number): SecretKey => {
+  const bytes = ethers.utils.arrayify(secret);
+  if (bytes.length !== numBytes) {
+    throw Error(`Malformed secret key, expected ${numBytes} bytes but got ${bytes.length}`);
+  }
+  return bytes;
+}
+
+export const protectMnemonic = (phrase: Mnemonic, numWords?: number): Mnemonic => {
+  const words = phrase.trim().split(/\s+/);
+  if (numWords && words.length !== numWords) {
+    throw Error(`Malformed mnemonic, expected ${numWords} words but got ${words.length}`);
+  }
+  return words.join(" ");
+}
