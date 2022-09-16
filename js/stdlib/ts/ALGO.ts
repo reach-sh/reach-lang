@@ -2187,21 +2187,20 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           debug('getView1', v, k, args);
           const { decode } = vim;
           const ch = await getC();
-          let vi, vvs;
           try {
             const step = await getCurrentStep_(ch);
-            vi = bigNumberToNumber(step);
+            const vi = bigNumberToNumber(step);
             const vtys = vs[vi];
             if (!vtys) { throw Error(`no views for state ${step}`); }
-            vvs = (await getState_(getC, _ => vtys))[1];
+            const vvs = (await getState_(getC, _ => vtys))[1];
+            const vres = await decode(vi, vvs, args);
+            debug({ vres });
+            return isSafe ? ['Some', vres] : vres;
           } catch (e) {
             debug(`getView1`, v, k, 'error', e);
             if (!isSafe) { throw Error(`View ${v}.${k} is not set.`); }
             return ['None', null];
           }
-          const vres = await decode(vi, vvs, args);
-          debug({ vres });
-          return isSafe ? ['Some', vres] : vres;
       };
       return { getView1, viewLib };
     };
