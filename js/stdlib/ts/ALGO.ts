@@ -70,6 +70,11 @@ import {
   makeParseCurrency,
   TransferOpts,
   stdlibShared,
+  protectMnemonic,
+  protectSecretKey,
+  SecretKeyInput,
+  SecretKey,
+  Mnemonic
 } from './shared_impl';
 import {
   bigNumberify,
@@ -115,7 +120,6 @@ export type Ty = AnyALGO_Ty;
 // The unused ones are commented out
 export type Address = string
 // type RawAddress = Uint8Array;
-type SecretKey = Uint8Array; // length 64
 
 type TxnParamsRaw = {
   flatFee?: boolean,
@@ -2509,20 +2513,16 @@ async function getDefaultAccount(): Promise<Account> {
 }
 
 /**
- * @param mnemonic 25 words, space-separated
+ * @param mnemonic 25 words, whitespace-separated
  */
-const newAccountFromMnemonic = async (mnemonic: string): Promise<Account> => {
-  return await connectAccount(algosdk.mnemonicToSecretKey(mnemonic));
-};
+const newAccountFromMnemonic = (phrase: Mnemonic): Promise<Account> =>
+  connectAccount(algosdk.mnemonicToSecretKey(protectMnemonic(phrase, 25)));
 
 /**
  * @param secret a Uint8Array, or its hex string representation
  */
-const newAccountFromSecret = async (secret: string | SecretKey): Promise<Account> => {
-  const sk = ethers.utils.arrayify(secret);
-  const mnemonic = algosdk.secretKeyToMnemonic(sk);
-  return await newAccountFromMnemonic(mnemonic);
-};
+const newAccountFromSecret = (sk: SecretKeyInput): Promise<Account> =>
+  newAccountFromMnemonic(algosdk.secretKeyToMnemonic(protectSecretKey(sk, 32)));
 
 const getNetworkTime = async (): Promise<BigNumber> => {
   const indexer = await getIndexer();

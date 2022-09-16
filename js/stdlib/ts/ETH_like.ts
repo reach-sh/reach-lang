@@ -28,6 +28,10 @@ import {
   j2sf,
   handleFormat,
   makeParseCurrency,
+  protectMnemonic,
+  protectSecretKey,
+  SecretKeyInput,
+  Mnemonic,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -912,20 +916,18 @@ const tokensAccepted = async (_: Account | Address): Promise<Array<Token>> => {
   return [];
 };
 
-const newAccountFromSecret = async (secret: string): Promise<Account> => {
+const newAccountFromSecret = async (secret: SecretKeyInput): Promise<Account> => {
   const provider = await getProvider();
-  const networkAccount = (new ethers.Wallet(secret)).connect(provider);
-  const acc = await connectAccount(networkAccount);
-  return acc;
+  const wallet = new ethers.Wallet(protectSecretKey(secret, 32));
+  const networkAccount = wallet.connect(provider);
+  return connectAccount(networkAccount);
 };
 
-const newAccountFromMnemonic = async (phrase: string): Promise<Account> => {
+const newAccountFromMnemonic = async (phrase: Mnemonic): Promise<Account> => {
   const provider = await getProvider();
-  const networkAccount = ethers.Wallet.fromMnemonic(phrase).connect(provider);
-  const acc = await connectAccount(networkAccount);
-  return acc;
+  const networkAccount = ethers.Wallet.fromMnemonic(protectMnemonic(phrase)).connect(provider);
+  return connectAccount(networkAccount);
 };
-
 
 const getDefaultAccount = async (): Promise<Account> => {
   debug(`getDefaultAccount`);

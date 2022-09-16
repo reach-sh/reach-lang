@@ -477,11 +477,12 @@ You will probably not use these.
 ---
 @{ref("js", "newAccountFromSecret")}
 ```js
-stdlib.newAccountFromSecret(secret: string) => Promise<acc>
+stdlib.newAccountFromSecret(secret: string | UInt8Array) => Promise<Account>
 ```
 
 Returns a Promise for a Reach account abstraction for an account on the consensus network specified by the given secret.
-The details of the secret encoding are specified uniquely to the consensus network.
+The secret key must be either a hex string beginning with `{!js} '0x'`, or a `{!js} Uint8Array`.
+The number of bytes in the secret differs between connectors.
 
 Example:
 
@@ -497,11 +498,12 @@ The `acc` object `{!rsh} await`s the user to input the secret and then sets the 
 ---
 @{ref("js", "newAccountFromMnemonic")}
 ```js
-stdlib.newAccountFromMnemonic(phrase: string) => Promise<acc>
+stdlib.newAccountFromMnemonic(phrase: string) => Promise<Account>
 ```
 
 Returns a Promise for a Reach account abstraction for an account on the consensus network specified by the given mnemonic phrase.
-The details of the mnemonic phrase encoding are specified uniquely to the consensus network.
+The mnemonic phrase must be a string of whitespace-separated words from the BIP-39 English wordlist.
+The number of words required for a mnemonic differs between connectors.
 
 ---
 @{ref("js", "createAccount")}

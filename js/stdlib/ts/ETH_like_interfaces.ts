@@ -111,7 +111,7 @@ export interface EthersLikeWallet extends EthersLikeNetworkAccountIsh {
 }
 
 export interface EthersLikeWalletClass {
-  new(secret: string): EthersLikeWallet
+  new(secret: Uint8Array): EthersLikeWallet
   fromMnemonic(mnemonic: string): EthersLikeWallet
   createRandom(): EthersLikeWallet
 }

@@ -7,7 +7,7 @@ import { ParamType } from '@ethersproject/abi';
 const { BigNumber, utils } = ethers;
 export { BigNumber, utils };
 import { address_cfxStandardize, defaultEpochTag } from './CFX_util';
-import { debug, j2s } from './shared_impl';
+import { debug, j2s, protectSecretKey, SecretKeyInput } from './shared_impl';
 import { T_Address } from './CFX_compiled_impl';
 
 type BigNumber = ethers.BigNumber;
@@ -562,8 +562,8 @@ export class Wallet implements IWallet {
   provider?: providers.Provider;
   _mnemonic?: () => {phrase: string};
 
-  constructor(privateKey: string, provider?: providers.Provider, mnem?: any) {
-    this.privateKey = privateKey;
+  constructor(privateKey: SecretKeyInput, provider?: providers.Provider, mnem?: any) {
+    this.privateKey = '0x' + Buffer.from(protectSecretKey(privateKey, 32)).toString('hex');
     if (mnem) {
       this._mnemonic = () => ({phrase: mnem});
     }
