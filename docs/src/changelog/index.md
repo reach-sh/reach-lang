@@ -10,10 +10,10 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{rcHead("0.1.12-rc.1")}
 
 + 2022/09/15: Added `{!js} stdlib.contract`.
++ 2022/09/15: Added `{!js} new Reach(env?)`.
 
 @{rcHead("0.1.12-rc.0")}
 
-+ 2022/09/15: Added `{!js} new Reach(env?)`.
 + 2022/09/15: **Backwards Incompatible**:
   In 0.1.11-rc.6, we introduced the PeraWallet fallback for Algorand wallets.
   This introduced a dependency of the standard library on React, which was too onerous.
