@@ -2193,7 +2193,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             vi = bigNumberToNumber(step);
             const vtys = vs[vi];
             if (!vtys) { throw Error(`no views for state ${step}`); }
-            vvs = await getState_(getC, _ => vtys)[1];
+            vvs = (await getState_(getC, _ => vtys))[1];
           } catch (e) {
             debug(`getView1`, v, k, 'error', e);
             if (!isSafe) { throw Error(`View ${v}.${k} is not set.`); }
