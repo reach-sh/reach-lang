@@ -1,7 +1,7 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 const stdlib = loadStdlib(process.env);
 
-const startingBalance = stdlib.parseCurrency(100000);
+const startingBalance = stdlib.parseCurrency(1000);
 
 const [minter, receiver] = await stdlib.newTestAccounts(2, startingBalance);
 
@@ -26,9 +26,9 @@ console.log(`Minter starting balance: ${bal}.`);
 
 console.log(`Creating the NFT`);
 const theNFT = await stdlib.launchToken(minter, "nftName", "SYM", { supply: 1, url: "https://reach.sh", clawback: null, freeze: null, defaultFrozen: false, reserve: null, note: Uint8Array[1]});
-const nftId = theNFT.id;
+const nftId = await theNFT.id;
 
-const [preAmtNFT] = await stdlib.balancesOf(minter, [nftId]);
+const preAmtNFT = await minter.balanceOf(nftId);
 console.log(`Minter has ${preAmtNFT} of the NFT`);
     
 if (stdlib.connector == 'ALGO' && await receiver.tokenAccept(nftId)) {console.log(`Receiver opted-in to NFT`)};
@@ -39,5 +39,5 @@ console.log(`NFT transfer made from minter to receiver`);
 const postBal = await getBal(minter);
 console.log(`Minter balance after transfer: ${postBal}.`);
 
-const [postAmtNFT] = await stdlib.balancesOf(receiver, [nftId]);
+const postAmtNFT = await receiver.balanceOf(nftId);
 console.log(`Receiver has ${postAmtNFT} of the NFT`);
