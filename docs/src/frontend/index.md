@@ -15,6 +15,10 @@ You import the Reach JavaScript standard library by writing
 ```js
 import { loadStdlib } from '@reach-sh/stdlib';
 const stdlib = loadStdlib();
+
+// or, equivalently
+import { Reach } from '@reach-sh/stdlib';
+const stdlib = new Reach(env);
 ```
 
 When you use `{!cmd} reach run` or `{!cmd} reach react`, you don't need to do anything else.
@@ -63,10 +67,14 @@ Otherwise, the value will be represented as `Uint8Array` byte array.
 
 # {#ref-frontends-js-loader} Loading the Standard Library
 
-@{ref("js", "loadStdlib")}
+@{ref("js", "loadStdlib")}@{ref("js", "Reach")}
 ```js
 import { loadStdlib } from '@reach-sh/stdlib';
 const stdlib = loadStdlib(env);
+
+// or, equivalently
+import { Reach } from '@reach-sh/stdlib';
+const stdlib = new Reach(env);
 ```
 
 Returns the standard library based on the provided `{!js} env`.
