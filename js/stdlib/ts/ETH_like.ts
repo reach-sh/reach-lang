@@ -807,19 +807,16 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           const mungedArgs = args.map((arg, i) => dom[i].munge(arg));
           debug(label, 'getView1', v, k, 'args', args, vkn, dom, rng);
           debug(label, `getView1 mungedArgs = ${mungedArgs}`);
-          try {
-            const val = await ethersC[vkn](...mungedArgs);
-            debug(label, 'getView1', v, k, 'val', val);
-            const uv = rng.unmunge(val);
-            return isSafe ? ['Some', uv] : uv;
-          } catch (e) {
+          let val;
+          try { val = await ethersC[vkn](...mungedArgs); }
+          catch (e) {
             debug(label, 'getView1', v, k, 'error', e);
-            if (isSafe) {
-              return ['None', null];
-            } else {
-              throw Error(`View ${v}.${k} is not set.`);
-            }
+            if (!isSafe) { throw Error(`View ${k ? `${v}.${k}` : v} is not set.`); }
+            return ['None', null];
           }
+          debug(label, 'getView1', v, k, 'val', val);
+          const uv = rng.unmunge(val);
+          return isSafe ? ['Some', uv] : uv;
         };
       return { getView1, viewLib };
     };
