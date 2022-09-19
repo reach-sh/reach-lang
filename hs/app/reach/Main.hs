@@ -400,7 +400,7 @@ mkVar = do
 mkScript :: Text -> App -> App
 mkScript connectorMode' wrapped = do
   Var {..} <- asks e_var
-  let debug' = if debug then "REACH_DEBUG=1\n" else ""
+  let debug' = if debug then "REACH_DEBUG=1\nset -x\n" else ""
   let ide' = if ide then "REACH_IDE=1\n" else ""
   let rpcTLSRejectUnverified' = case rpcTLSRejectUnverified of
         True -> ""

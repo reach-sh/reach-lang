@@ -27,7 +27,12 @@ import {
   j2s,
   j2sf,
   handleFormat,
+  hideWarnings,
   makeParseCurrency,
+  protectMnemonic,
+  protectSecretKey,
+  SecretKeyInput,
+  Mnemonic,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -807,19 +812,16 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           const mungedArgs = args.map((arg, i) => dom[i].munge(arg));
           debug(label, 'getView1', v, k, 'args', args, vkn, dom, rng);
           debug(label, `getView1 mungedArgs = ${mungedArgs}`);
-          try {
-            const val = await ethersC[vkn](...mungedArgs);
-            debug(label, 'getView1', v, k, 'val', val);
-            const uv = rng.unmunge(val);
-            return isSafe ? ['Some', uv] : uv;
-          } catch (e) {
+          let val;
+          try { val = await ethersC[vkn](...mungedArgs); }
+          catch (e) {
             debug(label, 'getView1', v, k, 'error', e);
-            if (isSafe) {
-              return ['None', null];
-            } else {
-              throw Error(`View ${v}.${k} is not set.`);
-            }
+            if (!isSafe) { throw Error(`View ${k ? `${v}.${k}` : v} is not set.`); }
+            return ['None', null];
           }
+          debug(label, 'getView1', v, k, 'val', val);
+          const uv = rng.unmunge(val);
+          return isSafe ? ['Some', uv] : uv;
         };
       return { getView1, viewLib };
     };
@@ -912,20 +914,18 @@ const tokensAccepted = async (_: Account | Address): Promise<Array<Token>> => {
   return [];
 };
 
-const newAccountFromSecret = async (secret: string): Promise<Account> => {
+const newAccountFromSecret = async (secret: SecretKeyInput): Promise<Account> => {
   const provider = await getProvider();
-  const networkAccount = (new ethers.Wallet(secret)).connect(provider);
-  const acc = await connectAccount(networkAccount);
-  return acc;
+  const wallet = new ethers.Wallet(protectSecretKey(secret, 32));
+  const networkAccount = wallet.connect(provider);
+  return connectAccount(networkAccount);
 };
 
-const newAccountFromMnemonic = async (phrase: string): Promise<Account> => {
+const newAccountFromMnemonic = async (phrase: Mnemonic): Promise<Account> => {
   const provider = await getProvider();
-  const networkAccount = ethers.Wallet.fromMnemonic(phrase).connect(provider);
-  const acc = await connectAccount(networkAccount);
-  return acc;
+  const networkAccount = ethers.Wallet.fromMnemonic(protectMnemonic(phrase)).connect(provider);
+  return connectAccount(networkAccount);
 };
-
 
 const getDefaultAccount = async (): Promise<Account> => {
   debug(`getDefaultAccount`);
@@ -950,7 +950,9 @@ const createAccount = async () => {
 }
 
 const fundFromFaucet = async (account: AccountTransferable | Address, value: any) => {
-  console.error("Warning: your program uses stdlib.fundFromFaucet. That means it only works on Reach devnets!");
+  if (! hideWarnings()) {
+    console.error("Warning: your program uses stdlib.fundFromFaucet. That means it only works on Reach devnets!");
+  }
   const f = await _specialFundFromFaucet();
   if (f) {
     return await f(account, value);

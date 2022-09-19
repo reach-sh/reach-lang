@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { loadStdlib } from "@reach-sh/stdlib";
+import { loadStdlib, ask } from "@reach-sh/stdlib";
 const stdlib = loadStdlib(process.env);
 const ethers = stdlib.ethers;
 
@@ -9,7 +9,8 @@ if (stdlib.connector !== "ETH") {
 }
 
 const accs = await stdlib.newTestAccounts(4, stdlib.parseCurrency(100));
-const [accDeploy, _acc1, _acc2, _acc3] = accs;
+//const acc = await stdlib.newAccountFromMnemonic(await ask.ask("input secret:", (x => x))); const accs = [acc, acc, acc, acc];
+const [accDeploy, acc1, acc2, acc3] = accs;
 const [addrDeploy, addr1, addr2, addr3] = accs.map(a => a.getAddress());
 const [tok1, tok2, tok3, tok4, tok5] = [1, 2, 3, 4, 5];
 const gasLimit = { gasLimit: 5_000_000 };
@@ -50,6 +51,7 @@ const lock = () => {
 };
 
 const deploy = async (abi, bin, args = []) => {
+  console.log("Deploying...")
   const factory = new ethers.ContractFactory(abi, bin, accDeploy.networkAccount);
   const contract = await factory.deploy(...args);
   const txn = await contract.deployTransaction.wait();
@@ -76,7 +78,7 @@ const deployReceiver = async () => {
 
 const test = async (ctc, expected, testEnumerable) => {
   console.log(`Testing ${expected.name}`);
-  const getWei = async () => (await accDeploy.balanceOf()).add(await _acc1.balanceOf()).add(await _acc2.balanceOf()).add(await _acc3.balanceOf());
+  const getWei = async () => (await accDeploy.balanceOf()).add(await acc1.balanceOf()).add(await acc2.balanceOf()).add(await acc3.balanceOf());
   const weiPre = await getWei();
 
   // ===== ERC165 =====
@@ -254,6 +256,10 @@ const test = async (ctc, expected, testEnumerable) => {
   await safeTransferFrom(addr3, receiverCtc.address, tok3);
   await assertOwners(receiverCtc.address, receiverCtc.address, receiverCtc.address);
   await receiverCtc.transfer(ctc.address, addr1, tok1, []);
+  await assertOwners(addr1, receiverCtc.address, receiverCtc.address);
+  await receiverCtc.transfer(ctc.address, addr1, tok2, []);
+  await receiverCtc.transfer(ctc.address, addr1, tok3, []);
+  await assertOwners(addr1, addr1, addr1);
 
   const weiPost = await getWei();
   const weiDiff = weiPre.sub(weiPost);
@@ -328,8 +334,9 @@ const bench = async (deployFunc) => {
   const [ctc, deployGas] = await deployFunc();
   card["Deploy"] = deployGas.toNumber();
 
-  const g = async (addr, f, ...args) => {
-    const cWithAddr = ctc.attach(addr);
+  const g = async (acc, f, ...args) => {
+    //console.log("calling: ", f, "  with addr: ", await acc.getAddress())
+    const cWithAddr = ctc.connect(acc.networkAccount);
     const fn = cWithAddr[f];
     if(fn) {
       return (await (await fn(...args, gasLimit)).wait()).gasUsed.toNumber();
@@ -338,24 +345,29 @@ const bench = async (deployFunc) => {
     }
   }
 
-  card["mint_1"] = await g(addrDeploy, "mint", addr1, 1);
-  card["mint_2"] = await g(addrDeploy, "mint", addr1, 2);
-  card["mint_3"] = await g(addrDeploy, "mint", addr1, 3);
-  card["mint_4"] = await g(addrDeploy, "mint", addr1, 4);
-  card["mint_5"] = await g(addrDeploy, "mint", addr1, 5);
+  card["mint_1"] = await g(accDeploy, "mint", addr1, 1);
+  card["mint_2"] = await g(accDeploy, "mint", addr1, 2);
+  card["mint_3"] = await g(accDeploy, "mint", addr1, 3);
+  card["mint_4"] = await g(accDeploy, "mint", addr1, 4);
+  card["mint_5"] = await g(accDeploy, "mint", addr1, 5);
 
-  card["transferFrom"] = await g(addr1, "transferFrom", addr1, addr2, 1);
+  card["transferFrom"] = await g(acc1, "transferFrom", addr1, addr2, 1);
 
-  card["safeTransferFrom_noBytes_eoa"] = await g(addr1, "safeTransferFrom(address,address,uint256)", addr2, addr1, 1);
-  card["safeTransferFrom_bytes_eoa"] = await g(addr1, "safeTransferFrom(address,address,uint256,bytes)", addr1, addr2, 1, []);
+  card["safeTransferFrom_noBytes_eoa"] = await g(acc2, "safeTransferFrom(address,address,uint256)", addr2, addr1, 1);
+  card["safeTransferFrom_bytes_eoa"] = await g(acc1, "safeTransferFrom(address,address,uint256,bytes)", addr1, addr2, 1, []);
 
   const receiverCtc = await deployReceiver();
-  card["safeTransferFrom_bytes_ctc"] = await g(addr1, "safeTransferFrom(address,address,uint256,bytes)", addr1, receiverCtc.address, 1, []);
+  card["safeTransferFrom_bytes_ctc"] = await g(acc2, "safeTransferFrom(address,address,uint256,bytes)", addr2, receiverCtc.address, 1, []);
   await receiverCtc.transfer(ctc.address, addr2, 1, [], gasLimit);
-  card["safeTransferFrom_noBytes_ctc"] = await g(addr1, "safeTransferFrom(address,address,uint256)", addr1, receiverCtc.address, 1);
+  card["safeTransferFrom_noBytes_ctc"] = await g(acc2, "safeTransferFrom(address,address,uint256)", addr2, receiverCtc.address, 1);
   await receiverCtc.transfer(ctc.address, addr2, 1, [], gasLimit);
 
-  card["burn"] = await g(addr1, "burn", 3);
+  card["burn"] = await g(acc1, "burn", 3);
+
+  if(card["burn"] !== "N/A"){
+    // Test that re-minting after burning fails.
+    await assertFail(g(accDeploy, "mint", addr1, 3));
+  }
 
 
   return card;

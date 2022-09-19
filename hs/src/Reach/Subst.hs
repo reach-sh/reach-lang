@@ -81,7 +81,7 @@ instance Subst DLRemoteALGOOC where
   subst = return
 
 instance Subst DLRemoteALGO where
-  subst (DLRemoteALGO x y z w v u t) = DLRemoteALGO <$> subst x <*> subst y <*> subst z <*> subst w <*> subst v <*> subst u <*> subst t
+  subst (DLRemoteALGO x y z w v u t s) = DLRemoteALGO <$> subst x <*> subst y <*> subst z <*> subst w <*> subst v <*> subst u <*> subst t <*> subst s
 
 instance Subst AS.Value where
   subst = return

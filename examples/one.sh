@@ -1,6 +1,4 @@
-#!/bin/sh
-set -e
-
+#!/bin/sh -xe
 MODE="$1"
 e="$2"
 
@@ -20,18 +18,21 @@ echo
   if [ -f Makefile ] && has_target ; then
     make REACH=../../reach "$MODE"
   else
+    do_reach() {
+      sh -x ../../reach "$@"
+    }
     case "$MODE" in
       build)
-        ../../reach compile
+        do_reach compile
         ;;
       run)
-        ../../reach run
+        do_reach run
         ;;
       down)
-        ../../reach down
+        do_reach down
         ;;
       clean)
-        ../../reach clean
+        do_reach clean
         ;;
       *)
         echo "No such mode: $MODE."

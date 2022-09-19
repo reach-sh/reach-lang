@@ -38,7 +38,7 @@ function extractMode(x?: string | Env): string {
 
 // The connectorMode arg is optional;
 // It will use REACH_CONNECTOR_MODE if 0 args.
-export function loadStdlib(connectorModeOrEnv?: string | {[key: string]: string}): Stdlib_User<any, any, any, any, any, any, any, any, any, any> {
+export function loadStdlib(connectorModeOrEnv?: string | {[key: string]: string}): Stdlib_User<any, any, any, any, any, any, any, any, any, any, any> {
   const connectorModeStr = extractMode(connectorModeOrEnv);
   const connectorMode = canonicalizeConnectorMode(connectorModeStr);
   const connector = getConnector(connectorMode);
@@ -58,4 +58,8 @@ export function loadStdlib(connectorModeOrEnv?: string | {[key: string]: string}
   // also just inject ourselves into the window for ease of use
   window.reach = stdlib;
   return stdlib;
+}
+
+export function Reach(this: {}, connectorModeOrEnv?: string | {[key: string]: string}) {
+  Object.assign(this, loadStdlib(connectorModeOrEnv));
 }

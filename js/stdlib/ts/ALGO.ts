@@ -69,6 +69,12 @@ import {
   hasProp,
   makeParseCurrency,
   TransferOpts,
+  stdlibShared,
+  protectMnemonic,
+  protectSecretKey,
+  SecretKeyInput,
+  SecretKey,
+  Mnemonic
 } from './shared_impl';
 import {
   bigNumberify,
@@ -114,7 +120,6 @@ export type Ty = AnyALGO_Ty;
 // The unused ones are commented out
 export type Address = string
 // type RawAddress = Uint8Array;
-type SecretKey = Uint8Array; // length 64
 
 type TxnParamsRaw = {
   flatFee?: boolean,
@@ -358,7 +363,7 @@ interface ALGOHacks {
   makeTransferTxn: any,
   setFaucet: any,
 };
-interface ALGOStdlib extends Stdlib_User<Provider, ProviderEnv, ProviderName, Token, ContractInfo, Address, NetworkAccount, Ty, Backend, Account>, ALGOHacks {
+interface ALGOStdlib extends Stdlib_User<Provider, ProviderEnv, ProviderName, Token, ContractInfo, Address, NetworkAccount, Ty, Backend, Contract, Account>, ALGOHacks {
 };
 export const load = (): ALGOStdlib => {
 
@@ -2190,18 +2195,15 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             const step = await getCurrentStep_(ch);
             const vi = bigNumberToNumber(step);
             const vtys = vs[vi];
-            if ( ! vtys ) { throw Error(`no views for state ${step}`); }
-            const [ _, vvs ] = await getState_(getC, _ => vtys);
+            if (!vtys) { throw Error(`no views for state ${step}`); }
+            const vvs = (await getState_(getC, _ => vtys))[1];
             const vres = await decode(vi, vvs, args);
-            debug({vres});
+            debug({ vres });
             return isSafe ? ['Some', vres] : vres;
           } catch (e) {
             debug(`getView1`, v, k, 'error', e);
-            if (isSafe) {
-              return ['None', null];
-            } else {
-              throw Error(`View ${v}.${k} is not set.`);
-            }
+            if (!isSafe) { throw Error(`View ${v}.${k} is not set.`); }
+            return ['None', null];
           }
       };
       return { getView1, viewLib };
@@ -2444,7 +2446,9 @@ const canFundFromFaucet = async (): Promise<boolean> => {
 };
 
 const fundFromFaucet = async (acc: Account | Address, value: unknown) => {
-  console.error("Warning: your program uses stdlib.fundFromFaucet. That means it only works on Reach devnets!");
+  if (! hideWarnings()){
+    console.error("Warning: your program uses stdlib.fundFromFaucet. That means it only works on Reach devnets!");
+  }
   const faucet = await getFaucet();
   debug('fundFromFaucet');
   const tag = Math.round(Math.random() * (2 ** 32));
@@ -2508,20 +2512,16 @@ async function getDefaultAccount(): Promise<Account> {
 }
 
 /**
- * @param mnemonic 25 words, space-separated
+ * @param mnemonic 25 words, whitespace-separated
  */
-const newAccountFromMnemonic = async (mnemonic: string): Promise<Account> => {
-  return await connectAccount(algosdk.mnemonicToSecretKey(mnemonic));
-};
+const newAccountFromMnemonic = (phrase: Mnemonic): Promise<Account> =>
+  connectAccount(algosdk.mnemonicToSecretKey(protectMnemonic(phrase, 25)));
 
 /**
  * @param secret a Uint8Array, or its hex string representation
  */
-const newAccountFromSecret = async (secret: string | SecretKey): Promise<Account> => {
-  const sk = ethers.utils.arrayify(secret);
-  const mnemonic = algosdk.secretKeyToMnemonic(sk);
-  return await newAccountFromMnemonic(mnemonic);
-};
+const newAccountFromSecret = (sk: SecretKeyInput): Promise<Account> =>
+  newAccountFromMnemonic(algosdk.secretKeyToMnemonic(protectSecretKey(sk, 32)));
 
 const getNetworkTime = async (): Promise<BigNumber> => {
   const indexer = await getIndexer();
@@ -2707,7 +2707,7 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
   return { name, sym, id, mint, optOut };
 }
 
-  return {
+  return stdlibShared({
     ...stdlib,
     ...typeDefs,
     ...shared_user,
@@ -2730,6 +2730,6 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
     parseCurrency, minimumBalance, formatCurrency,
     reachStdlib, algosdk,
     connector, standardUnit, atomicUnit,
-    tokensAccepted,
-  };
+    tokensAccepted
+  });
 };

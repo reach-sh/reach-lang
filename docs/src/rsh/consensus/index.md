@@ -603,6 +603,8 @@ In addition, a remote function may be augmented with one of the following operat
   Returns a remote function that records the need for additional resources on Algorand.
   + `{!rsh} opts.fees` records extra fees.
     If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an insufficient fee error.
+  + `{!rsh} opts.accounts` records extra accounts.
+    If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an invalid account reference.
   + `{!rsh} opts.assets` records extra assets.
     If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an invalid asset reference.
   + `{!rsh} opts.apps` records extra applications.

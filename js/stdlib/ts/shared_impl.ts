@@ -23,7 +23,7 @@ import { process } from './shim';
 export {
   hexlify
 } from './shared_backend';
-import type { Arith } from './interfaces';
+import type { Arith, Stdlib_User } from './interfaces';
 
 type BigNumber = ethers.BigNumber;
 
@@ -281,6 +281,21 @@ export type EventStream<T> = {
   lastTime: () => Time,
   // why can't TS handle a function type as arg
   monitor: (f: any) => void
+}
+
+export const stdlibShared = 
+  <ContractInfo, 
+   Backend extends IBackend<any>, 
+   Account extends IAccount<any, any, any, any, any>, 
+   Contract extends IContract<ContractInfo, any, any, any>,
+   ConnectorStdlib extends
+     Omit<Stdlib_User<any, any, any, any, ContractInfo, any, any, any, Backend, Contract, Account>, "contract">
+  >(connectorStdlib: ConnectorStdlib) => 
+{
+  const contract = (bin: Backend, ctcInfo?: Promise<ContractInfo>): Promise<Contract> =>
+    connectorStdlib.createAccount().then(acc => acc.contract(bin, ctcInfo));
+  
+  return { ...connectorStdlib, contract };
 }
 
 export const stdVerifyContract =
@@ -1294,3 +1309,23 @@ export const canonicalToBytes = (bv: CBR_Bytes) =>
     : bv;
 
 export const isUint8Array = (val: any) => val?.constructor?.name === 'Uint8Array';
+
+export type SecretKeyInput = Uint8Array | string; // Or anything that is ethers.utils.DataHexStringOrArrayish
+export type SecretKey = Uint8Array;
+export type Mnemonic = string; // Space separated words
+
+export const protectSecretKey = (secret: SecretKeyInput, numBytes: number): SecretKey => {
+  const bytes = ethers.utils.arrayify(secret);
+  if (bytes.length !== numBytes) {
+    throw Error(`Malformed secret key, expected ${numBytes} bytes but got ${bytes.length}`);
+  }
+  return bytes;
+}
+
+export const protectMnemonic = (phrase: Mnemonic, numWords?: number): Mnemonic => {
+  const words = phrase.trim().split(/\s+/);
+  if (numWords && words.length !== numWords) {
+    throw Error(`Malformed mnemonic, expected ${numWords} words but got ${words.length}`);
+  }
+  return words.join(" ");
+}

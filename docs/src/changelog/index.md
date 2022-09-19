@@ -6,9 +6,21 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 ## 0.1.12: 2022/09 - present
 
 @{verRC("0.1.12")}
++ 2022/09/19: Added `accounts` field to `{!rsh} remote.ALGO`.
+
+@{rcHead("0.1.12-rc.1")}
+
++ 2022/09/15: Added `{!js} stdlib.contract`.
++ 2022/09/15: Added `{!js} new Reach(env?)`.
 
 @{rcHead("0.1.12-rc.0")}
 
++ 2022/09/15: **Backwards Incompatible**:
+  In 0.1.11-rc.6, we introduced the PeraWallet fallback for Algorand wallets.
+  This introduced a dependency of the standard library on React, which was too onerous.
+  We've removed it and thus, there is a slightly different way to enable PeraWallet as fallback.
+  We apologize for this incompatibility.
++ 2022/09/14: Added `{!rsh} mixin`.
 + 2022/08/31: Upgraded to Algorand node v3.9.2, indexer 2.14.0, SDK 1.20.0.
 + 2022/08/31: Algorand-only: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 
@@ -18,7 +30,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcHead("0.1.11-rc.10")}
 
-+ 2022/09/08: Added `Contract.fromAddress`.
++ 2022/09/08: Added `{!rsh} Contract.fromAddress`.
 
 @{rcHead("0.1.11-rc.9")}
 
@@ -27,6 +39,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 @{rcHead("0.1.11-rc.8")}
 
 + 2022/08/29: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
++ 2022/08/29: Modified the type of `{!js} T_Bytes` in the JavaScript standard library to allow `{!js} Uint8Array`s and sometimes produce them when the bytes produced cannot be represented as a UTF-8 encoded string.
 + 2022/08/29: Added `{!rsh} Bytes.fromHex`.
 + 2022/08/25: Ethereum-like-only: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
 + 2022/08/24: Added `{!rsh} StringDyn.concat` function and `{!rsh} StringDyn` cast application.

@@ -1,5 +1,9 @@
 #!/bin/sh
 
+if [ "$REACH_DEBUG" = "Y" ] ; then
+  set -x
+fi
+
 if [ ! "$REACH_ALLOW_SU" = '1' ] && [ "$(id -u)" -eq 0 ]; then
   echo "Reach isn't intended to be run with superuser privileges."
   echo

@@ -15,6 +15,10 @@ You import the Reach JavaScript standard library by writing
 ```js
 import { loadStdlib } from '@reach-sh/stdlib';
 const stdlib = loadStdlib();
+
+// or, equivalently
+import { Reach } from '@reach-sh/stdlib';
+const stdlib = new Reach(env);
 ```
 
 When you use `{!cmd} reach run` or `{!cmd} reach react`, you don't need to do anything else.
@@ -63,10 +67,14 @@ Otherwise, the value will be represented as `Uint8Array` byte array.
 
 # {#ref-frontends-js-loader} Loading the Standard Library
 
-@{ref("js", "loadStdlib")}
+@{ref("js", "loadStdlib")}@{ref("js", "Reach")}
 ```js
 import { loadStdlib } from '@reach-sh/stdlib';
 const stdlib = loadStdlib(env);
+
+// or, equivalently
+import { Reach } from '@reach-sh/stdlib';
+const stdlib = new Reach(env);
 ```
 
 Returns the standard library based on the provided `{!js} env`.
@@ -212,16 +220,18 @@ stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', WalletConnect }));
 ```
 
-Alternatively, you can bind it to the `ALGO_PeraConnect` export of `@reach-sh/stdlib`, then PeraConnect is used to connect to the [PeraWallet](https://perawallet.app/) for signing.
+Alternatively, you can call the `ALGO_MakePeraConnect` export of `@reach-sh/stdlib`, with `PeraWalletConnect` from `@perawallet/connect`, then PeraConnect is used to connect to the [PeraWallet](https://perawallet.app/) for signing.
 For example, this sets the wallet fallback to be PeraConnect and the Algorand TestNet:
 ```js
-import { ALGO_PeraConnect as PeraConnect } from '@reach-sh/stdlib';
+import { ALGO_MakePeraConnect as MakePeraConnect } from '@reach-sh/stdlib';
+import { PeraWalletConnect } from "@perawallet/connect";
 stdlib.setWalletFallback(stdlib.walletFallback({
-  providerEnv: 'TestNet', WalletConnect: PeraConnect }));
+  providerEnv: 'TestNet', WalletConnect: MakePeraConnect(PeraWalletConnect) }));
 ```
 
 This fallback exposes the underlying WalletConnect wrapper object as the `wc` property on the wallet.
 Furthermore, it supports using an existing WalletConnect wrapper object by providing the key `WalletConnect_wc` in the `{!js} stdlib.walletFallback` options object.
+(When you're using PeraConnect, the same object/keys/etc are used for the `PeraWalletConnect` object.)
 
 ---
 
@@ -475,11 +485,12 @@ You will probably not use these.
 ---
 @{ref("js", "newAccountFromSecret")}
 ```js
-stdlib.newAccountFromSecret(secret: string) => Promise<acc>
+stdlib.newAccountFromSecret(secret: string | UInt8Array) => Promise<Account>
 ```
 
 Returns a Promise for a Reach account abstraction for an account on the consensus network specified by the given secret.
-The details of the secret encoding are specified uniquely to the consensus network.
+The secret key must be either a hex string beginning with `{!js} '0x'`, or a `{!js} Uint8Array`.
+The number of bytes in the secret differs between connectors.
 
 Example:
 
@@ -495,11 +506,12 @@ The `acc` object `{!rsh} await`s the user to input the secret and then sets the 
 ---
 @{ref("js", "newAccountFromMnemonic")}
 ```js
-stdlib.newAccountFromMnemonic(phrase: string) => Promise<acc>
+stdlib.newAccountFromMnemonic(phrase: string) => Promise<Account>
 ```
 
 Returns a Promise for a Reach account abstraction for an account on the consensus network specified by the given mnemonic phrase.
-The details of the mnemonic phrase encoding are specified uniquely to the consensus network.
+The mnemonic phrase must be a string of whitespace-separated words from the BIP-39 English wordlist.
+The number of words required for a mnemonic differs between connectors.
 
 ---
 @{ref("js", "createAccount")}
@@ -831,13 +843,17 @@ The third thing you should do in a frontend is create a contract handle, so you 
 ---
 
 ```js
-acc.contract(bin, ?info) => ctc
+acc.contract(bin: Backend, info?: Promise<ContractInfo>) => Contract
+stdlib.contract(bin: Backend, info?: Promise<ContractInfo>) => Promise<Contract>
 ```
 
-Returns a Reach contract handle based on the `{!js} bin` argument provided with access to the account `{!js} acc`.
+Returns a Reach contract handle based on the `{!js} bin` argument, and optional `ContractInfo` provided.
+The `{!js} acc.contract` form will use the account `{!js} acc` to interact with the returned contract.
+The `{!js} stdlib.contract` form is equivalent to `{!js} (await stdlib.createAccount()).contract`, generating an account on demand
+(this means the contract can only be used for read-only operations).
 This `{!js} bin` argument is the module produced by `{!cmd} reach compile`.
 
-If `{!js} info` is provided, it must be a `{!rsh} Contract` value, or a `{!js} Promise` that eventually yields a `{!rsh} Contract` value.
+If `{!js} info` is provided, it must be a `{!js} ContractInfo` value, or a `{!js} Promise` that eventually yields a `{!js} ContractInfo` value.
 When provided, Reach will verify that the contract given actually matches the bytecode produced by `{!cmd} reach compile` and will error if it is different in any way.
 
 Typically, the deployer of a contract will not provide `{!js} info`, while users of a contract will.
@@ -851,16 +867,16 @@ This deployment can only happen one time, so subsequent attempts will fail with 
 This function may emit warnings if there is any danger, risk, or subtlety to using this contract on your chosen consensus network.
 You can omit this warning by setting `{!cmd} REACH_NO_WARN`, but we recommend that you do not.
 
-This function does not block.
+The `{!js} acc.contract` form of the function does not block.
 
 ---
 
 @{ref("js", "getInfo")}
 ```js
-ctc.getInfo() => Promise<Contract>
+ctc.getInfo() => Promise<ContractInfo>
 ```
 
-Returns a Promise for a `{!rsh} Contract` value that may be given to `{!js} contract` to construct a Reach contract handle for this contract.
+Returns a Promise for a `{!js} ContractInfo` value that may be given to `{!js} contract` to construct a Reach contract handle for this contract.
 This object may be stringified with `{!js} JSON.stringify` for printing and parsed again with `{!js} JSON.parse` without any loss of information.
 
 If `{!js} ctc` will deploy the program, then the Promise will only be resolved after the contract is actually deployed on the network,
