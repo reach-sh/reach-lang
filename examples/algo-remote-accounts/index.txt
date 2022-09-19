@@ -1,0 +1,12 @@
+Compiling "client"...
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 6 theorems; No failures!
+Compiling "server"...
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 10 theorems; No failures!
