@@ -133,7 +133,7 @@ instance Countable DLRemoteALGOOC where
   counts = const mempty
 
 instance Countable DLRemoteALGO where
-  counts (DLRemoteALGO x y z w v u t) = counts x <> counts y <> counts z <> counts w <> counts v <> counts u <> counts t
+  counts (DLRemoteALGO x y z w v u t s) = counts x <> counts y <> counts z <> counts w <> counts v <> counts u <> counts t <> counts s
 
 instance Countable AS.Value where
   counts = const mempty

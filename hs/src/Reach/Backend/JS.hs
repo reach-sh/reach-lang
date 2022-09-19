@@ -374,7 +374,7 @@ jsMapKey k =
 
 jsRemote :: SrcLoc -> DLRemote -> App Doc
 jsRemote at (DLRemote _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv _nnZero) malgo) = do
-  let DLRemoteALGO r_fees r_assets _r_addr2acc r_apps _r_oc r_strictPay _r_rawCall = malgo
+  let DLRemoteALGO r_fees r_accounts r_assets _r_addr2acc r_apps _r_oc r_strictPay _r_rawCall = malgo
   fees' <- jsArg r_fees
   let notStaticZero = if r_strictPay then const True else not . staticZero
   let pay_ks_nz = filter (notStaticZero . fst) pay_ks
@@ -384,7 +384,7 @@ jsRemote at (DLRemote _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv 
   bills' <- l2n $ nRecvCount <> nnRecv
   toks' <- mapM jsArg $ nnRecv <> map snd pay_ks_nz <> r_assets
   let isAddress = (==) T_Address . argTypeOf
-  accs' <- mapM jsArg $ filter isAddress as
+  accs' <- mapM jsArg $ (filter isAddress as) <> r_accounts
   apps' <- mapM jsArg r_apps
   return $ parens $ jsObject $ M.fromList $
     [ (("pays"::String), pays')

@@ -748,6 +748,7 @@ data DLRemoteALGOOC
 
 data DLRemoteALGO = DLRemoteALGO
   { ralgo_fees :: DLArg
+  , ralgo_accounts :: [DLArg]
   , ralgo_assets :: [DLArg]
   , ralgo_addr2acc :: Bool
   , ralgo_apps :: [DLArg]
@@ -758,7 +759,7 @@ data DLRemoteALGO = DLRemoteALGO
   deriving (Eq, Ord)
 
 zDLRemoteALGO :: DLRemoteALGO
-zDLRemoteALGO = DLRemoteALGO argLitZero mempty False mempty RA_NoOp False False
+zDLRemoteALGO = DLRemoteALGO argLitZero mempty mempty False mempty RA_NoOp False False
 
 instance PrettySubst DLRemoteALGO where
   prettySubst (DLRemoteALGO {..}) = do
