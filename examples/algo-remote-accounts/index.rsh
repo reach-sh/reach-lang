@@ -15,7 +15,7 @@ export const client = Reach.App(() => {
     doPay: Fun([UInt], Null),
   });
 
-  r.doPay.pay(amount)(amount);
+  r.doPay.pay(amount) .ALGO({fees: 1, accounts: [payTo]})(amount);
   commit();
 
   exit();
@@ -43,6 +43,9 @@ export const server = Reach.App(() => {
   const [[amount], k] = call(I.doPay).pay((amount) => amount);
   transfer(amount).to(payTo);
   k(null);
+  commit();
+
+  A.publish();
   commit();
 
   exit();
