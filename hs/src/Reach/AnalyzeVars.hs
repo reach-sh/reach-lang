@@ -102,7 +102,7 @@ instance FreeVars DLRemoteALGOOC where
   freeVars = const mempty
 
 instance FreeVars DLRemoteALGO where
-  freeVars (DLRemoteALGO a b z w v u t) = freeVars a <> freeVars b <> freeVars z <> freeVars w <> freeVars v <> freeVars u <> freeVars t
+  freeVars (DLRemoteALGO a b c z w v u t) = freeVars a <> freeVars b <> freeVars c <> freeVars z <> freeVars w <> freeVars v <> freeVars u <> freeVars t
 
 instance FreeVars DLTokenNew where
   freeVars (DLTokenNew a b c d e f) = freeVars [a, b, c, d, e] <> freeVars f
