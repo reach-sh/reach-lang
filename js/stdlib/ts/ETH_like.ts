@@ -901,9 +901,18 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return md;
   };
 
+  const appOptedIn = async (_ctc: Contract): Promise<boolean> => {
+    return true;
+  };
+  const appOptIn = async (_ctc: Contract): Promise<void> => {
+    return;
+  };
+
   const accObj = { networkAccount, getAddress: selfAddress, stdlib, setDebugLabel,
                    tokenAccepted, tokensAccepted: tokensAccepted_, tokenAccept, tokenMetadata,
-                   contract, setGasLimit, getGasLimit, setStorageLimit, getStorageLimit };
+                   contract, setGasLimit, getGasLimit, setStorageLimit, getStorageLimit,
+                   appOptIn, appOptedIn,
+                 };
   const acc = accObj as unknown as Account;
   const balanceOf_ = (token?: Token): Promise<BigNumber> => balanceOf(acc, token);
   const balancesOf_ = (tokens: Array<Token | null>): Promise<Array<BigNumber>> => balancesOf(acc, tokens);
@@ -1176,6 +1185,13 @@ function setCustomHttpEventHandler() {
   console.warn(`setCustomHttpEventHandler is not supported on this connector`);
 }
 
+const accountAppOptIn = async (_acc: Account, _ctc: Contract): Promise<void> => {
+  return;
+};
+const accountAppOptedIn = async (_acc: Account, _ctc: Contract): Promise<boolean> => {
+  return true;
+};
+
 // TODO: restore type ann once types are in place
 // const ethLike: EthLike = {
 const ethLike = {
@@ -1194,6 +1210,8 @@ const ethLike = {
   balanceOf,
   balancesOf,
   minimumBalanceOf,
+  accountAppOptedIn,
+  accountAppOptIn,
   transfer,
   connectAccount,
   newAccountFromSecret,
