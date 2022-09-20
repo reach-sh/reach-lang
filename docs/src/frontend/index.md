@@ -697,6 +697,26 @@ Returns a Promise for an array of tokens that are accepted by `acc`.
 On networks which do not keep track of this information (e.g. Ethereum), this returns an empty array.
 
 ---
+@{ref("js", "appOptIn")}@{ref("js", "stdlib.accountAppOptIn")}
+```js
+acc.appOptIn(contract) => Promise<void>
+stdlib.accountAppOptIn(account, contract) => Promise<void>
+```
+
+This does nothing on some networks.
+On others, it opts into the given `contract`.
+
+---
+@{ref("js", "appOptedIn")}@{ref("js", "stdlib.accountAppOptedIn")}
+```js
+acc.appOptedIn(contract) => Promise<boolean>
+stdlib.accountAppOptedIn(account, contract) => Promise<boolean>
+```
+
+On some networks this always returns `true`.
+On others, it checks whether the account has opted into `contract`.
+
+---
 @{ref("js", "tokenMetadata")}
 ```js
 acc.tokenMetadata(token) => Promise<object>
