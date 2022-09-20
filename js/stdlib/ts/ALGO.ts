@@ -1419,6 +1419,28 @@ const getDeletedApplicationInfoM = async (id: number): Promise<OrExn<AppInfo>> =
   }
 }
 
+
+const getLocalState_ = async (addr: Address, ApplicationID: BigNumber): Promise<AppStateKVs | undefined> => {
+  const dhead = 'getLocalState';
+  if (await nodeCanRead()) {
+    const client = await getAlgodClient();
+    const query = client.accountApplicationInformation(addr, bigNumberToNumber(ApplicationID)) as unknown as ApiCall<AccountApplicationInfo>;
+    const accAppInfo = await doQuery_('contract.getLocalState', query, 0, _ => { return { val: undefined }; });
+    return accAppInfo?.['app-local-state']?.['key-value'];
+  } else {
+    const indexer = await getIndexer();
+    const query = indexer
+      .lookupAccountAppLocalStates(addr)
+      .applicationID(bigNumberToNumber(ApplicationID)) as unknown as ApiCall<IndexerAccountAppLocalStatesRes>;
+    const appLocalStatesRes = await doQuery_(dhead, query);
+    // As of indexer version 2.11.1 (at least, possibly higher versions too),
+    // apps-local-states can come back 'null', equivalent to an empty array
+    const appsLocalStates = appLocalStatesRes['apps-local-states'] ?? [];
+    const appLocalState = appsLocalStates.find(app => ApplicationID.eq(app['id']));
+    return appLocalState?.['key-value'];
+  }
+};
+
 const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   const thisAcc = networkAccount;
   let label = thisAcc.addr.substring(2, 6);
@@ -1496,44 +1518,15 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
         // Read map data
         const getLocalState = async (addr: Address): Promise<AppStateKVs | undefined> => {
-          const dhead = 'getLocalState';
-          if (await nodeCanRead()) {
-            const client = await getAlgodClient();
-            const query = client.accountApplicationInformation(addr, bigNumberToNumber(ApplicationID)) as unknown as ApiCall<AccountApplicationInfo>;
-            const accAppInfo = await doQuery_('contract.getLocalState', query, 0, _ => { return { val: undefined }; });
-            return accAppInfo?.['app-local-state']?.['key-value'];
-          } else {
-            const indexer = await getIndexer();
-            const query = indexer
-              .lookupAccountAppLocalStates(addr)
-              .applicationID(bigNumberToNumber(ApplicationID)) as unknown as ApiCall<IndexerAccountAppLocalStatesRes>;
-            const appLocalStatesRes = await doQuery_(dhead, query);
-            // As of indexer version 2.11.1 (at least, possibly higher versions too),
-            // apps-local-states can come back 'null', equivalent to an empty array
-            const appsLocalStates = appLocalStatesRes['apps-local-states'] ?? [];
-            const appLocalState = appsLocalStates.find(app => ApplicationID.eq(app['id']));
-            return appLocalState?.['key-value'];
-          }
-        };
+          return await getLocalState_(addr, ApplicationID);
+        }
 
         // Application Local State Opt-in
         const didOptIn = async (): Promise<boolean> =>
-          ((await getLocalState(thisAcc.addr)) !== undefined);
-        const doOptIn = async (): Promise<void> => {
-          const dhead = `${label} doOptIn`;
-          debug(dhead);
-          await sign_and_send_sync(
-            dhead,
-            thisAcc,
-            toWTxn(algosdk.makeApplicationOptInTxn(
-              thisAcc.addr, await getTxnParams(dhead),
-              bigNumberToNumber(ApplicationID),
-              undefined, undefined, undefined, undefined,
-              NOTE_Reach)));
-          // We are commenting this out because the above ^ might not be
-          // propagated to Indexer on the CI fast enough.
-          // assert(await didOptIn(), `didOptIn after doOptIn`);
-        };
+          (await doAccountAppOptedIn(thisAcc, ApplicationID));
+        const doOptIn = async (): Promise<void> =>
+          (await doAccountAppOptIn(thisAcc, ApplicationID));
+
         let ensuredOptIn: boolean = false;
         const ensureOptIn = async (): Promise<void> => {
           if ( ! ensuredOptIn ) {
@@ -2302,8 +2295,13 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   const acc = accObj as unknown as Account;
   const balanceOf_ = (token?: Token): Promise<BigNumber> => balanceOf(acc, token);
   const balancesOf_ = (tokens: Array<Token | null>): Promise<Array<BigNumber>> => balancesOf(acc, tokens);
+  const appOptIn = async (ctc: Contract): Promise<void> => await accountAppOptIn(acc, ctc);
+  const appOptedIn = async (ctc: Contract): Promise<boolean> => await accountAppOptedIn(acc, ctc);
 
-  return stdAccount({ ...accObj, balanceOf: balanceOf_, balancesOf: balancesOf_ });
+  return stdAccount({
+    ...accObj, balanceOf: balanceOf_, balancesOf: balancesOf_,
+    appOptIn, appOptedIn,
+  });
 };
 
 const tokensAccepted = async (acc: Account | Address): Promise<Array<Token>> => {
@@ -2424,6 +2422,31 @@ const balancesOf = async (acc: Account | Address, tokens: Array<Token|null>): Pr
 
 const balanceOf = async (acc: Account | Address, token?: Token): Promise<BigNumber> => {
   return (await balanceOfM(acc, token || null)) || bigNumberify(0);
+};
+
+const doAccountAppOptedIn = async (nacc: NetworkAccount, ctcId: BigNumber): Promise<boolean> => {
+  const ls = await getLocalState_(nacc.addr, ctcId);
+  return ls !== undefined;
+}
+const accountAppOptedIn = async (acc: Account, ctc: Contract): Promise<boolean> => {
+  return await doAccountAppOptedIn(acc.networkAccount, await ctc.getInfo());
+}
+const doAccountAppOptIn = async (nacc: NetworkAccount, ctcId: BigNumber): Promise<void> => {
+  const dhead = "accountAppOptIn";
+  await sign_and_send_sync(
+    dhead,
+    nacc,
+    toWTxn(algosdk.makeApplicationOptInTxn(
+      nacc.addr, await getTxnParams(dhead),
+      bigNumberToNumber(ctcId),
+      undefined, undefined, undefined, undefined,
+      NOTE_Reach)));
+  // We are commenting this out because the above ^ might not be
+  // propagated to Indexer on the CI fast enough.
+  // assert(await accountAppOptedIn(acc, ctc), `didOptIn after doOptIn`);
+};
+const accountAppOptIn = async (acc: Account, ctc: Contract): Promise<void> => {
+  return await doAccountAppOptIn(acc.networkAccount, await ctc.getInfo());
 };
 
 const createAccount = async (): Promise<Account> => {
@@ -2725,6 +2748,7 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
     getFaucet, setFaucet, canFundFromFaucet, fundFromFaucet,
     providerEnvByName,
     transfer, connectAccount, minimumBalanceOf, balancesOf, balanceOf,
+    accountAppOptedIn, accountAppOptIn,
     createAccount, newTestAccount, newTestAccounts, getDefaultAccount,
     newAccountFromMnemonic, newAccountFromSecret,
     getNetworkTime, getTimeSecs, getNetworkSecs,
