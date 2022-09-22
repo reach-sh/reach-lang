@@ -6,10 +6,10 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 ## 0.1.12: 2022/09 - present
 
 @{verRC("0.1.12")}
-+ 2022/09/19: Added `accounts` field to `{!rsh} remote.ALGO`.
 
 @{rcHead("0.1.12-rc.1")}
 
++ 2022/09/19: Added `accounts` field to `{!rsh} remote.ALGO`.
 + 2022/09/15: Added `{!js} stdlib.contract`.
 + 2022/09/15: Added `{!js} new Reach(env?)`.
 
