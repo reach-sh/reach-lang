@@ -225,6 +225,7 @@ export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, Conn
   getABI: (x?:boolean) => unknown,
   setupView: ISetupView<ContractInfo, VerifyResult, ConnectorTy>,
   setupEvents: ISetupEvent<ContractInfo, VerifyResult>,
+  types: { [key: string]: any }
   givenInfoP: (Promise<ContractInfo>|undefined)
   _setup: (args: ISetupArgs<ContractInfo, VerifyResult>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
 } & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, (SpecificKeys)>;
@@ -235,6 +236,7 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
   getContractAddress: () => Promise<CBR_Address>,
   // backend-specific
   getABI: (x?:boolean) => unknown,
+  getInternalState: () => Promise<{[key: string]: any }>;
   participants: ParticipantMap,
   p: ParticipantMap
   views: ViewMap,
@@ -283,18 +285,18 @@ export type EventStream<T> = {
   monitor: (f: any) => void
 }
 
-export const stdlibShared = 
-  <ContractInfo, 
-   Backend extends IBackend<any>, 
-   Account extends IAccount<any, any, any, any, any>, 
+export const stdlibShared =
+  <ContractInfo,
+   Backend extends IBackend<any>,
+   Account extends IAccount<any, any, any, any, any>,
    Contract extends IContract<ContractInfo, any, any, any>,
    ConnectorStdlib extends
      Omit<Stdlib_User<any, any, any, any, ContractInfo, any, any, any, Backend, Contract, Account>, "contract">
-  >(connectorStdlib: ConnectorStdlib) => 
+  >(connectorStdlib: ConnectorStdlib) =>
 {
   const contract = (bin: Backend, ctcInfo?: Promise<ContractInfo>): Promise<Contract> =>
     connectorStdlib.createAccount().then(acc => acc.contract(bin, ctcInfo));
-  
+
   return { ...connectorStdlib, contract };
 }
 
@@ -322,7 +324,7 @@ export const stdContract =
   <ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
     stdContractArgs: IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy>):
   IContract<ContractInfo, RawAddress, Token, ConnectorTy> => {
-  const { bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP } = stdContractArgs;
+  const { bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, types, givenInfoP } = stdContractArgs;
 
   type SomeSetupArgs = Pick<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo"|"getInfo")>;
   const { setInfo, getInfo }: SomeSetupArgs = (() => {
@@ -387,6 +389,13 @@ export const stdContract =
 
   const views = mkViews(true);
   const unsafeViews = mkViews(false);
+
+  const getInternalState = async () => {
+    const { views } = bin._getViews({ reachStdlib: stdlib }, viewLib);
+    return objectMap(views, (_, tys) => {
+      return types.T_Tuple(tys);
+    });
+  }
 
   const participants = objectMap(bin._Participants, ((pn:string, p:any) => {
       void(pn);
@@ -465,6 +474,7 @@ export const stdContract =
     getInfo,
     getContractAddress: (() => _initialize().getContractAddress()),
     participants, p: participants,
+    getInternalState,
     views, v: views,
     getViews: () => {
       console.log(`WARNING: ctc.getViews() is deprecated; use ctc.views or ctc.v instead.`);

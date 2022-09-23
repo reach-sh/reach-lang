@@ -44,6 +44,7 @@ export interface BackendTy<T extends CBR_Val> {
   name: string,
   canonicalize: (uv: unknown) => T,
   defaultValue: T,
+  toString: () => string,
 };
 
 export const BV_Null: CBR_Null = null;

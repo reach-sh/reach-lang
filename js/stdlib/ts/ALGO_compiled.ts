@@ -53,26 +53,29 @@ export interface ALGO_Ty<BV extends CBR_Val> extends BackendTy<BV> {
   netName: string,
 };
 
+const instAlgoTy = (ty: any) =>
+  ({ ...ty, toString: () => ty.netName });
+
 export const digest =
   makeDigest('sha256', (ts:any[], vs:any[]) => T_Tuple(ts).toNet(vs));
 
-export const T_Null: ALGO_Ty<CBR_Null> = {
+export const T_Null: ALGO_Ty<CBR_Null> = instAlgoTy({
   ...CBR.BT_Null,
   netSize: 0,
   toNet: (bv: CBR_Null): NV => (void(bv), new Uint8Array([])),
   fromNet: (nv: NV): CBR_Null => (void(nv), null),
   netName: 'byte[0]',
-}
+})
 
-export const T_Bool: ALGO_Ty<CBR_Bool> = {
+export const T_Bool: ALGO_Ty<CBR_Bool> = instAlgoTy({
   ...CBR.BT_Bool,
   netSize: 1,
   toNet: (bv: CBR_Bool): NV => new Uint8Array([bv ? 1 : 0]),
   fromNet: (nv: NV): CBR_Bool => nv[0] == 1,
   netName: 'byte', // XXX 'bool'
-}
+})
 
-export const T_UInt: ALGO_Ty<CBR_UInt> = {
+export const T_UInt: ALGO_Ty<CBR_UInt> = instAlgoTy({
   ...CBR.BT_UInt(UInt_max),
   netSize: 8, // UInt64
   toNet: (bv: CBR_UInt): NV => {
@@ -88,9 +91,9 @@ export const T_UInt: ALGO_Ty<CBR_UInt> = {
     return ethers.BigNumber.from(nv.slice(0, 8));
   },
   netName: 'uint64',
-}
+})
 
-export const T_UInt256: ALGO_Ty<CBR_UInt> = {
+export const T_UInt256: ALGO_Ty<CBR_UInt> = instAlgoTy({
   ...CBR.BT_UInt(UInt256_max),
   netSize: 32, // UInt
   toNet: (bv: CBR_UInt): NV => {
@@ -106,7 +109,7 @@ export const T_UInt256: ALGO_Ty<CBR_UInt> = {
     return ethers.BigNumber.from(nv.slice(0, 32));
   },
   netName: 'uint256',
-}
+})
 
 /** @description For arbitrary utf8 strings */
 const stringyNet = (len:number) => ({
@@ -131,14 +134,14 @@ export const bytestringyNet = (len:number) => ({
   }
 });
 
-export const T_Bytes = (len:number): ALGO_Ty<CBR_Bytes> => ({
+export const T_Bytes = (len:number): ALGO_Ty<CBR_Bytes> => instAlgoTy({
   ...CBR.BT_Bytes(len),
   ...stringyNet(len),
   netSize: bigNumberToNumber(len),
   netName: `byte[${len}]`,
 });
 
-export const T_BytesDyn: ALGO_Ty<CBR_Bytes> = ({
+export const T_BytesDyn: ALGO_Ty<CBR_Bytes> = instAlgoTy({
   ...CBR.BT_BytesDyn,
   toNet: canonicalToBytes,
   fromNet: (nv: NV): CBR_Bytes => (
@@ -148,7 +151,7 @@ export const T_BytesDyn: ALGO_Ty<CBR_Bytes> = ({
   netName: `byte[]`,
 });
 
-export const T_StringDyn: ALGO_Ty<CBR_Bytes> = ({
+export const T_StringDyn: ALGO_Ty<CBR_Bytes> = instAlgoTy({
   ...CBR.BT_StringDyn,
   toNet: canonicalToBytes,
   fromNet: (nv: NV): CBR_Bytes => (
@@ -158,11 +161,11 @@ export const T_StringDyn: ALGO_Ty<CBR_Bytes> = ({
   netName: `string`,
 });
 
-export const T_Digest: ALGO_Ty<CBR_Digest> = {
+export const T_Digest: ALGO_Ty<CBR_Digest> = instAlgoTy({
   ...CBR.BT_Digest,
   ...bytestringyNet(32),
   netName: `digest`,
-};
+});
 
 export const addressToHex = (x: string): string =>
   '0x' + Buffer.from(algosdk.decodeAddress(x).publicKey).toString('hex');
@@ -193,7 +196,7 @@ function addressUnwrapper(x: any): string {
    : addressToHex(addr);
 };
 
-export const T_Address: ALGO_Ty<CBR_Address> = {
+export const T_Address: ALGO_Ty<CBR_Address> = instAlgoTy({
   ...CBR.BT_Address,
   ...bytestringyNet(32),
   netSize: 32,
@@ -204,12 +207,12 @@ export const T_Address: ALGO_Ty<CBR_Address> = {
     return hs.padEnd(32*2+2, '0');
   },
   netName: `address`,
-};
+});
 
-export const T_Contract: ALGO_Ty<Contract> = {
+export const T_Contract: ALGO_Ty<Contract> = instAlgoTy({
   ...T_UInt,
   name: 'Contract',
-};
+});
 
 export const T_Array = (
   co: ALGO_Ty<CBR_Val>,
@@ -220,16 +223,16 @@ export const T_Array = (
   const asTuple = T_Tuple(new Array(size).fill(co));
   debug('T_Array', asTuple);
   const { netSize, toNet, fromNet } = asTuple;
-  return {
+  return instAlgoTy({
     ...CBR.BT_Array(co, size),
     netSize, toNet, fromNet,
     netName: `${co.netName}[${size}]`,
-  };
+  });
 };
 
 export const T_Tuple = (
   cos: Array<ALGO_Ty<CBR_Val>>,
-): ALGO_Ty<CBR_Tuple> => ({
+): ALGO_Ty<CBR_Tuple> => instAlgoTy({
   ...CBR.BT_Tuple(cos),
   netSize: (
     cos.reduce(((acc:number, co:ALGO_Ty<CBR_Val>): number =>
@@ -257,7 +260,7 @@ export const T_Tuple = (
 
 export const T_Struct = (
   cos: Array<[string, ALGO_Ty<CBR_Val>]>,
-): ALGO_Ty<CBR_Struct> => ({
+): ALGO_Ty<CBR_Struct> => instAlgoTy({
   ...CBR.BT_Struct(cos),
   netSize: (
     cos.reduce((acc, co) => acc + co[1].netSize, 0)
@@ -287,7 +290,7 @@ export const T_Object = (
   const netSize =
     cos.reduce((acc, co) => acc + co.netSize, 0);
   const {ascLabels} = labelMaps(coMap);
-  return {
+  return instAlgoTy({
     ...CBR.BT_Object(coMap),
     netSize,
     toNet: (bv: CBR_Object): NV => {
@@ -310,7 +313,7 @@ export const T_Object = (
       return obj;
     },
     netName: `(${cos.map(c => c.netName).join(',')})`,
-  }
+  })
 };
 
 // 1 byte for the label
@@ -325,7 +328,7 @@ export const T_Data = (
   const netSize = valSize + 1;
   debug(`T_Data`, { cos, cosSizes, valSize, netSize });
   const {ascLabels, labelMap} = labelMaps(coMap);
-  return {
+  return instAlgoTy({
     ...CBR.BT_Data(coMap),
     netSize,
     toNet: ([label, val]: CBR_Data): NV => {
@@ -347,7 +350,7 @@ export const T_Data = (
       return [label, val];
     },
     netName: `(byte,byte[${valSize}])`,
-  }
+  })
 }
 
 export const addressEq = mkAddressEq(T_Address);

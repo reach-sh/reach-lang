@@ -903,6 +903,14 @@ When the `{!js} showFull` argument is not `{!js} true`, internal implementation
 details are omitted.
 
 ---
+@{ref("js", "getInternalState")}
+```js
+ctc.getInternalState() => Promise<{ [key: string], ReachType }>
+```
+
+Returns a mapping that associates the steps of a `{!js} contract` to the `{!js} ReachType` of its internal state variables.
+
+---
 @{ref("js", "deploy")}
 ```js
 acc.deploy(bin) => ctc
@@ -1279,7 +1287,7 @@ stdlib.protect(t, x) => x
 Asserts that value `{!js} x` has Reach type `{!js} t`. An exception is thrown if this is not the case.
 
 ---
-@{ref("js", "T_Null")}@{ref("js", "T_Bool")}@{ref("js", "T_UInt")}@{ref("js", "T_Bytes")}@{ref("js", "T_Address")}@{ref("js", "T_Array")}@{ref("js", "T_Tuple")}@{ref("js", "T_Object")}
+@{ref("js", "T_Null")}@{ref("js", "T_Bool")}@{ref("js", "T_UInt")}@{ref("js", "T_Bytes")}@{ref("js", "T_Address")}@{ref("js", "T_Array")}@{ref("js", "T_Tuple")}@{ref("js", "T_Object")}@{ref("js", "ReachType")}
 ```js
 stdlib.T_Null // : ReachType
 stdlib.T_Bool // : ReachType
@@ -1296,6 +1304,14 @@ stdlib.T_Data({Variant: ReachType ...}) // : ReachType
 ```
 
 Each of these represent the corresponding Reach type.
+
+---
+@{ref("js", "toString")}
+```js
+ReachType.toString() => string
+```
+
+Returns the corresponding connector type for a given `{!js} ReachType`.
 
 ---
 @{ref("js", "assert")}
