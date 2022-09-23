@@ -84,7 +84,6 @@ import type { // =>
   Stdlib_Backend
 } from './interfaces';
 import { setQueryLowerBound, getQueryLowerBound, formatWithDecimals } from './shared_impl';
-import { typeDefs } from './ETH_compiled';
 export { setQueryLowerBound, getQueryLowerBound };
 
 // ****************************************************************************
@@ -794,8 +793,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return { getContractInfo, getContractAddress, getContractCompanion, getBalance, getCurrentStep, sendrecv, recv, getState, apiMapRef, simTokenAccepted };
     };
 
-    const types = typeDefs;
-
     const setupView = (setupViewArgs: SetupViewArgs) => {
       const eq = newEventQueue();
       const getC = makeGetC(setupViewArgs, eq);
@@ -850,7 +847,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     };
     const getABI = stdGetABI(ABI);
 
-    return stdContract({ bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP, types });
+    return stdContract({ bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
   };
 
   function setDebugLabel(newLabel: string): Account {

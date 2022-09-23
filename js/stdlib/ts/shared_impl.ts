@@ -225,7 +225,6 @@ export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, Conn
   getABI: (x?:boolean) => unknown,
   setupView: ISetupView<ContractInfo, VerifyResult, ConnectorTy>,
   setupEvents: ISetupEvent<ContractInfo, VerifyResult>,
-  types: { [key: string]: any }
   givenInfoP: (Promise<ContractInfo>|undefined)
   _setup: (args: ISetupArgs<ContractInfo, VerifyResult>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
 } & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, (SpecificKeys)>;
@@ -324,7 +323,7 @@ export const stdContract =
   <ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
     stdContractArgs: IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy>):
   IContract<ContractInfo, RawAddress, Token, ConnectorTy> => {
-  const { bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, types, givenInfoP } = stdContractArgs;
+  const { bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP } = stdContractArgs;
 
   type SomeSetupArgs = Pick<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo"|"getInfo")>;
   const { setInfo, getInfo }: SomeSetupArgs = (() => {
@@ -393,7 +392,8 @@ export const stdContract =
   const getInternalState = async () => {
     const { views } = bin._getViews({ reachStdlib: stdlib }, viewLib);
     return objectMap(views, (_, tys) => {
-      return types.T_Tuple(tys);
+      // @ts-ignore
+      return stdlib.T_Tuple(tys);
     });
   }
 
