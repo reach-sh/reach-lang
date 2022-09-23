@@ -34,6 +34,8 @@ echo
       clean)
         do_reach clean
         ;;
+      measure)
+        ../../scripts/measure-size.mjs --dir ./
       *)
         echo "No such mode: $MODE."
         exit 1

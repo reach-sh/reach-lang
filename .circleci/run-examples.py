@@ -12,6 +12,7 @@ def cmd(command, redirect=None, timeout=None):
 def run_example(name):
   artifact_name = f"{connector}.{name}"
   artifact_path = f"/tmp/artifacts/{artifact_name}"
+  artifact_measure_path = f"{artifact_path}.size.json"
   start_time = time.time()
 
   with open(artifact_path, "w") as artifact:
@@ -28,6 +29,8 @@ def run_example(name):
       else:
         status = "fail"
         outcome = f"{name} failed"
+      with open(artifact_measure_path, "w") as artifact_measure:
+        cmd(f'./one.sh measure "{name}"', redirect=artifact_measure)
     else:
       status = "fail"
       outcome = f"{name} failed to build"

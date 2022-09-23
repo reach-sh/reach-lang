@@ -83,6 +83,9 @@ connector("fake", "ALGO")
 connector("fake", "ETH")
 connector("fake", "CFX")
 
+
+add_build_job("merge-size-measurements", {"requires": "examples.ETH"})
+
 add_build_job("build-sink", { "requires": build_sink_deps })
 
 yaml.dump(config, Path("config.gen.yml"))
