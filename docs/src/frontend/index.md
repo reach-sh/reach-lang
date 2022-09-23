@@ -1281,7 +1281,7 @@ The standard library provides a number of utilities functions for interacting wi
 ---
 @{ref("js", "stdlib.protect")}@{ref("js", "protect")}
 ```js
-stdlib.protect(t, x) => x
+stdlib.protect(t:ReachType, x:t) => x
 ```
 
 Asserts that value `{!js} x` has Reach type `{!js} t`. An exception is thrown if this is not the case.
@@ -1291,7 +1291,7 @@ Asserts that value `{!js} x` has Reach type `{!js} t`. An exception is thrown if
 ```js
 stdlib.T_Null // : ReachType
 stdlib.T_Bool // : ReachType
-stdlib.T_UInt // ReachType
+stdlib.T_UInt // : ReachType
 stdlib.T_Bytes(number) // : ReachType
 stdlib.T_BytesDyn // : ReachType
 stdlib.T_StringDyn // : ReachType
@@ -1311,7 +1311,9 @@ Each of these represent the corresponding Reach type.
 ReachType.toString() => string
 ```
 
-Returns the corresponding connector type for a given `{!js} ReachType`.
+Returns a string representation for a given `{!js} ReachType`.
+This representation is consistent with the loaded connector's ABI.
+For example, on ALGO, `{!js} stdlib.T_UInt.toString()` returns `'uint64'`, but `'uint256'` on ETH.
 
 ---
 @{ref("js", "assert")}
@@ -1387,8 +1389,8 @@ These are additional conversion and comparison utilities.
 ---
 @{ref("js", "digest")}
 ```js
-stdlib.digest(ty:Type, v:ty) => Digest
-stdlib.digest(tys:Type[], vs:tys) => Digest
+stdlib.digest(ty:ReachType, v:ty) => Digest
+stdlib.digest(tys:ReachType[], vs:[tys]) => Digest
 ```
 
 Hashes the values.
