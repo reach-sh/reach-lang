@@ -78,31 +78,34 @@ const digest = makeDigest('keccak256', (ts:any[], vs:any[]) => {
 
 const V_Null: CBR_Null = null;
 
+const instEthTy = (ty: any) =>
+  ({ ...ty, toString: () => ty.paramType });
+
 // null is represented in solidity as false
-const T_Null: ETH_Ty<CBR_Null, false> = {
+const T_Null: ETH_Ty<CBR_Null, false> = instEthTy({
   ...CBR.BT_Null,
   munge: (bv: CBR_Null): false => (void(bv), false),
   unmunge: (nv: false): CBR_Null => (void(nv), V_Null),
   paramType: 'bool',
-};
+});
 
-const T_Bool: ETH_Ty<CBR_Bool, boolean> = {
+const T_Bool: ETH_Ty<CBR_Bool, boolean> = instEthTy({
   ...CBR.BT_Bool,
   munge: (bv: CBR_Bool): boolean => bv,
   unmunge: (nv: boolean): CBR_Bool => V_Bool(nv),
   paramType: 'bool',
-};
+});
 
 const V_Bool = (b: boolean): CBR_Bool => {
   return T_Bool.canonicalize(b);
 };
 
-const T_UInt: ETH_Ty<CBR_UInt, BigNumber> = {
+const T_UInt: ETH_Ty<CBR_UInt, BigNumber> = instEthTy({
   ...CBR.BT_UInt(UInt_max),
   munge: (bv: CBR_UInt): BigNumber => bigNumberify(bv),
   unmunge: (nv: BigNumber): CBR_UInt => V_UInt(nv),
   paramType: 'uint256',
-};
+});
 
 const T_UInt256 = T_UInt;
 
@@ -166,7 +169,7 @@ const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, ETH_Bytes> => {
         : `tuple(${fs.join(',')})`;
     })(),
   };
-  return me;
+  return instEthTy(me);
 };
 
 type ETH_BytesDyn = Array<number>;
@@ -182,7 +185,7 @@ const T_BytesDyn: ETH_Ty<CBR_Bytes, ETH_BytesDyn> = (() => {
     }),
     paramType: 'bytes',
   };
-  return me;
+  return instEthTy(me);
 })();
 
 type ETH_StringDyn = string;
@@ -197,17 +200,17 @@ const T_StringDyn: ETH_Ty<CBR_Bytes, ETH_StringDyn> = (() => {
     }),
     paramType: 'string',
   };
-  return me;
+  return instEthTy(me);
 })();
 
-const T_Digest: ETH_Ty<CBR_Digest, BigNumber> = {
+const T_Digest: ETH_Ty<CBR_Digest, BigNumber> = instEthTy({
   ...CBR.BT_Digest,
   defaultValue: ethers.utils.keccak256([]),
   munge: (bv: CBR_Digest): BigNumber => ethers.BigNumber.from(bv),
   // XXX likely not the correct unmunge type?
   unmunge: (nv: BigNumber): CBR_Digest => V_Digest(nv.toHexString()),
   paramType: 'uint256',
-};
+});
 const V_Digest = (s: string): CBR_Digest => {
   return T_Digest.canonicalize(s);
 };
@@ -217,7 +220,7 @@ const T_Array = <T>(
   size_i: unknown,
 ): ETH_Ty<CBR_Array, Array<T>> => {
   const size = bigNumberToNumber(bigNumberify(size_i));
-  return {
+  return instEthTy({
     ...CBR.BT_Array(ctc, size),
     munge: (bv: CBR_Array): any => {
       if ( size == 0 ) {
@@ -234,7 +237,7 @@ const T_Array = <T>(
       }
     },
     paramType: `${ctc.paramType}[${size}]`,
-  };
+  });
 };
 
 const V_Array = <T>(
@@ -247,7 +250,7 @@ const V_Array = <T>(
 // XXX fix me Dan, I'm type checking wrong!
 const T_Tuple = <T>(
   ctcs: Array<ETH_Ty<CBR_Val, T>>,
-): ETH_Ty<CBR_Tuple, Array<T>> => ({
+): ETH_Ty<CBR_Tuple, Array<T>> => instEthTy({
   ...CBR.BT_Tuple(ctcs),
   munge: (bv: CBR_Tuple): any => {
     if (ctcs.length == 0 ) {
@@ -270,7 +273,7 @@ const V_Tuple = <T>(
 
 const T_Struct = <T>(
   ctcs: Array<[string, ETH_Ty<CBR_Val, T>]>,
-): ETH_Ty<CBR_Struct, Array<T>> => ({
+): ETH_Ty<CBR_Struct, Array<T>> => instEthTy({
   ...CBR.BT_Struct(ctcs),
   munge: (bv: CBR_Struct): any => {
     if (ctcs.length == 0 ) {
@@ -293,7 +296,7 @@ const V_Struct = <T>(
 
 const T_Object = <T>(
   co: {[key: string]: ETH_Ty<CBR_Val, T>}
-): ETH_Ty<CBR_Object, {[key: string]: T}> => ({
+): ETH_Ty<CBR_Object, {[key: string]: T}> => instEthTy({
   ...CBR.BT_Object(co),
   // CBR -> Net . ETH object fields are prefaced with "_"
   munge: (bv: CBR_Object): any => {
@@ -338,7 +341,7 @@ const T_Data = <T>(
 ): ETH_Ty<CBR_Data, Array<T>> => {
   // TODO: not duplicate between this and CBR.ts
   const {ascLabels, labelMap} = labelMaps(co);
-  return {
+  return instEthTy({
     ...CBR.BT_Data(co),
     // Data representation in js is a 2-tuple:
     // [label, val]
@@ -382,7 +385,7 @@ const T_Data = <T>(
       const tupFields = [`${T_UInt.paramType} which`].concat(optionTys).join(',');
       return `tuple(${tupFields})`;
     })(),
-  }
+  })
 };
 
 const V_Data = <T>(
@@ -391,10 +394,10 @@ const V_Data = <T>(
   return T_Data(co).canonicalize(val);
 };
 
-const T_Contract = {
+const T_Contract = instEthTy({
   ...T_Address,
   name: 'Contract'
-};
+});
 
 const addressEq = mkAddressEq(T_Address);
 const ctcAddrEq = (x:unknown, y:unknown) => {

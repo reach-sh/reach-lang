@@ -9,6 +9,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcHead("0.1.12-rc.2")}
 
++ 2022/09/23: Added `{!js} ctc.getInternalState`.
+
 @{rcHead("0.1.12-rc.1")}
 
 + 2022/09/19: Added `accounts` field to `{!rsh} remote.ALGO`.

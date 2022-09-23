@@ -2233,7 +2233,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       sigs: (isFull ? ABI_sigs : ABI_sigs.map((name:string) => ({name})).filter(stdABIFilter).map(({name}:{name: string}) => name)),
     });
 
-    return stdContract({ bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
+    const types = typeDefs;
+
+    return stdContract({ bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, types, givenInfoP });
   };
 
   function setDebugLabel(newLabel: string): Account {
