@@ -131,7 +131,7 @@ const doOneDir = async (dirName) => {
           const [ethSize, algoSize]= await loadByteCodeSizes(f);
           const ethAlgoRatio = (algoSize !== 0 && ethSize !== 0) ?
                 ethSize * 1.0 / algoSize : 0;
-          ret = {algo: algoSize, eth: ethSize, ethAlgoRatio: ethAlgoRatio};
+          ret[buildfile.name] = {algo: algoSize, eth: ethSize, ethAlgoRatio: ethAlgoRatio};
           if (style === "lines") {
             console.log("ETH: " + dirName + " " + buildfile.name + ": " + ethSize);
             console.log("ALGO: " + dirName + " " + buildfile.name + ": " + algoSize);
