@@ -14,15 +14,15 @@ extra-source-files:
 - app/reach/embed/**/*
 
 dependencies:
+- Glob
 - aeson
 - aeson-pretty
-- amazonka
-- amazonka-core
-- amazonka-pinpoint
-- amazonka-pinpoint-email
 - async
+- attoparsec
 - base >= 4.7 && < 5
+- base16
 - base64
+- binary
 - bytestring
 - containers
 - cookie
@@ -33,9 +33,11 @@ dependencies:
 - directory
 - dlist
 - edit-distance
+- exceptions
 - extra
 - file-embed >= 0.0.9
 - filepath
+- generic-data
 - generic-deriving
 - hexstring
 - hspec
@@ -54,12 +56,13 @@ dependencies:
 - memory
 - mmorph
 - mtl
+- neat-interpolation
 - optparse-applicative
-- OTP
 - parsec
 - parsec-numbers
 - pretty-show
 - pretty-simple
+- pretty-terminal
 - prettyprinter
 - process
 - process-extras
@@ -70,13 +73,14 @@ dependencies:
 - scotty >= 0.12
 - search-algorithms
 - servant
-- servant-client
 - servant-auth
 - servant-auth-server
+- servant-client
 - servant-server
 - silently
 - simple-smt
 - smallcheck
+- split
 - stm
 - system-filepath
 - tasty
@@ -104,17 +108,7 @@ dependencies:
 - wai-extra
 - warp
 - yaml
-- neat-interpolation
-- pretty-terminal
-- generic-data
 - zlib
-- exceptions
-- tomland
-- base16
-- attoparsec
-- Glob
-- split
-- binary
 
 default-extensions:
 - BangPatterns
@@ -199,9 +193,6 @@ executables:
   reachc:
     <<: *std-exe
     source-dirs:         app/reachc
-  reach-id-client:
-    <<: *std-exe
-    source-dirs:         app/reach-id-client
   reach:
     main:                Main.hs
     source-dirs:         app/reach
@@ -220,6 +211,16 @@ executables:
     - unix
     - unix-time
     - reach
+  reach-cli:
+    <<: *std-exe
+    source-dirs:         app/reach-cli
+    dependencies:
+    - reach
+    - amazonka
+    - amazonka-cognito-idp
+  reach-id-client:
+    <<: *std-exe
+    source-dirs:         app/reach-id-client
   proto-stub:
     <<: *std-exe
     source-dirs:         app/proto-stub

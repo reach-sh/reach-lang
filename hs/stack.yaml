@@ -11,17 +11,8 @@ extra-deps:
   - streaming-bytestring-0.1.7@sha256:5b53960c1c5f8352d46a4f1a604d04340a08dcf7ff27ca3ed31253e02c01fd03,2968
   - validation-selective-0.1.0.1@sha256:9a5aa8b801efc6a4ffb120e1b28e80c5f7d090043be56bba11222cd20c393044,3621
   - selective-0.4.2@sha256:d223434ba4545a09b02dbdc7a4d63bd41ef40cc3d3d82883ccc6daea9d2b2dd5,3507
-  # - dir-traverse-0.2.3.0@sha256:adcc128f201ff95131b15ffe41365dc99c50dc3fa3a910f021521dc734013bfa,2137
-  # - extensions-0.0.0.1@sha256:16517ab9df3dd6c7a20da746c8ed02cfd59c8cb40ae5719aef8b5dd4edceadc0,3993
-  # - microaeson-0.1.0.0@sha256:43dd72c13b2cde29d3fb9a7a67178b6eaaa4280bb6809c52fb4a32487bd5cb25,3318
-  # - pretty-simple-4.0.0.0@sha256:a65be4ef40734eae1da7a88c9b73dbf1848f5a60b634dc4776fae60cafc85386,4071
-  # - trial-0.0.0.0@sha256:6eac7caf6fe4acb34a446a7f89142e8dc6d18b72376a790db730c7f4693e4627,4160
-  # - trial-optparse-applicative-0.0.0.0@sha256:ba05edfc327a281766df5e0f44d91229e6a98afaf59abe1894b293453f076192,2449
-  # - trial-tomland-0.0.0.0@sha256:baf2f085376392e71bb725b8626dbfa5e91d2af4b2e5690c7c69574d2462497f,2441
   - io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
   - simple-smt-0.9.5@sha256:70e6f694d401d23783b6f5c62774262a01cc7c305a64a13690ab7664a4f98ebf,736
-  # - tasty-html-0.4.1.2@sha256:7c8be5359940fcbd0228b9a1f5dc9a1113a9a5e03dc9b9ae018eb17f870aef13,1241
-  # - streaming-bytestring-0.1.7@sha256:5b53960c1c5f8352d46a4f1a604d04340a08dcf7ff27ca3ed31253e02c01fd03,2968
   - git: https://github.com/reach-sh/shell-monad.git
     commit: d8465680410807a782920ba8dca040d38da735f8
   - git: https://github.com/reach-sh/stan.git
@@ -33,15 +24,12 @@ extra-deps:
   - git: https://github.com/google/ormolu.git
     commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0
     # ^ from branch "gfork"
-  - git: https://github.com/chrisnevers/OTP
-    commit: f929a9a2b758fc3e33752513ae1dd8f4ccfa3ad3
-    # ^ from branch "master"
   - github: brendanhay/amazonka
-    commit: 0ccede621e56fb6f240e4850e205cde82d0e4a4b
+    commit: a4356591e151df86519b3bd2ccca1518c22e8b17
+    # 0ccede621e56fb6f240e4850e205cde82d0e4a4b
     subdirs:
     - lib/amazonka
     - lib/amazonka-core
+    - lib/services/amazonka-sso
     - lib/services/amazonka-sts
-    - lib/services/amazonka-pinpoint
-    - lib/services/amazonka-pinpoint-email
-    - lib/services/amazonka-pinpoint-sms-voice
+    - lib/services/amazonka-cognito-idp

@@ -5,201 +5,177 @@
 
 packages:
 - completed:
+    commit: 085c16fb21b9f856a435a3faab980e7e0b319341
+    git: https://github.com/reach-sh/haskell-hexstring.git
     name: hexstring
-    version: 0.11.1
-    git: https://github.com/reach-sh/haskell-hexstring.git
     pantry-tree:
-      size: 687
       sha256: 9ecf67856f59dfb382b283eceb42e4fc1865935d1a7e59111556ed381c6a2ffd
-    commit: 085c16fb21b9f856a435a3faab980e7e0b319341
+      size: 687
+    version: 0.11.1
   original:
+    commit: 085c16fb21b9f856a435a3faab980e7e0b319341
     git: https://github.com/reach-sh/haskell-hexstring.git
-    commit: 085c16fb21b9f856a435a3faab980e7e0b319341
 - completed:
     hackage: tomland-1.3.3.0@sha256:49871fb5c34ca11d73dabd31f4058ec3d2aac270eabd791d1473bb1e0a916527,8597
     pantry-tree:
-      size: 6430
       sha256: adc2503a2241a275ec80ef8030d7ab4c524f4481232eceb80ac3aea931d7eb95
+      size: 6430
   original:
     hackage: tomland-1.3.3.0@sha256:49871fb5c34ca11d73dabd31f4058ec3d2aac270eabd791d1473bb1e0a916527,8597
 - completed:
     hackage: megaparsec-9.0.1@sha256:2244ab77521a52a0083966c5405b3151f149e1db50b1a5b104cd9b1e56617203,3248
     pantry-tree:
-      size: 1447
       sha256: 0e2df0d318e48e352b3d766c46cdabc3abb5dcc3dfcb062bdd0a8d44f34a975c
+      size: 1447
   original:
     hackage: megaparsec-9.0.1@sha256:2244ab77521a52a0083966c5405b3151f149e1db50b1a5b104cd9b1e56617203,3248
 - completed:
     hackage: streaming-bytestring-0.1.7@sha256:5b53960c1c5f8352d46a4f1a604d04340a08dcf7ff27ca3ed31253e02c01fd03,2968
     pantry-tree:
-      size: 888
       sha256: dd905b22e9b56d03aa8f994f1509ab2cde99d649712089dfd957daddeb6e1220
+      size: 888
   original:
     hackage: streaming-bytestring-0.1.7@sha256:5b53960c1c5f8352d46a4f1a604d04340a08dcf7ff27ca3ed31253e02c01fd03,2968
 - completed:
     hackage: validation-selective-0.1.0.1@sha256:9a5aa8b801efc6a4ffb120e1b28e80c5f7d090043be56bba11222cd20c393044,3621
     pantry-tree:
-      size: 696
       sha256: bf72fe4304690da4b5bc6e5218b0f90b5613e7d658f3ce31731816a423fcbca6
+      size: 696
   original:
     hackage: validation-selective-0.1.0.1@sha256:9a5aa8b801efc6a4ffb120e1b28e80c5f7d090043be56bba11222cd20c393044,3621
 - completed:
     hackage: selective-0.4.2@sha256:d223434ba4545a09b02dbdc7a4d63bd41ef40cc3d3d82883ccc6daea9d2b2dd5,3507
     pantry-tree:
-      size: 1160
       sha256: 38f9abe506185137433e9620f702efc40aae7aaab8d3797ceb0b31fc3342ec32
+      size: 1160
   original:
     hackage: selective-0.4.2@sha256:d223434ba4545a09b02dbdc7a4d63bd41ef40cc3d3d82883ccc6daea9d2b2dd5,3507
 - completed:
     hackage: io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
     pantry-tree:
-      size: 273
       sha256: 65849cbd4749744033f0e23c317a4cb12b7a24eb0ca9d2610c95b6dc72b3f470
+      size: 273
   original:
     hackage: io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
 - completed:
     hackage: simple-smt-0.9.5@sha256:70e6f694d401d23783b6f5c62774262a01cc7c305a64a13690ab7664a4f98ebf,736
     pantry-tree:
-      size: 253
       sha256: 2c3dc6abc101832026902feb1f4d0cfd227dc0cddf9db857c30da38c80ac387c
+      size: 253
   original:
     hackage: simple-smt-0.9.5@sha256:70e6f694d401d23783b6f5c62774262a01cc7c305a64a13690ab7664a4f98ebf,736
 - completed:
+    commit: d8465680410807a782920ba8dca040d38da735f8
+    git: https://github.com/reach-sh/shell-monad.git
     name: shell-monad
-    version: 0.6.9
-    git: https://github.com/reach-sh/shell-monad.git
     pantry-tree:
-      size: 612
       sha256: aa71086fe3d90e9f93c437004668a94bfa3193a9af2d286b0485b59a55ee70b2
-    commit: d8465680410807a782920ba8dca040d38da735f8
+      size: 612
+    version: 0.6.9
   original:
+    commit: d8465680410807a782920ba8dca040d38da735f8
     git: https://github.com/reach-sh/shell-monad.git
-    commit: d8465680410807a782920ba8dca040d38da735f8
 - completed:
+    commit: 09c29e16723728fe2a3f1341e2569508c86f4597
+    git: https://github.com/reach-sh/stan.git
     name: stan
-    version: 0.0.1.0
-    git: https://github.com/reach-sh/stan.git
     pantry-tree:
-      size: 5139
       sha256: 05e44bb76ee95ac46ede71d407de2c0b7454f45ed667a6af3a5d8aee3f79a048
-    commit: 09c29e16723728fe2a3f1341e2569508c86f4597
+      size: 5139
+    version: 0.0.1.0
   original:
+    commit: 09c29e16723728fe2a3f1341e2569508c86f4597
     git: https://github.com/reach-sh/stan.git
-    commit: 09c29e16723728fe2a3f1341e2569508c86f4597
 - completed:
+    commit: f1b4cd7d4a6502c385c64a5d0c80ce325202a48d
+    git: https://github.com/reach-sh/language-javascript.git
     name: language-javascript
-    version: 0.7.1.1
-    git: https://github.com/reach-sh/language-javascript.git
     pantry-tree:
-      size: 3233
       sha256: 90e2a4e8f79e764418c6735d02ff1239c71060ac682d646e676f7c54ed650efa
-    commit: f1b4cd7d4a6502c385c64a5d0c80ce325202a48d
+      size: 3233
+    version: 0.7.1.1
   original:
+    commit: f1b4cd7d4a6502c385c64a5d0c80ce325202a48d
     git: https://github.com/reach-sh/language-javascript.git
-    commit: f1b4cd7d4a6502c385c64a5d0c80ce325202a48d
 - completed:
+    commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0
+    git: https://github.com/google/ormolu.git
     name: ormolu
-    version: 0.1.4.1
-    git: https://github.com/google/ormolu.git
     pantry-tree:
-      size: 80957
       sha256: e022d2c07cee18b2d280dd490ad687be6d8b5152a9d8eb27c42b21d827177a77
-    commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0
+      size: 80957
+    version: 0.1.4.1
   original:
+    commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0
     git: https://github.com/google/ormolu.git
-    commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0
 - completed:
-    name: OTP
-    version: 0.1.0.0
-    git: https://github.com/chrisnevers/OTP
-    pantry-tree:
-      size: 680
-      sha256: bc887d4fcf5be2aaca82832a8f2c5c2309620ccd5b9b9ec79105feefd8ffa528
-    commit: f929a9a2b758fc3e33752513ae1dd8f4ccfa3ad3
-  original:
-    git: https://github.com/chrisnevers/OTP
-    commit: f929a9a2b758fc3e33752513ae1dd8f4ccfa3ad3
-- completed:
-    size: 26670949
-    subdir: lib/amazonka
-    url: https://github.com/brendanhay/amazonka/archive/0ccede621e56fb6f240e4850e205cde82d0e4a4b.tar.gz
     name: amazonka
-    version: '2.0'
-    sha256: a7b386bbc8c580b1683b69ea406cb66416c2a440d6540fe50be6eff8917c0d31
     pantry-tree:
-      size: 827
-      sha256: 2789ec3422222681e81d7c1b9b9f4f1ccf8dc2bf5d6feb2a9fd8fc249556edbc
+      sha256: d82e73b4308dcd748231ce7349ec998d6e2e5f4d9a0580dd0ea27c98bab41206
+      size: 1318
+    sha256: 1a8bf87625a6f3a70142ce0b056002a4869bf24a27acc555a01401a84f594871
+    size: 31716026
+    subdir: lib/amazonka
+    url: https://github.com/brendanhay/amazonka/archive/a4356591e151df86519b3bd2ccca1518c22e8b17.tar.gz
+    version: '2.0'
   original:
     subdir: lib/amazonka
-    url: https://github.com/brendanhay/amazonka/archive/0ccede621e56fb6f240e4850e205cde82d0e4a4b.tar.gz
+    url: https://github.com/brendanhay/amazonka/archive/a4356591e151df86519b3bd2ccca1518c22e8b17.tar.gz
 - completed:
-    size: 26670949
-    subdir: lib/amazonka-core
-    url: https://github.com/brendanhay/amazonka/archive/0ccede621e56fb6f240e4850e205cde82d0e4a4b.tar.gz
     name: amazonka-core
-    version: '2.0'
-    sha256: a7b386bbc8c580b1683b69ea406cb66416c2a440d6540fe50be6eff8917c0d31
     pantry-tree:
-      size: 3117
-      sha256: fb1fbbacb9e710de708c1d43399e70ad7c15c3f1b8b2767a7cae96f4a5fc7039
+      sha256: 8707039e4fb7c575fbcd04906e4f541948ed152534da6d3830b9675badb4c71d
+      size: 3192
+    sha256: 1a8bf87625a6f3a70142ce0b056002a4869bf24a27acc555a01401a84f594871
+    size: 31716026
+    subdir: lib/amazonka-core
+    url: https://github.com/brendanhay/amazonka/archive/a4356591e151df86519b3bd2ccca1518c22e8b17.tar.gz
+    version: '2.0'
   original:
     subdir: lib/amazonka-core
-    url: https://github.com/brendanhay/amazonka/archive/0ccede621e56fb6f240e4850e205cde82d0e4a4b.tar.gz
+    url: https://github.com/brendanhay/amazonka/archive/a4356591e151df86519b3bd2ccca1518c22e8b17.tar.gz
 - completed:
-    size: 26670949
-    subdir: lib/services/amazonka-sts
-    url: https://github.com/brendanhay/amazonka/archive/0ccede621e56fb6f240e4850e205cde82d0e4a4b.tar.gz
+    name: amazonka-sso
+    pantry-tree:
+      sha256: e9a165eda0567cdf0581d29d8b1e9fe2df543474d7c70590e04ec1047ebe6d48
+      size: 1869
+    sha256: 1a8bf87625a6f3a70142ce0b056002a4869bf24a27acc555a01401a84f594871
+    size: 31716026
+    subdir: lib/services/amazonka-sso
+    url: https://github.com/brendanhay/amazonka/archive/a4356591e151df86519b3bd2ccca1518c22e8b17.tar.gz
+    version: '2.0'
+  original:
+    subdir: lib/services/amazonka-sso
+    url: https://github.com/brendanhay/amazonka/archive/a4356591e151df86519b3bd2ccca1518c22e8b17.tar.gz
+- completed:
     name: amazonka-sts
-    version: '2.0'
-    sha256: a7b386bbc8c580b1683b69ea406cb66416c2a440d6540fe50be6eff8917c0d31
     pantry-tree:
+      sha256: 3a0d4983a363e953e6dc651d1aaa6ca30755a16c01edf63e5104ece7745e3954
       size: 2932
-      sha256: cab234646c792a272ac2d7011c34fe06902a466900d953c85ffff4e3faaa1378
+    sha256: 1a8bf87625a6f3a70142ce0b056002a4869bf24a27acc555a01401a84f594871
+    size: 31716026
+    subdir: lib/services/amazonka-sts
+    url: https://github.com/brendanhay/amazonka/archive/a4356591e151df86519b3bd2ccca1518c22e8b17.tar.gz
+    version: '2.0'
   original:
     subdir: lib/services/amazonka-sts
-    url: https://github.com/brendanhay/amazonka/archive/0ccede621e56fb6f240e4850e205cde82d0e4a4b.tar.gz
+    url: https://github.com/brendanhay/amazonka/archive/a4356591e151df86519b3bd2ccca1518c22e8b17.tar.gz
 - completed:
-    size: 26670949
-    subdir: lib/services/amazonka-pinpoint
-    url: https://github.com/brendanhay/amazonka/archive/0ccede621e56fb6f240e4850e205cde82d0e4a4b.tar.gz
-    name: amazonka-pinpoint
-    version: '2.0'
-    sha256: a7b386bbc8c580b1683b69ea406cb66416c2a440d6540fe50be6eff8917c0d31
+    name: amazonka-cognito-idp
     pantry-tree:
-      size: 47567
-      sha256: bcb1610364fbc70efe2b92606375519d4e015450b57350479c6ec9652bb08c24
-  original:
-    subdir: lib/services/amazonka-pinpoint
-    url: https://github.com/brendanhay/amazonka/archive/0ccede621e56fb6f240e4850e205cde82d0e4a4b.tar.gz
-- completed:
-    size: 26670949
-    subdir: lib/services/amazonka-pinpoint-email
-    url: https://github.com/brendanhay/amazonka/archive/0ccede621e56fb6f240e4850e205cde82d0e4a4b.tar.gz
-    name: amazonka-pinpoint-email
+      sha256: 057d037a33a6e457dfbac837e5507d7c8a356c5ab8971e9e9a1ca4f6cf3fcd52
+      size: 36975
+    sha256: 1a8bf87625a6f3a70142ce0b056002a4869bf24a27acc555a01401a84f594871
+    size: 31716026
+    subdir: lib/services/amazonka-cognito-idp
+    url: https://github.com/brendanhay/amazonka/archive/a4356591e151df86519b3bd2ccca1518c22e8b17.tar.gz
     version: '2.0'
-    sha256: a7b386bbc8c580b1683b69ea406cb66416c2a440d6540fe50be6eff8917c0d31
-    pantry-tree:
-      size: 16096
-      sha256: aa7d22984d5507860def4021078b0f9a7224c44001f4eee4b79ae91bff97dc1b
   original:
-    subdir: lib/services/amazonka-pinpoint-email
-    url: https://github.com/brendanhay/amazonka/archive/0ccede621e56fb6f240e4850e205cde82d0e4a4b.tar.gz
-- completed:
-    size: 26670949
-    subdir: lib/services/amazonka-pinpoint-sms-voice
-    url: https://github.com/brendanhay/amazonka/archive/0ccede621e56fb6f240e4850e205cde82d0e4a4b.tar.gz
-    name: amazonka-pinpoint-sms-voice
-    version: '2.0'
-    sha256: a7b386bbc8c580b1683b69ea406cb66416c2a440d6540fe50be6eff8917c0d31
-    pantry-tree:
-      size: 3823
-      sha256: b5440045ba61f71d316697934cefa4658eb7fcd81a6c654f3196dcef4414133c
-  original:
-    subdir: lib/services/amazonka-pinpoint-sms-voice
-    url: https://github.com/brendanhay/amazonka/archive/0ccede621e56fb6f240e4850e205cde82d0e4a4b.tar.gz
+    subdir: lib/services/amazonka-cognito-idp
+    url: https://github.com/brendanhay/amazonka/archive/a4356591e151df86519b3bd2ccca1518c22e8b17.tar.gz
 snapshots:
 - completed:
+    sha256: 57d4ce67cc097fea2058446927987bc1f7408890e3a6df0da74e5e318f051c20
     size: 618884
     url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/19/7.yaml
-    sha256: 57d4ce67cc097fea2058446927987bc1f7408890e3a6df0da74e5e318f051c20
   original: lts-19.7
