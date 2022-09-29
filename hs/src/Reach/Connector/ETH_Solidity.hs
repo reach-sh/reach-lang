@@ -1606,7 +1606,7 @@ genApiJump p ms = do
   let require = solApply "require" [chk_st] <> semi
   let mk w = solWhen (chk_which w) thn
         where
-          thn = "return " <> solApply ("this." <> inst) args <> semi <> hardline
+          thn = "return " <> solApply ("_reach_internal_" <> inst) args <> semi <> hardline
           inst = "_" <> who <> pretty w
   let go = vsep $ map (mk . fst) $ M.toAscList ms
   ret <- funRetSig (ai_ret_ty ai) True
