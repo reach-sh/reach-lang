@@ -1568,7 +1568,8 @@ apiArgs tyMsg (ApiInfo {..}) = do
 
 apiDef :: SLPart -> Bool -> ApiInfo -> App Doc
 apiDef who qualify ApiInfo {..} = do
-  let who_s = adjustApiName (bunpack who) ai_which qualify
+  let who_orig = (bunpack who)
+  let who_s = adjustApiName who_orig ai_which qualify
   let mf = solMsg_fun ai_which
   (argDefns, tyLifts, args, m_arg_ty) <- apiArgs "_t.msg" $ ApiInfo {..}
   when (length args > apiMaxArgs) $
@@ -1581,7 +1582,7 @@ apiDef who qualify ApiInfo {..} = do
           [ solBraces (vsep $
             [ "ApiRng memory _r;"
             , solApply mf ["_t", "_r"] <> semi
-            , pretty ("return _r." <> who_s) <> semi
+            , pretty ("return _r." <> who_orig) <> semi
             ])
           ]
   retExt <- funRetSig ai_ret_ty True
@@ -1742,16 +1743,15 @@ createAPIRng env =
       fields <- fmap concat $ forM (M.toAscList env) $ \(k, ms) -> do
           let qualify = M.size ms > 1
           let k' = bunpack k
-          fs <- mapM (\ (w, ai) -> do
-                  let n = pretty $ adjustApiName k' w qualify
-                  -- let n = pretty $ prefix <> k' <> suffix
+          fs <- mapM (\ (_w, ai) -> do
+                  let n = pretty k'
                   t <- solType_ $ ai_ret_ty ai
                   return (n, t)
                 ) $ M.toAscList ms
           case qualify of
             True  -> do
-              let (_, st) = fromMaybe (impossible "createApiRng: empty list") $ headMay fs
-              return $ (pretty $ k', st) : fs
+              let one = fromMaybe (impossible "createApiRng: empty list") $ headMay fs
+              return $ [one]
             False -> return fs
 
       return $ fromMaybe (impossible "createAPIRng") $ solStruct "ApiRng" fields
