@@ -7,6 +7,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verRC("0.1.12")}
 
+@{rcHead("0.1.12-rc.3")}
+
 @{rcHead("0.1.12-rc.2")}
 
 + 2022/09/23: Added `{!js} ctc.getInternalState`.
