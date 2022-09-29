@@ -37,8 +37,8 @@ getConfig = do
     Left s -> do
       error $ "Could not decode Reach Cloud configuration: " <> s
 
-_main :: IO ()
-_main = do
+mainUP :: IO ()
+mainUP = do
   args <- map T.pack <$> getArgs
   -- XXX this is really stupid, the username and password should be in the
   -- config file
@@ -87,24 +87,13 @@ _main = do
             liftIO $ putStrLn $ "tok is " <> show tok
             liftIO $ putStrLn $ "ref is " <> show ref
             liftIO $ putStrLn $ "devk is " <> show devk
-            -- XXX this doesn't work... don't know why, always get that it is
-            -- wrong
-            r2 <- sendUnsigned env $
-              (newInitiateAuth AuthFlowType_REFRESH_TOKEN_AUTH cfgUserPoolClientId)
-                & initiateAuth_analyticsMetadata .~ am
-                & initiateAuth_authParameters .~ (Just $ HM.fromList
-                    [ ("USERNAME", inUSERNAME)
-                    , ("REFRESH_TOKEN", ref)
-                    , ("DEVICE_KEY", devk)
-                    ])
-            liftIO $ putStrLn $ "XXX " <> show r2
           _ ->
             error $ "Expected successful authentication"
       _ ->
         error $ "Expected software token MFA, but did not receive it"
 
-main :: IO ()
-main = do
+mainREF :: IO ()
+mainREF = do
   args <- map T.pack <$> getArgs
   let (inUSERNAME, inREF, inDEVK) =
         case args of
@@ -126,3 +115,6 @@ main = do
             , ("DEVICE_KEY", inDEVK)
             ])
     liftIO $ putStrLn $ "XXX " <> show r2
+
+main :: IO ()
+main = mainREF
