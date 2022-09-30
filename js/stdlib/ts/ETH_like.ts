@@ -846,8 +846,18 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return { createEventStream };
     };
     const getABI = stdGetABI(ABI);
+    const getEventSigs = () => {
+      const sigs = []
+      const events = bin._getEvents({ reachStdlib: stdlib });
+      for (const name in events) {
+        const e = events[name];
+        sigs.push(`${name}(${e.map((arg) => arg.name).join(', ')})`);
+      }
+      // TODO: add ETH-like event info
+     return {sigs};
+    };
 
-    return stdContract({ bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
+    return stdContract({ bin, getABI, getEventSigs, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
   };
 
   function setDebugLabel(newLabel: string): Account {

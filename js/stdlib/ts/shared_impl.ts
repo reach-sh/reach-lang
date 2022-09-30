@@ -183,6 +183,10 @@ export type ParticipantMap = {[key: string]: ParticipantVal};
 export type ViewVal = (...args:any) => Promise<any>;
 export type ViewFunMap = {[key: string]: ViewVal};
 export type ViewMap = {[key: string]: ViewVal | ViewFunMap};
+export type EventSigMap = {
+  sigs: string[],
+  ALGO?: string[],
+};
 export type APIMap = ViewMap;
 export type EventMap = { [key: string]: any }
 
@@ -223,6 +227,7 @@ export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
 export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
   getABI: (x?:boolean) => unknown,
+  getEventSigs: () => EventSigMap,
   setupView: ISetupView<ContractInfo, VerifyResult, ConnectorTy>,
   setupEvents: ISetupEvent<ContractInfo, VerifyResult>,
   givenInfoP: (Promise<ContractInfo>|undefined)
@@ -235,6 +240,7 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
   getContractAddress: () => Promise<CBR_Address>,
   // backend-specific
   getABI: (x?:boolean) => unknown,
+  getEventSigs: () => EventSigMap,
   getInternalState: () => Promise<{[key: string]: any }>;
   participants: ParticipantMap,
   p: ParticipantMap
@@ -323,7 +329,7 @@ export const stdContract =
   <ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
     stdContractArgs: IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy>):
   IContract<ContractInfo, RawAddress, Token, ConnectorTy> => {
-  const { bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP } = stdContractArgs;
+  const { bin, getABI, getEventSigs, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP } = stdContractArgs;
 
   type SomeSetupArgs = Pick<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo"|"getInfo")>;
   const { setInfo, getInfo }: SomeSetupArgs = (() => {
@@ -471,6 +477,7 @@ export const stdContract =
   return {
     ...ctcC,
     getABI,
+    getEventSigs,
     getInfo,
     getContractAddress: (() => _initialize().getContractAddress()),
     participants, p: participants,
