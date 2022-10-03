@@ -887,12 +887,14 @@ solAsnSet asnv vs = do
 solStateSet :: Int -> [(DLVar, DLArg)] -> App [Doc]
 solStateSet which svs = do
   let asnv = "nsvs"
+  svsName <- svbsName $ map fst svs
   setl <- solAsnSet asnv svs
   return $
     setl
       <> [ solSet "current_step" (solNum which)
          , solSet "current_time" solBlockTime
-         , solSet "current_svbs" (solEncode ["nsvs"])
+         , solSet svsName asnv
+         -- TODO - maybe delete other svbs globals, if this branch actually sees the light of day.
          ]
 
 solStateCheck :: Int -> App [(String, Doc)]
@@ -1418,7 +1420,8 @@ solHandler which h = freshVarMap $
           False -> do
             csv <- solStateCheck prev
             svs_ty' <- solAsnType svs
-            let csvs = [solSet (parens $ solDecl "_svs" (mayMemSol svs_ty')) $ solApply "abi.decode" ["current_svbs", parens svs_ty']]
+            svsName <- svbsName svs
+            let csvs = [solSet (parens $ solDecl "_svs" (mayMemSol svs_ty')) $ svsName]
             return (csv, csvs, AM_Call, SFL_Function True (solMsg_fun which))
       let hc_go lab chk =
             (<> semi) <$> solRequire (checkMsg $ "state " <> lab) chk
@@ -1774,6 +1777,11 @@ baseTypes =
 contractId :: String
 contractId = "ReachContract"
 
+svbsName :: [DLVar] -> App Doc
+svbsName svbs = do
+  t <- solAsnType svbs
+  return $ "svbs_" <> t
+
 solPLProg :: PLProg -> IO (ConnectorObject, Doc)
 solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at = at, cpp_views = (vs, vi), cpp_apis = ai, cpp_handlers = hs} } = do
   let DLInit {..} = dli
@@ -1860,7 +1868,8 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
                 c' <- solEq "current_step" $ solNum i
                 let asnv = "vvs"
                 vvs_ty' <- solAsnType vvs
-                let de' = solSet (parens $ solDecl asnv (mayMemSol vvs_ty')) $ solApply "abi.decode" ["current_svbs", parens vvs_ty']
+                svsName <- svbsName vvs
+                let de' = solSet (parens $ solDecl asnv (mayMemSol vvs_ty')) $ svsName
                 extendVarMap $ M.fromList $ map (\vv -> (vv, asnv <> "." <> solRawVar vv)) $ vvs
                 extendVarMap $ M.fromList $ map (\(a, argI) -> (a, "_a.elem" <> pretty argI)) $ zip args ([0 ..] :: [Int])
                 (defn, ret') <-
@@ -1891,15 +1900,33 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
           return (keys, vsep bs)
     (view_jsons, view_defns) <- unzip <$> (mapM vgo $ M.toAscList vs)
     let view_json = concat view_jsons
+    let hsMap = case hs of
+          CHandlers x -> x
+    let handlerSvbs h = case h of
+            C_Handler {..} -> map varLetVar ch_svs
+            C_Loop {..} -> map varLetVar cl_svs
+    let member x xs = any (== x) xs
+    let unique (x:xs) = if member x xs then unique xs else x : (unique xs)
+        unique [] = []
+    let svbss = unique $ map (handlerSvbs . snd) $ M.toList hsMap
+    svbsSolTypes <- mapM solAsnType svbss
+    svbsNames <- mapM svbsName svbss
+    let svbsDecls = map (\(t, n) -> t <> " " <> n <> ";") $ zip svbsSolTypes svbsNames
+    let currentStateArm (step, _handler) = do
+          n <- svbsName $ handlerSvbs _handler
+          return $ "  if (current_step == " <> pretty (show step)
+            <> "){current_svbs_bytes = abi.encode(" <> n <> ");}"
+    currentStateArms <- mapM currentStateArm $ M.toList hsMap
+    let currentStateFunc = "function _reachCurrentState() external view returns (uint256, bytes memory) { bytes memory current_svbs_bytes; " <> vsep currentStateArms <> "  return (current_step, current_svbs_bytes); }"
     let state_defn =
           vsep $
+            svbsDecls <>
             [ "uint256 current_step;"
             , "uint256 current_time;"
-            , "  bytes current_svbs;"
             , "uint256 creation_time;"
             , "function _reachCreationTime() external view returns (uint256) { return creation_time; }"
             , "function _reachCurrentTime() external view returns (uint256) { return current_time; }"
-            , "function _reachCurrentState() external view returns (uint256, bytes memory) { return (current_step, current_svbs); }"
+            , currentStateFunc
             ]
               <> map_defns
               <> view_defns
