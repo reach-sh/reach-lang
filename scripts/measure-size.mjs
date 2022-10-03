@@ -110,14 +110,14 @@ const doOneDir = async (dirName) => {
         for await (const exfile of exdirFiles) {
           if (exfile.name.match(".*\\.rsh")) {
             try {
-              console.error(`Compiling ${exStr}/${exfile.name}...`);
-              const proc = await cp.spawnSync("reach", ["compile", exfile.name], {cwd: exStr});
+              console.error(`Compiling ${dirName}/${exfile.name}...`);
+              const proc = await cp.spawnSync("reach", ["compile", exfile.name], {cwd: dirName});
             } catch (e) {}
           }
         }
       } catch (e) {
-        await exDir.closeSync();
       }
+      await exDir.closeSync();
     } catch (e) {}
   }
   const buildDirStr = dirName + "/build/"
