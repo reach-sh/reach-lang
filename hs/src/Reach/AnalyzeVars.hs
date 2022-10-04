@@ -210,11 +210,11 @@ instance FreeVars DLStmt where
     DL_ArrayReduce _ _ xs z b as i f -> freeVars (xs <> [z]) <> bindsFor (as <> [b, i]) f
     DL_Var {} -> mempty
     DL_Set _ v a -> freeVars v <> freeVars a
-    DL_LocalIf _ c t f -> freeVars c <> freeVars [t, f]
+    DL_LocalIf _ _ c t f -> freeVars c <> freeVars [t, f]
     DL_LocalSwitch _ v csm -> freeVars v <> freeVars csm
     DL_Only _ _ t -> freeVars t
     DL_MapReduce _ _ _ _ z a b f -> freeVars z <> bindsFor [a, b] f
-    DL_LocalDo _ t -> freeVars t
+    DL_LocalDo _ _ t -> freeVars t
 
 instance BoundVars DLStmt where
   boundVars = readMMap bvMap $ \case
@@ -224,8 +224,8 @@ instance BoundVars DLStmt where
     DL_ArrayReduce _ ans _ _ b as i f -> boundVars (as <> [ans, b, i]) <> boundVars f
     DL_Var _ v -> boundVars v
     DL_Set {} -> mempty
-    DL_LocalIf _ _ t f -> boundVars [t, f]
+    DL_LocalIf _ _ _ t f -> boundVars [t, f]
     DL_LocalSwitch _ _ csm -> boundVars csm
     DL_Only _ _ t -> boundVars t
     DL_MapReduce _ _ ans _ _ a b f -> boundVars [ans, a, b] <> boundVars f
-    DL_LocalDo _ t -> boundVars t
+    DL_LocalDo _ _ t -> boundVars t

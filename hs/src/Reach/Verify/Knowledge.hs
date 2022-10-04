@@ -291,7 +291,7 @@ kgq_m ctxt = \case
       >> kgq_l ctxt f
   DL_Var {} -> mempty
   DL_Set _ dv da -> kgq_a_only ctxt dv da
-  DL_LocalIf _ ca t f -> kgq_l ctxt' t >> kgq_l ctxt' f
+  DL_LocalIf _ _ ca t f -> kgq_l ctxt' t >> kgq_l ctxt' f
     where
       ctxt' = ctxt_add_back ctxt ca
   DL_LocalSwitch _ ov csm -> mapM_ cm1 csm
@@ -309,7 +309,7 @@ kgq_m ctxt = \case
       >> knows ctxt (P_Var a) (S.singleton (P_Map x))
       >> kgq_a_only ctxt ans r
       >> kgq_l ctxt f
-  DL_LocalDo _ t -> kgq_l ctxt t
+  DL_LocalDo _ _ t -> kgq_l ctxt t
 
 kgq_l :: KCtxt -> DLTail -> IO ()
 kgq_l ctxt = \case
@@ -325,7 +325,7 @@ kgq_asn_def ctxt (DLAssignment m) = mapM_ (kgq_a_all ctxt . DLA_Var) $ M.keys m
 kgq_n :: KCtxt -> LLConsensus -> IO ()
 kgq_n ctxt = \case
   LLC_Com m k -> kgq_m ctxt m >> kgq_n ctxt k
-  LLC_If _ ca t f ->
+  LLC_If _ _ ca t f ->
     ctxtNewScope ctxt' (kgq_n ctxt' t)
       >> ctxtNewScope ctxt' (kgq_n ctxt' f)
     where

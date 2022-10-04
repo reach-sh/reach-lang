@@ -4759,7 +4759,7 @@ doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
           typeEq t_ty f_ty
           at' <- withAt id
           let ans_dv = DLVar at' Nothing t_ty ret
-          theIf <- checkCond om $ DLS_If at' (DLA_Var cond_dv) sa tlifts' flifts'
+          theIf <- checkCond om $ DLS_If at' (Just ans_dv) (DLA_Var cond_dv) sa tlifts' flifts'
           saveLift $ DLS_Prompt at' ans_dv sa $ return theIf
           return $ (lvl, SLV_DLVar ans_dv)
     _ -> do
@@ -6367,7 +6367,7 @@ evalStmt = \case
           let sa = (mkAnnot tlifts) <> (mkAnnot flifts)
           at <- withAt id
           om <- readSt st_mode
-          saveLift =<< (checkCond om $ DLS_If at (DLA_Var cond_dv) sa tlifts flifts)
+          saveLift =<< (checkCond om $ DLS_If at Nothing (DLA_Var cond_dv) sa tlifts flifts)
           let levelHelp = map (\(r_at, rmi, (r_lvl, r_v), _) -> (r_at, rmi, (clvl <> r_lvl, r_v), True))
           let trets' = levelHelp trets
           let frets' = levelHelp frets

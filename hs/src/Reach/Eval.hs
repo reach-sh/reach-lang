@@ -275,7 +275,7 @@ instance Pandemic DLSStmt where
       DLS_ArrayMap at <$> pan v1 <*> pan a1 <*> pan v2 <*> pan v3 <*> pan bl
     DLS_ArrayReduce at v1 a1 a2 v2 v3 v4 bl -> do
       DLS_ArrayReduce at <$> pan v1 <*> pan a1 <*> pan a2 <*> pan v2 <*> pan v3 <*> pan v4 <*> pan bl
-    DLS_If at a ann sts1 sts2 -> DLS_If at <$> pan a <*> pure ann <*> pan sts1 <*> pan sts2
+    DLS_If at ans a ann sts1 sts2 -> DLS_If at <$> pan ans <*> pan a <*> pure ann <*> pan sts1 <*> pan sts2
     DLS_Switch at v sa sw -> DLS_Switch at <$> pan v <*> pure sa <*> pan sw
     DLS_Return at i a -> DLS_Return at i <$> pan a
     DLS_Prompt at v ann sts -> DLS_Prompt at <$> pan v <*> pure ann <*> pan sts

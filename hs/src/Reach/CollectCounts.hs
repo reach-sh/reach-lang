@@ -249,12 +249,12 @@ instance CountableK DLStmt where
       count_rms (as <> [ans, b, i]) (counts f <> kcs) <> counts (xs <> [z])
     DL_Var _ v -> count_rms [v] kcs
     DL_Set _ v a -> counts v <> counts a <> kcs
-    DL_LocalIf _ c t f -> counts c <> counts [t, f] <> kcs
+    DL_LocalIf _ _ c t f -> counts c <> counts [t, f] <> kcs
     DL_LocalSwitch _ v csm -> counts v <> counts csm <> kcs
     DL_Only _ _ t -> countsk kcs t
     DL_MapReduce _ _ ans _ z b a f ->
       count_rms [ans, b, a] (counts f <> kcs) <> counts z
-    DL_LocalDo _ t -> countsk kcs t
+    DL_LocalDo _ _ t -> countsk kcs t
 
 instance CountableK DLAssignment where
   countsk kcs (DLAssignment m) =
@@ -264,7 +264,7 @@ instance Countable ETail where
   counts = \case
     ET_Com s k -> countsk (counts k) s
     ET_Stop _ -> mempty
-    ET_If _ c t f -> counts c <> counts [t, f]
+    ET_If _ _ c t f -> counts c <> counts [t, f]
     ET_Switch _ o csm -> counts o <> counts csm
     ET_FromConsensus _ _ fi k -> countsk (counts k) fi
     ET_ToConsensus {..} ->
@@ -276,7 +276,7 @@ instance Countable ETail where
 instance Countable CTail where
   counts = \case
     CT_Com s k -> countsk (counts k) s
-    CT_If _ c t f -> counts c <> counts [t, f]
+    CT_If _ _ c t f -> counts c <> counts [t, f]
     CT_Switch _ o csm -> counts o <> counts csm
     CT_From _ _ fi -> countsk mempty fi
     CT_Jump _ _ svs asn -> counts svs <> counts asn

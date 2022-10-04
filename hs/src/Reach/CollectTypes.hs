@@ -193,11 +193,11 @@ instance CollectsTypes DLStmt where
   cts (DL_ArrayReduce _ ans x z b a i f) = cts ans <> cts x <> cts z <> cts b <> cts a <> cts i <> cts f
   cts (DL_Var _ v) = cts v
   cts (DL_Set _ v a) = cts v <> cts a
-  cts (DL_LocalIf _ a t f) = cts a <> cts t <> cts f
+  cts (DL_LocalIf _ _ a t f) = cts a <> cts t <> cts f
   cts (DL_LocalSwitch _ v csm) = cts v <> cts csm
   cts (DL_Only _ _ b) = cts b
   cts (DL_MapReduce _ _ ans _ z b a f) = cts ans <> cts z <> cts b <> cts a <> cts f
-  cts (DL_LocalDo _ t) = cts t
+  cts (DL_LocalDo _ _ t) = cts t
 
 instance CollectsTypes DLTail where
   cts (DT_Return _) = mempty
@@ -211,7 +211,7 @@ instance CollectsTypes a => CollectsTypes (DLInvariant a) where
 
 instance CollectsTypes LLConsensus where
   cts (LLC_Com m k) = cts m <> cts k
-  cts (LLC_If _ c t f) = cts c <> cts t <> cts f
+  cts (LLC_If _ _ c t f) = cts c <> cts t <> cts f
   cts (LLC_Switch _ v csm) = cts v <> cts csm
   cts (LLC_FromConsensus _ _ _ k) = cts k
   cts (LLC_While _ asn inv cond body k) = cts asn <> cts inv <> cts cond <> cts body <> cts k
@@ -254,7 +254,7 @@ instance CollectsTypes FromInfo where
 
 instance CollectsTypes CTail where
   cts (CT_Com m k) = cts m <> cts k
-  cts (CT_If _ ca t f) = cts ca <> cts t <> cts f
+  cts (CT_If _ _ ca t f) = cts ca <> cts t <> cts f
   cts (CT_Switch _ v csm) = cts v <> cts csm
   cts (CT_From _ _ msvs) = cts msvs
   cts (CT_Jump _ _ svs asn) = cts svs <> cts asn

@@ -743,8 +743,8 @@ instance Interp DLStmt where
       ev <- interp arg
       addToStore var ev
       return V_Null
-    DL_LocalDo _at dltail -> interp dltail
-    DL_LocalIf _at arg tail1 tail2 -> do
+    DL_LocalDo _at _ dltail -> interp dltail
+    DL_LocalIf _at _ arg tail1 tail2 -> do
       ev <- interp arg
       case ev of
         V_Bool True -> interp tail1
@@ -808,7 +808,7 @@ instance Interp LLConsensus where
     LLC_Com stmt cons -> do
       void $ interp stmt
       interp cons
-    LLC_If _at arg cons1 cons2 -> do
+    LLC_If _at _ arg cons1 cons2 -> do
       ev <- interp arg
       case ev of
         V_Bool True -> interp cons1

@@ -77,6 +77,7 @@ data Env = Env
   , eClearMaps :: Bool
   , eSimulate :: Bool
   , eSvs :: S.Set DLVar
+  , eVarsSet ::IORef (M.Map DLVar Int)
   }
 
 updateClearMaps :: Bool -> Env -> Env
@@ -214,6 +215,7 @@ mkEnv0 eCounter eDroppedAsserts eConst eParts eMaps eSimulate eSvs = do
         M.fromList $
           map (\x -> (x, mempty)) $ F_Ctor : F_All : F_Consensus : map F_One eParts
   eEnvsR <- liftIO $ newIORef eEnvs
+  eVarsSet <- liftIO $ newIORef mempty
   return $ Env {..}
 
 maybeClearMaps :: App a -> App a
@@ -245,6 +247,99 @@ opt_v2v v = fst <$> opt_v2p v
 
 opt_v2a :: DLVar -> App DLArg
 opt_v2a v = snd <$> opt_v2p v
+
+class IsCom a where
+  isCom :: a -> Maybe (DLStmt, a)
+
+instance IsCom DLTail where
+  isCom = \case
+    DT_Com m k -> Just (m, k)
+    _ -> Nothing
+
+instance IsCom CTail where
+  isCom = \case
+    CT_Com m k -> Just (m, k)
+    _ -> Nothing
+
+instance IsCom ETail where
+  isCom = \case
+    ET_Com m k -> Just (m, k)
+    _ -> Nothing
+
+instance IsCom LLStep where
+  isCom = \case
+    LLS_Com m k -> Just (m, k)
+    _ -> Nothing
+
+instance IsCom LLConsensus where
+  isCom = \case
+    LLC_Com m k -> Just (m, k)
+    _ -> Nothing
+
+class LiftPure a where
+  -- Returns what `DLVar` is `DL_Set` to and the pure `DLStmt`s along the way
+  -- Returns `Nothing` if there are impure stmts in `a` or there is no `DL_Set`
+  liftPure :: DLVar -> a -> (Maybe DLArg, [DLStmt])
+
+instance LiftPure DLTail where
+  liftPure dv = \case
+    DT_Return _ -> (Nothing, [])
+    DT_Com (DL_Set _ lhs rhs) (DT_Return _)
+      | lhs == dv -> (Just rhs, [])
+    DT_Com ds dt ->
+      case isPure ds of
+        True -> do
+          let (ma, dt') = liftPure dv dt
+          (ma, ds : dt')
+        False -> (Nothing, [])
+
+floatVar :: (DLStmt -> t -> t) -> SrcLoc -> DLVar -> t -> App t
+floatVar mkk at dv k = do
+  eVarsSet <- (liftIO . readIORef) =<< asks eVarsSet
+  case M.lookup dv eVarsSet of
+    -- There were zero branches that could not be lifted, i.e.
+    -- we generated a `const` assign, now drop this `var`.
+    Just 0 -> return $ k
+    _ -> return $ mkk (DL_Var at dv) k
+
+mkVar :: SrcLoc -> DLType -> App DLVar
+mkVar at t = do
+  ctr <- asks eCounter
+  idx <- liftIO $ incCounter ctr
+  return $ DLVar at Nothing t idx
+
+floatIf :: (DLStmt -> b -> b) -> SrcLoc -> DLVar -> DLArg -> DLTail -> DLTail -> b -> App b
+floatIf mkk at ansDv c tt ft k = do
+  case isPure tt && isPure ft of
+    True ->
+      case (liftPure ansDv tt, liftPure ansDv ft) of
+        ((Just ta, t_lifts), (Just fa, f_lifts)) -> do
+          eVarsSetR <- asks eVarsSet
+          eVarsSet <- (liftIO . readIORef) eVarsSetR
+          let mVal = M.lookup ansDv eVarsSet
+          -- Track that we successfully lifted this assignment
+          liftIO $ modifyIORef' eVarsSetR $ M.insert ansDv $ mSub1 mVal
+          let asn v = DL_Let at (DLV_Let DVC_Many v) $ DLE_PrimOp at IF_THEN_ELSE [c, ta, fa]
+          t <- case mVal of
+                Just 1 -> return $ mkk (asn ansDv) k
+                Just _ -> do
+                  tmp <- mkVar at (varType ansDv)
+                  let s2 = DL_Set at ansDv (DLA_Var tmp)
+                  return $ mkk (asn tmp) (mkk s2 k)
+                Nothing -> impossible "floatIf: trying to float if that does not set a dlvar"
+          return $ foldr mkk t $ t_lifts <> f_lifts
+        _ -> meh
+    False -> meh
+  where
+    meh = return $ mkk (DL_LocalIf at (Just ansDv) c tt ft) k
+    mSub1 = maybe 0 (\ x -> x - 1)
+
+float :: IsCom a => (DLStmt -> a -> a) -> a -> App a
+float mk t =
+  case isCom t of
+    Just (DL_Var at dv, k) -> floatVar mk at dv k
+    Just (DL_LocalIf at (Just dv) c tt ft, k) -> floatIf mk at dv c tt ft k
+    _ -> return t
 
 instance (Traversable t, Optimize a) => Optimize (t a) where
   opt = traverse opt
@@ -612,8 +707,8 @@ recLearn v vIs = do
   -- know
   mapM_ (uncurry recLearn) $ maybe [] (learn vIs) mExpr
 
-optIf :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (SrcLoc -> DLArg -> k -> k -> r) -> SrcLoc -> DLArg -> k -> k -> App r
-optIf mkDo mkIf at c t f =
+optIf :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (DLArg -> k -> k -> r) -> DLArg -> k -> k -> App r
+optIf mkDo mkIf c t f =
   opt c >>= \case
     DLA_Literal (DLL_Bool True) -> mkDo <$> opt t
     DLA_Literal (DLL_Bool False) -> mkDo <$> opt f
@@ -629,9 +724,9 @@ optIf mkDo mkIf at c t f =
         Left _ ->
           optNotHuh c' >>= \case
             Just c'' ->
-              return $ mkIf at c'' f' t'
+              return $ mkIf c'' f' t'
             Nothing ->
-              return $ mkIf at c' t' f'
+              return $ mkIf c' t' f'
 
 gcsSwitch :: Optimize k => ConstT (SwitchCases k)
 gcsSwitch = mapM_ (\(_, _, n) -> gcs n)
@@ -754,10 +849,10 @@ instance Optimize DLStmt where
       optConst v >>= \case
         False -> DL_Set at v <$> opt a
         True -> optLet at (DLV_Let DVC_Many v) (DLE_Arg at a)
-    DL_LocalIf at c t f ->
-      optIf (DL_LocalDo at) DL_LocalIf at c t f
+    DL_LocalIf at mans c t f ->
+      optIf (DL_LocalDo at mans) (DL_LocalIf at mans) c t f
     DL_LocalSwitch at ov csm ->
-      optSwitch (DL_LocalDo at) DT_Com DL_LocalSwitch at ov csm
+      optSwitch (DL_LocalDo at Nothing) DT_Com DL_LocalSwitch at ov csm
     DL_ArrayMap at ans xs as i f -> do
       s' <- DL_ArrayMap at ans <$> opt xs <*> pure as <*> pure i <*> newScope (opt f)
       maybeUnroll s' xs $ return s'
@@ -774,10 +869,10 @@ instance Optimize DLStmt where
       case l' of
         DT_Return _ -> return $ DL_Nop at
         _ -> return $ DL_Only at ep l'
-    DL_LocalDo at t ->
+    DL_LocalDo at mans t ->
       opt t >>= \case
         DT_Return _ -> return $ DL_Nop at
-        t' -> return $ DL_LocalDo at t'
+        t' -> return $ DL_LocalDo at mans t'
     where
       maybeUnroll :: DLStmt -> [DLArg] -> App DLStmt -> App DLStmt
       maybeUnroll s xs def = do
@@ -786,7 +881,7 @@ instance Optimize DLStmt where
           True -> do
             c <- asks eCounter
             let at = srclocOf s
-            let t = DL_LocalDo at $ DT_Com s $ DT_Return at
+            let t = DL_LocalDo at Nothing $ DT_Com s $ DT_Return at
             UnrollWrapper _ t' <- liftIO $ unrollLoops $ UnrollWrapper c t
             return t'
           _ -> def
@@ -798,18 +893,30 @@ instance Optimize DLStmt where
       cr <- asks eConstR
       let f = Just . (+) 1 . fromMaybe 0
       liftIO $ modifyIORef cr $ M.alter f v
-    DL_LocalIf _ _ t f -> gcs t >> gcs f
+    DL_LocalIf _ _ _ t f -> gcs t >> gcs f
     DL_LocalSwitch _ _ csm -> gcsSwitch csm
     DL_ArrayMap _ _ _ _ _ f -> gcs f
     DL_ArrayReduce _ _ _ _ _ _ _ f -> gcs f
     DL_MapReduce _ _ _ _ _ _ _ f -> gcs f
     DL_Only _ _ l -> gcs l
-    DL_LocalDo _ t -> gcs t
+    DL_LocalDo _ _ t -> gcs t
+
+-- Track that we are attempting to lift this assignment
+preFloat :: DLStmt -> App ()
+preFloat = \case
+  DL_LocalIf _ (Just dv) _ _ _ -> do
+    eVarsSetR <- asks eVarsSet
+    eVarsSet <- (liftIO . readIORef) eVarsSetR
+    liftIO $ modifyIORef' eVarsSetR $
+      M.insert dv $ maybe (1) succ $ M.lookup dv eVarsSet
+  _ -> return ()
 
 instance Optimize DLTail where
   opt = \case
     DT_Return at -> return $ DT_Return at
-    DT_Com m k -> mkCom DT_Com <$> opt m <*> opt k
+    DT_Com m k -> do
+      preFloat m
+      float DT_Com =<< mkCom DT_Com <$> opt m <*> opt k
   gcs = \case
     DT_Return _ -> return ()
     DT_Com m k -> gcs m >> gcs k
@@ -832,9 +939,11 @@ instance {-# OVERLAPS #-} Optimize a => Optimize (DLInvariant a) where
 
 instance Optimize LLConsensus where
   opt = \case
-    LLC_Com m k -> mkCom LLC_Com <$> opt m <*> opt k
-    LLC_If at c t f ->
-      optIf id LLC_If at c t f
+    LLC_Com m k ->do
+      preFloat m
+      float LLC_Com =<< mkCom LLC_Com <$> opt m <*> opt k
+    LLC_If at mans c t f ->
+      optIf id (LLC_If at mans) c t f
     LLC_Switch at ov csm ->
       optSwitch id LLC_Com LLC_Switch at ov csm
     LLC_While at asn inv cond body k -> do
@@ -848,7 +957,7 @@ instance Optimize LLConsensus where
       LLC_ViewIs at vn vk <$> opt a <*> opt k
   gcs = \case
     LLC_Com m k -> gcs m >> gcs k
-    LLC_If _ _ t f -> gcs t >> gcs f
+    LLC_If _ _ _ t f -> gcs t >> gcs f
     LLC_Switch _ _ csm -> gcsSwitch csm
     LLC_While _ _ _ cond body k -> gcs cond >> gcs body >> gcs k
     LLC_Continue {} -> return ()
@@ -889,7 +998,9 @@ opt_send (p, DLSend isClass args amta whena) =
 
 instance Optimize LLStep where
   opt = \case
-    LLS_Com m k -> mkCom LLS_Com <$> opt m <*> opt k
+    LLS_Com m k -> do
+      preFloat m
+      float LLS_Com =<< mkCom LLS_Com <$> opt m <*> opt k
     LLS_Stop at -> pure $ LLS_Stop at
     LLS_ToConsensus at lct send recv mtime ->
       LLS_ToConsensus at <$> opt lct <*> send' <*> recv' <*> mtime'
@@ -945,10 +1056,12 @@ instance {-# OVERLAPPING #-} (Optimize a, Optimize b, Optimize c, Optimize d, Op
 
 instance Optimize ETail where
   opt = \case
-    ET_Com m k -> mkCom ET_Com <$> opt m <*> opt k
+    ET_Com m k -> do
+      preFloat m
+      float ET_Com =<< mkCom ET_Com <$> opt m <*> opt k
     ET_Stop at -> return $ ET_Stop at
-    ET_If at c t f ->
-      optIf id ET_If at c t f
+    ET_If at mans c t f ->
+      optIf id (ET_If at mans) c t f
     ET_Switch at ov csm ->
       optSwitch id ET_Com ET_Switch at ov csm
     ET_FromConsensus at vi fi k ->
@@ -960,7 +1073,7 @@ instance Optimize ETail where
   gcs = \case
     ET_Com m k -> gcs m >> gcs k
     ET_Stop _ -> return ()
-    ET_If _ _ t f -> gcs t >> gcs f
+    ET_If _ _ _ t f -> gcs t >> gcs f
     ET_Switch _ _ csm -> gcsSwitch csm
     ET_FromConsensus _ _ _ k -> gcs k
     ET_ToConsensus {..} -> gcs et_tc_cons >> gcs_mtime et_tc_from_mtime
@@ -969,9 +1082,11 @@ instance Optimize ETail where
 
 instance Optimize CTail where
   opt = \case
-    CT_Com m k -> mkCom CT_Com <$> opt m <*> opt k
-    CT_If at c t f ->
-      optIf id CT_If at c t f
+    CT_Com m k -> do
+      preFloat m
+      float CT_Com =<< mkCom CT_Com <$> opt m <*> opt k
+    CT_If at mans c t f ->
+      optIf id (CT_If at mans) c t f
     CT_Switch at ov csm ->
       optSwitch id CT_Com CT_Switch at ov csm
     CT_From at w fi ->
@@ -980,7 +1095,7 @@ instance Optimize CTail where
       CT_Jump at which <$> opt vs <*> opt asn
   gcs = \case
     CT_Com m k -> gcs m >> gcs k
-    CT_If _ _ t f -> gcs t >> gcs f
+    CT_If _ _ _ t f -> gcs t >> gcs f
     CT_Switch _ _ csm -> gcsSwitch csm
     CT_From {} -> return ()
     CT_Jump {} -> return ()

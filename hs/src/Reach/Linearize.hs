@@ -88,6 +88,13 @@ d_inv :: (Applicative m) => (a -> m b) -> DLInvariant a -> m (DLInvariant b)
 d_inv block (DLInvariant inv_b minv_lab) =
   DLInvariant <$> block inv_b <*> pure minv_lab
 
+getRet :: Maybe DLVar -> DKApp (Maybe DLVar)
+getRet = \case
+  Just a  -> return $ Just a
+  Nothing -> do
+    ret <- asks eRet
+    return $ fst3 . snd <$> ret
+
 dk1 :: DKTail -> DLSStmt -> DKApp DKTail
 dk1 k s =
   case s of
@@ -96,9 +103,10 @@ dk1 k s =
       com' $ DKC_ArrayMap at ans xs as i <$> dk_block at f
     DLS_ArrayReduce at ans xs z b as i f ->
       com' $ DKC_ArrayReduce at ans xs z b as i <$> dk_block at f
-    DLS_If at c _ t f -> do
-      let con = DK_If at c
-      let loc t' f' = DK_Com (DKC_LocalIf at c t' f') k
+    DLS_If at mans c _ t f -> do
+      ans <- getRet mans
+      let con = DK_If at ans c
+      let loc t' f' = DK_Com (DKC_LocalIf at ans c t' f') k
       let mt = DK_Stop at
       (mk, k') <-
         getDKBM s >>= \case
@@ -135,7 +143,7 @@ dk1 k s =
       case isLocal s of
         True -> do
           ss' <- withReturn ret (dv, False, DK_Stop at) $ dk_top at ss
-          return $ DK_Com (DKC_Var at dv) $ DK_Com (DKC_LocalDo at ss') k
+          return $ DK_Com (DKC_Var at dv) $ DK_Com (DKC_LocalDo at (Just dv) ss') k
         False ->
           withReturn ret (dv, True, k) $
             case turnVarIntoLet of
@@ -255,8 +263,8 @@ instance CanLift DKCommon where
     DKC_ArrayReduce _ _ _ _ _ _ _ f -> canLift f
     DKC_Var {} -> True
     DKC_Set {} -> True
-    DKC_LocalDo _ t -> canLift t
-    DKC_LocalIf _ _ t f -> canLift t && canLift f
+    DKC_LocalDo _ _ t -> canLift t
+    DKC_LocalIf _ _ _ t f -> canLift t && canLift f
     DKC_LocalSwitch _ _ csm -> canLift csm
     DKC_MapReduce _ _ _ _ _ _ _ f -> canLift f
     DKC_FluidSet {} -> True
@@ -319,7 +327,7 @@ instance LiftCon DKTail where
     DK_Stop at -> return $ DK_Stop at
     DK_ToConsensus at send recv mtime -> do
       DK_ToConsensus at send <$> (noLifts $ lc recv) <*> lc mtime
-    DK_If at c t f -> DK_If at c <$> lc t <*> lc f
+    DK_If at mans c t f -> DK_If at mans c <$> lc t <*> lc f
     DK_Switch at v csm -> DK_Switch at v <$> lc csm
     DK_FromConsensus at1 at2 fs k ->
       captureLifts at1 $ DK_FromConsensus at1 at2 fs <$> lc k
@@ -526,8 +534,8 @@ df_com mkk back = \case
         DKC_ArrayReduce a b c d e f g x -> DL_ArrayReduce a b c d e f g <$> df_bl x
         DKC_Var a b -> return $ DL_Var a b
         DKC_Set a b c -> return $ DL_Set a b c
-        DKC_LocalDo a x -> DL_LocalDo a <$> df_t x
-        DKC_LocalIf a b x y -> DL_LocalIf a b <$> df_t x <*> df_t y
+        DKC_LocalDo a mans x -> DL_LocalDo a mans <$> df_t x
+        DKC_LocalIf a mans b x y -> DL_LocalIf a mans b <$> df_t x <*> df_t y
         DKC_LocalSwitch a b x -> DL_LocalSwitch a b <$> mapM go x
           where
             go (c, vu, y) = (,,) c vu <$> df_t y
@@ -554,8 +562,8 @@ df_t = \case
 
 df_con :: DKTail -> DFApp LLConsensus
 df_con = \case
-  DK_If a c t f ->
-    LLC_If a c <$> df_con t <*> df_con f
+  DK_If a mans c t f ->
+    LLC_If a mans c <$> df_con t <*> df_con f
   DK_Switch a v csm ->
     LLC_Switch a v <$> mapM cm1 csm
     where
