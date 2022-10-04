@@ -133,11 +133,11 @@ instance AC DLStmt where
         Just _ -> do
           ac_visit $ da
           return $ DL_Set at dv da
-    DL_LocalIf at c t f -> do
+    DL_LocalIf at mans c t f -> do
       f' <- ac f
       t' <- ac t
       ac_visit $ c
-      return $ DL_LocalIf at c t' f'
+      return $ DL_LocalIf at mans c t' f'
     DL_LocalSwitch at ov csm -> do
       csm' <- ac csm
       ac_visit $ ov
@@ -150,7 +150,7 @@ instance AC DLStmt where
       f' <- ac f
       ac_visit $ z
       return $ DL_MapReduce at mri ans x z b a f'
-    DL_LocalDo at t -> DL_LocalDo at <$> ac t
+    DL_LocalDo at mans t -> DL_LocalDo at mans <$> ac t
     where
       skip at = return $ DL_Nop at
 
@@ -184,11 +184,11 @@ instance AC ETail where
       m' <- ac m
       return $ mkCom ET_Com m' k'
     ET_Stop at -> return $ ET_Stop at
-    ET_If at c t f -> do
+    ET_If at mans c t f -> do
       f' <- ac f
       t' <- ac t
       ac_visit $ c
-      return $ ET_If at c t' f'
+      return $ ET_If at mans c t' f'
     ET_Switch at v csm -> do
       csm' <- ac csm
       ac_visit v
@@ -225,8 +225,8 @@ condBlock :: CTail -> Maybe (DLStmt, CTail)
 condBlock c =
   case (vs, ms') of
     ([], _) -> Nothing
-    (_, c'@(DL_LocalIf {}) : ms'') -> good c' ms''
-    (_, c'@(DL_LocalSwitch {}) : ms'') -> good c' ms''
+    (_, c'@(DL_LocalIf _ mans _ _ _) : ms'') -> good mans c' ms''
+    (_, c'@(DL_LocalSwitch {}) : ms'') -> good Nothing c' ms''
     _ -> Nothing
   where
     at = srclocOf c
@@ -235,7 +235,7 @@ condBlock c =
       DL_Var {} -> True
       _ -> False
     (vs, ms') = span isVar ms
-    good c' ms'' = Just (DL_LocalDo at dt, k')
+    good mans c' ms'' = Just (DL_LocalDo at mans dt, k')
       where
         dt = dtList at (vs <> [c'])
         k' = dtReplace CT_Com k (dtList at ms'')
@@ -258,11 +258,11 @@ instance AC CTail where
           case canFloat of
             True -> return $ mk dt $ mk m' k''
             False -> meh
-    CT_If at c t f -> do
+    CT_If at mans c t f -> do
       f' <- ac f
       t' <- ac t
       ac_visit $ c
-      return $ CT_If at c t' f'
+      return $ CT_If at mans c t' f'
     CT_Switch at v csm -> do
       csm' <- ac csm
       ac_visit $ v
@@ -370,11 +370,11 @@ instance AC LLConsensus where
           _ ->
             return c'
       return $ mkCom LLC_Com m' c''
-    LLC_If at c t f -> do
+    LLC_If at mans c t f -> do
       f' <- ac f
       t' <- ac t
       ac_visit c
-      return $ LLC_If at c t' f'
+      return $ LLC_If at mans c t' f'
     LLC_Switch at c csm -> do
       csm' <- ac csm
       ac_visit c

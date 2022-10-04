@@ -1308,7 +1308,7 @@ smt_m = \case
     dv' <- smt_a at (DLA_Var dv)
     va' <- smt_a at va
     smtAssertCtxt (smtEq dv' va')
-  DL_LocalIf at ca t f -> do
+  DL_LocalIf at _ ca t f -> do
     ca_se <- smt_a at ca
     let with_f = smtNewPathConstraint $ smtNot ca_se
     let with_t = smtNewPathConstraint $ ca_se
@@ -1325,7 +1325,7 @@ smt_m = \case
       _ -> impossible $ "Map.reduce outside invariant"
   DL_Only _at (Left who) loc -> smt_lm who loc
   DL_Only {} -> impossible $ "right only before EPP"
-  DL_LocalDo _ t -> smt_l t
+  DL_LocalDo _ _ t -> smt_l t
 
 smt_l :: DLTail -> App ()
 smt_l = \case
@@ -1420,7 +1420,7 @@ smtCurrentAddress who = do
 smt_n :: LLConsensus -> App ()
 smt_n = \case
   LLC_Com m k -> smt_m m <> smt_n k
-  LLC_If at ca t f -> do
+  LLC_If at _ ca t f -> do
     ca' <- smt_a at ca
     let go (v, k) = do
           v' <- smt_a at (DLA_Literal (DLL_Bool v))

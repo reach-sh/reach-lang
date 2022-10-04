@@ -115,7 +115,7 @@ instance Unroll DLStmt where
     DL_Let at mdv e -> DL_Let at mdv <$> ul e
     DL_Var at v -> return $ DL_Var at v
     DL_Set at v a -> return $ DL_Set at v a
-    DL_LocalIf at c t f -> DL_LocalIf at c <$> ul t <*> ul f
+    DL_LocalIf at mans c t f -> DL_LocalIf at mans c <$> ul t <*> ul f
     DL_LocalSwitch at ov csm -> DL_LocalSwitch at ov <$> ul csm
     DL_ArrayMap at ans xs as i fb -> do
       (_, xs') <- unzip <$> mapM (ul_explode at) xs
@@ -130,7 +130,7 @@ instance Unroll DLStmt where
     DL_MapReduce at mri ans x z b a fb ->
       DL_MapReduce at mri ans x z b a <$> ul fb
     DL_Only at p l -> DL_Only at p <$> ul l
-    DL_LocalDo at t -> DL_LocalDo at <$> ul t
+    DL_LocalDo at mans t -> DL_LocalDo at mans <$> ul t
 
 ul_m :: Unroll a => (DLStmt -> a -> a) -> DLStmt -> AppT a
 ul_m mkk m k = do
@@ -158,7 +158,7 @@ instance Unroll a => Unroll (DLInvariant a) where
 instance Unroll LLConsensus where
   ul = \case
     LLC_Com m k -> ul_m LLC_Com m k
-    LLC_If at c t f -> LLC_If at c <$> ul t <*> ul f
+    LLC_If at mans c t f -> LLC_If at mans c <$> ul t <*> ul f
     LLC_Switch at ov csm -> LLC_Switch at ov <$> ul csm
     LLC_FromConsensus at at' fs s -> LLC_FromConsensus at at' fs <$> ul s
     LLC_While at asn inv cond body k -> do
@@ -197,7 +197,7 @@ instance Unroll LLProg where
 instance Unroll CTail where
   ul = \case
     CT_Com m k -> ul_m CT_Com m k
-    CT_If at c t f -> CT_If at c <$> ul t <*> ul f
+    CT_If at mans c t f -> CT_If at mans c <$> ul t <*> ul f
     CT_Switch at ov csm -> CT_Switch at ov <$> ul csm
     e@(CT_From {}) -> return $ e
     e@(CT_Jump {}) -> return $ e

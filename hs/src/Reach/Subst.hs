@@ -151,12 +151,12 @@ instance Subst DLStmt where
       DL_ArrayReduce at ans <$> subst x <*> subst z <*> pure b <*> pure a <*> pure i <*> subst f
     DL_Var at v -> return $ DL_Var at v
     DL_Set at v a -> DL_Set at v <$> subst a
-    DL_LocalIf at c t f -> DL_LocalIf at <$> subst c <*> subst t <*> subst f
+    DL_LocalIf at mans c t f -> DL_LocalIf at <$> subst mans <*> subst c <*> subst t <*> subst f
     DL_LocalSwitch at v csm -> DL_LocalSwitch at <$> subst v <*> subst csm
     DL_Only at who b -> DL_Only at who <$> subst b
     DL_MapReduce at mri x a b u v bl ->
       DL_MapReduce at mri x a <$> subst b <*> pure u <*> pure v <*> subst bl
-    DL_LocalDo at t -> DL_LocalDo at <$> subst t
+    DL_LocalDo at mans t -> DL_LocalDo at <$> subst mans <*> subst t
 
 instance Subst DLTail where
   subst = \case
@@ -177,7 +177,7 @@ instance Subst FromInfo where
 instance Subst CTail where
   subst = \case
     CT_Com m k -> CT_Com <$> subst m <*> subst k
-    CT_If at c t f -> CT_If at <$> subst c <*> subst t <*> subst f
+    CT_If at mans c t f -> CT_If at <$> subst mans <*> subst c <*> subst t <*> subst f
     CT_Switch at v csm -> CT_Switch at <$> subst v <*> subst csm
     CT_From at which msvs -> CT_From at which <$> subst msvs
     CT_Jump at which svs asn -> CT_Jump at which <$> subst svs <*> subst asn

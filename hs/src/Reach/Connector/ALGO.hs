@@ -2663,7 +2663,7 @@ cm km = \case
     ca da
     output $ TStore loc (textyv dv)
     km
-  DL_LocalIf _ a tp fp -> do
+  DL_LocalIf _ _ a tp fp -> do
     ca a
     false_lab <- freshLabel "localIfF"
     join_lab <- freshLabel "localIfK"
@@ -2683,7 +2683,7 @@ cm km = \case
     impossible $ "cannot inspect maps at runtime"
   DL_Only {} ->
     impossible $ "only in CP"
-  DL_LocalDo _ t -> cp km t
+  DL_LocalDo _ _ t -> cp km t
 
 cp :: App () -> DLTail -> App ()
 cp km = \case
@@ -2693,7 +2693,7 @@ cp km = \case
 ct :: CTail -> App ()
 ct = \case
   CT_Com m k -> cm (ct k) m
-  CT_If _ a tt ft -> do
+  CT_If _ _ a tt ft -> do
     ca a
     false_lab <- freshLabel "ifF"
     code "bz" [false_lab]

@@ -678,7 +678,7 @@ jsCom = \case
     dv' <- jsVar dv
     da' <- jsArg da
     return $ dv' <+> "=" <+> da' <> semi
-  DL_LocalIf _ c t f -> do
+  DL_LocalIf _ _ c t f -> do
     c' <- jsArg c
     t' <- jsPLTail t
     f' <- jsPLTail f
@@ -712,7 +712,7 @@ jsCom = \case
       True -> jsPLTail l
       False -> mempty
   DL_Only {} -> impossible $ "left only after EPP"
-  DL_LocalDo _ t -> jsPLTail t
+  DL_LocalDo _ _ t -> jsPLTail t
 
 jsPLTail :: AppT DLTail
 jsPLTail = \case
@@ -791,7 +791,7 @@ jsETail = \case
     (ctxt_mode <$> ask) >>= \case
       JM_Simulate -> mempty
       _ -> return $ "return" <> semi
-  ET_If _ c t f -> jsIf <$> jsArg c <*> jsETail t <*> jsETail f
+  ET_If _ _ c t f -> jsIf <$> jsArg c <*> jsETail t <*> jsETail f
   ET_Switch at ov csm -> jsEmitSwitch jsETail at ov csm
   ET_FromConsensus _at which msvs k ->
     (ctxt_mode <$> ask) >>= \case

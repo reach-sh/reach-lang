@@ -1257,8 +1257,8 @@ data DLStmt
   | DL_ArrayReduce SrcLoc DLVar [DLArg] DLArg DLVar [DLVar] DLVar DLBlock
   | DL_Var SrcLoc DLVar
   | DL_Set SrcLoc DLVar DLArg
-  | DL_LocalDo SrcLoc DLTail
-  | DL_LocalIf SrcLoc DLArg DLTail DLTail
+  | DL_LocalDo SrcLoc (Maybe DLVar) DLTail
+  | DL_LocalIf SrcLoc (Maybe DLVar) DLArg DLTail DLTail
   | DL_LocalSwitch SrcLoc DLVar (SwitchCases DLTail)
   | DL_Only SrcLoc (Either SLPart Bool) DLTail
   | DL_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DLBlock
@@ -1272,8 +1272,8 @@ instance SrcLocOf DLStmt where
     DL_ArrayReduce a _ _ _ _ _ _ _ -> a
     DL_Var a _ -> a
     DL_Set a _ _ -> a
-    DL_LocalDo a _ -> a
-    DL_LocalIf a _ _ _ -> a
+    DL_LocalDo a _ _ -> a
+    DL_LocalIf a _ _ _ _ -> a
     DL_LocalSwitch a _ _ -> a
     DL_Only a _ _ -> a
     DL_MapReduce a _ _ _ _ _ _ _ -> a
@@ -1287,8 +1287,8 @@ instance Pretty DLStmt where
     DL_ArrayReduce _ ans xs z b as i f -> prettyReduce ans xs z b as i f
     DL_Var _at dv -> "let" <+> pretty dv <> semi
     DL_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
-    DL_LocalDo _at k -> "do" <+> braces (pretty k) <> semi
-    DL_LocalIf _at ca t f -> "local" <+> prettyIfp ca t f
+    DL_LocalDo _at ans k -> "do"  <> parens (pretty ans) <+> braces (pretty k) <> semi
+    DL_LocalIf _at ans ca t f -> "local" <> parens (pretty ans) <+> prettyIfp ca t f
     DL_LocalSwitch _at ov csm -> "local" <+> prettySwitch ov csm
     DL_Only _at who b -> prettyOnly who b
     DL_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a () f
@@ -1301,8 +1301,8 @@ instance IsPure DLStmt where
     DL_ArrayReduce _ _ _ _ _ _ _ f -> isPure f
     DL_Var {} -> True
     DL_Set {} -> True -- XXX This might be bad
-    DL_LocalDo _ k -> isPure k
-    DL_LocalIf _ _ t f -> isPure t && isPure f
+    DL_LocalDo _ _ k -> isPure k
+    DL_LocalIf _ _ _ t f -> isPure t && isPure f
     DL_LocalSwitch _ _ csm -> isPure csm
     DL_Only _ _ b -> isPure b
     DL_MapReduce _ _ _ _ _ _ _ f -> isPure f
@@ -1311,7 +1311,7 @@ mkCom :: (DLStmt -> k -> k) -> DLStmt -> k -> k
 mkCom mk m k =
   case m of
     DL_Nop _ -> k
-    DL_LocalDo _ k' ->
+    DL_LocalDo _ _ k' ->
       dtReplace mk k k'
     _ -> mk m k
 
@@ -1339,7 +1339,6 @@ dtList :: SrcLoc -> [DLStmt] -> DLTail
 dtList at = \case
   [] -> DT_Return at
   m : ms -> DT_Com m $ dtList at ms
-
 data DLBlock
   = DLBlock SrcLoc [SLCtxtFrame] DLTail DLArg
   deriving (Eq)

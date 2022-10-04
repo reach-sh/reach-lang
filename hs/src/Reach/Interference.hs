@@ -52,7 +52,7 @@ getWrittenVars = \case
     FI_Continue vs -> map fst vs
     _ -> []
   CT_Com _ t -> getWrittenVars t
-  CT_If _ _ t f -> concatMap getWrittenVars [t, f]
+  CT_If _ _ _ t f -> concatMap getWrittenVars [t, f]
   CT_Switch _ _ sc -> getSwitchWrittenVars sc
   CT_Jump {} -> []
   where

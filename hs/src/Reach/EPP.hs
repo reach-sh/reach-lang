@@ -402,7 +402,7 @@ be_m = \case
     fg_use $ a
     let mkt _ = return $ DL_Set at v a
     return $ (,) (ce_vuse v >> (mkt ())) (mkt ())
-  DL_LocalIf at c t f -> do
+  DL_LocalIf at mans c t f -> do
     fg_use $ c
     t'p <- be_t t
     f'p <- be_t f
@@ -410,7 +410,7 @@ be_m = \case
       t'p
       f'p
       (\t' f' ->
-         return $ DL_LocalIf at c t' f')
+         return $ DL_LocalIf at mans c t' f')
   DL_LocalSwitch at ov csm -> do
     fg_use $ ov
     let go (v, vu, k) = do
@@ -450,9 +450,9 @@ be_m = \case
             True -> DL_Only at (Right ic) <$> l'l
     return $ (,) t'c t'l
   DL_Only {} -> impossible $ "right only before EPP"
-  DL_LocalDo at t -> do
+  DL_LocalDo at mans t -> do
     (t'c, t'l) <- be_t t
-    let mk = DL_LocalDo at
+    let mk = DL_LocalDo at mans
     return $ (,) (mk <$> t'c) (mk <$> t'l)
   where
     nop at = retb0 $ const $ return $ DL_Nop at
@@ -547,11 +547,11 @@ be_c = \case
     (k'c, k'l) <- remember_toks $ be_c k
     (c'c, c'l) <- withConsensus True $ be_m c
     return $ (,) (backwards (mkCom CT_Com) c'c k'c) (backwards (mkCom ET_Com) c'l k'l)
-  LLC_If at c t f -> do
+  LLC_If at mans c t f -> do
     (t'c, t'l) <- be_c t
     (f'c, f'l) <- be_c f
     fg_use $ c
-    let go mk t' f' = mk at c <$> t' <*> f'
+    let go mk t' f' = mk at mans c <$> t' <*> f'
     return $ (,) (go CT_If t'c f'c) (go ET_If t'l f'l)
   LLC_Switch at ov csm -> do
     fg_use $ ov
@@ -624,7 +624,7 @@ be_c = \case
       inLoop $
         local (\e -> e {be_loop = Just (this_loopj, this_loopsp)}) $
           be_c body
-    let loop_if = CT_If cond_at cond_a <$> body'c <*> goto_kont
+    let loop_if = CT_If cond_at Nothing cond_a <$> body'c <*> goto_kont
     let loop_top = dtReplace CT_Com <$> loop_if <*> cond_l'c
     cnt <- asks be_counter
     setHandler this_loopj $ do
@@ -701,7 +701,7 @@ be_s_ = \case
           $ do
             ms <- asks be_ms
             let mst = dtList at (toList ms)
-            let mss = DL_LocalDo at mst
+            let mss = DL_LocalDo at Nothing mst
             fg_use $ int_ok
             fg_defn $ from_v : time_v : secs_v : msg_vs
             be_c_top mss $ ok_c

@@ -27,7 +27,7 @@ pointe it = [("!node", it, M.fromList [ ("shape", "point") ])]
 geT :: String -> String -> CTail -> DotGraph
 geT trans from = \case
   CT_Com _ t -> rec t
-  CT_If _ _ t f -> rec t <> rec f
+  CT_If _ _ _ t f -> rec t <> rec f
   CT_Switch _ _ csm -> concatMap go $ M.toAscList csm
     where
       go (_, (_, _, t)) = rec t

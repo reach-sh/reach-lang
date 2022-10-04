@@ -210,7 +210,7 @@ instance Freshen DLStmt where
       DL_Let at f' <$> fu e
     DL_Var at v -> DL_Var at <$> fu_v v
     DL_Set at v a -> DL_Set at <$> fu v <*> fu a
-    DL_LocalIf at c t f -> DL_LocalIf at <$> fu c <*> fu t <*> fu f
+    DL_LocalIf at mans c t f -> DL_LocalIf at <$> fu mans <*> fu c <*> fu t <*> fu f
     DL_LocalSwitch at ov csm ->
       DL_LocalSwitch at <$> fu ov <*> fu csm
     DL_Only at who b -> DL_Only at who <$> fu b
@@ -237,7 +237,7 @@ instance Freshen DLStmt where
       a' <- fu_v a
       fb' <- fu fb
       return $ DL_MapReduce at mri ans' x z' b' a' fb'
-    DL_LocalDo at t -> DL_LocalDo at <$> fu t
+    DL_LocalDo at mans t -> DL_LocalDo at <$> fu mans <*> fu t
 
 instance Freshen DLPayAmt where
   fu = \case
@@ -272,7 +272,7 @@ instance Freshen k => Freshen (DLinExportBlock k) where
 instance Freshen LLConsensus where
   fu = \case
     LLC_Com s k -> LLC_Com <$> fu s <*> fu k
-    LLC_If at c t f -> LLC_If at <$> fu c <*> fu t <*> fu f
+    LLC_If at mans c t f -> LLC_If at <$> fu mans <*> fu c <*> fu t <*> fu f
     LLC_Switch at v csm -> LLC_Switch at <$> fu v <*> fu csm
     LLC_FromConsensus x y fs k -> LLC_FromConsensus x y fs <$> fu k
     LLC_While at asn inv cond body k ->
@@ -308,7 +308,7 @@ instance Freshen ETail where
   fu = \case
     ET_Com c k -> ET_Com <$> fu c <*> fu k
     ET_Stop at -> return $ ET_Stop at
-    ET_If a c t f -> ET_If a <$> fu c <*> fu t <*> fu f
+    ET_If a mans c t f -> ET_If a <$> fu mans <*> fu c <*> fu t <*> fu f
     ET_Switch a x csm -> ET_Switch a <$> fu x <*> fu csm
     ET_FromConsensus a w f k -> ET_FromConsensus a w <$> fu f <*> fu k
     ET_ToConsensus at from prev lct w me msg out timev secsv didSendv mtime cons ->

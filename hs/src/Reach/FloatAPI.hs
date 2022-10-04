@@ -48,7 +48,7 @@ instance FloatAPI LLConsensus where
       save c
       fa k
     LLC_Com m k -> LLC_Com m <$> fa k
-    LLC_If at c t f -> nf $ LLC_If at c <$> cffa t <*> cffa f
+    LLC_If at mans c t f -> nf $ LLC_If at mans c <$> cffa t <*> cffa f
     LLC_Switch at v csm -> LLC_Switch at v <$> fa csm
     LLC_FromConsensus at1 at2 fs s ->
       nf $ LLC_FromConsensus at1 at2 fs <$> fa s

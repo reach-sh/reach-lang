@@ -1246,7 +1246,7 @@ solCom = \case
     addMemVar dv
     mempty
   DL_Set _ dv da -> solSet (solMemVar dv) <$> solArg da
-  DL_LocalIf _ ca t f ->
+  DL_LocalIf _ _ ca t f ->
     solIf <$> solArg ca <*> solPLTail t <*> solPLTail f
   DL_LocalSwitch at ov csm -> solSwitch solPLTail at ov csm
   DL_Only {} -> impossible $ "only in CT"
@@ -1298,7 +1298,7 @@ solCom = \case
         ]
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
-  DL_LocalDo _ t -> solPLTail t
+  DL_LocalDo _ _ t -> solPLTail t
 
 solCom_ :: AppT a -> DLStmt -> AppT a
 solCom_ iter m k = do
@@ -1317,7 +1317,7 @@ solPLTail = \case
 solCTail :: AppT CTail
 solCTail = \case
   CT_Com m k -> solCom_ solCTail m k
-  CT_If _ ca t f -> solIf <$> solArg ca <*> solCTail t <*> solCTail f
+  CT_If _ _ ca t f -> solIf <$> solArg ca <*> solCTail t <*> solCTail f
   CT_Switch at ov csm -> solSwitch solCTail at ov csm
   CT_Jump _ which svs (DLAssignment asnm) -> do
     let go_svs v = solSet ("la.svs." <> solRawVar v) <$> solVar v
