@@ -1037,7 +1037,7 @@ XREF_KEYS_ARRAY.forEach(key => {
   SORTED_XREFS[key] = xrefs.h.xrefs[key];
 });
 
-await fs.writeFile('/proj/docs/dev/xrefs.json', JSON.stringify(
+await fs.writeFile('/proj/docs/gen/xrefs.json', JSON.stringify(
   SORTED_XREFS, null, 2
 ) + '\n');
 
