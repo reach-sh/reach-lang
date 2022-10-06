@@ -4,7 +4,6 @@
 module Reach.AST.Base where
 
 import Control.Applicative ((<|>))
-import Control.DeepSeq (NFData)
 import Data.Aeson as Aeson
 import Data.Aeson.Key as Aeson.Key
 import Data.Aeson.Encoding (text)
@@ -29,14 +28,14 @@ import Control.Exception (Exception, throw)
 data ReachSource
   = ReachStdLib
   | ReachSourceFile FilePath
-  deriving (Eq, Generic, NFData, Ord)
+  deriving (Eq, Generic, Ord)
 
 instance Show ReachSource where
   show ReachStdLib = "reach standard library"
   show (ReachSourceFile fp) = fp
 
 data SrcLoc = SrcLoc (Maybe String) (Maybe TokenPosn) (Maybe ReachSource)
-  deriving (Eq, Generic, NFData, Ord)
+  deriving (Eq, Generic, Ord)
 
 instance FromJSON TokenPosn
 
@@ -281,7 +280,7 @@ srclocOf_ def v = a'
 data SecurityLevel
   = Secret
   | Public
-  deriving (Eq, Generic, NFData, Ord, Show)
+  deriving (Eq, Generic, Ord, Show)
 
 instance FromJSON SecurityLevel
 
@@ -320,7 +319,7 @@ render_sp = viaShow
 data UIntTy
   = UI_Word
   | UI_256
-  deriving (Eq, Generic, NFData, Ord, Show)
+  deriving (Eq, Generic, Ord, Show)
 
 instance FromJSON UIntTy
 instance ToJSON UIntTy
@@ -330,7 +329,7 @@ uint256_Max = 2 ^ (256 :: Integer) - 1
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)
-  deriving (Eq, Ord, Generic, NFData)
+  deriving (Eq, Ord, Generic)
 
 instance FromJSON SLCtxtFrame
 instance ToJSON SLCtxtFrame where

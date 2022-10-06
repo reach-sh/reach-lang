@@ -4,7 +4,7 @@ github:              "reach-sh/reach-lang"
 license:             Apache-2.0
 author:              "Reach"
 maintainer:          "jay@reach.sh"
-copyright:           "2019 Reach"
+copyright:           "2019-2022 Reach"
 description:         Please visit the GitHub repository <https://github.com/reach-sh/reach-lang#readme>
 
 extra-source-files:
@@ -14,101 +14,7 @@ extra-source-files:
 - app/reach/embed/**/*
 
 dependencies:
-- Glob
-- aeson
-- aeson-pretty
-- async
-- attoparsec
 - base >= 4.7 && < 5
-- base16
-- base64
-- binary
-- bytestring
-- containers
-- cookie
-- cryptonite
-- data-default-class
-- deepseq
-- digest
-- directory
-- dlist
-- edit-distance
-- exceptions
-- extra
-- file-embed >= 0.0.9
-- filepath
-- generic-data
-- generic-deriving
-- hexstring
-- hspec
-- hspec-smallcheck
-- hspec-wai
-- http-client
-- http-client-tls
-- http-conduit
-- http-media
-- io-capture
-- language-javascript >= 0.7.1.1
-- lattices
-- lens
-- loop
-- main-tester
-- memory
-- mmorph
-- mtl
-- neat-interpolation
-- optparse-applicative
-- parsec
-- parsec-numbers
-- pretty-show
-- pretty-simple
-- pretty-terminal
-- prettyprinter
-- process
-- process-extras
-- random
-- regex
-- safe
-- scientific
-- scotty >= 0.12
-- search-algorithms
-- servant
-- servant-auth
-- servant-auth-server
-- servant-client
-- servant-server
-- silently
-- simple-smt
-- smallcheck
-- split
-- stm
-- system-filepath
-- tasty
-- tasty-ant-xml
-- tasty-discover
-- tasty-golden
-- tasty-hedgehog
-- tasty-hspec
-- tasty-html
-- tasty-hunit
-- tasty-quickcheck
-- tasty-smallcheck
-- temporary
-- text
-- time
-- tomland
-- transformers
-- unix-compat
-- unordered-containers
-- utf8-string
-- uuid
-- vector
-- wai
-- wai-cors
-- wai-extra
-- warp
-- yaml
-- zlib
 
 default-extensions:
 - BangPatterns
@@ -166,6 +72,60 @@ library:
   when:
   - condition:           false
     other-modules:       Paths_reach
+  dependencies:
+  - aeson
+  - aeson-pretty
+  - async
+  - base16
+  - base64
+  - bytestring
+  - containers
+  - cryptonite
+  - digest
+  - directory
+  - dlist
+  - edit-distance
+  - exceptions
+  - extra
+  - file-embed >= 0.0.9
+  - filepath
+  - generic-deriving
+  - http-client-tls
+  - http-conduit
+  - language-javascript >= 0.7.1.1
+  - memory
+  - mtl
+  - optparse-applicative
+  - parsec-numbers
+  - pretty-show
+  - pretty-terminal
+  - process
+  - process-extras
+  - regex
+  - safe
+  - scientific
+  - search-algorithms
+  - simple-smt
+  - system-filepath
+  - temporary
+  - text
+  - time
+  - transformers
+  - unix-compat
+  - vector
+  - zlib
+  # XXX Simulator
+  - data-default-class
+  - scotty >= 0.12
+  - stm
+  - wai-extra
+  # XXX Replace use with toml
+  - yaml
+  # XXX Just use one!
+  - attoparsec
+  - parsec
+  # XXX Remove RLang and TSA and move into app-closed
+
 tests:
   reach-test:
     main:                Main.hs
@@ -176,6 +136,23 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - reach
+    - aeson
+    - bytestring
+    - containers
+    - directory
+    - filepath
+    - generic-data
+    - generic-deriving
+    - hspec
+    - process
+    - tasty
+    - tasty-ant-xml
+    - tasty-discover
+    - tasty-golden
+    - tasty-hspec
+    - tasty-hunit
+    - tasty-quickcheck
+    - text
 
 _std_exe: &std-exe
   main:                  Main.hs
@@ -186,13 +163,13 @@ _std_exe: &std-exe
   - -threaded
   - -rtsopts
   - -with-rtsopts=-N
-  dependencies:
-  - reach
 
 executables:
   reachc:
     <<: *std-exe
     source-dirs:         app/reachc
+    dependencies:
+    - reach
   reach:
     main:                Main.hs
     source-dirs:         app/reach
@@ -205,25 +182,75 @@ executables:
     - -with-rtsopts=-N
     - -optP-Wno-nonportable-include-path
     dependencies:
+    - reach
     - neat-interpolation
     - parsec
     - safe
     - unix
     - unix-time
-    - reach
   reach-cli:
     <<: *std-exe
     source-dirs:         app/reach-cli
     dependencies:
-    - reach
-    - amazonka
-    - amazonka-cognito-idp
+    - aeson
+    - http-conduit
+    - text
   reach-id-client:
     <<: *std-exe
     source-dirs:         app/reach-id-client
+    dependencies:
+    - reach
+    - aeson
+    - bytestring
+    - http-client
+    - http-conduit
+    - mtl
+    - optparse-applicative
+    - servant-auth
   proto-stub:
     <<: *std-exe
     source-dirs:         app/proto-stub
+    dependencies:
+    - reach
+    - aeson
+    - async
+    - bytestring
+    - containers
+    - extra
+    - hspec
+    - http-client
+    - http-media
+    - mmorph
+    - mtl
+    - optparse-applicative
+    - parsec
+    - pretty-terminal
+    - process
+    - safe
+    - servant
+    - servant-client
+    - servant-server
+    - stm
+    - text
+    - time
+    - utf8-string
+    - warp
   reachpc:
     <<: *std-exe
     source-dirs: app/reachpc
+    dependencies:
+    - reach
+    - Glob
+    - binary
+    - bytestring
+    - containers
+    - cryptonite
+    - directory
+    - extra
+    - filepath
+    - memory
+    - neat-interpolation
+    - split
+    - text
+    - time
+    - tomland

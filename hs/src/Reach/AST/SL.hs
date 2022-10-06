@@ -2,7 +2,6 @@
 
 module Reach.AST.SL where
 
-import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
@@ -681,7 +680,7 @@ data SPrimOp
   | S_BYTES_XOR
   | S_BTOI_LAST8 Bool
   | S_CTC_ADDR_EQ
-  deriving (Eq, Generic, NFData, Ord, Show)
+  deriving (Eq, Generic, Ord, Show)
 
 sprimToPrim :: UIntTy -> UIntTy -> Bool -> SPrimOp -> PrimOp
 sprimToPrim dom rng useVerifyArith = \case
