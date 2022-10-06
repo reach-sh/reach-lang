@@ -26,7 +26,6 @@ import Reach.Texty
 import Reach.Util
 import Data.Bifunctor
 import Data.Bool (bool)
-import Control.DeepSeq (NFData)
 
 type ConnectorName = T.Text
 
@@ -653,7 +652,7 @@ data PrimVM -- Primitive Verification Mode
   = PV_Safe -- No static assertion, yes dynamic check
   | PV_Veri -- Yes static assertion, no dynamic check
   | PV_None
-  deriving (Eq, Generic, NFData, Ord, Show)
+  deriving (Eq, Generic, Ord, Show)
 
 data PrimOp
   = ADD UIntTy PrimVM
