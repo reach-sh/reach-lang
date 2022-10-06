@@ -124,13 +124,13 @@ const test = async (ctc, expected) => {
     await waitTxn(uctc.transfer(to, amt, gasLimit));
     await assertEvent.Transfer(uctc.signer.address, to, amt);
   }
-  const transferFrom = async (uctc, from, to, amt) => {
+  const transferFrom = async (uctc, from, to, amt, allowanceLeft) => {
     await waitTxn(uctc.transferFrom(from, to, amt, gasLimit));
     await assertEvent.Transfer(from, to, amt);
+    await assertEvent.Approval(from, uctc.signer.address, allowanceLeft);
   }
   const approve = async (uctc, spender, amt) => {
     await waitTxn(uctc.approve(spender, amt, gasLimit));
-    // TODO - I'm getting what I expect here from my contract, but not from the OZ contract.  So maybe I misunderstand this event...
     await assertEvent.Approval(uctc.signer.address, spender, amt);
   }
 
@@ -139,12 +139,11 @@ const test = async (ctc, expected) => {
 
   // transfer of more than you have should fail
   await assertFail(transfer(ctc1, addr2, 10));
-  await assertFail(transferFrom(ctc1, addr2, addr3, 10));
-  assertEvent.Approval(addr2, addr1, 0);
+  await assertFail(transferFrom(ctc1, addr2, addr3, 10, 0));
   // transfer of zero should work even if you don't have any, based on my reading of the spec
   await transfer(ctc1, addr2, 0);
   // transferFrom of zero should work even the from doesn't have any and the transferer has an allowance of 0, based on my reading of the spec.
-  await transferFrom(ctc1, addr2, addr3, 0);
+  await transferFrom(ctc1, addr2, addr3, 0, 0);
 
   await transfer(ctc, addr1, 10);
   await assertBalances(totalSupply - 10, 10, 0, 0);
@@ -153,15 +152,27 @@ const test = async (ctc, expected) => {
   assertEq(await ctc.allowance(addrDeploy, addr3), 20);
   await assertBalances(totalSupply - 10, 10, 0, 0);
   // transferFrom of more than an allowance should fail
-  await assertFail(transferFrom(ctc3, addrDeploy, addr2, 100));
-  await transferFrom(ctc3, addrDeploy, addr2, 10);
+  await assertFail(transferFrom(ctc3, addrDeploy, addr2, 100, 20));
+  await transferFrom(ctc3, addrDeploy, addr2, 10, 10);
   assertEq(await ctc.allowance(addrDeploy, addr3), 10);
   await assertBalances(totalSupply - 20, 10, 10, 0);
-  await transferFrom(ctc3, addrDeploy, addr3, 10);
+  await transferFrom(ctc3, addrDeploy, addr3, 10, 0);
   assertEq(await ctc.allowance(addrDeploy, addr3), 0);
   await assertBalances(totalSupply - 30, 10, 10, 10);
   // transferFrom should use up the allowance
-  await assertFail(transferFrom(ctc3, addrDeploy, addr3, 1));
+  await assertFail(transferFrom(ctc3, addrDeploy, addr3, 1, 0));
+
+  // Even if you're rich, you can't transfer more than your balance.
+  await assertFail(transfer(ctc, addr2, totalSupply - 10));
+
+  // Can't transfer to zero address
+  await assertFail(transfer(ctc, zeroAddr, 10));
+  // Can't approve zero address
+  await assertFail(approve(ctc, zeroAddr, 10));
+
+  await approve(ctc, addr1, 100);
+  // Can't transferFrom to the zero address
+  await assertFail(transferFrom(ctc1, ctc, zeroAddr, 10));
 
   assertEq(await ctc.name(), expected.name, "name()");
   assertEq(await ctc.symbol(), expected.symbol, "symbol()");
@@ -217,8 +228,8 @@ const reach_expected = {
 
 
 // Actually run the tests, side by side.
-const ozCost = await test((await ozDeploy())[0], oz_expected);
 const reachCost = await test((await reachDeploy())[0], reach_expected);
+const ozCost = await test((await ozDeploy())[0], oz_expected);
 
 console.log("Cost of Reach contract as percentage of OZ contract (for a test suite run): ", reachCost.mul(100_000.0).div(ozCost).toNumber() / 1000);
 
