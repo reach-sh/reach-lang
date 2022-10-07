@@ -33,6 +33,7 @@ import {
   protectSecretKey,
   SecretKeyInput,
   Mnemonic,
+  mkGetEventTys,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -846,8 +847,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return { createEventStream };
     };
     const getABI = stdGetABI(ABI);
+    const getEventTys = mkGetEventTys(bin, stdlib);
 
-    return stdContract({ bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
+    return stdContract({ bin, getABI, getEventTys, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
   };
 
   function setDebugLabel(newLabel: string): Account {
