@@ -14,7 +14,7 @@ const [accDeploy, acc1, acc2, acc3] = accs;
 const [addrDeploy, addr1, addr2, addr3] = accs.map(a => a.getAddress());
 const [tok1, tok2, tok3, tok4, tok5] = [1, 2, 3, 4, 5];
 const gasLimit = { gasLimit: 5_000_000 };
-const zeroAddr = "0x" + "0".repeat(40);
+const zeroAddress = "0x" + "0".repeat(40);
 const assert = stdlib.assert;
 const bigNumberify = ethers.BigNumber.from;
 const waitTxn = async callPromise => await (await callPromise).wait();
@@ -73,21 +73,16 @@ const rchDeploy = async (rchModulePath, args) => {
   return deploy(ctc.ABI, ctc.Bytecode, args);
 }
 
+// ===== ERC165 =====
+const interfaceIds = {
+  ERC165: "0x01ffc9a7",
+  ERC20: "0x36372b07",
+};
 
 const test = async (ctc, expected) => {
   console.log(`Testing ${expected.name}`);
   const getWei = async () => (await accDeploy.balanceOf()).add(await acc1.balanceOf()).add(await acc2.balanceOf()).add(await acc3.balanceOf());
   const weiPre = await getWei();
-
-  // ===== ERC165 =====
-  const interfaceIds = {
-    ERC165: "0x01ffc9a7",
-    ERC20: "0xTODO",
-  };
-
-  //for (const iface in interfaceIds) {
-  //  assert(await ctc.supportsInterface(interfaceIds[iface]), `Supports ${iface}`);
-  //}
 
   // ===== ERC20 =====
   // add event listeners
@@ -109,7 +104,7 @@ const test = async (ctc, expected) => {
     }
   }
 
-  await assertEvent.Transfer(zeroAddr, addrDeploy, totalSupply);
+  await assertEvent.Transfer(zeroAddress, addrDeploy, totalSupply);
 
   const assertBalances = async (...balances) => {
     assertEq(await ctc.balanceOf(addrDeploy), balances[0]);
@@ -166,13 +161,13 @@ const test = async (ctc, expected) => {
   await assertFail(transfer(ctc, addr2, totalSupply - 10));
 
   // Can't transfer to zero address
-  await assertFail(transfer(ctc, zeroAddr, 10));
+  await assertFail(transfer(ctc, zeroAddress, 10));
   // Can't approve zero address
-  await assertFail(approve(ctc, zeroAddr, 10));
+  await assertFail(approve(ctc, zeroAddress, 10));
 
   await approve(ctc, addr1, 100);
   // Can't transferFrom to the zero address
-  await assertFail(transferFrom(ctc1, ctc, zeroAddr, 10));
+  await assertFail(transferFrom(ctc1, ctc, zeroAddress, 10));
 
   assertEq(await ctc.name(), expected.name, "name()");
   assertEq(await ctc.symbol(), expected.symbol, "symbol()");
@@ -199,20 +194,23 @@ const ozDeploy = async () => {
 
 //// Test Reach based ERC20
 
+const reach_meta = {
+  name: "Reach_ERC20",
+  symbol: "RCH",
+  decimals,
+  totalSupply,
+  zeroAddress,
+}
 const reach_constructor_args = [
   [
     // time
     0,
     [
-      // name
-      "Reach_ERC20",
-      // symbol
-      "RCH",
-      // decimals
-      decimals,
-      // totalSupply
-      totalSupply,
-      zeroAddr
+      reach_meta.name,
+      reach_meta.symbol,
+      reach_meta.decimals,
+      reach_meta.totalSupply,
+      reach_meta.zeroAddress
     ],
   ],
 ];
@@ -272,6 +270,25 @@ console.log("OpenZeppelin costs: ", ozBenchCard);
 const reachBenchCard = await bench(reachDeploy);
 console.log("Reach costs: ", reachBenchCard);
 
+
+{
+  // Now do some tests that are specific to the Reach ERC20 and not the OZ ERC20
+  const backend = await import('./build/index.main.mjs');
+
+  const ctc = accDeploy.contract(backend);
+
+  try {
+    await ctc.p.Deployer({meta: reach_meta, deployed: (c) => {throw 42}});
+  } catch (e) {
+    if ( e !== 42) {
+      throw e;
+    }
+  }
+
+  for (const iface in interfaceIds) {
+    assert(await ctc.views.supportsInterface(interfaceIds[iface]), `Supports ${iface}`);
+  }
+}
 
 
 process.exit(0);
