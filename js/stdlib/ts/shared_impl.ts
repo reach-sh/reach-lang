@@ -124,7 +124,7 @@ export type IBackend<ConnectorTy extends AnyBackendTy> = {
   _Participants: {[n: string]: any},
   _APIs: {[n: string]: any | {[n: string]: any}},
   _stateSourceMap: {[key: number]: any},
-  _getEvents: (stdlib:Object) => ({ [n:string]: [any] })
+  _getEvents: (stdlib:Object) => ({ [n:string]: ConnectorTy[] })
 };
 
 export type OnProgress = (obj: {current: BigNumber, target: BigNumber}) => any;
@@ -183,10 +183,6 @@ export type ParticipantMap = {[key: string]: ParticipantVal};
 export type ViewVal = (...args:any) => Promise<any>;
 export type ViewFunMap = {[key: string]: ViewVal};
 export type ViewMap = {[key: string]: ViewVal | ViewFunMap};
-export type EventSigMap = {
-  sigs: string[],
-  ALGO?: string[],
-};
 export type APIMap = ViewMap;
 export type EventMap = { [key: string]: any }
 
@@ -227,7 +223,7 @@ export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
 export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
   getABI: (x?:boolean) => unknown,
-  getEventSigs: () => EventSigMap,
+  getEventTys: () => Record<string, ConnectorTy[]>,
   setupView: ISetupView<ContractInfo, VerifyResult, ConnectorTy>,
   setupEvents: ISetupEvent<ContractInfo, VerifyResult>,
   givenInfoP: (Promise<ContractInfo>|undefined)
@@ -240,7 +236,7 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
   getContractAddress: () => Promise<CBR_Address>,
   // backend-specific
   getABI: (x?:boolean) => unknown,
-  getEventSigs: () => EventSigMap,
+  getEventTys: () => Record<string, ConnectorTy[]>,
   getInternalState: () => Promise<{[key: string]: any }>;
   participants: ParticipantMap,
   p: ParticipantMap
@@ -329,7 +325,7 @@ export const stdContract =
   <ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
     stdContractArgs: IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy>):
   IContract<ContractInfo, RawAddress, Token, ConnectorTy> => {
-  const { bin, getABI, getEventSigs, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP } = stdContractArgs;
+  const { bin, getABI, getEventTys, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP } = stdContractArgs;
 
   type SomeSetupArgs = Pick<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo"|"getInfo")>;
   const { setInfo, getInfo }: SomeSetupArgs = (() => {
@@ -477,7 +473,7 @@ export const stdContract =
   return {
     ...ctcC,
     getABI,
-    getEventSigs,
+    getEventTys,
     getInfo,
     getContractAddress: (() => _initialize().getContractAddress()),
     participants, p: participants,
@@ -1346,3 +1342,6 @@ export const protectMnemonic = (phrase: Mnemonic, numWords?: number): Mnemonic =
   }
   return words.join(" ");
 }
+
+export const mkGetEventTys = <BackendTy extends AnyBackendTy>(bin: IBackend<BackendTy>, stdlib: any) => () =>
+  bin._getEvents({ reachStdlib: stdlib });
