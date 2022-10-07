@@ -1420,7 +1420,7 @@ smtCurrentAddress who = do
 smt_n :: LLConsensus -> App ()
 smt_n = \case
   LLC_Com m k -> smt_m m <> smt_n k
-  LLC_If at _ ca t f -> do
+  LLC_If at ca t f -> do
     ca' <- smt_a at ca
     let go (v, k) = do
           v' <- smt_a at (DLA_Literal (DLL_Bool v))

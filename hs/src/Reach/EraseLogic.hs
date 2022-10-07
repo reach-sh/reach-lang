@@ -136,11 +136,11 @@ instance Erase LLConsensus where
       k' <- el k
       m' <- el m
       return $ mkCom LLC_Com m' k'
-    LLC_If at mans c t f -> do
+    LLC_If at c t f -> do
       f' <- el f
       t' <- el t
       c' <- el c
-      return $ LLC_If at mans c' t' f'
+      return $ LLC_If at c' t' f'
     LLC_Switch at v csm -> do
       csm' <- el csm
       v' <- el v

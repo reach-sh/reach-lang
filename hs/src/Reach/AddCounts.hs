@@ -184,11 +184,11 @@ instance AC ETail where
       m' <- ac m
       return $ mkCom ET_Com m' k'
     ET_Stop at -> return $ ET_Stop at
-    ET_If at mans c t f -> do
+    ET_If at c t f -> do
       f' <- ac f
       t' <- ac t
       ac_visit $ c
-      return $ ET_If at mans c t' f'
+      return $ ET_If at c t' f'
     ET_Switch at v csm -> do
       csm' <- ac csm
       ac_visit v
@@ -258,11 +258,11 @@ instance AC CTail where
           case canFloat of
             True -> return $ mk dt $ mk m' k''
             False -> meh
-    CT_If at mans c t f -> do
+    CT_If at c t f -> do
       f' <- ac f
       t' <- ac t
       ac_visit $ c
-      return $ CT_If at mans c t' f'
+      return $ CT_If at c t' f'
     CT_Switch at v csm -> do
       csm' <- ac csm
       ac_visit $ v
@@ -370,11 +370,11 @@ instance AC LLConsensus where
           _ ->
             return c'
       return $ mkCom LLC_Com m' c''
-    LLC_If at mans c t f -> do
+    LLC_If at c t f -> do
       f' <- ac f
       t' <- ac t
       ac_visit c
-      return $ LLC_If at mans c t' f'
+      return $ LLC_If at c t' f'
     LLC_Switch at c csm -> do
       csm' <- ac csm
       ac_visit c

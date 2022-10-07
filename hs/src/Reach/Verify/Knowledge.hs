@@ -325,7 +325,7 @@ kgq_asn_def ctxt (DLAssignment m) = mapM_ (kgq_a_all ctxt . DLA_Var) $ M.keys m
 kgq_n :: KCtxt -> LLConsensus -> IO ()
 kgq_n ctxt = \case
   LLC_Com m k -> kgq_m ctxt m >> kgq_n ctxt k
-  LLC_If _ _ ca t f ->
+  LLC_If _ ca t f ->
     ctxtNewScope ctxt' (kgq_n ctxt' t)
       >> ctxtNewScope ctxt' (kgq_n ctxt' f)
     where

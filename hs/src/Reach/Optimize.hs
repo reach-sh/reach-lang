@@ -80,6 +80,23 @@ data Env = Env
   , eVarsSet ::IORef (M.Map DLVar Int)
   }
 
+mkVar :: SrcLoc -> DLType -> App DLVar
+mkVar at t = do
+  ctr <- asks eCounter
+  idx <- liftIO $ incCounter ctr
+  return $ DLVar at Nothing t idx
+
+updateVarSet :: DLVar -> (Maybe Int -> Maybe Int) -> App (Maybe Int)
+updateVarSet dv update = do
+  eVarsSetR <- asks eVarsSet
+  eVarsSet <- (liftIO . readIORef) eVarsSetR
+  let mVal = update $ M.lookup dv eVarsSet
+  liftIO . modifyIORef' eVarsSetR $ flip M.alter dv $ const mVal
+  return $ mVal
+
+readVarSet :: DLVar -> App (Maybe Int)
+readVarSet dv = updateVarSet dv id
+
 updateClearMaps :: Bool -> Env -> Env
 updateClearMaps b e = e { eClearMaps = b }
 
@@ -114,7 +131,8 @@ newScope :: App x -> App x
 newScope m = do
   Env {..} <- ask
   eEnvsR' <- liftIO $ dupeIORef eEnvsR
-  local (\e -> e {eEnvsR = eEnvsR'}) m
+  eVarsSet' <- liftIO $ dupeIORef eVarsSet
+  local (\e -> e {eEnvsR = eEnvsR', eVarsSet = eVarsSet'}) m
 
 lookupCommon :: Ord a => (CommonEnv -> M.Map a b) -> a -> App (Maybe b)
 lookupCommon dict obj = do
@@ -248,6 +266,7 @@ opt_v2v v = fst <$> opt_v2p v
 opt_v2a :: DLVar -> App DLArg
 opt_v2a v = snd <$> opt_v2p v
 
+-- This deconstructs an `a` into the pieces of a X_Com
 class IsCom a where
   isCom :: a -> Maybe (DLStmt, a)
 
@@ -279,49 +298,40 @@ instance IsCom LLConsensus where
 class LiftPure a where
   -- Returns what `DLVar` is `DL_Set` to and the pure `DLStmt`s along the way
   -- Returns `Nothing` if there are impure stmts in `a` or there is no `DL_Set`
-  liftPure :: DLVar -> a -> (Maybe DLArg, [DLStmt])
+  liftPure :: DLVar -> a -> Maybe (DLArg, [DLStmt])
 
 instance LiftPure DLTail where
   liftPure dv = \case
-    DT_Return _ -> (Nothing, [])
+    DT_Return _ -> Nothing
     DT_Com (DL_Set _ lhs rhs) (DT_Return _)
-      | lhs == dv -> (Just rhs, [])
+      | lhs == dv -> Just (rhs, [])
     DT_Com ds dt ->
       case isPure ds of
         True -> do
-          let (ma, dt') = liftPure dv dt
-          (ma, ds : dt')
-        False -> (Nothing, [])
+          case liftPure dv dt of
+            Just (a, dt') -> Just (a, ds : dt')
+            Nothing -> Nothing
+        False -> Nothing
 
 floatVar :: (DLStmt -> t -> t) -> SrcLoc -> DLVar -> t -> App t
 floatVar mkk at dv k = do
-  eVarsSet <- (liftIO . readIORef) =<< asks eVarsSet
-  case M.lookup dv eVarsSet of
+  readVarSet dv >>= \case
     -- There were zero branches that could not be lifted, i.e.
     -- we generated a `const` assign, now drop this `var`.
     Just 0 -> return $ k
     _ -> return $ mkk (DL_Var at dv) k
-
-mkVar :: SrcLoc -> DLType -> App DLVar
-mkVar at t = do
-  ctr <- asks eCounter
-  idx <- liftIO $ incCounter ctr
-  return $ DLVar at Nothing t idx
 
 floatIf :: (DLStmt -> b -> b) -> SrcLoc -> DLVar -> DLArg -> DLTail -> DLTail -> b -> App b
 floatIf mkk at ansDv c tt ft k = do
   case isPure tt && isPure ft of
     True ->
       case (liftPure ansDv tt, liftPure ansDv ft) of
-        ((Just ta, t_lifts), (Just fa, f_lifts)) -> do
-          eVarsSetR <- asks eVarsSet
-          eVarsSet <- (liftIO . readIORef) eVarsSetR
-          let mVal = M.lookup ansDv eVarsSet
+        (Just (ta, t_lifts), Just (fa, f_lifts)) -> do
+          mVal <- updateVarSet ansDv mSub1
           -- Track that we successfully lifted this assignment
-          liftIO $ modifyIORef' eVarsSetR $ M.insert ansDv $ mSub1 mVal
           let asn v = DL_Let at (DLV_Let DVC_Many v) $ DLE_PrimOp at IF_THEN_ELSE [c, ta, fa]
           t <- case mVal of
-                Just 1 -> return $ mkk (asn ansDv) k
+                Just 0 -> return $ mkk (asn ansDv) k
                 Just _ -> do
                   tmp <- mkVar at (varType ansDv)
                   let s2 = DL_Set at ansDv (DLA_Var tmp)
@@ -332,7 +342,7 @@ floatIf mkk at ansDv c tt ft k = do
     False -> meh
   where
     meh = return $ mkk (DL_LocalIf at (Just ansDv) c tt ft) k
-    mSub1 = maybe 0 (\ x -> x - 1)
+    mSub1 = Just . maybe 0 (\ x -> x - 1)
 
 float :: IsCom a => (DLStmt -> a -> a) -> a -> App a
 float mk t =
@@ -904,19 +914,20 @@ instance Optimize DLStmt where
 -- Track that we are attempting to lift this assignment
 preFloat :: DLStmt -> App ()
 preFloat = \case
-  DL_LocalIf _ (Just dv) _ _ _ -> do
-    eVarsSetR <- asks eVarsSet
-    eVarsSet <- (liftIO . readIORef) eVarsSetR
-    liftIO $ modifyIORef' eVarsSetR $
-      M.insert dv $ maybe (1) succ $ M.lookup dv eVarsSet
+  DL_LocalIf _ (Just dv) _ _ _ ->
+    void $ updateVarSet dv $ Just . maybe 1 succ
   _ -> return ()
+
+-- Optimize is generally top-down, but this is locally bottom-up. We float after optimizing the tail
+optCom :: (IsCom b, Optimize b) => (DLStmt -> b -> b) -> DLStmt -> b -> App b
+optCom mk m k = do
+  preFloat m
+  float mk =<< mkCom mk <$> opt m <*> opt k
 
 instance Optimize DLTail where
   opt = \case
     DT_Return at -> return $ DT_Return at
-    DT_Com m k -> do
-      preFloat m
-      float DT_Com =<< mkCom DT_Com <$> opt m <*> opt k
+    DT_Com m k -> optCom DT_Com m k
   gcs = \case
     DT_Return _ -> return ()
     DT_Com m k -> gcs m >> gcs k
@@ -939,11 +950,9 @@ instance {-# OVERLAPS #-} Optimize a => Optimize (DLInvariant a) where
 
 instance Optimize LLConsensus where
   opt = \case
-    LLC_Com m k ->do
-      preFloat m
-      float LLC_Com =<< mkCom LLC_Com <$> opt m <*> opt k
-    LLC_If at mans c t f ->
-      optIf id (LLC_If at mans) c t f
+    LLC_Com m k -> optCom LLC_Com m k
+    LLC_If at c t f ->
+      optIf id (LLC_If at) c t f
     LLC_Switch at ov csm ->
       optSwitch id LLC_Com LLC_Switch at ov csm
     LLC_While at asn inv cond body k -> do
@@ -957,7 +966,7 @@ instance Optimize LLConsensus where
       LLC_ViewIs at vn vk <$> opt a <*> opt k
   gcs = \case
     LLC_Com m k -> gcs m >> gcs k
-    LLC_If _ _ _ t f -> gcs t >> gcs f
+    LLC_If _ _ t f -> gcs t >> gcs f
     LLC_Switch _ _ csm -> gcsSwitch csm
     LLC_While _ _ _ cond body k -> gcs cond >> gcs body >> gcs k
     LLC_Continue {} -> return ()
@@ -998,9 +1007,7 @@ opt_send (p, DLSend isClass args amta whena) =
 
 instance Optimize LLStep where
   opt = \case
-    LLS_Com m k -> do
-      preFloat m
-      float LLS_Com =<< mkCom LLS_Com <$> opt m <*> opt k
+    LLS_Com m k -> optCom LLS_Com m k
     LLS_Stop at -> pure $ LLS_Stop at
     LLS_ToConsensus at lct send recv mtime ->
       LLS_ToConsensus at <$> opt lct <*> send' <*> recv' <*> mtime'
@@ -1056,12 +1063,10 @@ instance {-# OVERLAPPING #-} (Optimize a, Optimize b, Optimize c, Optimize d, Op
 
 instance Optimize ETail where
   opt = \case
-    ET_Com m k -> do
-      preFloat m
-      float ET_Com =<< mkCom ET_Com <$> opt m <*> opt k
+    ET_Com m k -> optCom ET_Com m k
     ET_Stop at -> return $ ET_Stop at
-    ET_If at mans c t f ->
-      optIf id (ET_If at mans) c t f
+    ET_If at c t f ->
+      optIf id (ET_If at) c t f
     ET_Switch at ov csm ->
       optSwitch id ET_Com ET_Switch at ov csm
     ET_FromConsensus at vi fi k ->
@@ -1073,7 +1078,7 @@ instance Optimize ETail where
   gcs = \case
     ET_Com m k -> gcs m >> gcs k
     ET_Stop _ -> return ()
-    ET_If _ _ _ t f -> gcs t >> gcs f
+    ET_If _ _ t f -> gcs t >> gcs f
     ET_Switch _ _ csm -> gcsSwitch csm
     ET_FromConsensus _ _ _ k -> gcs k
     ET_ToConsensus {..} -> gcs et_tc_cons >> gcs_mtime et_tc_from_mtime
@@ -1082,11 +1087,9 @@ instance Optimize ETail where
 
 instance Optimize CTail where
   opt = \case
-    CT_Com m k -> do
-      preFloat m
-      float CT_Com =<< mkCom CT_Com <$> opt m <*> opt k
-    CT_If at mans c t f ->
-      optIf id (CT_If at mans) c t f
+    CT_Com m k -> optCom CT_Com m k
+    CT_If at c t f ->
+      optIf id (CT_If at) c t f
     CT_Switch at ov csm ->
       optSwitch id CT_Com CT_Switch at ov csm
     CT_From at w fi ->
@@ -1095,7 +1098,7 @@ instance Optimize CTail where
       CT_Jump at which <$> opt vs <*> opt asn
   gcs = \case
     CT_Com m k -> gcs m >> gcs k
-    CT_If _ _ _ t f -> gcs t >> gcs f
+    CT_If _ _ t f -> gcs t >> gcs f
     CT_Switch _ _ csm -> gcsSwitch csm
     CT_From {} -> return ()
     CT_Jump {} -> return ()

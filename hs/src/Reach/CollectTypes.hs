@@ -211,7 +211,7 @@ instance CollectsTypes a => CollectsTypes (DLInvariant a) where
 
 instance CollectsTypes LLConsensus where
   cts (LLC_Com m k) = cts m <> cts k
-  cts (LLC_If _ _ c t f) = cts c <> cts t <> cts f
+  cts (LLC_If _ c t f) = cts c <> cts t <> cts f
   cts (LLC_Switch _ v csm) = cts v <> cts csm
   cts (LLC_FromConsensus _ _ _ k) = cts k
   cts (LLC_While _ asn inv cond body k) = cts asn <> cts inv <> cts cond <> cts body <> cts k
@@ -254,7 +254,7 @@ instance CollectsTypes FromInfo where
 
 instance CollectsTypes CTail where
   cts (CT_Com m k) = cts m <> cts k
-  cts (CT_If _ _ ca t f) = cts ca <> cts t <> cts f
+  cts (CT_If _ ca t f) = cts ca <> cts t <> cts f
   cts (CT_Switch _ v csm) = cts v <> cts csm
   cts (CT_From _ _ msvs) = cts msvs
   cts (CT_Jump _ _ svs asn) = cts svs <> cts asn

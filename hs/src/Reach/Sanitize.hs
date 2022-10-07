@@ -164,7 +164,7 @@ instance {-# OVERLAPS #-} Sanitize a => Sanitize (DLInvariant a) where
 instance Sanitize LLConsensus where
   sani = \case
     LLC_Com m k -> LLC_Com (sani m) (sani k)
-    LLC_If _ mans c t f -> LLC_If sb (sani mans) (sani c) (sani t) (sani f)
+    LLC_If _ c t f -> LLC_If sb (sani c) (sani t) (sani f)
     LLC_Switch _ ov csm -> LLC_Switch sb ov (sani csm)
     LLC_While _ asn inv cond body k -> LLC_While sb (sani asn) (sani inv) (sani cond) (sani body) (sani k)
     LLC_Continue _ asn -> LLC_Continue sb (sani asn)
@@ -198,7 +198,7 @@ instance Sanitize ETail where
   sani = \case
     ET_Com m k -> ET_Com (sani m) (sani k)
     ET_Stop _ -> ET_Stop sb
-    ET_If _ mans c t f -> ET_If sb (sani mans) (sani c) (sani t) (sani f)
+    ET_If _ c t f -> ET_If sb (sani c) (sani t) (sani f)
     ET_Switch _ x b -> ET_Switch sb x (sani b)
     ET_FromConsensus _ x y z -> ET_FromConsensus sb x (sani y) (sani z)
     ET_ToConsensus _ from prev lct which me msg out timev secsv didSendv mtime cons ->
@@ -209,7 +209,7 @@ instance Sanitize ETail where
 instance Sanitize CTail where
   sani = \case
     CT_Com m k -> CT_Com (sani m) (sani k)
-    CT_If _ mans c t f -> CT_If sb (sani mans) (sani c) (sani t) (sani f)
+    CT_If _ c t f -> CT_If sb (sani c) (sani t) (sani f)
     CT_Switch _ x b -> CT_Switch sb x (sani b)
     CT_From _ w vs -> CT_From sb w (sani vs)
     CT_Jump _ a b c -> CT_Jump sb a b (sani c)
