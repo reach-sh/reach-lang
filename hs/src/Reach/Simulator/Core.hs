@@ -808,7 +808,7 @@ instance Interp LLConsensus where
     LLC_Com stmt cons -> do
       void $ interp stmt
       interp cons
-    LLC_If _at _ arg cons1 cons2 -> do
+    LLC_If _at arg cons1 cons2 -> do
       ev <- interp arg
       case ev of
         V_Bool True -> interp cons1

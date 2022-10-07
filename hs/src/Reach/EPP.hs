@@ -547,11 +547,11 @@ be_c = \case
     (k'c, k'l) <- remember_toks $ be_c k
     (c'c, c'l) <- withConsensus True $ be_m c
     return $ (,) (backwards (mkCom CT_Com) c'c k'c) (backwards (mkCom ET_Com) c'l k'l)
-  LLC_If at mans c t f -> do
+  LLC_If at c t f -> do
     (t'c, t'l) <- be_c t
     (f'c, f'l) <- be_c f
     fg_use $ c
-    let go mk t' f' = mk at mans c <$> t' <*> f'
+    let go mk t' f' = mk at c <$> t' <*> f'
     return $ (,) (go CT_If t'c f'c) (go ET_If t'l f'l)
   LLC_Switch at ov csm -> do
     fg_use $ ov
@@ -624,7 +624,7 @@ be_c = \case
       inLoop $
         local (\e -> e {be_loop = Just (this_loopj, this_loopsp)}) $
           be_c body
-    let loop_if = CT_If cond_at Nothing cond_a <$> body'c <*> goto_kont
+    let loop_if = CT_If cond_at cond_a <$> body'c <*> goto_kont
     let loop_top = dtReplace CT_Com <$> loop_if <*> cond_l'c
     cnt <- asks be_counter
     setHandler this_loopj $ do

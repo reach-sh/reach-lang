@@ -791,7 +791,7 @@ jsETail = \case
     (ctxt_mode <$> ask) >>= \case
       JM_Simulate -> mempty
       _ -> return $ "return" <> semi
-  ET_If _ _ c t f -> jsIf <$> jsArg c <*> jsETail t <*> jsETail f
+  ET_If _ c t f -> jsIf <$> jsArg c <*> jsETail t <*> jsETail f
   ET_Switch at ov csm -> jsEmitSwitch jsETail at ov csm
   ET_FromConsensus _at which msvs k ->
     (ctxt_mode <$> ask) >>= \case

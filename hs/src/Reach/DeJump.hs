@@ -56,7 +56,7 @@ instance (DeJump a) => DeJump (SwitchCases a) where
 instance DeJump CTail where
   dj = \case
     CT_Com m k -> CT_Com <$> djs m <*> dj k
-    CT_If at mans c t f -> CT_If at <$> djs mans <*> djs c <*> dj t <*> dj f
+    CT_If at c t f -> CT_If at <$> djs c <*> dj t <*> dj f
     CT_Switch at ov csm -> CT_Switch at <$> djs ov <*> dj csm
     CT_From at w fi -> CT_From at w <$> djs_fi fi
     CT_Jump at dst _ (DLAssignment asnm) -> do

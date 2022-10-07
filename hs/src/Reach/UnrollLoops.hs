@@ -158,7 +158,7 @@ instance Unroll a => Unroll (DLInvariant a) where
 instance Unroll LLConsensus where
   ul = \case
     LLC_Com m k -> ul_m LLC_Com m k
-    LLC_If at mans c t f -> LLC_If at mans c <$> ul t <*> ul f
+    LLC_If at c t f -> LLC_If at c <$> ul t <*> ul f
     LLC_Switch at ov csm -> LLC_Switch at ov <$> ul csm
     LLC_FromConsensus at at' fs s -> LLC_FromConsensus at at' fs <$> ul s
     LLC_While at asn inv cond body k -> do
@@ -197,7 +197,7 @@ instance Unroll LLProg where
 instance Unroll CTail where
   ul = \case
     CT_Com m k -> ul_m CT_Com m k
-    CT_If at mans c t f -> CT_If at mans c <$> ul t <*> ul f
+    CT_If at c t f -> CT_If at c <$> ul t <*> ul f
     CT_Switch at ov csm -> CT_Switch at ov <$> ul csm
     e@(CT_From {}) -> return $ e
     e@(CT_Jump {}) -> return $ e

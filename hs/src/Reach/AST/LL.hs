@@ -12,7 +12,7 @@ import Reach.Texty
 
 data LLConsensus
   = LLC_Com DLStmt LLConsensus
-  | LLC_If SrcLoc (Maybe DLVar) DLArg LLConsensus LLConsensus
+  | LLC_If SrcLoc DLArg LLConsensus LLConsensus
   | LLC_Switch SrcLoc DLVar (SwitchCases LLConsensus)
   | LLC_FromConsensus SrcLoc SrcLoc [SLCtxtFrame] LLStep
   | LLC_While
@@ -30,7 +30,7 @@ data LLConsensus
 instance SrcLocOf LLConsensus where
   srclocOf = \case
     LLC_Com s _ -> srclocOf s
-    LLC_If a _ _ _ _ -> a
+    LLC_If a _ _ _ -> a
     LLC_Switch a _ _ -> a
     LLC_FromConsensus a _ _ _ -> a
     LLC_While {..} -> llc_w_at
@@ -40,7 +40,7 @@ instance SrcLocOf LLConsensus where
 instance Pretty LLConsensus where
   pretty = \case
     LLC_Com x k -> prettyCom x k
-    LLC_If _at _ ca t f -> prettyIfp ca t f
+    LLC_If _at ca t f -> prettyIfp ca t f
     LLC_Switch _at ov csm -> prettySwitch ov csm
     LLC_FromConsensus _at _ret_at _fs k ->
       prettyCommit <> hardline <> pretty k

@@ -25,7 +25,7 @@ instance Pretty FromInfo where
 data ETail
   = ET_Com DLStmt ETail
   | ET_Stop SrcLoc
-  | ET_If SrcLoc (Maybe DLVar) DLArg ETail ETail
+  | ET_If SrcLoc DLArg ETail ETail
   | ET_Switch SrcLoc DLVar (SwitchCases ETail)
   | ET_FromConsensus SrcLoc Int FromInfo ETail
   | ET_ToConsensus
@@ -60,7 +60,7 @@ instance SrcLocOf ETail where
   srclocOf = \case
     ET_Com c _ -> srclocOf c
     ET_Stop at -> at
-    ET_If at _ _ _ _ -> at
+    ET_If at _ _ _ -> at
     ET_Switch at _ _ -> at
     ET_FromConsensus at _ _ _ -> at
     ET_ToConsensus {..} -> et_tc_at
@@ -72,7 +72,7 @@ instance Pretty ETail where
     case e of
       ET_Com c k -> pretty c <> hardline <> pretty k
       ET_Stop _ -> emptyDoc
-      ET_If _ _ ca t f -> prettyIfp ca t f
+      ET_If _ ca t f -> prettyIfp ca t f
       ET_Switch _ ov csm -> prettySwitch ov csm
       ET_FromConsensus _ which msvs k ->
         "fromConsensus" <+> whichp <+> pretty msvs <+> semi
@@ -142,7 +142,7 @@ instance Pretty EPProg where
 
 data CTail
   = CT_Com DLStmt CTail
-  | CT_If SrcLoc (Maybe DLVar) DLArg CTail CTail
+  | CT_If SrcLoc DLArg CTail CTail
   | CT_Switch SrcLoc DLVar (SwitchCases CTail)
   | CT_From SrcLoc Int FromInfo
   | CT_Jump SrcLoc Int [DLVar] DLAssignment
@@ -151,7 +151,7 @@ data CTail
 instance SrcLocOf CTail where
   srclocOf = \case
     CT_Com s _ -> srclocOf s
-    CT_If a _ _ _ _ -> a
+    CT_If a _ _ _ -> a
     CT_Switch a _ _ -> a
     CT_From a _ _ -> a
     CT_Jump a _ _ _ -> a
@@ -159,7 +159,7 @@ instance SrcLocOf CTail where
 instance Pretty CTail where
   pretty = \case
     CT_Com e k -> pretty e <> hardline <> pretty k
-    CT_If _ _ ca tt ft -> prettyIfp ca tt ft
+    CT_If _ ca tt ft -> prettyIfp ca tt ft
     CT_Switch _ ov csm -> prettySwitch ov csm
     CT_From _ which fi -> pform "from" $ pretty which <> "," <+> pretty fi
     CT_Jump _ which vars assignment -> pform "jump!" args

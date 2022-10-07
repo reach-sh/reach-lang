@@ -30,7 +30,7 @@ instance CollectSvs FromInfo where
 instance CollectSvs CTail where
   collectSvs = \case
     CT_Com _ ct       -> collectSvs ct
-    CT_If _ _ _ ct ct'  -> collectSvs ct <> collectSvs ct'
+    CT_If _ _ ct ct'  -> collectSvs ct <> collectSvs ct'
     CT_Switch _ _ m   -> collectSvs m
     CT_From _ _ fi    -> collectSvs fi
     CT_Jump _ _ svs _ -> S.fromList svs

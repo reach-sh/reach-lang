@@ -2693,7 +2693,7 @@ cp km = \case
 ct :: CTail -> App ()
 ct = \case
   CT_Com m k -> cm (ct k) m
-  CT_If _ _ a tt ft -> do
+  CT_If _ a tt ft -> do
     ca a
     false_lab <- freshLabel "ifF"
     code "bz" [false_lab]

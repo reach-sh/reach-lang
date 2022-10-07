@@ -122,7 +122,7 @@ instance Contains ETail where
   has q = \case
     ET_Com ds et -> has q ds || has q et
     ET_Stop _ -> False
-    ET_If _ _ _ et et' -> has q et || has q et'
+    ET_If _ _ et et' -> has q et || has q et'
     ET_Switch _ _ m -> any (has q . thd3) m
     ET_FromConsensus _ _ _ et -> has q et
     ET_ToConsensus _ _ _ _ _ _ _ _ _ _ _ (Just (_, et')) et -> has q et || has q et'
@@ -181,11 +181,11 @@ seek = \case
           Nothing -> err at API_NoOut
           Just k' -> return $ Just $ mkCom ET_Com c k'
   ET_Stop _ -> return Nothing
-  ET_If at mans c t f -> do
+  ET_If at c t f -> do
     t' <- seek t
     f' <- seek f
     let stop = ET_Stop at
-    let go tt ff = return $ Just $ ET_If at mans c tt ff
+    let go tt ff = return $ Just $ ET_If at c tt ff
     case (t', f') of
       (Just tt, _) | isCut tt -> return t'
       (_, Just ff) | isCut ff -> return f'
@@ -241,7 +241,7 @@ clipAtFrom :: ETail -> ETail
 clipAtFrom = \case
   ET_Com c k -> ET_Com c (r k)
   ET_Stop at -> ET_Stop at
-  ET_If at mans c t f -> ET_If at mans c (r t) (r f)
+  ET_If at c t f -> ET_If at c (r t) (r f)
   ET_Switch at x m -> ET_Switch at x (M.map (\(y, z, k) -> (y, z, r k)) m)
   ET_FromConsensus at x y _ -> ET_FromConsensus at x y (ET_Stop at)
   ET_ToConsensus {} -> impossible "to consensus at start of while body"
@@ -270,11 +270,11 @@ slurp = \case
           -- path and put it somewhere else
           m
   ET_Stop _ -> return Nothing
-  ET_If at mans c t f -> do
+  ET_If at c t f -> do
     (so_t, t') <- locSeenOut $ slurp t
     (so_f, f') <- locSeenOut $ slurp f
     let stop = ET_Stop at
-    let go tt ff = return $ Just $ ET_If at mans c tt ff
+    let go tt ff = return $ Just $ ET_If at c tt ff
     let alwaysSeeOut = and [so_t, so_f]
     when alwaysSeeOut $ do
       liftIO . flip writeIORef True =<< asks eSeenOutR
@@ -348,7 +348,7 @@ slurp = \case
     doWhile_ at (DLAssignment m) (DLBlock _ _ ct c) b k = do
       let ml = M.toAscList m
       let (mvs, mas) = unzip ml
-      let ift = ET_If at Nothing c (clipAtFrom b) k
+      let ift = ET_If at c (clipAtFrom b) k
       let condt = dtReplace ET_Com ift ct
       cnter <- asks eCounter
       (condt', mvs') <- liftIO $ freshen_ cnter condt mvs

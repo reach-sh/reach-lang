@@ -177,7 +177,7 @@ instance Subst FromInfo where
 instance Subst CTail where
   subst = \case
     CT_Com m k -> CT_Com <$> subst m <*> subst k
-    CT_If at mans c t f -> CT_If at <$> subst mans <*> subst c <*> subst t <*> subst f
+    CT_If at c t f -> CT_If at <$> subst c <*> subst t <*> subst f
     CT_Switch at v csm -> CT_Switch at <$> subst v <*> subst csm
     CT_From at which msvs -> CT_From at which <$> subst msvs
     CT_Jump at which svs asn -> CT_Jump at which <$> subst svs <*> subst asn

@@ -562,8 +562,8 @@ df_t = \case
 
 df_con :: DKTail -> DFApp LLConsensus
 df_con = \case
-  DK_If a mans c t f ->
-    LLC_If a mans c <$> df_con t <*> df_con f
+  DK_If a _ c t f ->
+    LLC_If a c <$> df_con t <*> df_con f
   DK_Switch a v csm ->
     LLC_Switch a v <$> mapM cm1 csm
     where

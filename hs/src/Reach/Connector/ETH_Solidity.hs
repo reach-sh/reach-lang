@@ -1317,7 +1317,7 @@ solPLTail = \case
 solCTail :: AppT CTail
 solCTail = \case
   CT_Com m k -> solCom_ solCTail m k
-  CT_If _ _ ca t f -> solIf <$> solArg ca <*> solCTail t <*> solCTail f
+  CT_If _ ca t f -> solIf <$> solArg ca <*> solCTail t <*> solCTail f
   CT_Switch at ov csm -> solSwitch solCTail at ov csm
   CT_Jump _ which svs (DLAssignment asnm) -> do
     let go_svs v = solSet ("la.svs." <> solRawVar v) <$> solVar v
