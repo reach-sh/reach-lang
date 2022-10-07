@@ -27,6 +27,9 @@ instance (Traversable f, Subst a) => Subst (f a) where
 instance {-# OVERLAPS #-} (Subst a, Subst b) => Subst (a, b) where
   subst (x, y) = (,) <$> subst x <*> subst y
 
+instance {-# OVERLAPS #-} (Subst a, Subst b, Subst c) => Subst (a, b, c) where
+  subst (x, y, z) = (,,) <$> subst x <*> subst y <*> subst z
+
 instance {-# OVERLAPS #-} Subst a => Subst (SwitchCases a) where
   subst csm = mapM go csm
     where
@@ -81,7 +84,7 @@ instance Subst DLRemoteALGOOC where
   subst = return
 
 instance Subst DLRemoteALGO where
-  subst (DLRemoteALGO x y z w v u t s) = DLRemoteALGO <$> subst x <*> subst y <*> subst z <*> subst w <*> subst v <*> subst u <*> subst t <*> subst s
+  subst (DLRemoteALGO a b c d e f g h i) = DLRemoteALGO <$> subst a <*> subst b <*> subst c <*> subst d <*> subst e <*> subst f <*> subst g <*> subst h <*> subst i
 
 instance Subst AS.Value where
   subst = return

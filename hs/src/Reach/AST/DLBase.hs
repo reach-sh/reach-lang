@@ -359,6 +359,9 @@ instance PrettySubst DLArg where
 argLitZero :: DLArg
 argLitZero = DLA_Literal $ DLL_Int sb UI_Word 0
 
+argLitNull :: DLArg
+argLitNull = DLA_Literal DLL_Null
+
 staticZero :: DLArg -> Bool
 staticZero = \case
   DLA_Literal (DLL_Int _ _ 0) -> True
@@ -754,11 +757,14 @@ data DLRemoteALGO = DLRemoteALGO
   , ralgo_onCompletion :: DLRemoteALGOOC
   , ralgo_strictPay :: Bool
   , ralgo_rawCall :: Bool
+  , ralgo_simValues :: (DLArg, -- netRecv
+                        Either (Maybe [DLArg]) DLArg, -- nonNetRecv (Left = UInt bill amounts given by user, Right = compiled into Tuple of UInts)
+                        DLArg) -- returnVal
   }
   deriving (Eq, Ord)
 
 zDLRemoteALGO :: DLRemoteALGO
-zDLRemoteALGO = DLRemoteALGO argLitZero mempty mempty False mempty RA_NoOp False False
+zDLRemoteALGO = DLRemoteALGO argLitZero mempty mempty False mempty RA_NoOp False False (argLitZero, Left Nothing, argLitNull)
 
 instance PrettySubst DLRemoteALGO where
   prettySubst (DLRemoteALGO {..}) = do

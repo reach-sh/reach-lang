@@ -205,7 +205,7 @@ instance Pandemic DLRemoteALGOOC where
   pan = return
 
 instance Pandemic DLRemoteALGO where
-  pan (DLRemoteALGO x y z w v u t s) = DLRemoteALGO <$> pan x <*> pan y <*> pan z <*> pan w <*> pan v <*> pan u <*> pan t <*> pan s
+  pan (DLRemoteALGO a b c d e f g h i) = DLRemoteALGO <$> pan a <*> pan b <*> pan c <*> pan d <*> pan e <*> pan f <*> pan g <*> pan h <*> pan i
 
 instance Pandemic DLPayAmt where
   pan (DLPayAmt net ks) = do
@@ -226,6 +226,9 @@ instance Pandemic DLArg where
 instance Pandemic b => Pandemic (a, b) where
   pan (s,a) = (,) s <$> pan a
 
+instance (Pandemic a, Pandemic b, Pandemic c) => Pandemic (a, b, c) where
+  pan (x, y, z) = (,,) <$> pan x <*> pan y <*> pan z
+
 instance Pandemic DLLargeArg where
   pan = \case
     DLLA_Array t as -> DLLA_Array t <$> pan as
@@ -239,9 +242,6 @@ instance Pandemic DLLargeArg where
 instance Pandemic DLSend where
   pan (DLSend b r s t) =
     DLSend b <$> pan r <*> pan s <*> pan t
-
-instance Pandemic (DLVar, Bool, DLStmts) where
-  pan (v,b,sts) = (,,) <$> pan v <*> pure b <*> pan sts
 
 instance Pandemic DLAssignment where
   pan (DLAssignment mvargs) = do

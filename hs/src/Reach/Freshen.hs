@@ -57,6 +57,9 @@ instance FreshenV DLLetVar where
 instance (Freshen a, Freshen b) => Freshen (a, b) where
   fu (x, y) = (,) <$> fu x <*> fu y
 
+instance (Freshen a, Freshen b, Freshen c) => Freshen (a, b, c) where
+  fu (x, y, z) = (,,) <$> fu x <*> fu y <*> fu z
+
 instance (Freshen a, Freshen b) => Freshen (Either a b) where
   fu = \case
     Left x -> Left <$> fu x
@@ -139,7 +142,7 @@ instance Freshen DLRemoteALGOOC where
   fu = return
 
 instance Freshen DLRemoteALGO where
-  fu (DLRemoteALGO x y z w v u t s) = DLRemoteALGO <$> fu x <*> fu y <*> fu z <*> fu w <*> fu v <*> fu u <*> fu t <*> fu s
+  fu (DLRemoteALGO a b c d e f g h i) = DLRemoteALGO <$> fu a <*> fu b <*> fu c <*> fu d <*> fu e <*> fu f <*> fu g <*> fu h <*> fu i
 
 instance Freshen AS.Value where
   fu = return
