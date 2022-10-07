@@ -1,1 +1,1 @@
--C hs --command="stack ghci --ghci-options='-O0'"
+-C hs --command="stack ghci --ghci-options='-O0' reach:exe:reach-cli"

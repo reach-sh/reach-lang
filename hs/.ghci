@@ -1,4 +1,3 @@
 :set -isrc
 :set -itest
 :set -iapp
-:load Reach.Compiler
