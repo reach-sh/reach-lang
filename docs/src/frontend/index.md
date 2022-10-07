@@ -908,7 +908,7 @@ details are omitted.
 ctc.getEventTys() => Record<string, ReachType[]>
 ```
 
-Returns a mapping from event name to the reach types of the data emitted for that event.
+Returns a mapping from event name to the Reach types of the data emitted for that event.
 This can be used to determine the connector-specific event signature.
 For example:
 
