@@ -254,6 +254,10 @@ instance {-# OVERLAPS #-} (Optimize a, Optimize b) => Optimize (a, b) where
   opt (x, y) = (,) <$> opt x <*> opt y
   gcs (x, y) = gcs x >> gcs y
 
+instance {-# OVERLAPS #-} (Optimize a, Optimize b, Optimize c) => Optimize (a, b, c) where
+  opt (x, y, z) = (,,) <$> opt x <*> opt y <*> opt z
+  gcs (x, y, z) = gcs x >> gcs y >> gcs z
+
 instance {-# OVERLAPS #-} (Optimize a, Optimize b) => Optimize (Either a b) where
   opt = \case
     Left x -> Left <$> opt x
@@ -320,8 +324,8 @@ instance Optimize DLRemoteALGOOC where
   gcs _ = return ()
 
 instance Optimize DLRemoteALGO where
-  opt (DLRemoteALGO x y z w v u t s) =
-    DLRemoteALGO <$> opt x <*> opt y <*> opt z <*> opt w <*> opt v <*> opt u <*> opt t <*> opt s
+  opt (DLRemoteALGO a b c d e f g h i) =
+    DLRemoteALGO <$> opt a <*> opt b <*> opt c <*> opt d <*> opt e <*> opt f <*> opt g <*> opt h <*> opt i
   gcs _ = return ()
 
 instance Optimize AS.Value where

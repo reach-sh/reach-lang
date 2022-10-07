@@ -69,6 +69,9 @@ instance FreeVars v => FreeVars (M.Map k v) where
 instance (FreeVars a, FreeVars b) => FreeVars (a, b) where
   freeVars (a, b) = freeVars a <> freeVars b
 
+instance (FreeVars a, FreeVars b, FreeVars c) => FreeVars (a, b, c) where
+  freeVars (a, b, c) = freeVars a <> freeVars b <> freeVars c
+
 instance (FreeVars a, FreeVars b) => FreeVars (Either a b) where
   freeVars = \case
     Left a -> freeVars a
@@ -102,7 +105,7 @@ instance FreeVars DLRemoteALGOOC where
   freeVars = const mempty
 
 instance FreeVars DLRemoteALGO where
-  freeVars (DLRemoteALGO a b c z w v u t) = freeVars a <> freeVars b <> freeVars c <> freeVars z <> freeVars w <> freeVars v <> freeVars u <> freeVars t
+  freeVars (DLRemoteALGO a b c d e f g h i) = freeVars a <> freeVars b <> freeVars c <> freeVars d <> freeVars e <> freeVars f <> freeVars g <> freeVars h <> freeVars i
 
 instance FreeVars DLTokenNew where
   freeVars (DLTokenNew a b c d e f) = freeVars [a, b, c, d, e] <> freeVars f

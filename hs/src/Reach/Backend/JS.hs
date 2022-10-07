@@ -7,6 +7,7 @@ import qualified Data.Foldable as Foldable
 import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Either
 import qualified Data.Scientific as Sci
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
@@ -374,7 +375,7 @@ jsMapKey k =
 
 jsRemote :: SrcLoc -> DLRemote -> App Doc
 jsRemote at (DLRemote _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv _nnZero) malgo) = do
-  let DLRemoteALGO r_fees r_accounts r_assets _r_addr2acc r_apps _r_oc r_strictPay _r_rawCall = malgo
+  let DLRemoteALGO r_fees r_accounts r_assets _r_addr2acc r_apps _r_oc r_strictPay _r_rawCall _r_simReturn = malgo
   fees' <- jsArg r_fees
   let notStaticZero = if r_strictPay then const True else not . staticZero
   let pay_ks_nz = filter (notStaticZero . fst) pay_ks
@@ -551,16 +552,19 @@ jsExpr = \case
       JM_Simulate -> do
         dr' <- jsRemote at dr
         obj' <- jsArg ro
-        let res' = parens $ jsSimTxn "remote" $
+        let simTxn = jsSimTxn "remote" $
               [ ("obj", obj')
               , ("remote", dr')
               ]
-        let nnRecv = dwb_tok_billed $ dr_bills dr
-        net' <- jsCon $ DLL_Int at UI_Word 0
-        let bill' = jsArray $ map (const net') nnRecv
-        let bill'' = if null nnRecv then [] else [bill']
-        let res'' = parens $ res' <> ", undefined"
-        return $ jsArray $ [ net' ] <> bill'' <> [ res'' ]
+        let (netRecv, nonNetRecv_, returnVal) = ralgo_simValues $ dr_ralgo dr
+        let nonNetRecv = fromRight (impossible "nonNetRecv was `Left`") nonNetRecv_
+        netRecv' <- jsArg netRecv
+        nonNetRecv' <- jsArg nonNetRecv
+        returnVal' <- jsArg returnVal
+        let arr = jsArray [netRecv' <> " /* netRecv */",
+                           nonNetRecv' <> " /* nonNetRecv */",
+                           returnVal' <> " /* returnVal */"]
+        return $ jsNewScope $ simTxn <> hardline <> jsReturn arr
   DLE_TokenNew _ tns -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> return "undefined /* TokenNew */"

@@ -3680,11 +3680,13 @@ evalPrim p sargs =
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote ALGO"
       metam <- mustBeObject =<< one_arg
       metam' <- mapM (ensure_public . sss_sls) metam
-      let actual = M.keysSet metam'
-      let valid = S.fromList $ [ "fees", "accounts", "assets", "addressToAccount", "apps", "onCompletion", "strictPay", "rawCall" ]
-      unless (actual `S.isSubsetOf` valid) $ do
+      let keys = M.keysSet metam'
+      let validKeys = S.fromList $ [ "fees", "accounts", "assets", "addressToAccount", "apps",
+                                     "onCompletion", "strictPay", "rawCall",
+                                     "simulationValues" ]
+      unless (keys `S.isSubsetOf` validKeys) $ do
         expect_ $ Err_Remote_ALGO_extra $ S.toAscList $
-          actual `S.difference` valid
+          keys `S.difference` validKeys
       let metal f k = k (M.lookup f metam')
       at <- withAt id
       let expectBool lab = metal lab $ \case
@@ -3721,6 +3723,30 @@ evalPrim p sargs =
         Just (SLV_Bytes _ "UpdateApplication") -> return $ RA_UpdateApplication
         Just (SLV_Bytes _ "DeleteApplication") -> return $ RA_DeleteApplication
         Just _ -> expect_ $ Err_Remote_ALGO_extra $ [ "illegal value for onCompletion" ]
+      -- nonNetRecv default depends on call to bill(). bill() might be called later, so we generate
+      -- the default when the remote fn is called (in later branch, where RemoteFunMode = Nothing)
+      let nonNetRecvDef = Left Nothing
+      let netRecvDef = DLA_Literal $ DLL_Int at UI_Word 0
+      let returnValDef = DLA_Literal $ DLL_Null
+      let simValueFields = ["netRecv", "nonNetRecv", "returnVal"]
+      ralgo_simValues <- metal "simulationValues" $ \case
+        Nothing -> return (netRecvDef, nonNetRecvDef, returnValDef)
+        Just (SLV_Object _ _ fields) | valid -> do
+          nonNetRecv <- case field "nonNetRecv" of
+            Nothing -> return nonNetRecvDef
+            Just (SLV_Tuple _ elems) -> (Left . Just <$>) . sequence $ map (compileCheckType (T_UInt UI_Word)) elems
+            Just _ -> expect_ $ Err_Remote_ALGO_extra ["nonNetRecv must be a Tuple of UInts"]
+
+          netRecv <- fromMaybe netRecvDef <$> fieldTyped "netRecv" (T_UInt UI_Word)
+          returnVal <- fromMaybe returnValDef <$> (fieldTyped "returnVal" =<< st2dte (stf_rng stf))
+          return (netRecv, nonNetRecv, returnVal)
+         where
+          valid = (S.fromList $ M.keys fields) `S.isSubsetOf` (S.fromList simValueFields)
+          field name = sss_val <$> M.lookup name fields
+          fieldTyped name ty = sequence $ compileCheckType ty <$> field name
+        Just (SLV_Object _ _ _) ->
+          expect_ $ Err_Remote_ALGO_extra ["simulationValues can only have the fields " <> show simValueFields]
+        Just _ -> expect_ $ Err_Remote_ALGO_extra ["simulationValues must be an Object"]
       let malgo = Just $ DLRemoteALGO {..}
       return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa ma stf mpay mbill malgo Nothing)
     SLPrim_remotef rat aa ma stf mpay mbill malgo Nothing -> do
@@ -3753,7 +3779,16 @@ evalPrim p sargs =
       allTokens <- fmap DLA_Var <$> readSt st_toks
       let nnToksNotBilled = allTokens \\ nntbRecv
       let withBill = DLWithBill nBilled nntbRecv nnToksNotBilled
-      let ralgo = fromMaybe zDLRemoteALGO malgo
+      -- Compile and check nonNetRecv
+      let DLRemoteALGO {..} = fromMaybe zDLRemoteALGO malgo
+      let (netRecv, nonNetRecv, returnVal) = ralgo_simValues
+      let nonNetRecvAmounts = fromLeft (impossible "nonNetRecv is `Right`") nonNetRecv
+      nonNetRecv' <- case nonNetRecvAmounts of
+        -- User didn't give nonNetRecv, generate default where the ctc receives zero of every token
+        Nothing -> compileArgExpr_ $ DLAE_Tuple $ replicate nntbC $ DLAE_Arg $ DLA_Literal $ DLL_Int at UI_Word 0
+        Just amts | length amts /= nntbC -> expect_ $ Err_Remote_ALGO_extra ["Length of nonNetRecv must match the number of tokens billed"]
+        Just amts -> compileArgExpr_ $ DLAE_Tuple $ map DLAE_Arg amts
+      let ralgo = DLRemoteALGO { ralgo_simValues = (netRecv, Right nonNetRecv', returnVal), .. }
       res' <-
         doInteractiveCall
           sargs
