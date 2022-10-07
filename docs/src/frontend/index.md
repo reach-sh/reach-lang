@@ -903,6 +903,22 @@ When the `{!js} showFull` argument is not `{!js} true`, internal implementation
 details are omitted.
 
 ---
+@{ref("js", "ctc.getEventTys")}
+```js
+ctc.getEventTys() => Record<string, ReachType[]>
+```
+
+Returns a mapping from event name to the reach types of the data emitted for that event.
+This can be used to determine the connector-specific event signature.
+For example:
+
+```js
+const tys = ctc.getEventTys();
+const e = 'Swap';
+const sig = `${e}${tys[e].toString()}`;
+```
+
+---
 @{ref("js", "getInternalState")}
 ```js
 ctc.getInternalState() => Promise<{ [key: string], ReachType }>
