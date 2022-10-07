@@ -11,13 +11,16 @@ const ERC165 = mixin({
     supportsInterface: Fun([Bytes(4)], Bool),
   }],
 });
+// We define this wrapped version to work around the mixin “unused variable” bug.
+const ERC165_wrapped = mixin({
+  Base: ERC165
+})
 
 const ERC20 = mixin({
-  //IDs: [ Bytes.fromHex('0xTODO'), ],
+  IDs: [ Bytes.fromHex('0x36372b07'), ],
   View: [{
     name: Fun([], StringDyn),
     symbol: Fun([], StringDyn),
-    // TODO Decimals should return uint8
     decimals: Fun([], UInt),
     totalSupply: Fun([], UInt),
     balanceOf: Fun([Address], UInt),
@@ -37,8 +40,7 @@ const ERC20 = mixin({
 export const main = Reach.App(() => {
   setOptions({ connectors: [ETH] });
 
-  // TODO - mix in ERC165 after I calculate the return code.
-  const { IDs, View: V, Events: E, API: I } = ERC20();
+  const { IDs, View: V, Events: E, API: I } = ERC20(ERC165_wrapped);
 
   const D = Participant('Deployer', {
     meta: Object({
@@ -58,8 +60,7 @@ export const main = Reach.App(() => {
     const { name, symbol, decimals, totalSupply, zeroAddress } = declassify(interact.meta);
   })
   D.publish(name, symbol, decimals, totalSupply, zeroAddress).check(() => {
-    // TODO - decimals is supposed to be a uint8.  I'm not certain how to do that, but let's at least enforce the value range.
-    check(decimals < 256);
+    check(decimals < 256, "decimals fits in uint8");
   });
 
   D.interact.deployed(getContract());
@@ -69,9 +70,8 @@ export const main = Reach.App(() => {
   V.decimals.set(() => decimals);
   V.totalSupply.set(() => totalSupply);
 
-  // TODO - enable this once I mix in ERC165.
-  //const IDsArray = array(Bytes(4), IDs);
-  //V.supportsInterface.set(IDsArray.includes);
+  const IDsArray = array(Bytes(4), IDs);
+  V.supportsInterface.set(IDsArray.includes);
 
   const balances = new Map(Address, UInt);
   const allowances = new Map(Tuple(Address, Address), UInt);
@@ -82,7 +82,6 @@ export const main = Reach.App(() => {
   const [ ] =
     parallelReduce([ ])
       .define(() => {
-
         const balanceOf = (owner) => {
           const m_bal = balances[owner];
           return fromSome(m_bal, 0);
