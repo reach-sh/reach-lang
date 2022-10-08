@@ -200,34 +200,6 @@ executables:
     - http-conduit
     - http-types
     - text
-  proto-stub:
-    <<: *std-exe
-    source-dirs:         app/proto-stub
-    dependencies:
-    - reach
-    - aeson
-    - async
-    - bytestring
-    - containers
-    - extra
-    - hspec
-    - http-client
-    - http-media
-    - mmorph
-    - mtl
-    - optparse-applicative
-    - parsec
-    - pretty-terminal
-    - process
-    - safe
-    - servant
-    - servant-client
-    - servant-server
-    - stm
-    - text
-    - time
-    - utf8-string
-    - warp
   reachpc:
     <<: *std-exe
     source-dirs: app/reachpc
