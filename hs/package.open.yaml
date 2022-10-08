@@ -200,18 +200,6 @@ executables:
     - http-conduit
     - http-types
     - text
-  reach-id-client:
-    <<: *std-exe
-    source-dirs:         app/reach-id-client
-    dependencies:
-    - reach
-    - aeson
-    - bytestring
-    - http-client
-    - http-conduit
-    - mtl
-    - optparse-applicative
-    - servant-auth
   proto-stub:
     <<: *std-exe
     source-dirs:         app/proto-stub
