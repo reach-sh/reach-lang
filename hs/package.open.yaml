@@ -119,7 +119,7 @@ library:
   - scotty >= 0.12
   - stm
   - wai-extra
-  # XXX Replace use with json
+  # XXX Replace use with json (see below too)
   - yaml
   # XXX Just use one!
   - attoparsec
@@ -170,6 +170,11 @@ executables:
     source-dirs:         app/reachc
     dependencies:
     - reach
+    - aeson
+    - bytestring
+    - extra
+    - process
+    - safe
   reach:
     main:                Main.hs
     source-dirs:         app/reach
@@ -183,11 +188,25 @@ executables:
     - -optP-Wno-nonportable-include-path
     dependencies:
     - reach
+    - aeson
+    - async
+    - bytestring
+    - containers
+    - extra
+    - filepath
+    - http-conduit
+    - mtl
     - neat-interpolation
+    - optparse-applicative
     - parsec
+    - pretty-simple
     - safe
+    - text
+    - time
     - unix
     - unix-time
+    - utf8-string
+    - yaml
   reach-cli:
     <<: *std-exe
     source-dirs:         app/reach-cli
