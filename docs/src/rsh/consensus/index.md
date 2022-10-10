@@ -625,7 +625,7 @@ In addition, a remote function may be augmented with one of the following operat
     The field represents how many of each non-network token Reach will assume your contract received from the remote call, for the purposes of transaction simulation.
     Amounts must be specified in the same order as in the call to `{!rsh} bill` or `{!rsh} withBill`.
     This is useful when using `{!rsh} withBill` and `{!rsh} enforce` to enforce that your contract received a certain number non-network tokens from the remote call.
-  + `{!rsh} opts.simReturnVal` is a field whose type must match the returned type of the remote function (default unspecified).
+  + `{!rsh} opts.simReturnVal` is a field whose type must match the returned type of the remote function (default depends on return type).
     The field represents the return value of the remote function, for the purposes of transaction simulation.
     This is useful when using `{!rsh} enforce` on the return value of the remote function.
 

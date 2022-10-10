@@ -1763,8 +1763,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           getOutput: (async <X extends CBR_Val>(o_mode:string, o_lab:string, o_ctc:ALGO_Ty<X>, o_val:X): Promise<X> => {
             void(o_mode);
             void(o_lab);
-            void(o_ctc);
-            return o_val;
+            // When user doesn't provide remote().ALGO({ simReturnVal: ... }), it gets turned
+            // into undefined. Turn it back into a sensible default value.
+            return o_val !== undefined ? o_val : o_ctc.defaultValue;
           }),
         };
         const sim_r = await sim_p( fake_res );
