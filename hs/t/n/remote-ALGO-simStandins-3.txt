@@ -1,0 +1,10 @@
+reachc: error[RE0088]: These types are mismatched:
+  expected: UInt
+       got: Bool
+
+  ./remote-ALGO-simStandins-3.rsh:23:20:tuple
+
+  23|     simTokensRecv: [2, true], // incorrect element type
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0088
+

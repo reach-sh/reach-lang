@@ -1,0 +1,10 @@
+reachc: error[RE0088]: These types are mismatched:
+  expected: Bool
+       got: Null
+
+  ./remote-ALGO-simStandins-1.rsh:24:19:literal
+
+  24|     simReturnVal: null, // incorrect range type
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0088
+
