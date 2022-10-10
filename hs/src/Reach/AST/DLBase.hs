@@ -749,9 +749,9 @@ data DLRemoteALGOOC
   deriving (Eq, Ord)
 
 data DLRemoteALGOSTR -- simTokensRecv in `remote().ALGO({ simTokensRecv: [1, 2, 3] })`
-  = RA_Unset        -- User never gave simTokensRecv
-  | RA_List [DLArg] -- List of UInts given by user
-  | RA_Tuple DLArg  -- Tuple of UInts compiled from list given by user
+  = RA_Unset               -- User never gave simTokensRecv
+  | RA_List SrcLoc [DLArg] -- List of UInts given by user
+  | RA_Tuple DLArg         -- Tuple of UInts compiled from list given by user
   deriving (Eq, Ord, Show)
 
 data DLRemoteALGO = DLRemoteALGO

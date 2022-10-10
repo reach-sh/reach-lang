@@ -86,7 +86,7 @@ instance Subst DLRemoteALGOOC where
 instance Subst DLRemoteALGOSTR where
   subst = \case
     RA_Unset -> return RA_Unset
-    RA_List l -> RA_List <$> subst l
+    RA_List at l -> RA_List at <$> subst l
     RA_Tuple t -> RA_Tuple <$> subst t
 
 instance Subst DLRemoteALGO where

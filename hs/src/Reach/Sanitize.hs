@@ -66,7 +66,7 @@ instance Sanitize DLRemoteALGOOC where
 instance Sanitize DLRemoteALGOSTR where
   sani = \case
     RA_Unset -> RA_Unset
-    RA_List l -> RA_List $ sani l
+    RA_List at l -> RA_List at $ sani l
     RA_Tuple t -> RA_Tuple $ sani t
 
 instance Sanitize DLRemoteALGO where

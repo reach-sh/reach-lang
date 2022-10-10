@@ -3723,13 +3723,15 @@ evalPrim p sargs =
         Just (SLV_Bytes _ "UpdateApplication") -> return $ RA_UpdateApplication
         Just (SLV_Bytes _ "DeleteApplication") -> return $ RA_DeleteApplication
         Just _ -> expect_ $ Err_Remote_ALGO_extra $ [ "illegal value for onCompletion" ]
-      ralgo_simNetRecv <- metal "simNetRecv" $ maybe (pure argLitZero) (compileCheckType (T_UInt UI_Word))
+      let locAtOf = locAt . srclocOf
+      let compileUInt = compileCheckType (T_UInt UI_Word)
+      ralgo_simNetRecv <- metal "simNetRecv" $ maybe (pure argLitZero) (\x -> locAtOf x $ compileUInt x)
       ralgo_simTokensRecv <- metal "simTokensRecv" $ maybe (pure RA_Unset) $ \case
-        SLV_Tuple _ amts -> RA_List <$> mapM (compileCheckType (T_UInt UI_Word)) amts
+        SLV_Tuple tupAt amts -> locAt tupAt $ RA_List tupAt <$> mapM compileUInt amts
         _ -> expect_ $ Err_Remote_ALGO_extra ["simTokensRecv must be a Tuple of UInts"]
       rngTy <- st2dte $ stf_rng stf
       ralgo_simReturnVal <- metal "simReturnVal" $ \case
-        Just x -> Just <$> compileCheckType rngTy x
+        Just x -> locAtOf x $ Just <$> compileCheckType rngTy x
         Nothing -> return Nothing
       let malgo = Just $ DLRemoteALGO {..}
       return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa ma stf mpay mbill malgo Nothing)
@@ -3767,8 +3769,8 @@ evalPrim p sargs =
       ralgo_simTokensRecv' <- fmap RA_Tuple . compileArgExpr_ =<< case ralgo_simTokensRecv of
         -- If user didn't give simTokensRecv, generate default where the ctc receives zero of every token
         RA_Unset -> return $ DLAE_Tuple $ replicate nntbC $ DLAE_Arg $ DLA_Literal $ DLL_Int at UI_Word 0
-        RA_List amts | length amts == nntbC -> return $ DLAE_Tuple $ map DLAE_Arg amts
-        RA_List _ -> expect_ $ Err_Remote_ALGO_extra ["Length of nonNetRecv must match the number of tokens billed"]
+        RA_List _ amts | length amts == nntbC -> return $ DLAE_Tuple $ map DLAE_Arg amts
+        RA_List at' _ -> locAt at' $ expect_ $ Err_Remote_ALGO_extra ["Length of simTokensRecv must match the number of tokens billed"]
         RA_Tuple _ -> impossible "RA_Tuple"
       let ralgo = DLRemoteALGO { ralgo_simTokensRecv = ralgo_simTokensRecv', .. }
       res' <-

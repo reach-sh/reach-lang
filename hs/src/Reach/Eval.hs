@@ -207,7 +207,7 @@ instance Pandemic DLRemoteALGOOC where
 instance Pandemic DLRemoteALGOSTR where
   pan = \case
     RA_Unset -> return RA_Unset
-    RA_List l -> RA_List <$> pan l
+    RA_List at l -> RA_List at <$> pan l
     RA_Tuple t -> RA_Tuple <$> pan t
 
 instance Pandemic DLRemoteALGO where
