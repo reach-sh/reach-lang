@@ -63,8 +63,16 @@ instance Sanitize DLWithBill where
 instance Sanitize DLRemoteALGOOC where
   sani = id
 
+instance Sanitize DLRemoteALGOSTR where
+  sani = \case
+    RA_Unset -> RA_Unset
+    RA_List l -> RA_List $ sani l
+    RA_Tuple t -> RA_Tuple $ sani t
+
 instance Sanitize DLRemoteALGO where
-  sani (DLRemoteALGO a b c d e f g h i) = DLRemoteALGO (sani a) (sani b) (sani c) (sani d) (sani e) (sani f) (sani g) (sani h) (sani i)
+  sani (DLRemoteALGO a b c d e f g h i j k) =
+    DLRemoteALGO (sani a) (sani b) (sani c) (sani d) (sani e) (sani f) (sani g) (sani h) (sani i)
+                 (sani j) (sani k)
 
 instance Sanitize AS.Value where
   sani = id

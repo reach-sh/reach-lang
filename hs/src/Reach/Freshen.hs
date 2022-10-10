@@ -141,8 +141,16 @@ instance Freshen a => Freshen (DLInvariant a) where
 instance Freshen DLRemoteALGOOC where
   fu = return
 
+instance Freshen DLRemoteALGOSTR where
+  fu = \case
+    RA_Unset -> return RA_Unset
+    RA_List l -> RA_List <$> fu l
+    RA_Tuple t -> RA_Tuple <$> fu t
+
 instance Freshen DLRemoteALGO where
-  fu (DLRemoteALGO a b c d e f g h i) = DLRemoteALGO <$> fu a <*> fu b <*> fu c <*> fu d <*> fu e <*> fu f <*> fu g <*> fu h <*> fu i
+  fu (DLRemoteALGO a b c d e f g h i j k) =
+    DLRemoteALGO <$> fu a <*> fu b <*> fu c <*> fu d <*> fu e <*> fu f <*> fu g <*> fu h <*>
+                     fu i <*> fu j <*> fu k
 
 instance Freshen AS.Value where
   fu = return

@@ -118,8 +118,15 @@ instance CollectsTypes PrimOp where
 instance CollectsTypes DLRemoteALGOOC where
   cts = const mempty
 
+instance CollectsTypes DLRemoteALGOSTR where
+  cts = \case
+    RA_Unset -> mempty
+    RA_List l -> cts l
+    RA_Tuple t -> cts t
+
 instance CollectsTypes DLRemoteALGO where
-  cts (DLRemoteALGO a b c d e f g h i) = cts a <> cts b <> cts c <> cts d <> cts e <> cts f <> cts g <> cts h <> cts i
+  cts (DLRemoteALGO a b c d e f g h i j k) =
+    cts a <> cts b <> cts c <> cts d <> cts e <> cts f <> cts g <> cts h <> cts i <> cts j <> cts k
 
 instance CollectsTypes AS.Value where
   cts = const mempty

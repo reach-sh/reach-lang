@@ -323,9 +323,17 @@ instance Optimize DLRemoteALGOOC where
   opt = return
   gcs _ = return ()
 
+instance Optimize DLRemoteALGOSTR where
+  opt = \case
+    RA_Unset -> return RA_Unset
+    RA_List l -> RA_List <$> opt l
+    RA_Tuple t -> RA_Tuple <$> opt t
+  gcs _ = return ()
+
 instance Optimize DLRemoteALGO where
-  opt (DLRemoteALGO a b c d e f g h i) =
-    DLRemoteALGO <$> opt a <*> opt b <*> opt c <*> opt d <*> opt e <*> opt f <*> opt g <*> opt h <*> opt i
+  opt (DLRemoteALGO a b c d e f g h i j k) =
+    DLRemoteALGO <$> opt a <*> opt b <*> opt c <*> opt d <*> opt e <*> opt f <*> opt g <*> opt h <*>
+                     opt i <*> opt j <*> opt k
   gcs _ = return ()
 
 instance Optimize AS.Value where

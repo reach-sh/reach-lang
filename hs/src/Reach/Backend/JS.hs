@@ -7,7 +7,6 @@ import qualified Data.Foldable as Foldable
 import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe
-import Data.Either
 import qualified Data.Scientific as Sci
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
@@ -375,7 +374,8 @@ jsMapKey k =
 
 jsRemote :: SrcLoc -> DLRemote -> App Doc
 jsRemote at (DLRemote _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv _nnZero) malgo) = do
-  let DLRemoteALGO r_fees r_accounts r_assets _r_addr2acc r_apps _r_oc r_strictPay _r_rawCall _r_simReturn = malgo
+  let DLRemoteALGO r_fees r_accounts r_assets _r_addr2acc r_apps _r_oc r_strictPay _r_rawCall
+                   _r_simNetRecv _r_simTokRecv _r_simRetVal = malgo
   fees' <- jsArg r_fees
   let notStaticZero = if r_strictPay then const True else not . staticZero
   let pay_ks_nz = filter (notStaticZero . fst) pay_ks
@@ -556,14 +556,15 @@ jsExpr = \case
               [ ("obj", obj')
               , ("remote", dr')
               ]
-        let (netRecv, nonNetRecv_, returnVal) = ralgo_simValues $ dr_ralgo dr
-        let nonNetRecv = fromRight (impossible "nonNetRecv was `Left`") nonNetRecv_
-        netRecv' <- jsArg netRecv
-        nonNetRecv' <- jsArg nonNetRecv
-        returnVal' <- jsArg returnVal
-        let arr = jsArray [netRecv' <> " /* netRecv */",
-                           nonNetRecv' <> " /* nonNetRecv */",
-                           returnVal' <> " /* returnVal */"]
+        let DLRemoteALGO { ralgo_simNetRecv, ralgo_simTokensRecv, ralgo_simReturnVal } = dr_ralgo dr
+        netRecv' <- jsArg ralgo_simNetRecv
+        tokensRecv' <- jsArg $ case ralgo_simTokensRecv of
+          RA_Tuple t -> t
+          _ -> impossible "expected RA_Tuple"
+        returnVal' <- maybe (pure "undefined") jsArg ralgo_simReturnVal
+        let arr = jsArray [netRecv'    <> " /* simNetRecv */",
+                           tokensRecv' <> " /* simTokensRecv */",
+                           returnVal'  <> " /* simReturnVal */"]
         return $ jsNewScope $ simTxn <> hardline <> jsReturn arr
   DLE_TokenNew _ tns -> do
     (ctxt_mode <$> ask) >>= \case

@@ -204,8 +204,16 @@ instance Pandemic Bool where
 instance Pandemic DLRemoteALGOOC where
   pan = return
 
+instance Pandemic DLRemoteALGOSTR where
+  pan = \case
+    RA_Unset -> return RA_Unset
+    RA_List l -> RA_List <$> pan l
+    RA_Tuple t -> RA_Tuple <$> pan t
+
 instance Pandemic DLRemoteALGO where
-  pan (DLRemoteALGO a b c d e f g h i) = DLRemoteALGO <$> pan a <*> pan b <*> pan c <*> pan d <*> pan e <*> pan f <*> pan g <*> pan h <*> pan i
+  pan (DLRemoteALGO a b c d e f g h i j k) =
+    DLRemoteALGO <$> pan a <*> pan b <*> pan c <*> pan d <*> pan e <*> pan f <*> pan g <*> pan h <*>
+                     pan i <*> pan j <*> pan k
 
 instance Pandemic DLPayAmt where
   pan (DLPayAmt net ks) = do

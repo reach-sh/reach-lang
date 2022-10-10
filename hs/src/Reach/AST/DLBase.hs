@@ -748,6 +748,12 @@ data DLRemoteALGOOC
   | RA_DeleteApplication
   deriving (Eq, Ord)
 
+data DLRemoteALGOSTR -- simTokensRecv in `remote().ALGO({ simTokensRecv: [1, 2, 3] })`
+  = RA_Unset        -- User never gave simTokensRecv
+  | RA_List [DLArg] -- List of UInts given by user
+  | RA_Tuple DLArg  -- Tuple of UInts compiled from list given by user
+  deriving (Eq, Ord, Show)
+
 data DLRemoteALGO = DLRemoteALGO
   { ralgo_fees :: DLArg
   , ralgo_accounts :: [DLArg]
@@ -757,14 +763,14 @@ data DLRemoteALGO = DLRemoteALGO
   , ralgo_onCompletion :: DLRemoteALGOOC
   , ralgo_strictPay :: Bool
   , ralgo_rawCall :: Bool
-  , ralgo_simValues :: (DLArg, -- netRecv
-                        Either (Maybe [DLArg]) DLArg, -- nonNetRecv (Left = UInt bill amounts given by user, Right = compiled into Tuple of UInts)
-                        DLArg) -- returnVal
+  , ralgo_simNetRecv :: DLArg
+  , ralgo_simTokensRecv :: DLRemoteALGOSTR
+  , ralgo_simReturnVal :: Maybe DLArg
   }
   deriving (Eq, Ord)
 
 zDLRemoteALGO :: DLRemoteALGO
-zDLRemoteALGO = DLRemoteALGO argLitZero mempty mempty False mempty RA_NoOp False False (argLitZero, Left Nothing, argLitNull)
+zDLRemoteALGO = DLRemoteALGO argLitZero mempty mempty False mempty RA_NoOp False False argLitZero RA_Unset Nothing
 
 instance PrettySubst DLRemoteALGO where
   prettySubst (DLRemoteALGO {..}) = do

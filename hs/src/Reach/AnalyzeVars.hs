@@ -104,8 +104,16 @@ instance FreeVars Bool where
 instance FreeVars DLRemoteALGOOC where
   freeVars = const mempty
 
+instance FreeVars DLRemoteALGOSTR where
+  freeVars = \case
+    RA_Unset -> mempty
+    RA_List l -> freeVars l
+    RA_Tuple t -> freeVars t
+
 instance FreeVars DLRemoteALGO where
-  freeVars (DLRemoteALGO a b c d e f g h i) = freeVars a <> freeVars b <> freeVars c <> freeVars d <> freeVars e <> freeVars f <> freeVars g <> freeVars h <> freeVars i
+  freeVars (DLRemoteALGO a b c d e f g h i j k) =
+    freeVars a <> freeVars b <> freeVars c <> freeVars d <> freeVars e <> freeVars f <>
+    freeVars g <> freeVars h <> freeVars i <> freeVars j <> freeVars k
 
 instance FreeVars DLTokenNew where
   freeVars (DLTokenNew a b c d e f) = freeVars [a, b, c, d, e] <> freeVars f
