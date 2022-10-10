@@ -326,7 +326,7 @@ instance Optimize DLRemoteALGOOC where
 instance Optimize DLRemoteALGOSTR where
   opt = \case
     RA_Unset -> return RA_Unset
-    RA_List l -> RA_List <$> opt l
+    RA_List at l -> RA_List at <$> opt l
     RA_Tuple t -> RA_Tuple <$> opt t
   gcs _ = return ()
 

@@ -144,7 +144,7 @@ instance Freshen DLRemoteALGOOC where
 instance Freshen DLRemoteALGOSTR where
   fu = \case
     RA_Unset -> return RA_Unset
-    RA_List l -> RA_List <$> fu l
+    RA_List at l -> RA_List at <$> fu l
     RA_Tuple t -> RA_Tuple <$> fu t
 
 instance Freshen DLRemoteALGO where

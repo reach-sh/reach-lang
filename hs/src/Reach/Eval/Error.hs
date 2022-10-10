@@ -770,7 +770,7 @@ instance Show EvalError where
     Err_Alias_Type_Clash alias ->
       "The alias `" <> alias <> "` is overloaded multiple types for the same parameter types."
     Err_Remote_ALGO_extra ks ->
-      "REMOTE_FUN.ALGO received illegal fields: " <> show ks
+      "REMOTE_FUN.ALGO received illegal fields: " <> if length ks == 1 then head ks else show ks
     Err_ExpectedThunk ->
       "Expected a syntactic thunk."
     Err_Api_Return_Type ->

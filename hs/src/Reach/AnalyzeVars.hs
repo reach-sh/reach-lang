@@ -107,7 +107,7 @@ instance FreeVars DLRemoteALGOOC where
 instance FreeVars DLRemoteALGOSTR where
   freeVars = \case
     RA_Unset -> mempty
-    RA_List l -> freeVars l
+    RA_List _ l -> freeVars l
     RA_Tuple t -> freeVars t
 
 instance FreeVars DLRemoteALGO where

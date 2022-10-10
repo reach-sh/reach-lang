@@ -121,7 +121,7 @@ instance CollectsTypes DLRemoteALGOOC where
 instance CollectsTypes DLRemoteALGOSTR where
   cts = \case
     RA_Unset -> mempty
-    RA_List l -> cts l
+    RA_List _ l -> cts l
     RA_Tuple t -> cts t
 
 instance CollectsTypes DLRemoteALGO where

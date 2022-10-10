@@ -135,7 +135,7 @@ instance Countable DLRemoteALGOOC where
 instance Countable DLRemoteALGOSTR where
   counts = \case
     RA_Unset -> mempty
-    RA_List l -> counts l
+    RA_List _ l -> counts l
     RA_Tuple t -> counts t
 
 instance Countable DLRemoteALGO where
