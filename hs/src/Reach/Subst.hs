@@ -83,8 +83,16 @@ instance Subst DLWithBill where
 instance Subst DLRemoteALGOOC where
   subst = return
 
+instance Subst DLRemoteALGOSTR where
+  subst = \case
+    RA_Unset -> return RA_Unset
+    RA_List l -> RA_List <$> subst l
+    RA_Tuple t -> RA_Tuple <$> subst t
+
 instance Subst DLRemoteALGO where
-  subst (DLRemoteALGO a b c d e f g h i) = DLRemoteALGO <$> subst a <*> subst b <*> subst c <*> subst d <*> subst e <*> subst f <*> subst g <*> subst h <*> subst i
+  subst (DLRemoteALGO a b c d e f g h i j k) =
+    DLRemoteALGO <$> subst a <*> subst b <*> subst c <*> subst d <*> subst e <*> subst f <*>
+                 subst g <*> subst h <*> subst i <*> subst j <*> subst k
 
 instance Subst AS.Value where
   subst = return

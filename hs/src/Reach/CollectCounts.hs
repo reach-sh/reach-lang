@@ -132,8 +132,16 @@ instance Countable DLWithBill where
 instance Countable DLRemoteALGOOC where
   counts = const mempty
 
+instance Countable DLRemoteALGOSTR where
+  counts = \case
+    RA_Unset -> mempty
+    RA_List l -> counts l
+    RA_Tuple t -> counts t
+
 instance Countable DLRemoteALGO where
-  counts (DLRemoteALGO a b c d e f g h i) = counts a <> counts b <> counts c <> counts d <> counts e <> counts f <> counts g <> counts h <> counts i
+  counts (DLRemoteALGO a b c d e f g h i j k) =
+    counts a <> counts b <> counts c <> counts d <> counts e <> counts f <> counts g <> counts h <>
+    counts i <> counts j <> counts k
 
 instance Countable AS.Value where
   counts = const mempty
