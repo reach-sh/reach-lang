@@ -618,6 +618,16 @@ In addition, a remote function may be augmented with one of the following operat
   + `{!rsh} opts.strictPay` does not optimize away `pay` or `axfer` transactions that are statically zero.
     If this is needed, and not included, then `{!rsh} remote` calls that require a payment transaction to always be present, even if the amount is zero, could fail.
   + `{!rsh} opts.rawCall` is a boolean (default `{!rsh} false`) that when `{!rsh} true` omits the ABI method selector from the call.
+  + `{!rsh} opts.simNetRecv` is an integer field (default `{!rsh} 0`).
+    The field represents how many network tokens Reach will assume your contract received from the remote call, for the purposes of transaction simulation.
+    This is useful when using `{!rsh} withBill` and `{!rsh} enforce` to enforce that your contract received a certain number network tokens from the remote call.
+  + `{!rsh} opts.simTokensRecv` is a tuple-of-integers field (default all zeros).
+    The field represents how many of each non-network token Reach will assume your contract received from the remote call, for the purposes of transaction simulation.
+    Amounts must be specified in the same order as in the call to `{!rsh} bill` or `{!rsh} withBill`.
+    This is useful when using `{!rsh} withBill` and `{!rsh} enforce` to enforce that your contract received a certain number non-network tokens from the remote call.
+  + `{!rsh} opts.simReturnVal` is a field whose type must match the returned type of the remote function (default unspecified).
+    The field represents the return value of the remote function, for the purposes of transaction simulation.
+    This is useful when using `{!rsh} enforce` on the return value of the remote function.
 
 If the remote contract is not expected to return non-network tokens then a pair is returned, where the amount of network tokens received is the first element, and the original result is the second element.
 
