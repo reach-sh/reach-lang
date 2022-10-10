@@ -1,0 +1,8 @@
+reachc: error[RE0132]: REMOTE_FUN.ALGO received illegal fields: Length of simTokensRecv must match the number of tokens billed
+
+  ./remote-ALGO-simStandins-2.rsh:23:20:tuple
+
+  23|     simTokensRecv: [2, 3, 4], // incorrect length
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0132
+
