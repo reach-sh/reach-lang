@@ -7,7 +7,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verRC("0.1.12")}
 
-@{rcHead("0.1.12-rc.3")}
+@{rcHead("0.1.12-rc.4")}
 
 + 2022/10/09 Added `{!rsh} opts.simNetRecv`, `{!rsh} opts.simTokensRecv`, and `{!rsh} opts.simReturnVal`.
 + 2022/10/07 Added `{!js} ctc.getEventTys`.
