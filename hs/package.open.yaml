@@ -95,6 +95,7 @@ library:
   - memory
   - mtl
   - optparse-applicative
+  - parsec
   - parsec-numbers
   - pretty-show
   - pretty-terminal
@@ -118,9 +119,6 @@ library:
   - scotty >= 0.12
   - stm
   - wai-extra
-  # XXX Just use one!
-  - attoparsec
-  - parsec
 
 tests:
   reach-test:
