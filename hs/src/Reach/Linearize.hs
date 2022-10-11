@@ -104,6 +104,8 @@ dk1 k s =
     DLS_ArrayReduce at ans xs z b as i f ->
       com' $ DKC_ArrayReduce at ans xs z b as i <$> dk_block at f
     DLS_If at mans c _ t f -> do
+      -- If `mans = Just dv`, we already know that this `if` will set dv.
+      -- If we do not have that metadata, try to lookup in the env what DLVar the return value will be assigned to.
       ans <- getRet mans
       let con = DK_If at ans c
       let loc t' f' = DK_Com (DKC_LocalIf at ans c t' f') k
