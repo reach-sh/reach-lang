@@ -119,8 +119,6 @@ library:
   - scotty >= 0.12
   - stm
   - wai-extra
-  # XXX Replace use with json (see below too)
-  - yaml
   # XXX Just use one!
   - attoparsec
   - parsec
