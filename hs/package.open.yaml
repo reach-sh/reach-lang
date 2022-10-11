@@ -85,7 +85,6 @@ library:
   - directory
   - dlist
   - edit-distance
-  - exceptions
   - extra
   - file-embed >= 0.0.9
   - filepath
@@ -122,7 +121,6 @@ library:
   # XXX Just use one!
   - attoparsec
   - parsec
-  # XXX Remove RLang and TSA and move into app-closed
 
 tests:
   reach-test:
