@@ -9,6 +9,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcHead("0.1.12-rc.4")}
 
++ 2022/10/12: Updated `{!js} test.chkErr` to use a regex for the expected error.
 + 2022/10/09 Added `{!rsh} opts.simNetRecv`, `{!rsh} opts.simTokensRecv`, and `{!rsh} opts.simReturnVal`.
 + 2022/10/07 Added `{!js} ctc.getEventTys`.
 

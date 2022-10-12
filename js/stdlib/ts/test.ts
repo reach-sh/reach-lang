@@ -60,7 +60,7 @@ export const chkErr = async (id:string, exp:string, f:Job<void>, xtra:Xtra = {})
       catch (e) { void(e); }
     }
     es = clean(es);
-    chk(id, es.includes(exps), true, { ...xtra, e, es, exps });
+    chk(id, !!es.match(exps), true, { ...xtra, e, es, exps });
   }
 };
 
