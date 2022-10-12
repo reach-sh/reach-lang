@@ -1340,7 +1340,6 @@ solCTail = \case
       vsep $
         [ solSet "current_step" "0x0"
         , solSet "current_time" "0x0"
-        , "delete current_svbs;"
         -- We could "selfdestruct" our token holdings, based on _toks
         --
         -- , solApply "selfdestruct" ["payable(msg.sender)"] <> semi
