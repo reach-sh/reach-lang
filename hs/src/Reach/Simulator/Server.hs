@@ -577,8 +577,8 @@ startServer :: LLProg -> String -> IO ()
 startServer p srcTxt = do
   sync <- newTVarIO def
   let runActionToIO m = runReaderT (runWebM m) sync
-  let showp :: T.Text -> a -> IO ()
-      showp _ _ = return ()
+  let showp :: T.Text -> a -> IO a
+      showp _ x = return x
   eol <- bigopt (showp, "eol") p
   flap <- floatAPI eol
   pil <- epp flap
