@@ -172,6 +172,7 @@ const test = async (ctc, expected) => {
   assertEq(await ctc.name(), expected.name, "name()");
   assertEq(await ctc.symbol(), expected.symbol, "symbol()");
   assertEq(await ctc.totalSupply(), expected.totalSupply, "totalSupply()");
+  assertEq(await ctc.decimals(), expected.decimals, "decimals()");
 
   const weiPost = await getWei();
   const weiDiff = weiPre.sub(weiPost);
