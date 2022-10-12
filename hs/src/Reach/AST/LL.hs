@@ -97,7 +97,7 @@ instance HasCounter LLProg where
   getCounter = getCounter . llp_opts
 
 instance Pretty LLProg where
-  pretty (LLProg _llp_at _llp_opts llp_parts llp_init llp_exports llp_views llp_apis llp_aliases llp_events llp_step) =
+  pretty (LLProg {..}) =
     "#lang ll" <> hardline
       <> pretty llp_parts
       <> hardline

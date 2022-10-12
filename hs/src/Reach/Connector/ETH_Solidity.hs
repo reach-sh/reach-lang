@@ -28,7 +28,7 @@ import qualified Data.Text.Lazy.IO as LTIO
 import Generics.Deriving (Generic)
 import Reach.AST.Base
 import Reach.AST.DLBase
-import Reach.AST.PL
+import Reach.AST.CP
 import Reach.CommandLine
 import Reach.Connector
 import Reach.Counter
@@ -269,7 +269,7 @@ data SolCtxt = SolCtxt
   , ctxt_typed :: IORef (M.Map Int Doc)
   , ctxt_typef :: IORef (M.Map Int Doc)
   , ctxt_typeidx :: Counter
-  , ctxt_plo :: PLOpts
+  , ctxt_cpo :: CPOpts
   , ctxt_intidx :: Counter
   , ctxt_ints :: IORef (M.Map Int Doc)
   , ctxt_outputs :: IORef (M.Map String Doc)
@@ -305,8 +305,8 @@ addInterface f dom rng = do
 
 allocVarIdx :: App Int
 allocVarIdx = do
-  PLOpts {..} <- ctxt_plo <$> ask
-  liftIO $ incCounter plo_counter
+  c <- getCounter . ctxt_cpo <$> ask
+  liftIO $ incCounter c
 
 allocVar :: App Doc
 allocVar = (pretty . (++) "v" . show) <$> allocVarIdx
@@ -1774,9 +1774,13 @@ baseTypes =
 contractId :: String
 contractId = "ReachContract"
 
-solPLProg :: PLProg -> IO (ConnectorObject, Doc)
-solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at = at, cpp_views = (vs, vi), cpp_apis = ai, cpp_handlers = hs} } = do
-  let DLInit {..} = dli
+solCPProg :: CPProg -> IO (ConnectorObject, Doc)
+solCPProg (CPProg {..}) = do
+  let at = cpp_at
+  let DLViewsX vs vi = cpp_views
+  let ai = cpp_apis
+  let hs = cpp_handlers
+  let DLInit {..} = cpp_init
   let ctxt_handler_num = 0
   ctxt_varm <- newIORef mempty
   ctxt_mvars <- newIORef mempty
@@ -1792,7 +1796,7 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
   ctxt_outputs <- newIORef mempty
   ctxt_tlfuns <- newIORef mempty
   ctxt_which_msg <- newIORef mempty
-  let ctxt_plo = plo
+  let ctxt_cpo = cpp_opts
   let ctxt_uses_apis = not $ M.null ai
   flip runReaderT (SolCtxt {..}) $ do
     let map_defn (mpv, mi) = do
@@ -2147,14 +2151,14 @@ connect_eth _ = Connector {..}
     conName = conName'
     conCons = conCons'
     conReserved = flip S.member solReservedNames
-    conGen moutn pl = case moutn of
+    conGen moutn cp = case moutn of
       Just outn -> go (outn "sol")
       Nothing -> withSystemTempDirectory "reachc-sol" $ \dir ->
         go (dir </> "compiled.sol")
       where
         go :: FilePath -> IO ConnectorInfo
         go solf = do
-          (cinfo, sol) <- solPLProg pl
+          (cinfo, sol) <- solCPProg cp
           unless dontWriteSol $ do
             LTIO.writeFile solf $ render sol
           compile_sol cinfo solf

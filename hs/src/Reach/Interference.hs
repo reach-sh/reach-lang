@@ -1,29 +1,40 @@
 module Reach.Interference (colorProgram) where
 
-import Control.Monad (forM)
-import Control.Monad.Extra (mconcatMapM)
+import Control.Monad
+import Control.Monad.Extra
 import Control.Monad.Reader
-  ( MonadIO (liftIO)
-  , ReaderT (runReaderT)
-  , asks
-  , forM_
-  )
 import Data.IORef
-  ( IORef
-  , modifyIORef
-  , newIORef
-  , readIORef
-  , writeIORef
-  )
 import Data.List ((\\))
 import qualified Data.Map.Strict as M
-import Data.Maybe (fromMaybe, maybeToList)
-import Data.Ord (comparing)
+import Data.Maybe
+import Data.Ord
 import qualified Data.Set as S
+import Reach.AST.CP
 import Reach.AST.DLBase
 import Reach.AST.PL
-import Reach.Util (impossible)
-import Safe.Foldable (maximumByMay)
+import Reach.Texty
+import Reach.Util
+import Safe.Foldable
+
+data ColorGraphs = ColorGraph
+  { typeGraph :: M.Map DLType Int
+  , varGraph :: M.Map DLVar Int
+  }
+  deriving (Eq)
+
+instance Pretty ColorGraphs where
+  pretty = \case
+    ColorGraph tg vg ->
+      "type graph:" <+> pretty tg <> hardline
+        <> "var graph:" <+> prettyVarGraph vg
+    where
+      prettyVarGraph g =
+        let rows =
+              map
+                (\(v, i) ->
+                   "  " <> viaShow v <> ": " <> viaShow (varType v) <> " - " <> viaShow i)
+                $ M.toList g
+         in braces $ hardline <> vsep rows
 
 type DLVarS = S.Set DLVar
 
@@ -149,8 +160,8 @@ color s gInter asn0 = do
   color_loop
   readIORef asnr
 
-colorProgram :: PLProg -> IO ColorGraphs
-colorProgram PLProg { plp_cpprog = CPProg { cpp_handlers = CHandlers handlers }} = do
+colorProgram :: PLProg a CPProg -> IO ColorGraphs
+colorProgram (PLProg { plp_cpp = CPProg { cpp_handlers = CHandlers handlers }}) = do
   e_tv <- newIORef mempty
   e_ti <- newIORef mempty
   flip runReaderT (Env {..}) $ makeInterferenceGraph handlers

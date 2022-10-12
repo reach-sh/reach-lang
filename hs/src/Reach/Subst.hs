@@ -10,7 +10,7 @@ import qualified Data.Aeson as AS
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Reach.AST.DLBase
-import Reach.AST.PL
+import Reach.AST.CP
 
 type SubstEnv = M.Map DLVar DLVar
 

@@ -15,6 +15,8 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
+import Reach.AST.CP
+import Reach.AST.EP
 import Reach.CollectCounts
 import Reach.Counter
 import Reach.FixedPoint
@@ -735,8 +737,9 @@ mk_eb (DLinExportBlock at vs (DLBlock bat sf ll a)) = do
   let body' = dtReplace DT_Com (DT_Return bat) ll
   return $ DLinExportBlock at vs (DLBlock bat sf body' a)
 
-epp :: LLProg -> IO PLProg
-epp (LLProg llp_at (LLOpts {..}) llp_parts llp_init llp_exports llp_views llp_apis llp_aliases llp_events llp_step) = do
+epp :: LLProg -> IO (PLProg EPProg CPProg)
+epp (LLProg {..}) = do
+  let LLOpts {..} = llp_opts
   -- Step 1: Analyze the program to compute basic blocks
   let be_counter = llo_counter
   be_savec <- newCounter 1
@@ -786,11 +789,15 @@ epp (LLProg llp_at (LLOpts {..}) llp_parts llp_init llp_exports llp_views llp_ap
   vm <- flip mapWithKeyM mkvm $ \which mk ->
     mkh $ mk <$> ce_readSave which
   let cpp_at = llp_at
-  let cpp_views = (llp_views, vm)
+  let cpp_init = llp_init
+  let cpp_views = DLViewsX llp_views vm
   let cpp_apis = api_info
   let cpp_events = llp_events
   cpp_handlers <- CHandlers <$> mapM mkh hs
-  let cp = CPProg {..}
+  let cpo_untrustworthyMaps = llo_untrustworthyMaps
+  let cpo_counter = llo_counter
+  let cpp_opts = CPOpts {..}
+  let plp_cpp = CPProg {..}
   stateToSrcMap <- readIORef be_stateToSrcMap
   -- Step 4: Generate the end-points
   as <- readIORef be_api_steps
@@ -807,15 +814,25 @@ epp (LLProg llp_at (LLOpts {..}) llp_parts llp_init llp_exports llp_views llp_ap
           Just ns -> foldr (\ (x,_) acc' -> M.insert (k, Just x) v acc') acc ns
           _ -> M.insert (k, Nothing) v acc
   let sps_ies' = M.foldrWithKey genSepApis mempty sps_ies
-  let mkep (who, step) ie = do
-        let isAPI = S.member who sps_apis
+  let mkep (who, step) ep_interactEnv = do
+        let ep_at = llp_at
+        let ep_isApi = S.member who sps_apis
         let ee_who = who
         let ee_m_api_step = step
         let ee_flow = flow
-        et <- flip runReaderT (EEnv {..}) $ mkep_
-        return $ EPProg llp_at isAPI ie et
-  pps <- EPPs llp_apis <$> mapWithKeyM mkep sps_ies'
+        ep_tail <- flip runReaderT (EEnv {..}) $ mkep_
+        return $ EPart {..}
+  let epo_untrustworthyMaps = llo_untrustworthyMaps
+  let epo_counter = llo_counter
+  let epp_opts = EPOpts {..}
+  let epp_init = llp_init
+  let epp_exports = dex'
+  let epp_views = cpp_views
+  let epp_apis = llp_apis
+  let epp_events = llp_events
+  let epp_stateSrcMap = stateToSrcMap
+  epp_m <- mapWithKeyM mkep sps_ies'
+  let plp_at = llp_at
+  let plp_epp = EPProg {..}
   -- Step 4: Generate the final PLProg
-  let plo_untrustworthyMaps = llo_untrustworthyMaps
-  let plo_counter = llo_counter
-  return $ PLProg llp_at (PLOpts {..}) llp_init dex' stateToSrcMap pps cp
+  return $ PLProg {..}

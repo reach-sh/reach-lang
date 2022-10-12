@@ -13,7 +13,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Reach.AST.DLBase
 import Reach.AST.LL
-import Reach.AST.PL
+import Reach.AST.EP
 import Reach.Counter
 import Reach.Util
 

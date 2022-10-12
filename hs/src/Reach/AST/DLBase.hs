@@ -651,6 +651,8 @@ instance Pretty ApiInfo where
         , ("ret", pretty ai_ret_ty)
         ]
 
+type ApiInfos = M.Map SLPart (M.Map Int ApiInfo)
+
 data PrimVM -- Primitive Verification Mode
   = PV_Safe -- No static assertion, yes dynamic check
   | PV_Veri -- Yes static assertion, no dynamic check
@@ -1488,6 +1490,9 @@ allFluidVars =
 class HasCounter a where
   getCounter :: a -> Counter
 
+class HasUntrustworthyMaps a where
+  getUntrustworthyMaps :: a -> Bool
+
 type InterfaceLikeMap a = M.Map (Maybe SLPart) (M.Map SLVar a)
 
 flattenInterfaceLikeMap :: forall a . InterfaceLikeMap a -> M.Map SLPart a
@@ -1501,6 +1506,26 @@ flattenInterfaceLikeMap = M.fromList . concatMap go . M.toList
 type DLView = (IType, [B.ByteString])
 
 type DLViews = InterfaceLikeMap DLView
+
+type ViewsInfo = InterfaceLikeMap DLExportBlock
+
+data ViewInfo = ViewInfo [DLVar] ViewsInfo
+  deriving (Eq)
+
+instance Pretty ViewInfo where
+  pretty (ViewInfo vs vi) =
+    pform "view" (pretty vs <+> pretty vi)
+
+type ViewInfos = M.Map Int ViewInfo
+
+data DLViewsX = DLViewsX DLViews ViewInfos
+  deriving (Eq)
+
+instance Pretty DLViewsX where
+  pretty (DLViewsX vs vis) = render_obj $ M.fromList
+    [ ("vs"::String, pretty vs)
+    , ("vis", pretty vis)
+    ]
 
 type Aliases = M.Map SLVar (Maybe B.ByteString)
 
@@ -1520,3 +1545,15 @@ arraysLength arrays = do
 adjustApiName :: Show a => String -> a -> Bool -> String
 adjustApiName who which qualify = prefix <> who <> suffix
   where (prefix, suffix) = bool ("", "") ("_", show which) qualify
+
+-- NOTE switch to Maybe DLAssignment and make sure we have a consistent order,
+-- like with M.toAscList
+data FromInfo
+  = FI_Continue [(DLVar, DLArg)]
+  | FI_Halt [DLArg]
+  deriving (Eq)
+
+instance Pretty FromInfo where
+  pretty = \case
+    FI_Continue svs -> pform "continue" (pretty svs)
+    FI_Halt toks -> pform "halt" (pretty toks)

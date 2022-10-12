@@ -137,23 +137,31 @@ data EPOpts = EPOpts
 instance HasCounter EPOpts where
   getCounter (EPOpts {..}) = epo_counter
 
+instance HasUntrustworthyMaps EPOpts where
+  getUntrustworthyMaps (EPOpts {..}) = epo_untrustworthyMaps
+
 type StateSrcMap = M.Map Int (SrcLoc, [SLCtxtFrame])
 
 data EPProg = EPProg
   { epp_opts :: EPOpts
   , epp_init :: DLInit
   , epp_exports :: DLExports
+  , epp_views :: DLViewsX
   , epp_stateSrcMap :: StateSrcMap
   , epp_apis :: DLAPIs
+  , epp_events :: DLEvents
   , epp_m :: M.Map (SLPart, Maybe Int) EPart
   }
   deriving (Eq)
 
 instance Pretty EPProg where
   pretty (EPProg {..}) =
-    "EPP" <> render_obj (M.fromList $
+    "EP" <+> render_obj (M.fromList $
       [ (("init"::String), pretty epp_init)
       , ("exports", pretty epp_exports)
       , ("apis", pretty epp_apis)
       , ("m", render_obj epp_m)
       ])
+
+instance HasCounter EPProg where
+  getCounter = getCounter . epp_opts

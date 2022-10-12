@@ -10,6 +10,8 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
+import Reach.AST.EP
+import Reach.AST.CP
 import Reach.Counter
 import Reach.Sanitize
 import Reach.UnrollLoops
@@ -1120,27 +1122,35 @@ instance Optimize ViewInfo where
   opt (ViewInfo vs vi) = ViewInfo vs <$> (newScope $ opt vi)
   gcs _ = return ()
 
-instance Optimize CPProg where
-  opt (CPProg cpp_at cpp_views cpp_apis cpp_events (CHandlers hs)) =
-    CPProg cpp_at <$> (newScope $ opt cpp_views) <*> pure cpp_apis <*> pure cpp_events
-           <*> (CHandlers <$> mapM (newScope . opt) hs)
-  gcs CPProg { cpp_handlers = CHandlers hs } = gcs hs
+instance Optimize EPart where
+  opt (EPart ep_at ep_isApi ep_interactEnv ep_tail) =
+    newScope $ EPart ep_at ep_isApi ep_interactEnv <$> (focus_one "" $ opt ep_tail)
+  gcs = gcs . ep_tail
+
+updateClearMaps' :: HasUntrustworthyMaps a => a -> App b -> App b
+updateClearMaps' opts m = local (updateClearMaps $ getUntrustworthyMaps opts) m
 
 instance Optimize EPProg where
-  opt (EPProg epp_at epp_isApi epp_interactEnv epp_tail) =
-    newScope $ EPProg epp_at epp_isApi epp_interactEnv <$> (focus_one "" $ opt epp_tail)
-  gcs = gcs . epp_tail
+  opt (EPProg {..}) = updateClearMaps' epp_opts $
+    EPProg epp_opts epp_init <$> opt epp_exports <*> opt epp_views <*> pure epp_stateSrcMap <*> pure epp_apis <*> pure epp_events <*> opt epp_m
+  gcs (EPProg {..}) = gcs epp_m
 
-instance Optimize EPPs where
-  opt (EPPs {..}) = EPPs epps_apis <$> opt epps_m
-  gcs (EPPs {..}) = gcs epps_m
+instance Optimize CHandlers where
+  opt (CHandlers hs) = CHandlers <$> mapM (newScope . opt) hs
+  gcs (CHandlers hs) = gcs hs
 
-instance Optimize PLProg where
-  opt (PLProg plp_at plp_opts plp_init plp_exports plp_stateSrcMap plp_epps plp_cpprog) = do
-    local (updateClearMaps $ plo_untrustworthyMaps plp_opts) $
-      PLProg plp_at plp_opts plp_init <$> opt plp_exports <*> pure plp_stateSrcMap
-             <*> opt plp_epps <*> opt plp_cpprog
-  gcs PLProg {..} = gcs plp_epps >> gcs plp_cpprog
+instance Optimize DLViewsX where
+  opt (DLViewsX a b) = DLViewsX <$> opt a <*> opt b
+  gcs (DLViewsX a b) = gcs a >> gcs b
+
+instance Optimize CPProg where
+  opt (CPProg {..}) = updateClearMaps' cpp_opts $
+    CPProg cpp_at cpp_opts cpp_init <$> (newScope $ opt cpp_views) <*> pure cpp_apis <*> pure cpp_events <*> opt cpp_handlers
+  gcs (CPProg {..}) = gcs cpp_views >> gcs cpp_handlers
+
+instance {-# OVERLAPS #-} (Optimize a, Optimize b) => Optimize (PLProg a b) where
+  opt (PLProg {..}) = PLProg plp_at <$> opt plp_epp <*> opt plp_cpp
+  gcs (PLProg {..}) = gcs plp_epp >> gcs plp_cpp
 
 optimize_ :: (Optimize a) => Counter -> Bool -> S.Set DLVar -> a -> IO a
 optimize_ c sim svs t = do

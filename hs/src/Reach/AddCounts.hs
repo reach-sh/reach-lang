@@ -8,6 +8,8 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
+import Reach.AST.EP
+import Reach.AST.CP
 import Reach.CollectCounts
 import Reach.AnalyzeVars
 import Reach.Util
@@ -296,19 +298,22 @@ instance {-# OVERLAPS #-} AC a => AC (DLinExportBlock a) where
     vs' <- mapM ac_vls vs
     return $ DLinExportBlock at vs' a'
 
-instance AC EPProg where
-  ac (EPProg epp_at epp_isApi epp_interactEnv epp_tail) =
-    fresh $ EPProg epp_at epp_isApi epp_interactEnv <$> ac epp_tail
+instance AC EPart where
+  ac (EPart {..}) =
+    fresh $ EPart ep_at ep_isApi ep_interactEnv <$> ac ep_tail
 
-instance AC EPPs where
-  ac (EPPs {..}) = EPPs epps_apis <$> ac epps_m
+instance AC EPProg where
+  ac (EPProg {..}) = EPProg epp_opts epp_init <$> ac epp_exports <*> ac epp_views <*> pure epp_stateSrcMap <*> pure epp_apis <*> pure epp_events <*> ac epp_m
 
 instance AC CHandlers where
   ac (CHandlers m) = CHandlers <$> ac m
 
+instance AC DLViewsX where
+  ac (DLViewsX a b) = DLViewsX <$> ac a <*> ac b
+
 instance AC CPProg where
-  ac (CPProg cpp_at cpp_views cpp_apis cpp_events cpp_handlers) =
-    CPProg cpp_at <$> ac cpp_views <*> pure cpp_apis <*> pure cpp_events <*> ac cpp_handlers
+  ac (CPProg {..}) =
+    CPProg cpp_at cpp_opts cpp_init <$> ac cpp_views <*> pure cpp_apis <*> pure cpp_events <*> ac cpp_handlers
 
 ac_vi :: AppT ViewsInfo
 ac_vi = mapM (mapM (fresh . ac))
@@ -317,10 +322,8 @@ instance AC ViewInfo where
   ac (ViewInfo vs vi) =
     ViewInfo vs <$> ac_vi vi
 
-instance AC PLProg where
-  ac (PLProg plp_at plp_opts plp_init plp_exports plp_stateSrcMap plp_epps plp_cpprog) =
-    PLProg plp_at plp_opts plp_init <$> ac plp_exports <*> pure plp_stateSrcMap
-           <*> ac plp_epps <*> ac plp_cpprog
+instance {-# OVERLAPS #-} (AC a, AC b) => AC (PLProg a b) where
+  ac (PLProg {..}) = PLProg plp_at <$> ac plp_epp <*> ac plp_cpp
 
 instance AC DLSend where
   ac = viaVisit
