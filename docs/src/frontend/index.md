@@ -1712,9 +1712,10 @@ In this code, the `{!js} chk` asserts that the unsigned integer `i[1]` is the sa
 @{ref("js", "test.chkErr")}
 ```js
 test.chkErr(id: string, expected:string, f:() => Promise): void
+test.chkErr('overflows', 'add overflow', () => stdlib.safeAdd(stdlib.UInt_max, stdlib.UInt_max));
 ```
 
-Runs a check named `id` that expects `f` to throw an exception that contains the string `expected`.
+Runs a check named `id` that expects `f` to throw an exception that satisfies the regex `expected`.
 
 ---
 @{ref("js", "test.one")}
