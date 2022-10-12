@@ -100,21 +100,6 @@ instance Pretty CHandlers where
   pretty (CHandlers m) =
     render_obj m
 
-type ViewsInfo = InterfaceLikeMap DLExportBlock
-
-data ViewInfo = ViewInfo [DLVar] ViewsInfo
-  deriving (Eq)
-
-instance Pretty ViewInfo where
-  pretty (ViewInfo vs vi) =
-    pform "view" (pretty vs <+> pretty vi)
-
-type ViewInfos = M.Map Int ViewInfo
-
-type CPViews = DLViews
-
-type ApiInfos = M.Map SLPart (M.Map Int ApiInfo)
-
 data CPOpts = CPOpts
   { cpo_untrustworthyMaps :: Bool
   , cpo_counter :: Counter
@@ -124,10 +109,14 @@ data CPOpts = CPOpts
 instance HasCounter CPOpts where
   getCounter (CPOpts {..}) = cpo_counter
 
+instance HasUntrustworthyMaps CPOpts where
+  getUntrustworthyMaps (CPOpts {..}) = cpo_untrustworthyMaps
+
 data CPProg = CPProg
   { cpp_at :: SrcLoc
   , cpp_opts :: CPOpts
-  , cpp_views :: (CPViews, ViewInfos)
+  , cpp_init :: DLInit
+  , cpp_views :: DLViewsX
   , cpp_apis :: ApiInfos
   , cpp_events :: DLEvents
   , cpp_handlers :: CHandlers
@@ -136,9 +125,10 @@ data CPProg = CPProg
 
 instance Pretty CPProg where
   pretty (CPProg {..}) =
-    "views:" <+> pretty cpp_views <> hardline
-      <> "apiInfo:" <+> pretty cpp_apis
-      <> hardline
-      <> "events:" <+> pretty cpp_events
-      <> hardline
-      <> pretty cpp_handlers
+    "CP" <+> render_obj (M.fromList $
+      [ (("init"::String), pretty cpp_init)
+      , ("views", pretty cpp_views)
+      , ("apis", pretty cpp_apis)
+      , ("events", pretty cpp_events)
+      , ("handlers", pretty cpp_handlers)
+      ])

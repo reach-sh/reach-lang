@@ -18,7 +18,8 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Set as S
 import Reach.AST.DLBase
-import Reach.AST.PL
+import Reach.AST.EP
+import Reach.AST.CP
 
 newtype Count = Count (Maybe DLVarCat)
   deriving (Show, Eq)

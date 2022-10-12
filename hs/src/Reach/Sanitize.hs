@@ -5,11 +5,12 @@ module Reach.Sanitize
 where
 
 import qualified Data.Aeson as AS
+import qualified Data.ByteString as B
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
-import Reach.AST.PL
-import qualified Data.ByteString as B
+import Reach.AST.CP
+import Reach.AST.EP
 
 class Sanitize a where
   sani :: a -> a

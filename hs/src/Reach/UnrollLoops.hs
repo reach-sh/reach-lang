@@ -11,6 +11,8 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
+import Reach.AST.CP
+import Reach.AST.EP
 import Reach.Counter
 import Reach.Freshen
 import Reach.Util
@@ -213,19 +215,17 @@ instance Unroll CHandlers where
   ul (CHandlers m) = CHandlers <$> ul m
 
 instance Unroll CPProg where
-  ul (CPProg cpp_at cpp_views cpp_apis cpp_events cpp_handlers) =
+  ul (CPProg {..}) =
     -- Note: When views contain functions, if we had a network where we
     -- compiled the views to VM code, and had to unroll, then we'd need to
     -- unroll cpp_views here.
-    CPProg cpp_at cpp_views cpp_apis cpp_events <$> ul cpp_handlers
+    CPProg cpp_at cpp_opts cpp_init cpp_views cpp_apis cpp_events <$> ul cpp_handlers
 
-instance Unroll EPPs where
-  ul (EPPs {..}) = EPPs <$> pure epps_apis <*> pure epps_m
+instance Unroll EPProg where
+  ul (EPProg {..}) = EPProg epp_opts epp_init <$> ul epp_exports <*> pure epp_views <*> pure epp_stateSrcMap <*> pure epp_apis <*> pure epp_events <*> pure epp_m
 
-instance Unroll PLProg where
-  ul (PLProg plp_at plp_opts plp_init plp_exports plp_stateSrcMap plp_epps plp_cpprog) =
-    PLProg plp_at plp_opts plp_init <$> ul plp_exports <*> pure plp_stateSrcMap
-           <*> ul plp_epps <*> ul plp_cpprog
+instance (Unroll a, Unroll b) => Unroll (PLProg a b) where
+  ul (PLProg {..}) = PLProg plp_at <$> ul plp_epp <*> ul plp_cpp
 
 data UnrollWrapper a
   = UnrollWrapper Counter a

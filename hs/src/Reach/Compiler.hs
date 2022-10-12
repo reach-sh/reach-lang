@@ -11,6 +11,7 @@ import Reach.APICut
 import Reach.AST.Base
 import Reach.AST.DL
 import Reach.AST.SL
+import Reach.AST.PL
 import Reach.Backend.JS
 import Reach.BigOpt
 import Reach.CommandLine
@@ -389,7 +390,7 @@ compile env (CompilerOpts {..}) = do
         let runConnector c = do
               let n = conName c
               loud $ "running connector " <> show n
-              conGen c woutnMay pl
+              conGen c woutnMay $ plp_cpp pl
         crs <- mapM runConnector dlo_connectors
         -- Those connector info things will be given to the JS code to get
         -- included in the actual backend.
@@ -399,7 +400,7 @@ compile env (CompilerOpts {..}) = do
         -- implementations, because Algorand doesn't have a good way to call
         -- read-only methods of contracts.
         loud $ "running backend js"
-        backend_js woutn crs pl
+        backend_js woutn crs $ plp_epp pl
         return ()
 
 doIf :: a -> Bool -> Maybe a

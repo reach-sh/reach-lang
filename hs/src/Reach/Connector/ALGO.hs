@@ -32,7 +32,7 @@ import Generics.Deriving (Generic)
 import Reach.AddCounts
 import Reach.AST.Base
 import Reach.AST.DLBase
-import Reach.AST.PL
+import Reach.AST.CP
 import Reach.BinaryLeafTree
 import Reach.CommandLine
 import Reach.Connector
@@ -969,7 +969,7 @@ checkCost rlab notify disp ls ci ts = do
 type Lets = M.Map DLVar (App ())
 
 data Env = Env
-  { ePLO :: PLOpts
+  { eOpts :: CPOpts
   , eFailuresR :: ErrorSetRef
   , eWarningsR :: ErrorSetRef
   , eCounter :: Counter
@@ -3350,8 +3350,8 @@ selectFromM f k m = M.mapMaybe go m
   where
     go (x, m') = f x <$> M.lookup k m'
 
-analyzeViews :: (CPViews, ViewInfos) -> VSITop
-analyzeViews (vs, vis) = vsit
+analyzeViews :: DLViewsX -> VSITop
+analyzeViews (DLViewsX vs vis) = vsit
   where
     vsit = M.fromList $ concatMap (\ (mi, m) -> map (got mi) $ M.toList m) $ M.toList vs
     got mi (who, (it, aliases)) = (f, v $ map mk aliases)
@@ -3368,10 +3368,14 @@ analyzeViews (vs, vis) = vsit
     vsih = M.map goh vis
     goh (ViewInfo svs vi) = (map v2vl svs, flattenInterfaceLikeMap vi)
 
-compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
-compile_algo env disp pl = do
-  let PLProg { plp_opts = ePLO, plp_init = dli, plp_cpprog = cpp } = pl
-  let CPProg { cpp_at = at, cpp_views = vsi, cpp_apis = ai, cpp_handlers = (CHandlers hm) } = cpp
+compile_algo :: CompilerToolEnv -> Disp -> CPProg -> IO ConnectorInfo
+compile_algo env disp (CPProg {..}) = do
+  let at = cpp_at
+  let eOpts = cpp_opts
+  let dli = cpp_init
+  let vsi = cpp_views
+  let ai = cpp_apis
+  let CHandlers hm = cpp_handlers
   -- This is the final result
   resr <- newIORef mempty
   totalLenR <- newIORef (0 :: Integer)
@@ -3418,7 +3422,6 @@ compile_algo env disp pl = do
   eMaps <- verifyMapTypes gbad $ dli_maps dli
   let eMapDataTy = mapDataTy eMaps
   eMapDataSize <- typeSizeOf__ gbad eMapDataTy
-  let PLOpts {..} = ePLO
   let eSP = 255
   let eVars = mempty
   let eLets = mempty
@@ -3439,7 +3442,7 @@ compile_algo env disp pl = do
         return $ keysl
   eMapKeysl <- recordSizeAndKeys gbad "mapData" eMapDataSize algoMaxLocalSchemaEntries_usable
   let mapDataKeys = length eMapKeysl
-  unless (plo_untrustworthyMaps || null eMapKeysl) $ do
+  unless (getUntrustworthyMaps eOpts || null eMapKeysl) $ do
     gwarn $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
   let h2lr = \case
         (i, C_Handler {..}) -> Just $ LabelRec {..}
@@ -3467,7 +3470,7 @@ compile_algo env disp pl = do
               case eCompanion of
                 Nothing -> eHP_ - 1
                 Just _ -> eHP_
-        eCounter <- dupeCounter plo_counter
+        eCounter <- dupeCounter $ getCounter eOpts
         eStateSizeR <- newIORef 0
         eLabel <- newCounter 0
         eOutputR <- newIORef mempty
@@ -3810,7 +3813,7 @@ connect_algo env = Connector {..}
       Nothing -> withSystemTempDirectory "reachc-algo" $ \d ->
         go (\w -> d </> T.unpack w) pl
       Just outn -> go outn pl
-    go :: (T.Text -> String) -> PLProg -> IO ConnectorInfo
+    go :: (T.Text -> String) -> CPProg -> IO ConnectorInfo
     go outn = compile_algo env disp
       where
         disp :: String -> T.Text -> IO String

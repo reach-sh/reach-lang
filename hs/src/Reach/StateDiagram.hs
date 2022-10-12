@@ -6,6 +6,7 @@ import qualified Data.Map.Strict as M
 import Reach.Dotty
 import Reach.AST.DLBase
 import Reach.AST.PL
+import Reach.AST.CP
 import Reach.Texty
 
 ddd :: Int -> String -> String
@@ -83,11 +84,11 @@ nicev v =
 instance HasEdges CPProg where
   getEdges = getEdges . cpp_handlers
 
-instance HasEdges PLProg where
-  getEdges = getEdges . plp_cpprog
+instance (HasEdges b) => HasEdges (PLProg a b) where
+  getEdges = getEdges . plp_cpp
 
 setSanitize :: Ord a => [a] -> [a]
 setSanitize = S.toList . S.fromList
 
-stateDiagram :: PLProg -> DotGraph_
+stateDiagram :: PLProg a CPProg -> DotGraph_
 stateDiagram = DotGraph_ . setSanitize . getEdges
