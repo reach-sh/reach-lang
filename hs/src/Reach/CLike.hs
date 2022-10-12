@@ -1,9 +1,9 @@
 module Reach.CLike (clike) where
 
 import Control.Monad.Reader
-import qualified Data.ByteString.Char8 as B
 import Data.IORef
 import qualified Data.Map.Strict as M
+import Data.Maybe
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.CP
@@ -63,13 +63,17 @@ instance CLike DLEI where
 instance CLike DLEvents where
   cl = clilm DLEI
 
-data CLViewX = CLViewX
-  { cvx_at :: SrcLoc
-  , cvx_dom :: [DLType]
-  , cvx_rng :: DLType
-  , cvx_as :: [B.ByteString]
-  , cvx_steps :: M.Map Int DLExportBlock
+data FunInfo a = FunInfo
+  { fi_at :: SrcLoc
+  , fi_dom :: [DLType]
+  , fi_rng :: DLType
+  , fi_as :: [SLPart]
+  , fi_steps :: M.Map Int a
   }
+
+newtype CLViewY = CLViewY DLExportBlock
+
+type CLViewX = FunInfo CLViewY
 
 type CLViewsX = M.Map SLPart CLViewX
 
@@ -79,31 +83,39 @@ viewReorg (DLViewsX vs vis) = vx
     igo (ViewInfo _ vsi) = flattenInterfaceLikeMap vsi
     vism = M.map igo vis
     vx = M.mapWithKey go $ flattenInterfaceLikeMap vs
-    go k (DLView {..}) = CLViewX {..}
+    go k (DLView {..}) = FunInfo {..}
       where
-        cvx_at = dvw_at
-        (cvx_dom, cvx_rng) = itype2arr dvw_it
-        cvx_as = dvw_as
-        cvx_steps = M.map (\m -> m M.! k) vism
+        fi_at = dvw_at
+        (fi_dom, fi_rng) = itype2arr dvw_it
+        fi_as = dvw_as
+        fi_steps = M.map (\m -> CLViewY $ m M.! k) vism
 
-newtype CLVX = CLVX (SLPart, CLViewX)
+newtype FIX a = FIX (SLPart, FunInfo a)
 
-instance CLike CLVX where
-  cl (CLVX (v, CLViewX {..})) = do
-    let dom = cvx_dom
-    let rng = cvx_rng
-    domvs <- forM dom $ allocVar cvx_at
-    rngv <- allocVar cvx_at rng
-    let intt = CL_Jump cvx_at "XXX" [] rngv
+instance CLike CLViewY where
+  cl _ = return ()
+
+instance CLike ApiInfoY where
+  cl _ = return ()
+
+instance (CLike a) => CLike (FIX a) where
+  cl (FIX (v, FunInfo {..})) = do
+    let dom = fi_dom
+    let rng = fi_rng
+    domvs <- forM dom $ allocVar fi_at
+    rngv <- allocVar fi_at rng
+    mapM_ cl $ M.elems fi_steps
+    let intt = CL_Jump fi_at "XXX" [] rngv
     wrapv <- allocSym $ v <> "_w"
     let cf x = CSFun x dom rng
     def (cf wrapv) $ CLD_Fun $ CLFun domvs rngv CLFM_Internal intt
-    let extt = CL_Jump cvx_at wrapv domvs rngv
+    let extt = CL_Jump fi_at wrapv domvs rngv
     let extd = CLD_Fun $ CLFun domvs rngv CLFM_External extt
-    forM_ (v : cvx_as) $ flip def extd . cf
+    -- XXX "optimize" case where there is only one name?
+    forM_ (v : fi_as) $ flip def extd . cf
 
-instance CLike CLViewsX where
-  cl = clm CLVX
+instance (CLike a) => CLike (M.Map SLPart (FunInfo a)) where
+  cl = clm FIX
 
 data ApiInfoY = ApiInfoY
   { aiy_mcase :: Maybe String
@@ -111,28 +123,39 @@ data ApiInfoY = ApiInfoY
   , aiy_compile :: ApiInfoCompilation
   }
 
-data ApiInfoX = ApiInfoX
-  { aix_at :: SrcLoc
-  , aix_dom :: [DLType]
-  , aix_rng :: DLType
-  , aix_alias :: Maybe SLPart
-  , aix_steps :: M.Map Int ApiInfoY
-  }
-
+type ApiInfoX = FunInfo ApiInfoY
 type ApiInfosX = M.Map SLPart ApiInfoX
 
 apiReorg :: ApiInfos -> ApiInfosX
 apiReorg ais = flip M.map ais apiReorgX
 
 apiReorgX :: M.Map Int ApiInfo -> ApiInfoX
-apiReorgX aim = ApiInfoX {..}
+apiReorgX aim = FunInfo {..}
   where
-    aix_at = get ai_at
-    aix_dom = get ai_msg_tys
-    aix_rng = get ai_ret_ty
-    aix_alias = get ai_alias
+    fi_at = get ai_at
+    imp = impossible "apiSig"
+    fi_dom = flip get' id $ flip M.map aim $ \ApiInfo {..} ->
+      case ai_compile of
+        AIC_SpreadArg ->
+          case ai_msg_tys of
+            [T_Tuple ts] -> ts
+            _ -> imp
+        AIC_Case ->
+          case ai_msg_tys of
+            [T_Data tm] ->
+              case M.lookup (fromMaybe imp ai_mcase_id) tm of
+                Just (T_Tuple ts) -> ts
+                _ -> imp
+            _ -> imp
+    fi_rng = get ai_ret_ty
+    fi_as = case malias of
+              Nothing -> []
+              Just x -> [x]
+    malias = get ai_alias
     get :: forall v . (Sanitize v, Eq v) => (ApiInfo -> v) -> v
-    get f = feq $ sani $ map f $ M.elems aim
+    get = get' aim
+    get' :: forall k mv v . (Sanitize v, Eq v) => M.Map k mv -> (mv -> v) -> v
+    get' m f = feq $ sani $ map f $ M.elems m
     feq :: forall v . (Eq v) => [v] -> v
     feq = \case
       [] -> impossible "No API infos"
@@ -140,20 +163,12 @@ apiReorgX aim = ApiInfoX {..}
         case all ((==) x) xs of
           True -> x
           False -> impossible "API infos disagree"
-    aix_steps = flip M.map aim $ go
+    fi_steps = flip M.map aim $ go
     go ApiInfo {..} = ApiInfoY {..}
       where
         aiy_mcase = ai_mcase_id
         aiy_which = ai_which
         aiy_compile = ai_compile
-
-newtype AIX = AIX (SLPart, ApiInfoX)
-
-instance CLike AIX where
-  cl (AIX (_f, ApiInfoX {..})) = error "XXX"
-
-instance CLike ApiInfosX where
-  cl = clm AIX
 
 clike :: PLProg a CPProg -> IO (PLProg a CLProg)
 clike = plp_cpp_mod $ \CPProg {..} -> do
