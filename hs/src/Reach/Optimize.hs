@@ -85,11 +85,8 @@ data Env = Env
   , eFusionCases :: IORef FuseEnv
   }
 
-mkVar :: SrcLoc -> DLType -> App DLVar
-mkVar at t = do
-  ctr <- asks eCounter
-  idx <- liftIO $ incCounter ctr
-  return $ DLVar at Nothing t idx
+instance HasCounter Env where
+  getCounter = eCounter
 
 updateVarSet :: DLVar -> (Maybe Int -> Maybe Int) -> App (Maybe Int)
 updateVarSet dv update = do
@@ -342,7 +339,7 @@ floatIf mkk at ansDv c tt ft k = do
           t <- case mVal of
                 Just 0 -> return $ mkk (asn ansDv) k
                 Just _ -> do
-                  tmp <- mkVar at (varType ansDv)
+                  tmp <- allocVar at (varType ansDv)
                   let s2 = DL_Set at ansDv (DLA_Var tmp)
                   return $ mkk (asn tmp) (mkk s2 k)
                 Nothing -> impossible "floatIf: trying to float if that does not set a dlvar"
@@ -1214,6 +1211,10 @@ instance Optimize EPProg where
 instance Optimize CHandlers where
   opt (CHandlers hs) = CHandlers <$> mapM (newScope . opt) hs
   gcs (CHandlers hs) = gcs hs
+
+instance Optimize DLView where
+  opt x = return x
+  gcs _ = return ()
 
 instance Optimize DLViewsX where
   opt (DLViewsX a b) = DLViewsX <$> opt a <*> opt b

@@ -106,6 +106,9 @@ data Env = Env
   , e_infections :: IORef (M.Map Int (SrcLoc, SLVar))
   }
 
+instance HasCounter Env where
+  getCounter = e_id
+
 instance Semigroup a => Semigroup (App a) where
   x <> y = (<>) <$> x <*> y
 
@@ -916,9 +919,7 @@ is_api :: SLPart -> App Bool
 is_api who = S.member who <$> (ae_apis <$> aisd)
 
 ctxt_alloc :: App Int
-ctxt_alloc = do
-  Env {..} <- ask
-  liftIO $ incCounter e_id
+ctxt_alloc = allocVarIdx
 
 ctxt_mkvar :: (Int -> DLVar) -> App DLVar
 ctxt_mkvar mkvar = mkvar <$> ctxt_alloc
@@ -3595,14 +3596,16 @@ evalPrim p sargs =
             let vom = M.singleton "set" $ SLSSVal at Public vv
             let vo = SLV_Object at (Just $ ns <> " View, " <> k) vom
             let io = SLSSVal at Public vo
-            di <-
+            let dvw_at = at
+            dvw_it <-
               case t of
                 ST_Fun (SLTypeFun {..}) ->
                   IT_Fun <$> mapM st2dte stf_dom <*> st2dte stf_rng
                 ST_UDFun {} ->
                   expect_ $ Err_View_UDFun
                 _ -> IT_Val <$> st2dte t
-            return $ ((di, m_alias), (m_alias, io))
+            let dvw_as = m_alias
+            return $ (DLView {..}, (m_alias, io))
       ix <- mapWithKeyM go im
       let i' = M.map fst ix
       let io = M.map (snd . snd) ix

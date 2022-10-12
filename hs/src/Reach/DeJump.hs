@@ -16,15 +16,12 @@ data Env = Env
   , e_idx :: Counter
   }
 
+instance HasCounter Env where
+  getCounter = e_idx
+
 type App = ReaderT Env IO
 
 type AppT a = a -> App a
-
-allocVar :: AppT DLVar
-allocVar (DLVar at s t _) = do
-  Env {..} <- ask
-  idx <- liftIO $ incCounter e_idx
-  return $ DLVar at s t idx
 
 getLoop :: Int -> App CTail
 getLoop w = do
@@ -65,7 +62,7 @@ instance DeJump CTail where
       rho'r <- liftIO $ newIORef rho
       -- Rebind them and add the renaming to rho
       let go2 (v, a) = do
-            v' <- allocVar v
+            v' <- freshenVar v
             liftIO $ modifyIORef rho'r $ M.insert v v'
             a' <- djs a
             return $ DL_Let at (DLV_Let DVC_Many v') $ DLE_Arg at a'

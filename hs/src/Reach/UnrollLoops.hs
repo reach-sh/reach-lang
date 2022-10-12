@@ -29,13 +29,11 @@ data Env = Env
   , emLifts :: Maybe (IORef Lifts)
   }
 
+instance HasCounter Env where
+  getCounter = eCounter
+
 class Unroll a where
   ul :: AppT a
-
-allocIdx :: App Int
-allocIdx = do
-  Env {..} <- ask
-  lift $ incCounter eCounter
 
 addLifts :: (DLStmt -> a -> a) -> Lifts -> a -> a
 addLifts mkk ls k = foldr mkk k ls
@@ -64,7 +62,7 @@ liftLocal = \case
 
 liftExpr :: HasCallStack => SrcLoc -> DLType -> DLExpr -> App DLArg
 liftExpr at t e = do
-  idx <- allocIdx
+  idx <- allocVarIdx
   let v = DLVar at Nothing t idx
   liftCommon (DL_Let at (DLV_Let DVC_Many v) e)
   return $ DLA_Var v

@@ -18,6 +18,12 @@ class Sanitize a where
 instance (Functor f, Sanitize a) => Sanitize (f a) where
   sani = fmap sani
 
+instance Sanitize SrcLoc where
+  sani _ = sb
+
+instance Sanitize DLType where
+  sani = id
+
 instance Sanitize DLVar where
   sani = id
 

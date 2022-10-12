@@ -308,6 +308,9 @@ instance AC EPProg where
 instance AC CHandlers where
   ac (CHandlers m) = CHandlers <$> ac m
 
+instance AC DLView where
+  ac = return
+
 instance AC DLViewsX where
   ac (DLViewsX a b) = DLViewsX <$> ac a <*> ac b
 

@@ -390,11 +390,5 @@ apc hc (eWho, _) = \case
     return $ EPart ep_at True ep_interactEnv et'
   p -> return p
 
-class ApiCut a where
-  apicut :: a -> IO a
-
-instance ApiCut EPProg where
-  apicut (EPProg {..}) = EPProg epp_opts epp_init epp_exports epp_views epp_stateSrcMap epp_apis epp_events <$> mapWithKeyM (apc epp_opts) epp_m
-
-instance ApiCut (PLProg EPProg b) where
-  apicut (PLProg {..}) = PLProg plp_at <$> apicut plp_epp <*> pure plp_cpp
+apicut :: PLProg EPProg b -> IO (PLProg EPProg b)
+apicut = plp_epp_mod $ \EPProg {..} -> EPProg epp_opts epp_init epp_exports epp_views epp_stateSrcMap epp_apis epp_events <$> mapWithKeyM (apc epp_opts) epp_m
