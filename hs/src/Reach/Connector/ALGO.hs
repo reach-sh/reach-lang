@@ -996,6 +996,9 @@ data Env = Env
   , eGetStateKeys :: IO Int
   }
 
+instance HasCounter Env where
+  getCounter = eCounter
+
 type App = ReaderT Env IO
 
 data LibFun
@@ -2832,15 +2835,6 @@ bindTime dv = store_let dv True cRound
 bindSecs :: DLVar -> App a -> App a
 bindSecs dv = store_let dv True (code "global" ["LatestTimestamp"])
 
-allocDLVar_ :: Counter -> SrcLoc -> DLType -> IO DLVar
-allocDLVar_ c at t =
-  DLVar at Nothing t <$> incCounter c
-
-allocDLVar :: SrcLoc -> DLType -> App DLVar
-allocDLVar at t = do
-  c <- eCounter <$> ask
-  liftIO $ allocDLVar_ c at t
-
 bindFromGV :: GlobalVar -> App () -> SrcLoc -> [DLVarLet] -> App a -> App a
 bindFromGV gv ensure at vls m = do
   let notNothing = \case
@@ -2849,8 +2843,8 @@ bindFromGV gv ensure at vls m = do
   case any notNothing vls of
     False -> m
     True -> do
-      av <- allocDLVar at $ T_Tuple $ map varLetType vls
-      av_dup <- allocDLVar at $ T_Tuple $ map varLetType vls
+      av <- allocVar at $ T_Tuple $ map varLetType vls
+      av_dup <- allocVar at $ T_Tuple $ map varLetType vls
       ensure
       -- This relies on knowing what sallocVarLet will do
       let shouldDup (DLVarLet mvc _) =
@@ -2960,7 +2954,7 @@ callCompanion at cc = do
       case mcr of
         Nothing -> go Nothing
         Just _ -> do
-          dv <- allocDLVar at t
+          dv <- allocVar at t
           sallocLet dv (gvLoad GV_companion) $
             go $ Just $ DLA_Var dv
     CompanionCreate -> do
@@ -3251,7 +3245,7 @@ cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs aliases) = do
 doWrapData :: [DLType] -> (DLArg -> App ()) -> App ()
 doWrapData tys mk = do
   -- Tuple of tys is on stack
-  av <- allocDLVar sb $ T_Tuple tys
+  av <- allocVar sb $ T_Tuple tys
   sallocLet av (return ()) $ mk (DLA_Var av)
   -- Data of tys is on stack
   return ()
@@ -3357,7 +3351,7 @@ analyzeViews :: DLViewsX -> VSITop
 analyzeViews (DLViewsX vs vis) = vsit
   where
     vsit = M.fromList $ concatMap (\ (mi, m) -> map (got mi) $ M.toList m) $ M.toList vs
-    got mi (who, (it, aliases)) = (f, v $ map mk aliases)
+    got mi (who, (DLView _at it aliases)) = (f, v $ map mk aliases)
       where
         v = VSITopInfo args ret hs
         mk n = maybe "" (<> "_") mi <> n
@@ -3486,7 +3480,7 @@ compile_algo env disp (CPProg {..}) = do
               mergeIORef gFailuresR S.union eFailuresR
               mergeIORef gWarningsR S.union eWarningsR
         companionMaker <- readCompanionCache
-        cr_rv <- allocDLVar_ eCounter at T_Contract
+        cr_rv <- allocVar_ eCounter at T_Contract
         eCompanionRec <- companionMaker cr_rv
         eLibrary <- newIORef mempty
         let eGetStateKeys = do

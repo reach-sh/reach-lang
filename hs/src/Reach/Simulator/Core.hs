@@ -1072,7 +1072,7 @@ isTimeout tc_mtime phId = do
 registerViews :: [(Maybe SLPart, [(SLVar, DLView)])] -> App ()
 registerViews [] = return ()
 registerViews ((_, []) : vs) = registerViews vs
-registerViews ((sl, ((slv,(ty, aliases)) : vars)) : vs) = do
+registerViews ((sl, ((slv,(DLView _ ty aliases)) : vars)) : vs) = do
   forM_ (slv : map bunpack aliases) $ \ vVar -> do
     s <- getState
     let (g,l) = registerView s (fmap bunpack sl) vVar ty

@@ -1161,7 +1161,7 @@ jsViews (DLViewsX cvs vis) = do
                 Nothing -> return $ illegal
             return $ jsWhen c $ vsep [let', ret']
       let enInfo' :: Maybe SLPart -> (SLVar, DLView) -> App ([(SLVar, Doc)], Doc)
-          enInfo' v (k, (vt, aliases)) = do
+          enInfo' v (k, (DLView _at vt aliases)) = do
             let (dom, rng) = itype2arr vt
             dom' <- jsArray <$> mapM jsContract dom
             rng' <- jsContract rng

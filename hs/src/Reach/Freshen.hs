@@ -26,6 +26,9 @@ data Env = Env
   , fRho :: IORef (M.Map DLVar DLVar)
   }
 
+instance HasCounter Env where
+  getCounter = fCounter
+
 newScope :: App x -> App x
 newScope m = do
   Env {..} <- ask
@@ -39,10 +42,9 @@ class FreshenV a where
   fu_v :: AppT a
 
 instance FreshenV DLVar where
-  fu_v v@(DLVar at lab t _) = do
+  fu_v v = do
     Env {..} <- ask
-    idx <- liftIO $ incCounter fCounter
-    let v' = DLVar at lab t idx
+    v' <- freshenVar v
     liftIO $ modifyIORef fRho (M.insert v v')
     return $ v'
 

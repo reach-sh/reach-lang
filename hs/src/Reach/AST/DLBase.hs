@@ -1504,6 +1504,22 @@ allFluidVars =
 class HasCounter a where
   getCounter :: a -> Counter
 
+allocVarIdx :: HasCounter e => ReaderT e IO Int
+allocVarIdx = do
+  c <- asks getCounter
+  liftIO $ incCounter c
+
+allocVar_ :: Counter -> SrcLoc -> DLType -> IO DLVar
+allocVar_ c at t =
+  DLVar at Nothing t <$> incCounter c
+
+allocVar :: HasCounter e => SrcLoc -> DLType -> ReaderT e IO DLVar
+allocVar at t = DLVar at Nothing t <$> allocVarIdx
+
+freshenVar :: HasCounter e => DLVar -> ReaderT e IO DLVar
+freshenVar (DLVar at s t _) =
+  DLVar at s t <$> allocVarIdx
+
 class HasUntrustworthyMaps a where
   getUntrustworthyMaps :: a -> Bool
 
@@ -1517,7 +1533,15 @@ flattenInterfaceLikeMap = M.fromList . concatMap go . M.toList
     go' :: Maybe SLPart -> (SLVar, a) -> (SLPart, a)
     go' mp (v, x) = (fromMaybe "" (fmap (flip (<>) "_") mp) <> bpack v, x)
 
-type DLView = (IType, [B.ByteString])
+data DLView = DLView
+  { dvw_at :: SrcLoc
+  , dvw_it :: IType
+  , dvw_as :: [B.ByteString]
+  }
+  deriving (Eq)
+
+instance Pretty DLView where
+  pretty (DLView {..}) = pretty (dvw_it, dvw_as)
 
 type DLViews = InterfaceLikeMap DLView
 

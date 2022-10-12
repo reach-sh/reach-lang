@@ -279,6 +279,9 @@ data SolCtxt = SolCtxt
   , ctxt_uses_apis :: Bool
   }
 
+instance HasCounter SolCtxt where
+  getCounter = getCounter . ctxt_cpo
+
 readCtxtIO :: (SolCtxt -> IORef a) -> App a
 readCtxtIO f = (liftIO . readIORef) =<< (f <$> ask)
 
@@ -303,13 +306,8 @@ addInterface f dom rng = do
   modifyCtxtIO ctxt_ints $ M.insert idx idef
   return $ ip <> "." <> f <> ".selector"
 
-allocVarIdx :: App Int
-allocVarIdx = do
-  c <- getCounter . ctxt_cpo <$> ask
-  liftIO $ incCounter c
-
-allocVar :: App Doc
-allocVar = (pretty . (++) "v" . show) <$> allocVarIdx
+allocRawVar :: App Doc
+allocRawVar = (pretty . (++) "v" . show) <$> allocVarIdx
 
 extendVarMap :: VarMap -> App ()
 extendVarMap vm1 = do
@@ -340,12 +338,9 @@ addMemVar v = do
   mvars <- ctxt_mvars <$> ask
   liftIO $ modifyIORef mvars $ S.insert v
 
-allocDLVar :: SrcLoc -> DLType -> App DLVar
-allocDLVar at t = DLVar at Nothing t <$> allocVarIdx
-
 allocMemVar :: SrcLoc -> DLType -> App Doc
 allocMemVar at t = do
-  dv <- allocDLVar at t
+  dv <- allocVar at t
   addMemVar dv
   return $ solMemVar dv
 
@@ -981,8 +976,8 @@ solCom = \case
     let rng_ty'mem = rng_ty' <> withArgLoc rng_ty
     f' <- addInterface (pretty f) dom'mem rng_ty'mem
     let eargs = f' : as'
-    v_succ <- allocVar
-    v_return <- allocVar
+    v_succ <- allocRawVar
+    v_return <- allocRawVar
     v_before <- allocMemVar at $ T_UInt UI_Word
     -- Note: Not checking that the address is really a contract and not doing
     -- exactly what OpenZeppelin does
@@ -1049,7 +1044,7 @@ solCom = \case
             T_Null -> []
             _ -> [ solSet (solMemVar dv <> ".elem" <> billOffset 1) $ solApply "abi.decode" [v_return, parens rng_ty'_] ]
     let e_data_e = solApply "abi.encodeWithSelector" eargs
-    e_data <- allocVar
+    e_data <- allocRawVar
     e_before <- solPrimApply (SUB UI_Word PV_Veri) [meBalance, netTokPaid]
     err_msg <- solRequireMsg $ show (at, fs, ("remote " <> f <> " failed"))
     -- XXX we could assert that the balances of all our tokens is the same as
@@ -1110,7 +1105,7 @@ solCom = \case
     return ""
   DL_Let _ (DLV_Let _ dv) (DLE_GetUntrackedFunds at mtok tb) -> do
     addMemVar dv
-    actBalV <- allocVar
+    actBalV <- allocRawVar
     tb' <- solArg tb
     bal <- case mtok of
       Nothing -> return "address(this).balance"
@@ -1140,10 +1135,10 @@ solCom = \case
     let DLContractNew {..} = cns M.! conName'
     let (bc :: String) = either impossible id $ aesonParse dcn_code
     addMemVar dv
-    bc' <- allocVar
-    as'bs <- allocVar
-    bc'' <- allocVar
-    ctc' <- allocVar
+    bc' <- allocRawVar
+    as'bs <- allocRawVar
+    bc'' <- allocRawVar
+    ctc' <- allocRawVar
     let pay' = "0"
     let p' = solApply "add" [ bc'', "0x20" ]
     let len' = solApply "mload" [ bc'' ]
@@ -1783,7 +1778,6 @@ contractId = "ReachContract"
 
 solCPProg :: CPProg -> IO (ConnectorObject, Doc)
 solCPProg (CPProg {..}) = do
-  let at = cpp_at
   let DLViewsX vs vi = cpp_views
   let ai = cpp_apis
   let hs = cpp_handlers
@@ -1834,14 +1828,14 @@ solCPProg (CPProg {..}) = do
               ]
     map_defns <- mapM map_defn (M.toList dli_maps)
     let tgo :: Maybe SLPart -> (SLVar, DLView) -> App ([(T.Text, Aeson.Value)], Doc)
-        tgo v (k, (t, aliases)) = do
+        tgo v (k, (DLView vat t aliases)) = do
           let mk kv = maybe kv (\v' -> bunpack v' <> "_" <> kv) v
           let vk_ = mk k
           let vk = pretty $ vk_
           let (dom, rng) = itype2arr t
-          args <- mapM (allocDLVar at) dom
+          args <- mapM (allocVar vat) dom
           when (length args > apiMaxArgs) $
-            expect_throw Nothing at $ Err_SolTooManyArgs "Views" vk_ (length args)
+            expect_throw Nothing vat $ Err_SolTooManyArgs "Views" vk_ (length args)
           let mkargvm arg = (arg, solRawVar arg)
           extendVarMap $ M.fromList $ map mkargvm args
           let solType_p am ty = do

@@ -196,6 +196,9 @@ data SMTCtxt = SMTCtxt
   , ctxt_map_vars :: IORef (S.Set String)
   }
 
+instance HasCounter SMTCtxt where
+  getCounter = ctxt_idx
+
 ctxt_mode :: App VerifyMode
 ctxt_mode =
   (ctxt_modem <$> ask) >>= \case
@@ -348,7 +351,7 @@ smtPrimOp at p dargs =
                 True ->
                   Atom <$> smtCurrentAddress pn
                 False -> do
-                  ai <- smt_alloc_id
+                  ai <- allocVarIdx
                   let av = "classAddr" <> show ai
                   let dv = DLVar at Nothing T_Address ai
                   let smlet = SMTLet at dv (DLV_Let DVC_Once dv) Witness (SMTProgram $ DLE_PrimOp at p dargs)
@@ -858,7 +861,7 @@ smtMapDeclare at mpv mi se = do
   t <- smtMapSort mpv
   smt <- asks ctxt_smt
   dv <- do
-    newId <- smt_alloc_id
+    newId <- allocVarIdx
     let dv = DLVar at (Just (at, mv)) T_Null newId
     v2dv <- asks ctxt_v_to_dv
     map_vs <- asks ctxt_map_vars
@@ -1013,7 +1016,7 @@ smtMapReviewRecordReduce at mri ans x z b a f = do
               smt_v at oa
             [] -> do
               -- Or, it could be related to a different reduction
-              ans'_dv <- freshenDV ans
+              ans'_dv <- freshenVar ans
               pathAddUnbound at (Just ans'_dv) $ Just $ SMTModel O_ReduceVar
               ans' <- smt_v at ans'_dv
               mapM_ (go_fresh ans') other_rs
@@ -1397,19 +1400,10 @@ smt_asn_def at asn = mapM_ def1 $ M.keys asnm
       pathAddUnbound at (Just dv) (Just $ SMTModel O_Assignment)
       assertInvariants at (varType dv) (getVarName dv)
 
-smt_alloc_id :: App Int
-smt_alloc_id = do
-  idxr <- ctxt_idx <$> ask
-  liftIO $ incCounter idxr
-
-freshenDV :: DLVar -> App DLVar
-freshenDV (DLVar at lab t _) =
-  DLVar at lab t <$> smt_alloc_id
-
 freshAddrs :: App a -> App a
 freshAddrs m = do
   let go dv@(DLVar at _ _ _) = do
-        dv' <- freshenDV dv
+        dv' <- freshenVar dv
         pathAddUnbound at (Just dv') (Just $ SMTModel O_BuiltIn)
         return dv'
   addrs' <- mapM go =<< (ctxt_addrs <$> ask)
@@ -1497,7 +1491,7 @@ smt_s = \case
           let bind_amt m = do
                 let DLPayAmt {..} = amta
                 let mki f = do
-                      i <- smt_alloc_id
+                      i <- allocVarIdx
                       return (((<>) ("pv_" <> f) . show) i, i)
                 (pv_net, pv_net_i) <- mki "net"
                 let pv_net' = Atom pv_net

@@ -39,9 +39,6 @@ instance Show Error where
   show = \case
     Err_Unreachable s -> "code must not be reachable: " <> s
 
-allocVar :: (e -> Counter) -> ReaderT e IO Int
-allocVar ef = asks ef >>= (liftIO . incCounter)
-
 -- Remove returns, duplicate continuations, and transform into dk
 
 type DKApp = ReaderT DKEnv IO
@@ -365,8 +362,8 @@ data DFEnv = DFEnv
   , eBals :: Integer
   }
 
-df_allocVar :: DFApp Int
-df_allocVar = allocVar eCounter_df
+instance HasCounter DFEnv where
+  getCounter = eCounter_df
 
 fluidRefm :: FluidVar -> DFApp (Maybe (SrcLoc, DLArg))
 fluidRefm fv = do
@@ -429,7 +426,7 @@ assign :: SrcLoc -> DLVar -> DLExpr -> DLStmt
 assign at dv de = DL_Let at (DLV_Let DVC_Many dv) de
 
 mkVar :: SrcLoc -> String -> DLType -> DFApp DLVar
-mkVar at lab ty = DLVar at (Just (at, lab)) ty <$> df_allocVar
+mkVar at lab ty = DLVar at (Just (at, lab)) ty <$> allocVarIdx
 
 lookupTokenIdx :: SrcLoc -> DLArg -> DLArg -> DFApp ([DLStmt], DLArg)
 lookupTokenIdx at tok toks = do
@@ -581,7 +578,7 @@ df_con = \case
                       FV_tokenInfos -> tokenInfoType
                       FV_tokens -> tokenArrType
                       _ -> return $ fluidVarType fv
-              dv <- DLVar at (Just (sb, show $ pretty fv)) ty <$> df_allocVar
+              dv <- DLVar at (Just (sb, show $ pretty fv)) ty <$> allocVarIdx
               return $ Just (fv, dv)
     fvm <- M.fromList <$> catMaybes <$> mapM go fvs
     let body_fvs' = df_con =<< unpackFVMap at body
