@@ -683,11 +683,8 @@ defluid (DKProg dkp_at (DLOpts {..}) dkp_parts dkp_init dkp_exports dkp_views dk
     return $ LLProg dkp_at opts' dkp_parts dkp_init dex' dkp_views dkp_apis dkp_aliases dkp_events k'
 
 -- Stich it all together
-linearize :: (forall a. Pretty a => T.Text -> a -> IO ()) -> DLProg -> IO LLProg
+linearize :: (forall a. Pretty a => T.Text -> a -> IO a) -> DLProg -> IO LLProg
 linearize outm p =
   return p >>= out "dk" dekont >>= out "lc" liftcon >>= out "df" defluid >>= out "fu" freshen_top
   where
-    out lab f p' = do
-      p'' <- f p'
-      outm lab p''
-      return p''
+    out lab f p' = outm lab =<< f p'

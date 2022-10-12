@@ -1,3 +1,7 @@
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+-- ^ We allow name shadowing because we want to use `p` for every program AST
+-- to ensure that we don't accidentally use things out of order.
+
 module Reach.Compiler (CompilerOpts (..), compile, make_connectors) where
 
 import Control.Monad
@@ -50,17 +54,14 @@ make_connectors env =
 -- command-line options.
 compile :: CompilerToolEnv -> CompilerOpts -> IO ()
 compile env (CompilerOpts {..}) = do
-  let source = if co_printKeywordInfo then ReachStdLib else ReachSourceFile co_source
   let outd = fromMaybe (takeDirectory co_source </> "build") co_moutputDir
-  let co_dirDotReach = fromMaybe (takeDirectory co_source </> ".reach") co_mdirDotReach
-  let co_output ext = FP.encodeString $ FP.append (FP.decodeString outd) $ (FP.filename $ FP.decodeString co_source) `FP.replaceExtension` ext
+  let co_output ext = FP.encodeString $ FP.append (FP.decodeString outd) $ FP.replaceExtension (FP.filename $ FP.decodeString co_source) ext
   createDirectoryIfMissing True outd
-  let co_tops = if null co_topl then Nothing else Just (S.fromList co_topl)
   let outnMay = flip doIf (co_intermediateFiles || cte_REACH_DEBUG env)
   let interOut outn_ = case outnMay outn_ of
         Just f -> LTIO.writeFile . f
         Nothing -> \_ _ -> return ()
-  dirDotReach' <- makeAbsolute co_dirDotReach
+  dirDotReach' <- makeAbsolute $ fromMaybe (takeDirectory co_source </> ".reach") co_mdirDotReach
   -- First, we actually read the source files. This function is the only thing
   -- that will read the disk. It produces a "JS Bundle" which is a map from
   -- locations to code. This is so that we don't read the same module code
@@ -69,6 +70,7 @@ compile env (CompilerOpts {..}) = do
   -- evaluator so they can be run in order. It mostly exists as a misguided
   -- attempt to risk the IO monad to one place in the compiler, but it is maybe
   -- useful today.
+  let source = if co_printKeywordInfo then ReachStdLib else ReachSourceFile co_source
   djp <- gatherDeps_top source co_installPkgs dirDotReach'
   -- interOut co_output "bundle.js" $ render $ pretty djp
   unless co_installPkgs $ do
@@ -93,7 +95,8 @@ compile env (CompilerOpts {..}) = do
     -- DApps that get compiled to the ones passed at the command-line. This is
     -- mostly boring administrative stuff and not interesting compilation.
     (avail, compileDApp) <- prepareDAppCompiles run shared_lifts exe_ex
-    let chosen = S.toAscList $ fromMaybe avail co_tops
+    let tops = if null co_topl then Nothing else Just (S.fromList co_topl)
+    let chosen = S.toAscList $ fromMaybe avail tops
     let onlyOne = length chosen == 1
     forM_ chosen $ \which -> do
       -- We are now inside the main part of the compiler that actually does
@@ -102,20 +105,18 @@ compile env (CompilerOpts {..}) = do
         putStrLn $ "Compiling " <> show which <> "..."
       let woutn = co_output . ((T.pack which <> ".") <>)
       let woutnMay = outnMay woutn
-      let showp :: Pretty a => T.Text -> a -> IO ()
+      let showp :: forall a . Pretty a => T.Text -> a -> IO a
           showp l x = do
-            let x' = pretty x
-            let x'' = render x'
             loud $ "showp " <> show l
-            interOut woutn l x''
+            interOut woutn l $ render $ pretty x
+            return x
       -- This compileDApp function came out of `prepareDAppCompiles` and it
       -- embeds a call to Eval/Core, but shares the module state from
       -- `shared_lifts`. This is going to do evaluation of the source (or SL)
       -- program and produce the residual DL program. SL is Scheme with JS
       -- syntax and DL is basically ML with a bunch of DApp specific ideas.
-      dl <- compileDApp which
-      let DLProg { dlp_opts = DLOpts {..} } = dl
-      showp "dl" dl
+      p <- showp "dl" =<< compileDApp which
+      let DLProg { dlp_opts = DLOpts {..} } = p
       unless co_stopAfterEval $ do
         -- A DL program can contain control flow and function calls like:
         --
@@ -223,8 +224,7 @@ compile env (CompilerOpts {..}) = do
         -- (because dekont can duplicate code) and produces the LL program AST,
         -- which is where we define most of the other work
         --
-        ll <- linearize showp dl
-        showp "ll" ll
+        p <- showp "ll" =<< linearize showp p
         -- We repeatedly optimize the program during compilation. It is
         -- important to do this in a few different places, which I'll talk
         -- about separately.
@@ -248,9 +248,7 @@ compile env (CompilerOpts {..}) = do
         -- THIS optimization run is to reduce the size of the verification
         -- problem, because SMT solvers are exponential in program size (&
         -- state)
-        ol <- bigopt (showp, "ol") ll
-        -- ol <- optimize ll
-        showp "ol" ol
+        p <- showp "ol" =<< bigopt (showp, "ol") p
         -- This runs all of the different verifications.
         --
         -- The knowledge checker is basically a graph connected-ness search on
@@ -263,20 +261,18 @@ compile env (CompilerOpts {..}) = do
           let vo_timeout = co_verifyTimeout
           let vo_dir = dirDotReach'
           let vo_first_fail_quit = co_verifyFirstFailQuit
-          verify (VerifyOpts {..}) ol >>= maybeDie
+          verify (VerifyOpts {..}) p >>= maybeDie
         -- Once we know that we've passed the verification engine, we can
         -- remove variables that only occur in `assert` and `invariant`
         -- statements. The only hard part of this is noticing that some loop
         -- variables can be removed.
-        el <- erase_logic ol
-        showp "el" el
+        p <- showp "el" =<< erase_logic p
         unless (not co_sim) $ do
           src <- readFile co_source
-          startServer el src
+          startServer p src
         -- We optimize again because since we just removed logic variables,
         -- there are probably tempories that we can get rid of too.
-        eol <- bigopt (showp, "eol") el
-        showp "eol" eol
+        p <- showp "eol" =<< bigopt (showp, "eol") p
         -- This is a really simple pass that knows how the DL code generator
         -- works generating API code. That code looks like this:
         --
@@ -302,8 +298,7 @@ compile env (CompilerOpts {..}) = do
         --
         -- Maybe we should stick this in Linearize
         --
-        flap <- floatAPI eol
-        showp "flap" flap
+        p <- showp "flap" =<< floatAPI p
         -- This is the end-point projection pass.
         --
         -- The basic idea of end-point projection is to turn
@@ -348,10 +343,9 @@ compile env (CompilerOpts {..}) = do
         -- Producing C is the harder part. There we need to discover what the
         -- states are and create each one of the state transitions.
         --
-        pil <- epp flap
+        p <- showp "pil" =<< epp p
         -- The C program is a state machine... we can display it as dot
-        showp "state.dot" $ stateDiagram pil
-        showp "pil" pil
+        void $ showp "state.dot" $ stateDiagram p
         -- In the DL code generation, APIs are represented as participant
         -- classes, but we don't want them to have to be attached for the
         -- entire program. So this pass changes an "A"-like program from
@@ -375,32 +369,24 @@ compile env (CompilerOpts {..}) = do
         -- ... x, y, dom ...
         -- recv3
         --
-        apc <- apicut pil
-        showp "apc" apc
+        p <- showp "apc" =<< apicut p
         -- We optimize again at this point, because some values may only be of
         -- interested to some participants, so the A/B/C programs can become
         -- smaller
-        pl <- bigopt (showp, "pl") apc
-        showp "pl" pl
+        p <- showp "pl" =<< bigopt (showp, "pl") p
         -- Next, we generate the backend code for each one of the connectors
         -- the user asked for. This return "connector info" structures that
         -- basically have the bytecode in them, plus stuff the runtime needs.
         --
         -- This only looks at the "C" piece
-        let runConnector c = do
-              let n = conName c
-              loud $ "running connector " <> show n
-              conGen c woutnMay $ plp_cpp pl
-        crs <- mapM runConnector dlo_connectors
+        crs <- forM dlo_connectors $ \c -> do
+          let n = conName c
+          loud $ "running connector " <> show n
+          conGen c woutnMay $ plp_cpp p
         -- Those connector info things will be given to the JS code to get
         -- included in the actual backend.
-        --
-        -- You might think this only looks at the A & B pieces, but it also has
-        -- to look at the C piece, so we can generate client-only View
-        -- implementations, because Algorand doesn't have a good way to call
-        -- read-only methods of contracts.
         loud $ "running backend js"
-        backend_js woutn crs $ plp_epp pl
+        backend_js woutn crs $ plp_epp p
         return ()
 
 doIf :: a -> Bool -> Maybe a
