@@ -24,6 +24,9 @@ const getBal = async (who) => fmt(await stdlib.balanceOf(who));
 const bal = await getBal(minter);
 console.log(`Minter starting balance: ${bal}.`);
 
+const name = "JPAlgos";
+const symbol = "JPA";
+
 const opts = { 
     supply: 1, 
     au: "ipfs://bafybeigdyrzt5...", //asset url
@@ -33,9 +36,6 @@ const opts = {
     reserve: null, 
     note: Uint8Array[1],
 };
-
-const name = "JPAlgos";
-const symbol = "JPA";
 
 const mintNFT = async (minter, name, symbol, opts = {supply: 1, au: "ipfs://bafybeigdyrzt5...", c: null, f: null, defaultFrozen: false, reserve: null, note: Uint8Array[1]}) => {
     console.log(`Creating the NFT`);
@@ -50,11 +50,11 @@ const transferNFT = async (minter, receiver, nftId, supply) => {
     console.log(`Minter has ${preAmtNFT} of the NFT`);
 
     if (stdlib.connector == 'ALGO' && await receiver.tokenAccept(nftId)) {
-        console.log(`Receiver opted-in to NFT`
-        )};
+        console.log(`Receiver opted-in to NFT`);
+    };
     if (stdlib.connector == 'ALGO' && await receiver.tokenAccepted(nftId)) {
-        console.log(`Token accepted`
-        )};
+        console.log(`Token accepted`);
+    };
     await stdlib.transfer(minter, receiver, supply, nftId);
     console.log(`NFT transfer made from minter to receiver`);
 
