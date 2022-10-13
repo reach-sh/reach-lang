@@ -1461,7 +1461,7 @@ solHandler which h = freshVarMap $
           _ ->
             return [mkFun [argDefn] body]
       return $ vsep $ [evtDefn, frameDefn] <> funDefs
-    C_Loop _at svsl msgl ct -> do
+    C_Loop _at _last svsl msgl ct -> do
       let svs = map varLetVar svsl
       let msg = map varLetVar msgl
       (frameDefn, frameDecl, ctp) <- solCTail_top which solArgSVSVar svsl msgl False ct

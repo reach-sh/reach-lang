@@ -59,6 +59,7 @@ data CHandler
       }
   | C_Loop
       { cl_at :: SrcLoc
+      , cl_last :: Int
       , cl_svs :: [DLVarLet]
       , cl_vars :: [DLVarLet]
       , cl_body :: CTail
@@ -66,25 +67,26 @@ data CHandler
   deriving (Eq)
 
 instance Pretty CHandler where
-  pretty (C_Handler _ int fs last_i svs msg timev secsv body) =
+  pretty (C_Handler {..}) =
     pbrackets
-      [ pretty fs
-      , pretty int
-      , "last = " <> pretty last_i
-      , pretty svs
-      , pretty (map varLetType svs)
-      , pretty msg
-      , pretty (map varLetType msg)
-      , "timev = " <> pretty timev
-      , "secsv = " <> pretty secsv
-      , render_nest $ pretty body
+      [ pretty ch_from
+      , pretty ch_int
+      , "last = " <> pretty ch_last
+      , pretty ch_svs
+      , pretty (map varLetType ch_svs)
+      , pretty ch_msg
+      , pretty (map varLetType ch_msg)
+      , "timev = " <> pretty ch_timev
+      , "secsv = " <> pretty ch_secsv
+      , render_nest $ pretty ch_body
       ]
-  pretty (C_Loop _ svs vars body) =
+  pretty (C_Loop {..}) =
     pbrackets
       [ "loop!"
-      , pretty svs
-      , pretty vars
-      , render_nest $ pretty body
+      , "last = " <> pretty cl_last
+      , pretty cl_svs
+      , pretty cl_vars
+      , render_nest $ pretty cl_body
       ]
 
 instance SrcLocOf CHandler where

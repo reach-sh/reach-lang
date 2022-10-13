@@ -105,6 +105,8 @@ instance (CLike a) => CLike (FIX a) where
     domvs <- forM dom $ allocVar fi_at
     rngv <- allocVar fi_at rng
     mapM_ cl $ M.elems fi_steps
+    -- XXX for views, we know DLVarLet info about them
+    -- XXX "optimize" case where there is only one step?
     let intt = CL_Jump fi_at "XXX" [] rngv
     wrapv <- allocSym $ v <> "_w"
     let cf x = CSFun x dom rng
@@ -170,6 +172,17 @@ apiReorgX aim = FunInfo {..}
         aiy_which = ai_which
         aiy_compile = ai_compile
 
+newtype CHX = CHX (Int, CHandler)
+
+instance CLike CHX where
+  cl (CHX (which, _h)) = do
+    let hc = "XXX"
+    let n = bpack $ "_reach_" <> hc <> show which
+    def (CSVar n) $ CLD_Sto $ T_Null
+
+instance CLike CHandlers where
+  cl (CHandlers hm) = clm CHX hm
+
 clike :: PLProg a CPProg -> IO (PLProg a CLProg)
 clike = plp_cpp_mod $ \CPProg {..} -> do
   let CPOpts {..} = cpp_opts
@@ -182,6 +195,6 @@ clike = plp_cpp_mod $ \CPProg {..} -> do
     cl cpp_events
     cl $ viewReorg cpp_views
     cl $ apiReorg cpp_apis
-    -- XXX cl cpp_handlers
+    cl cpp_handlers
   clp_defs <- readIORef eDefsR
   return $ CLProg {..}

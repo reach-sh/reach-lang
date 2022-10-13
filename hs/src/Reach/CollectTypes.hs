@@ -271,7 +271,7 @@ instance CollectsTypes DLVarCat where
 
 instance CollectsTypes CHandler where
   cts (C_Handler _ int fs _ svs msg timev secsv body) = cts int <> cts fs <> cts svs <> cts msg <> cts timev <> cts secsv <> cts body
-  cts (C_Loop _ svs vars body) = cts svs <> cts vars <> cts body
+  cts (C_Loop {..}) = cts cl_svs <> cts cl_vars <> cts cl_body
 
 instance CollectsTypes CHandlers where
   cts (CHandlers m) = cts m
