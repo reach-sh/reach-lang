@@ -28,6 +28,10 @@ instance Show CLSym where
 data CLStmt
   = CLDL DLStmt
   | CLStore SrcLoc CLVar DLArg
+  | CLTxnBind SrcLoc DLVar DLVar DLVar
+  | CLTimeCheck SrcLoc DLVar DLVar
+  | CLStateBind SrcLoc [DLVarLet] Int
+  | CLIntervalCheck SrcLoc DLVar (CInterval DLTimeArg)
   | CLTokenUntrack SrcLoc DLArg
   deriving (Eq)
 
@@ -35,6 +39,16 @@ instance Pretty CLStmt where
   pretty = \case
     CLDL s -> pretty s
     CLStore _ v a -> pretty v <+> "<-" <+> pretty a
+    CLTxnBind _ from timev secsv -> lhs <+> ":=" <+> "txn.metadata"
+      where
+        lhs = render_obj $ M.fromList
+          [ ("from" :: String, from)
+          , ("time", timev)
+          , ("secs", secsv)
+          ]
+    CLTimeCheck _ actual given -> "checkTime" <> parens (render_das [actual, given])
+    CLStateBind _ svs prev -> pretty svs <+> ":=" <+> "state" <> pretty prev
+    CLIntervalCheck _ actual int -> "checkInterval" <> parens (render_das [pretty actual, pretty int])
     CLTokenUntrack _ a -> "Token.untrack" <> parens (pretty a)
 
 data CLTail
