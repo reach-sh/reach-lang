@@ -17,6 +17,7 @@ type App = ReaderT Env IO
 
 data Env = Env
   { eDefsR :: IORef CLDefs
+  , eFunsR :: IORef CLFuns
   , eCounter :: Counter
   }
 
@@ -32,10 +33,21 @@ env_insert k v m =
     True -> impossible $ show k <> " is already defined"
     False -> M.insert k v m
 
-def :: CLSym -> CLDef -> App ()
-def v d = do
-  er <- asks eDefsR
-  liftIO $ modifyIORef er $ env_insert v d
+env_insert_ :: (Show k, Ord k) => (Env -> IORef (M.Map k v)) -> k -> v -> App ()
+env_insert_ f k v = do
+  er <- asks f
+  liftIO $ modifyIORef er $ env_insert k v
+
+def :: CLVar -> CLDef -> App ()
+def v d = env_insert_ eDefsR v d
+
+fun :: CLVar -> CLFun -> App ()
+fun n d = env_insert_ eFunsR s d
+  where
+    s = CLSym n dom rng
+    dom = map varLetType clf_dom
+    rng = varType clf_rng
+    CLFun {..} = d
 
 class CLike a where
   cl :: a -> App ()
@@ -44,7 +56,7 @@ newtype DLMI = DLMI (DLMVar, DLMapInfo)
 
 instance CLike DLMI where
   cl (DLMI ((DLMVar i), (DLMapInfo {..}))) =
-    def (CSVar (bpack $ "m" <> show i)) (CLD_Map dlmi_kt dlmi_ty)
+    def (bpack $ "m" <> show i) (CLD_Map dlmi_kt dlmi_ty)
 
 clm :: (CLike a) => ((k, v) -> a) -> M.Map k v -> App ()
 clm f m = forM_ (map f $ M.toAscList m) cl
@@ -58,7 +70,7 @@ clilm f = clm f . flattenInterfaceLikeMap
 newtype DLEI = DLEI (SLPart, [DLType])
 
 instance CLike DLEI where
-  cl (DLEI (p, ts)) = def (CSVar p) $ CLD_Evt ts
+  cl (DLEI (p, ts)) = def p $ CLD_Evt ts
 
 instance CLike DLEvents where
   cl = clilm DLEI
@@ -110,12 +122,11 @@ instance (CLike a) => CLike (FIX a) where
     -- XXX "optimize" case where there is only one step?
     let intt = CL_Jump fi_at "XXX" [] rngv
     wrapv <- allocSym $ v <> "_w"
-    let cf x = CSFun x dom rng
-    def (cf wrapv) $ CLD_Fun $ CLFun domvls rngv CLFM_Internal intt
+    fun wrapv $ CLFun domvls rngv CLFM_Internal intt
     let extt = CL_Jump fi_at wrapv domvs rngv
-    let extd = CLD_Fun $ CLFun domvls rngv CLFM_External extt
+    let extd = CLFun domvls rngv CLFM_External extt
     -- XXX "optimize" case where there is only one name?
-    forM_ (v : fi_as) $ flip def extd . cf
+    forM_ (v : fi_as) $ flip fun extd
 
 instance (CLike a) => CLike (M.Map SLPart (FunInfo a)) where
   cl = clm FIX
@@ -223,9 +234,7 @@ instance CLike CHX where
     let n = nameMeth which
     given_timev <- allocVar ch_at $ T_UInt UI_Word
     let clf_dom = (v2vl given_timev) : ch_msg
-    let dom = map varLetType clf_dom
-    let rng = T_Null
-    t_rngv <- allocVar ch_at rng
+    t_rngv <- allocVar ch_at T_Null
     let clf_rng = t_rngv
     body' <- tr_ (TEnv {..}) ch_body
     let clf_tail =
@@ -235,17 +244,15 @@ instance CLike CHX where
           $ CL_Com (CLIntervalCheck ch_at ch_timev ch_int)
           $ body'
     let clf_mode = CLFM_External
-    def (CSFun n dom rng) $ CLD_Fun $ CLFun {..}
+    fun n $ CLFun {..}
   cl (CHX (which, (C_Loop {..}))) = do
     let n = nameLoop which
     let clf_dom = cl_svs <> cl_vars
-    let dom = map varLetType clf_dom
-    let rng = T_Null
-    t_rngv <- allocVar cl_at rng
+    t_rngv <- allocVar cl_at T_Null
     let clf_rng = t_rngv
     clf_tail <- tr_ (TEnv {..}) cl_body
     let clf_mode = CLFM_Internal
-    def (CSFun n dom rng) $ CLD_Fun $ CLFun {..}
+    fun n $ CLFun {..}
 
 instance CLike CHandlers where
   cl (CHandlers hm) = clm CHX hm
@@ -256,6 +263,7 @@ clike = plp_cpp_mod $ \CPProg {..} -> do
   let clp_at = cpp_at
   let clp_opts = CLOpts cpo_untrustworthyMaps cpo_counter
   eDefsR <- newIORef mempty
+  eFunsR <- newIORef mempty
   let eCounter = getCounter clp_opts
   flip runReaderT (Env {..}) $ do
     cl cpp_init
@@ -264,4 +272,5 @@ clike = plp_cpp_mod $ \CPProg {..} -> do
     cl $ apiReorg cpp_apis
     cl cpp_handlers
   clp_defs <- readIORef eDefsR
+  clp_funs <- readIORef eFunsR
   return $ CLProg {..}
