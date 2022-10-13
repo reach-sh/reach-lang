@@ -187,8 +187,12 @@ apiReorgX aim = FunInfo {..}
 type TApp = ReaderT TEnv IO
 
 data TEnv = TEnv
-  { t_rngv :: DLVar
+  { tCounter :: Counter
+  , t_rngv :: DLVar
   }
+
+instance HasCounter TEnv where
+  getCounter = tCounter
 
 class CLikeTr a b where
   tr :: a -> TApp b
@@ -213,11 +217,18 @@ instance CLikeTr CTail CLTail where
             $ CL_Halt at
         FI_Halt toks ->
           return $ foldr (CL_Com . CLTokenUntrack at) (CL_Halt at) toks
-    CT_Jump at which _svs (DLAssignment asnm) -> do
+    CT_Jump at which svs (DLAssignment asnm) -> do
       rngv <- asks t_rngv
-      -- XXX need to pass svs args
-      -- XXX fst should be snd
-      return $ CL_Jump at (nameLoop which) (map fst $ M.toAscList asnm) rngv
+      let asnl = M.toAscList asnm
+      asn' <- forM asnl $ \(v, a) -> do
+        v' <- freshenVar v
+        return (v', a)
+      let asnvs' = map fst asn'
+      let args = svs <> asnvs'
+      let kt = CL_Jump at (nameLoop which) args rngv
+      let go (v', a) = CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once v') (DLE_Arg at a)))
+      let t = foldr go kt asn'
+      return t
 
 newtype CHX = CHX (Int, CHandler)
 
@@ -236,6 +247,7 @@ instance CLike CHX where
     let clf_dom = (v2vl given_timev) : ch_msg
     t_rngv <- allocVar ch_at T_Null
     let clf_rng = t_rngv
+    tCounter <- asks getCounter
     body' <- tr_ (TEnv {..}) ch_body
     let clf_tail =
             CL_Com (CLTxnBind ch_at ch_from ch_timev ch_secsv)
@@ -250,6 +262,7 @@ instance CLike CHX where
     let clf_dom = cl_svs <> cl_vars
     t_rngv <- allocVar cl_at T_Null
     let clf_rng = t_rngv
+    tCounter <- asks getCounter
     clf_tail <- tr_ (TEnv {..}) cl_body
     let clf_mode = CLFM_Internal
     fun n $ CLFun {..}
