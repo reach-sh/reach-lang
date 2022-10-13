@@ -14,6 +14,7 @@ type CLVar = B.ByteString
 
 data CLSym
   = CSVar CLVar
+  -- XXX don't make this a unified thing
   | CSFun CLVar [DLType] DLType
   deriving (Ord, Eq)
 
@@ -80,7 +81,7 @@ instance Pretty CLFunMode where
     CLFM_External -> "external"
 
 data CLFun = CLFun
-  { clf_dom :: [DLVar]
+  { clf_dom :: [DLVarLet]
   , clf_rng :: DLVar
   , clf_mode :: CLFunMode
   , clf_tail :: CLTail
