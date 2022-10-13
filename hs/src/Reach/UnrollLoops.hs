@@ -206,8 +206,7 @@ instance Unroll CHandler where
   ul = \case
     C_Handler at int last_timev from lasti svs msg timev body ->
       C_Handler at int last_timev from lasti svs msg timev <$> ul body
-    C_Loop at svs vars body ->
-      C_Loop at svs vars <$> ul body
+    C_Loop {..} -> C_Loop cl_at cl_last cl_svs cl_vars <$> ul cl_body
 
 instance Unroll CHandlers where
   ul (CHandlers m) = CHandlers <$> ul m

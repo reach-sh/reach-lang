@@ -2877,11 +2877,11 @@ bindFromStack _at vsl m = do
 
 cloop :: Int -> CHandler -> App ()
 cloop _ (C_Handler {}) = impossible $ "cloop h"
-cloop which (C_Loop at svs vars body) = recordWhich which $ do
+cloop which (C_Loop {..}) = recordWhich which $ do
   block (loopLabel which) $ do
     -- STACK: [ ...svs ...vars ] TOP on right
-    bindFromStack at (svs <> vars) $
-      ct body
+    bindFromStack cl_at (cl_svs <> cl_vars) $
+      ct cl_body
 
 -- NOTE This could be compiled to a jump table if that were possible with TEAL
 cblt :: String -> (Int -> a -> App ()) -> BLT Int a -> App ()
