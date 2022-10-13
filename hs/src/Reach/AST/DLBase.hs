@@ -1595,3 +1595,12 @@ instance Pretty FromInfo where
   pretty = \case
     FI_Continue svs -> pform "continue" (pretty svs)
     FI_Halt toks -> pform "halt" (pretty toks)
+
+data CInterval a
+  = CBetween (Maybe a) (Maybe a)
+  deriving (Show, Eq)
+
+instance Pretty a => Pretty (CInterval a) where
+  pretty (CBetween f t) = pform "between" $ go f <+> go t
+    where
+      go = brackets . pretty

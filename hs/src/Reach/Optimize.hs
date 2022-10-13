@@ -1186,7 +1186,7 @@ instance Optimize CHandler where
         C_Handler {..} ->
           C_Handler ch_at ch_int ch_from ch_last ch_svs ch_msg ch_timev ch_secsv <$> opt ch_body
         C_Loop {..} -> do
-          C_Loop cl_at cl_last cl_svs cl_vars <$> opt cl_body
+          C_Loop cl_at cl_svs cl_vars <$> opt cl_body
   gcs = \case
     C_Handler {..} -> gcs ch_body
     C_Loop {..} -> gcs cl_body

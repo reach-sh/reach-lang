@@ -36,15 +36,6 @@ instance Pretty CTail where
       where
         args = pretty which <+> pretty vars <+> pretty assignment
 
-data CInterval a
-  = CBetween (Maybe a) (Maybe a)
-  deriving (Show, Eq)
-
-instance Pretty a => Pretty (CInterval a) where
-  pretty (CBetween f t) = pform "between" $ go f <+> go t
-    where
-      go = brackets . pretty
-
 data CHandler
   = C_Handler
       { ch_at :: SrcLoc
@@ -59,7 +50,6 @@ data CHandler
       }
   | C_Loop
       { cl_at :: SrcLoc
-      , cl_last :: Int
       , cl_svs :: [DLVarLet]
       , cl_vars :: [DLVarLet]
       , cl_body :: CTail
@@ -83,7 +73,6 @@ instance Pretty CHandler where
   pretty (C_Loop {..}) =
     pbrackets
       [ "loop!"
-      , "last = " <> pretty cl_last
       , pretty cl_svs
       , pretty cl_vars
       , render_nest $ pretty cl_body

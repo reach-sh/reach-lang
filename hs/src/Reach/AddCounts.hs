@@ -283,7 +283,7 @@ instance AC CHandler where
       body' <- ac cl_body
       svs' <- ac_vls cl_svs
       vars' <- ac_vls cl_vars
-      return $ C_Loop cl_at cl_last svs' vars' body'
+      return $ C_Loop cl_at svs' vars' body'
     C_Handler {..} -> fresh $ do
       body' <- ac ch_body
       ac_visit ch_int
