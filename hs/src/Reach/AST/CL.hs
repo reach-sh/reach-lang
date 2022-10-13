@@ -12,16 +12,11 @@ import Reach.Texty
 
 type CLVar = B.ByteString
 
-data CLSym
-  = CSVar CLVar
-  -- XXX don't make this a unified thing
-  | CSFun CLVar [DLType] DLType
+data CLSym = CLSym CLVar [DLType] DLType
   deriving (Ord, Eq)
 
 instance Pretty CLSym where
-  pretty = \case
-    CSVar v -> pretty v
-    CSFun f d r -> pretty f <> parens (render_das d) <> pretty r
+  pretty (CLSym f d r) = pretty f <> parens (render_das d) <> pretty r
 
 instance Show CLSym where
   show = show . pretty
@@ -99,7 +94,6 @@ data CLDef
     , cldm_ty :: DLType
     }
   | CLD_Evt [DLType]
-  | CLD_Fun CLFun
   deriving (Eq)
 
 instance Pretty CLDef where
@@ -107,9 +101,10 @@ instance Pretty CLDef where
     CLD_Sto t -> "sto" <+> pretty t
     CLD_Map k v -> "map" <+> pretty k <+> pretty v
     CLD_Evt t -> "evt" <+> brackets (render_das t)
-    CLD_Fun f -> "fun" <+> pretty f
 
-type CLDefs = M.Map CLSym CLDef
+type CLDefs = M.Map CLVar CLDef
+
+type CLFuns = M.Map CLSym CLFun
 
 data CLOpts = CLOpts
   { clo_untrustworthyMaps :: Bool
@@ -127,8 +122,13 @@ data CLProg = CLProg
   { clp_at :: SrcLoc
   , clp_opts :: CLOpts
   , clp_defs :: CLDefs
+  , clp_funs :: CLFuns
   }
   deriving (Eq)
 
 instance Pretty CLProg where
-  pretty (CLProg {..}) = "CL" <+> render_obj clp_defs
+  pretty (CLProg {..}) = "CL" <> hardline
+    <> "// Definitions:" <> hardline
+    <> render_obj clp_defs <> hardline
+    <> "// Functions:" <> hardline
+    <> render_obj clp_funs

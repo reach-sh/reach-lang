@@ -213,12 +213,9 @@ data DLInit = DLInit
   deriving (Eq, Generic)
 
 instance Pretty DLInit where
-  pretty (DLInit {..}) =
-    "// maps" <> hardline
-      <> render_obj dli_maps
-      <> hardline
-      <> "// initialization"
-      <> hardline
+  pretty (DLInit {..}) = render_obj $ M.fromList
+    [ ("maps" :: String, render_obj dli_maps)
+    ]
 
 data DLConstant
   = DLC_UInt_max

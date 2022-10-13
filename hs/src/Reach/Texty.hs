@@ -80,7 +80,7 @@ render = runIdentity . flip runReaderT 0 . render_
 
 render_obj :: Pretty k => Pretty v => M.Map k v -> Doc
 render_obj env =
-  braces $ nest $ hardline <> (concatWith (surround (comma <> hardline)) $ map render_p $ M.toAscList env)
+  braces $ nest $ hardline <> (concatWith (surround (comma <> hardline)) $ map render_p $ M.toAscList env) <> hardline
   where
     render_p (k, oa) = pretty k <+> "=" <+> pretty oa
 
