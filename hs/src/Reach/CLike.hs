@@ -208,15 +208,14 @@ instance CLikeTr CTail CLTail where
     CT_Com d t -> CL_Com (CLDL d) <$> tr t
     CT_If at c t f -> CL_If at c <$> tr t <*> tr f
     CT_Switch at x csm -> CL_Switch at x <$> tr csm
-    CT_From at _xxx_which fi ->
+    CT_From at which fi -> do
+      let ht = CL_Halt at
       case fi of
-        FI_Continue _xxx_svs -> do
-          timev <- asks t_rngv -- XXX really should be time
-          return $ CL_Com (CLStore at "xxxState" $ DLA_Var timev)
-            $ CL_Com (CLStore at "xxxTime" $ DLA_Var timev)
-            $ CL_Halt at
-        FI_Halt toks ->
-          return $ foldr (CL_Com . CLTokenUntrack at) (CL_Halt at) toks
+        FI_Continue svs -> do
+          return $ CL_Com (CLStateSet at which svs) ht
+        FI_Halt toks -> do
+          let ht' = CL_Com (CLStateDestroy at) ht
+          return $ foldr (CL_Com . CLTokenUntrack at) ht' toks
     CT_Jump at which svs (DLAssignment asnm) -> do
       rngv <- asks t_rngv
       let asnl = M.toAscList asnm
