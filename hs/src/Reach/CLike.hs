@@ -103,6 +103,7 @@ instance (CLike a) => CLike (FIX a) where
     let dom = fi_dom
     let rng = fi_rng
     domvs <- forM dom $ allocVar fi_at
+    let domvls = map v2vl domvs
     rngv <- allocVar fi_at rng
     mapM_ cl $ M.elems fi_steps
     -- XXX for views, we know DLVarLet info about them
@@ -110,9 +111,9 @@ instance (CLike a) => CLike (FIX a) where
     let intt = CL_Jump fi_at "XXX" [] rngv
     wrapv <- allocSym $ v <> "_w"
     let cf x = CSFun x dom rng
-    def (cf wrapv) $ CLD_Fun $ CLFun domvs rngv CLFM_Internal intt
+    def (cf wrapv) $ CLD_Fun $ CLFun domvls rngv CLFM_Internal intt
     let extt = CL_Jump fi_at wrapv domvs rngv
-    let extd = CLD_Fun $ CLFun domvs rngv CLFM_External extt
+    let extd = CLD_Fun $ CLFun domvls rngv CLFM_External extt
     -- XXX "optimize" case where there is only one name?
     forM_ (v : fi_as) $ flip def extd . cf
 
@@ -172,42 +173,10 @@ apiReorgX aim = FunInfo {..}
         aiy_which = ai_which
         aiy_compile = ai_compile
 
-data CHY = CHY
-  { cy_at :: SrcLoc
-  , cy_inn :: Bool
-  , cy_last :: Int
-  , cy_svs :: [DLVarLet]
-  , cy_msg :: [DLVarLet]
-  , cy_rngv :: DLVar
-  , cy_body_pre :: CLTail -> CLTail
-  , cy_body_post :: CLTail
-  }
-
-newtype CHX = CHX (Int, CHY)
-
-handlerName :: Bool -> Int -> CLVar
-handlerName inn which = bpack $ "_reach_" <> hc <> show which
-  where hc = if inn then "l" else "m"
-
-instance CLike CHX where
-  cl (CHX (which, (CHY {..}))) = do
-    let rng = varType cy_rngv
-    let dom = map varLetType cy_msg
-    let clf_mode = if cy_inn then CLFM_Internal else CLFM_External
-    let n = handlerName cy_inn which
-    let clf_dom = map varLetVar cy_msg
-    let clf_rng = cy_rngv
-    let clf_tail =
-          cy_body_pre
-          $ CL_Com (CLStateBind cy_at cy_svs cy_last)
-          $ cy_body_post
-    def (CSFun n dom rng) $ CLD_Fun $ CLFun {..}
-
 type TApp = ReaderT TEnv IO
 
 data TEnv = TEnv
-  { t_timev :: DLVar
-  , t_rngv :: DLVar
+  { t_rngv :: DLVar
   }
 
 class CLikeTr a b where
@@ -227,7 +196,7 @@ instance CLikeTr CTail CLTail where
     CT_From at _xxx_which fi ->
       case fi of
         FI_Continue _xxx_svs -> do
-          timev <- asks t_timev
+          timev <- asks t_rngv -- XXX really should be time
           return $ CL_Com (CLStore at "xxxState" $ DLA_Var timev)
             $ CL_Com (CLStore at "xxxTime" $ DLA_Var timev)
             $ CL_Halt at
@@ -237,44 +206,49 @@ instance CLikeTr CTail CLTail where
       rngv <- asks t_rngv
       -- XXX need to pass svs args
       -- XXX fst should be snd
-      return $ CL_Jump at (handlerName True which) (map fst $ M.toAscList asnm) rngv
+      return $ CL_Jump at (nameLoop which) (map fst $ M.toAscList asnm) rngv
+
+newtype CHX = CHX (Int, CHandler)
+
+handlerName :: String -> Int -> CLVar
+handlerName hc which = bpack $ "_reach_" <> hc <> show which
+
+nameLoop :: Int -> CLVar
+nameLoop = handlerName "l"
+nameMeth :: Int -> CLVar
+nameMeth = handlerName "m"
+
+instance CLike CHX where
+  cl (CHX (which, (C_Handler {..}))) = do
+    let n = nameMeth which
+    given_timev <- allocVar ch_at $ T_UInt UI_Word
+    let clf_dom = (v2vl given_timev) : ch_msg
+    let dom = map varLetType clf_dom
+    let rng = T_Null
+    t_rngv <- allocVar ch_at rng
+    let clf_rng = t_rngv
+    body' <- tr_ (TEnv {..}) ch_body
+    let clf_tail =
+            CL_Com (CLTxnBind ch_at ch_from ch_timev ch_secsv)
+          $ CL_Com (CLTimeCheck ch_at ch_timev given_timev)
+          $ CL_Com (CLStateBind ch_at ch_svs ch_last)
+          $ CL_Com (CLIntervalCheck ch_at ch_timev ch_int)
+          $ body'
+    let clf_mode = CLFM_External
+    def (CSFun n dom rng) $ CLD_Fun $ CLFun {..}
+  cl (CHX (which, (C_Loop {..}))) = do
+    let n = nameLoop which
+    let clf_dom = cl_svs <> cl_vars
+    let dom = map varLetType clf_dom
+    let rng = T_Null
+    t_rngv <- allocVar cl_at rng
+    let clf_rng = t_rngv
+    clf_tail <- tr_ (TEnv {..}) cl_body
+    let clf_mode = CLFM_Internal
+    def (CSFun n dom rng) $ CLD_Fun $ CLFun {..}
 
 instance CLike CHandlers where
-  cl (CHandlers hm) = clm CHX =<< mapM go hm
-    where
-      go = \case
-        C_Handler {..} -> do
-          given_timev <- allocVar ch_at $ T_UInt UI_Word
-          let cy_at = ch_at
-          let cy_inn = False
-          let cy_last = ch_last
-          let cy_svs = ch_svs
-          let cy_msg = (v2vl given_timev) : ch_msg
-          let cy_body_pre k =
-                CL_Com (CLTxnBind ch_at ch_from ch_timev ch_secsv)
-                $ CL_Com (CLTimeCheck ch_at ch_timev given_timev)
-                k
-          cy_rngv <- allocVar ch_at T_Null
-          let t_timev = ch_timev
-          let t_rngv = cy_rngv
-          cy_body_post <-
-            CL_Com (CLIntervalCheck ch_at ch_timev ch_int)
-            <$> tr_ (TEnv {..}) ch_body
-          return $ CHY {..}
-        C_Loop {..} -> do
-          let cy_at = cl_at
-          let cy_inn = True
-          -- XXX we actually don't load the svs like this
-          let cy_last = 0
-          let cy_svs = cl_svs
-          let cy_msg = cl_vars
-          let cy_body_pre = id
-          cy_rngv <- allocVar cl_at T_Null
-          -- XXX we don't know this and it needs to come differently
-          let t_timev = cy_rngv
-          let t_rngv = cy_rngv
-          cy_body_post <- tr_ (TEnv {..}) cl_body
-          return $ CHY {..}
+  cl (CHandlers hm) = clm CHX hm
 
 clike :: PLProg a CPProg -> IO (PLProg a CLProg)
 clike = plp_cpp_mod $ \CPProg {..} -> do
