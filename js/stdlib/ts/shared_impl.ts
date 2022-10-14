@@ -228,6 +228,7 @@ export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, Conn
   setupEvents: ISetupEvent<ContractInfo, VerifyResult>,
   givenInfoP: (Promise<ContractInfo>|undefined)
   _setup: (args: ISetupArgs<ContractInfo, VerifyResult>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
+  doAppOptIn: (ctc: ContractInfo) => Promise<void>
 } & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, (SpecificKeys)>;
 
 export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
@@ -235,6 +236,7 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
   getViews: () => ViewMap,
   getContractAddress: () => Promise<CBR_Address>,
   // backend-specific
+  appOptIn: () => Promise<void>
   getABI: (x?:boolean) => unknown,
   getEventTys: () => Record<string, ConnectorTy[]>,
   getInternalState: () => Promise<{[key: string]: any }>;
@@ -325,7 +327,7 @@ export const stdContract =
   <ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
     stdContractArgs: IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy>):
   IContract<ContractInfo, RawAddress, Token, ConnectorTy> => {
-  const { bin, getABI, getEventTys, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP } = stdContractArgs;
+  const { bin, getABI, getEventTys, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP, doAppOptIn, } = stdContractArgs;
 
   type SomeSetupArgs = Pick<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo"|"getInfo")>;
   const { setInfo, getInfo }: SomeSetupArgs = (() => {
@@ -469,9 +471,13 @@ export const stdContract =
         ? createEventStream(k, v)
         : objectMap(v, ((kp, vp: any) =>
           createEventStream(k + "_" + kp, vp)))));
+  const appOptIn = async () => {
+    return await doAppOptIn(await getInfo());
+  }
 
   return {
     ...ctcC,
+    appOptIn,
     getABI,
     getEventTys,
     getInfo,
@@ -546,8 +552,7 @@ export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   stdlib: Object,
   getAddress: () => string,
   setDebugLabel: (lab: string) => IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>,
-  appOptedIn: (ctc: Contract) => Promise<boolean>,
-  appOptIn: (ctc: Contract) => Promise<void>,
+  appOptedIn: (ctc: ContractInfo) => Promise<boolean>,
   tokenAccept: (token: Token) => Promise<void>,
   tokenAccepted: (token: Token) => Promise<boolean>,
   tokensAccepted: () => Promise<Array<Token>>
