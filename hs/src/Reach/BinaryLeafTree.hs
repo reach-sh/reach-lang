@@ -10,13 +10,13 @@ import qualified Data.Sequence as S
 
 data BLT i a
   = Empty
-  | Leaf i a
+  | Leaf i Bool a
   | Branch i (BLT i a) (BLT i a)
 
 instance Show i => Show (BLT i a) where
   show = \case
     Empty -> "."
-    Leaf i _ -> show i
+    Leaf i _ _ -> show i
     Branch i l r -> "(" <> show l <> ") " <> show i <> " (" <> show r <> ")"
 
 bltM :: Integral i => M.Map i a -> BLT i a
@@ -31,7 +31,9 @@ blt s =
     True ->
       case s of
         S.Empty -> Empty
-        (x, v) S.:<| _ -> Leaf x v
+        -- XXX incorporate into this the logic of when you need to check a leaf
+        -- and when you don't if you know the low/hi
+        (x, v) S.:<| _ -> Leaf x True v
     False ->
       let midl = len `div` 2
           (l, r) = S.splitAt midl s

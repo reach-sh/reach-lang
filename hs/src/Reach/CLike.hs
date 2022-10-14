@@ -9,6 +9,7 @@ import Reach.AST.DLBase
 import Reach.AST.CP
 import Reach.AST.PL
 import Reach.AST.CL
+import Reach.BinaryLeafTree
 import Reach.Counter
 import Reach.Sanitize
 import Reach.Util
@@ -56,6 +57,7 @@ newtype DLMI = DLMI (DLMVar, DLMapInfo)
 
 instance CLike DLMI where
   cl (DLMI ((DLMVar i), (DLMapInfo {..}))) =
+    -- XXX generate the map reference functions here?
     def (bpack $ "m" <> show i) (CLD_Map dlmi_kt dlmi_ty)
 
 clm :: (CLike a) => ((k, v) -> a) -> M.Map k v -> App ()
@@ -75,15 +77,14 @@ instance CLike DLEI where
 instance CLike DLEvents where
   cl = clilm DLEI
 
-data FunInfo a = FunInfo
-  { fi_at :: SrcLoc
-  , fi_dom :: [DLType]
-  , fi_rng :: DLType
-  , fi_as :: [SLPart]
-  , fi_steps :: M.Map Int a
+data CLViewY = CLViewY
+  { cvy_svs :: [DLVarLet]
+  , cvy_body :: DLExportBlock
   }
 
-newtype CLViewY = CLViewY DLExportBlock
+instance CLikeF CLViewY where
+  clf (CLViewY {..}) =
+    error "XXX"
 
 type CLViewX = FunInfo CLViewY
 
@@ -92,7 +93,7 @@ type CLViewsX = M.Map SLPart CLViewX
 viewReorg :: DLViewsX -> CLViewsX
 viewReorg (DLViewsX vs vis) = vx
   where
-    igo (ViewInfo _ vsi) = flattenInterfaceLikeMap vsi
+    igo (ViewInfo svs vsi) = (map v2vl svs, flattenInterfaceLikeMap vsi)
     vism = M.map igo vis
     vx = M.mapWithKey go $ flattenInterfaceLikeMap vs
     go k (DLView {..}) = FunInfo {..}
@@ -100,35 +101,97 @@ viewReorg (DLViewsX vs vis) = vx
         fi_at = dvw_at
         (fi_dom, fi_rng) = itype2arr dvw_it
         fi_as = dvw_as
-        fi_steps = M.map (\m -> CLViewY $ m M.! k) vism
+        fi_steps = M.map fgo vism
+        fgo (cvy_svs, m) = CLViewY {..}
+          where
+            cvy_body = m M.! k
 
 newtype FIX a = FIX (SLPart, FunInfo a)
 
-instance CLike CLViewY where
-  cl _ = return () -- XXX
+type FApp = ReaderT FEnv IO
 
-instance CLike ApiInfoY where
-  cl _ = return () -- XXX
+data FEnv = FEnv
+  { fCounter :: Counter
+  , f_at :: SrcLoc
+  , f_dom :: [DLVarLet]
+  , f_rng :: DLVar
+  , f_statev :: DLVar
+  }
 
-instance (CLike a) => CLike (FIX a) where
+instance HasCounter FEnv where
+  getCounter = fCounter
+
+class CLikeF a where
+  clf :: a -> FApp CLTail
+
+clf_ :: (CLikeF a) => FEnv -> a -> App CLTail
+clf_ e x = liftIO $ flip runReaderT e $ clf x
+
+instance (CLikeF a) => CLikeF (BLT Int a) where
+  clf = \case
+    Empty -> do
+      at <- asks f_at
+      return
+        $ CL_Com (CLDL (DL_Let at DLV_Eff (DLE_Claim at [] CT_Enforce (DLA_Literal $ DLL_Bool False) (Just "Incorrect state"))))
+        $ CL_Halt at
+    Leaf i mc a -> do
+      -- XXX ^ make sure blt actually fills in mc
+      at <- asks f_at
+      a' <- clf a
+      case mc of
+        False -> return a'
+        True -> do
+          cmpv <- allocVar at T_Bool
+          statev <- asks f_statev
+          return
+            $ CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once cmpv) (DLE_PrimOp at (PEQ UI_Word) [ DLA_Var statev, DLA_Literal $ DLL_Int at UI_Word $ fromIntegral i ])))
+            $ CL_Com (CLDL (DL_Let at DLV_Eff (DLE_Claim at [] CT_Enforce (DLA_Var cmpv) (Just "Incorrect state"))))
+            $ a'
+    Branch i l r -> do
+      at <- asks f_at
+      l' <- clf l
+      r' <- clf r
+      cmpv <- allocVar at T_Bool
+      statev <- asks f_statev
+      return
+        $ CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once cmpv) (DLE_PrimOp at (PLT UI_Word) [ DLA_Var statev, DLA_Literal $ DLL_Int at UI_Word $ fromIntegral i ])))
+        $ CL_If at (DLA_Var cmpv) l' r'
+
+data FunInfo a = FunInfo
+  { fi_at :: SrcLoc
+  , fi_dom :: [DLType]
+  , fi_rng :: DLType
+  , fi_as :: [SLPart]
+  , fi_steps :: M.Map Int a
+  }
+
+instance (CLikeF a) => CLike (FIX a) where
   cl (FIX (v, FunInfo {..})) = do
     let dom = fi_dom
     let rng = fi_rng
     domvs <- forM dom $ allocVar fi_at
     let domvls = map v2vl domvs
     rngv <- allocVar fi_at rng
-    mapM_ cl $ M.elems fi_steps
-    -- XXX for views, we know DLVarLet info about them
-    -- XXX "optimize" case where there is only one step?
-    let intt = CL_Jump fi_at "XXX" [] rngv
-    wrapv <- allocSym $ v <> "_w"
-    fun wrapv $ CLFun domvls rngv CLFM_Internal intt
-    let extt = CL_Jump fi_at wrapv domvs rngv
-    let extd = CLFun domvls rngv CLFM_External extt
-    -- XXX "optimize" case where there is only one name?
-    forM_ (v : fi_as) $ flip fun extd
+    let f_at = fi_at
+    let f_dom = domvls
+    let f_rng = rngv
+    f_statev <- allocVar fi_at $ T_UInt UI_Word
+    fCounter <- asks getCounter
+    -- XXX when the state is a data, this would be a real switch
+    stept <- clf_ (FEnv {..}) $ bltM fi_steps
+    let intt = CL_Com (CLStateRead fi_at f_statev) stept
+    let ns = v : fi_as
+    case ns of
+      [ n ] -> do
+        fun n $ CLFun domvls rngv CLFM_External intt
+      _ -> do
+        wrapv <- allocSym $ v <> "_w"
+        fun wrapv $ CLFun domvls rngv CLFM_Internal intt
+        let extt = CL_Jump fi_at wrapv domvs rngv
+        let extd = CLFun domvls rngv CLFM_External extt
+        forM_ ns $ flip fun extd
 
-instance (CLike a) => CLike (M.Map SLPart (FunInfo a)) where
+instance (CLikeF a) => CLike (M.Map SLPart (FunInfo a)) where
   cl = clm FIX
 
 data ApiInfoY = ApiInfoY
@@ -136,6 +199,10 @@ data ApiInfoY = ApiInfoY
   , aiy_which :: Int
   , aiy_compile :: ApiInfoCompilation
   }
+
+instance CLikeF ApiInfoY where
+  clf (ApiInfoY {..}) =
+    error "XXX"
 
 type ApiInfoX = FunInfo ApiInfoY
 type ApiInfosX = M.Map SLPart ApiInfoX
@@ -212,9 +279,13 @@ instance CLikeTr CTail CLTail where
       let ht = CL_Halt at
       case fi of
         FI_Continue svs -> do
+          -- XXX change to StoreSet
+          -- XXX expose saving of time
           return $ CL_Com (CLStateSet at which svs) ht
         FI_Halt toks -> do
+          -- XXX change to StoreSet
           let ht' = CL_Com (CLStateDestroy at) ht
+          -- XXX move this into language
           return $ foldr (CL_Com . CLTokenUntrack at) ht' toks
     CT_Jump at which svs (DLAssignment asnm) -> do
       rngv <- asks t_rngv
@@ -224,6 +295,8 @@ instance CLikeTr CTail CLTail where
         return (v', a)
       let asnvs' = map fst asn'
       let args = svs <> asnvs'
+      -- XXX move this concept backwards so that CT_Jump is just a sequence of
+      -- variables
       let kt = CL_Jump at (nameLoop which) args rngv
       let go (v', a) = CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once v') (DLE_Arg at a)))
       let t = foldr go kt asn'
@@ -249,9 +322,14 @@ instance CLike CHX where
     tCounter <- asks getCounter
     body' <- tr_ (TEnv {..}) ch_body
     let clf_tail =
+          -- XXX add extensions to DLE so these can be read directly
             CL_Com (CLTxnBind ch_at ch_from ch_timev ch_secsv)
+          -- XXX put given_timev into DL and does this in Core
           $ CL_Com (CLTimeCheck ch_at ch_timev given_timev)
+          -- XXX change to StoreRead and something to decompose a Data instance
+          -- and fail if the tag doesn't match
           $ CL_Com (CLStateBind ch_at ch_svs ch_last)
+          -- XXX move this back to EPP
           $ CL_Com (CLIntervalCheck ch_at ch_timev ch_int)
           $ body'
     let clf_mode = CLFM_External
@@ -278,6 +356,8 @@ clike = plp_cpp_mod $ \CPProg {..} -> do
   eFunsR <- newIORef mempty
   let eCounter = getCounter clp_opts
   flip runReaderT (Env {..}) $ do
+    -- XXX creation time
+    -- XXX current state & creation time views
     cl cpp_init
     cl cpp_events
     cl $ viewReorg cpp_views
