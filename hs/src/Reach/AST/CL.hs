@@ -25,6 +25,7 @@ data CLStmt
   = CLDL DLStmt
   | CLTxnBind SrcLoc DLVar DLVar DLVar
   | CLTimeCheck SrcLoc DLVar DLVar
+  | CLStateRead SrcLoc DLVar
   | CLStateBind SrcLoc [DLVarLet] Int
   | CLIntervalCheck SrcLoc DLVar (CInterval DLTimeArg)
   | CLStateSet SrcLoc Int [(DLVar, DLArg)]
