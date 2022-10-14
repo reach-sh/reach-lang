@@ -7,6 +7,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verRC("0.1.12")}
 
+@{rcHead("0.1.12-rc.5")}
+
 @{rcHead("0.1.12-rc.4")}
 
 + 2022/10/12: Updated `{!js} test.chkErr` to use a regex for the expected error.
