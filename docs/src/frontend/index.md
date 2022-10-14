@@ -697,14 +697,13 @@ Returns a Promise for an array of tokens that are accepted by `acc`.
 On networks which do not keep track of this information (e.g. Ethereum), this returns an empty array.
 
 ---
-@{ref("js", "appOptIn")}@{ref("js", "stdlib.accountAppOptIn")}
+@{ref("js", "appOptIn")}
 ```js
-acc.appOptIn(contract) => Promise<void>
-stdlib.accountAppOptIn(account, contract) => Promise<void>
+ctc.appOptIn() => Promise<void>
 ```
 
 This does nothing on some networks.
-On others, it opts into the given `contract`.
+On others, it opts into the contract `ctc`.
 
 ---
 @{ref("js", "appOptedIn")}@{ref("js", "stdlib.accountAppOptedIn")}

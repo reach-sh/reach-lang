@@ -14,18 +14,21 @@ try {
   if ( e !== 42) {throw e;}
 }
 
-
 // accA is opted in after launching.
-assert(await stdlib.accountAppOptedIn(accA, ctc));
-assert(await accA.appOptedIn(ctc));
+assert(await stdlib.accountAppOptedIn(accA, await ctc.getInfo()));
+assert(await accA.appOptedIn(await ctc.getInfo()));
 
 // accB is not opted in.
 if (algoP) {
-  assert(! (await stdlib.accountAppOptedIn(accB, ctc)));
-  assert(! (await accB.appOptedIn(ctc)));
+  assert(! (await stdlib.accountAppOptedIn(accB, await ctc.getInfo())));
+  assert(! (await accB.appOptedIn(await ctc.getInfo())));
 }
 
-await accB.appOptIn(ctc);
+const ctcB = accB.contract(backend, await ctc.getInfo());
+await ctcB.appOptIn();
+// A second opt-in should be a no-op, not a crash.
+await ctcB.appOptIn();
 
-assert(await stdlib.accountAppOptedIn(accB, ctc));
-assert(await accB.appOptedIn(ctc));
+assert(await stdlib.accountAppOptedIn(accB, await ctc.getInfo()));
+assert(await accB.appOptedIn(await ctc.getInfo()));
+

@@ -849,7 +849,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     const getABI = stdGetABI(ABI);
     const getEventTys = mkGetEventTys(bin, stdlib);
 
-    return stdContract({ bin, getABI, getEventTys, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
+    return stdContract({ bin, getABI, getEventTys, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP, doAppOptIn });
   };
 
   function setDebugLabel(newLabel: string): Account {
@@ -901,17 +901,14 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return md;
   };
 
-  const appOptedIn = async (_ctc: Contract): Promise<boolean> => {
+  const appOptedIn = async (_ctc: ContractInfo): Promise<boolean> => {
     return true;
-  };
-  const appOptIn = async (_ctc: Contract): Promise<void> => {
-    return;
   };
 
   const accObj = { networkAccount, getAddress: selfAddress, stdlib, setDebugLabel,
                    tokenAccepted, tokensAccepted: tokensAccepted_, tokenAccept, tokenMetadata,
                    contract, setGasLimit, getGasLimit, setStorageLimit, getStorageLimit,
-                   appOptIn, appOptedIn,
+                   appOptedIn,
                  };
   const acc = accObj as unknown as Account;
   const balanceOf_ = (token?: Token): Promise<BigNumber> => balanceOf(acc, token);
@@ -1185,10 +1182,10 @@ function setCustomHttpEventHandler() {
   console.warn(`setCustomHttpEventHandler is not supported on this connector`);
 }
 
-const accountAppOptIn = async (_acc: Account, _ctc: Contract): Promise<void> => {
+const doAppOptIn = async (_ctc: ContractInfo): Promise<void> => {
   return;
 };
-const accountAppOptedIn = async (_acc: Account, _ctc: Contract): Promise<boolean> => {
+const accountAppOptedIn = async (_acc: Account, _ctc: ContractInfo): Promise<boolean> => {
   return true;
 };
 
@@ -1211,7 +1208,7 @@ const ethLike = {
   balancesOf,
   minimumBalanceOf,
   accountAppOptedIn,
-  accountAppOptIn,
+  doAppOptIn,
   transfer,
   connectAccount,
   newAccountFromSecret,

@@ -2229,7 +2229,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     });
     const getEventTys = mkGetEventTys(bin, stdlib);
 
-    return stdContract({ bin, getABI, getEventTys, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
+    const doAppOptIn = async (ctc: ContractInfo) => {
+      return await doAccountAppOptIn(networkAccount, ctc);
+    }
+
+    return stdContract({ bin, getABI, getEventTys, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP, doAppOptIn });
   };
 
   function setDebugLabel(newLabel: string): Account {
@@ -2295,12 +2299,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   const acc = accObj as unknown as Account;
   const balanceOf_ = (token?: Token): Promise<BigNumber> => balanceOf(acc, token);
   const balancesOf_ = (tokens: Array<Token | null>): Promise<Array<BigNumber>> => balancesOf(acc, tokens);
-  const appOptIn = async (ctc: Contract): Promise<void> => await accountAppOptIn(acc, ctc);
-  const appOptedIn = async (ctc: Contract): Promise<boolean> => await accountAppOptedIn(acc, ctc);
+  const appOptedIn = async (ctc: ContractInfo): Promise<boolean> => await accountAppOptedIn(acc, ctc);
 
   return stdAccount({
-    ...accObj, balanceOf: balanceOf_, balancesOf: balancesOf_,
-    appOptIn, appOptedIn,
+    ...accObj, balanceOf: balanceOf_, balancesOf: balancesOf_, appOptedIn,
   });
 };
 
@@ -2424,29 +2426,28 @@ const balanceOf = async (acc: Account | Address, token?: Token): Promise<BigNumb
   return (await balanceOfM(acc, token || null)) || bigNumberify(0);
 };
 
-const doAccountAppOptedIn = async (nacc: NetworkAccount, ctcId: BigNumber): Promise<boolean> => {
+const doAccountAppOptedIn = async (nacc: NetworkAccount, ctcId: ContractInfo): Promise<boolean> => {
   const ls = await getLocalState_(nacc.addr, ctcId);
   return ls !== undefined;
 }
-const accountAppOptedIn = async (acc: Account, ctc: Contract): Promise<boolean> => {
-  return await doAccountAppOptedIn(acc.networkAccount, await ctc.getInfo());
+const accountAppOptedIn = async (acc: Account, ctc: ContractInfo): Promise<boolean> => {
+  return await doAccountAppOptedIn(acc.networkAccount, ctc);
 }
-const doAccountAppOptIn = async (nacc: NetworkAccount, ctcId: BigNumber): Promise<void> => {
-  const dhead = "accountAppOptIn";
-  await sign_and_send_sync(
-    dhead,
-    nacc,
-    toWTxn(algosdk.makeApplicationOptInTxn(
-      nacc.addr, await getTxnParams(dhead),
-      bigNumberToNumber(ctcId),
-      undefined, undefined, undefined, undefined,
-      NOTE_Reach)));
-  // We are commenting this out because the above ^ might not be
-  // propagated to Indexer on the CI fast enough.
-  // assert(await accountAppOptedIn(acc, ctc), `didOptIn after doOptIn`);
-};
-const accountAppOptIn = async (acc: Account, ctc: Contract): Promise<void> => {
-  return await doAccountAppOptIn(acc.networkAccount, await ctc.getInfo());
+const doAccountAppOptIn = async (nacc: NetworkAccount, ctcId: ContractInfo): Promise<void> => {
+  if (!(await doAccountAppOptedIn(nacc, ctcId))) {
+    const dhead = "accountAppOptIn";
+    await sign_and_send_sync(
+      dhead,
+      nacc,
+      toWTxn(algosdk.makeApplicationOptInTxn(
+        nacc.addr, await getTxnParams(dhead),
+        bigNumberToNumber(ctcId),
+        undefined, undefined, undefined, undefined,
+        NOTE_Reach)));
+    // We are commenting this out because the above ^ might not be
+    // propagated to Indexer on the CI fast enough.
+    // assert(await accountAppOptedIn(acc, ctc), `didOptIn after doOptIn`);
+  }
 };
 
 const createAccount = async (): Promise<Account> => {
@@ -2748,7 +2749,7 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
     getFaucet, setFaucet, canFundFromFaucet, fundFromFaucet,
     providerEnvByName,
     transfer, connectAccount, minimumBalanceOf, balancesOf, balanceOf,
-    accountAppOptedIn, accountAppOptIn,
+    accountAppOptedIn,
     createAccount, newTestAccount, newTestAccounts, getDefaultAccount,
     newAccountFromMnemonic, newAccountFromSecret,
     getNetworkTime, getTimeSecs, getNetworkSecs,
