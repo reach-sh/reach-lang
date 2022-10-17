@@ -775,6 +775,10 @@
     "title": "Install VSCode",
     "path": "/guide/editor-support/#guide-install-VSCode"
   },
+  "guide-invariants": {
+    "title": "Writing Invariants",
+    "path": "/guide/invariants/#guide-invariants"
+  },
   "guide-lifecycle": {
     "title": "Contract Development Lifecycle and Best Practices for Building Reach DApps",
     "path": "/guide/lifecycle/#guide-lifecycle"

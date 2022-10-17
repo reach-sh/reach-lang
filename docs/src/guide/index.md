@@ -16,6 +16,7 @@ The following guides are available:
 + @{seclink("guide-ctransfers")}
 + @{seclink("guide-assert")}
 + @{seclink("guide-loop-invs")}
++ @{seclink("guide-invariants")}
 + @{seclink("guide-timeout")}
 + @{seclink("guide-determ")}
 + @{seclink("guide-race")}
