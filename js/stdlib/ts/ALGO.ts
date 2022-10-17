@@ -1523,7 +1523,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
         // Application Local State Opt-in
         const didOptIn = async (): Promise<boolean> =>
-          (await doAccountAppOptedIn(thisAcc, ApplicationID));
+          (await doAccountAppOptedIn(thisAcc.addr, ApplicationID));
         const doOptIn = async (): Promise<void> =>
           (await doAccountAppOptIn(thisAcc, ApplicationID));
 
@@ -2426,15 +2426,16 @@ const balanceOf = async (acc: Account | Address, token?: Token): Promise<BigNumb
   return (await balanceOfM(acc, token || null)) || bigNumberify(0);
 };
 
-const doAccountAppOptedIn = async (nacc: NetworkAccount, ctcId: ContractInfo): Promise<boolean> => {
-  const ls = await getLocalState_(nacc.addr, ctcId);
+const doAccountAppOptedIn = async (nacc: string, ctcId: ContractInfo): Promise<boolean> => {
+  const ls = await getLocalState_(nacc, ctcId);
   return ls !== undefined;
 }
-const accountAppOptedIn = async (acc: Account, ctc: ContractInfo): Promise<boolean> => {
-  return await doAccountAppOptedIn(acc.networkAccount, ctc);
+const accountAppOptedIn = async (acc: Account | Address, ctc: ContractInfo): Promise<boolean> => {
+  const addr = extractAddrConvert(acc);
+  return await doAccountAppOptedIn(addr, ctc);
 }
 const doAccountAppOptIn = async (nacc: NetworkAccount, ctcId: ContractInfo): Promise<void> => {
-  if (!(await doAccountAppOptedIn(nacc, ctcId))) {
+  if (!(await doAccountAppOptedIn(nacc.addr, ctcId))) {
     const dhead = "accountAppOptIn";
     await sign_and_send_sync(
       dhead,
@@ -2749,7 +2750,7 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
     getFaucet, setFaucet, canFundFromFaucet, fundFromFaucet,
     providerEnvByName,
     transfer, connectAccount, minimumBalanceOf, balancesOf, balanceOf,
-    accountAppOptedIn,
+    appOptedIn: accountAppOptedIn,
     createAccount, newTestAccount, newTestAccounts, getDefaultAccount,
     newAccountFromMnemonic, newAccountFromSecret,
     getNetworkTime, getTimeSecs, getNetworkSecs,

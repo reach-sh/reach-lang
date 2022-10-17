@@ -1185,7 +1185,7 @@ function setCustomHttpEventHandler() {
 const doAppOptIn = async (_ctc: ContractInfo): Promise<void> => {
   return;
 };
-const accountAppOptedIn = async (_acc: Account, _ctc: ContractInfo): Promise<boolean> => {
+const appOptedIn = async (_acc: Account | Address, _ctc: ContractInfo): Promise<boolean> => {
   return true;
 };
 
@@ -1207,7 +1207,7 @@ const ethLike = {
   balanceOf,
   balancesOf,
   minimumBalanceOf,
-  accountAppOptedIn,
+  appOptedIn,
   doAppOptIn,
   transfer,
   connectAccount,
