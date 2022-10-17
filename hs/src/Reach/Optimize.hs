@@ -20,7 +20,6 @@ import Safe (atMay)
 import qualified Data.ByteString as B
 import Reach.CollectSvs
 import Reach.AST.SL
-import Reach.Subst
 
 type App = ReaderT Env IO
 
@@ -69,6 +68,8 @@ instance Semigroup CommonEnv where
 instance Monoid CommonEnv where
   mempty = CommonEnv mempty mempty mempty mempty mempty
 
+type FuseEnv = M.Map DLVar (SwitchCases DLTail)
+
 data Env = Env
   { eFocus :: Focus
   , eParts :: [SLPart]
@@ -81,7 +82,7 @@ data Env = Env
   , eSimulate :: Bool
   , eSvs :: S.Set DLVar
   , eVarsSet ::IORef (M.Map DLVar Int)
-  , eFusionCases :: IORef (M.Map DLVar (SwitchCases DLTail))
+  , eFusionCases :: IORef FuseEnv
   }
 
 mkVar :: SrcLoc -> DLType -> App DLVar
@@ -936,12 +937,16 @@ readFusionCases dv = do
   fusionCases <- liftIO . readIORef =<< asks eFusionCases
   return $ M.lookup dv fusionCases
 
-preFuse :: DLStmt -> App (M.Map DLVar (SwitchCases DLTail))
+preFuse :: DLStmt -> App FuseEnv
 preFuse s = do
   oldEnv <- liftIO . readIORef =<< asks eFusionCases
   case s of
     DL_LocalSwitch _ dv _ -> updateFusion dv mempty
     DL_Let {} -> cantFuse
+    -- XXX We could fuse if the `DL_Var` we encounter is set within a switch.
+    -- The env would need to track the vars a switch needs to set to fuse.
+    -- We'd want to update `DL_LocalSwitch` to track whether it sets a var, for efficiency.
+    -- Q: If we end up fusing, how do we efficiently drop these `DL_Var`?
     DL_Var {} -> cantFuse
     _ | not (isPure s) -> cantFuse
     _ -> return ()
@@ -960,12 +965,12 @@ fuseSwitch mk at dv scs k =
         Just (v2, _, t2) -> do
           -- The branch we're inling binds `v2`.
           -- The branch we're inling *into* binds `v1`.
-          -- Substitute occurrences of `v2` in `t2` with `v1`.
-          let t2' = subst_ (M.fromList [(v2, v1)]) t2
+          -- Set v2 to v1
+          let t2' = DT_Com (DL_Let at (DLV_Let DVC_Many v2) $ DLE_Arg at $ DLA_Var v1) t2
           (v1, b1, dtReplace DT_Com t2' t1)
         Nothing -> (v1, b1, t1)
 
-fuseStmt :: IsCom a => M.Map DLVar (SwitchCases DLTail) -> (DLStmt -> a -> a) -> a -> App a
+fuseStmt :: IsCom a => FuseEnv -> (DLStmt -> a -> a) -> a -> App a
 fuseStmt fuseEnv mk t =
   case isCom t of
     Just (DL_LocalSwitch at dv scs, k) -> do
