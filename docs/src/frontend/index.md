@@ -706,14 +706,14 @@ This does nothing on some networks.
 On others, it opts into the contract `ctc`.
 
 ---
-@{ref("js", "appOptedIn")}@{ref("js", "stdlib.accountAppOptedIn")}
+@{ref("js", "appOptedIn")}@{ref("js", "stdlib.appOptedIn")}
 ```js
-acc.appOptedIn(contract) => Promise<boolean>
-stdlib.accountAppOptedIn(account, contract) => Promise<boolean>
+acc.appOptedIn(info:ContractInfo) => Promise<boolean>
+stdlib.appOptedIn(acc: Account | Address, info: ContractInfo) => Promise<boolean>
 ```
 
 On some networks this always returns `true`.
-On others, it checks whether the account has opted into `contract`.
+On others, it checks whether the account has opted into the contract specified by `info`.
 
 ---
 @{ref("js", "tokenMetadata")}
