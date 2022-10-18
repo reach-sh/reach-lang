@@ -974,8 +974,8 @@ compileTypeOf v = do
 compileTypeOfs :: [SLVal] -> App ([DLType], [DLArg])
 compileTypeOfs vs = unzip <$> mapM compileTypeOf vs
 
-compileCheckType :: DLType -> SLVal -> App DLArg
-compileCheckType et v = compileArgExpr_ =<< typeCheck_d Nothing et v
+compileCheckType :: Maybe SrcLoc -> DLType -> SLVal -> App DLArg
+compileCheckType el et v = compileArgExpr_ =<< typeCheck_d el et v
 
 compileToVar :: SLVal -> App DLVar
 compileToVar v = do
@@ -1699,11 +1699,11 @@ compileTimeArg :: SLVal -> App DLTimeArg
 compileTimeArg = \case
   SLV_Data _ dm "Left" v
     | correctData dm ->
-      Left <$> compileCheckType t v
+      Left <$> compileCheckType Nothing t v
   SLV_Data at dm "Right" v
     | correctData dm -> do
       liftIO $ emitWarning (Just at) $ W_NetworkSeconds
-      Right <$> compileCheckType t v
+      Right <$> compileCheckType Nothing t v
   SLV_DLVar (DLVar _ _ (T_Data dm) _)
     | correctData dm ->
       expect_ Err_TimeArg_NotStatic
@@ -2165,9 +2165,9 @@ evalDistinctTokens old = \case
 evalITE :: SecurityLevel -> SLVal -> SLVal -> SLVal -> App SLSVal
 evalITE lvl c t f = do
   at <- withAt id
-  ca <- compileCheckType T_Bool c
+  ca <- compileCheckType (Just at) T_Bool c
   (tt, ta) <- compileTypeOf t
-  fa <- compileCheckType tt f
+  fa <- compileCheckType (Just $ srclocOf t) tt f
   dv <- ctxt_lift_expr (DLVar at Nothing tt) (DLE_PrimOp at IF_THEN_ELSE [ca, ta, fa])
   return $ (lvl, SLV_DLVar dv)
 
@@ -2470,7 +2470,7 @@ doFluidSet_ fv da = do
 doFluidSet :: FluidVar -> SLSVal -> App ()
 doFluidSet fv ssv = do
   sv <- ensure_public ssv
-  da <- compileCheckType (fluidVarType fv) sv
+  da <- compileCheckType Nothing (fluidVarType fv) sv
   doFluidSet_ fv da
 
 doBaseWaitUpdate :: DLTimeArg -> App ()
@@ -2564,7 +2564,7 @@ tokenMetaAssert tm tok lhs op msg = do
 assumeOp :: B.ByteString -> SPrimOp -> DLVar -> SLVal -> App ()
 assumeOp lab op v bound = do
   cmp <- evalPrimOp op [public $ SLV_DLVar v, public bound]
-  cmp_v <- compileCheckType T_Bool $ snd cmp
+  cmp_v <- compileCheckType Nothing T_Bool $ snd cmp
   doClaim CT_Assume cmp_v $ Just ("assume " <> lab)
 
 assumeGtZero :: DLVar -> App ()
@@ -2581,8 +2581,8 @@ assumeBalanceUpdate :: SLVal -> SLVal -> (PrimOp, DLVar -> App b) -> App b
 assumeBalanceUpdate balV amtV (op, assumeF) = do
   at <- withAt id
   let tInt = T_UInt UI_Word
-  bal_dv <- compileCheckType tInt balV
-  amt_dv <- compileCheckType tInt amtV
+  bal_dv <- compileCheckType Nothing tInt balV
+  amt_dv <- compileCheckType Nothing tInt amtV
   -- Avoid using `evalPrimOp` to avoid generating claims for verify arithmetic
   bal' <- ctxt_lift_expr (DLVar at Nothing tInt) $ DLE_PrimOp at op [bal_dv, amt_dv]
   assumeF bal'
@@ -2603,7 +2603,7 @@ doBalanceUpdate mtok op = \case
       forM_ (M.lookup op assumeOps) $
         assumeBalanceUpdate (snd bsv) rhs
     bv' <- evalApplyVals' up_rator [bsv]
-    bva <- compileCheckType (T_UInt UI_Word) $ snd bv'
+    bva <- compileCheckType Nothing (T_UInt UI_Word) $ snd bv'
     setBalance TM_Balance mtok bva
 
 tokenMetaUpdate :: TokenMeta -> DLArg -> SPrimOp -> SLVal -> App ()
@@ -2612,7 +2612,7 @@ tokenMetaUpdate tm tok op rhs = do
   let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [(Public, rhs)]
   v <- tokenMetaGet tm tok
   v' <- evalApplyVals' up_rator [public $ SLV_DLVar v]
-  dv <- compileCheckType (tmTypeOf tm) $ snd v'
+  dv <- compileCheckType Nothing (tmTypeOf tm) $ snd v'
   tokenMetaSet tm tok dv False
 
 doArrayBoundsCheck :: Integer -> SLVal -> App ()
@@ -2772,13 +2772,13 @@ evalPrim p sargs =
           [x] -> return (x, Nothing)
           [x, y] -> return (x, Just y)
           _ -> illegal_args
-      toka <- compileCheckType T_Token tokv
+      toka <- compileCheckType Nothing T_Token tokv
       at <- withAt id
       let lab = "Token.burn"
       ensureCreatedToken lab toka
       amta <-
         case mamtv of
-          Just v -> compileCheckType (T_UInt UI_Word) v
+          Just v -> compileCheckType Nothing (T_UInt UI_Word) v
           Nothing -> DLA_Var <$> getBalanceOf' (Just toka)
       ensure_mode SLM_ConsensusStep lab
       let mtok_a = Just toka
@@ -2789,7 +2789,7 @@ evalPrim p sargs =
       ctxt_lift_eff $ DLE_TokenBurn at toka amta
       return $ public $ SLV_Null at lab
     SLPrim_Token_destroy -> do
-      toka <- compileCheckType T_Token =<< one_arg
+      toka <- compileCheckType Nothing T_Token =<< one_arg
       at <- withAt id
       let lab = "Token.destroy"
       ensureCreatedToken lab toka
@@ -2805,7 +2805,7 @@ evalPrim p sargs =
       metam' <- mapM (ensure_public . sss_sls) metam
       let metal f k = k (M.lookup f metam')
       let bytes f len = metal f $ \case
-            Just v -> compileCheckType (T_Bytes len) v
+            Just v -> compileCheckType Nothing (T_Bytes len) v
             Nothing -> compileArgExpr_ $ largeArgToArgExpr $ bytesZeroLit len
       dtn_name <- bytes "name" tokenNameLen
       dtn_sym <- bytes "symbol" tokenSymLen
@@ -2813,10 +2813,10 @@ evalPrim p sargs =
       dtn_metadata <- bytes "metadata" tokenMetadataLen
       dtn_supply <- metal "supply" $ \case
         Nothing -> return $ DLA_Constant $ DLC_UInt_max
-        Just v -> compileCheckType (T_UInt UI_Word) v
+        Just v -> compileCheckType Nothing (T_UInt UI_Word) v
       dtn_decimals <- metal "decimals" $ \case
         Nothing -> return $ Nothing
-        Just v -> Just <$> compileCheckType (T_UInt UI_Word) v
+        Just v -> Just <$> compileCheckType Nothing (T_UInt UI_Word) v
       let check = \case
             "name" -> ok
             "symbol" -> ok
@@ -2848,7 +2848,7 @@ evalPrim p sargs =
     SLPrim_Token_track -> do
       ensure_mode SLM_ConsensusStep "Token.track"
       at <- withAt id
-      toka <- compileCheckType T_Token =<< one_arg
+      toka <- compileCheckType Nothing T_Token =<< one_arg
       trackToken toka Nothing
       return $ public $ SLV_Null at "Token.track"
     SLPrim_padTo len -> do
@@ -2863,26 +2863,26 @@ evalPrim p sargs =
     SLPrim_balance -> do
       case args of
         [] -> getBalanceOf Nothing
-        [v] -> getBalanceOf . Just =<< compileCheckType T_Token v
+        [v] -> getBalanceOf . Just =<< compileCheckType Nothing T_Token v
         _ -> illegal_args
     SLPrim_Token_accepted -> do
       at <- withAt id
       (addr_, tok_) <- two_args
       ensure_mode SLM_ConsensusStep "Token.accepted"
-      addr <- compileCheckType T_Address addr_
-      tok <- compileCheckType T_Token tok_
+      addr <- compileCheckType Nothing T_Address addr_
+      tok <- compileCheckType Nothing T_Token tok_
       dv_ <- ctxt_lift_expr (DLVar at Nothing T_Bool) $ DLE_TokenAccepted at addr tok
       dv <- doInternalLog_ Nothing dv_
       retV $ public $ SLV_DLVar dv
     SLPrim_Token_supply -> do
       v <- one_arg
-      da <- compileCheckType T_Token v
+      da <- compileCheckType Nothing T_Token v
       ensureCreatedToken "Token.supply" da
       sr <- tokenMetaGet TM_Supply da
       return $ public $ SLV_DLVar sr
     SLPrim_Token_destroyed -> do
       v <- one_arg
-      da <- compileCheckType T_Token v
+      da <- compileCheckType Nothing T_Token v
       ensureCreatedToken "Token.destroyed" da
       dr <- tokenMetaGet TM_Destroyed da
       return $ public $ SLV_DLVar dr
@@ -3113,7 +3113,7 @@ evalPrim p sargs =
                 SLV_DLVar arrdv@(DLVar _ _ arr_ty@(T_Array elem_ty sz) _) ->
                   case idxi < sz of
                     True -> do
-                      valda <- compileCheckType elem_ty valv
+                      valda <- compileCheckType Nothing elem_ty valv
                       doArrayBoundsCheck sz idxv
                       at <- withAt id
                       retArrDV arr_ty $ DLE_ArraySet at (DLA_Var arrdv) idxda valda
@@ -3126,7 +3126,7 @@ evalPrim p sargs =
               (arr_ty, arrda) <- compileTypeOf arrv
               case arr_ty of
                 T_Array elem_ty sz -> do
-                  valda <- compileCheckType elem_ty valv
+                  valda <- compileCheckType Nothing elem_ty valv
                   doArrayBoundsCheck sz idxv
                   at <- withAt id
                   retArrDV arr_ty $ DLE_ArraySet at arrda idxda valda
@@ -3310,7 +3310,7 @@ evalPrim p sargs =
       let sv = SLV_Null at "currentMode"
       return $ (lvl, SLV_Data at dt vn sv)
     SLPrim_claim ct -> do
-      let barg = compileCheckType T_Bool
+      let barg = compileCheckType Nothing T_Bool
       (dargm, mmsg) <- case map snd sargs of
         [arg] -> return $ (barg arg, Nothing)
         [arg, marg] -> do
@@ -3385,7 +3385,7 @@ evalPrim p sargs =
     SLPrim_part_set ->
       case map snd sargs of
         [(SLV_Participant _ who _ _), addr] -> do
-          addr_da <- compileCheckType T_Address addr
+          addr_da <- compileCheckType Nothing T_Address addr
           withAt $ \at -> (lvl, (SLV_Prim $ SLPrim_part_setted at who addr_da))
         _ -> illegal_args
     SLPrim_part_setted {} -> expect_t rator $ Err_Eval_NotApplicable
@@ -3643,7 +3643,7 @@ evalPrim p sargs =
     SLPrim_remote -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
       (av, ri, ma) <- two_mthree_args
-      aa <- compileCheckType T_Contract av
+      aa <- compileCheckType Nothing T_Contract av
       rm_ <- mustBeObject ri
       ae <- fromMaybe mempty <$> mapM mustBeObject ma
       rm <-
@@ -3697,24 +3697,24 @@ evalPrim p sargs =
             Just _ -> expect_ $ Err_Remote_ALGO_extra $ [ lab <> " with non-compile time value" ]
       ralgo_fees <- metal "fees" $ \case
         Nothing -> return $ DLA_Literal $ DLL_Int at UI_Word 0
-        Just v -> compileCheckType (T_UInt UI_Word) v
+        Just v -> compileCheckType Nothing (T_UInt UI_Word) v
       ralgo_strictPay <- expectBool "strictPay"
       ralgo_rawCall <- expectBool "rawCall"
       ralgo_accounts <- metal "accounts" $ \case
         Nothing -> return $ mempty
         Just v -> do
           vs <- explodeTupleLike "REMOTE_FUN.ALGO.accounts" v
-          mapM (compileCheckType T_Address) vs
+          mapM (compileCheckType Nothing T_Address) vs
       ralgo_assets <- metal "assets" $ \case
         Nothing -> return $ mempty
         Just v -> do
           vs <- explodeTupleLike "REMOTE_FUN.ALGO.assets" v
-          mapM (compileCheckType T_Token) vs
+          mapM (compileCheckType Nothing T_Token) vs
       ralgo_apps <- metal "apps" $ \case
         Nothing -> return $ mempty
         Just v -> do
           vs <- explodeTupleLike "REMOTE_FUN.ALGO.apps" v
-          mapM (compileCheckType T_Contract) vs
+          mapM (compileCheckType Nothing T_Contract) vs
       ralgo_addr2acc <- expectBool "addressToAccount"
       ralgo_onCompletion <- metal "onCompletion" $ \case
         Nothing -> return $ RA_NoOp
@@ -3726,14 +3726,14 @@ evalPrim p sargs =
         Just (SLV_Bytes _ "DeleteApplication") -> return $ RA_DeleteApplication
         Just _ -> expect_ $ Err_Remote_ALGO_extra $ [ "illegal value for onCompletion" ]
       let locAtOf = locAt . srclocOf
-      let compileUInt = compileCheckType (T_UInt UI_Word)
+      let compileUInt = compileCheckType Nothing (T_UInt UI_Word)
       ralgo_simNetRecv <- metal "simNetRecv" $ maybe (pure argLitZero) (\x -> locAtOf x $ compileUInt x)
       ralgo_simTokensRecv <- metal "simTokensRecv" $ maybe (pure RA_Unset) $ \case
         SLV_Tuple tupAt amts -> locAt tupAt $ RA_List tupAt <$> mapM compileUInt amts
         _ -> expect_ $ Err_Remote_ALGO_extra ["simTokensRecv must be a Tuple of UInts"]
       rngTy <- st2dte $ stf_rng stf
       ralgo_simReturnVal <- metal "simReturnVal" $ \case
-        Just x -> locAtOf x $ Just <$> compileCheckType rngTy x
+        Just x -> locAtOf x $ Just <$> compileCheckType Nothing rngTy x
         Nothing -> return Nothing
       let malgo = Just $ DLRemoteALGO {..}
       return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa ma stf mpay mbill malgo Nothing)
@@ -3871,7 +3871,7 @@ evalPrim p sargs =
     SLPrim_verifyMuldiv -> do
       at <- withAt id
       (x, y, z) <- three_args
-      args' <- mapM (compileCheckType $ T_UInt UI_Word) [x, y, z]
+      args' <- mapM (compileCheckType Nothing $ T_UInt UI_Word) [x, y, z]
       m <- readSt st_mode
       cl <- case m of
         SLM_Export -> return $ CT_Enforce
@@ -4004,7 +4004,7 @@ evalPrim p sargs =
           mvt_tm <- mustBeDataTy Err_Switch_NotData mvt
           case M.toAscList mvt_tm of
             [("None", T_Null), ("Some", st)] -> do
-              da <- compileCheckType st dv
+              da <- compileCheckType Nothing st dv
               let mkv = DLVar at Nothing st
               let e = DLE_FromSome at ma da
               fsv <- ctxt_lift_expr mkv e
@@ -4129,7 +4129,7 @@ evalPrim p sargs =
       at <- withAt id
       ensure_mode SLM_ConsensusStep "Contract.fromAddress"
       x <- one_arg
-      xa <- compileCheckType T_Address x
+      xa <- compileCheckType Nothing T_Address x
       let mkv = DLVar at Nothing $ maybeT T_Contract
       let e = DLE_ContractFromAddress at xa
       fsv <- ctxt_lift_expr mkv e
@@ -5151,7 +5151,7 @@ tokIsUnique sks tok = do
         f <- lookStdlib "not"
         evalApplyVals' f [x]
   tokUniqSv <- notF =<< arrayIncludes [DLA_Var tokens, tok]
-  compileCheckType T_Bool $ snd tokUniqSv
+  compileCheckType Nothing T_Bool $ snd tokUniqSv
 
 doToConsensus :: [JSStatement] -> ToConsensusRec -> App SLStmtRes
 doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
@@ -5181,7 +5181,7 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
     _ -> return False
   unless (st_after_first st || isSoloSend) $ do
     expect_thrown at Err_UniqueFirstPublish
-  let ctepee t e = compileCheckType t =<< ensure_public =<< evalExpr e
+  let ctepee t e = compileCheckType Nothing t =<< ensure_public =<< evalExpr e
   -- We go back to the original env from before the to-consensus step
   -- Handle sending
   let compilePayAmt_ e = compilePayAmt TT_Pay =<< ensure_public =<< evalExpr e
@@ -6226,7 +6226,7 @@ evalModeToBlock mode rest e = do
   (e_lifts, e_da) <-
     captureLifts $
       locSt pure_st $
-        compileCheckType rest . snd =<< e
+        compileCheckType Nothing rest . snd =<< e
   return $ DLSBlock at fs e_lifts e_da
 
 evalExportClosureToBlock :: SLClo -> [SLSVal] -> Maybe SLTypeFun -> DLType -> App DLSBlock
@@ -6250,7 +6250,7 @@ evalLValue = \case
     case cv of
       SLV_Map mv -> do
         kt <- dlmi_kt <$> mapLookup mv
-        fa <- compileCheckType kt fv
+        fa <- compileCheckType Nothing kt fv
         return $ SLLV_MapRef at mv fa
       _ ->
         expect_t cv $ Err_Eval_RefNotRefable
@@ -6791,14 +6791,14 @@ mapSet :: DLMVar -> DLArg -> SLVal -> App ()
 mapSet mv mc nv = do
   at <- withAt id
   DLMapInfo {..} <- mapLookup mv
-  na <- compileCheckType dlmi_ty nv
+  na <- compileCheckType Nothing dlmi_ty nv
   ctxt_lift_eff $ DLE_MapSet at mv mc $ Just na
 
 mapRef :: DLMVar -> SLVal -> App DLVar
 mapRef mv mcv = do
   at <- withAt id
   mi <- mapLookup mv
-  mc <- compileCheckType (dlmi_kt mi) mcv
+  mc <- compileCheckType Nothing (dlmi_kt mi) mcv
   let mt = dlmi_tym mi
   let mkvar = DLVar at Nothing mt
   ctxt_lift_expr mkvar $ DLE_MapRef at mv mc
