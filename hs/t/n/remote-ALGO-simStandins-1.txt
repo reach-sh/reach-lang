@@ -1,6 +1,6 @@
 reachc: error[RE0088]: These types are mismatched:
-  expected: Bool
-       got: Null
+  expected: Bool from ./remote-ALGO-simStandins-1.rsh:21:58:application
+       got: Null from ./remote-ALGO-simStandins-1.rsh:24:19:literal
 
   ./remote-ALGO-simStandins-1.rsh:24:19:literal
 

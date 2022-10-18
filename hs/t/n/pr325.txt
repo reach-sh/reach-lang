@@ -1,6 +1,6 @@
 reachc: error[RE0088]: These types are mismatched:
-  expected: Data({"None": Null, "Some": Address})
-       got: Address
+  expected: Data({"None": Null, "Some": Address}) from reach standard library:106:32:application
+       got: Address from ./pr325.rsh:5:27:application
 
   ./pr325.rsh:13:23:application
 
