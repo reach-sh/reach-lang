@@ -2243,6 +2243,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return this;
   }
 
+  function getDebugLabel(): string {
+    return label;
+  }
+
   const me_na = { networkAccount };
   const tokenAccepted = async (token:Token): Promise<boolean> => {
     debug(`tokenAccepted`, token);
@@ -2294,7 +2298,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   const unsupportedAcc = stdAccount_unsupported(connector);
 
   const accObj = { ...unsupportedAcc, networkAccount, getAddress: selfAddress,
-                   stdlib, setDebugLabel, tokenAccepted, tokensAccepted: tokensAccepted_,
+                   stdlib, getDebugLabel, setDebugLabel, tokenAccepted, tokensAccepted: tokensAccepted_,
                    tokenAccept, tokenMetadata, contract };
   const acc = accObj as unknown as Account;
   const balanceOf_ = (token?: Token): Promise<BigNumber> => balanceOf(acc, token);

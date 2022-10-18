@@ -859,6 +859,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return this;
   };
 
+  function getDebugLabel(): string {
+    return label;
+  }
+
   const tokenAccepted = async (token:Token): Promise<boolean> => {
     debug(`tokenAccepted: Unnecessary on ETHlike`, token);
     return true;
@@ -905,7 +909,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return true;
   };
 
-  const accObj = { networkAccount, getAddress: selfAddress, stdlib, setDebugLabel,
+  const accObj = { networkAccount, getAddress: selfAddress, stdlib, getDebugLabel, setDebugLabel,
                    tokenAccepted, tokensAccepted: tokensAccepted_, tokenAccept, tokenMetadata,
                    contract, setGasLimit, getGasLimit, setStorageLimit, getStorageLimit,
                    appOptedIn,
