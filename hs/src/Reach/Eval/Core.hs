@@ -575,6 +575,7 @@ base_env_slvals =
   , ("UInt256", SLV_Type $ ST_UInt UI_256)
   , ("Bytes", SLV_Prim SLPrim_Bytes)
   , ("BytesDyn", SLV_Type $ ST_BytesDyn)
+  , ("BytesDynCast", SLV_Prim SLPrim_BytesDynCast)
   , ("StringDyn", SLV_Type $ ST_StringDyn)
   , ("Contract", SLV_Type ST_Contract)
   , ("ContractCode", SLV_Prim $ SLPrim_ContractCode)
@@ -729,6 +730,7 @@ slToDLV = \case
   SLV_Bool at b -> lit at $ DLL_Bool b
   SLV_Int at mt i -> lit at $ DLL_Int at (fromMaybe UI_Word mt) i
   SLV_Bytes at bs -> return $ Just $ DLV_Bytes at bs
+  SLV_BytesDyn at bs -> return $ Just $ DLV_BytesDyn at bs
   SLV_String at t -> return $ Just $ DLV_StringDyn at t
   SLV_DLC c -> arg sb $ DLA_Constant c
   SLV_DLVar dv -> arg (srclocOf dv) $ DLA_Var dv
@@ -786,6 +788,7 @@ slToJSON v =
     SLV_Bool _ b -> return $ Aeson.Bool b
     SLV_Int _ _ n -> return $ Aeson.Number $ fromIntegral n
     SLV_Bytes _ bs -> return $ Aeson.String $ b2t bs
+    SLV_BytesDyn _ bs -> return $ Aeson.String $ b2t bs
     SLV_String _ t -> return $ Aeson.String $ t
     SLV_Array _ _ vs -> arr vs
     SLV_Tuple _ vs -> arr vs
@@ -2929,6 +2932,18 @@ evalPrim p sargs =
     SLPrim_Bytes ->
       case map snd sargs of
         [(SLV_Int _ _ sz)] -> retV $ (lvl, SLV_Type $ ST_Bytes sz)
+        _ -> illegal_args
+    SLPrim_BytesDynCast -> do
+      at <- withAt id
+      case args of
+        [] -> retV $ (lvl, SLV_Type $ ST_BytesDyn)
+        [x] -> do
+          (ty, dla) <- compileTypeOf x
+          case ty of
+            T_Bytes _ -> return ()
+            _ -> illegal_args
+          dv <- ctxt_lift_expr (DLVar at Nothing T_BytesDyn) $ DLE_Arg at dla
+          return $ (lvl, SLV_DLVar dv)
         _ -> illegal_args
     SLPrim_Array ->
       case map snd sargs of

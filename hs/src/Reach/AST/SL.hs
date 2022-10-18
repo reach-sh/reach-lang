@@ -146,6 +146,7 @@ data SLVal
   | SLV_Bool SrcLoc Bool
   | SLV_Int SrcLoc (Maybe UIntTy) Integer
   | SLV_Bytes SrcLoc B.ByteString
+  | SLV_BytesDyn SrcLoc B.ByteString
   | SLV_String SrcLoc T.Text
   | SLV_Array SrcLoc DLType [SLVal]
   | SLV_Tuple SrcLoc [SLVal]
@@ -394,6 +395,7 @@ instance Pretty SLVal where
     SLV_Bool _ b -> pretty b
     SLV_Int _ _ i -> pretty i
     SLV_Bytes _ b -> pretty b
+    SLV_BytesDyn _ b -> pretty b
     SLV_String _ t -> pretty t
     SLV_Array at t as ->
       "array" <> parens (pretty t <> comma <+> pretty (SLV_Tuple at as))
@@ -429,6 +431,7 @@ instance SrcLocOf SLVal where
     SLV_Bool a _ -> a
     SLV_Int a _ _ -> a
     SLV_Bytes a _ -> a
+    SLV_BytesDyn a _ -> a
     SLV_String a _ -> a
     SLV_Array a _ _ -> a
     SLV_Tuple a _ -> a
@@ -740,6 +743,7 @@ data SLPrimitive
   | SLPrim_Fun
   | SLPrim_Refine
   | SLPrim_Bytes
+  | SLPrim_BytesDynCast
   | SLPrim_Data
   | SLPrim_Data_variant (M.Map SLVar SLType) SLVar SLType
   | SLPrim_data_match

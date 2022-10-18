@@ -65,6 +65,7 @@ completionKind v =
     SLV_Bool _ _ -> Just CK_Constant
     SLV_Int _ _ _ -> Just CK_Constant
     SLV_Bytes _ _ -> Just CK_Constant
+    SLV_BytesDyn _ _ -> Just CK_Constant
     SLV_String _ _ -> Just CK_Constant
     SLV_Array _ _ _ -> Just CK_Constant
     SLV_Tuple _ _ -> Just CK_Constant
@@ -98,6 +99,7 @@ completionKind v =
         SLPrim_Fun -> Just CK_TypeParameter
         SLPrim_Refine -> Just CK_TypeParameter
         SLPrim_Bytes -> Just CK_TypeParameter
+        SLPrim_BytesDynCast -> Just CK_Function
         SLPrim_Data -> Just CK_TypeParameter
         SLPrim_Data_variant _ _ _ -> Nothing
         SLPrim_data_match -> Just CK_Method

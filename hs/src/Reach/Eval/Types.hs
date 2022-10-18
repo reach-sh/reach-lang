@@ -92,6 +92,7 @@ data DLValue
   | DLV_Data SrcLoc (M.Map SLVar DLType) String DLValue
   | DLV_Struct SrcLoc [(SLVar, DLValue)]
   | DLV_Bytes SrcLoc B.ByteString
+  | DLV_BytesDyn SrcLoc B.ByteString
   | DLV_StringDyn SrcLoc T.Text
 
 instance SrcLocOf DLValue where
@@ -104,6 +105,7 @@ instance SrcLocOf DLValue where
     DLV_Data at _ _ _ -> at
     DLV_Struct at _ -> at
     DLV_Bytes at _ -> at
+    DLV_BytesDyn at _ -> at
     DLV_StringDyn at _ -> at
 
 data TransferType
