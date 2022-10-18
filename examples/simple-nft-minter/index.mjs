@@ -62,7 +62,7 @@ const transferNFT = async (minter, receiver, nftId, supply) => {
     await stdlib.transfer(minter, receiver, supply, nftId);
     console.log(`${supply} ${symbol} transferred from ${minter.getAddress()} to ${receiver.getAddress()}`);
 
-    const postAmtNFT = await logBalance(receiver, nftId, "Minter");
+    const postAmtNFT = await logBalance(receiver, nftId, "Receiver");
     test.chk('NFT AMT', preAmtNFT, postAmtNFT);
 }
 
