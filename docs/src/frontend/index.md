@@ -645,7 +645,8 @@ This can be useful to verify that the address receiving the payment is the corre
 acc.getDebugLabel() => string
 ```
 
-Returns the label used to distinguish an account in debug logs. If no label is provided, then the first four digits of the account address will be used.
+Returns the label used to distinguish an account in debug logs.
+If no label was previously provided with `{!js} acc.setDebugLabel`, then the first four digits of the account address will be used.
 
 ---
 @{ref("js", "setDebugLabel")}
