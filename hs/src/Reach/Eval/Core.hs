@@ -2227,7 +2227,8 @@ evalPrimOp sp sargs = do
           useStrict >>= \case
             True ->
               (,) <$> typeOfM x <*> typeOfM y >>= \case
-                (Just (x_ty, _), Just (y_ty, _)) -> typeEq x_ty y_ty Nothing Nothing >> chkEq
+                (Just (x_ty, _), Just (y_ty, _)) ->
+                  typeEq x_ty y_ty (Just $ srclocOf x) (Just $ srclocOf y) >> chkEq
                 _ -> return (lvl, SLV_Bool at $ x == y)
             False -> chkEq
           where
@@ -2983,15 +2984,15 @@ evalPrim p sargs =
     SLPrim_array_concat -> do
       at <- withAt id
       case map snd sargs of
-        [SLV_Array _ x_ty x_vs, SLV_Array _ y_ty y_vs] -> do
-          typeEq x_ty y_ty Nothing Nothing
+        [SLV_Array x_at x_ty x_vs, SLV_Array y_at y_ty y_vs] -> do
+          typeEq x_ty y_ty (Just x_at) (Just y_at)
           retV $ (lvl, SLV_Array at x_ty $ x_vs ++ y_vs)
         [x, y] -> do
           (xt, xa) <- compileTypeOf x
           (yt, ya) <- compileTypeOf y
           case (xt, yt) of
             (T_Array x_ty x_sz, T_Array y_ty y_sz) -> do
-              typeEq x_ty y_ty Nothing Nothing
+              typeEq x_ty y_ty (Just $ srclocOf x) (Just $ srclocOf y)
               let t = T_Array x_ty (x_sz + y_sz)
               let mkdv = DLVar at Nothing t
               dv <- ctxt_lift_expr mkdv $ DLE_ArrayConcat at xa ya
@@ -3070,7 +3071,7 @@ evalPrim p sargs =
               (f_lvl, f_v) <- f' b_dsv a_dsv i_dsv
               ensure_level lvl f_lvl
               (f_ty, f_da) <- compileTypeOf f_v
-              typeEq z_ty f_ty Nothing Nothing
+              typeEq z_ty f_ty (Just $ srclocOf z) (Just $ srclocOf f_v)
               return $ f_da
           let shouldUnroll = not (isLocal f_lifts) || all isSmallLiteralArray xs
           case shouldUnroll of
@@ -3346,7 +3347,8 @@ evalPrim p sargs =
       part <- one_arg
       who_a <-
         typeOfM part >>= \case
-          Just (ty, res) -> typeEq T_Address ty Nothing Nothing >> compileArgExpr_ res
+          Just (ty, res) -> typeEq T_Address ty (Just at) (Just $ srclocOf part)
+            >> compileArgExpr_ res
           Nothing ->
             case part of
               SLV_Participant _ who _ _ ->
@@ -3586,7 +3588,7 @@ evalPrim p sargs =
           (f_lvl, f_v) <- evalApplyVals' f [(lvl, b_dsv), (lvl, ma_dsv)]
           ensure_level lvl f_lvl
           (f_ty, f_da) <- compileTypeOf f_v
-          typeEq z_ty f_ty Nothing Nothing
+          typeEq z_ty f_ty (Just $ srclocOf z) (Just $ srclocOf f_v)
           return $ f_da
       (ans_dv, ans_dsv) <- make_dlvar at z_ty
       let f_bl = DLSBlock at [] f_lifts f_da
@@ -4756,7 +4758,7 @@ doTernary ce a te fa fe = locAtf (srcloc_jsa "?:" a) $ do
                 return $ (elifts', e_ty)
           (tlifts', t_ty) <- add_ret t_at' tlifts tv
           (flifts', f_ty) <- add_ret f_at' flifts fv
-          typeEq t_ty f_ty Nothing Nothing
+          typeEq t_ty f_ty (Just $ srclocOf tv) (Just $ srclocOf fv)
           at' <- withAt id
           let ans_dv = DLVar at' Nothing t_ty ret
           theIf <- checkCond om $ DLS_If at' (Just ans_dv) (DLA_Var cond_dv) sa tlifts' flifts'
