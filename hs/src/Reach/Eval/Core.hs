@@ -828,10 +828,10 @@ typeOf v =
     Just x -> return x
     Nothing -> expect_ $ Err_Type_None v
 
-typeCheck_d :: DLType -> SLVal -> App DLArgExpr
-typeCheck_d ty val = do
+typeCheck_d :: Maybe SrcLoc -> DLType -> SLVal -> App DLArgExpr
+typeCheck_d tyLoc ty val = do
   (val_ty, res) <- typeOf val
-  typeEq ty val_ty Nothing $ Just $ srclocOf val
+  typeEq ty val_ty tyLoc $ Just $ srclocOf val
   return res
 
 applyRefinement :: ClaimType -> SLVal -> [SLVal] -> Maybe SLVal -> App ()
@@ -891,7 +891,7 @@ applyType ct v = \case
 typeCheck_s :: ClaimType -> SLType -> SLVal -> App DLArgExpr
 typeCheck_s ct st val = do
   dt <- st2dte st
-  res <- typeCheck_d dt val
+  res <- typeCheck_d Nothing dt val
   applyType ct val st
   return $ res
 
@@ -975,7 +975,7 @@ compileTypeOfs :: [SLVal] -> App ([DLType], [DLArg])
 compileTypeOfs vs = unzip <$> mapM compileTypeOf vs
 
 compileCheckType :: DLType -> SLVal -> App DLArg
-compileCheckType et v = compileArgExpr_ =<< typeCheck_d et v
+compileCheckType et v = compileArgExpr_ =<< typeCheck_d Nothing et v
 
 compileToVar :: SLVal -> App DLVar
 compileToVar v = do
@@ -2339,7 +2339,7 @@ evalPrimOp sp sargs = do
     make_var dom rng args' = do
       at <- withAt id
       args'e <-
-        mapM (uncurry typeCheck_d)
+        mapM (uncurry (typeCheck_d Nothing))
           =<< zipEq (Err_Apply_ArgCount at) dom args'
       let uit_dom = case dom of
                       x:_ -> uintTyOf x
@@ -2975,7 +2975,7 @@ evalPrim p sargs =
             SLV_Tuple _ elem_vs -> do
               at <- withAt id
               elem_ty <- st2dte elem_sty
-              let check1 sv = typeCheck_d elem_ty sv >> return sv
+              let check1 sv = typeCheck_d (Just at) elem_ty sv >> return sv
               elem_vs_checked <- mapM check1 elem_vs
               retV $ (lvl, SLV_Array at elem_ty elem_vs_checked)
             --- FIXME we could support turning a DL Tuple into an array.
@@ -3085,7 +3085,7 @@ evalPrim p sargs =
                     --- to be parameteric in the state. We also ensure
                     --- that they type is the same as the anonymous
                     --- version.
-                    _ <- typeCheck_d z_ty (snd xv_v')
+                    _ <- typeCheck_d (Just $ srclocOf z) z_ty (snd xv_v')
                     return $ xv_v'
               foldM evalem (lvl, z) $ zip xs_vs [0..]
             False -> do
@@ -3100,11 +3100,11 @@ evalPrim p sargs =
           case (idxty, idxda) of
             (T_UInt UI_Word, (DLA_Literal (DLL_Int _ _ idxi))) ->
               case arrv of
-                SLV_Array _ elem_ty arrvs ->
+                SLV_Array arrAt elem_ty arrvs ->
                   case idxi' < length arrvs of
                     True -> do
                       at <- withAt id
-                      void $ typeCheck_d elem_ty valv
+                      void $ typeCheck_d (Just arrAt) elem_ty valv
                       let arrvs' = arraySet idxi' valv arrvs
                       let arrv' = SLV_Array at elem_ty arrvs'
                       retV $ (lvl, arrv')
@@ -6208,9 +6208,9 @@ doWhileLikeContinueEval lhs whilem (rhs_lvl, rhs_v) = do
         let sv = case M.lookup v decl_env of
               Nothing -> SLSSVal at Public $ SLV_DLVar dv
               Just x -> x
-        let DLVar _ _ et _ = dv
+        let DLVar eloc _ et _ = dv
         val <- ensure_public $ sss_sls sv
-        dae <- typeCheck_d et val
+        dae <- typeCheck_d (Just eloc) et val
         return $ (dv, dae)
   cont_daem <- M.fromList <$> (mapM f $ M.toList whilem)
   cont_dam' <- compileArgExprMap cont_daem
