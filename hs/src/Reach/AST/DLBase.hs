@@ -1249,6 +1249,12 @@ varLetType = varType . varLetVar
 v2vl :: DLVar -> DLVarLet
 v2vl = DLVarLet (Just DVC_Many)
 
+vl2lv :: DLVarLet -> DLLetVar
+vl2lv (DLVarLet mvc v) =
+  case mvc of
+    Nothing -> DLV_Eff
+    Just vc -> DLV_Let vc v
+
 type SwitchCases a = M.Map SLVar (DLVar, Bool, a)
 
 instance IsPure a => IsPure (SwitchCases a) where

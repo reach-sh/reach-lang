@@ -25,8 +25,20 @@ data Env = Env
 instance HasCounter Env where
   getCounter = eCounter
 
+reachpre :: CLVar
+reachpre = "_reach_"
+handlerName :: String -> Int -> CLVar
+handlerName hc which = reachpre <> (bpack $ hc <> show which)
+
+nameLoop :: Int -> CLVar
+nameLoop = handlerName "l"
+nameMeth :: Int -> CLVar
+nameMeth = handlerName "m"
+wn :: CLVar -> CLVar
+wn x = reachpre <> x <> "_w"
+
 allocSym :: CLVar -> App CLVar
-allocSym t = (\i -> "_" <> t <> (bpack $ show i)) <$> allocVarIdx
+allocSym t = (\i -> reachpre <> t <> (bpack $ show i)) <$> allocVarIdx
 
 env_insert :: (Show k, Ord k) => k -> v -> M.Map k v -> M.Map k v
 env_insert k v m =
@@ -49,6 +61,26 @@ fun n d = env_insert_ eFunsR s d
     dom = map varLetType clf_dom
     rng = varType clf_rng
     CLFun {..} = d
+
+funw :: [CLVar] -> SrcLoc -> [DLVarLet] -> DLVar -> CLTail -> App ()
+funw ns at clf_dom clf_rng intt = do
+  ni <- case ns of
+          [] -> impossible $ "no names"
+          [ n ] -> return $ wn n
+          n : _ -> allocSym $ n
+  let di = CLFun { clf_mode = CLFM_Internal, clf_tail = intt, .. }
+  let domvs = map varLetVar clf_dom
+  let extt = CL_Jump at ni domvs clf_rng
+  let de = CLFun { clf_mode = CLFM_External, clf_tail = extt, .. }
+  fun ni di
+  forM_ ns $ flip fun de
+
+funwm :: [CLVar] -> SrcLoc -> [DLVarLet] -> DLVar -> CLTail -> App ()
+funwm = \case
+  [ n ] -> \_ clf_dom clf_rng clf_tail -> do
+    let clf_mode = CLFM_External
+    fun n $ CLFun {..}
+  ns -> funw ns
 
 class CLike a where
   cl :: a -> App ()
@@ -83,8 +115,18 @@ data CLViewY = CLViewY
   }
 
 instance CLikeF CLViewY where
-  clf (CLViewY {..}) =
-    error "XXX"
+  clf (CLViewY {..}) = do
+    prev <- fromMaybe (impossible "clf cvy") <$> asks f_staten
+    let (DLinExportBlock _ mfargs (DLBlock at _ t r)) = cvy_body
+    rng <- asks f_rng
+    let k = CL_Com (CLReturnSet at rng r) $ CL_Halt at
+    let t0 = dtReplace (CL_Com . CLDL) k t
+    let fargs = fromMaybe mempty mfargs
+    dom <- asks f_dom
+    let bind (dvl, avl) = CL_Com $ CLDL $ DL_Let at (vl2lv avl) $ DLE_Arg at $ DLA_Var $ varLetVar dvl
+    let t1 = foldr bind t0 $ zip dom fargs
+    let t2 = CL_Com (CLStateBind at cvy_svs prev) t1
+    return $ t2
 
 type CLViewX = FunInfo CLViewY
 
@@ -116,6 +158,7 @@ data FEnv = FEnv
   , f_dom :: [DLVarLet]
   , f_rng :: DLVar
   , f_statev :: DLVar
+  , f_staten :: Maybe Int
   }
 
 instance HasCounter FEnv where
@@ -137,7 +180,7 @@ instance (CLikeF a) => CLikeF (BLT Int a) where
     Leaf i mc a -> do
       -- XXX ^ make sure blt actually fills in mc
       at <- asks f_at
-      a' <- clf a
+      a' <- local (\e -> e { f_staten = Just i }) $ clf a
       case mc of
         False -> return a'
         True -> do
@@ -177,32 +220,34 @@ instance (CLikeF a) => CLike (FIX a) where
     let f_rng = rngv
     f_statev <- allocVar fi_at $ T_UInt UI_Word
     fCounter <- asks getCounter
+    let f_staten = Nothing
     -- XXX when the state is a data, this would be a real switch
     stept <- clf_ (FEnv {..}) $ bltM fi_steps
     let intt = CL_Com (CLStateRead fi_at f_statev) stept
     let ns = v : fi_as
-    case ns of
-      [ n ] -> do
-        fun n $ CLFun domvls rngv CLFM_External intt
-      _ -> do
-        wrapv <- allocSym $ v <> "_w"
-        fun wrapv $ CLFun domvls rngv CLFM_Internal intt
-        let extt = CL_Jump fi_at wrapv domvs rngv
-        let extd = CLFun domvls rngv CLFM_External extt
-        forM_ ns $ flip fun extd
+    funwm ns fi_at domvls rngv intt
 
 instance (CLikeF a) => CLike (M.Map SLPart (FunInfo a)) where
   cl = clm FIX
 
 data ApiInfoY = ApiInfoY
-  { aiy_mcase :: Maybe String
+  { aiy_at :: SrcLoc
   , aiy_which :: Int
-  , aiy_compile :: ApiInfoCompilation
+  , aiy_wrap :: [DLVarLet] -> FApp (DLVar, [(DLVar, DLExpr)])
   }
 
 instance CLikeF ApiInfoY where
-  clf (ApiInfoY {..}) =
-    error "XXX"
+  clf (ApiInfoY {..}) = do
+    let at = aiy_at
+    rng <- asks f_rng
+    dom <- asks f_dom
+    (argv, lets) <- aiy_wrap dom
+    timev <- allocVar at $ T_UInt UI_Word
+    let go (v, e) = CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once v) e))
+    return
+      $ CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once timev) $ DLE_Arg at $ DLA_Literal $ DLL_Int at UI_Word $ 0))
+      $ flip (foldr go) lets
+      $ CL_Jump at (wn $ nameMeth aiy_which) [timev, argv] rng
 
 type ApiInfoX = FunInfo ApiInfoY
 type ApiInfosX = M.Map SLPart ApiInfoX
@@ -215,19 +260,7 @@ apiReorgX aim = FunInfo {..}
   where
     fi_at = get ai_at
     imp = impossible "apiSig"
-    fi_dom = flip get' id $ flip M.map aim $ \ApiInfo {..} ->
-      case ai_compile of
-        AIC_SpreadArg ->
-          case ai_msg_tys of
-            [T_Tuple ts] -> ts
-            _ -> imp
-        AIC_Case ->
-          case ai_msg_tys of
-            [T_Data tm] ->
-              case M.lookup (fromMaybe imp ai_mcase_id) tm of
-                Just (T_Tuple ts) -> ts
-                _ -> imp
-            _ -> imp
+    fi_dom = flip get' id fi_dom'
     fi_rng = get ai_ret_ty
     fi_as = case malias of
               Nothing -> []
@@ -244,12 +277,37 @@ apiReorgX aim = FunInfo {..}
         case all ((==) x) xs of
           True -> x
           False -> impossible "API infos disagree"
-    fi_steps = flip M.map aim $ go
-    go ApiInfo {..} = ApiInfoY {..}
+    (fi_dom', fi_steps) = funzip $ flip M.map aim $ go
+    go ApiInfo {..} = (dom, ApiInfoY {..})
       where
-        aiy_mcase = ai_mcase_id
+        aiy_at = ai_at
         aiy_which = ai_which
-        aiy_compile = ai_compile
+        (dom, aiy_wrap) = case ai_compile of
+          AIC_SpreadArg ->
+            case ai_msg_tys of
+              [T_Tuple ts] -> (ts, tupleCase)
+              _ -> imp
+          AIC_Case ->
+            case ai_msg_tys of
+              [T_Data tm] ->
+                case M.lookup cid tm of
+                  Just (T_Tuple ts) -> (ts, dataCase tm)
+                  _ -> imp
+              _ -> imp
+        cid = fromMaybe imp ai_mcase_id
+        tupleCase domvs = do
+          argv <- allocVar ai_at $ T_Tuple dom
+          return $ (argv, [(argv, DLE_LArg ai_at $ DLLA_Tuple $ for domvs $ \vl -> DLA_Var $ varLetVar vl)])
+        dataCase tm domvs = do
+          (tuplev, lets) <- tupleCase domvs
+          argv <- allocVar ai_at $ T_Data tm
+          return $ (argv, lets <> [(argv, DLE_LArg ai_at $ DLLA_Data tm cid $ DLA_Var tuplev)])
+
+funzip :: Functor f => f (a,b) -> (f a, f b)
+funzip xs = (fst <$> xs, snd <$> xs)
+
+for :: [a] -> (a -> b) -> [b]
+for = flip map
 
 type TApp = ReaderT TEnv IO
 
@@ -304,24 +362,15 @@ instance CLikeTr CTail CLTail where
 
 newtype CHX = CHX (Int, CHandler)
 
-handlerName :: String -> Int -> CLVar
-handlerName hc which = bpack $ "_reach_" <> hc <> show which
-
-nameLoop :: Int -> CLVar
-nameLoop = handlerName "l"
-nameMeth :: Int -> CLVar
-nameMeth = handlerName "m"
-
 instance CLike CHX where
   cl (CHX (which, (C_Handler {..}))) = do
-    let n = nameMeth which
     given_timev <- allocVar ch_at $ T_UInt UI_Word
     let clf_dom = (v2vl given_timev) : ch_msg
     t_rngv <- allocVar ch_at T_Null
     let clf_rng = t_rngv
     tCounter <- asks getCounter
     body' <- tr_ (TEnv {..}) ch_body
-    let clf_tail =
+    let intt =
           -- XXX add extensions to DLE so these can be read directly
             CL_Com (CLTxnBind ch_at ch_from ch_timev ch_secsv)
           -- XXX put given_timev into DL and does this in Core
@@ -332,8 +381,7 @@ instance CLike CHX where
           -- XXX move this back to EPP
           $ CL_Com (CLIntervalCheck ch_at ch_timev ch_int)
           $ body'
-    let clf_mode = CLFM_External
-    fun n $ CLFun {..}
+    funw [ nameMeth which ] ch_at clf_dom clf_rng intt
   cl (CHX (which, (C_Loop {..}))) = do
     let n = nameLoop which
     let clf_dom = cl_svs <> cl_vars
