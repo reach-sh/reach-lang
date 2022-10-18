@@ -2426,7 +2426,7 @@ const balanceOf = async (acc: Account | Address, token?: Token): Promise<BigNumb
   return (await balanceOfM(acc, token || null)) || bigNumberify(0);
 };
 
-const doAccountAppOptedIn = async (nacc: string, ctcId: ContractInfo): Promise<boolean> => {
+const doAccountAppOptedIn = async (nacc: Address, ctcId: ContractInfo): Promise<boolean> => {
   const ls = await getLocalState_(nacc, ctcId);
   return ls !== undefined;
 }
