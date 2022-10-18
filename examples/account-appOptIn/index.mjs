@@ -23,6 +23,7 @@ assert(await accA.appOptedIn(await ctc.getInfo()));
 // accB is not opted in.
 if (algoP) {
   assert(! (await stdlib.appOptedIn(accB, await ctc.getInfo())));
+  assert(! (await stdlib.appOptedIn(accB.getAddress(), await ctc.getInfo())));
   assert(! (await accB.appOptedIn(await ctc.getInfo())));
 }
 
@@ -32,5 +33,6 @@ await ctcB.appOptIn();
 await ctcB.appOptIn();
 
 assert(await stdlib.appOptedIn(accB, await ctc.getInfo()));
+assert(await stdlib.appOptedIn(accB.getAddress(), await ctc.getInfo()));
 assert(await accB.appOptedIn(await ctc.getInfo()));
 
