@@ -139,8 +139,8 @@ newScope m = do
   eVarsSet' <- liftIO $ dupeIORef eVarsSet
   eFusionCases' <- liftIO $ dupeIORef eFusionCases
   local (\e -> e { eEnvsR = eEnvsR'
-                  , eVarsSet = eVarsSet'
-                  , eFusionCases = eFusionCases' }) m
+                 , eVarsSet = eVarsSet'
+                 , eFusionCases = eFusionCases' }) m
 
 lookupCommon :: Ord a => (CommonEnv -> M.Map a b) -> a -> App (Maybe b)
 lookupCommon dict obj = do
