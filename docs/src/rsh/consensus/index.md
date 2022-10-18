@@ -517,7 +517,7 @@ Reach assumes that network tokens and non-network tokens behave identically, but
 
 ---
 
-`{!rsh} Token.burn(tok, amt)`, or `{!rsh} tok.burn(amt)`, where `{!rsh} tok` is a `{!rsh} Token` value and `{!rsh} amt` is a `{!rsh} UInt` value, may be used to @{defn("burn")} tokens in the contract account, meaning that they are utterly destroyed and can never be recovered.
+`{!rsh} Token.burn(tok, amt)`, or `{!rsh} tok.burn(tok)`, where `{!rsh} tok` is a `{!rsh} Token` value and `{!rsh} amt` is a `{!rsh} UInt` value, may be used to @{defn("burn")} tokens in the contract account, meaning that they are utterly destroyed and can never be recovered.  If `{!rsh} amt` is not given, the current balance of the token will be used.
 
 ---
 
