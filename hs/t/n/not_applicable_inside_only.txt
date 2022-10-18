@@ -1,5 +1,5 @@
 reachc: error[RE0088]: These types are mismatched:
-  expected: UInt256
+  expected: UInt256 from definition
        got: Bool from ./not_applicable_inside_only.rsh:4:24:application
 
   ./not_applicable_inside_only.rsh:8:19:application

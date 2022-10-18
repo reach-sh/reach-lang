@@ -1,6 +1,6 @@
 reachc: error[RE0088]: These types are mismatched:
-  expected: Tuple(UInt)
-       got: Tuple(UInt, Tuple(UInt, Token))
+  expected: Tuple(UInt) from ./asolpshinning-redpm.rsh:13:13:return
+       got: Tuple(UInt, Tuple(UInt, Token)) from ./asolpshinning-redpm.rsh:13:13:return
 
   ./asolpshinning-redpm.rsh:13:13:block app
 

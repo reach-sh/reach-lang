@@ -1,6 +1,6 @@
 reachc: error[RE0088]: These types are mismatched:
-  expected: UInt
-       got: Bool
+  expected: UInt from definition
+       got: Bool from ./bool_add.rsh:3:7:literal
 
   ./bool_add.rsh:3:12:application
 
