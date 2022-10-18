@@ -37,6 +37,8 @@ instance Show ReachSource where
 data SrcLoc = SrcLoc (Maybe String) (Maybe TokenPosn) (Maybe ReachSource)
   deriving (Eq, Generic, Ord)
 
+type MSrcLoc = Maybe SrcLoc
+
 instance FromJSON TokenPosn
 
 instance ToJSON TokenPosn
