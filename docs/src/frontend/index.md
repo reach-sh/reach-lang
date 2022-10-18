@@ -640,6 +640,14 @@ Next, each address is logged so that participants can see both addresses.
 This can be useful to verify that the address receiving the payment is the correct address.
 
 ---
+@{ref("js", "getDebugLabel")}
+```js
+acc.getDebugLabel() => string
+```
+
+Returns the label used to distinguish an account in debug logs. If no label is provided, then the first four digits of the account address will be used.
+
+---
 @{ref("js", "setDebugLabel")}
 ```js
 acc.setDebugLabel(string) => acc

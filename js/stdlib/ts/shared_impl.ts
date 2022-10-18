@@ -551,6 +551,7 @@ export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   contract: (bin: Backend, ctcInfoP?: Promise<ContractInfo>) => Contract,
   stdlib: Object,
   getAddress: () => string,
+  getDebugLabel: () => string,
   setDebugLabel: (lab: string) => IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>,
   appOptedIn: (ctc: ContractInfo) => Promise<boolean>,
   tokenAccept: (token: Token) => Promise<void>,
