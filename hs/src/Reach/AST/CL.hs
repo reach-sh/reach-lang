@@ -31,6 +31,7 @@ data CLStmt
   | CLStateSet SrcLoc Int [(DLVar, DLArg)]
   | CLTokenUntrack SrcLoc DLArg
   | CLStateDestroy SrcLoc
+  | CLReturnSet SrcLoc DLVar DLArg
   deriving (Eq)
 
 instance Pretty CLStmt where
@@ -44,10 +45,12 @@ instance Pretty CLStmt where
           , ("secs", secsv)
           ]
     CLTimeCheck _ actual given -> "checkTime" <> parens (render_das [actual, given])
+    CLStateRead _ v -> pretty v <+> ":=" <+> "state"
     CLStateBind _ svs prev -> pretty svs <+> ":=" <+> "state" <> pretty prev
     CLIntervalCheck _ actual int -> "checkInterval" <> parens (render_das [pretty actual, pretty int])
     CLStateSet _ which svs -> "state" <> pretty which <+> "<-" <+> pretty svs
     CLTokenUntrack _ a -> "Token.untrack" <> parens (pretty a)
+    CLReturnSet _ v a -> "return" <+> pretty a <+> "into" <+> pretty v
     CLStateDestroy _ -> "stateDestroy"
 
 data CLTail

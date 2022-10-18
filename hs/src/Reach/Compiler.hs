@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
--- ^ We allow name shadowing because we want to use `p` for every program AST
--- to ensure that we don't accidentally use things out of order.
-
 module Reach.Compiler (CompilerOpts (..), compile, make_connectors) where
+
+-- We allow name shadowing because we want to use `p` for every program AST
+-- to ensure that we don't accidentally use things out of order.
 
 import Control.Monad
 import qualified Data.Map.Strict as M
