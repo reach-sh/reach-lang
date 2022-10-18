@@ -117,7 +117,7 @@ data EvalError
   | Err_Type_None SLVal
   | Err_Type_NotDT SLType
   | Err_Type_NotApplicable SLType
-  | Err_Type_Mismatch DLType DLType
+  | Err_Type_Mismatch DLType DLType (Maybe SrcLoc) (Maybe SrcLoc)
   | Err_Eval_MustBeInWhileInvariant String
   | Err_Expected_Map SLValTy
   | Err_Prim_Foldable
@@ -683,8 +683,12 @@ instance Show EvalError where
       "Value of this type cannot exist at runtime: " <> show (pretty t)
     Err_Type_NotApplicable ty ->
       "Cannot apply this like a function: " <> show ty
-    Err_Type_Mismatch t1 t2 ->
-      "These types are mismatched:\n  expected: " <> show t1 <> "\n       got: " <> show t2
+    Err_Type_Mismatch t1 t2 ml1 ml2 ->
+      "These types are mismatched:\n  expected: " <> show t1 <> loc ml1 <> "\n       got: " <> show t2 <> loc ml2
+      where
+        loc ml = case ml of
+          Just at -> " from " <> show at
+          _ -> ""
     Err_Expected_Map v ->
       "Expected map, got: " <> show_sv v
     Err_Prim_Foldable ->
