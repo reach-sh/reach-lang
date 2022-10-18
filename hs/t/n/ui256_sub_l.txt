@@ -1,6 +1,6 @@
 reachc: error[RE0088]: These types are mismatched:
   expected: UInt256
-       got: UInt
+       got: UInt from ./ui256_sub_l.rsh:12:17:decimal
 
   ./ui256_sub_l.rsh:12:15:application
 

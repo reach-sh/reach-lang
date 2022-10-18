@@ -1,6 +1,6 @@
 reachc: error[RE0088]: These types are mismatched:
   expected: UInt
-       got: Bool
+       got: Bool from 5:14:literal
 
   <top level>
 

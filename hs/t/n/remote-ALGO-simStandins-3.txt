@@ -1,6 +1,6 @@
 reachc: error[RE0088]: These types are mismatched:
-  expected: UInt
-       got: Bool
+  expected: UInt from ./remote-ALGO-simStandins-3.rsh:21:58:application
+       got: Bool from ./remote-ALGO-simStandins-3.rsh:23:24:literal
 
   ./remote-ALGO-simStandins-3.rsh:23:20:tuple
 
