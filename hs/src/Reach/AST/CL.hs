@@ -31,7 +31,7 @@ data CLStmt
   | CLStateSet SrcLoc Int [(DLVar, DLArg)]
   | CLTokenUntrack SrcLoc DLArg
   | CLStateDestroy SrcLoc
-  | CLReturnSet SrcLoc DLVar DLArg
+  | CLMemorySet SrcLoc CLVar DLArg
   deriving (Eq)
 
 instance Pretty CLStmt where
@@ -50,14 +50,14 @@ instance Pretty CLStmt where
     CLIntervalCheck _ actual int -> "checkInterval" <> parens (render_das [pretty actual, pretty int])
     CLStateSet _ which svs -> "state" <> pretty which <+> "<-" <+> pretty svs
     CLTokenUntrack _ a -> "Token.untrack" <> parens (pretty a)
-    CLReturnSet _ v a -> "return" <+> pretty a <+> "into" <+> pretty v
+    CLMemorySet _ v a -> "mem" <+> pretty v <+> "<-" <+> pretty a
     CLStateDestroy _ -> "stateDestroy"
 
 data CLTail
   = CL_Com CLStmt CLTail
   | CL_If SrcLoc DLArg CLTail CLTail
   | CL_Switch SrcLoc DLVar (SwitchCases CLTail)
-  | CL_Jump SrcLoc CLVar [DLVar] DLVar
+  | CL_Jump SrcLoc CLVar [DLVar]
   | CL_Halt SrcLoc
   deriving (Eq)
 
@@ -66,24 +66,24 @@ instance Pretty CLTail where
     CL_Com e k -> pretty e <> hardline <> pretty k
     CL_If _ ca tt ft -> prettyIfp ca tt ft
     CL_Switch _ ov csm -> prettySwitch ov csm
-    CL_Jump _ which args ret -> pretty ret <+> "<-" <+> pretty which <> parens (render_das args)
+    CL_Jump _ which args -> "jump" <+> pretty which <> parens (render_das args)
     CL_Halt _ -> "exit()"
 
 data CLFunMode
-  = CLFM_View
-  | CLFM_Internal
+  = CLFM_Internal
   | CLFM_External
+    { cfm_view :: Bool
+    , cfm_erngv :: DLType
+    }
   deriving (Eq)
 
 instance Pretty CLFunMode where
   pretty = \case
-    CLFM_View -> "view"
     CLFM_Internal -> "internal"
-    CLFM_External -> "external"
+    CLFM_External {..} -> "external" <> (if cfm_view then " view " else "") <> "(" <> pretty cfm_erngv <> ")"
 
 data CLFun = CLFun
   { clf_dom :: [DLVarLet]
-  , clf_rng :: DLVar
   , clf_mode :: CLFunMode
   , clf_tail :: CLTail
   }
@@ -91,10 +91,11 @@ data CLFun = CLFun
 
 instance Pretty CLFun where
   pretty (CLFun {..}) =
-    pretty clf_mode <+> parens (render_das clf_dom) <+> "rets" <+> pretty clf_rng <+> "=>" <+> render_nest (pretty clf_tail)
+    pretty clf_mode <+> parens (render_das clf_dom) <+> "=>" <+> render_nest (pretty clf_tail)
 
 data CLDef
   = CLD_Sto DLType
+  | CLD_Mem DLType
   | CLD_Map
     { cldm_kt :: DLType
     , cldm_ty :: DLType
@@ -105,6 +106,7 @@ data CLDef
 instance Pretty CLDef where
   pretty = \case
     CLD_Sto t -> "sto" <+> pretty t
+    CLD_Mem t -> "mem" <+> pretty t
     CLD_Map k v -> "map" <+> pretty k <+> pretty v
     CLD_Evt t -> "evt" <+> brackets (render_das t)
 
