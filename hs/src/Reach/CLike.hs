@@ -1,4 +1,7 @@
-module Reach.CLike (clike) where
+module Reach.CLike
+  ( clike
+  , nameReturn
+  ) where
 
 import Control.Monad.Reader
 import Data.IORef
@@ -25,20 +28,22 @@ data Env = Env
 instance HasCounter Env where
   getCounter = eCounter
 
-reachpre :: CLVar
-reachpre = "_reach_"
-handlerName :: String -> Int -> CLVar
-handlerName hc which = reachpre <> (bpack $ hc <> show which)
-
+nameBase :: CLVar -> CLVar -> CLVar
+nameBase pre post = "_reach" <> pre <> "_" <> post
+nameInt :: CLVar -> Int -> CLVar
+nameInt pre i = nameBase pre (bpack $ show i)
 nameLoop :: Int -> CLVar
-nameLoop = handlerName "l"
+nameLoop = nameInt "l"
 nameMeth :: Int -> CLVar
-nameMeth = handlerName "m"
-wn :: CLVar -> CLVar
-wn x = reachpre <> x <> "_w"
-
-allocSym :: CLVar -> App CLVar
-allocSym t = (\i -> reachpre <> t <> (bpack $ show i)) <$> allocVarIdx
+nameMeth = nameInt "p"
+nameMethi :: Int -> CLVar
+nameMethi = nameInt "i"
+nameMap :: Int -> CLVar
+nameMap = nameInt "m"
+nameApi :: CLVar -> CLVar
+nameApi = nameBase "a"
+nameReturn :: CLVar -> CLVar
+nameReturn = nameBase "r"
 
 env_insert :: (Show k, Ord k) => k -> v -> M.Map k v -> M.Map k v
 env_insert k v m =
@@ -59,28 +64,19 @@ fun n d = env_insert_ eFunsR s d
   where
     s = CLSym n dom rng
     dom = map varLetType clf_dom
-    rng = varType clf_rng
+    rng = case clf_mode of
+            CLFM_Internal -> T_Null
+            CLFM_External _ t -> t
     CLFun {..} = d
 
-funw :: [CLVar] -> SrcLoc -> [DLVarLet] -> DLVar -> CLTail -> App ()
-funw ns at clf_dom clf_rng intt = do
-  ni <- case ns of
-          [] -> impossible $ "no names"
-          [ n ] -> return $ wn n
-          n : _ -> allocSym $ n
+funw :: CLVar -> [CLVar] -> SrcLoc -> [DLVarLet] -> Bool -> DLType -> CLTail -> App ()
+funw ni ns at clf_dom isView rng intt = do
   let di = CLFun { clf_mode = CLFM_Internal, clf_tail = intt, .. }
   let domvs = map varLetVar clf_dom
-  let extt = CL_Jump at ni domvs clf_rng
-  let de = CLFun { clf_mode = CLFM_External, clf_tail = extt, .. }
+  let extt = CL_Jump at ni domvs
+  let de = CLFun { clf_mode = CLFM_External isView rng, clf_tail = extt, .. }
   fun ni di
   forM_ ns $ flip fun de
-
-funwm :: [CLVar] -> SrcLoc -> [DLVarLet] -> DLVar -> CLTail -> App ()
-funwm = \case
-  [ n ] -> \_ clf_dom clf_rng clf_tail -> do
-    let clf_mode = CLFM_External
-    fun n $ CLFun {..}
-  ns -> funw ns
 
 class CLike a where
   cl :: a -> App ()
@@ -90,7 +86,7 @@ newtype DLMI = DLMI (DLMVar, DLMapInfo)
 instance CLike DLMI where
   cl (DLMI ((DLMVar i), (DLMapInfo {..}))) =
     -- XXX generate the map reference functions here?
-    def (bpack $ "m" <> show i) (CLD_Map dlmi_kt dlmi_ty)
+    def (nameMap i) (CLD_Map dlmi_kt dlmi_ty)
 
 clm :: (CLike a) => ((k, v) -> a) -> M.Map k v -> App ()
 clm f m = forM_ (map f $ M.toAscList m) cl
@@ -119,7 +115,7 @@ instance CLikeF CLViewY where
     prev <- fromMaybe (impossible "clf cvy") <$> asks f_staten
     let (DLinExportBlock _ mfargs (DLBlock at _ t r)) = cvy_body
     rng <- asks f_rng
-    let k = CL_Com (CLReturnSet at rng r) $ CL_Halt at
+    let k = CL_Com (CLMemorySet at rng r) $ CL_Halt at
     let t0 = dtReplace (CL_Com . CLDL) k t
     let fargs = fromMaybe mempty mfargs
     dom <- asks f_dom
@@ -143,6 +139,7 @@ viewReorg (DLViewsX vs vis) = vx
         fi_at = dvw_at
         (fi_dom, fi_rng) = itype2arr dvw_it
         fi_as = dvw_as
+        fi_isView = True
         fi_steps = M.map fgo vism
         fgo (cvy_svs, m) = CLViewY {..}
           where
@@ -156,7 +153,7 @@ data FEnv = FEnv
   { fCounter :: Counter
   , f_at :: SrcLoc
   , f_dom :: [DLVarLet]
-  , f_rng :: DLVar
+  , f_rng :: CLVar
   , f_statev :: DLVar
   , f_staten :: Maybe Int
   }
@@ -203,6 +200,7 @@ instance (CLikeF a) => CLikeF (BLT Int a) where
 data FunInfo a = FunInfo
   { fi_at :: SrcLoc
   , fi_dom :: [DLType]
+  , fi_isView :: Bool
   , fi_rng :: DLType
   , fi_as :: [SLPart]
   , fi_steps :: M.Map Int a
@@ -214,10 +212,10 @@ instance (CLikeF a) => CLike (FIX a) where
     let rng = fi_rng
     domvs <- forM dom $ allocVar fi_at
     let domvls = map v2vl domvs
-    rngv <- allocVar fi_at rng
+    let f_rng = nameReturn v
+    def f_rng $ CLD_Mem rng
     let f_at = fi_at
     let f_dom = domvls
-    let f_rng = rngv
     f_statev <- allocVar fi_at $ T_UInt UI_Word
     fCounter <- asks getCounter
     let f_staten = Nothing
@@ -225,7 +223,7 @@ instance (CLikeF a) => CLike (FIX a) where
     stept <- clf_ (FEnv {..}) $ bltM fi_steps
     let intt = CL_Com (CLStateRead fi_at f_statev) stept
     let ns = v : fi_as
-    funwm ns fi_at domvls rngv intt
+    funw (nameApi v) ns fi_at domvls fi_isView rng intt
 
 instance (CLikeF a) => CLike (M.Map SLPart (FunInfo a)) where
   cl = clm FIX
@@ -239,7 +237,6 @@ data ApiInfoY = ApiInfoY
 instance CLikeF ApiInfoY where
   clf (ApiInfoY {..}) = do
     let at = aiy_at
-    rng <- asks f_rng
     dom <- asks f_dom
     (argv, lets) <- aiy_wrap dom
     timev <- allocVar at $ T_UInt UI_Word
@@ -247,7 +244,7 @@ instance CLikeF ApiInfoY where
     return
       $ CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once timev) $ DLE_Arg at $ DLA_Literal $ DLL_Int at UI_Word $ 0))
       $ flip (foldr go) lets
-      $ CL_Jump at (wn $ nameMeth aiy_which) [timev, argv] rng
+      $ CL_Jump at (nameMethi aiy_which) [timev, argv]
 
 type ApiInfoX = FunInfo ApiInfoY
 type ApiInfosX = M.Map SLPart ApiInfoX
@@ -261,6 +258,7 @@ apiReorgX aim = FunInfo {..}
     fi_at = get ai_at
     imp = impossible "apiSig"
     fi_dom = flip get' id fi_dom'
+    fi_isView = False
     fi_rng = get ai_ret_ty
     fi_as = case malias of
               Nothing -> []
@@ -313,7 +311,6 @@ type TApp = ReaderT TEnv IO
 
 data TEnv = TEnv
   { tCounter :: Counter
-  , t_rngv :: DLVar
   }
 
 instance HasCounter TEnv where
@@ -346,7 +343,6 @@ instance CLikeTr CTail CLTail where
           -- XXX move this into language
           return $ foldr (CL_Com . CLTokenUntrack at) ht' toks
     CT_Jump at which svs (DLAssignment asnm) -> do
-      rngv <- asks t_rngv
       let asnl = M.toAscList asnm
       asn' <- forM asnl $ \(v, a) -> do
         v' <- freshenVar v
@@ -355,7 +351,7 @@ instance CLikeTr CTail CLTail where
       let args = svs <> asnvs'
       -- XXX move this concept backwards so that CT_Jump is just a sequence of
       -- variables
-      let kt = CL_Jump at (nameLoop which) args rngv
+      let kt = CL_Jump at (nameLoop which) args
       let go (v', a) = CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once v') (DLE_Arg at a)))
       let t = foldr go kt asn'
       return t
@@ -366,8 +362,6 @@ instance CLike CHX where
   cl (CHX (which, (C_Handler {..}))) = do
     given_timev <- allocVar ch_at $ T_UInt UI_Word
     let clf_dom = (v2vl given_timev) : ch_msg
-    t_rngv <- allocVar ch_at T_Null
-    let clf_rng = t_rngv
     tCounter <- asks getCounter
     body' <- tr_ (TEnv {..}) ch_body
     let intt =
@@ -381,12 +375,11 @@ instance CLike CHX where
           -- XXX move this back to EPP
           $ CL_Com (CLIntervalCheck ch_at ch_timev ch_int)
           $ body'
-    funw [ nameMeth which ] ch_at clf_dom clf_rng intt
+    let isView = False
+    funw (nameMethi which) [ nameMeth which ] ch_at clf_dom isView T_Null intt
   cl (CHX (which, (C_Loop {..}))) = do
     let n = nameLoop which
     let clf_dom = cl_svs <> cl_vars
-    t_rngv <- allocVar cl_at T_Null
-    let clf_rng = t_rngv
     tCounter <- asks getCounter
     clf_tail <- tr_ (TEnv {..}) cl_body
     let clf_mode = CLFM_Internal
