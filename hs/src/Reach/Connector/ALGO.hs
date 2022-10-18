@@ -33,6 +33,7 @@ import Reach.AddCounts
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.CP
+import Reach.AST.CL
 import Reach.BinaryLeafTree
 import Reach.CommandLine
 import Reach.Connector
@@ -3807,12 +3808,12 @@ connect_algo env = Connector {..}
   where
     conName = conName'
     conCons = conCons'
-    conGen moutn pl = case moutn of
+    conGen moutn clp = case moutn of
       Nothing -> withSystemTempDirectory "reachc-algo" $ \d ->
-        go (\w -> d </> T.unpack w) pl
-      Just outn -> go outn pl
-    go :: (T.Text -> String) -> CPProg -> IO ConnectorInfo
-    go outn = compile_algo env disp
+        go (\w -> d </> T.unpack w) clp
+      Just outn -> go outn clp
+    go :: (T.Text -> String) -> CLProg -> IO ConnectorInfo
+    go outn = compile_algo env disp . clp_old
       where
         disp :: String -> T.Text -> IO String
         disp which c = do

@@ -375,8 +375,7 @@ compile env (CompilerOpts {..}) = do
         -- interested to some participants, so the A/B/C programs can become
         -- smaller
         p <- showp "pl" =<< bigopt (showp, "pl") p
-        void $ showp "cl" =<< clike p
-        -- ^ XXX
+        p <- showp "cl" =<< clike p
         -- Next, we generate the backend code for each one of the connectors
         -- the user asked for. This return "connector info" structures that
         -- basically have the bytecode in them, plus stuff the runtime needs.

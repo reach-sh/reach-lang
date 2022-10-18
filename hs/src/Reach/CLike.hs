@@ -140,10 +140,10 @@ viewReorg (DLViewsX vs vis) = vx
         (fi_dom, fi_rng) = itype2arr dvw_it
         fi_as = dvw_as
         fi_isView = True
-        fi_steps = M.map fgo vism
-        fgo (cvy_svs, m) = CLViewY {..}
-          where
-            cvy_body = m M.! k
+        fi_steps = M.mapMaybe fgo vism
+        fgo (cvy_svs, m) = do
+          cvy_body <- M.lookup k m
+          return $ CLViewY {..}
 
 newtype FIX a = FIX (SLPart, FunInfo a)
 
@@ -389,7 +389,7 @@ instance CLike CHandlers where
   cl (CHandlers hm) = clm CHX hm
 
 clike :: PLProg a CPProg -> IO (PLProg a CLProg)
-clike = plp_cpp_mod $ \CPProg {..} -> do
+clike = plp_cpp_mod $ \old@(CPProg {..}) -> do
   let CPOpts {..} = cpp_opts
   let clp_at = cpp_at
   let clp_opts = CLOpts cpo_untrustworthyMaps cpo_counter
@@ -406,4 +406,5 @@ clike = plp_cpp_mod $ \CPProg {..} -> do
     cl cpp_handlers
   clp_defs <- readIORef eDefsR
   clp_funs <- readIORef eFunsR
+  let clp_old = old
   return $ CLProg {..}
