@@ -1,6 +1,6 @@
 reachc: error[RE0088]: These types are mismatched:
-  expected: UInt
-       got: Object({"i": Object({"i": UInt, "scale": UInt}), "sign": Bool})
+  expected: UInt from definition
+       got: Object({"i": Object({"i": UInt, "scale": UInt}), "sign": Bool}) from reach standard library:270:4:obj
 
   ./gh_1328.rsh:6:13:application
 

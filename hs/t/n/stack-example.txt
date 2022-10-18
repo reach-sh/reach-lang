@@ -1,5 +1,5 @@
 reachc: error[RE0088]: These types are mismatched:
-  expected: UInt
+  expected: UInt from definition
        got: Bytes(4) from ./stack-example.rsh:8:25:string
 
   ./stack-example.rsh:7:25:application
