@@ -978,17 +978,19 @@ fuseStmt fuseEnv mk t =
       -- Now, look in the env to see if there are any
       -- subsequent switches to fuse into this stmt.
       k' <- fuseSwitch mk at dv scs k
+      fusionCasesR <- asks eFusionCases
       case isCom k' of
         Just (DL_LocalSwitch _ _ scs1, k1) | M.member dv fuseEnv -> do
           -- If there are previous switches looking to fuse,
           -- reset the fusionCase env to how it was
           -- before we processed this branch, add the info
           -- for this switch to the env, and drop this stmt
-            fusionCasesR <- asks eFusionCases
             liftIO $ writeIORef fusionCasesR $ M.insert dv scs1 fuseEnv
             return $ mk (DL_Nop at) k1
         -- If there are no previous switches looking to fuse, keep this stmt and return
-        _ -> return k'
+        _ -> do
+          liftIO $ writeIORef fusionCasesR fuseEnv
+          return k'
     _ -> return t
 
 -- Optimize is generally top-down, but this is locally bottom-up. We float/fuse after optimizing the tail
