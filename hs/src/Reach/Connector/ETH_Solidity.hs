@@ -398,6 +398,7 @@ instance DepthOf DLLargeArg where
     DLLA_Data _ _ x -> depthOf x
     DLLA_Struct kvs -> depthOf $ map snd kvs
     DLLA_Bytes {} -> return 1
+    DLLA_BytesDyn {} -> return 1
     DLLA_StringDyn {} -> return 1
 
 instance DepthOf DLTokenNew where
@@ -681,7 +682,12 @@ solLargeArg' usesStorage dv la =
         go (k, a) = do
           let name = dv <> "." <> pretty k
           asnArg usesStorage name a
-    DLLA_Bytes s -> do
+    DLLA_Bytes s -> doBytes s
+    DLLA_BytesDyn s -> doBytes s
+    DLLA_StringDyn s ->
+      return $ one "" $ solString $ T.unpack s
+  where
+    doBytes s = do
       let g3 :: Char -> String -> String
           g3 a b = (printf "%02x" a) <> b
       let g2 x = "hex" <> solString (B.foldr g3 "" x)
@@ -700,9 +706,6 @@ solLargeArg' usesStorage dv la =
           let cs = chunks bcs s
           let go i x = one (".elem" <> pretty i) (g2 x)
           return $ c $ zipWith go ([0 ..] :: [Int]) cs
-    DLLA_StringDyn s ->
-      return $ one "" $ solString $ T.unpack s
-  where
     one :: Doc -> Doc -> Doc
     one f v = dv <> f <+> "=" <+> v <> semi
     c = vsep

@@ -1084,6 +1084,8 @@ smt_la at_de dla = do
     DLLA_Struct kvs -> cons $ map snd kvs
     DLLA_Bytes bs -> do
       return $ smtApply "bytes" [Atom (show $ crc32 bs)]
+    DLLA_BytesDyn bs -> do
+      return $ smtApply "bytesDyn" [Atom (show $ crc32 bs)]
     DLLA_StringDyn st -> do
       return $ smtApply "stringDyn" [Atom (show $ crc32 $ bpack $ T.unpack st)]
 

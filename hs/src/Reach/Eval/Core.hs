@@ -702,6 +702,7 @@ dlvToDL = \case
   DLV_Struct _ menv -> DLAE_Struct <$> all_just (map recAssoc menv)
   DLV_Data _ t s mdv -> DLAE_Data t s <$> dlvToDL mdv
   DLV_Bytes _ b -> return $ DLAE_Bytes b
+  DLV_BytesDyn _ b -> return $ DLAE_BytesDyn b
   DLV_StringDyn _ s -> return $ DLAE_StringDyn s
   _ -> Nothing
   where
@@ -948,6 +949,8 @@ compileArgExpr mt = \case
     mk $ DLLA_Struct kvs'
   DLAE_Bytes b -> do
     mk $ DLLA_Bytes b
+  DLAE_BytesDyn b -> do
+    mk $ DLLA_BytesDyn b
   DLAE_StringDyn t -> do
     mk $ DLLA_StringDyn t
   where

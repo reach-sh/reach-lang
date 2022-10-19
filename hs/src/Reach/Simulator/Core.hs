@@ -316,6 +316,7 @@ data DLVal
   | V_UInt Integer
   | V_Token Int
   | V_Bytes String -- XXX BS.ByteString
+  | V_BytesDyn String -- XXX BS.ByteString
   | V_StringDyn T.Text
   | V_Digest DLVal
   | V_Address Account
@@ -521,6 +522,7 @@ instance Interp DLLargeArg where
       evd_args <- mapM (\arg -> interp arg) $ M.fromList assoc_slvars_dlargs
       return $ V_Struct $ M.toAscList evd_args
     DLLA_Bytes bs -> return $ V_Bytes $ bunpack bs
+    DLLA_BytesDyn bs -> return $ V_Bytes $ bunpack bs
     DLLA_StringDyn t -> return $ V_StringDyn t
 
 instance Interp DLExpr where

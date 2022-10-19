@@ -263,6 +263,7 @@ jsLargeArg = \case
   DLLA_Struct kvs ->
     jsLargeArg $ DLLA_Obj $ M.fromList kvs
   DLLA_Bytes b -> return $ jsBytes b
+  DLLA_BytesDyn b -> return $ jsBytes b
   DLLA_StringDyn t -> return $ jsString $ T.unpack t
 
 jsBytes :: B.ByteString -> Doc
