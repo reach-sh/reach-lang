@@ -862,7 +862,7 @@ applyType ct v = \case
     se <- evalObjEnv oe
     forWithKeyM_ se $ \k kv -> do
       rec (stm M.! k) (sss_val kv)
-  ST_Data stm ->
+  ST_Data _ stm ->
     -- This is like explodeDataLike
     case v of
       SLV_Data _ _ vn vv -> do
@@ -1506,10 +1506,10 @@ evalAsEnvM sv@(lvl, obj) = case obj of
     return $ Just $
       M.fromList
         [("concat", retV $ public $ SLV_Prim $ SLPrim_op S_STRINGDYN_CONCAT)]
-  SLV_Type (ST_Data varm) ->
+  SLV_Type (ST_Data mAt varm) ->
     return $ Just $
       flip M.mapWithKey varm $ \k t ->
-        retV $ public $ SLV_Prim $ SLPrim_Data_variant varm k t
+        retV $ public $ SLV_Prim $ SLPrim_Data_variant mAt varm k t
   SLV_Prim SLPrim_Map ->
     return $ Just $
       M.fromList $
@@ -2726,7 +2726,7 @@ warnInteractType = \case
     at <- withAt id
     liftIO $ emitWarning (Just at) W_ExternalObject
   ST_Tuple ts -> mapM_ r ts
-  ST_Data e -> mapM_ r e
+  ST_Data _ e -> mapM_ r e
   ST_Struct a -> mapM_ (r . snd) a
   ST_Fun (SLTypeFun {..}) -> mapM_ r (stf_rng : stf_dom)
   ST_Array t _ -> r t
@@ -3394,6 +3394,7 @@ evalPrim p sargs =
         _ -> illegal_args
     SLPrim_part_setted {} -> expect_t rator $ Err_Eval_NotApplicable
     SLPrim_Data -> do
+      at <- withAt id
       argm <- mustBeObject =<< one_arg
       varm <-
         mapWithKeyM
@@ -3403,14 +3404,14 @@ evalPrim p sargs =
           argm
       when (M.null varm) $
         expect_ $ Err_Eval_EmptyData
-      retV $ (lvl, SLV_Type $ ST_Data varm)
-    SLPrim_Data_variant t vn vt -> do
+      retV $ (lvl, SLV_Type $ ST_Data (Just at) varm)
+    SLPrim_Data_variant mAt t vn vt -> do
       at <- withAt id
       dt <- mapM st2dte t
       vv <- case (vt, args) of
         (ST_Null, []) -> return $ SLV_Null at "variant"
         _ -> one_arg
-      void $ typeCheck_s CT_Assert Nothing vt vv
+      void $ typeCheck_s CT_Assert mAt vt vv
       retV $ (lvl, SLV_Data at dt vn vv)
     SLPrim_data_match -> do
       -- Expect two arguments to function

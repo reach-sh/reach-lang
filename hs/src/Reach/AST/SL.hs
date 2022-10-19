@@ -35,7 +35,7 @@ data SLType
   | ST_Array SLType Integer
   | ST_Tuple [SLType]
   | ST_Object (M.Map SLVar SLType)
-  | ST_Data (M.Map SLVar SLType)
+  | ST_Data MSrcLoc (M.Map SLVar SLType)
   | ST_Struct [(SLVar, SLType)]
   | ST_Fun SLTypeFun
   | ST_UDFun SLType
@@ -69,7 +69,7 @@ instance Show SLType where
     ST_Array ty i -> "Array(" <> show ty <> ", " <> show i <> ")"
     ST_Tuple tys -> "Tuple(" <> showTys tys <> ")"
     ST_Object tyMap -> "Object({" <> showTyMap tyMap <> "})"
-    ST_Data tyMap -> "Data({" <> showTyMap tyMap <> "})"
+    ST_Data _ tyMap -> "Data({" <> showTyMap tyMap <> "})"
     ST_Struct tys -> "Struct([" <> showTyList tys <> "])"
     ST_Fun (SLTypeFun tys ty Nothing Nothing Nothing Nothing) ->
       "Fun([" <> showTys tys <> "], " <> show ty <> ")"
@@ -98,7 +98,7 @@ st2dt = \case
   ST_Array ty i -> T_Array <$> st2dt ty <*> pure i
   ST_Tuple tys -> T_Tuple <$> traverse st2dt tys
   ST_Object tyMap -> T_Object <$> traverse st2dt tyMap
-  ST_Data tyMap -> T_Data <$> traverse st2dt tyMap
+  ST_Data _ tyMap -> T_Data <$> traverse st2dt tyMap
   ST_Struct tys -> T_Struct <$> traverse (\(k, t) -> (,) k <$> st2dt t) tys
   ST_Fun {} -> Nothing
   ST_UDFun {} -> Nothing
@@ -120,7 +120,7 @@ dt2st = \case
   T_Array ty i -> ST_Array (dt2st ty) i
   T_Tuple tys -> ST_Tuple $ map dt2st tys
   T_Object tyMap -> ST_Object $ M.map dt2st tyMap
-  T_Data tyMap -> ST_Data $ M.map dt2st tyMap
+  T_Data tyMap -> ST_Data Nothing $ M.map dt2st tyMap
   T_Struct tys -> ST_Struct $ map (\(k, t) -> (k, dt2st t)) tys
 
 st2it :: SLType -> Maybe IType
@@ -340,7 +340,7 @@ instance Equiv SLType where
     ((ST_Array s1 _len1), (ST_Array s2 _len2)) -> equiv s1 s2
     ((ST_Tuple xs), (ST_Tuple ys)) -> equiv xs ys
     ((ST_Object m), (ST_Object m2)) -> equiv m m2
-    ((ST_Data m), (ST_Data m2)) -> equiv m m2
+    ((ST_Data _ m), (ST_Data _ m2)) -> equiv m m2
     ((ST_Struct s), (ST_Struct s2)) -> equiv s s2
     ((ST_Fun f), (ST_Fun f2)) -> equiv f f2
     ((ST_UDFun f), (ST_UDFun f2)) -> equiv f f2
@@ -741,7 +741,7 @@ data SLPrimitive
   | SLPrim_Refine
   | SLPrim_Bytes
   | SLPrim_Data
-  | SLPrim_Data_variant (M.Map SLVar SLType) SLVar SLType
+  | SLPrim_Data_variant MSrcLoc (M.Map SLVar SLType) SLVar SLType
   | SLPrim_data_match
   | SLPrim_Array
   | SLPrim_Array_iota
