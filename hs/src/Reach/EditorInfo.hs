@@ -99,7 +99,7 @@ completionKind v =
         SLPrim_Refine -> Just CK_TypeParameter
         SLPrim_Bytes -> Just CK_TypeParameter
         SLPrim_Data -> Just CK_TypeParameter
-        SLPrim_Data_variant _ _ _ -> Nothing
+        SLPrim_Data_variant _ _ _ _ -> Just CK_Function
         SLPrim_data_match -> Just CK_Method
         SLPrim_Array -> Just CK_TypeParameter
         SLPrim_Array_iota -> Just CK_Method
