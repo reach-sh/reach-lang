@@ -5192,27 +5192,34 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
   let compilePayAmt_ e = compilePayAmt TT_Pay =<< ensure_public =<< evalExpr e
   let tc_send1 who = do
         let st_lpure = st {st_mode = SLM_LocalPure}
-        (only_lifts, res) <-
+        (only_lifts, (res, res_ats)) <-
           locWho who $
             locSt st_lpure $
               captureLifts $ do
                 evalChecks
                 let repeat_dv = M.lookup who pdvs
                 ds_isClass <- is_class who
-                ds_msg <- mapM (\v -> snd <$> (compileTypeOf =<< ensure_public =<< evalId "publish msg" v)) msg
+                --ds_msg <- mapM (\v -> snd <$> (compileTypeOf =<< ensure_public =<< evalId "publish msg" v)) msg
+                (ds_msg_at, ds_msg) <- unzip <$> mapM (\v -> do
+                  sv <- evalId "publish msg" v
+                  va <- snd <$> (compileTypeOf =<< ensure_public sv)
+                  return (srclocOf (snd sv), va)) msg
                 ds_pay <- compilePayAmt_ amt_e
                 ds_when <- ctepee T_Bool when_e
-                return (repeat_dv, DLSend {..})
+                return ((repeat_dv, DLSend {..}), ds_msg_at)
         saveLift $ DLS_Only at who (only_lifts)
-        return $ res
+        return $ (res, res_ats)
   tc_send'0 <- sequence $ M.fromSet tc_send1 whos
   let tc_send' = tc_send'0
-  let tc_send = fmap snd tc_send'
+  let tc_send = fmap (snd . fst) tc_send'
+  let msg_ats_map = fmap snd tc_send'
   let msg_dass = fmap ds_msg tc_send
   let msg_dass_t = transpose $ M.elems $ msg_dass
-  let get_msg_t = typeEqs . map (\x -> (Nothing, argTypeOf x))
-  msg_ts <- mapM get_msg_t msg_dass_t
-  let mrepeat_dvs = all_just $ M.elems $ M.map fst tc_send'
+  let msg_ats = transpose $ M.elems $ msg_ats_map
+  let msg_dass_t' = zipWith zip msg_dass_t msg_ats
+  let get_msg_t = typeEqs . map (\(x, x_at) -> (Just x_at, argTypeOf x))
+  msg_ts <- mapM get_msg_t msg_dass_t'
+  let mrepeat_dvs = all_just $ M.elems $ M.map (fst . fst) tc_send'
   -- Handle receiving / consensus
   dr_from_ <- ctxt_mkvar $ DLVar at Nothing T_Address
   let recv_imode = AllowShadowingRace whos (S.fromList msg)
