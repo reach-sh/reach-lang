@@ -4295,7 +4295,7 @@ assertRefinedArgs :: ClaimType -> [SLSVal] -> SrcLoc -> SLTypeFun -> App (SLVal,
 assertRefinedArgs ct sargs iat (SLTypeFun {..}) = do
   let argvs = map snd sargs
   arges <-
-    mapM (uncurry $ typeCheck_s ct Nothing)
+    mapM (uncurry $ typeCheck_s ct (Just iat))
       =<< zipEq (Err_Apply_ArgCount iat) stf_dom argvs
   at <- withAt id
   let dom_tupv = SLV_Tuple at argvs
