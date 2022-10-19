@@ -367,6 +367,14 @@ This function's API is considered unstable.
 On Ethereum, `{!js} provider` is an instance of `{!js} ethers.provider`.
 See: [https://docs.ethers.io/v5/api/providers/provider/](https://docs.ethers.io/v5/api/providers/provider/)
 
+Example:
+
+```js
+load: /examples/ganache/index.mjs
+md5: cca336d85844697eb44884226f9d2ce0
+range: 10-13
+```
+
 On Algorand, `{!js} provider` is an object:
 ```js
 interface BasicProvider {
@@ -386,14 +394,6 @@ interface Provider extends BasicProvider {
 The `{!js} algodClient` and `{!js} indexer` values are as specified by the [Algorand JS SDK](https://algorand.github.io/js-algorand-sdk/).
 The `{!js} algod_bc` and `{!js} indexer_bc` are objects that represent HTTP connections to those values.
 The `{!js} signAndPostTxns` function obeys [ARC-0008](https://github.com/reach-sh/ARCs/blob/reach-wallet/ARCs/arc-0008.md).
-
-Example:
-
-```js
-load: /examples/ganache/index.mjs
-md5: cca336d85844697eb44884226f9d2ce0
-range: 10-13
-```
 
 ---
 @{ref("js", "getProvider")}
@@ -836,8 +836,8 @@ On networks that do not, this will always return zero.
 stdlib.transfer(from: Account, to: Account | Address, amount, token?: Token, opts?: TransferOpts) => Promise<void>
 ```
 
-Performs a transfer of `{!js} amount` from `{!js} from` to `{!js} to`,
-which are accounts, such as those returned by `{!js} connectAccount`.
+Performs a transfer of `{!js} amount` from `{!js} from`, which is an account, such as those returned by `{!js} connectAccount`;
+to `{!js} to`, which can be an account or an address. 
 If `{!js} token` is not provided, then the transfer is of network tokens;
 otherwise, it is of the designated non-network token.
 The returned `{!js} Promise` will only be resolved after the transfer completes.
