@@ -90,6 +90,7 @@ instance FreeVars DLLargeArg where
     DLLA_Data _ _ a -> freeVars a
     DLLA_Struct m -> freeVars $ map snd m
     DLLA_Bytes {} -> mempty
+    DLLA_BytesDyn {} -> mempty
     DLLA_StringDyn {} -> mempty
 
 instance FreeVars DLPayAmt where

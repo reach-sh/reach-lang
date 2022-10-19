@@ -405,6 +405,7 @@ data DLLargeArg
   | DLLA_Data (M.Map SLVar DLType) String DLArg
   | DLLA_Struct [(SLVar, DLArg)]
   | DLLA_Bytes B.ByteString
+  | DLLA_BytesDyn B.ByteString
   | DLLA_StringDyn T.Text
   deriving (Eq, Ord, Generic, Show)
 
@@ -425,6 +426,7 @@ instance CanDupe DLLargeArg where
     DLLA_Data _ _ x -> canDupe x
     DLLA_Struct m -> canDupe $ map snd m
     DLLA_Bytes _ -> False
+    DLLA_BytesDyn _ -> False
     DLLA_StringDyn _ -> False
 
 render_dasM :: PrettySubst a => [a] -> PrettySubstApp Doc
@@ -464,6 +466,7 @@ instance PrettySubst DLLargeArg where
       kvs' <- render_dasM kvs
       return $ "struct" <> brackets kvs'
     DLLA_Bytes bs -> return $ pretty bs
+    DLLA_BytesDyn bs -> return $ pretty bs
     DLLA_StringDyn t -> return $ dquotes (pretty t)
 
 mdaToMaybeLA :: DLType -> Maybe DLArg -> DLLargeArg
@@ -481,6 +484,7 @@ data DLArgExpr
   | DLAE_Data (M.Map SLVar DLType) String DLArgExpr
   | DLAE_Struct [(SLVar, DLArgExpr)]
   | DLAE_Bytes B.ByteString
+  | DLAE_BytesDyn B.ByteString
   | DLAE_StringDyn T.Text
   deriving (Show)
 
@@ -493,6 +497,7 @@ argExprToArgs = \case
   DLAE_Data _ _ ae -> one ae
   DLAE_Struct aes -> many $ map snd aes
   DLAE_Bytes _ -> []
+  DLAE_BytesDyn _ -> []
   DLAE_StringDyn _ -> []
   where
     one = argExprToArgs
@@ -506,6 +511,7 @@ largeArgToArgExpr = \case
   DLLA_Data m v a -> DLAE_Data m v $ DLAE_Arg a
   DLLA_Struct kvs -> DLAE_Struct $ map (\(k, v) -> (,) k $ DLAE_Arg v) kvs
   DLLA_Bytes b -> DLAE_Bytes b
+  DLLA_BytesDyn b -> DLAE_BytesDyn b
   DLLA_StringDyn t -> DLAE_StringDyn t
 
 largeArgTypeOf :: DLLargeArg -> DLType
@@ -520,6 +526,7 @@ argExprTypeOf menv = \case
   DLAE_Data t _ _ -> T_Data t
   DLAE_Struct kvs -> T_Struct $ map (second rec) kvs
   DLAE_Bytes bs -> T_Bytes $ fromIntegral $ B.length bs
+  DLAE_BytesDyn _ -> T_BytesDyn
   DLAE_StringDyn _ -> T_StringDyn
   where
     rec = argExprTypeOf menv

@@ -1733,6 +1733,7 @@ cla = \case
   DLLA_Struct kvs ->
     cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd kvs
   DLLA_Bytes bs -> cbs bs
+  DLLA_BytesDyn bs -> cbs bs
   DLLA_StringDyn t -> cbs $ bpack $ T.unpack t
 
 cbs :: B.ByteString -> App ()
