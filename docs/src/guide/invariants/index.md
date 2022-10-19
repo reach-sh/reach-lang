@@ -202,7 +202,7 @@ Without proper invariants the application cannot be formally verified and will f
 Let's look at the RSVP application. 
 This DApp is more complicated than the @{seclink("tut")} tutorial, but the same principles apply. 
 We'll write invariants for the conditions of the `{!rsh} while` loop and the balance. 
-The one difference in this application is that one of the conditions, `done`, will be verified with a `check`, which is a dynamic assertion, rather than an invariant. 
+The one difference in this application is that one of the conditions, `done`, will be verified with a `{!rsh} check`, which is a dynamic assertion, rather than an invariant. 
 
 ``` rsh
 load: /examples/rsvp-6-vevt/index.rsh
