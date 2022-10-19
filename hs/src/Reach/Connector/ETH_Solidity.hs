@@ -26,7 +26,6 @@ import qualified Data.Text.Lazy.IO as LTIO
 import Generics.Deriving (Generic)
 import Reach.AST.Base
 import Reach.AST.DLBase
-import Reach.AST.CP
 import Reach.AST.CL
 import Reach.CommandLine
 import Reach.Connector
@@ -55,6 +54,12 @@ maxDepth = 13
 apiMaxArgs :: Int
 apiMaxArgs = 12
 
+reachEthBackendVersion :: Int
+reachEthBackendVersion = 8
+
+contractId :: String
+contractId = "ReachContract"
+
 --- Solidity errors
 
 data EthError
@@ -73,14 +78,6 @@ instance Show EthError where
       show apiMaxArgs <> " arguments, but " <> name <> " uses " <> show num <> "."
 
 --- Solidity helpers
-
-conName' :: T.Text
-conName' = "ETH"
-
-conCons' :: DLConstant -> DLLiteral
-conCons' = \case
-  DLC_UInt_max  -> DLL_Int sb UI_Word $ 2 ^ (256 :: Integer) - 1
-  DLC_Token_zero -> DLL_TokenZero
 
 solString :: String -> Doc
 solString s = squotes $ pretty s
@@ -171,7 +168,6 @@ solStruct name = \case
 solEnum :: Doc -> [Doc] -> Doc
 solEnum name opts = "enum" <+> name <+> braces (hcat $ intersperse (comma <> space) opts)
 
---- Runtime helpers
 reachPre :: Doc
 reachPre = "_reach_"
 
@@ -263,7 +259,7 @@ data SolCtxt = SolCtxt
   , ctxt_typed :: IORef (M.Map Int Doc)
   , ctxt_typef :: IORef (M.Map Int Doc)
   , ctxt_typeidx :: Counter
-  , ctxt_cpo :: CPOpts
+  , ctxt_varidx :: Counter
   , ctxt_intidx :: Counter
   , ctxt_ints :: IORef (M.Map Int Doc)
   , ctxt_outputs :: IORef (M.Map String Doc)
@@ -274,7 +270,7 @@ data SolCtxt = SolCtxt
   }
 
 instance HasCounter SolCtxt where
-  getCounter = getCounter . ctxt_cpo
+  getCounter = ctxt_varidx
 
 readCtxtIO :: (SolCtxt -> IORef a) -> App a
 readCtxtIO f = (liftIO . readIORef) =<< (f <$> ask)
@@ -285,12 +281,6 @@ modifyCtxtIO f m = (liftIO . (flip modifyIORef m)) =<< (f <$> ask)
 type App = ReaderT SolCtxt IO
 
 type AppT a = a -> App Doc
-
-instance Semigroup a => Semigroup (App a) where
-  mx <> my = (<>) <$> mx <*> my
-
-instance Monoid a => Monoid (App a) where
-  mempty = return mempty
 
 addInterface :: Doc -> [Doc] -> Doc -> App Doc
 addInterface f dom rng = do
@@ -1310,12 +1300,12 @@ solPLTail = \case
   DT_Return _ -> mempty
   DT_Com m k -> solCom_ solPLTail m k
 
-solCTail :: AppT CTail
-solCTail = \case
-  CT_Com m k -> solCom_ solCTail m k
-  CT_If _ ca t f -> solIf <$> solArg ca <*> solCTail t <*> solCTail f
-  CT_Switch at ov csm -> solSwitch solCTail at ov csm
-  CT_Jump _ which svs (DLAssignment asnm) -> do
+solCLTail :: AppT CLTail
+solCLTail = \case
+  CL_Com m k -> solCom_ solCTail m k
+  CL_If _ ca t f -> solIf <$> solArg ca <*> solCTail t <*> solCTail f
+  CL_Switch at ov csm -> solSwitch solCTail at ov csm
+  CL_Jump _ which svs (DLAssignment asnm) -> do
     let go_svs v = solSet ("la.svs." <> solRawVar v) <$> solVar v
     svs' <- mapM go_svs svs
     let go_asn (v, a) = solSet ("la.msg." <> solRawVar v) <$> solArg a
@@ -1327,9 +1317,9 @@ solCTail = \case
           <> svs'
           <> asn'
           <> [solApply (solLoop_fun which) ["la"] <> semi]
-  CT_From _ which (FI_Continue svs) -> do
+  CL_From _ which (FI_Continue svs) -> do
     vsep <$> solStateSet which svs
-  CT_From _ _ (FI_Halt _toks) -> do
+  CL_From _ _ (FI_Halt _toks) -> do
     return $
       vsep $
         [ solSet "current_step" "0x0"
@@ -1767,11 +1757,8 @@ baseTypes =
     , (T_Token, "address")
     ] <> map (\ sz -> (T_Bytes sz, "bytes" <> pretty sz)) [0..byteChunkSize]
 
-contractId :: String
-contractId = "ReachContract"
-
-solCPProg :: CPProg -> IO (ConnectorObject, Doc)
-solCPProg (CPProg {..}) = do
+solProg :: CLProg -> IO (ConnectorObject, Doc)
+solProg (CLProg {..}) = do
   let DLViewsX vs vi = cpp_views
   let ai = cpp_apis
   let hs = cpp_handlers
@@ -1929,9 +1916,6 @@ solCPProg (CPProg {..}) = do
             ]
     return $ (cinfo, vsep $ [preamble, solVersion, solStdLib, typedsp, intsp, ctcp])
 
-reachEthBackendVersion :: Int
-reachEthBackendVersion = 8
-
 compile_sol :: ConnectorObject -> FilePath -> IO ConnectorInfo
 compile_sol cinfo solf = compile_sol_ solf contractId >>= \case
   Left x -> impossible x
@@ -1947,6 +1931,8 @@ compile_sol cinfo solf = compile_sol_ solf contractId >>= \case
               , ("BytecodeLen", Aeson.Number $ (fromIntegral $ T.length csrCode) / 2)
               , ("version", Aeson.Number $ fromIntegral reachEthBackendVersion)
               ]
+
+-- Connector
 
 ccBin :: BS.ByteString -> String
 ccBin = B.unpack
@@ -2032,6 +2018,13 @@ solReservedNames = S.fromList $
   , "virtual"
   ]
 
+conName' :: T.Text
+conName' = "ETH"
+
+conCons' :: DLConstant -> DLLiteral
+conCons' = \case
+  DLC_UInt_max  -> DLL_Int sb UI_Word $ 2 ^ (256 :: Integer) - 1
+  DLC_Token_zero -> DLL_TokenZero
 
 connect_eth :: CompilerToolEnv -> Connector
 connect_eth _ = Connector {..}
@@ -2046,7 +2039,7 @@ connect_eth _ = Connector {..}
       where
         go :: FilePath -> IO ConnectorInfo
         go solf = do
-          (cinfo, sol) <- solCPProg $ clp_old cl
+          (cinfo, sol) <- solProg cl
           unless dontWriteSol $ do
             LTIO.writeFile solf $ render sol
           compile_sol cinfo solf
