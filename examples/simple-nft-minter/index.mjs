@@ -43,7 +43,7 @@ const opts = {
     note: Uint8Array[1],
 };
 
-const mintNFT = async (minter, name, symbol, opts = {supply, url, c: null, f: null, defaultFrozen: false, reserve: null, note}) => {
+const mintNFT = async (minter, name, symbol, opts = {supply, url, c, f, defaultFrozen, reserve, note}) => {
     console.log(`Creating the NFT`);
     const theNFT = await stdlib.launchToken(minter, name, symbol, opts);
     console.log(theNFT);
