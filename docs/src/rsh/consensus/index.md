@@ -55,8 +55,8 @@ md5: 78e1541e01ce0791b4b41d2bcd57aaa2
 In this program, the Reach backend calls the frontend `{!rsh} interact` function, `{!rsh} checkView` with the expected value of the views at each point in the program.
 The frontend compares that value with what is returned by
 ```js
-[ await ctc.getViews().Main.last(),
-  await ctc.getViews().Main.i() ]
+[ await ctc.views().Main.last(),
+  await ctc.views().Main.i() ]
 ```
 
 When a view is bound to a function, it may inspect any values in its scope, including linear state.
