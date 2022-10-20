@@ -5199,7 +5199,6 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
                 evalChecks
                 let repeat_dv = M.lookup who pdvs
                 ds_isClass <- is_class who
-                --ds_msg <- mapM (\v -> snd <$> (compileTypeOf =<< ensure_public =<< evalId "publish msg" v)) msg
                 (ds_msg_at, ds_msg) <- unzip <$> mapM (\v -> do
                   sv <- evalId "publish msg" v
                   va <- snd <$> (compileTypeOf =<< ensure_public sv)
