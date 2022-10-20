@@ -6,10 +6,13 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 ## 0.1.12: 2022/09 - present
 
 @{verRC("0.1.12")}
-+ 2022/10/18: Added `{!js} acc.getDebugLabel`.
-+ 2022/10/19: Added `{!js} ctc.appOptIn` and `{!js} account.appOptedIn`
+
+@{rcHead("0.1.12-rc.6")}
 
 @{rcHead("0.1.12-rc.5")}
+
++ 2022/10/19: Added `{!js} ctc.appOptIn` and `{!js} account.appOptedIn`
++ 2022/10/18: Added `{!js} acc.getDebugLabel`.
 
 @{rcHead("0.1.12-rc.4")}
 
