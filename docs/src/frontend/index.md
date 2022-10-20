@@ -836,8 +836,7 @@ On networks that do not, this will always return zero.
 stdlib.transfer(from: Account, to: Account | Address, amount, token?: Token, opts?: TransferOpts) => Promise<void>
 ```
 
-Performs a transfer of `{!js} amount` from `{!js} from`, which is an account, such as those returned by `{!js} connectAccount`;
-to `{!js} to`, which can be an account or an address. 
+Performs a transfer of `{!js} amount` from `{!js} from`, which is an account, to `{!js} to`, which is either an account or an address. 
 If `{!js} token` is not provided, then the transfer is of network tokens;
 otherwise, it is of the designated non-network token.
 The returned `{!js} Promise` will only be resolved after the transfer completes.
