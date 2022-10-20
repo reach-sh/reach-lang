@@ -7,7 +7,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verRC("0.1.12")}
 
-@{rcHead("0.1.12-rc.6")}
+@{rcHead("0.1.12-rc.7")}
 
 @{rcHead("0.1.12-rc.5")}
 
