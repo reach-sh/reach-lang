@@ -12,40 +12,10 @@
     "rank": 60
   },
   {
-    "here": "changelog",
-    "title": "Changelog",
+    "here": "index",
+    "title": "Index",
     "isBook": false,
-    "rank": 120
-  },
-  {
-    "here": "model",
-    "title": "Model",
-    "isBook": false,
-    "rank": 30
-  },
-  {
-    "here": "quickstart",
-    "title": "Quickstart",
-    "isBook": false,
-    "rank": 10
-  },
-  {
-    "here": "build",
-    "title": "Reach is for Builders",
-    "isBook": false,
-    "rank": 5
-  },
-  {
-    "here": "networks",
-    "title": "Networks",
-    "isBook": false,
-    "rank": 80
-  },
-  {
-    "here": "frontend",
-    "title": "Frontends",
-    "isBook": false,
-    "rank": 70
+    "rank": 140
   },
   {
     "here": "rsh",
@@ -54,16 +24,16 @@
     "rank": 50
   },
   {
+    "here": "build",
+    "title": "Reach is for Builders",
+    "isBook": false,
+    "rank": 5
+  },
+  {
     "here": "tool",
     "title": "Tool",
     "isBook": false,
     "rank": 40
-  },
-  {
-    "here": "index",
-    "title": "Index",
-    "isBook": false,
-    "rank": 140
   },
   {
     "here": "search",
@@ -72,10 +42,10 @@
     "rank": 130
   },
   {
-    "here": "tut",
-    "title": "Tutorials",
+    "here": "frontend",
+    "title": "Frontends",
     "isBook": false,
-    "rank": 20
+    "rank": 70
   },
   {
     "here": "trouble",
@@ -84,16 +54,34 @@
     "rank": 115
   },
   {
-    "here": "rpc",
-    "title": "RPC Server",
-    "isBook": true,
-    "rank": 90
+    "here": "model",
+    "title": "Model",
+    "isBook": false,
+    "rank": 30
   },
   {
-    "here": "workshop",
-    "title": "Workshops",
-    "isBook": true,
-    "rank": 100
+    "here": "networks",
+    "title": "Networks",
+    "isBook": false,
+    "rank": 80
+  },
+  {
+    "here": "tut",
+    "title": "Tutorials",
+    "isBook": false,
+    "rank": 20
+  },
+  {
+    "here": "quickstart",
+    "title": "Quickstart",
+    "isBook": false,
+    "rank": 10
+  },
+  {
+    "here": "changelog",
+    "title": "Changelog",
+    "isBook": false,
+    "rank": 120
   },
   {
     "here": "guide",
@@ -102,16 +90,16 @@
     "rank": 110
   },
   {
-    "here": "rsh/compute",
-    "title": "Computations",
-    "isBook": false,
-    "rank": 60
+    "here": "workshop",
+    "title": "Workshops",
+    "isBook": true,
+    "rank": 100
   },
   {
-    "here": "rsh/consensus",
-    "title": "Consensus Steps",
-    "isBook": false,
-    "rank": 50
+    "here": "rpc",
+    "title": "RPC Server",
+    "isBook": true,
+    "rank": 90
   },
   {
     "here": "rsh/appinit",
@@ -126,14 +114,50 @@
     "rank": 40
   },
   {
+    "here": "rsh/compute",
+    "title": "Computations",
+    "isBook": false,
+    "rank": 60
+  },
+  {
     "here": "rsh/errors",
     "title": "Error Codes",
     "isBook": false,
     "rank": 70
   },
   {
+    "here": "rsh/module",
+    "title": "Modules",
+    "isBook": false,
+    "rank": 10
+  },
+  {
     "here": "rsh/step",
     "title": "Steps",
+    "isBook": false,
+    "rank": 30
+  },
+  {
+    "here": "rsh/consensus",
+    "title": "Consensus Steps",
+    "isBook": false,
+    "rank": 50
+  },
+  {
+    "here": "tut/rps",
+    "title": "Rock, Paper, Scissors!",
+    "isBook": false,
+    "rank": 20
+  },
+  {
+    "here": "tut/overview",
+    "title": "Overview",
+    "isBook": false,
+    "rank": 10
+  },
+  {
+    "here": "tut/rsvp",
+    "title": "Répondez S'il Vous Plaît",
     "isBook": false,
     "rank": 30
   },
@@ -144,64 +168,166 @@
     "rank": 18
   },
   {
-    "here": "rsh/module",
-    "title": "Modules",
+    "here": "guide/determ",
+    "title": "Determinism, simultaneity, and choice in decentralized applications",
     "isBook": false,
-    "rank": 10
+    "rank": 110
   },
   {
-    "here": "tut/overview",
-    "title": "Overview",
+    "here": "guide/ctransfers",
+    "title": "What do the different kinds of consensus transfers mean? publish, pay, race, fork, parallelReduce?",
     "isBook": false,
-    "rank": 10
+    "rank": 70
   },
   {
-    "here": "tut/rps",
-    "title": "Rock, Paper, Scissors!",
+    "here": "guide/assert",
+    "title": "How and what to verify",
     "isBook": false,
-    "rank": 20
+    "rank": 80
   },
   {
-    "here": "tut/rsvp",
-    "title": "Répondez S'il Vous Plaît",
+    "here": "guide/abstract",
+    "title": "Building decentralized abstractions",
     "isBook": false,
-    "rank": 30
+    "rank": 130
   },
   {
-    "here": "rpc/proto",
-    "title": "Specification",
+    "here": "guide/editor-support",
+    "title": "IDE/Text Editor Support",
+    "isBook": false,
+    "rank": 150
+  },
+  {
+    "here": "guide/lifecycle",
+    "title": "Contract Development Lifecycle and Best Practices for Building Reach DApps",
+    "isBook": false,
+    "rank": 35
+  },
+  {
+    "here": "guide/invariants",
+    "title": "Writing Invariants",
+    "isBook": false,
+    "rank": 95
+  },
+  {
+    "here": "guide/ganache",
+    "title": "How to use Ganache with Reach",
+    "isBook": false,
+    "rank": 140
+  },
+  {
+    "here": "guide/limits",
+    "title": "What are Reach's limitations?",
+    "isBook": false,
+    "rank": 180
+  },
+  {
+    "here": "guide/logging",
+    "title": "How do I add tracing logs to my Reach program?",
     "isBook": false,
     "rank": 50
   },
   {
-    "here": "rpc/py",
-    "title": "Python",
+    "here": "guide/packages",
+    "title": "Sharing and discovering shared Reach packages",
     "isBook": false,
-    "rank": 40
+    "rank": 160
   },
   {
-    "here": "rpc/client",
-    "title": "Client Walkthrough",
+    "here": "guide/solidity",
+    "title": "How does Reach development compare to Solidity development?",
     "isBook": false,
-    "rank": 60
+    "rank": 30
   },
   {
-    "here": "rpc/go",
-    "title": "Go",
+    "here": "guide/loop-invs",
+    "title": "Finding and using loop invariants",
+    "isBook": false,
+    "rank": 90
+  },
+  {
+    "here": "guide/timeout",
+    "title": "Non-participation: What it is and how to protect against it",
+    "isBook": false,
+    "rank": 100
+  },
+  {
+    "here": "guide/roadmap",
+    "title": "Reach's Roadmap",
+    "isBook": false,
+    "rank": 190
+  },
+  {
+    "here": "guide/versions",
+    "title": "How does Reach use version numbers?",
     "isBook": false,
     "rank": 20
   },
   {
-    "here": "rpc/js",
-    "title": "JavaScript",
+    "here": "guide/rpc",
+    "title": "Do I have to use JavaScript to write my frontend? What about Python, Go, or other languages?",
     "isBook": false,
-    "rank": 30
+    "rank": 40
+  },
+  {
+    "here": "guide/staking",
+    "title": "Example: Staking and Unstaking Tokens",
+    "isBook": false,
+    "rank": 135
+  },
+  {
+    "here": "guide/race",
+    "title": "Racing non-determinism in decentralized applications",
+    "isBook": false,
+    "rank": 120
+  },
+  {
+    "here": "guide/reach",
+    "title": "How does Reach work?",
+    "isBook": false,
+    "rank": 170
+  },
+  {
+    "here": "guide/testing",
+    "title": "How should I test a DApp?",
+    "isBook": false,
+    "rank": 51
+  },
+  {
+    "here": "guide/nntoks",
+    "title": "How do network and non-network tokens differ?",
+    "isBook": false,
+    "rank": 60
+  },
+  {
+    "here": "guide/windows",
+    "title": "Using Reach on Windows",
+    "isBook": false,
+    "rank": 10
   },
   {
     "here": "workshop/relay",
     "title": "Relay Account",
     "isBook": false,
     "rank": 20
+  },
+  {
+    "here": "workshop/fomo-generalized",
+    "title": "Fear of Missing Out+",
+    "isBook": false,
+    "rank": 50
+  },
+  {
+    "here": "workshop/hash-lock",
+    "title": "Hash Lock",
+    "isBook": false,
+    "rank": 10
+  },
+  {
+    "here": "workshop/trust-fund",
+    "title": "Trust Fund",
+    "isBook": false,
+    "rank": 30
   },
   {
     "here": "workshop/fomo",
@@ -216,160 +342,34 @@
     "rank": 10
   },
   {
-    "here": "guide/invariants",
-    "title": "Writing Invariants",
-    "isBook": false,
-    "rank": 95
-  },
-  {
-    "here": "guide/ctransfers",
-    "title": "What do the different kinds of consensus transfers mean? publish, pay, race, fork, parallelReduce?",
-    "isBook": false,
-    "rank": 70
-  },
-  {
-    "here": "workshop/trust-fund",
-    "title": "Trust Fund",
+    "here": "rpc/js",
+    "title": "JavaScript",
     "isBook": false,
     "rank": 30
   },
   {
-    "here": "guide/assert",
-    "title": "How and what to verify",
-    "isBook": false,
-    "rank": 80
-  },
-  {
-    "here": "workshop/fomo-generalized",
-    "title": "Fear of Missing Out+",
-    "isBook": false,
-    "rank": 50
-  },
-  {
-    "here": "guide/lifecycle",
-    "title": "Contract Development Lifecycle and Best Practices for Building Reach DApps",
-    "isBook": false,
-    "rank": 35
-  },
-  {
-    "here": "guide/determ",
-    "title": "Determinism, simultaneity, and choice in decentralized applications",
-    "isBook": false,
-    "rank": 110
-  },
-  {
-    "here": "guide/limits",
-    "title": "What are Reach's limitations?",
-    "isBook": false,
-    "rank": 180
-  },
-  {
-    "here": "guide/abstract",
-    "title": "Building decentralized abstractions",
-    "isBook": false,
-    "rank": 130
-  },
-  {
-    "here": "guide/ganache",
-    "title": "How to use Ganache with Reach",
-    "isBook": false,
-    "rank": 140
-  },
-  {
-    "here": "guide/race",
-    "title": "Racing non-determinism in decentralized applications",
-    "isBook": false,
-    "rank": 120
-  },
-  {
-    "here": "guide/windows",
-    "title": "Using Reach on Windows",
-    "isBook": false,
-    "rank": 10
-  },
-  {
-    "here": "guide/reach",
-    "title": "How does Reach work?",
-    "isBook": false,
-    "rank": 170
-  },
-  {
-    "here": "guide/roadmap",
-    "title": "Reach's Roadmap",
-    "isBook": false,
-    "rank": 190
-  },
-  {
-    "here": "guide/solidity",
-    "title": "How does Reach development compare to Solidity development?",
-    "isBook": false,
-    "rank": 30
-  },
-  {
-    "here": "guide/staking",
-    "title": "Example: Staking and Unstaking Tokens",
-    "isBook": false,
-    "rank": 135
-  },
-  {
-    "here": "guide/packages",
-    "title": "Sharing and discovering shared Reach packages",
-    "isBook": false,
-    "rank": 160
-  },
-  {
-    "here": "guide/rpc",
-    "title": "Do I have to use JavaScript to write my frontend? What about Python, Go, or other languages?",
-    "isBook": false,
-    "rank": 40
-  },
-  {
-    "here": "guide/loop-invs",
-    "title": "Finding and using loop invariants",
-    "isBook": false,
-    "rank": 90
-  },
-  {
-    "here": "guide/nntoks",
-    "title": "How do network and non-network tokens differ?",
+    "here": "rpc/client",
+    "title": "Client Walkthrough",
     "isBook": false,
     "rank": 60
   },
   {
-    "here": "guide/testing",
-    "title": "How should I test a DApp?",
-    "isBook": false,
-    "rank": 51
-  },
-  {
-    "here": "guide/logging",
-    "title": "How do I add tracing logs to my Reach program?",
-    "isBook": false,
-    "rank": 50
-  },
-  {
-    "here": "guide/timeout",
-    "title": "Non-participation: What it is and how to protect against it",
-    "isBook": false,
-    "rank": 100
-  },
-  {
-    "here": "guide/editor-support",
-    "title": "IDE/Text Editor Support",
-    "isBook": false,
-    "rank": 150
-  },
-  {
-    "here": "guide/versions",
-    "title": "How does Reach use version numbers?",
+    "here": "rpc/go",
+    "title": "Go",
     "isBook": false,
     "rank": 20
   },
   {
-    "here": "workshop/hash-lock",
-    "title": "Hash Lock",
+    "here": "rpc/py",
+    "title": "Python",
     "isBook": false,
-    "rank": 10
+    "rank": 40
+  },
+  {
+    "here": "rpc/proto",
+    "title": "Specification",
+    "isBook": false,
+    "rank": 50
   },
   {
     "here": "tut/rps/7-rpc",
@@ -391,93 +391,21 @@
       "isBook": false,
       "rank": 60
     },
-    "changelog": {
+    "index": {
       "path": [
-        "changelog"
+        "index"
       ],
       "children": {},
-      "here": "changelog",
-      "title": "Changelog",
+      "here": "index",
+      "title": "Index",
       "isBook": false,
-      "rank": 120
-    },
-    "model": {
-      "path": [
-        "model"
-      ],
-      "children": {},
-      "here": "model",
-      "title": "Model",
-      "isBook": false,
-      "rank": 30
-    },
-    "quickstart": {
-      "path": [
-        "quickstart"
-      ],
-      "children": {},
-      "here": "quickstart",
-      "title": "Quickstart",
-      "isBook": false,
-      "rank": 10
-    },
-    "build": {
-      "path": [
-        "build"
-      ],
-      "children": {},
-      "here": "build",
-      "title": "Reach is for Builders",
-      "isBook": false,
-      "rank": 5
-    },
-    "networks": {
-      "path": [
-        "networks"
-      ],
-      "children": {},
-      "here": "networks",
-      "title": "Networks",
-      "isBook": false,
-      "rank": 80
-    },
-    "frontend": {
-      "path": [
-        "frontend"
-      ],
-      "children": {},
-      "here": "frontend",
-      "title": "Frontends",
-      "isBook": false,
-      "rank": 70
+      "rank": 140
     },
     "rsh": {
       "path": [
         "rsh"
       ],
       "children": {
-        "compute": {
-          "path": [
-            "rsh",
-            "compute"
-          ],
-          "children": {},
-          "here": "rsh/compute",
-          "title": "Computations",
-          "isBook": false,
-          "rank": 60
-        },
-        "consensus": {
-          "path": [
-            "rsh",
-            "consensus"
-          ],
-          "children": {},
-          "here": "rsh/consensus",
-          "title": "Consensus Steps",
-          "isBook": false,
-          "rank": 50
-        },
         "appinit": {
           "path": [
             "rsh",
@@ -500,6 +428,17 @@
           "isBook": false,
           "rank": 40
         },
+        "compute": {
+          "path": [
+            "rsh",
+            "compute"
+          ],
+          "children": {},
+          "here": "rsh/compute",
+          "title": "Computations",
+          "isBook": false,
+          "rank": 60
+        },
         "errors": {
           "path": [
             "rsh",
@@ -510,6 +449,17 @@
           "title": "Error Codes",
           "isBook": false,
           "rank": 70
+        },
+        "module": {
+          "path": [
+            "rsh",
+            "module"
+          ],
+          "children": {},
+          "here": "rsh/module",
+          "title": "Modules",
+          "isBook": false,
+          "rank": 10
         },
         "step": {
           "path": [
@@ -522,22 +472,32 @@
           "isBook": false,
           "rank": 30
         },
-        "module": {
+        "consensus": {
           "path": [
             "rsh",
-            "module"
+            "consensus"
           ],
           "children": {},
-          "here": "rsh/module",
-          "title": "Modules",
+          "here": "rsh/consensus",
+          "title": "Consensus Steps",
           "isBook": false,
-          "rank": 10
+          "rank": 50
         }
       },
       "here": "rsh",
       "title": "Language",
       "isBook": false,
       "rank": 50
+    },
+    "build": {
+      "path": [
+        "build"
+      ],
+      "children": {},
+      "here": "build",
+      "title": "Reach is for Builders",
+      "isBook": false,
+      "rank": 5
     },
     "tool": {
       "path": [
@@ -549,16 +509,6 @@
       "isBook": false,
       "rank": 40
     },
-    "index": {
-      "path": [
-        "index"
-      ],
-      "children": {},
-      "here": "index",
-      "title": "Index",
-      "isBook": false,
-      "rank": 140
-    },
     "search": {
       "path": [
         "search"
@@ -569,33 +519,51 @@
       "isBook": false,
       "rank": 130
     },
+    "frontend": {
+      "path": [
+        "frontend"
+      ],
+      "children": {},
+      "here": "frontend",
+      "title": "Frontends",
+      "isBook": false,
+      "rank": 70
+    },
+    "trouble": {
+      "path": [
+        "trouble"
+      ],
+      "children": {},
+      "here": "trouble",
+      "title": "Troubleshooting",
+      "isBook": false,
+      "rank": 115
+    },
+    "model": {
+      "path": [
+        "model"
+      ],
+      "children": {},
+      "here": "model",
+      "title": "Model",
+      "isBook": false,
+      "rank": 30
+    },
+    "networks": {
+      "path": [
+        "networks"
+      ],
+      "children": {},
+      "here": "networks",
+      "title": "Networks",
+      "isBook": false,
+      "rank": 80
+    },
     "tut": {
       "path": [
         "tut"
       ],
       "children": {
-        "wfs": {
-          "path": [
-            "tut",
-            "wfs"
-          ],
-          "children": {},
-          "here": "tut/wfs",
-          "title": "Wisdom For Sale",
-          "isBook": false,
-          "rank": 18
-        },
-        "overview": {
-          "path": [
-            "tut",
-            "overview"
-          ],
-          "children": {},
-          "here": "tut/overview",
-          "title": "Overview",
-          "isBook": false,
-          "rank": 10
-        },
         "rps": {
           "path": [
             "tut",
@@ -620,6 +588,17 @@
           "isBook": false,
           "rank": 20
         },
+        "overview": {
+          "path": [
+            "tut",
+            "overview"
+          ],
+          "children": {},
+          "here": "tut/overview",
+          "title": "Overview",
+          "isBook": false,
+          "rank": 10
+        },
         "rsvp": {
           "path": [
             "tut",
@@ -630,6 +609,17 @@
           "title": "Répondez S'il Vous Plaît",
           "isBook": false,
           "rank": 30
+        },
+        "wfs": {
+          "path": [
+            "tut",
+            "wfs"
+          ],
+          "children": {},
+          "here": "tut/wfs",
+          "title": "Wisdom For Sale",
+          "isBook": false,
+          "rank": 18
         }
       },
       "here": "tut",
@@ -637,174 +627,41 @@
       "isBook": false,
       "rank": 20
     },
-    "trouble": {
+    "quickstart": {
       "path": [
-        "trouble"
+        "quickstart"
       ],
       "children": {},
-      "here": "trouble",
-      "title": "Troubleshooting",
+      "here": "quickstart",
+      "title": "Quickstart",
       "isBook": false,
-      "rank": 115
+      "rank": 10
     },
-    "rpc": {
+    "changelog": {
       "path": [
-        "rpc"
+        "changelog"
       ],
-      "children": {
-        "proto": {
-          "path": [
-            "rpc",
-            "proto"
-          ],
-          "children": {},
-          "here": "rpc/proto",
-          "title": "Specification",
-          "isBook": false,
-          "rank": 50
-        },
-        "py": {
-          "path": [
-            "rpc",
-            "py"
-          ],
-          "children": {},
-          "here": "rpc/py",
-          "title": "Python",
-          "isBook": false,
-          "rank": 40
-        },
-        "client": {
-          "path": [
-            "rpc",
-            "client"
-          ],
-          "children": {},
-          "here": "rpc/client",
-          "title": "Client Walkthrough",
-          "isBook": false,
-          "rank": 60
-        },
-        "go": {
-          "path": [
-            "rpc",
-            "go"
-          ],
-          "children": {},
-          "here": "rpc/go",
-          "title": "Go",
-          "isBook": false,
-          "rank": 20
-        },
-        "js": {
-          "path": [
-            "rpc",
-            "js"
-          ],
-          "children": {},
-          "here": "rpc/js",
-          "title": "JavaScript",
-          "isBook": false,
-          "rank": 30
-        },
-        "cs": {
-          "path": [
-            "rpc",
-            "cs"
-          ],
-          "children": {},
-          "here": "rpc/cs",
-          "title": "C#",
-          "isBook": false,
-          "rank": 10
-        }
-      },
-      "here": "rpc",
-      "title": "RPC Server",
-      "isBook": true,
-      "rank": 90
-    },
-    "workshop": {
-      "path": [
-        "workshop"
-      ],
-      "children": {
-        "relay": {
-          "path": [
-            "workshop",
-            "relay"
-          ],
-          "children": {},
-          "here": "workshop/relay",
-          "title": "Relay Account",
-          "isBook": false,
-          "rank": 20
-        },
-        "fomo": {
-          "path": [
-            "workshop",
-            "fomo"
-          ],
-          "children": {},
-          "here": "workshop/fomo",
-          "title": "Fear of Missing Out",
-          "isBook": false,
-          "rank": 40
-        },
-        "trust-fund": {
-          "path": [
-            "workshop",
-            "trust-fund"
-          ],
-          "children": {},
-          "here": "workshop/trust-fund",
-          "title": "Trust Fund",
-          "isBook": false,
-          "rank": 30
-        },
-        "fomo-generalized": {
-          "path": [
-            "workshop",
-            "fomo-generalized"
-          ],
-          "children": {},
-          "here": "workshop/fomo-generalized",
-          "title": "Fear of Missing Out+",
-          "isBook": false,
-          "rank": 50
-        },
-        "hash-lock": {
-          "path": [
-            "workshop",
-            "hash-lock"
-          ],
-          "children": {},
-          "here": "workshop/hash-lock",
-          "title": "Hash Lock",
-          "isBook": false,
-          "rank": 10
-        }
-      },
-      "here": "workshop",
-      "title": "Workshops",
-      "isBook": true,
-      "rank": 100
+      "children": {},
+      "here": "changelog",
+      "title": "Changelog",
+      "isBook": false,
+      "rank": 120
     },
     "guide": {
       "path": [
         "guide"
       ],
       "children": {
-        "invariants": {
+        "determ": {
           "path": [
             "guide",
-            "invariants"
+            "determ"
           ],
           "children": {},
-          "here": "guide/invariants",
-          "title": "Writing Invariants",
+          "here": "guide/determ",
+          "title": "Determinism, simultaneity, and choice in decentralized applications",
           "isBook": false,
-          "rank": 95
+          "rank": 110
         },
         "ctransfers": {
           "path": [
@@ -828,39 +685,6 @@
           "isBook": false,
           "rank": 80
         },
-        "lifecycle": {
-          "path": [
-            "guide",
-            "lifecycle"
-          ],
-          "children": {},
-          "here": "guide/lifecycle",
-          "title": "Contract Development Lifecycle and Best Practices for Building Reach DApps",
-          "isBook": false,
-          "rank": 35
-        },
-        "determ": {
-          "path": [
-            "guide",
-            "determ"
-          ],
-          "children": {},
-          "here": "guide/determ",
-          "title": "Determinism, simultaneity, and choice in decentralized applications",
-          "isBook": false,
-          "rank": 110
-        },
-        "limits": {
-          "path": [
-            "guide",
-            "limits"
-          ],
-          "children": {},
-          "here": "guide/limits",
-          "title": "What are Reach's limitations?",
-          "isBook": false,
-          "rank": 180
-        },
         "abstract": {
           "path": [
             "guide",
@@ -871,160 +695,6 @@
           "title": "Building decentralized abstractions",
           "isBook": false,
           "rank": 130
-        },
-        "ganache": {
-          "path": [
-            "guide",
-            "ganache"
-          ],
-          "children": {},
-          "here": "guide/ganache",
-          "title": "How to use Ganache with Reach",
-          "isBook": false,
-          "rank": 140
-        },
-        "race": {
-          "path": [
-            "guide",
-            "race"
-          ],
-          "children": {},
-          "here": "guide/race",
-          "title": "Racing non-determinism in decentralized applications",
-          "isBook": false,
-          "rank": 120
-        },
-        "windows": {
-          "path": [
-            "guide",
-            "windows"
-          ],
-          "children": {},
-          "here": "guide/windows",
-          "title": "Using Reach on Windows",
-          "isBook": false,
-          "rank": 10
-        },
-        "reach": {
-          "path": [
-            "guide",
-            "reach"
-          ],
-          "children": {},
-          "here": "guide/reach",
-          "title": "How does Reach work?",
-          "isBook": false,
-          "rank": 170
-        },
-        "roadmap": {
-          "path": [
-            "guide",
-            "roadmap"
-          ],
-          "children": {},
-          "here": "guide/roadmap",
-          "title": "Reach's Roadmap",
-          "isBook": false,
-          "rank": 190
-        },
-        "solidity": {
-          "path": [
-            "guide",
-            "solidity"
-          ],
-          "children": {},
-          "here": "guide/solidity",
-          "title": "How does Reach development compare to Solidity development?",
-          "isBook": false,
-          "rank": 30
-        },
-        "staking": {
-          "path": [
-            "guide",
-            "staking"
-          ],
-          "children": {},
-          "here": "guide/staking",
-          "title": "Example: Staking and Unstaking Tokens",
-          "isBook": false,
-          "rank": 135
-        },
-        "packages": {
-          "path": [
-            "guide",
-            "packages"
-          ],
-          "children": {},
-          "here": "guide/packages",
-          "title": "Sharing and discovering shared Reach packages",
-          "isBook": false,
-          "rank": 160
-        },
-        "rpc": {
-          "path": [
-            "guide",
-            "rpc"
-          ],
-          "children": {},
-          "here": "guide/rpc",
-          "title": "Do I have to use JavaScript to write my frontend? What about Python, Go, or other languages?",
-          "isBook": false,
-          "rank": 40
-        },
-        "loop-invs": {
-          "path": [
-            "guide",
-            "loop-invs"
-          ],
-          "children": {},
-          "here": "guide/loop-invs",
-          "title": "Finding and using loop invariants",
-          "isBook": false,
-          "rank": 90
-        },
-        "nntoks": {
-          "path": [
-            "guide",
-            "nntoks"
-          ],
-          "children": {},
-          "here": "guide/nntoks",
-          "title": "How do network and non-network tokens differ?",
-          "isBook": false,
-          "rank": 60
-        },
-        "testing": {
-          "path": [
-            "guide",
-            "testing"
-          ],
-          "children": {},
-          "here": "guide/testing",
-          "title": "How should I test a DApp?",
-          "isBook": false,
-          "rank": 51
-        },
-        "logging": {
-          "path": [
-            "guide",
-            "logging"
-          ],
-          "children": {},
-          "here": "guide/logging",
-          "title": "How do I add tracing logs to my Reach program?",
-          "isBook": false,
-          "rank": 50
-        },
-        "timeout": {
-          "path": [
-            "guide",
-            "timeout"
-          ],
-          "children": {},
-          "here": "guide/timeout",
-          "title": "Non-participation: What it is and how to protect against it",
-          "isBook": false,
-          "rank": 100
         },
         "editor-support": {
           "path": [
@@ -1037,6 +707,116 @@
           "isBook": false,
           "rank": 150
         },
+        "lifecycle": {
+          "path": [
+            "guide",
+            "lifecycle"
+          ],
+          "children": {},
+          "here": "guide/lifecycle",
+          "title": "Contract Development Lifecycle and Best Practices for Building Reach DApps",
+          "isBook": false,
+          "rank": 35
+        },
+        "invariants": {
+          "path": [
+            "guide",
+            "invariants"
+          ],
+          "children": {},
+          "here": "guide/invariants",
+          "title": "Writing Invariants",
+          "isBook": false,
+          "rank": 95
+        },
+        "ganache": {
+          "path": [
+            "guide",
+            "ganache"
+          ],
+          "children": {},
+          "here": "guide/ganache",
+          "title": "How to use Ganache with Reach",
+          "isBook": false,
+          "rank": 140
+        },
+        "limits": {
+          "path": [
+            "guide",
+            "limits"
+          ],
+          "children": {},
+          "here": "guide/limits",
+          "title": "What are Reach's limitations?",
+          "isBook": false,
+          "rank": 180
+        },
+        "logging": {
+          "path": [
+            "guide",
+            "logging"
+          ],
+          "children": {},
+          "here": "guide/logging",
+          "title": "How do I add tracing logs to my Reach program?",
+          "isBook": false,
+          "rank": 50
+        },
+        "packages": {
+          "path": [
+            "guide",
+            "packages"
+          ],
+          "children": {},
+          "here": "guide/packages",
+          "title": "Sharing and discovering shared Reach packages",
+          "isBook": false,
+          "rank": 160
+        },
+        "solidity": {
+          "path": [
+            "guide",
+            "solidity"
+          ],
+          "children": {},
+          "here": "guide/solidity",
+          "title": "How does Reach development compare to Solidity development?",
+          "isBook": false,
+          "rank": 30
+        },
+        "loop-invs": {
+          "path": [
+            "guide",
+            "loop-invs"
+          ],
+          "children": {},
+          "here": "guide/loop-invs",
+          "title": "Finding and using loop invariants",
+          "isBook": false,
+          "rank": 90
+        },
+        "timeout": {
+          "path": [
+            "guide",
+            "timeout"
+          ],
+          "children": {},
+          "here": "guide/timeout",
+          "title": "Non-participation: What it is and how to protect against it",
+          "isBook": false,
+          "rank": 100
+        },
+        "roadmap": {
+          "path": [
+            "guide",
+            "roadmap"
+          ],
+          "children": {},
+          "here": "guide/roadmap",
+          "title": "Reach's Roadmap",
+          "isBook": false,
+          "rank": 190
+        },
         "versions": {
           "path": [
             "guide",
@@ -1047,12 +827,232 @@
           "title": "How does Reach use version numbers?",
           "isBook": false,
           "rank": 20
+        },
+        "rpc": {
+          "path": [
+            "guide",
+            "rpc"
+          ],
+          "children": {},
+          "here": "guide/rpc",
+          "title": "Do I have to use JavaScript to write my frontend? What about Python, Go, or other languages?",
+          "isBook": false,
+          "rank": 40
+        },
+        "staking": {
+          "path": [
+            "guide",
+            "staking"
+          ],
+          "children": {},
+          "here": "guide/staking",
+          "title": "Example: Staking and Unstaking Tokens",
+          "isBook": false,
+          "rank": 135
+        },
+        "race": {
+          "path": [
+            "guide",
+            "race"
+          ],
+          "children": {},
+          "here": "guide/race",
+          "title": "Racing non-determinism in decentralized applications",
+          "isBook": false,
+          "rank": 120
+        },
+        "reach": {
+          "path": [
+            "guide",
+            "reach"
+          ],
+          "children": {},
+          "here": "guide/reach",
+          "title": "How does Reach work?",
+          "isBook": false,
+          "rank": 170
+        },
+        "testing": {
+          "path": [
+            "guide",
+            "testing"
+          ],
+          "children": {},
+          "here": "guide/testing",
+          "title": "How should I test a DApp?",
+          "isBook": false,
+          "rank": 51
+        },
+        "nntoks": {
+          "path": [
+            "guide",
+            "nntoks"
+          ],
+          "children": {},
+          "here": "guide/nntoks",
+          "title": "How do network and non-network tokens differ?",
+          "isBook": false,
+          "rank": 60
+        },
+        "windows": {
+          "path": [
+            "guide",
+            "windows"
+          ],
+          "children": {},
+          "here": "guide/windows",
+          "title": "Using Reach on Windows",
+          "isBook": false,
+          "rank": 10
         }
       },
       "here": "guide",
       "title": "Guide",
       "isBook": true,
       "rank": 110
+    },
+    "workshop": {
+      "path": [
+        "workshop"
+      ],
+      "children": {
+        "relay": {
+          "path": [
+            "workshop",
+            "relay"
+          ],
+          "children": {},
+          "here": "workshop/relay",
+          "title": "Relay Account",
+          "isBook": false,
+          "rank": 20
+        },
+        "fomo-generalized": {
+          "path": [
+            "workshop",
+            "fomo-generalized"
+          ],
+          "children": {},
+          "here": "workshop/fomo-generalized",
+          "title": "Fear of Missing Out+",
+          "isBook": false,
+          "rank": 50
+        },
+        "hash-lock": {
+          "path": [
+            "workshop",
+            "hash-lock"
+          ],
+          "children": {},
+          "here": "workshop/hash-lock",
+          "title": "Hash Lock",
+          "isBook": false,
+          "rank": 10
+        },
+        "trust-fund": {
+          "path": [
+            "workshop",
+            "trust-fund"
+          ],
+          "children": {},
+          "here": "workshop/trust-fund",
+          "title": "Trust Fund",
+          "isBook": false,
+          "rank": 30
+        },
+        "fomo": {
+          "path": [
+            "workshop",
+            "fomo"
+          ],
+          "children": {},
+          "here": "workshop/fomo",
+          "title": "Fear of Missing Out",
+          "isBook": false,
+          "rank": 40
+        }
+      },
+      "here": "workshop",
+      "title": "Workshops",
+      "isBook": true,
+      "rank": 100
+    },
+    "rpc": {
+      "path": [
+        "rpc"
+      ],
+      "children": {
+        "cs": {
+          "path": [
+            "rpc",
+            "cs"
+          ],
+          "children": {},
+          "here": "rpc/cs",
+          "title": "C#",
+          "isBook": false,
+          "rank": 10
+        },
+        "js": {
+          "path": [
+            "rpc",
+            "js"
+          ],
+          "children": {},
+          "here": "rpc/js",
+          "title": "JavaScript",
+          "isBook": false,
+          "rank": 30
+        },
+        "client": {
+          "path": [
+            "rpc",
+            "client"
+          ],
+          "children": {},
+          "here": "rpc/client",
+          "title": "Client Walkthrough",
+          "isBook": false,
+          "rank": 60
+        },
+        "go": {
+          "path": [
+            "rpc",
+            "go"
+          ],
+          "children": {},
+          "here": "rpc/go",
+          "title": "Go",
+          "isBook": false,
+          "rank": 20
+        },
+        "py": {
+          "path": [
+            "rpc",
+            "py"
+          ],
+          "children": {},
+          "here": "rpc/py",
+          "title": "Python",
+          "isBook": false,
+          "rank": 40
+        },
+        "proto": {
+          "path": [
+            "rpc",
+            "proto"
+          ],
+          "children": {},
+          "here": "rpc/proto",
+          "title": "Specification",
+          "isBook": false,
+          "rank": 50
+        }
+      },
+      "here": "rpc",
+      "title": "RPC Server",
+      "isBook": true,
+      "rank": 90
     }
   },
   "here": "",

@@ -1,0 +1,53 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance sufficient for transfer"
+  at ./index-balinv.rsh:94:25:application
+
+  // Violation Witness
+
+  const UInt.max = 4;
+
+  const wager/297 = "Alice".interact.wager;
+  //    ^ could = 1
+  //      from: ./index-balinv.rsh:30:10:property binding
+  const netBalance/330 = <loop variable>;
+  //    ^ could = 0
+  //      from: ./index-balinv.rsh:61:3:while
+
+  // Theorem Formalization
+
+  const v452 = (2 * wager/297) <= netBalance/330;
+  //    ^ would be false
+  assert(v452);
+
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance zero at application exit"
+  at ./index-balinv.rsh:27:30:compileDApp
+
+  // Violation Witness
+
+  const UInt.max = 6;
+
+  const wager/297 = "Alice".interact.wager;
+  //    ^ could = 0
+  //      from: ./index-balinv.rsh:30:10:property binding
+  const netBalance/330 = <loop variable>;
+  //    ^ could = 1
+  //      from: ./index-balinv.rsh:61:3:while
+
+  // Theorem Formalization
+
+  const v456 = 0 == (netBalance/330 - (2 * wager/297));
+  //    ^ would be false
+  assert(v456);
+
+  Verifying when NO participants are honest
+Checked 77 theorems; 4 failures (and 2 omitted repeats) :'(
+
+For a guide to understanding verification failures, see: https://docs.reach.sh/rsh/errors/#how-to-read-verification-failures

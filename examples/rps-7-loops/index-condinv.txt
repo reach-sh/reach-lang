@@ -1,0 +1,26 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  at ./index-condinv.rsh:93:9:application
+
+  // Violation Witness
+
+  const UInt.max = 6;
+
+  const outcome/321 = <loop variable>;
+  //    ^ could = 3
+  //      from: ./index-condinv.rsh:61:3:while
+
+  // Theorem Formalization
+
+  const v446 = ((outcome/321 == 2) ? true : (outcome/321 == 0));
+  //    ^ would be false
+  assert(v446);
+
+  Verifying when NO participants are honest
+Checked 77 theorems; 2 failures (and 1 omitted repeats) :'(
+
+For a guide to understanding verification failures, see: https://docs.reach.sh/rsh/errors/#how-to-read-verification-failures

@@ -1,0 +1,59 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance sufficient for transfer"
+  at ./index-balinv.rsh:68:33:application
+  at /app/index-balinv.rsh:65:25:application call to [unknown function] (defined at: /app/index-balinv.rsh:65:25:function exp)
+
+  // Violation Witness
+
+  const UInt.max = 2;
+
+  const details/728 = "Admin".interact.details;
+  //    ^ could = {deadline: 1, host: <abstract address 1>, name: "Bytes!val!1", reservation: 2 }
+  //      from: ./index-balinv.rsh:13:12:property binding
+  const netBalance/759 = <loop variable>;
+  //    ^ could = 1
+  //      from: ./index-balinv.rsh:45:19:while
+
+  // Theorem Formalization
+
+  const v948 = details/728.reservation <= netBalance/759;
+  //    ^ would be false
+  assert(v948);
+
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance zero at application exit"
+  at ./index-balinv.rsh:76:7:application
+
+  // Violation Witness
+
+  const UInt.max = 1;
+
+  const netBalance/759 = <loop variable>;
+  //    ^ could = 1
+  //      from: ./index-balinv.rsh:45:19:while
+
+  // Theorem Formalization
+
+  const v962 = 0 == netBalance/759;
+  //    ^ would be false
+  assert(v962);
+
+  Verifying when NO participants are honest
+Checked 38 theorems; 5 failures (and 3 omitted repeats) :'(
+
+For a guide to understanding verification failures, see: https://docs.reach.sh/rsh/errors/#how-to-read-verification-failures
+warning[RW0005]: The `Object` type's format is controlled by Reach; you may want to use `Struct` instead for external interfaces, so you can mandate and document the format.
+
+  ./index-balinv.rsh:22:20:application
+
+  22|   const Info = View('Info', {
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0005
+
