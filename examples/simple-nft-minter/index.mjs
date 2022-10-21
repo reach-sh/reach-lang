@@ -3,9 +3,13 @@ const stdlib = new Reach(process.env, { REACH_NO_WARN: 'Y' });
 
 const startingBalance = stdlib.parseCurrency(100);
 const [minter, receiver] = await stdlib.newTestAccounts(2, startingBalance);
+minter.setDebugLabel('Minter');
+receiver.setDebugLabel('Receiver');
 
 const gasLimit = 500000;
-if (stdlib.connector != 'ALGO') {minter.setGasLimit(gasLimit) && receiver.setGasLimit(gasLimit)};
+if (stdlib.connector != 'ALGO') {
+    minter.setGasLimit(gasLimit) && receiver.setGasLimit(gasLimit)
+};
 
 const mintAddr = minter.getAddress();
 console.log(`Minter's address is ${mintAddr}`);
@@ -20,18 +24,17 @@ console.log(`The receiver's formatted address is ${receiverAddrFormat}`);
 const fmt = (x) => stdlib.formatCurrency(x, 4);
 const getBal = async (who, tok) => tok ? (await stdlib.balanceOf(who, tok)) : fmt(await stdlib.balanceOf(who));
 
-const logBalance = async (acc, tok, accStr = acc.getAddress()) => {
-    const bal = await getBal(acc, tok, accStr);
+const logBalance = async (acc, tok) => {
+    const bal = await getBal(acc, tok);
     const unit = tok ? 'of the NFT' : stdlib.standardUnit;
-    console.log(`${accStr} has ${bal} ${unit}.`);
-
+    console.log(`${acc.getDebugLabel()} has ${bal} ${unit}.`);
     return bal;
 }
 
-await logBalance(minter, null, "Minter");
+await logBalance(minter, null);
 
-const name = "JPAlgos";
-const symbol = "JPA";
+const name = (stdlib.connector == 'ALGO') ? "JPAlgos" : "JPals";
+const symbol = (stdlib.connector == 'ALGO') ? "JPA" : "JPAL";
 
 const opts = { 
     supply: 1, 
@@ -51,22 +54,19 @@ const mintNFT = async (minter, name, symbol, opts = {supply, url, c, f, defaultF
 }
 
 const transferNFT = async (minter, receiver, nftId, supply) => {
-    const preAmtNFT = await logBalance(minter, nftId, "Minter");
+    const preAmtNFT = await logBalance(minter, nftId);
 
-    if (stdlib.connector == 'ALGO' && await receiver.tokenAccept(nftId)) {
-        console.log(`Receiver opted-in to NFT`);
-    };
-    if (stdlib.connector == 'ALGO' && await receiver.tokenAccepted(nftId)) {
-        console.log(`Token accepted`);
+    if (stdlib.connector == 'ALGO') {
+        await receiver.tokenAccept(nftId);
+        console.log(`${receiver.getDebugLabel()} opted-in to NFT`);
     };
     await stdlib.transfer(minter, receiver, supply, nftId);
-    console.log(`${supply} ${symbol} transferred from ${minter.getAddress()} to ${receiver.getAddress()}`);
-
-    const postAmtNFT = await logBalance(receiver, nftId, "Receiver");
+    console.log(`${supply} ${symbol} transferred from ${minter.getDebugLabel()} to ${receiver.getDebugLabel()}`);
+    
+    const postAmtNFT = await logBalance(receiver, nftId);
     test.chk('NFT AMT', preAmtNFT, postAmtNFT);
 }
 
 const nftId = await mintNFT(minter, name, symbol, opts);
 await transferNFT(minter, receiver, nftId, opts.supply);
-
-await logBalance(minter, null, "Minter");
+await logBalance(minter, null);
