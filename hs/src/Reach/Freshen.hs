@@ -172,6 +172,7 @@ instance Freshen DLExpr where
     DLE_ArrayRef at a b -> DLE_ArrayRef at <$> fu a <*> fu b
     DLE_ArraySet at a b c -> DLE_ArraySet at <$> fu a <*> fu b <*> fu c
     DLE_ArrayConcat at a b -> DLE_ArrayConcat at <$> fu a <*> fu b
+    DLE_BytesDynCast at a -> DLE_BytesDynCast at <$> fu a
     DLE_TupleRef at x y -> DLE_TupleRef at <$> fu x <*> pure y
     DLE_ObjectRef at x y -> DLE_ObjectRef at <$> fu x <*> pure y
     DLE_Interact a b c d e f -> DLE_Interact a b c d e <$> fu f

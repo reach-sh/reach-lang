@@ -148,6 +148,7 @@ instance CollectsTypes DLExpr where
     DLE_ArrayRef _ a i -> cts a <> cts i
     DLE_ArraySet _ a i v -> cts a <> cts i <> cts v
     DLE_ArrayConcat _ x y -> cts x <> cts y
+    DLE_BytesDynCast _ x -> cts x
     DLE_TupleRef _ t _ -> cts t
     DLE_ObjectRef _ a _ -> cts a
     DLE_Interact _ _ _ _ t as -> cts t <> cts as

@@ -1964,6 +1964,8 @@ ce = \case
     xtz <- typeSizeOf xt
     check_concat_len $ (xlen + ylen) * xtz
     op "concat"
+  DLE_BytesDynCast _ v -> do
+    ca v
   DLE_TupleRef at ta idx -> do
     ca ta
     cTupleRef at (argTypeOf ta) idx

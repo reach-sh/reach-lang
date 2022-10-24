@@ -839,6 +839,7 @@ data DLExpr
   | DLE_ArrayRef SrcLoc DLArg DLArg
   | DLE_ArraySet SrcLoc DLArg DLArg DLArg
   | DLE_ArrayConcat SrcLoc DLArg DLArg
+  | DLE_BytesDynCast SrcLoc DLArg
   | DLE_TupleRef SrcLoc DLArg Integer
   | DLE_TupleSet SrcLoc DLArg Integer DLArg
   | DLE_ObjectRef SrcLoc DLArg String
@@ -953,6 +954,9 @@ instance PrettySubst DLExpr where
     DLE_ArrayConcat _ x y -> do
       as' <- render_dasM [x, y]
       return $ "Array.concat" <> parens as'
+    DLE_BytesDynCast _ x -> do
+      x' <- prettySubst x
+      return $ "BytesDyn" <> parens x'
     DLE_TupleRef _ a i -> do
       a' <- prettySubst a
       return $ a' <> brackets (pretty i)
@@ -1081,6 +1085,7 @@ instance IsPure DLExpr where
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True
     DLE_ArrayConcat {} -> True
+    DLE_BytesDynCast {} -> True
     DLE_TupleRef {} -> True
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> False
@@ -1123,6 +1128,7 @@ instance IsLocal DLExpr where
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True
     DLE_ArrayConcat {} -> True
+    DLE_BytesDynCast {} -> True
     DLE_TupleRef {} -> True
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> True
@@ -1161,6 +1167,7 @@ instance CanDupe DLExpr where
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True
     DLE_ArrayConcat {} -> True
+    DLE_BytesDynCast {} -> True
     DLE_TupleRef {} -> True
     DLE_TupleSet {} -> True
     DLE_ObjectRef {} -> True

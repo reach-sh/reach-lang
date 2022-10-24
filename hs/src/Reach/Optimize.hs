@@ -547,6 +547,7 @@ instance Optimize DLExpr where
     DLE_ArrayRef at a i -> DLE_ArrayRef at <$> opt a <*> opt i
     DLE_ArraySet at a i v -> optSet DLE_ArraySet DLE_ArrayRef at a i v
     DLE_ArrayConcat at x0 y0 -> DLE_ArrayConcat at <$> opt x0 <*> opt y0
+    DLE_BytesDynCast at x -> DLE_BytesDynCast at <$> opt x
     DLE_TupleRef at t i -> do
       t' <- opt t
       let meh = return $ DLE_TupleRef at t' i

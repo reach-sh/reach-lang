@@ -1125,6 +1125,9 @@ smt_e at_dv mdv de = do
     DLE_ArrayConcat {} ->
       --- FIXME: This might be possible to do by generating a function
       impossible "array_concat"
+    DLE_BytesDynCast at a -> do
+      a' <- smt_a at a
+      bound at $ smtApply "Bytes_toBytesDyn" [a']
     DLE_TupleRef at arr_da i -> do
       let t = argTypeOf arr_da
       s <- smtTypeSort t

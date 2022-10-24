@@ -138,6 +138,7 @@ instance FreeVars DLExpr where
     DLE_ArrayRef _ a b -> freeVars [a, b]
     DLE_ArraySet _ a b c -> freeVars [a, b, c]
     DLE_ArrayConcat _ a b -> freeVars [a, b]
+    DLE_BytesDynCast _ a -> freeVars a
     DLE_TupleRef _ a _ -> freeVars a
     DLE_ObjectRef _ a _ -> freeVars a
     DLE_Interact _ _ _ _ _ a -> freeVars a

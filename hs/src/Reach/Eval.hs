@@ -150,6 +150,7 @@ instance Pandemic DLExpr where
     DLE_ArrayRef at a i -> DLE_ArrayRef at <$> pan a <*> pan i
     DLE_ArraySet at a i v -> DLE_ArraySet at <$> pan a <*> pan i <*> pan v
     DLE_ArrayConcat at x y -> DLE_ArrayConcat at <$> pan x <*> pan y
+    DLE_BytesDynCast at x -> DLE_BytesDynCast at <$> pan x
     DLE_TupleRef at a i -> DLE_TupleRef at <$> pan a <*> pure i
     DLE_ObjectRef at a f -> DLE_ObjectRef at <$> pan a <*> pure f
     DLE_Interact at cxt slp s ty as -> DLE_Interact at cxt slp s ty <$> pan as

@@ -1,0 +1,9 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 5 theorems; No failures!
+/home/wgh/s/mk/reach-lang/hs/reach.cabal was generated with a newer version of hpack,
+please upgrade and try again.
+WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
+ * Uses a dynamically sized type, like BytesDyn or StringDyn.

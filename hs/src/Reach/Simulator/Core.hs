@@ -548,6 +548,7 @@ instance Interp DLExpr where
       arr1 <- vArray <$> interp dlarg1
       arr2 <- vArray <$> interp dlarg2
       return $ V_Array $ arr1 <> arr2
+    DLE_BytesDynCast _at v -> interp v
     DLE_TupleRef _at dlarg n -> do
       arr <- vTuple <$> interp dlarg
       return $ saferIndex (fromIntegral n) arr
