@@ -436,6 +436,7 @@ instance DepthOf DLExpr where
     DLE_ArrayRef _ x y -> add1 $ depthOf [x, y]
     DLE_ArraySet _ x y z -> depthOf [x, y, z]
     DLE_ArrayConcat _ x y -> add1 $ depthOf [x, y]
+    DLE_BytesDynCast _ x -> add1 $ depthOf x
     DLE_TupleRef _ x _ -> add1 $ depthOf x
     DLE_TupleSet _ t _ v -> add1 $ depthOf [t, v]
     DLE_ObjectRef _ x _ -> add1 $ depthOf x
@@ -743,6 +744,9 @@ solExpr sp = \case
     spa $ return $ solApply (solArraySet ti) args'
   DLE_ArrayConcat {} ->
     impossible "array concat"
+  DLE_BytesDynCast _ ae -> do
+    ae' <- solArg ae
+    return $ "bytes.concat" <> parens ae'
   DLE_TupleRef _ ae i -> do
     ae' <- solArg ae
     return $ ae' <> ".elem" <> pretty i <> sp

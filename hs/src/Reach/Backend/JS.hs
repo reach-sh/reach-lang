@@ -423,6 +423,7 @@ jsExpr = \case
     x' <- jsArg x
     y' <- jsArg y
     return $ x' <> "." <> jsApply "concat" [y']
+  DLE_BytesDynCast _ x -> jsArg x
   DLE_TupleRef at aa i -> do
     aa' <- jsArg aa
     i' <- jsCon $ DLL_Int at UI_Word i

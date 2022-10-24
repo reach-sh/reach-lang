@@ -578,7 +578,6 @@ base_env_slvals =
   , ("UInt256", SLV_Type $ ST_UInt UI_256)
   , ("Bytes", SLV_Prim SLPrim_Bytes)
   , ("BytesDyn", SLV_Type $ ST_BytesDyn)
-  , ("BytesDynCast", SLV_Prim SLPrim_BytesDynCast)
   , ("StringDyn", SLV_Type $ ST_StringDyn)
   , ("Contract", SLV_Type ST_Contract)
   , ("ContractCode", SLV_Prim $ SLPrim_ContractCode)
@@ -2940,18 +2939,6 @@ evalPrim p sargs =
       case map snd sargs of
         [(SLV_Int _ _ sz)] -> retV $ (lvl, SLV_Type $ ST_Bytes sz)
         _ -> illegal_args
-    SLPrim_BytesDynCast -> do
-      at <- withAt id
-      case args of
-        [] -> retV $ (lvl, SLV_Type $ ST_BytesDyn)
-        [x] -> do
-          (ty, dla) <- compileTypeOf x
-          case ty of
-            T_Bytes _ -> return ()
-            _ -> illegal_args
-          dv <- ctxt_lift_expr (DLVar at Nothing T_BytesDyn) $ DLE_Arg at dla
-          return $ (lvl, SLV_DLVar dv)
-        _ -> illegal_args
     SLPrim_Array ->
       case map snd sargs of
         [(SLV_Type ty), (SLV_Int _ _ sz)] ->
@@ -4135,6 +4122,18 @@ evalPrim p sargs =
           DLE_ContractNew at dcns dr
       ctcdv <- doInternalLog_ Nothing ctcdv_
       return $ public $ SLV_DLVar ctcdv
+    SLPrim_BytesDynCast -> do
+      case args of
+        [SLV_Bytes at bs] -> return $ (lvl, SLV_BytesDyn at bs)
+        [x] -> do
+          at <- withAt id
+          (ty, dla) <- compileTypeOf x
+          case ty of
+            T_Bytes _ -> return ()
+            _ -> illegal_args
+          dv <- ctxt_lift_expr (DLVar at Nothing T_BytesDyn) $ DLE_BytesDynCast at dla
+          return $ (lvl, SLV_DLVar dv)
+        _ -> illegal_args
     SLPrim_toStringDyn -> first_arg >>= \case
       SLV_Bytes at bs -> return $ (lvl, SLV_String at $ T.pack $ bunpack bs)
       v -> do
@@ -4444,6 +4443,8 @@ evalApplyValsAux assumePrecondition rator randvs =
       evalApplyValsAux assumePrecondition (SLV_Prim $ SLPrim_castOrTrunc to) randvs
     SLV_Type ST_StringDyn ->
       evalApplyValsAux assumePrecondition (SLV_Prim $ SLPrim_toStringDyn) randvs
+    SLV_Type ST_BytesDyn ->
+      evalApplyValsAux assumePrecondition (SLV_Prim $ SLPrim_BytesDynCast) randvs
     SLV_Prim p -> do
       sco <- e_sco <$> ask
       SLAppRes sco <$> evalPrim p randvs

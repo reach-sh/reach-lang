@@ -212,7 +212,7 @@ export const main = Reach.App(() => {
       .api_(I.safeTransferFrom2, (from_, to, tokenId) => {
         transferChecks(this, from_, to, tokenId);
         return [ (k) => {
-          doSafeTransferFrom(this, from_, to, tokenId, BytesDynCast(""));
+          doSafeTransferFrom(this, from_, to, tokenId, BytesDyn(""));
           k(null);
           return [ ];
         }];
