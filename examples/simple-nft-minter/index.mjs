@@ -31,7 +31,7 @@ const logBalance = async (acc, tok) => {
     return bal;
 }
 
-await logBalance(minter, null);
+await logBalance(minter);
 
 const name = (stdlib.connector == 'ALGO') ? "JPAlgos" : "JPals";
 const symbol = (stdlib.connector == 'ALGO') ? "JPA" : "JPAL";
@@ -46,7 +46,7 @@ const opts = {
     note: Uint8Array[1],
 };
 
-const mintNFT = async (minter, name, symbol, opts = {supply, url, c, f, defaultFrozen, reserve, note}) => {
+const mintNFT = async (minter, name, symbol, opts) => {
     console.log(`Creating the NFT`);
     const theNFT = await stdlib.launchToken(minter, name, symbol, opts);
     console.log(theNFT);
@@ -69,4 +69,4 @@ const transferNFT = async (minter, receiver, nftId, supply) => {
 
 const nftId = await mintNFT(minter, name, symbol, opts);
 await transferNFT(minter, receiver, nftId, opts.supply);
-await logBalance(minter, null);
+await logBalance(minter);
