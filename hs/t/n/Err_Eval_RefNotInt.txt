@@ -1,4 +1,4 @@
-reachc: error[RE0025]: hello is not a field of Tuple(UInt, UInt, UInt). Did you mean: ["set","length"]
+reachc: error[RE0025]: hello is not a field of Tuple(UInt, UInt, UInt). Did you mean: ["set","length","includes"]
 
   ./Err_Eval_RefNotInt.rsh:6:15:array ref
 
