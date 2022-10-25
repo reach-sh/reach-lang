@@ -10,8 +10,9 @@ const accOpts = {
   freeze: accC,
   reserve: accD,
 };
+const metadataHash = "12345678901234567890123456789012";
 const gil = await stdlib.launchToken(accA, 'Gil', 'GIL', {
-  ...(isAlgo ? {...accOpts, defaultFrozen: true} : {}),
+  ...(isAlgo ? {...accOpts, defaultFrozen: true, metadataHash,} : {}),
 });
 
 if (isAlgo) {
@@ -36,6 +37,7 @@ if (isAlgo) {
   for (const k in accOpts) {
     stdlib.assert(stdlib.addressEq(m[k], accOpts[k]));
   };
+  stdlib.assert(m.metadataHash === metadataHash, "metadataHash match");
   stdlib.assert(m.defaultFrozen === true);
   console.log(`All assertions passed. =]`);
 }
