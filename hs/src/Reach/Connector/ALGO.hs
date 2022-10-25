@@ -2155,7 +2155,7 @@ ce = \case
               processArgTuple asMore
           -- XXX If we can "inherit" resources, then this needs to be removed and
           -- we need to check that nnZeros actually stay 0
-          forM_ (r_assets <> nnRecv) $ \a -> do
+          forM_ (r_assets <> map snd pay_ks <> nnRecv) $ \a -> do
             incResource R_Asset a
             ca a
             makeTxn1 "Assets"
