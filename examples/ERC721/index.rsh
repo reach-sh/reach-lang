@@ -114,8 +114,7 @@ export const main = Reach.App(() => {
   V.name.set(name);
   V.symbol.set(symbol);
   V.totalSupply.set(totalSupply);
-  const IDsArray = array(Bytes(4), IDs);
-  V.supportsInterface.set(IDsArray.includes);
+  V.supportsInterface.set(IDs.includes);
 
   const owners = new Map(UInt, Address);
   const balances = new Map(UInt);
