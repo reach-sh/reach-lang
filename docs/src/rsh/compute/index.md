@@ -2976,7 +2976,7 @@ The `IDs` component is intended to hold byte strings that represent ERC-165 inte
 For example, we define all of the interfaces that are part of the [ERC-721](https://eips.ethereum.org/EIPS/eip-721) NFT specification using `{!rsh} mixin`:
 ```reach
 load: /examples/ERC721/index.rsh
-md5: fc2bac5972751cb3280a6e974d864096
+md5: c31c20d4e9add1a3ef3038596d965089
 range: 8 - 59
 ```
 
