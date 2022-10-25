@@ -37,7 +37,8 @@ if (isAlgo) {
   for (const k in accOpts) {
     stdlib.assert(stdlib.addressEq(m[k], accOpts[k]));
   };
-  stdlib.assert(m.metadataHash === metadataHash, "metadataHash match");
+  // In the result the `metadataHash` field is renamed to just `metadata`...
+  stdlib.assert(m.metadata === metadataHash, "metadataHash match");
   stdlib.assert(m.defaultFrozen === true);
   console.log(`All assertions passed. =]`);
 }
