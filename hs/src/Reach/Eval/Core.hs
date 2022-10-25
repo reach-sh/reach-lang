@@ -2979,22 +2979,10 @@ evalPrim p sargs =
         _ -> illegal_args
     SLPrim_Foldable -> expect_ Err_Prim_Foldable
     SLPrim_tuple_includes -> do
-      at <- withAt id
       (tup, needle) <- two_args
-      (nt, _na) <- typeOf needle
-      foldable_includes <- lookStdlib "Foldable_includes"
-      case tup of
-        SLV_Tuple _ vs -> do
-          v_ret <- evalOrMap (\v -> snd <$> evalPolyEq Public v needle) vs
-          retV $ (lvl, v_ret)
-        SLV_DLVar arrDlv@(DLVar _ _ (T_Tuple ts) _) -> do
-          let indices = map snd $ filter (\(t, _i) -> t == nt) (zip ts [0..])
-          let mkdv = DLVar at Nothing nt
-          let liftRef i = ctxt_lift_expr mkdv $
-               DLE_TupleRef at (DLA_Var arrDlv) i
-          dlvs <- mapM liftRef indices
-          evalApplyVals' foldable_includes [(lvl, (SLV_Array at nt (map SLV_DLVar dlvs))), (lvl, needle)]
-        _ -> illegal_args
+      vs <- explodeTupleLike "Tuple.includes" tup
+      v_ret <- evalOrMap (\v -> snd <$> evalPolyEq Public v needle) vs
+      retV $ (lvl, v_ret)
     SLPrim_tuple_length -> do
       at <- withAt id
       one_arg >>= \case
