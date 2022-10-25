@@ -3,4 +3,3 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 5 theorems; No failures!
-please upgrade and try again.
