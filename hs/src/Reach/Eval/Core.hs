@@ -2976,7 +2976,7 @@ evalPrim p sargs =
           let indices = map snd $ filter (\(t, _i) -> t == nt) (zip ts [0..])
           let mkdv = DLVar at Nothing nt
           let liftRef i = ctxt_lift_expr mkdv $
-               DLE_ArrayRef at (DLA_Var arrDlv) (DLA_Literal $ DLL_Int at UI_Word i)
+               DLE_TupleRef at (DLA_Var arrDlv) i
           dlvs <- mapM liftRef indices
           evalApplyVals' foldable_includes [(lvl, (SLV_Array at nt (map SLV_DLVar dlvs))), (lvl, needle)]
         _ -> illegal_args
