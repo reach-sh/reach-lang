@@ -776,8 +776,8 @@ Instead, we'll just make a few simple changes to the test framework to demonstra
 
 ```
 load: /examples/rsvp-6-vevt/index.mjs
-md5: 6c9ca7f7e8a9cb738005b61cabc1e8b0
-range: 45-55
+md5: 89fe2faa0411e3d6af06b4ed081ba2aa
+range: 49-59
 ```
 
 First, we'll have the Host monitor all registrations for this event.
@@ -790,9 +790,12 @@ This is representative of a user interface that shows the Host each registration
 
 ```
 load: /examples/rsvp-6-vevt/index.mjs
-md5: 6c9ca7f7e8a9cb738005b61cabc1e8b0
-range: 57-67
+md5: 89fe2faa0411e3d6af06b4ed081ba2aa
+range: 61-74
 ```
+
+We've added a gas limit using `{!js} stdlib.setGasLimit` for testing on Ethereum.
+This prevents `{!rsh} API`s from expending all of their tokens on gas fees.
 
 Next, we modify the `willGo` function so that the Guest, before they register, inspects the event details and looks at the reservation price.
 This is representative of a user interface that informs the Guest of how much they'll be expected to pay to make a reservation.
