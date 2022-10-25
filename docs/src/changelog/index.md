@@ -6,6 +6,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 ## 0.1.12: 2022/09 - present
 
 @{verRC("0.1.12")}
++ 2022/10/25: Added `{!rsh} BytesDyn` casting from fixed-length bytes.
 
 @{rcHead("0.1.12-rc.5")}
 
