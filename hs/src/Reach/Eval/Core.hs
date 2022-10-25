@@ -1563,12 +1563,11 @@ evalAsEnvM sv@(lvl, obj) = case obj of
              -- if tested by `SLPrim_is` as a function, which means that something
              -- like `mytuple.includes` can't be set as a view function.
              -- Fixing the `SLPrim_is` implementation seems a lot harder than this.
-             foldable_includes <- lookStdlib "Foldable_includes"
              return $ (lvl, jsClo (srclocOf tupSlv) "tuple_includes"
                "(v) => f(tup, v)"
-               (M.fromList [("f", SLV_Prim SLPrim_tuple_includes),
-                            ("tup", tupSlv),
-                            ("Foldable_includes", foldable_includes)])))
+               (M.fromList [ ("f", SLV_Prim SLPrim_tuple_includes)
+                           , ("tup", tupSlv)
+                           ])))
         ]
     arrayValueEnv :: SLObjEnv
     arrayValueEnv =
