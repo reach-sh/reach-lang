@@ -6,7 +6,7 @@ const [minter, receiver] = await stdlib.newTestAccounts(2, startingBalance);
 minter.setDebugLabel('Minter');
 receiver.setDebugLabel('Receiver');
 
-const gasLimit = 500000;
+const gasLimit = 5000000;
 if (stdlib.connector != 'ALGO') {
     minter.setGasLimit(gasLimit) && receiver.setGasLimit(gasLimit)
 };
