@@ -2155,6 +2155,18 @@ evalPolyEq lvl x y =
       at <- withAt id
       return $ (lvl, SLV_Bool at v)
 
+evalOr :: SLVal -> SLVal -> App SLVal
+evalOr l r =
+  case (l, r) of
+    (SLV_Bool bAt lb, SLV_Bool _ rb) ->
+      return $ SLV_Bool bAt $ lb || rb
+    (SLV_DLVar {}, SLV_DLVar {}) ->
+      snd <$> evalPrimOp S_IF_THEN_ELSE [(Public, l), public $ SLV_Bool sb True, (Public, r)]
+    (SLV_Bool bAt True, _) -> return $ SLV_Bool bAt True
+    (SLV_Bool _ False, SLV_DLVar {}) -> return $ r
+    (SLV_DLVar _, SLV_Bool {}) -> evalOr r l
+    _ -> impossible $ "evalOr expecting SLV_Bool or SLV_DLVar"
+
 evalAnd :: SLVal -> SLVal -> App SLVal
 evalAnd l r =
   case (l, r) of
@@ -2166,6 +2178,14 @@ evalAnd l r =
     (SLV_Bool _ True, SLV_DLVar {}) -> return $ r
     (SLV_DLVar _, SLV_Bool {}) -> evalAnd r l
     _ -> impossible $ "evalAnd expecting SLV_Bool or SLV_DLVar"
+
+evalOrMap :: (SLVal -> App SLVal) -> [SLVal] -> App SLVal
+evalOrMap f = \case
+  [] -> return $ SLV_Bool sb False
+  h : t -> do
+    h' <- f h
+    t' <- evalOrMap f t
+    evalOr h' t'
 
 evalAndMap :: (SLVal -> App SLVal) -> [SLVal] -> App SLVal
 evalAndMap f = \case
@@ -2965,13 +2985,8 @@ evalPrim p sargs =
       foldable_includes <- lookStdlib "Foldable_includes"
       case tup of
         SLV_Tuple _ vs -> do
-          let typeMatch v = do
-                mTA <- typeOfM v
-                case mTA of
-                  (Just (t, _a)) -> return $ t == nt
-                  _ -> return $ False
-          vsMatched <- filterM typeMatch vs
-          evalApplyVals' foldable_includes [(lvl, (SLV_Array at nt vsMatched)), (lvl, needle)]
+          v_ret <- evalOrMap (\v -> snd <$> evalPolyEq Public v needle) vs
+          retV $ (lvl, v_ret)
         SLV_DLVar arrDlv@(DLVar _ _ (T_Tuple ts) _) -> do
           let indices = map snd $ filter (\(t, _i) -> t == nt) (zip ts [0..])
           let mkdv = DLVar at Nothing nt
