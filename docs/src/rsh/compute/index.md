@@ -988,10 +988,11 @@ c.and()
 
 #### `Foldable.includes` && `.includes`
 
-@{ref("rsh", "Foldable.includes")}@{ref("rsh", "Map.includes")}@{ref("rsh", "Array.includes")}@{ref("rsh", "includes")}
+@{ref("rsh", "Foldable.includes")}@{ref("rsh", "Map.includes")}@{ref("rsh", "Array.includes")}@{ref("rsh", "Tuple.includes")}@{ref("rsh", "includes")}
 ```reach
 Foldable.includes(c, x)
 Array.includes(c, x)
+Tuple.includes(c, x)
 Map.includes(c, x)
 c.includes(x)
 ```
@@ -2976,13 +2977,13 @@ The `IDs` component is intended to hold byte strings that represent ERC-165 inte
 For example, we define all of the interfaces that are part of the [ERC-721](https://eips.ethereum.org/EIPS/eip-721) NFT specification using `{!rsh} mixin`:
 ```reach
 load: /examples/ERC721/index.rsh
-md5: fc2bac5972751cb3280a6e974d864096
+md5: 1101ece6c8b14e4fe7c64dbe941dd07d
 range: 8 - 59
 ```
 
 Then, we construct the final mixed contract, and overriding `ERC721EnumerablePartial`'s base with `ERC721Metadata` (because we want _both_ extensions to ERC-721):
 ```reach
 load: /examples/ERC721/index.rsh
-md5: fc2bac5972751cb3280a6e974d864096
+md5: 1101ece6c8b14e4fe7c64dbe941dd07d
 range: 79 - 80
 ```

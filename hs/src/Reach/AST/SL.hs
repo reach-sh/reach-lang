@@ -764,6 +764,7 @@ data SLPrimitive
   | SLPrim_Struct_toObject
   | SLPrim_Struct_fields
   | SLPrim_Tuple
+  | SLPrim_tuple_includes
   | SLPrim_tuple_length
   | SLPrim_tuple_set
   | SLPrim_Object

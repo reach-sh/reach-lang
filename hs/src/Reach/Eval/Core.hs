@@ -1397,8 +1397,8 @@ evalAsEnvM sv@(lvl, obj) = case obj of
       go key mode =
         [(key, retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial $ p {slpr_mode = Just mode})]
   --- FIXME rewrite the rest to look at the type and go from there
-  SLV_Tuple _ _ -> return $ Just tupleValueEnv
-  SLV_DLVar (DLVar _ _ (T_Tuple _) _) -> return $ Just tupleValueEnv
+  SLV_Tuple _ _ -> return $ Just $ tupleValueEnv obj
+  SLV_DLVar (DLVar _ _ (T_Tuple _) _) -> return $ Just $ tupleValueEnv obj
   SLV_DLVar (DLVar _ _ T_Token _) ->
     return $ Just $
       M.fromList $
@@ -1437,6 +1437,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
       M.fromList
         [ ("set", retV $ public $ SLV_Prim $ SLPrim_tuple_set)
         , ("length", retV $ public $ SLV_Prim $ SLPrim_tuple_length)
+        , ("includes", retV $ public $ SLV_Prim $ SLPrim_tuple_includes)
         ]
   SLV_Array {} -> return $ Just arrayValueEnv
   SLV_DLVar (DLVar _ _ (T_Array _ _) _) -> return $ Just arrayValueEnv
@@ -1551,11 +1552,23 @@ evalAsEnvM sv@(lvl, obj) = case obj of
     foldableObjectEnv = map (\m -> (m, delayStdlib $ "Foldable_" <> m <> "1")) foldableMethods
     foldableValueEnv :: [(SLVar, App SLSVal)]
     foldableValueEnv = map (\m -> (m, retStdLib $ "Foldable_" <> m)) foldableMethods
-    tupleValueEnv :: SLObjEnv
-    tupleValueEnv =
+    tupleValueEnv :: SLVal -> SLObjEnv
+    tupleValueEnv tupSlv =
       M.fromList
         [ ("set", delayCall SLPrim_tuple_set)
         , ("length", doCall SLPrim_tuple_length)
+        , ("includes",
+           do
+             -- I would just do `delayCall SLPrim_tuple_includes`, but it fails
+             -- if tested by `SLPrim_is` as a function, which means that something
+             -- like `mytuple.includes` can't be set as a view function.
+             -- Fixing the `SLPrim_is` implementation seems a lot harder than this.
+             foldable_includes <- lookStdlib "Foldable_includes"
+             return $ (lvl, jsClo (srclocOf tupSlv) "tuple_includes"
+               "(v) => f(tup, v)"
+               (M.fromList [("f", SLV_Prim SLPrim_tuple_includes),
+                            ("tup", tupSlv),
+                            ("Foldable_includes", foldable_includes)])))
         ]
     arrayValueEnv :: SLObjEnv
     arrayValueEnv =
@@ -2945,6 +2958,28 @@ evalPrim p sargs =
           retV $ (lvl, SLV_Type $ ST_Array ty sz)
         _ -> illegal_args
     SLPrim_Foldable -> expect_ Err_Prim_Foldable
+    SLPrim_tuple_includes -> do
+      at <- withAt id
+      (tup, needle) <- two_args
+      (nt, _na) <- typeOf needle
+      foldable_includes <- lookStdlib "Foldable_includes"
+      case tup of
+        SLV_Tuple _ vs -> do
+          let typeMatch v = do
+                mTA <- typeOfM v
+                case mTA of
+                  (Just (t, _a)) -> return $ t == nt
+                  _ -> return $ False
+          vsMatched <- filterM typeMatch vs
+          evalApplyVals' foldable_includes [(lvl, (SLV_Array at nt vsMatched)), (lvl, needle)]
+        SLV_DLVar arrDlv@(DLVar _ _ (T_Tuple ts) _) -> do
+          let indices = map snd $ filter (\(t, _i) -> t == nt) (zip ts [0..])
+          let mkdv = DLVar at Nothing nt
+          let liftRef i = ctxt_lift_expr mkdv $
+               DLE_ArrayRef at (DLA_Var arrDlv) (DLA_Literal $ DLL_Int at UI_Word i)
+          dlvs <- mapM liftRef indices
+          evalApplyVals' foldable_includes [(lvl, (SLV_Array at nt (map SLV_DLVar dlvs))), (lvl, needle)]
+        _ -> illegal_args
     SLPrim_tuple_length -> do
       at <- withAt id
       one_arg >>= \case
