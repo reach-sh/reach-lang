@@ -3,12 +3,13 @@ import * as backend from './build/index.main.mjs';
 
 const stdlib = loadStdlib();
 const isAlgo = stdlib.connector === 'ALGO';
-const [ accA, accB, accC, accD ] = await stdlib.newTestAccounts(4, stdlib.parseCurrency(100));
+const [ accA, accB, accC, accD, accE ] = await stdlib.newTestAccounts(5, stdlib.parseCurrency(100));
 
 const accOpts = {
   clawback: accB,
   freeze: accC,
   reserve: accD,
+  manager: accE,
 };
 const gil = await stdlib.launchToken(accA, 'Gil', 'GIL', {
   ...(isAlgo ? {...accOpts, defaultFrozen: true} : {}),

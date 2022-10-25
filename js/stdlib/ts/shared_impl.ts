@@ -524,6 +524,7 @@ export type LaunchTokenOpts = {
   freeze?: any,
   defaultFrozen?: boolean,
   reserve?: any,
+  manager?: string,
   note?: Uint8Array,
 };
 

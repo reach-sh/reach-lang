@@ -2704,6 +2704,7 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
   const clawback = f_addr(opts.clawback);
   const freeze = f_addr(opts.freeze);
   const reserve = f_addr(opts.reserve);
+  const manager = f_addr(opts.manager);
   const defaultFrozen = opts.defaultFrozen ?? false;
   const suggestedParams = await getTxnParams('launchToken');
 
@@ -2714,7 +2715,7 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
       assetMetadataHash, assetName: name, assetURL: url, clawback,
       decimals, defaultFrozen, freeze, note: opts.note, reserve,
       suggestedParams, total: bigNumberToBigInt(supply), unitName: sym,
-      from: addrCreator,
+      from: addrCreator, manager,
     }))
   );
 
