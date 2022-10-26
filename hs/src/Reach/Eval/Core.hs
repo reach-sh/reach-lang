@@ -661,12 +661,11 @@ base_env_slvals =
 base_env :: SLEnv
 base_env = m_fromList_public_builtin base_env_slvals
 
-jsClo :: HasCallStack => SrcLoc -> String -> String -> (M.Map SLVar SLVal) -> SLVal
-jsClo at name js env_ = SLV_Clo at Nothing $ SLClo (Just name) args body cloenv
+jsClo_ :: HasCallStack => SrcLoc -> String -> String -> SLEnv -> SLVal
+jsClo_ at name js env = SLV_Clo at Nothing $ SLClo (Just name) args body cloenv
   where
     -- Since we're generating closure, don't fuss about unused vars
     cloenv = SLCloEnv mempty env False
-    env = M.map (SLSSVal at Public) env_
     (args, body) =
       case rjsa (srcloc2annot at) (readJsExpr js) of
         JSArrowExpression aformals _ bodys -> (a_, b_)
@@ -674,6 +673,15 @@ jsClo at name js env_ = SLV_Clo at Nothing $ SLClo (Just name) args body cloenv
             b_ = jsArrowBodyToRetBlock bodys
             a_ = parseJSArrowFormals at aformals
         _ -> impossible "not arrow"
+
+jsClo :: HasCallStack => SrcLoc -> String -> String -> (M.Map SLVar SLVal) -> SLVal
+jsClo at name js env_ = jsClo_ at name js $ M.map (SLSSVal at Public) env_
+
+jsCloExtendEnv :: HasCallStack => SrcLoc -> String -> String -> (M.Map SLVar SLVal) -> App SLVal
+jsCloExtendEnv at name js env = do
+  curEnv <- (sco_cenv . e_sco) <$> ask
+  let env' = M.map (SLSSVal at Public) env
+  return $ jsClo_ at name js (M.union env' curEnv)
 
 typeEqb :: DLType -> DLType -> Bool
 typeEqb = (==)
@@ -1559,18 +1567,16 @@ evalAsEnvM sv@(lvl, obj) = case obj of
         , ("length", doCall SLPrim_tuple_length)
         , ("includes",
            do
-             env <- (sco_cenv . e_sco) <$> ask
-             let env' = M.map sss_val env
              -- I would just do `delayCall SLPrim_tuple_includes`, but it fails
              -- if tested by `SLPrim_is` as a function, which means that something
              -- like `mytuple.includes` can't be set as a view function.
              -- Fixing the `SLPrim_is` implementation seems a lot harder than this.
-             return $ (lvl, jsClo (srclocOf tupSlv) "tuple_includes"
+             clo <- jsCloExtendEnv (srclocOf tupSlv) "tuple_includes"
                "(v) => f(tup, v)"
-               (M.union (M.fromList [ ("f", SLV_Prim SLPrim_tuple_includes)
+               (M.fromList [ ("f", SLV_Prim SLPrim_tuple_includes)
                            , ("tup", tupSlv)
                            ])
-                        env')))
+             return $ (lvl, clo))
         ]
     arrayValueEnv :: SLObjEnv
     arrayValueEnv =
