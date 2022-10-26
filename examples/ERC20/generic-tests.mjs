@@ -1,4 +1,5 @@
 import * as backend from './build/index.main.mjs';
+import * as backendTransferTest from './build/index.transferTest.mjs';
 import { loadStdlib, ask } from "@reach-sh/stdlib";
 const stdlib = loadStdlib(process.env);
 
@@ -133,5 +134,32 @@ export const genericTests = async () => {
   assertEq((await ctc0.v.decimals())[1], meta.decimals, "decimals()");
 
   console.log("finished connector-generic tests")
+
+  if (stdlib.connector === "ETH") {
+    console.log("Running extra tests on ETH, where Tokens are ERC-20s.")
+
+    // Our frontend stdlib.transfer should accept it.
+    await stdlib.transfer(acc0, acc2, 10, ctcinfo);
+    await assertBalances(totalSupply - 40, 10, 20, 10);
+    await stdlib.transfer(acc0, acc1, 10, ctcinfo);
+    await assertBalances(totalSupply - 50, 20, 20, 10);
+
+
+    // And contracts should accept our ERC-20 as Token values.
+    const helperCtcA = acc2.contract(backendTransferTest);
+    //const helperInfo = await helperCtcA.getInfo();
+    const helperCtcB = acc3.contract(backendTransferTest, helperCtcA.getInfo());
+    await Promise.all([
+      helperCtcA.p.A({
+        tok: ctcinfo,
+        getAmount: () => 10,
+      }),
+      helperCtcB.p.B({}),
+    ]);
+
+    await assertBalances(totalSupply - 50, 20, 10, 20);
+
+    console.log("Done with extra ETH tests")
+  }
 
 }
