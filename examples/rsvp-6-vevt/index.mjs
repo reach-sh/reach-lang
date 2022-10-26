@@ -7,7 +7,7 @@ const stdlib = loadStdlib({ REACH_NO_WARN: 'Y' });
 const err = {
   'ETH': 'transaction failed',
   'ALGO': 'assert failed',
-  'CFX': 'transaction is reverted',
+  'CFX': 'Receipt outcomeStatus is nonzero',
 }[stdlib.connector];
 
 // Framework
@@ -15,9 +15,7 @@ const makeRSVP = async ({ hostLabel, name, reservation, timeLimit }) => {
   const sbal = stdlib.parseCurrency(100);
   const accHost = await stdlib.newTestAccount(sbal);
   accHost.setDebugLabel(hostLabel);
-  if (stdlib.connector != 'ALGO') {
-    accHost.setGasLimit(GAS_LIMIT);
-  };
+  accHost.setGasLimit(GAS_LIMIT);
 
   const stdPerson = (obj) => {
     const { acc } = obj;
@@ -61,9 +59,7 @@ const makeRSVP = async ({ hostLabel, name, reservation, timeLimit }) => {
   const makeGuest = async (label) => {
     const acc = await stdlib.newTestAccount(sbal);
     acc.setDebugLabel(label);
-    if (stdlib.connector != 'ALGO') {
-      acc.setGasLimit(GAS_LIMIT);
-    }
+    acc.setGasLimit(GAS_LIMIT);
 
     const willGo = async () => {
       const ctcGuest = acc.contract(backend, ctcInfo);
