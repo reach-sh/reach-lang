@@ -143,3 +143,31 @@ export const main = Reach.App(() => {
   exit();
 });
 
+
+// A simple contract that receives and transfers non-network tokens to test our ERC-20 with.
+// A roundabout way for Alice to transfer to Bob.
+export const transferTest = Reach.App(() => {
+  const A = Participant('A', {
+    tok: Token,
+    getAmount: Fun([], UInt),
+  });
+  const B = Participant('B', {
+  })
+  init();
+  A.only(() => {
+    const tok = declassify(interact.tok);
+  })
+  A.publish(tok);
+  commit();
+  B.publish();
+  commit();
+  A.only(() => {
+    const amt = declassify(interact.getAmount());
+  })
+  A.publish(amt).pay([0, [amt, tok]]);
+  commit();
+  B.publish();
+  transfer([0, [amt, tok]]).to(B);
+  commit();
+  exit();
+});
