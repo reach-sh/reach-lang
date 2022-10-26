@@ -776,8 +776,8 @@ Instead, we'll just make a few simple changes to the test framework to demonstra
 
 ```
 load: /examples/rsvp-6-vevt/index.mjs
-md5: 89fe2faa0411e3d6af06b4ed081ba2aa
-range: 49-59
+md5: 65e69ecdbcea0eab0d04838833ddea55
+range: 47-57
 ```
 
 First, we'll have the Host monitor all registrations for this event.
@@ -790,8 +790,8 @@ This is representative of a user interface that shows the Host each registration
 
 ```
 load: /examples/rsvp-6-vevt/index.mjs
-md5: 89fe2faa0411e3d6af06b4ed081ba2aa
-range: 61-74
+md5: 65e69ecdbcea0eab0d04838833ddea55
+range: 59-70
 ```
 
 We've added a gas limit using `{!js} stdlib.setGasLimit` for testing on Ethereum.
