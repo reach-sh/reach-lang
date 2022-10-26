@@ -695,6 +695,10 @@ solLargeArg' usesStorage dv la =
                     where
                       (ys, zs) = B.splitAt n xs
           let cs = chunks bcs s
+          let go i x = return $ one (".elem" <> pretty i) (g2 x)
+          concatZipWithM go ([0 ..] :: [Int]) cs
+    one :: Doc -> Doc -> Docs
+    one f v = [dv <> f <+> "=" <+> v <> semi]
 
 solLargeArg :: Bool -> DLVar -> DLLargeArg -> App Docs
 solLargeArg usesStorage dv la = flip (solLargeArg' usesStorage) la =<< solF dv
@@ -730,7 +734,7 @@ solExpr sp = \case
   DLE_ArrayConcat {} ->
     impossible "array concat"
   DLE_BytesDynCast _ ae -> do
-    ae' <- solArg ae
+    ae' <- solF ae
     return $ "bytes.concat" <> parens ae'
   DLE_TupleRef _ ae i -> do
     ae' <- solF ae
