@@ -251,13 +251,14 @@ If you are not building a browser-based DApp, you may want to set the network pr
 stdlib.setProviderByName(string) => void
 ```
 
-Supported provider names are: `{!js} 'MainNet'`, `{!js} 'TestNet'`, and `{!js} 'LocalHost'`.
+Supported provider names are: `{!js} 'MainNet'`, `{!js} 'TestNet'`, `{!js} 'BetaNet'`, and `{!js} 'LocalHost'`.
+`{!js} 'BetaNet'` is sometimes referred to as `{!js} 'DevNet'`.
 
 On Ethereum, `{!js} 'MainNet'` will connect to homestead, and `{!js} 'TestNet'` to ropsten.
 Multiple free API providers are used behind the scenes, [as implemented by ethers.js](https://docs.ethers.io/v5/api/providers/#providers-getDefaultProvider).
 
 On Algorand, `{!js} 'MainNet'` will connect to MainNet, and `{!js} 'TestNet'` to TestNet.
-The free RandLabs API provider is used ([https://algoexplorerapi.io](https://algoexplorerapi.io)).
+The default Node provider is AlgoNode, but the free [RandLabs API](https://randlabs.io/products?product=api) provider can also be used.
 
 Provider connections are created with the code below:
 
@@ -265,24 +266,68 @@ Provider connections are created with the code below:
 
 ``` js
 load: /examples/overview-networks/index.mjs
-md5: a0d32a930197470096ccdd9fcaeace96
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
 range: 9-9
+```
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 15-15
+```
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 21-21
 ```
 
 `{!js} TestNet`
 
 ``` js
 load: /examples/overview-networks/index.mjs
-md5: a0d32a930197470096ccdd9fcaeace96
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
 range: 11-11
+```
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 17-17
+```
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 23-23
+```
+
+`{!js} BetaNet`
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 13-13
+```
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 19-19
+```
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 25-25
 ```
 
 `{!js} LocalHost`
 
 ``` js
 load: /examples/overview-networks/index.mjs
-md5: a0d32a930197470096ccdd9fcaeace96
-range: 13-13
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 27-27
 ```
 
 ---

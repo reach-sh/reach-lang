@@ -1,6 +1,6 @@
 /build
 /scribble.log
 /convert.log
-/dev.log
+/gen.log
 /md
 /secret.env
