@@ -1559,15 +1559,18 @@ evalAsEnvM sv@(lvl, obj) = case obj of
         , ("length", doCall SLPrim_tuple_length)
         , ("includes",
            do
+             env <- (sco_cenv . e_sco) <$> ask
+             let env' = M.map sss_val env
              -- I would just do `delayCall SLPrim_tuple_includes`, but it fails
              -- if tested by `SLPrim_is` as a function, which means that something
              -- like `mytuple.includes` can't be set as a view function.
              -- Fixing the `SLPrim_is` implementation seems a lot harder than this.
              return $ (lvl, jsClo (srclocOf tupSlv) "tuple_includes"
                "(v) => f(tup, v)"
-               (M.fromList [ ("f", SLV_Prim SLPrim_tuple_includes)
+               (M.union (M.fromList [ ("f", SLV_Prim SLPrim_tuple_includes)
                            , ("tup", tupSlv)
-                           ])))
+                           ])
+                        env')))
         ]
     arrayValueEnv :: SLObjEnv
     arrayValueEnv =
