@@ -147,7 +147,6 @@ export const genericTests = async () => {
 
     // And contracts should accept our ERC-20 as Token values.
     const helperCtcA = acc2.contract(backendTransferTest);
-    //const helperInfo = await helperCtcA.getInfo();
     const helperCtcB = acc3.contract(backendTransferTest, helperCtcA.getInfo());
     await Promise.all([
       helperCtcA.p.A({
