@@ -88,14 +88,18 @@ instance CLike DLMI where
     -- XXX generate the map reference functions here?
     def (nameMap i) (CLD_Map dlmi_kt dlmi_ty)
 
-clm :: (CLike a) => ((k, v) -> a) -> M.Map k v -> App ()
-clm f m = forM_ (map f $ M.toAscList m) cl
+data CMap t k v = CMap ((k, v) -> t) (M.Map k v)
+
+instance (CLike t) => CLike (CMap t k v) where
+  cl (CMap f m) = forM_ (map f $ M.toAscList m) cl
 
 instance CLike DLInit where
-  cl (DLInit {..}) = clm DLMI dli_maps
+  cl (DLInit {..}) = cl $ CMap DLMI dli_maps
 
-clilm :: (CLike a) => ((SLPart, v) -> a) -> InterfaceLikeMap v -> App ()
-clilm f = clm f . flattenInterfaceLikeMap
+data CILMap a v = CILMap ((SLPart, v) -> a) (InterfaceLikeMap v)
+
+instance (CLike a) => CLike (CILMap a v) where
+  cl (CILMap f m) = cl $ CMap f $ flattenInterfaceLikeMap m
 
 newtype DLEI = DLEI (SLPart, [DLType])
 
@@ -103,7 +107,7 @@ instance CLike DLEI where
   cl (DLEI (p, ts)) = def p $ CLD_Evt ts
 
 instance CLike DLEvents where
-  cl = clilm DLEI
+  cl = cl . CILMap DLEI
 
 data CLViewY = CLViewY
   { cvy_svs :: [DLVarLet]
@@ -226,7 +230,7 @@ instance (CLikeF a) => CLike (FIX a) where
     funw (nameApi v) ns fi_at domvls fi_isView rng intt
 
 instance (CLikeF a) => CLike (M.Map SLPart (FunInfo a)) where
-  cl = clm FIX
+  cl = cl . CMap FIX
 
 data ApiInfoY = ApiInfoY
   { aiy_at :: SrcLoc
@@ -386,7 +390,7 @@ instance CLike CHX where
     fun n $ CLFun {..}
 
 instance CLike CHandlers where
-  cl (CHandlers hm) = clm CHX hm
+  cl (CHandlers hm) = cl $ CMap CHX hm
 
 clike :: PLProg a CPProg -> IO (PLProg a CLProg)
 clike = plp_cpp_mod $ \old@(CPProg {..}) -> do

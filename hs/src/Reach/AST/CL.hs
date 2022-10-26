@@ -145,3 +145,7 @@ instance Pretty CLProg where
     <> render_obj clp_defs <> hardline
     <> "// Functions:" <> hardline
     <> render_obj clp_funs
+
+instance HasCounter CLProg where
+  getCounter = getCounter . clp_opts
+
