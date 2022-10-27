@@ -1326,6 +1326,17 @@ const getAccountInfo  = async (acc: Account | Address): Promise<AccountInfo> => 
 
 const getAssetInfo = async (a:number): Promise<AssetInfo> => {
   const dhead = 'getAssetInfo';
+  try {
+    await ensureNodeCanRead();
+    const client = await getAlgodClient();
+    const req = client.getAssetByID(a);
+    debug(dhead, req);
+    const res = (await req.do()) as AssetInfo;
+    debug(dhead, 'node', res);
+    return res;
+  } catch (e:any) {
+    debug(dhead, 'node err', e)
+  }
   const indexer = await getIndexer();
   const q = indexer.lookupAssetByID(a) as unknown as ApiCall<IndexerAssetInfoRes>;
   const failOk = (x:any): OrExn<IndexerAssetInfoRes> => {
