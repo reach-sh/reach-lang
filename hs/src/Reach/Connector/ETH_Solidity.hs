@@ -161,7 +161,6 @@ solIf_ c t f = [ solWhen c t <> hardline <> "else" <+> solBraces f ]
 solIf :: (SolFrag a, SolStmts k) => a -> k -> k -> App Docs
 solIf c t f = solIf_ <$> solF c <*> solS t <*> solS f
 
---- FIXME don't nest
 solIfs_ :: [(Doc, Docs)] -> Docs
 solIfs_ = \case
   [] -> []
@@ -1361,19 +1360,18 @@ solSF x = do
   (frameDefn, frameDecl) <- solFrame mvars
   return (frameDefn, frameDecl <> x')
 
-solArgType :: Maybe [DLVar] -> [DLVar] -> App Doc
-solArgType msvs msg = do
-  let fst_part =
-        case msvs of
-          Nothing -> ("time", T_UInt UI_Word)
-          Just svs -> ("svs", vsToType svs)
-  let msg_ty = vsToType msg
-  let arg_ty = T_Struct $ [fst_part, ("msg", msg_ty)]
-  solType arg_ty
+solArgType :: Maybe [DLVar] -> [DLVar] -> DLType
+solArgType msvs msg = T_Struct $ [fst_part, ("msg", msg_ty)]
+  where
+    fst_part =
+      case msvs of
+        Nothing -> ("time", T_UInt UI_Word)
+        Just svs -> ("svs", vsToType svs)
+    msg_ty = vsToType msg
 
 solArgDefn_ :: Doc -> ArgMode -> Maybe [DLVar] -> [DLVar] -> App Doc
 solArgDefn_ name am msvs msg = do
-  arg_ty' <- solArgType msvs msg
+  arg_ty' <- solType $ solArgType msvs msg
   am' <- solF am
   return $ solDecl name $ arg_ty' <> am'
 
@@ -1397,7 +1395,8 @@ instance SolStmts HandlerX where
         liftIO $ modifyIORef which_msg_r $ M.insert which msg
         void $ solS $ CLTxnBind at from timev secsv
         addVars solArgMsgVar msgl
-        let cl' = CL_Com (CLEmitPublish at which msg)
+        let msg_ty = solArgType Nothing msg
+        let cl' = CL_Com (CLEmitPublish at which msg_ty)
                   $ CL_Com (CLIntervalCheck at timev secsv interval)
                   $ CL_Halt at
         (frameDefn, ctp) <- solSF $ HandlerY cl' ct
@@ -1479,7 +1478,7 @@ apiArgs tyMsg (ApiInfo {..}) = do
   ai_msg_vs <- case M.lookup ai_which which_msg of
     Just vs -> return vs
     Nothing -> impossible "apiDef: no which"
-  m_arg_ty <- solArgType Nothing ai_msg_vs
+  m_arg_ty <- solType $ solArgType Nothing ai_msg_vs
   let mkArgDefns ts = do
         let indexedTypes = zip ts [0 ..]
         unzip <$> mapM (\(ty, i :: Int) -> do
@@ -1867,12 +1866,12 @@ instance SolStmts CLStmt where
         , (from, "payable(msg.sender)")
         ]
       return []
-    CLEmitPublish _at which msg -> do
+    CLEmitPublish _at which msg_ty -> do
       -- XXX This should be in CLike, but how can we force the inclusion of
       -- _who?
-      arg_ty' <- solArgType Nothing msg
+      msg_ty' <- solType msg_ty
       let e = solMsg_evt which
-      let ed = [ "event" <+> solApply e ["address _who", arg_ty' <+> "_a"] <> semi ]
+      let ed = [ "event" <+> solApply e ["address _who", msg_ty' <+> "_a"] <> semi ]
       modifyCtxtIO ctxt_outputs $ M.insert (show e) ed
       return $ [ "emit" <+> solApply e ["msg.sender", "_a"] <> semi ]
     CLTimeCheck at actual given -> do
@@ -1976,12 +1975,13 @@ instance SolStmts FunX where
         True -> return (AM_Memory, SFLCtor)
         False -> do
           let name' = pclv name
-          (ext, mut, mret) <-
+          let mut = not clf_view
+          (ext, mret) <-
             case clf_mode of
-              CLFM_Internal -> return (False, True, Nothing)
+              CLFM_Internal -> return (False, Nothing)
               CLFM_External {..} -> do
                 ret <- solType_withArgLoc cfm_erngv
-                return (True, not cfm_view, Just ret)
+                return (True, Just ret)
           return $ (AM_Call, SFLFun ext mut name' mret)
     am' <- solF am
     args <-
