@@ -1935,26 +1935,11 @@ newtype FunX = FunX (CLSym, CLFun)
 
 instance SolStmts FunX where
   solS (FunX ((CLSym name _ _), (CLFun {..}))) = freshVarMap $ do
-    -- XXX handle ctor
     -- XXX put args in tuple
     -- XXX lock
-    -- XXX memory on internal
-    let am = AM_Call
-    am' <- solF am
-    args <- forM clf_dom $ \vl -> do
-      let v = varLetVar vl
-      ty' <- solType $ varType v
-      let v' = solRawVar v
-      return $ solDecl v' $ ty' <> am'
-    extra_args <-
-      case clf_mode of
-        CLFM_External {} -> return []
-        CLFM_Internal -> do
-          return $ [ solDecl memVar memTy ]
-    let args' = args <> extra_args
-    sfl <-
+    (am, sfl) <-
       case name == nameMeth 0 of
-        True -> return SFLCtor
+        True -> return (AM_Memory, SFLCtor)
         False -> do
           let name' = pclv name
           (ext, mut, mret) <-
@@ -1963,10 +1948,24 @@ instance SolStmts FunX where
               CLFM_External {..} -> do
                 ret <- solType cfm_erngv
                 return (True, not cfm_view, Just ret)
-          return $ SFLFun ext mut name' mret
-    addVars solRawVar clf_dom
+          return $ (AM_Call, SFLFun ext mut name' mret)
+    am' <- solF am
+    args <-
+      case clf_mode of
+        CLFM_External {} -> do
+          addVars solRawVar clf_dom
+          forM clf_dom $ \vl -> do
+            let v = varLetVar vl
+            ty' <- solType $ varType v
+            let v' = solRawVar v
+            return $ solDecl v' $ ty' <> am'
+        CLFM_Internal -> do
+          let vs = map varLetVar clf_dom
+          argTy <- solType $ vsToType vs
+          addVars_ (\v -> "_a." <> solRawVar v) vs
+          return $ [ solDecl "_a" argTy, solDecl memVar memTy ]
     (frameDefn, body) <- solSF clf_tail
-    return $ frameDefn <> solFunctionLike sfl args' body
+    return $ frameDefn <> solFunctionLike sfl args body
 
 instance SolStmts CLProg where
   solS (CLProg {..}) = do
