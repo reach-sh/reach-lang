@@ -39,7 +39,8 @@ evalImportClause env im =
   case im of
     JSImportClauseNameSpace (JSImportNameSpace _ _ ji) -> do
       (at', ns) <- withAt $ flip parseIdent ji
-      return $ M.singleton ns $ (SLSSVal at' Public $ SLV_Object at' (Just $ "module " <> ns) env)
+      uni <- readUniverse
+      return $ M.singleton ns $ (SLSSVal at' Public uni $ SLV_Object at' (Just $ "module " <> ns) env)
     JSImportClauseNamed (JSImportsNamed _ iscl _) ->
       evalImExportSpecifiers (LC_RefFrom "import") env go iscl
       where
@@ -135,11 +136,12 @@ evalLib :: Connectors -> SLMod -> SLLibs -> App SLLibs
 evalLib cns (src, body) libm = do
   -- liftIO $ putStrLn $ "Evaluating " <> show src
   let at = srcloc_src src
+  uni <- readUniverse
   let base_env' =
         M.union base_env $
           M.mapKeys T.unpack $
             M.mapWithKey
-              (\k _ -> SLSSVal sb Public $ SLV_Connector k)
+              (\k _ -> SLSSVal sb Public uni $ SLV_Connector k)
               cns
   let stdlib_env =
         case src of

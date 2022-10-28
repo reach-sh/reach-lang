@@ -617,16 +617,16 @@ Before we had this line in the file, when we ran `./reach compile`, it would pri
 
 ```
 load: /examples/rps-3-bets/index.txt
-md5: b40fa499b4eb0f5685be6bdacc9f72dc
-range: 2-7
+md5: 28d95cc29c6b14c1cc26c778d196f184
+range: 3-8
 ```
 
 But now, it prints out
 
 ```
 load: /examples/rps-4-attack/index.txt
-md5: 7dd7ca4ad02b809cfd3e9f74b980bda1
-range: 2-7
+md5: 110e527c76781aa90248cd73afb2d87a
+range: 3-8
 ```
 
 + Line 7 is different and shows that more theorems have been proven about our program.
@@ -685,8 +685,8 @@ When we run `./reach compile rps-4-attack/index-bad.rsh`, it gives details about
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: c05213f485c1095beb47b850f37cc77e
-range: 4-31
+md5: f3e303f988d9e814893c783592a61280
+range: 5-32
 ```
 
 There's a lot of information in the compiler output that can help an experienced programmer track down the problem. But the most important parts are
@@ -724,8 +724,8 @@ When we run `./reach run`, it reports that this assertion is false:
 
 ```
 load: /examples/rps-4-attack/index-fails.txt
-md5: e9d3a82d42cf23117555b918f9f78b28
-range: 2-6
+md5: 50af6bc7a17c513531f63cb7c8ec7efa
+range: 3-7
 ```
 
 It is not enough to correct failures and attacks when you discover them.

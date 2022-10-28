@@ -3667,6 +3667,7 @@ compile_algo env disp (CPProg {..}) = do
     code "b" [ "apiReturn_noCheck" ]
     label "alloc"
     let ctf f x = do
+          liftIO $ modifyIORef resr $ M.insert (LT.toStrict f) $ AS.Number $ fromIntegral x
           cint x
           code "txn" [f]
           asserteq
@@ -3719,6 +3720,23 @@ verifyMapTypes badx = mapM $ \ DLMapInfo {..} -> do
     unless (dlmi_kt == T_Address) $ do
       badx $ LT.pack $ "Cannot use '" <> show dlmi_kt <> "' as Map key. Only 'Address' keys are allowed."
     return $ DLMapInfo {..}
+
+data ALGOConnectorInfo = ALGOConnectorInfo
+  { aci_appApproval :: String
+  , aci_appClear :: String
+  } deriving (Show)
+
+instance AS.ToJSON ALGOConnectorInfo where
+  toJSON (ALGOConnectorInfo {..}) = AS.object $
+    [ "approvalB64" .= aci_appApproval
+    , "clearStateB64" .= aci_appClear
+    ]
+
+instance AS.FromJSON ALGOConnectorInfo where
+  parseJSON = AS.withObject "ALGOConnectorInfo" $ \obj -> do
+    aci_appApproval <- obj .: "appApproval"
+    aci_appClear <- obj .: "appClear"
+    return $ ALGOConnectorInfo {..}
 
 data ALGOCodeIn = ALGOCodeIn
   { aci_approval :: String
@@ -3782,10 +3800,10 @@ instance AS.ToJSON ALGOCodeOpts where
 
 instance AS.FromJSON ALGOCodeOpts where
   parseJSON = AS.withObject "ALGOCodeOpts" $ \obj -> do
-    aco_globalUints <- fromMaybe 0 <$> obj .:? "globalUints"
-    aco_globalBytes <- fromMaybe 0 <$> obj .:? "globalBytes"
-    aco_localUints <- fromMaybe 0 <$> obj .:? "localUints"
-    aco_localBytes <- fromMaybe 0 <$> obj .:? "localBytes"
+    aco_globalUints <- fromMaybe 0 <$> firstJustM (obj .:?) [ "globalUints", "GlobalNumUint" ]
+    aco_globalBytes <- fromMaybe 0 <$> firstJustM (obj .:?) [ "globalBytes", "GlobalNumByteSlice" ]
+    aco_localUints  <- fromMaybe 0 <$> firstJustM (obj .:?) [ "localUints", "LocalNumUint" ]
+    aco_localBytes  <- fromMaybe 0 <$> firstJustM (obj .:?) [ "localBytes", "LocalNumByteSlice" ]
     return $ ALGOCodeOpts {..}
 
 ccTEAL :: String -> CCApp BS.ByteString
@@ -3832,3 +3850,7 @@ connect_algo env = Connector {..}
     conContractNewOpts mv = do
       (aco :: ALGOCodeOpts) <- aesonParse $ fromMaybe (AS.object mempty) mv
       return $ AS.toJSON aco
+    conCompileConnectorInfo :: Maybe AS.Value -> Either String AS.Value
+    conCompileConnectorInfo v = do
+      ALGOConnectorInfo {..} <- aesonParse $ fromMaybe (AS.object mempty) v
+      return $ AS.toJSON $ ALGOConnectorInfo {..}

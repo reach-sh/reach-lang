@@ -23,6 +23,7 @@ import qualified Data.Text.Encoding as TE
 import GHC.Stack
 import System.Directory.Extra
 import System.Exit
+import qualified Data.Aeson as AE
 
 -- | A simple substitute for Data.ByteString.Char8.pack that handles unicode
 bpack :: String -> ByteString
@@ -200,3 +201,13 @@ startsWith :: Eq a => a -> [a] -> Bool
 startsWith x = \case
   xp:_ | x == xp -> True
   _ -> False
+
+mapJsonString :: (Text -> Text) -> AE.Value -> AE.Value
+mapJsonString f = \case
+  AE.String s -> AE.String $ f s
+  _ -> impossible "Expected string"
+
+expectJsonObj :: (AE.Object -> t) -> AE.Value -> t
+expectJsonObj f = \case
+  AE.Object o -> f o
+  _ -> impossible "Expected object"

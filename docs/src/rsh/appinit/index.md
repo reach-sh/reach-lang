@@ -315,8 +315,3 @@ file that defines the program.
 The value returned (`cc`) can be used with `{!rsh} new Contract` to actually deploy the child contracts.
 It embeds the actual bytecode of the child contracts, so it can (potentially drastically) expand the size (and thus cost) of deploying the parent contract.
 
-:::note
-How do I get valid input to `{!rsh} ContractCode` from Reach?
-
-A future version of Reach will accept `{!rsh} Reach.App` values as arguments to `{!rsh} ContractCode`, but until then, the best way to get the necessary files is to use `{!cmd} reach compile --intermediate-files` and inspect the `build` directory, which contains the necessary input for each connector.
-:::

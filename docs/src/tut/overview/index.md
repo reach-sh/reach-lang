@@ -167,8 +167,8 @@ It will print out a detailed error message showing the violation.
 
 ```
 load: /examples/overview/index-error.txt
-md5: c0c6a724c30f78bf2a43ef7676205327
-range: 2-28
+md5: 847d0e99da928c61c43f29383d091b12
+range: 3-29
 ```
 
 Verification failures include a lot of information, such as a concrete counter-example showing values that could have been provided by frontends that would lead to the property failing to hold.

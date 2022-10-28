@@ -60,7 +60,7 @@ main = do
     exitSuccess
   args <- getCompilerArgs versionCliDisp
   (e :: Either SomeException ()) <-
-    try $ compile env $ cta_co args
+    try $ void $ compile env $ cta_co args
   case shouldReport args env of
     False -> pure ()
     True -> case e of
@@ -70,7 +70,7 @@ main = do
         Nothing -> startReport (cte_REACHC_ID env) "compile" `apMA` e
   case e of
     Left exn -> throwIO exn
-    Right () -> return ()
+    Right _ -> return ()
  where
   f = replace "'" "'\\''" . unpack . encode
   report :: Either CompileErrorException () -> IO ()

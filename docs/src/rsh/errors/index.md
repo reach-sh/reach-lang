@@ -65,8 +65,8 @@ When you compile this program, Reach detects the problem and produces a lot of o
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: c05213f485c1095beb47b850f37cc77e
-range: 1-1
+md5: f3e303f988d9e814893c783592a61280
+range: 2-2
 ```
 
 First, Reach will check knowledge assertions that are introduced by `{!rsh} unknowable`.
@@ -74,8 +74,8 @@ This program does not have a violation of knowledge assertions, so there is no m
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: c05213f485c1095beb47b850f37cc77e
-range: 2-2
+md5: f3e303f988d9e814893c783592a61280
+range: 3-3
 ```
 
 Next, Reach begins checking the body of your code.
@@ -86,8 +86,8 @@ If you want to check with the actual connectors you will use, then you can use t
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: c05213f485c1095beb47b850f37cc77e
-range: 3-3
+md5: f3e303f988d9e814893c783592a61280
+range: 4-4
 ```
 
 Next, Reach will check your program when the participants in it are "honest".
@@ -100,8 +100,8 @@ You will get extra errors in this mode if you include an `{!rsh} assume`, but fo
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: c05213f485c1095beb47b850f37cc77e
-range: 4-8
+md5: f3e303f988d9e814893c783592a61280
+range: 5-9
 ```
 
 When Reach finds a problem, it will output a block of text that starts like this.
@@ -116,8 +116,8 @@ In this case, the error says that at the end of the program ("application exit")
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: c05213f485c1095beb47b850f37cc77e
-range: 10-10
+md5: f3e303f988d9e814893c783592a61280
+range: 11-11
 ```
 
 In the next section of text, Reach is going to provide information about the "violation witness".
@@ -127,8 +127,8 @@ Reach can synthesize example inputs to provide evidence that the violation is po
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: c05213f485c1095beb47b850f37cc77e
-range: 12-12
+md5: f3e303f988d9e814893c783592a61280
+range: 13-13
 ```
 
 Reach will report the values of all the variables that are unconstrained by your program; that is, the ones that are input.
@@ -138,8 +138,8 @@ You should rarely read too much into this number... effectively, Reach is tellin
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: c05213f485c1095beb47b850f37cc77e
-range: 14-16
+md5: f3e303f988d9e814893c783592a61280
+range: 15-17
 ```
 
 This is a more interesting witness.
@@ -159,8 +159,8 @@ This variable is free, because Alice can choose anything she wants for the wager
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: c05213f485c1095beb47b850f37cc77e
-range: 17-22
+md5: f3e303f988d9e814893c783592a61280
+range: 18-23
 ```
 
 Next, we see two more free variables: the handles that Alice and Bob choose when they play the game.
@@ -171,8 +171,8 @@ This information is in your program in the definition of `getHand`, but we can't
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: c05213f485c1095beb47b850f37cc77e
-range: 24
+md5: f3e303f988d9e814893c783592a61280
+range: 25
 ```
 
 After showing the violation witness, Reach switches and shows you the way that it has represented the theorem "balance zero at application exit" as a program.
@@ -182,8 +182,8 @@ This section looks like the witness section, except that the phrase `could` is g
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: c05213f485c1095beb47b850f37cc77e
-range: 26-27
+md5: f3e303f988d9e814893c783592a61280
+range: 27-28
 ```
 
 Here we see Reach reporting that the `outcome` of the game would be 2 (Alice wins), which we expect.
@@ -191,8 +191,8 @@ It also reports the definition of the variable, so we can remind ourselves of th
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: c05213f485c1095beb47b850f37cc77e
-range: 28-29
+md5: f3e303f988d9e814893c783592a61280
+range: 29-30
 ```
 
 Next, we see Reach reporting what the internal variable `v110` would be.
@@ -201,8 +201,8 @@ Since the program doesn't give this variable a name, Reach can't show a name and
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: c05213f485c1095beb47b850f37cc77e
-range: 30-32
+md5: f3e303f988d9e814893c783592a61280
+range: 31-33
 ```
 
 Finally, we see the definition of the property being checked.
@@ -228,8 +228,8 @@ Basically, we've been shown that there would be 1 atomic network unit left in th
 
 ```
 load: /examples/rps-4-attack/index-bad.txt
-md5: c05213f485c1095beb47b850f37cc77e
-range: 34-37
+md5: f3e303f988d9e814893c783592a61280
+range: 35-38
 ```
 
 The rest of the output shows that the other mode is checked and summarizes the run.
@@ -2960,6 +2960,28 @@ This error indicates that you called `{!rsh} Bytes.fromHex` with an invalid hex 
 A hex string may only contain characters `0-9` and `a-f`.
 
 You can fix this error by providing a string in the correct format.
+
+## {#RE0140} RE0140
+
+This error indicates that you are trying to access a value from outside of a `{!rsh} Reach.App` whose value is not known at compile time.
+
+For example, the code below erroneously tries to access `{!rsh} c` from within the nested `{!rsh} Reach.App`:
+
+```
+A.publish(a);
+const c = a + 5;
+
+const ctor = new Contract(Reach.App(() => {
+  // ...
+  const b = c;
+  // ...
+}));
+```
+
+`!{rsh} c` relies on the value of `{!rsh} a`, which is only known at runtime.
+Since nested applications can only reference values that are known at compile time, this code is invalid.
+
+You can fix this error by removing the erroneous reference to a dynamic value.
 
 ## {#RETH0001} RETH0001
 

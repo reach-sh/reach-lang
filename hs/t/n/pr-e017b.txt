@@ -1,3 +1,4 @@
+Compiling `main`...
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs.
 
   ./pr-e017b.rsh:131:17:application

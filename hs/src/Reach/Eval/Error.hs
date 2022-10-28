@@ -166,9 +166,10 @@ data EvalError
   | Err_Api_Return_Type
   | Err_Eval_EmptyData
   | Err_JSON SLValTy
-  | Err_ContractCode ConnectorName String SLValTy
+  | Err_ContractCode ConnectorName String
   | Err_Invalid_Exponential_Form String
   | Err_BytesFromHex_Invalid
+  | Err_Invalid_Universe SLVar
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -319,6 +320,7 @@ instance HasErrorCode EvalError where
     Err_ContractCode {} -> 137
     Err_Invalid_Exponential_Form {} -> 138
     Err_BytesFromHex_Invalid {} -> 139
+    Err_Invalid_Universe {} -> 140
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -607,7 +609,7 @@ instance Show EvalError where
     Err_Prim_InvalidArg_Dynamic prim ->
       "Invalid arg for " <> displayPrim prim
         <> ". The argument must be computable at compile time"
-    Err_Shadowed n (SLSSVal at0 _ _) (SLSSVal at _ _) ->
+    Err_Shadowed n (SLSSVal at0 _ _ _) (SLSSVal at _ _ _) ->
       -- FIXME tell the srcloc of the original binding
       "Invalid name shadowing"
         <> (". Identifier '" <> n <> "' is already bound at " <> show at0)
@@ -783,11 +785,13 @@ instance Show EvalError where
       "Data instances may not be empty"
     Err_JSON sv ->
       "Cannot convert value to JSON: " <> show_sv sv
-    Err_ContractCode cn msg sv ->
-      "Failed to compile or parse contract code for " <> show cn <> ": " <> msg <> ": " <> show_sv sv
+    Err_ContractCode cn msg ->
+      "Failed to compile or parse contract code for " <> show cn <> ": " <> msg
     Err_Invalid_Exponential_Form t ->
       "Invalid " <> t <> " in exponential notation"
     Err_BytesFromHex_Invalid ->
       "Bytes.fromHex received a string that does not contain valid hex characters"
+    Err_Invalid_Universe v ->
+      "Cannot reference " <> v <> " because it is the result of dynamic computation. A nested `Reach.App` can only reference statically computable values from outer scopes."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

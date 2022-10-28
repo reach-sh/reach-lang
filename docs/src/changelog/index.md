@@ -14,6 +14,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcHead("0.1.12-rc.8")}
 
++ 2022/10/28: Added support for launching `{!rsh} Reach.App` via `{!rsh} new Contract`.
+
 @{rcHead("0.1.12-rc.7")}
 
 + 2022/10/25: Added `{!rsh} Tuple.includes`.

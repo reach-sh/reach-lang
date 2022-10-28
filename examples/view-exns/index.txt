@@ -1,16 +1,16 @@
-Compiling "dapp_plus"...
+Compiling `dapp_plus`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 5 theorems; No failures!
-Compiling "dapp_sub"...
+Compiling `dapp_sub`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 5 theorems; No failures!
-Compiling "main"...
+Compiling `main`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest

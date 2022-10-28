@@ -1,22 +1,22 @@
-Compiling "main1"...
+Compiling `main1`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 15 theorems; No failures!
-Compiling "main1_big"...
+Compiling `main1_big`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 15 theorems; No failures!
-Compiling "main2"...
+Compiling `main2`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 15 theorems; No failures!
-Compiling "main3"...
+Compiling `main3`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest

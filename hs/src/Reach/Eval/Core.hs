@@ -52,6 +52,8 @@ import qualified Data.ByteString.Base16 as B16
 
 --- New Types
 
+type CompileProg = SLVal -> App ConnectorObject
+
 type App = ReaderT Env IO
 
 data ExnEnv = ExnEnv
@@ -105,6 +107,8 @@ data Env = Env
   , e_appr :: Either DLOpts (IORef AppInitSt)
   , e_droppedAsserts :: Counter
   , e_infections :: IORef Infections
+  , e_compileProg :: CompileProg
+  , e_universe :: Counter
   }
 
 instance HasCounter Env where
@@ -247,6 +251,9 @@ locStMode x m = do
   let st' = st {st_mode = x}
   locSt st' m
 
+readUniverse :: App Int
+readUniverse = liftIO . readCounter =<< asks e_universe
+
 captureLifts :: App a -> App (DLStmts, a)
 captureLifts m = do
   e_lifts' <- liftIO $ newIORef mempty
@@ -322,14 +329,11 @@ type SLLibs = (M.Map ReachSource SLEnv)
 
 type SLMod = (ReachSource, [JSModuleItem])
 
-defaultApp :: SLSSVal
-defaultApp =
-  SLSSVal sb Public $
-    SLV_Prim $
-      SLPrim_App_Delay
-        sb
-        (JSStatementBlock JSNoAnnot [] JSNoAnnot JSSemiAuto)
-        (mempty, False)
+mkDefaultApp :: IO SLVal
+mkDefaultApp = do
+  conR <- newIORef mempty
+  return $ SLV_Prim $ SLPrim_App_Delay sb mt_sb (mempty, False) conR Nothing
+  where mt_sb = JSStatementBlock JSNoAnnot [] JSNoAnnot JSSemiAuto
 
 app_default_opts :: Counter -> Counter -> Connectors -> DLOpts
 app_default_opts idxr dar cns =
@@ -464,10 +468,10 @@ env_insert_ insMode k v env = case insMode of
     go :: App SLEnv
     go = case v of
       -- Note: secret ident enforcement is limited to doOnly
-      (SLSSVal _ Public _)
+      (SLSSVal _ Public _ _)
         | not (isSpecialIdent k) && isSecretIdent k ->
           expect_ $ Err_Eval_NotPublicIdent k
-      (SLSSVal _ _ ev) -> do
+      (SLSSVal _ _ _ ev) -> do
         case findStmtTrampoline ev of
           Just _ -> expect_t ev $ Err_IllegalEffPosition
           Nothing ->
@@ -535,23 +539,27 @@ env_lookup_ ctx x hide env =
 
 isKwd :: SLSSVal -> Bool
 isKwd = \case
-  SLSSVal _ _ (SLV_Kwd _) -> True
+  SLSSVal _ _ _ (SLV_Kwd _) -> True
   _ -> False
 
 -- | The "_" ident may never be looked up.
 env_lookup :: LookupCtx -> SLVar -> SLEnv -> App SLSSVal
 env_lookup ctx x env = do
   sv <- env_lookup_ ctx x isKwd env
+  uni <- readUniverse
   markVarUsed (sss_at sv, x)
   case sv of
     SLSSVal {sss_val = SLV_Deprecated d v} -> do
       at <- withAt id
       liftIO $ emitWarning (Just at) $ W_Deprecated d
       return $ sv {sss_val = v}
+    SLSSVal { sss_universe, sss_val }
+      | sss_universe /= uni && isDynamicVal sss_val -> do
+        expect_ $ Err_Invalid_Universe x
     v -> return $ v
 
 m_fromList_public_builtin :: [(SLVar, SLVal)] -> SLEnv
-m_fromList_public_builtin = m_fromList_public sb
+m_fromList_public_builtin = m_fromList_public sb 0
 
 base_env_slvals :: [(String, SLVal)]
 base_env_slvals =
@@ -678,13 +686,14 @@ jsClo_ at name js env = SLV_Clo at Nothing $ SLClo (Just name) args body cloenv
             a_ = parseJSArrowFormals at aformals
         _ -> impossible "not arrow"
 
-jsClo :: HasCallStack => SrcLoc -> String -> String -> (M.Map SLVar SLVal) -> SLVal
-jsClo at name js env_ = jsClo_ at name js $ M.map (SLSSVal at Public) env_
+jsClo :: HasCallStack => SrcLoc -> Universe -> String -> String -> (M.Map SLVar SLVal) -> SLVal
+jsClo at uni name js env_ = jsClo_ at name js $ M.map (SLSSVal at Public uni) env_
 
 jsCloExtendEnv :: HasCallStack => SrcLoc -> String -> String -> (M.Map SLVar SLVal) -> App SLVal
 jsCloExtendEnv at name js env = do
   curEnv <- (sco_cenv . e_sco) <$> ask
-  let env' = M.map (SLSSVal at Public) env
+  uni <- readUniverse
+  let env' = M.map (SLSSVal at Public uni) env
   return $ jsClo_ at name js (M.union env' curEnv)
 
 typeEqb :: DLType -> DLType -> Bool
@@ -1237,7 +1246,8 @@ unaryToPrim = \case
     fun a s ctxt = snd <$> (locAtf (srcloc_jsa "unop" a) $ evalId ctxt s)
     clo a s js = do
       at <- withAt $ srcloc_jsa "unop" a
-      return $ jsClo at s js mempty
+      uni <- readUniverse
+      return $ jsClo at uni s js mempty
 
 infectWithId_clo :: SLVar -> SLClo -> SLClo
 infectWithId_clo v (SLClo _ e b c) =
@@ -1247,6 +1257,7 @@ infectWithId_sv :: SrcLoc -> SLVar -> SLVal -> App SLVal
 infectWithId_sv at v val = do
   case val of
     SLV_Participant a who _ mdv -> return $ SLV_Participant a who (Just v) mdv
+    SLV_Prim (SLPrim_App_Delay a s e cr _) -> return $ SLV_Prim (SLPrim_App_Delay a s e cr $ Just v)
     SLV_Clo a mt c -> return $ SLV_Clo a mt $ infectWithId_clo v c
     SLV_DLVar (DLVar a _ t i) -> do
       infections <- asks e_infections
@@ -1255,8 +1266,8 @@ infectWithId_sv at v val = do
     x -> return $ x
 
 infectWithId_sss :: SLVar -> SLSSVal -> App SLSSVal
-infectWithId_sss v (SLSSVal at lvl sv) = do
-  SLSSVal at lvl <$> infectWithId_sv at v sv
+infectWithId_sss v (SLSSVal at lvl uni sv) = do
+  SLSSVal at lvl uni <$> infectWithId_sv at v sv
 
 infectWithId_sls :: SrcLoc -> SLVar -> SLSVal -> App SLSVal
 infectWithId_sls at v (lvl, sv) = do
@@ -1269,7 +1280,8 @@ evalObjEnv = mapM go
     go :: App SLSVal -> App SLSSVal
     go getv = do
       at <- withAt id
-      sls_sss at <$> getv
+      uni <- readUniverse
+      sls_sss at uni <$> getv
 
 evalAsEnv :: SLSVal -> App SLObjEnv
 evalAsEnv sv = do
@@ -1292,7 +1304,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
           ios <- ae_ios <$> aisd
           return $
             case M.lookup who ios of
-              Just isv@(SLSSVal _ _ (SLV_Object oa ol env)) ->
+              Just isv@(SLSSVal _ _ _ (SLV_Object oa ol env)) ->
                 secret $
                   SLV_Object oa ol $
                     flip M.mapWithKey env $ \k _ ->
@@ -1673,6 +1685,7 @@ compileInteractResult ct lab st de = do
 makeInteract :: SLPart -> SLInterface -> App (SLSSVal, InteractEnv)
 makeInteract who (SLInterface spec) = do
   at <- withAt id
+  uni <- readUniverse
   let lab = Just $ (bunpack who) <> "'s interaction interface"
   let wrap_ty :: SLVar -> (SrcLoc, SLType) -> App (SLSSVal, IType)
       wrap_ty k (i_at, ty) =
@@ -1681,21 +1694,21 @@ makeInteract who (SLInterface spec) = do
             dom' <- mapM st2dte stf_dom
             rng' <- st2dte stf_rng
             return $
-              ( (sls_sss i_at $ secret $ SLV_Prim $ SLPrim_localf i_at who k $ Left stf)
+              ( (sls_sss i_at uni $ secret $ SLV_Prim $ SLPrim_localf i_at who k $ Left stf)
               , IT_Fun dom' rng'
               )
           ST_UDFun rng -> do
             rng' <- st2dte rng
             return $
-              ( (sls_sss i_at $ secret $ SLV_Prim $ SLPrim_localf i_at who k $ Right rng)
+              ( (sls_sss i_at uni $ secret $ SLV_Prim $ SLPrim_localf i_at who k $ Right rng)
               , IT_UDFun rng'
               )
           t -> do
             t' <- st2dte t
             isv <- secret <$> compileInteractResult CT_Assume "interact" t (\dt -> return $ DLE_Arg i_at $ DLA_Interact who k dt)
-            return $ (sls_sss i_at isv, IT_Val t')
+            return $ (sls_sss i_at uni isv, IT_Val t')
   (lifts, spec') <- captureLifts $ mapWithKeyM wrap_ty spec
-  let io = SLSSVal at Secret $ SLV_Object at lab $ M.map fst spec'
+  let io = SLSSVal at Secret uni $ SLV_Object at lab $ M.map fst spec'
   let ienv = InteractEnv $ M.map (\(_, y) -> y) spec'
   saveLift $ DLS_Only at who lifts
   return $ (io, ienv)
@@ -1773,7 +1786,8 @@ evalForm f args = do
             let at' = srcloc_jsa "app arrow" a at
             return $ convertTernaryReachApp at' a opte top_formals partse (jsArrowBodyToStmt top_s)
           _ -> expect_ $ Err_App_InvalidArgs args
-      retV $ public $ SLV_Prim $ SLPrim_App_Delay at top_s (sco_cenv, sco_use_strict)
+      conInfoR <- liftIO $ newIORef mempty
+      retV $ public $ SLV_Prim $ SLPrim_App_Delay at top_s (sco_cenv, sco_use_strict) conInfoR Nothing
     SLForm_Part_Only who mv -> do
       at <- withAt id
       x <- one_arg
@@ -1781,10 +1795,11 @@ evalForm f args = do
       return $ public $ SLV_Form $ SLForm_EachAns [(who, mv)] at env x
     SLForm_liftInteract who mv k -> do
       at <- withAt id
+      uni <- readUniverse
       let whoOnly = SLV_Form $ SLForm_Part_Only who mv
       -- Enclose the generated `only` with a closure that binds all the arguments to the interact call,
       -- which allows `this` to point to the originator of the consensus transfer instead of `who`.
-      let rator' = jsClo at "liftedInteract" "(...args) => whoOnly(() => interact[k](...args))" $ M.fromList [("whoOnly", whoOnly), ("k", SLV_Bytes at $ bpack k)]
+      let rator' = jsClo at uni "liftedInteract" "(...args) => whoOnly(() => interact[k](...args))" $ M.fromList [("whoOnly", whoOnly), ("k", SLV_Bytes at $ bpack k)]
       evalApply rator' args
     SLForm_fork -> do
       zero_args
@@ -3057,9 +3072,10 @@ evalPrim p sargs =
         _ -> illegal_args
     SLPrim_array_zip -> do
       at <- withAt id
+      uni <- readUniverse
       let mapArgs = intercalate ", " $ map (\n -> "a" <> (show n)) [0..(length sargs -1)]
       let jsF = "(" <> mapArgs <> ") => [" <> mapArgs <> "]"
-      let f = jsClo at "zipFunc" jsF mempty
+      let f = jsClo at uni "zipFunc" jsF mempty
       evalApplyVals' (SLV_Prim $ SLPrim_array_map False) $ sargs <> [public f]
     SLPrim_array_map withIndex ->
       case args of
@@ -3291,12 +3307,13 @@ evalPrim p sargs =
       retV $ (lvl, SLV_Bool at $ M.member (bunpack bs) vm)
     SLPrim_Object_fields -> do
       at <- withAt id
+      uni <- readUniverse
       a <- one_arg
       ty <- mustBeType a
       tm <- case ty of
         ST_Object m -> return m
         _ -> expect_t a $ Err_Expected "object type"
-      let tm' = M.map (\t -> SLSSVal at lvl (SLV_Type t)) tm
+      let tm' = M.map (\t -> SLSSVal at lvl uni (SLV_Type t)) tm
       retV $ (lvl, SLV_Object at Nothing tm')
     SLPrim_Object_set -> do
       at <- withAt id
@@ -3319,11 +3336,12 @@ evalPrim p sargs =
           evalApplyVals' explodingObject_set (map (lvl,) [obj_v, SLV_Bytes at fieldName, val_v])
     SLPrim_makeEnum -> do
       at' <- withAt $ srcloc_at "makeEnum" Nothing
+      uni <- readUniverse
       case map snd sargs of
         [iv@(SLV_Int _ mt i)] ->
           retV $ (lvl, SLV_Tuple at' (enum_pred : map (SLV_Int at' mt) [0 .. (i -1)]))
           where
-            enum_pred = jsClo at' "makeEnum" "(x) => ((0 <= x) && (x < M))" (M.fromList [("M", iv)])
+            enum_pred = jsClo at' uni "makeEnum" "(x) => ((0 <= x) && (x < M))" (M.fromList [("M", iv)])
         _ -> illegal_args
     SLPrim_App_Delay {} -> expect_t rator $ Err_Eval_NotApplicable
     SLPrim_localf iat who m stf ->
@@ -3387,6 +3405,7 @@ evalPrim p sargs =
         CT_Unknowable {} -> impossible "unknowable"
     SLPrim_transfer -> do
       at <- withAt id
+      uni <- readUniverse
       pay_sv <-
         case args of
           [a] -> return $ a
@@ -3396,7 +3415,7 @@ evalPrim p sargs =
       return $
         public $
           SLV_Object at (Just "transfer") $
-            M.fromList [("to", SLSSVal sb Public transferToPrim)]
+            M.fromList [("to", SLSSVal sb Public uni transferToPrim)]
     SLPrim_transfer_amt_to pay_sv -> do
       at <- withAt id
       ensure_mode SLM_ConsensusStep "transfer"
@@ -3519,6 +3538,7 @@ evalPrim p sargs =
     SLPrim_ParticipantClass -> makeParticipant False True
     SLPrim_API -> do
       ensure_mode SLM_AppInit "API"
+      uni <- readUniverse
       (nv, intv, alias) <- case args of
         [x] -> return (Nothing, x, Nothing)
         [x, y] ->
@@ -3545,18 +3565,18 @@ evalPrim p sargs =
             mapM_ warnInteractType $ stf_rng : stf_dom
             let nv' = SLV_Bytes at nkb
             let stf_dom' = ST_Tuple stf_dom
-            let mkpre o = jsClo at (nk <> "pre") "(mt, dom) => o(dom)" $ M.fromList [("o", o)]
+            let mkpre o = jsClo at uni (nk <> "pre") "(mt, dom) => o(dom)" $ M.fromList [("o", o)]
             let stf_pre' = fmap mkpre stf_pre
-            let mkpost o = jsClo at (nk <> "post") "([dom,rng]) => o(dom,rng)" $ M.fromList [("o", o)]
+            let mkpost o = jsClo at uni (nk <> "post") "([dom,rng]) => o(dom,rng)" $ M.fromList [("o", o)]
             let stf_post' = fmap mkpost stf_post
             let in_t = SLTypeFun [] stf_dom' Nothing stf_pre' Nothing stf_pre_msg
             let out_t = SLTypeFun [stf_dom', stf_rng] ST_Null stf_post' Nothing stf_post_msg Nothing
-            let fake tf = SLSSVal at Public $ SLV_Type $ ST_Fun tf
+            let fake tf = SLSSVal at Public uni $ SLV_Type $ ST_Fun tf
             let nkm = M.fromList $ [("in", fake in_t), ("out", fake out_t)]
             let intv' = SLV_Object at (Just $ nk <> " interact") nkm
             it <- IT_Fun <$> mapM st2dte stf_dom <*> st2dte stf_rng
             m_alias <- mapM (mustBeBytes . sss_val) $ M.lookup k aliasEnv
-            (M.singleton nk (m_alias, stf_dom),,) (nkb, it) <$> (sls_sss at <$> makeParticipant_ True True nv' intv')
+            (M.singleton nk (m_alias, stf_dom),,) (nkb, it) <$> (sls_sss at uni <$> makeParticipant_ True True nv' intv')
           t -> expect_ $ Err_API_NotFun k t
       let aliases = M.unions $ M.elems $ M.map fst3 ix
       let i' = M.map snd3 ix
@@ -3580,6 +3600,7 @@ evalPrim p sargs =
       aliasEnv <- mapM mustBeObject alias >>= return . fromMaybe mempty
       let mns = bunpack <$> n
       nAt <- withAt id
+      uni <- readUniverse
       let mustBeTupleOfBytes ma = do
             a <- mustBeTuple $ sss_val ma
             mapM mustBeBytes a
@@ -3594,9 +3615,9 @@ evalPrim p sargs =
               mapM_ (verifyName at "View" []) names
               mapM_ (verifyNotReserved at) names
             let vv = SLV_Prim $ SLPrim_viewis at n k t
-            let vom = M.singleton "set" $ SLSSVal at Public vv
+            let vom = M.singleton "set" $ SLSSVal at Public uni vv
             let vo = SLV_Object at (Just $ ns <> " View, " <> k) vom
-            let io = SLSSVal at Public vo
+            let io = SLSSVal at Public uni vo
             let dvw_at = at
             dvw_it <-
               case t of
@@ -3631,6 +3652,7 @@ evalPrim p sargs =
       retV $ public $ SLV_Map mv
     SLPrim_Map_reduce -> do
       at <- withAt id
+      uni <- readUniverse
       (m, z, f_) <- three_args
       mv <-
         case m of
@@ -3638,7 +3660,7 @@ evalPrim p sargs =
           _ -> expect_t m $ Err_Expected_Map
       mi <- mapLookup mv
       let x_tym = dlmi_tym mi
-      let f = jsClo at "reduceWrapper" ("(b, ma) => ma.match({None: (() => b), Some: (a => f(b, a))})") (M.fromList [("f", f_)])
+      let f = jsClo at uni "reduceWrapper" ("(b, ma) => ma.match({None: (() => b), Some: (a => f(b, a))})") (M.fromList [("f", f_)])
       ensure_while_invariant "Map.reduce"
       (z_ty, z_da) <- compileTypeOf z
       (b_dv, b_dsv) <- make_dlvar at z_ty
@@ -3657,7 +3679,8 @@ evalPrim p sargs =
       return $ (lvl, ans_dsv)
     SLPrim_Refine -> do
       at <- withAt id
-      let mkClo = jsClo at "refine"
+      uni <- readUniverse
+      let mkClo = jsClo at uni "refine"
       t <- first_arg >>= expect_ty "Refine"
       t' <- case t of
         ST_Fun (SLTypeFun {..}) -> do
@@ -3702,6 +3725,7 @@ evalPrim p sargs =
           return $ (lvl, x)
     SLPrim_remote -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
+      uni <- readUniverse
       (av, ri, ma) <- two_mthree_args
       at <- withAt id
       aa <- compileCheckType msdef T_Contract av
@@ -3719,7 +3743,7 @@ evalPrim p sargs =
               -- XXX support raw calls
               let k' = Just $ fromMaybe k m_alias
               return $
-                SLSSVal at Public $
+                SLSSVal at Public uni $
                   SLV_Prim $
                     SLPrim_remotef at aa k' stf Nothing Nothing Nothing Nothing
             t -> expect_ $ Err_Remote_NotFun k t
@@ -3800,6 +3824,7 @@ evalPrim p sargs =
     SLPrim_remotef rat aa ma stf mpay mbill malgo Nothing -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
       at <- withAt id
+      uni <- readUniverse
       let zero = SLV_Int at nn 0
       let amtv = fromMaybe zero mpay
       payAmt <- compilePayAmt TT_Pay amtv
@@ -3821,7 +3846,7 @@ evalPrim p sargs =
       rt <- st2dte rng
       let postArg = "(dom, [_," <> (if nntbNo then "" else " _,") <> " rng])"
       let post' = flip fmap post $ \postv ->
-            jsClo at "post" (postArg <> " => post(dom, rng)") $
+            jsClo at uni "post" (postArg <> " => post(dom, rng)") $
               M.fromList [("post", postv)]
       let stf' = SLTypeFun dom rng' pre post' pre_msg post_msg
       allTokens <- fmap DLA_Var <$> readSt st_toks
@@ -3965,6 +3990,7 @@ evalPrim p sargs =
       public <$> doInternalLog (Just ma) x
     SLPrim_Event -> do
       ensure_mode SLM_AppInit "Event"
+      uni <- readUniverse
       (nv, intv) <- case args of
         [x] -> return (Nothing, x)
         [x, y] -> return (Just x, y)
@@ -3981,7 +4007,7 @@ evalPrim p sargs =
           verifyName at "Event" [] k
           verifyNotReserved at k
         let v = SLV_Prim $ SLPrim_event_is n k tys
-        let io = SLSSVal at' Public v
+        let io = SLSSVal at' Public uni v
         di <- flip mapM tys $ \ty ->
           case st2dt ty of
             Nothing -> expect_ $ Err_Type_NotDT ty
@@ -4122,39 +4148,51 @@ evalPrim p sargs =
                 ov <- slToJSON co
                 (liftIO $ withCurrentDirectory dir $ conCompileCode c ov) >>= \case
                   Right x -> return x
-                  Left x -> expect_t co $ Err_ContractCode cn x
+                  Left x -> expect_ $ Err_ContractCode cn x
           public <$> (SLV_ContractCode at <$> mapWithKeyM f cns)
         _ -> expect_t ccv $ Err_Expected "Object or Reach.App"
     SLPrim_Contract_new -> do
-      at <- withAt id
       let lab = "new Contract"
-      (ccv, opts) <-
-        case args of
-          [x] -> return (x, mempty)
-          [x, y] -> (,) x <$> mustBeObject y
-          _ -> illegal_args
-      cc <- case ccv of
-              SLV_ContractCode _ cc -> return cc
-              _ -> expect_t ccv $ Err_Expected "ContractCode"
-      let cc' = M.mapKeys t2s cc
+      let expectContractCode = \case
+            SLV_ContractCode _ cc -> return cc
+            ow -> expect_t ow $ Err_Expected "ContractCode or Reach.App"
       cns <- readDlo dlo_connectors
-      dcns <- forWithKeyM cns $ \cn c -> do
+      (cc, con_x_opts) <-
+        case args of
+          [x@(SLV_Prim (SLPrim_App_Delay {}))] -> do
+            compileProg <- asks e_compileProg
+            co <- compileProg x
+
+            let forEachConn f = forWithKeyM cns $ \cn c ->
+                                  either impossible return $ f c $ M.lookup cn co
+            co'  <- forEachConn conCompileConnectorInfo
+            opts <- forEachConn conContractNewOpts
+            return (co', opts)
+          [x] -> (, mempty) <$> expectContractCode x
+          [x, y] -> do
+            x' <- expectContractCode x
+            y' <- mustBeObject y
+            opts <- forWithKeyM cns $ \cn c -> do
+                let cnv = t2s cn
+                let ctx = LC_RefFrom lab
+                moptsv <-
+                  case M.member cnv y' of
+                    True -> do
+                      sv <- sss_val <$> env_lookup ctx cnv y'
+                      return $ Just sv
+                    False -> return Nothing
+                mopts <- traverse slToJSON moptsv
+                opts' <- either (expect_ . Err_ContractCode cn) return $
+                           conContractNewOpts c mopts
+                return opts'
+            return (x', opts)
+          _ -> illegal_args
+      let cc' = M.mapKeys t2s cc
+      dcns <- forWithKeyM cns $ \cn _ -> do
         let cnv = t2s cn
         let ctx = LC_RefFrom lab
         dcn_code <- env_lookup_ ctx cnv (const False) cc'
-        moptsv <-
-          case M.member cnv opts of
-            True -> do
-              sv <- sss_val <$> env_lookup ctx cnv opts
-              return $ Just sv
-            False -> return Nothing
-        mopts <- traverse slToJSON moptsv
-        dcn_opts <-
-          case conContractNewOpts c mopts of
-            Right x -> return x
-            Left x -> do
-              let opts' = fromMaybe (SLV_Null at lab) moptsv
-              expect_t opts' $ Err_ContractCode cn x
+        let dcn_opts = fromMaybe (impossible "No connector options") $ M.lookup cn con_x_opts
         return $ DLContractNew {..}
       return $ public $ SLV_Prim $ SLPrim_Contract_new_ctor dcns
     SLPrim_Contract_new_ctor dcns -> do
@@ -4261,15 +4299,15 @@ evalPrim p sargs =
     eventInterface intv = do
       objEnv <- mustBeObject intv
       let checkInt = \case
-            SLSSVal tAt _ (SLV_Tuple _ ts) ->
+            SLSSVal tAt _ _ (SLV_Tuple _ ts) ->
               (tAt,) <$> mapM (expect_ty "Event") ts
-            SLSSVal idAt _ idV -> locAt idAt $ expect_t idV $ Err_App_InvalidInteract
+            SLSSVal idAt _ _ idV -> locAt idAt $ expect_t idV $ Err_App_InvalidInteract
       mapM checkInt objEnv
     mustBeInterface intv = do
       objEnv <- mustBeObject intv
       let checkint = \case
-            SLSSVal t_at _ (SLV_Type t) -> return $ (t_at, t)
-            SLSSVal idAt _ idV -> locAt idAt $ expect_t idV $ Err_App_InvalidInteract
+            SLSSVal t_at _ _ (SLV_Type t) -> return $ (t_at, t)
+            SLSSVal idAt _ _ idV -> locAt idAt $ expect_t idV $ Err_App_InvalidInteract
       SLInterface <$> mapM checkint objEnv
     makeParticipant :: Bool -> Bool -> App SLSVal
     makeParticipant isAPI isClass = do
@@ -4535,10 +4573,11 @@ evalPropertyPair fenv = \case
   JSPropertyNameandValue pn a vs ->
     locAtf (srcloc_jsa "property binding" a) $ do
       (flvl, f) <- evalPropertyName pn
+      uni <- readUniverse
       case vs of
         [e] -> do
           at' <- withAt id
-          sv' <- sls_sss at' <$> evalExpr e
+          sv' <- sls_sss at' uni <$> evalExpr e
           env' <- env_insert_ AllowShadowing f sv' fenv
           return $ (flvl, env')
         _ -> expect_ $ Err_Obj_IllegalFieldValues vs
@@ -4557,11 +4596,12 @@ evalPropertyPair fenv = \case
       SLV_DLVar dlv@(DLVar _at _s (T_Object tenv) _i) -> do
         let mkOneEnv k t = do
               at' <- withAt id
+              uni <- readUniverse
               let lvl = idLevel k
               let de = DLE_ObjectRef at' (DLA_Var dlv) k
               let mdv = DLVar at' Nothing t
               dv <- ctxt_lift_expr mdv de
-              return $ M.singleton k $ SLSSVal at' lvl $ SLV_DLVar dv
+              return $ M.singleton k $ SLSSVal at' lvl uni $ SLV_DLVar dv
         -- mconcat over SLEnvs is safe here b/c each is a singleton w/ unique key
         mkRes =<< (mconcatMapM (uncurry mkOneEnv) $ M.toList tenv)
       _ -> expect_ $ Err_Obj_SpreadNotObj sv
@@ -4640,6 +4680,7 @@ evalExpr e = case e of
     locAtf (srcloc_jsa "id ref" a) $
       evalId "expression" x
   JSDecimal a ns -> do
+    uni <- readUniverse
     let handleE chr = do
           case splitOn chr ns of
             [b, x] -> do
@@ -4660,14 +4701,14 @@ evalExpr e = case e of
       [iDigits, fDigits] -> do
         let i = iDigits <> fDigits
         let scale = '1' : replicate (length fDigits) '0'
-        let signV = \at -> SLSSVal at Public $ SLV_Bool at True
+        let signV = \at -> SLSSVal at Public uni $ SLV_Bool at True
         let signedInt = \at ->
               SLV_Object at Nothing $
                 M.fromList
-                  [ ("scale", SLSSVal at Public $ SLV_Int at nn $ numberValue 10 scale)
-                  , ("i", SLSSVal at Public $ SLV_Int at nn $ numberValue 10 i)
+                  [ ("scale", SLSSVal at Public uni $ SLV_Int at nn $ numberValue 10 scale)
+                  , ("i", SLSSVal at Public uni $ SLV_Int at nn $ numberValue 10 i)
                   ]
-        let iV = \at -> SLSSVal at Public $ signedInt at
+        let iV = \at -> SLSSVal at Public uni $ signedInt at
         locAtf (srcloc_jsa "decimal" a) $
             withAt $ \at ->
               public $
@@ -5008,9 +5049,10 @@ evalDeclLHS trackVars merr rhs_lvl lhs_env v = \case
   JSIdentifier a x -> do
     locAtf (srcloc_jsa "id" a) $ do
       at_ <- withAt id
+      uni <- readUniverse
       v' <- infectWithId_sv at_ x v
       when trackVars $ trackVariable (at_, x)
-      env_insert x (SLSSVal at_ rhs_lvl v') lhs_env
+      env_insert x (SLSSVal at_ rhs_lvl uni v') lhs_env
   JSArrayLiteral a xs _ -> do
     locAtf (srcloc_jsa "array" a) $ do
       vs <- explodeTupleLike "lhs array" v
@@ -5046,7 +5088,7 @@ destructDecls = \case
 enforcePrivateUnderscore :: SLEnv -> App ()
 enforcePrivateUnderscore = mapM_ enf . M.toList
   where
-    enf (k, SLSSVal at secLev _) = case secLev of
+    enf (k, SLSSVal at secLev _ _) = case secLev of
       Secret
         | not (isSpecialIdent k)
             && not (isSecretIdent k) ->
@@ -5070,6 +5112,7 @@ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
       locSt st_localstep $ do
         penv__ <- sco_lookup_penv who
         ios <- ae_ios <$> aisd
+        uni <- readUniverse
         let penv_ =
               -- Ensure that only has access to "interact" if it didn't before,
               -- such as when an only occurs inside of a closure in a module body
@@ -5078,7 +5121,7 @@ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
                 False -> M.insert "interact" (ios M.! who) penv__
         me_dv <- doGetSelfAddress who
         let me_v = SLV_DLVar me_dv
-        let ssv_here = SLSSVal only_at Public
+        let ssv_here = SLSSVal only_at Public uni
         let add_this v env = M.insert "this" (ssv_here v) env
         isClass <- is_class who
         penv <-
@@ -5086,7 +5129,7 @@ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
             Nothing -> return $ add_this me_v penv_
             Just v ->
               case M.lookup v penv_ of
-                Just (SLSSVal pv_at pv_lvl pv@(SLV_Participant at_ who_ mv_ mdv)) ->
+                Just (SLSSVal pv_at pv_lvl pv_uni pv@(SLV_Participant at_ who_ mv_ mdv)) ->
                   case mdv of
                     Just _ | not isClass -> return $ add_this pv penv_
                     _ -> do
@@ -5099,7 +5142,7 @@ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
                       let pv' = SLV_Participant at_ who_ mv_ (Just me_dv)
                       return $
                         add_this pv' $
-                          M.insert v (SLSSVal pv_at pv_lvl pv') penv_
+                          M.insert v (SLSSVal pv_at pv_lvl pv_uni pv') penv_
                 _ -> return $ add_this me_v $ M.insert v (ssv_here me_v) penv_
         let sco_only =
               sco_only_pre {sco_penvs = M.insert who penv (sco_penvs sco_only_pre)}
@@ -5231,6 +5274,7 @@ doToConsensus :: [JSStatement] -> ToConsensusRec -> App SLStmtRes
 doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
   ensure_mode SLM_Step "to consensus"
   ensure_live "to consensus"
+  uni <- readUniverse
   let whos = slptc_whos
   who_apis <- S.intersection whos <$> (ae_apis <$> aisd)
   unless (S.null who_apis || slptc_api) $
@@ -5305,8 +5349,8 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
                 Nothing -> return $ env
                 Just whov ->
                   evalId_ "publish who binding" whov >>= \case
-                    (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ _)) ->
-                      return $ M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just who_dv))) env
+                    (SLSSVal idAt lvl_ uni_ (SLV_Participant at_ who_ as_ _)) ->
+                      return $ M.insert whov (SLSSVal idAt lvl_ uni_ (SLV_Participant at_ who_ as_ (Just who_dv))) env
                     _ ->
                       impossible $ "participant is not participant"
         return $ (add_who_env, who_lab, pdvs')
@@ -5320,8 +5364,8 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
     sco <- e_sco <$> ask
     when (isJust $ sco_while_vars sco) $
       expect_ $ Err_Token_InWhile
-  msg_env <- foldlM env_insertp mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ dr_msg
-  let recv_env_mod = who_env_mod . (M.insert "this" (SLSSVal at Public $ SLV_DLVar dr_from))
+  msg_env <- foldlM env_insertp mempty $ zip msg $ map (sls_sss at uni . public . SLV_DLVar) $ dr_msg
+  let recv_env_mod = who_env_mod . (M.insert "this" (SLSSVal at Public uni $ SLV_DLVar dr_from))
   let recv_env = msg_env
   (tc_recv, k_st, k_cr) <- do
     SLRes conlifts k_st (mktc_recv, k_cr) <- captureRes $ do
@@ -5729,9 +5773,10 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
                     let arg = jid $ "_deconstr"
                     let case_id = mkLocalCase who case_n
                     var_idx <- ctxt_alloc
+                    uni <- readUniverse
                     dv <- ctxt_lift_expr (DLVar at Nothing case_ty) $ DLE_Impossible at var_idx $ Err_Impossible_Case ("fork/local/" <> who <> "/" <> show case_n)
                     let varId = "_.v" <> show var_idx
-                    let sco' = M.singleton varId $ SLSSVal at Secret $ SLV_DLVar dv
+                    let sco' = M.singleton varId $ SLSSVal at Secret uni $ SLV_DLVar dv
                     let props = mkCommaTrailingList [
                           JSPropertyNameandValue (JSPropertyIdent a case_id) a [jsArrowExpr a [arg] arg],
                           JSPropertyNameandValue (JSPropertyIdent a "default") a [jsArrowExpr a [arg] $ jid varId]
@@ -6207,12 +6252,13 @@ findStmtTrampoline = \case
     fs <- e_stack <$> ask
     at <- withAt id
     st <- readSt id
+    uni <- readUniverse
     setSt $
       st
         { st_mode = SLM_Step
         , st_after_ctor = True
         }
-    let sco' = sco_set "this" (SLSSVal at Public $ SLV_Kwd $ SLK_this) sco
+    let sco' = sco_set "this" (SLSSVal at Public uni $ SLV_Kwd $ SLK_this) sco
     (steplifts, cr) <-
       captureLifts $
         locSco sco' $ evalStmt ks
@@ -6257,12 +6303,13 @@ doExit = do
 doWhileLikeInitEval :: JSExpression -> JSExpression -> App (M.Map SLVar DLVar, DLAssignment, SLScope)
 doWhileLikeInitEval lhs rhs = do
   vars_env <- unchangedSt $ evalDecl True lhs rhs
-  let help v (SLSSVal at _ val) = do
+  let help v (SLSSVal at _ _ val) = do
         (t, da) <- typeOf val
         dv <- ctxt_mkvar $ DLVar at (Just (at, v)) t
         return $ (dv, da)
   helpm <- M.traverseWithKey help vars_env
-  let unknown_var_env = M.map (\(dv, _) -> SLSSVal (srclocOf dv) Public (SLV_DLVar dv)) helpm
+  uni <- readUniverse
+  let unknown_var_env = M.map (\(dv, _) -> SLSSVal (srclocOf dv) Public uni (SLV_DLVar dv)) helpm
   -- We remove "this" afterwards because it is dangerous
   let rm_this e = return $ M.delete "this" e
   sco_env' <- sco_update_and_mod DisallowShadowing unknown_var_env rm_this
@@ -6275,6 +6322,7 @@ doWhileLikeInitEval lhs rhs = do
 doWhileLikeContinueEval :: JSExpression -> M.Map SLVar DLVar -> SLSVal -> App ()
 doWhileLikeContinueEval lhs whilem (rhs_lvl, rhs_v) = do
   at <- withAt id
+  uni <- readUniverse
   let merr = Just $ Err_LoopVariableLength $ srclocOf rhs_v
   decl_env <- evalDeclLHS False merr rhs_lvl mempty rhs_v lhs
   stEnsureMode SLM_ConsensusStep
@@ -6286,7 +6334,7 @@ doWhileLikeContinueEval lhs whilem (rhs_lvl, rhs_v) = do
          Just _ -> return ())
   let f (v, dv) = do
         let sv = case M.lookup v decl_env of
-              Nothing -> SLSSVal at Public $ SLV_DLVar dv
+              Nothing -> SLSSVal at Public uni $ SLV_DLVar dv
               Just x -> x
         let DLVar eloc _ et _ = dv
         val <- ensure_public $ sss_sls sv
@@ -6541,6 +6589,7 @@ evalStmt = \case
   (JSSwitch a _ de _ _ cases _ sp : ks) -> do
     locAtf (srcloc_jsa "switch" a) $ do
       at' <- withAt id
+      uni <- readUniverse
       om <- readSt st_mode
       let de_v = jse_expect_id at' de
       (de_lvl, de_val) <- evalId "switch" de_v
@@ -6587,7 +6636,7 @@ evalStmt = \case
       let select at_c shouldBind body vv = locAt at_c $ do
             let addl_env =
                   case shouldBind of
-                    True -> M.singleton de_v (sls_sss at_c (de_lvl, vv))
+                    True -> M.singleton de_v (sls_sss at_c uni (de_lvl, vv))
                     False -> mempty
             sco'' <- locSco sco' $ sco_update_ AllowShadowing addl_env
             locSco sco'' $ evalStmt body
