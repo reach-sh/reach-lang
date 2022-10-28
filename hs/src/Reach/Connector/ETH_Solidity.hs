@@ -108,14 +108,11 @@ solFunctionLike sfl args body = [ sflp <+> solBraces body ]
                      Nothing -> ""
                      Just ret -> " returns" <+> parens ret
             ext' = if ext then "external" else "internal"
-            mut' = if mut then "payable" else "view"
+            mut' = if mut then (if ext then "payable" else "") else "view"
 
 solFunction :: Doc -> [Doc] -> Maybe Doc -> Docs -> Docs
 solFunction name args mret body =
   solFunctionLike (SFLFun False True name mret) args body
-
-solContract :: String -> Docs -> Docs
-solContract s body = ["contract" <+> pretty s <+> solBraces body]
 
 solVersion :: Docs
 solVersion = ["pragma solidity ^" <> pretty solcVersionStr <> ";"]
@@ -1844,7 +1841,7 @@ createMem :: CLDefs -> App Docs
 createMem defs = do
   fs <- forM (M.toAscList $ M.mapMaybe viewCLD_Mem defs) $ \(k, t) -> do
     let n = pclv k
-    t' <- solType_ t
+    t' <- solType t
     return (n, t')
   let fs' = ("nil", "bool") : fs
   return $ fromMaybe (impossible "cm") $ solStruct memTy fs'
@@ -1924,6 +1921,15 @@ instance SolStmts CLStmt where
       a' <- solF a
       return $ [ solSet v' a' ]
 
+vsToInternalArg :: [DLVar] -> DLType
+vsToInternalArg = vsToType
+makeInternalArg :: [DLVar] -> Doc -> [DLArg] -> App Docs
+makeInternalArg vs ia args = do
+  let go v a = (show (solRawVar v), a)
+  solLargeArg' False ia $ DLLA_Struct $ zipWith go vs args
+bindInternalArg :: [DLVar] -> Doc -> App ()
+bindInternalArg vs ia = addVars_ (\v -> ia <> "." <> solRawVar v) vs
+
 instance SolStmts CLTail where
   solS = \case
     CL_Com m k -> solScat m k
@@ -1932,10 +1938,11 @@ instance SolStmts CLTail where
     CL_Jump _at f args mmret -> do
       let f' = pclv f
       -- Turn the arguments into a single object and call w/ memory
-      args_ty <- solType $ vsToType args
-      let defn = [ solDecl "memory _ja" args_ty <> semi ]
-      let go v = (show (solRawVar v), DLA_Var v)
-      asn <- solLargeArg' False "_ja" $ DLLA_Struct $ map go args
+      let args_ty = vsToInternalArg args
+      args_ty' <- solType args_ty
+      am' <- withArgLoc args_ty
+      let defn = [ solDecl (am' <+> "_ja") args_ty' <> semi ]
+      asn <- makeInternalArg args "_ja" $ map DLA_Var args
       let call = defn <> asn <> [ solApply f' [ "_ja", memVar ] <> semi ]
       case mmret of
         Nothing -> do
@@ -1986,8 +1993,8 @@ instance SolStmts FunX where
             return $ solDecl v' $ ty' <> am''
         CLFM_Internal -> do
           let vs = map varLetVar clf_dom
-          argTy <- solType_withArgLoc $ vsToType vs
-          addVars_ (\v -> "_a." <> solRawVar v) vs
+          argTy <- solType_withArgLoc $ vsToInternalArg vs
+          bindInternalArg vs "_a"
           return $ [ solDecl "_a" argTy, memVarDecl ]
     (frameDefn, body) <- solSF clf_tail
     return $ frameDefn <> solFunctionLike sfl args body
@@ -2035,7 +2042,7 @@ solProg p = do
         , "fallback () external payable {}"
         ]
   let ctcbody = state_defn <> typefsp <> outputsp <> defp <> p'
-  let ctcp = solContract (contractId <> " is Stdlib") ctcbody
+  let ctcp = ["contract" <+> pretty contractId <+> "is Stdlib" <+> solBraces ctcbody]
   view_json <- readIORef ctxt_view_json
   let cinfo =
         M.fromList $
