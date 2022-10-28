@@ -68,15 +68,15 @@ fun n d = env_insert_ eFunsR s d
     dom = map varLetType clf_dom
     rng = case clf_mode of
             CLFM_Internal -> T_Null
-            CLFM_External _ t -> t
+            CLFM_External t -> t
     CLFun {..} = d
 
 funw :: CLVar -> [CLVar] -> SrcLoc -> [DLVarLet] -> Bool -> DLType -> Maybe CLVar -> CLTail -> App ()
-funw ni ns at clf_dom isView rng mret intt = do
+funw ni ns at clf_dom clf_view rng mret intt = do
   let di = CLFun { clf_mode = CLFM_Internal, clf_tail = intt, .. }
   let domvs = map varLetVar clf_dom
   let extt = CL_Jump at ni domvs (Just mret)
-  let de = CLFun { clf_mode = CLFM_External isView rng, clf_tail = extt, .. }
+  let de = CLFun { clf_mode = CLFM_External rng, clf_tail = extt, .. }
   fun ni di
   forM_ ns $ flip fun de
 
@@ -372,7 +372,7 @@ instance CLike CHX where
     body' <- tr_ (TEnv {..}) ch_body
     let intt =
           -- XXX include this in the program itself?
-            CL_Com (CLEmitPublish ch_at which (map varLetVar ch_msg))
+            CL_Com (CLEmitPublish ch_at which (T_Tuple $ map varType $ map varLetVar clf_dom))
           -- XXX add extensions to DLE so these can be read directly
           $ CL_Com (CLTxnBind ch_at ch_from ch_timev ch_secsv)
           -- XXX put given_timev into DL and does this in Core
@@ -392,6 +392,7 @@ instance CLike CHX where
     tCounter <- asks getCounter
     clf_tail <- tr_ (TEnv {..}) cl_body
     let clf_mode = CLFM_Internal
+    let clf_view = False
     fun n $ CLFun {..}
 
 instance CLike CHandlers where

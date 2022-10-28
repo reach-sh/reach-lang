@@ -30,7 +30,7 @@ data CLStmt
   = CLDL DLStmt
   | CLTxnBind SrcLoc DLVar DLVar DLVar
   | CLTimeCheck SrcLoc DLVar DLVar
-  | CLEmitPublish SrcLoc Int [DLVar]
+  | CLEmitPublish SrcLoc Int DLType
   | CLStateRead SrcLoc DLVar
   | CLStateBind SrcLoc [DLVarLet] Int
   | CLIntervalCheck SrcLoc DLVar DLVar (CInterval DLTimeArg)
@@ -79,18 +79,18 @@ instance Pretty CLTail where
 data CLFunMode
   = CLFM_Internal
   | CLFM_External
-    { cfm_view :: Bool
-    , cfm_erngv :: DLType
+    { cfm_erngv :: DLType
     }
   deriving (Eq)
 
 instance Pretty CLFunMode where
   pretty = \case
     CLFM_Internal -> "internal"
-    CLFM_External {..} -> "external" <> (if cfm_view then " view " else "") <> "(" <> pretty cfm_erngv <> ")"
+    CLFM_External {..} -> "external" <> "(" <> pretty cfm_erngv <> ")"
 
 data CLFun = CLFun
   { clf_dom :: [DLVarLet]
+  , clf_view :: Bool
   , clf_mode :: CLFunMode
   , clf_tail :: CLTail
   }
@@ -98,7 +98,7 @@ data CLFun = CLFun
 
 instance Pretty CLFun where
   pretty (CLFun {..}) =
-    pretty clf_mode <+> parens (render_das clf_dom) <+> "=>" <+> render_nest (pretty clf_tail)
+    pretty clf_mode <+> (if clf_view then "view" else "mut") <+> parens (render_das clf_dom) <+> "=>" <+> render_nest (pretty clf_tail)
 
 data CLDef
   = CLD_Mem DLType
