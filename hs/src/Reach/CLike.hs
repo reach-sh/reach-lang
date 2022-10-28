@@ -2,6 +2,7 @@ module Reach.CLike
   ( clike
   , nameMap
   , nameReturn
+  , nameMeth
   ) where
 
 import Control.Monad.Reader

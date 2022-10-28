@@ -91,25 +91,24 @@ solBraces :: Docs -> Doc
 solBraces body = braces (nest $ hardline <> vsep body)
 
 data SolFunctionLike
-  = SFL_Constructor
-  | SFL_Function Bool (Doc)
+  = SFLCtor
+  | SFLFun Bool Bool Doc
 
 solFunctionLike :: SolFunctionLike -> [Doc] -> Doc -> Docs -> Docs
-solFunctionLike sfl args ret body =
-  [ sflp <+> ret' <+> solBraces body ]
+solFunctionLike sfl args ret body = [ sflp <+> solBraces body ]
   where
-    ret' = ext' <> ret
-    (ext', sflp) =
+    sflp =
       case sfl of
-        SFL_Constructor ->
-          (emptyDoc, solApply "constructor" args)
-        SFL_Function ext name ->
-          (ext'', "function" <+> solApply name args)
+        SFLCtor -> solApply "constructor" args
+        SFLFun ext mut name ->
+          "function" <+> solApply name args <+> ext' <+> mut' <+> ret'
           where
-            ext'' = if ext then "external " else " "
+            ret' = "returns" <+> parens ret
+            ext' = if ext then "external" else "internal"
+            mut' = if mut then "payable" else "view"
 
 solFunction :: Doc -> [Doc] -> Doc -> Docs -> Docs
-solFunction name = solFunctionLike (SFL_Function False name)
+solFunction name = solFunctionLike (SFLFun False True name)
 
 solContract :: String -> Docs -> Docs
 solContract s body = ["contract" <+> pretty s <+> solBraces body]
@@ -232,14 +231,14 @@ solRawVar (DLVar _ _ _ n) = pretty $ "v" ++ show n
 solMemVar :: DLVar -> Doc
 solMemVar dv = "_f." <> solRawVar dv
 
-apiRetVar :: Doc
-apiRetVar = "_apiRet"
+memVar :: Doc
+memVar = "_Memory"
 
-apiRetMemVar :: String -> Doc
-apiRetMemVar f = apiRetVar <> "." <> pretty f
+memVarF :: String -> Doc
+memVarF f = memVar <> "." <> pretty f
 
-apiRngTy :: Doc
-apiRngTy = "Memory"
+memTy :: Doc
+memTy = "Memory"
 
 solArgSVSVar :: DLVar -> Doc
 solArgSVSVar dv = "_a.svs." <> solRawVar dv
@@ -308,7 +307,7 @@ addInterface :: Doc -> [Doc] -> Doc -> App Doc
 addInterface f dom rng = do
   idx <- (liftIO . incCounter) =<< (ctxt_intidx <$> ask)
   let ip = "I" <> pretty idx
-  let idef = ["interface" <+> ip <+> solBraces ["function" <+> solApply f dom <+> "external returns" <+> parens rng <> semi]]
+  let idef = ["interface" <+> ip <+> solBraces ["function" <+> solApply f dom <+> "external payable returns" <+> parens rng <> semi]]
   modifyCtxtIO ctxt_ints $ M.insert idx idef
   return $ ip <> "." <> f <> ".selector"
 
@@ -329,8 +328,11 @@ addVar' v = do
   addVar v v'
   return v'
 
+addVars_ :: (DLVar -> Doc) -> [DLVar] -> App ()
+addVars_ f l = extendVarMap $ M.fromList $ map (\v -> (v, f v)) l
+
 addVars :: (DLVar -> Doc) -> [DLVarLet] -> App ()
-addVars f l = extendVarMap $ M.fromList $ map (\v -> (v, f v)) $ map varLetVar l
+addVars f = addVars_ f . map varLetVar
 
 freshVarMap :: App a -> App a
 freshVarMap m = do
@@ -916,6 +918,7 @@ solStateSet which svs = do
 solStateBind :: SrcLoc -> [DLVar] -> App Docs
 solStateBind _at svs = do
   svs_ty' <- solAsnType svs
+  addVars_ solSVSVar svs
   return [solSet (parens $ solDecl "_svs" (mayMemSol svs_ty')) $ solApply "abi.decode" ["current_svbs", parens svs_ty']]
 
 solStateCheck :: SrcLoc -> Int -> App Docs
@@ -1104,7 +1107,7 @@ instance SolStmts DLStmt where
       let emitl = "emit" <+> go id emitVars
       asn <- case (lk, lvs') of
         (L_Api p, [v]) -> do
-          return $ [ solSet (apiRetMemVar $ bunpack p) v ]
+          return $ [ solSet (memVarF $ bunpack p) v ]
         (_, _) -> return []
       case pv of
         DLV_Eff -> do
@@ -1389,41 +1392,38 @@ instance SolStmts HandlerX where
         which_msg_r <- asks ctxt_which_msg
         liftIO $ modifyIORef which_msg_r $ M.insert which msg
         void $ solS $ CLTxnBind at from timev secsv
-        addVars solSVSVar svsl
         addVars solArgMsgVar msgl
         let cl' = CL_Com (CLEmitPublish at which msg)
                   $ CL_Com (CLIntervalCheck at timev secsv interval)
                   $ CL_Halt at
         (frameDefn, ctp) <- solSF $ HandlerY cl' ct
         evtDefn <- solEvent which msg
-        let ret = "payable"
         (hashCheck, svs_init, am, sfl) <-
           case which == 0 of
             True -> do
               let inits = [solSet "creation_time" solBlockTime]
-              return (mempty, inits, AM_Memory, SFL_Constructor)
+              return (mempty, inits, AM_Memory, SFLCtor)
             False -> do
               csv <- solStateAndTimeCheck at prev
               csvs <- solStateBind at svs
-              return (csv, csvs, AM_Call, SFL_Function True (solMsg_fun which))
+              return (csv, csvs, AM_Call, SFLFun True True (solMsg_fun which))
         -- This is a re-entrancy lock, because we know that
-        -- all methods start by checking the current state.  When we
-        -- implement on-chain state, we need to do this differently
+        -- all methods start by checking the current state.
         let lock = [solSet "current_step" "0x0"]
         argDefn <- solArgDefn am Nothing msg
         let body = hashCheck <> lock <> svs_init <> ctp
-        let mkFun args b = solFunctionLike sfl args ret b
+        let mkFun args b = solFunctionLike sfl args "" b
         funDefs <-
           case sfl of
-            SFL_Function _ name -> do
-              am' <- (apiRngTy <>) <$> solF AM_Memory
+            SFLFun _ _ name -> do
+              am' <- (memTy <>) <$> solF AM_Memory
               let createStruct = solDecl "_r" am' <> semi
-              let apiRetDefn = solDecl apiRetVar am'
+              let memDefn = solDecl memVar am'
               intArg <- solArgDefn AM_Memory Nothing msg
               let callFun = solApply name ["_a", "_r"] <> semi
               let callBody = [createStruct, callFun]
               return $ mkFun [argDefn] callBody
-                <> solFunction name [intArg, apiRetDefn] "internal " body
+                <> solFunction name [intArg, memDefn] "" body
             _ -> return $ mkFun [argDefn] body
         return $ evtDefn <> frameDefn <> funDefs
       C_Loop _at svsl msgl ct -> do
@@ -1433,7 +1433,7 @@ instance SolStmts HandlerX where
         addVars solArgMsgVar msgl
         (frameDefn, body) <- solSF ct
         argDefn <- solArgDefn AM_Memory (Just $ svs) msg
-        let ret = "internal"
+        let ret = ""
         let funDefn = solFunction (solLoop_fun which) [argDefn] ret body
         return $ frameDefn <> funDefn
 
@@ -1470,14 +1470,6 @@ solBytesSplit sz goSmall goBig =
         len = case i == lastOne of
           True -> lastLen
           False -> byteChunkSize
-
-funRetSig :: DLType -> Bool -> App Doc
-funRetSig ret_ty ext = do
-  ret_ty' <- solType_withArgLoc ret_ty
-  let external = case ext of
-        True -> "external payable returns"
-        False -> "internal returns"
-  return $ external <+> parens ret_ty'
 
 apiArgs :: Doc -> ApiInfo -> App ([Doc], [Doc], [Doc], Doc)
 apiArgs tyMsg (ApiInfo {..}) = do
@@ -1543,20 +1535,19 @@ apiDef who qualify (ApiInfo {..}) = do
         [ m_arg_ty <+> "memory _t;" ]
         <> tyLifts
         <> [ solBraces
-            [ "Memory memory _r;"
+            [ memTy <+> "memory _r;"
             , solApply mf ["_t", "_r"] <> semi
             , pretty ("return _r." <> who_orig) <> semi
             ]
           ]
-  retExt <- funRetSig ai_ret_ty True
-  retInt <- funRetSig ai_ret_ty False
+  ret <- solType_withArgLoc ai_ret_ty
   let internalName = "_reach_internal_" <> pretty who_s
-  let mk w ret = solFunction (pretty w) argDefns ret
+  let mk w ext = solFunctionLike (SFLFun ext True (pretty w)) argDefns ret
   let extBody = ["return " <> solApply internalName args <> semi]
   let alias = case bunpack <$> ai_alias of
-              Just ai -> mk ai retExt extBody
+              Just ai -> mk ai True extBody
               Nothing -> []
-  return $ mk internalName retInt body <> mk who_s retExt extBody <> alias
+  return $ mk internalName False body <> mk who_s True extBody <> alias
 
 genApiJump :: SLPart -> M.Map Int ApiInfo -> App Docs
 genApiJump p ms = do
@@ -1572,9 +1563,9 @@ genApiJump p ms = do
           thn = [ "return " <> solApply ("_reach_internal_" <> inst) args <> semi ]
           inst = "_" <> who <> pretty w
   let go = map (mk . fst) $ M.toAscList ms
-  ret <- funRetSig (ai_ret_ty ai) True
+  ret <- solType_withArgLoc $ ai_ret_ty ai
   let body = require : go
-  return $ solFunction who argDefns ret body
+  return $ solFunctionLike (SFLFun True True who) argDefns ret body
 
 newtype SApiX = SApiX (SLPart, (M.Map Int ApiInfo))
 
@@ -1622,7 +1613,7 @@ solDefineType t = case t of
           , solDecl "idx" "uint256"
           , solDecl "val" tnmem
           ]
-    let ret = "pure internal" <+> "returns" <+> parens (solDecl "arrp" memem)
+    let ret = solDecl "arrp" memem
     let assign idx val = (solArrayRef "arrp" idx) <+> "=" <+> val <> semi
     let body =
           [ ("for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++")
@@ -1631,6 +1622,7 @@ solDefineType t = case t of
           ]
     addMap me
     i <- addId
+    -- XXX This is pure, but we can't say that
     addFun i $ solFunction (solArraySet i) args ret body
   T_Tuple ats -> do
     let ats' = (flip zip) ats $ map (("elem" ++) . show) ([0 ..] :: [Int])
@@ -1735,18 +1727,16 @@ instance SolStmts SMapY where
     keyTy <- solType_ kt
     valTy <- solType mt
     let args = [solDecl "addr" keyTy]
-    let ret = "view returns (" <> valTy <> " memory res)"
-    let ext_ret = "external " <> ret
-    let int_ret = "internal " <> ret
+    let ret = valTy <> " memory res"
     let ref = (solArrayRef name "addr")
     do_none <- solLargeArg' False "res" $ mdaToMaybeLA ty Nothing
     let do_some = [solSet "res" ref]
     eq <- solEq (ref <> ".which") (solVariant valTy "Some")
     let int_defn =
-          solFunction (solMapRefInt_ name) args int_ret $
+          solFunctionLike (SFLFun False False $ solMapRefInt_ name) args ret $
             solIf_ eq do_some do_none
     let ext_defn =
-          solFunction (solMapRefExt_ name) args ext_ret $
+          solFunctionLike (SFLFun True False $ solMapRefExt_ name) args ret $
             [solSet "res" (solApply (solMapRefInt_ name) ["addr"])]
     return $
       [ "mapping (" <> keyTy <> " => " <> valTy <> ") " <> name <> semi ]
@@ -1783,15 +1773,15 @@ instance SolStmts SViewY where
     wrappedDomTy <- solType $ T_Tuple dom
     dom' <- zipWithM mkdom args dom
     rng' <- solType_p AM_Memory rng
-    let ret = "external view returns" <+> parens rng'
-    let retWrapped = "internal view returns" <+> parens (rng' <> " _viewRet")
+    let ret = rng'
+    let retWrapped = rng' <> " _viewRet"
     let vkWrapped = vk <> "_wrapped"
     let wrapperBody =
           [(mayMemSol wrappedDomTy) <> " _t" <> semi]
           <> (map (\(a, i) -> "_t.elem" <> pretty i <> " = "
                     <> solRawVar a <> semi) $ zip args ([0 ..] :: [Int]))
           <> ["return " <> solApply vkWrapped ["_t"] <> semi]
-    let mkWrapper name = solFunction name dom' ret wrapperBody
+    let mkWrapper name = solFunctionLike (SFLFun True False name) dom' ret wrapperBody
     let wrapper = mkWrapper vk
     let view_defns :: Docs = concatMap (mkWrapper . pretty . mk . bunpack) aliases
     illegal <- solRequireS "invalid view_i" "false"
@@ -1856,7 +1846,7 @@ createMem defs = do
     t' <- solType_ t
     return (n, t')
   let fs' = ("nil", "bool") : fs
-  return $ fromMaybe (impossible "cm") $ solStruct "Memory" fs'
+  return $ fromMaybe (impossible "cm") $ solStruct memTy fs'
 
 solTimeCheck :: SrcLoc -> Doc -> Doc -> App Docs
 solTimeCheck at actual' given' = do
@@ -1888,7 +1878,6 @@ instance SolStmts CLStmt where
     CLStateBind at svs prev -> do
       s' <- solStateCheck at prev
       svs' <- solStateBind at $ map varLetVar svs
-      -- XXX bind vars
       return $ s' <> svs'
     CLIntervalCheck at timev secsv (CBetween ifrom ito) -> do
       let checkTime1 op ta = do
@@ -1957,16 +1946,28 @@ instance SolStmts FunX where
       return $ solDecl v' $ ty' <> am'
     ret <-
       case clf_mode of
-        CLFM_Internal -> return "internal"
-        CLFM_External {..} -> do
-          let mview = if cfm_view then " view" else ""
-          rng' <- solType cfm_erngv
-          let rets = "returns" <+> parens rng'
-          return $ "external" <> mview <+> rets
-    addVars solArgMsgVar clf_dom
+        CLFM_Internal -> do
+          return ""
+        CLFM_External {..} -> solType cfm_erngv
+    extra_args <-
+      case clf_mode of
+        CLFM_External {} -> return []
+        CLFM_Internal -> do
+          return $ [ solDecl memVar memTy ]
+    let args' = args <> extra_args
+    sfl <-
+      case name == nameMeth 0 of
+        True -> return SFLCtor
+        False -> do
+          let name' = pclv name
+          let (ext, mut) =
+                case clf_mode of
+                  CLFM_Internal -> (False, True)
+                  CLFM_External {..} -> (True, not cfm_view)
+          return $ SFLFun ext mut name'
+    addVars solRawVar clf_dom
     (frameDefn, body) <- solSF clf_tail
-    let name' = pclv name
-    return $ frameDefn <> solFunctionLike (SFL_Function False name') args ret body
+    return $ frameDefn <> solFunctionLike sfl args' ret body
 
 instance SolStmts CLProg where
   solS (CLProg {..}) = do
