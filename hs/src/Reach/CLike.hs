@@ -1,5 +1,6 @@
 module Reach.CLike
   ( clike
+  , nameMap
   , nameReturn
   ) where
 
@@ -369,15 +370,17 @@ instance CLike CHX where
     tCounter <- asks getCounter
     body' <- tr_ (TEnv {..}) ch_body
     let intt =
+          -- XXX include this in the program itself?
+            CL_Com (CLEmitPublish ch_at which (map varLetVar ch_msg))
           -- XXX add extensions to DLE so these can be read directly
-            CL_Com (CLTxnBind ch_at ch_from ch_timev ch_secsv)
+          $ CL_Com (CLTxnBind ch_at ch_from ch_timev ch_secsv)
           -- XXX put given_timev into DL and does this in Core
           $ CL_Com (CLTimeCheck ch_at ch_timev given_timev)
           -- XXX change to StoreRead and something to decompose a Data instance
           -- and fail if the tag doesn't match
           $ CL_Com (CLStateBind ch_at ch_svs ch_last)
           -- XXX move this back to EPP
-          $ CL_Com (CLIntervalCheck ch_at ch_timev ch_int)
+          $ CL_Com (CLIntervalCheck ch_at ch_timev ch_secsv ch_int)
           $ body'
     let isView = False
     funw (nameMethi which) [ nameMeth which ] ch_at clf_dom isView T_Null intt
