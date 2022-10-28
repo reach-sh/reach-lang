@@ -243,6 +243,9 @@ memVarF f = memVar <> "." <> pretty f
 memTy :: Doc
 memTy = "Memory"
 
+memVarDecl :: Doc
+memVarDecl = solDecl ("memory" <+> memVar) memTy
+
 solArgSVSVar :: DLVar -> Doc
 solArgSVSVar dv = "_a.svs." <> solRawVar dv
 
@@ -1924,18 +1927,36 @@ instance SolStmts CLTail where
     CL_Com m k -> solScat m k
     CL_If _ ca t f -> solIf ca t f
     CL_Switch at ov csm -> solSwitch at ov csm
-    CL_Jump _at f args -> do
-      -- XXX memory on internal
+    CL_Jump _at f args mmret -> do
       let f' = pclv f
-      args' <- mapM solF args
-      return $ [ solApply f' args' <> semi ]
+      -- Turn the arguments into a single object and call w/ memory
+      args_ty <- solType $ vsToType args
+      let defn = [ solDecl "memory _ja" args_ty <> semi ]
+      let go v = (show (solRawVar v), DLA_Var v)
+      asn <- solLargeArg' False "_ja" $ DLLA_Struct $ map go args
+      let call = defn <> asn <> [ solApply f' [ "_ja", memVar ] <> semi ]
+      case mmret of
+        Nothing -> do
+          -- internal to internal call
+          return $ call
+        Just mret -> do
+          -- external to internal call, we must allocate
+          let alloc = [ memVarDecl <> semi ]
+          let ret =
+                case mret of
+                  Nothing ->
+                    -- No return
+                    []
+                  Just retv ->
+                    [ "return" <+> memVarF (bunpack retv) <> semi ]
+          return $ alloc <> call <> ret
     CL_Halt _ -> return []
 
 newtype FunX = FunX (CLSym, CLFun)
 
 instance SolStmts FunX where
   solS (FunX ((CLSym name _ _), (CLFun {..}))) = freshVarMap $ do
-    -- XXX put args in tuple
+    -- XXX put args in tuple for publish (in CLike)
     -- XXX lock
     (am, sfl) <-
       case name == nameMeth 0 of
@@ -1965,7 +1986,7 @@ instance SolStmts FunX where
           let vs = map varLetVar clf_dom
           argTy <- solType_withArgLoc $ vsToType vs
           addVars_ (\v -> "_a." <> solRawVar v) vs
-          return $ [ solDecl "_a" argTy, solDecl ("memory" <+> memVar) memTy ]
+          return $ [ solDecl "_a" argTy, memVarDecl ]
     (frameDefn, body) <- solSF clf_tail
     return $ frameDefn <> solFunctionLike sfl args body
 
