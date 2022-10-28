@@ -8,6 +8,7 @@ import Control.Monad
 import Control.Monad.Extra
 import Control.Monad.Reader
 import Control.Monad.Trans.Except
+import Crypto.Hash (hash, SHA1)
 import Data.Aeson as Aeson
 import qualified Data.Aeson as AS
 import Data.Bifunctor (Bifunctor (first))
@@ -279,8 +280,7 @@ data SolCtxt = SolCtxt
   , ctxt_typef :: IORef (M.Map Int Docs)
   , ctxt_typeidx :: Counter
   , ctxt_varidx :: Counter
-  , ctxt_intidx :: Counter
-  , ctxt_ints :: IORef (M.Map Int Docs)
+  , ctxt_ints :: IORef (M.Map String Docs)
   , ctxt_outputs :: IORef (M.Map String Docs)
   , ctxt_requireMsg :: Counter
   , ctxt_which_msg :: IORef (M.Map Int [DLVar])
@@ -311,11 +311,13 @@ class SolFrag a where
 
 addInterface :: Doc -> [Doc] -> Doc -> App Doc
 addInterface f dom rng = do
-  idx <- (liftIO . incCounter) =<< (ctxt_intidx <$> ask)
-  let ip = "I" <> pretty idx
-  let idef = ["interface" <+> ip <+> solBraces ["function" <+> solApply f dom <+> "external payable returns" <+> parens rng <> semi]]
-  modifyCtxtIO ctxt_ints $ M.insert idx idef
-  return $ ip <> "." <> f <> ".selector"
+  let body = "function" <+> solApply f dom <+> "external payable returns" <+> parens rng <> semi
+  let body' = show $ hash @BS.ByteString @SHA1 $ bpack $ show body
+  let ip = "I" <> body'
+  let ip' = pretty ip
+  let idef = ["interface" <+> ip' <+> solBraces [body]]
+  modifyCtxtIO ctxt_ints $ M.insert ip idef
+  return $ ip' <> "." <> f <> ".selector"
 
 allocRawVar :: App Doc
 allocRawVar = (pretty . (++) "v" . show) <$> allocVarIdx
@@ -2008,7 +2010,6 @@ solProg p = do
   ctxt_typed <- newIORef mempty
   ctxt_view_json <- newIORef mempty
   ctxt_typeidx <- newCounter 0
-  ctxt_intidx <- newCounter 0
   ctxt_requireMsg <- newCounter 7 -- +1 the num used in stdlib_reach.sol
   ctxt_ints <- newIORef mempty
   ctxt_outputs <- newIORef mempty
