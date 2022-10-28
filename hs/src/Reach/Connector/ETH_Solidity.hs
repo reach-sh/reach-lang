@@ -239,7 +239,7 @@ apiRetMemVar :: String -> Doc
 apiRetMemVar f = apiRetVar <> "." <> pretty f
 
 apiRngTy :: Doc
-apiRngTy = "ApiRng"
+apiRngTy = "Memory"
 
 solArgSVSVar :: DLVar -> Doc
 solArgSVSVar dv = "_a.svs." <> solRawVar dv
@@ -277,7 +277,6 @@ data SolCtxt = SolCtxt
   , ctxt_intidx :: Counter
   , ctxt_ints :: IORef (M.Map Int Docs)
   , ctxt_outputs :: IORef (M.Map String Docs)
-  , ctxt_tlfuns :: IORef (M.Map String Docs)
   , ctxt_requireMsg :: Counter
   , ctxt_which_msg :: IORef (M.Map Int [DLVar])
   , ctxt_view_json :: IORef AesonRib
@@ -1544,7 +1543,7 @@ apiDef who qualify (ApiInfo {..}) = do
         [ m_arg_ty <+> "memory _t;" ]
         <> tyLifts
         <> [ solBraces
-            [ "ApiRng memory _r;"
+            [ "Memory memory _r;"
             , solApply mf ["_t", "_r"] <> semi
             , pretty ("return _r." <> who_orig) <> semi
             ]
@@ -1991,7 +1990,6 @@ solProg p = do
   ctxt_requireMsg <- newCounter 7 -- +1 the num used in stdlib_reach.sol
   ctxt_ints <- newIORef mempty
   ctxt_outputs <- newIORef mempty
-  ctxt_tlfuns <- newIORef mempty
   ctxt_which_msg <- newIORef mempty
   let ctxt_varidx = getCounter p
   p' <- flip runReaderT (SolCtxt {..}) $ solS p
@@ -2009,12 +2007,11 @@ solProg p = do
   typefsp <- getm ctxt_typef
   intsp <- getm ctxt_ints
   outputsp <- getm ctxt_outputs
-  tlfunsp <- getm ctxt_tlfuns
   let defp =
         [ "receive () external payable {}"
         , "fallback () external payable {}"
         ]
-  let ctcbody = state_defn <> typefsp <> outputsp <> tlfunsp <> defp <> p'
+  let ctcbody = state_defn <> typefsp <> outputsp <> defp <> p'
   let ctcp = solContract (contractId <> " is Stdlib") ctcbody
   view_json <- readIORef ctxt_view_json
   let cinfo =
@@ -2151,7 +2148,8 @@ connect_eth _ = Connector {..}
       where
         go :: FilePath -> IO ConnectorInfo
         go solf = do
-          (cinfo, sol) <- solProg cl
+          let useNew = True
+          (cinfo, sol) <- if useNew then solProg cl else solProg (clp_old cl)
           unless dontWriteSol $ do
             LTIO.writeFile solf $ render sol
           compile_sol cinfo solf

@@ -123,3 +123,6 @@ instance Pretty CPProg where
       , ("events", pretty cpp_events)
       , ("handlers", pretty cpp_handlers)
       ])
+
+instance HasCounter CPProg where
+  getCounter = getCounter . cpp_opts
