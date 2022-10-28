@@ -16,6 +16,7 @@ import Reach.Connector
 import Reach.JSOrphans ()
 import Reach.Texty
 import Reach.Warning (Deprecation (..))
+import Data.IORef
 
 -- SL types are a superset of DL types.
 -- We copy/paste constructors instead of using `ST_Val DLType`
@@ -175,6 +176,34 @@ data SLVal
   | SLV_Deprecated Deprecation SLVal
   | SLV_ContractCode SrcLoc ConnectorObject
   deriving (Eq, Generic)
+
+isDynamicVal :: SLVal -> Bool
+isDynamicVal = \case
+  SLV_Null {} -> False
+  SLV_Bool {} -> False
+  SLV_Int {} -> False
+  SLV_Bytes {} -> False
+  SLV_BytesDyn {} -> False
+  SLV_String {} -> False
+  SLV_DLC _ -> False
+  SLV_Type {} -> False
+  SLV_Connector {} -> False
+  SLV_Prim {} -> False
+  SLV_Form {} -> False
+  SLV_Kwd {} -> False
+  SLV_ContractCode {} -> False
+  SLV_Clo {} -> False
+  SLV_DLVar {} -> True
+  SLV_Participant {} -> True
+  SLV_RaceParticipant {} -> True
+  SLV_Anybody -> True
+  SLV_Map {} -> True
+  SLV_Array _ _ svs -> any isDynamicVal svs
+  SLV_Tuple _ svs -> any isDynamicVal svs
+  SLV_Object _ _ svs -> any (isDynamicVal . sss_val . snd) $ M.toAscList svs
+  SLV_Struct _ svs -> any (isDynamicVal . snd) svs
+  SLV_Data _ _ _ sv -> isDynamicVal sv
+  SLV_Deprecated _ sv -> isDynamicVal sv
 
 uintTyM :: SLVal -> Maybe UIntTy
 uintTyM = \case
@@ -771,7 +800,7 @@ data SLPrimitive
   | SLPrim_Object_has
   | SLPrim_Object_fields
   | SLPrim_Object_set
-  | SLPrim_App_Delay SrcLoc JSStatement (SLEnv, Bool)
+  | SLPrim_App_Delay SrcLoc JSStatement (SLEnv, Bool) (IORef ConnectorObject) (Maybe SLVar)
   | SLPrim_op SPrimOp
   | SLPrim_transfer
   | SLPrim_transfer_amt_to SLVal
@@ -844,34 +873,37 @@ instance Equiv SLPrimitive where
 
 type SLSVal = (SecurityLevel, SLVal)
 
+type Universe = Int
+
 data SLSSVal = SLSSVal
   { sss_at :: SrcLoc
   , sss_level :: SecurityLevel
+  , sss_universe :: Universe
   , sss_val :: SLVal
   }
   deriving (Eq, Generic, Show)
 
 instance Pretty SLSSVal where
-  pretty (SLSSVal _ level val) = pretty (level, val) -- <> "@" <> pretty at
+  pretty (SLSSVal _ level uni val) = pretty (level, uni, val) -- <> "@" <> pretty at
   -- TODO: incorporate srcloc in pretty?
 
 sss_restrict :: SecurityLevel -> SLSSVal -> SLSSVal
-sss_restrict lvl1 (SLSSVal at lvl2 val) =
-  (SLSSVal at (lvl1 <> lvl2) val)
+sss_restrict lvl1 (SLSSVal at lvl2 uni val) =
+  (SLSSVal at (lvl1 <> lvl2) uni val)
 
 sss_sls :: SLSSVal -> SLSVal
-sss_sls (SLSSVal _ level val) = (level, val)
+sss_sls (SLSSVal _ level _ val) = (level, val)
 
-sls_sss :: SrcLoc -> SLSVal -> SLSSVal
-sls_sss at (level, val) = SLSSVal at level val
+sls_sss :: SrcLoc -> Universe -> SLSVal -> SLSSVal
+sls_sss at uni (level, val) = SLSSVal at level uni val
 
 type SLEnv = M.Map SLVar SLSSVal
 
 mt_env :: SLEnv
 mt_env = mempty
 
-m_fromList_public :: SrcLoc -> [(SLVar, SLVal)] -> SLEnv
-m_fromList_public at kvs =
+m_fromList_public :: SrcLoc -> Universe -> [(SLVar, SLVal)] -> SLEnv
+m_fromList_public at uni kvs =
   M.fromList $ map go kvs
   where
-    go (k, v) = (k, SLSSVal at Public v)
+    go (k, v) = (k, SLSSVal at Public uni v)

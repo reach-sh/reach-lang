@@ -517,7 +517,7 @@ Reach assumes that network tokens and non-network tokens behave identically, but
 
 ---
 
-`{!rsh} Token.burn(tok, amt?)`, or `{!rsh} tok.burn(amt?)`, where `{!rsh} tok` is a `{!rsh} Token` value and `{!rsh} amt` is a `{!rsh} UInt` value, may be used to @{defn("burn")} tokens in the contract account, meaning that they are utterly destroyed and can never be recovered. 
+`{!rsh} Token.burn(tok, amt?)`, or `{!rsh} tok.burn(amt?)`, where `{!rsh} tok` is a `{!rsh} Token` value and `{!rsh} amt` is a `{!rsh} UInt` value, may be used to @{defn("burn")} tokens in the contract account, meaning that they are utterly destroyed and can never be recovered.
 If `{!rsh} amt` is not given, the current balance of the token will be used.
 
 ---
@@ -749,7 +749,14 @@ instance methods.
 
 @{ref("rsh", "new Contract")}@{ref("rsh", "Contract.new")}
 Reach programs can create new child contracts based on predetermined, static code during compile time.
-This code is specified with `{!rsh} ContractCode`, which you can read about in @{seclink("ref-programs-appinit-contractcode")}.
+This code is specified with `{!rsh} ContractCode`, which you can read about in @{seclink("ref-programs-appinit-contractcode")}, or a `{!rsh} Reach.App`.
+
+
+Given a `{!rsh} Reach.App`, indicated by the variable `{!rsh} app`, you can create a constructor function with:
+
+```reach
+const ctor = new Contract(app);
+```
 
 Given some child contract code, indicated by the variable `{!rsh} cc`, you can create a constructor function with:
 
@@ -769,6 +776,8 @@ The `{!rsh} ALGO` connector accepts the keys:
   + `{!rsh} opts.localBytes` --- The number of byte strings in the local storage of the contract.
 
 If these options are required, but not present, then the contract will behave incorrectly.
+
+When providing a `{!rsh} Reach.App`, the Reach compiler will automatically derive the necessary options to launch the contract.
 
 The constructor function must be called to actually create the contract.
 It is like a `{!rsh} REMOTE_FUN}`, but it cannot be augmented, nor can it receive payment.

@@ -1,0 +1,8 @@
+reachc: error[RE0140]: Cannot reference c because it is the result of dynamic computation. A nested `Reach.App` can only reference statically computable values from outer scopes.
+
+  ./Err_Invalid_Universe.rsh:25:12:id ref
+
+  25|     assert(c == a + b);
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0140
+

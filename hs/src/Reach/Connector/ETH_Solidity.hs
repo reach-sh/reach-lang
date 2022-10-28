@@ -1799,6 +1799,22 @@ ccPath fp = do
       ccSol cn x
     _ -> throwE $ "Invalid code path: " <> show fp
 
+data ETHConnectorInfo = ETHConnectorInfo
+  { eci_bytecode :: String
+  } deriving (Show)
+
+instance AS.ToJSON ETHConnectorInfo where
+  toJSON (ETHConnectorInfo {..}) = AS.String $ T.pack $ drop0x $ eci_bytecode
+    where
+      drop0x = \case
+        '0':'x':s -> s
+        ow -> ow
+
+instance AS.FromJSON ETHConnectorInfo where
+  parseJSON = AS.withObject "ETHConnectorInfo" $ \obj -> do
+    eci_bytecode <- obj .: "Bytecode"
+    return $ ETHConnectorInfo {..}
+
 solReservedNames :: S.Set SLVar
 solReservedNames = S.fromList $
   [ "address"
@@ -1891,3 +1907,7 @@ connect_eth _ = Connector {..}
     conContractNewOpts mv = do
       (x :: ()) <- aesonParse $ fromMaybe AS.Null mv
       return $ AS.toJSON x
+    conCompileConnectorInfo :: Maybe AS.Value -> Either String AS.Value
+    conCompileConnectorInfo v = do
+      ETHConnectorInfo {..} <- aesonParse $ fromMaybe (AS.object mempty) v
+      return $ AS.toJSON $ ETHConnectorInfo {..}

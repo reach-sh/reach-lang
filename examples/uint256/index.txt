@@ -1,28 +1,28 @@
-Compiling "main1"...
+Compiling `main1`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 38 theorems; No failures!
-Compiling "main2"...
+Compiling `main2`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 33 theorems; No failures!
-Compiling "trapC"...
+Compiling `trapC`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 50 theorems; No failures!
-Compiling "trapS"...
+Compiling `trapS`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 116 theorems; No failures!
-Compiling "veriC"...
+Compiling `veriC`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest

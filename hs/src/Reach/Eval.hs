@@ -25,8 +25,8 @@ import qualified Data.ByteString as B
 import Data.List.Extra (groupSort)
 import Reach.UnsafeUtil (unsafeNub)
 
-compileDApp :: DLStmts -> DLSExports -> SLVal -> App DLProg
-compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_strict))) = locAt (srcloc_lab "compileDApp" at) $ do
+compileDApp :: DLStmts -> DLSExports -> CompileProg -> SLVal -> App DLProg
+compileDApp shared_lifts exports compileProg (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_strict) _ _)) = locAt (srcloc_lab "compileDApp" at) $ do
   let (JSBlock _ top_ss _) = jsStmtToBlock top_s
   setSt $
     SLState
@@ -63,6 +63,7 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
              { e_appr = Right appr
              , e_mape = mape
              , e_droppedAsserts = e_droppedAsserts'
+             , e_compileProg = compileProg
              })
         $ do
           void $ evalStmt top_ss
@@ -98,7 +99,7 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
   let dlp_events = ar_events
   let dlp_stmts = final'
   return $ DLProg {..}
-compileDApp _ _ _ = impossible "compileDApp called without a Reach.App"
+compileDApp _ _ _ _ = impossible "compileDApp called without a Reach.App"
 
 verifyApiAliases :: M.Map SLVar (Maybe B.ByteString, [SLType]) -> App Aliases
 verifyApiAliases m = do
@@ -121,8 +122,8 @@ makeMapEnv = do
   me_ms <- newIORef mempty
   return $ MapEnv {..}
 
-makeEnv :: Connectors -> IO Env
-makeEnv cns = do
+makeEnv :: Connectors -> Universe -> IO Env
+makeEnv cns uni = do
   e_id <- newCounter 0
   let e_who = Nothing
   let e_stack = []
@@ -161,6 +162,8 @@ makeEnv cns = do
   e_mape <- makeMapEnv
   e_droppedAsserts <- newCounter 0
   let e_appr = Left $ app_default_opts e_id e_droppedAsserts cns
+  let e_compileProg = const $ impossible "compileProg"
+  e_universe <- newCounter uni
   return (Env {..})
 
 checkUnusedVars :: App a -> App a
@@ -178,9 +181,9 @@ checkUnusedVars m = do
       expect_throw Nothing at $ Err_Unused_Variables l
   return a
 
-evalBundle :: Connectors -> JSBundle -> Bool -> IO (ReaderT Env m a -> m a, DLStmts, M.Map SLVar SLSSVal)
+evalBundle :: Connectors -> JSBundle -> Bool -> IO (ReaderT Env m a -> m a, DLStmts, SLEnv)
 evalBundle cns (JSBundle mods) addToEnvForEditorInfo = do
-  evalEnv <- makeEnv cns
+  evalEnv <- makeEnv cns 0
   let run = flip runReaderT evalEnv
   let exe = fst $ hdDie mods
   let evalPlus = do
@@ -201,8 +204,35 @@ evalBundle cns (JSBundle mods) addToEnvForEditorInfo = do
   (shared_lifts, _, exe_ex) <- run $ evalPlus
   return (run, shared_lifts, exe_ex)
 
-prepareDAppCompiles :: Monad m => (App DLProg -> a) -> DLStmts -> M.Map SLVar SLSSVal -> m (S.Set SLVar, SLVar -> a)
-prepareDAppCompiles run shared_lifts exe_ex = do
+type CompileDLProg = SLVar -> SLVar -> DLProg -> IO ConnectorObject
+
+getCompileName :: String -> Maybe String -> App (String, String)
+getCompileName topName appName = case appName of
+  Just name
+    -- Compiling a top level app
+    -- Log: Compiling `main`
+    -- Gen: index.main.mjs
+    | name == topName -> return (backticks topName, topName)
+    -- Compiling a named app
+    -- Log: Compiling `child` for `main`
+    -- Gen: index.child.mjs
+    | otherwise  -> return $ (backticks name <> " for " <> backticks topName, name)
+  Nothing
+    -- Compiling a default app
+    -- Log: Compiling `default`
+    -- Gen: index.default.mjs
+    | topName == "default" -> return (backticks topName, topName)
+    -- Compiling an anonymous app
+    -- Log: Compiling `internal ctc #2 for `main`
+    -- Gen: index.main2.mjs
+    | otherwise -> do
+      ctr <- show <$> ctxt_alloc
+      return $ ("internal contract #" <> ctr <> " for " <> backticks topName, topName <> ctr)
+  where
+    backticks s = '`' : s <> "`"
+
+prepareDAppCompiles :: Monad m => CompileDLProg -> (App ConnectorObject -> IO ConnectorObject) -> DLStmts -> SLEnv -> m (S.Set SLVar, SLVar -> IO ConnectorObject)
+prepareDAppCompiles compileDL run shared_lifts exe_ex = do
   let tops =
         M.keysSet $
           flip M.filter exe_ex $
@@ -210,13 +240,45 @@ prepareDAppCompiles run shared_lifts exe_ex = do
               case sss_val v of
                 SLV_Prim SLPrim_App_Delay {} -> True
                 _ -> False
-  let go getdapp = run $ checkUnusedVars $ do
+  let compileApp which getdapp = run $ do
         exports <- getExports exe_ex
-        topv <- ensure_public . sss_sls =<< getdapp
-        compileDApp shared_lifts exports topv
+        let mCompileApp toplevel = \case
+              sv@(SLV_Prim (SLPrim_App_Delay _ _ _ conR mname)) -> do
+                con <- liftIO $ readIORef conR
+                case (con == mempty, toplevel) of
+                  (False, False) -> return con
+                  -- This `App` may have been already compiled under a different variable name.
+                  -- However, we always compile apps at the toplevel because
+                  -- we want the output files to be written with a certain name.
+                  -- XXX We could store the PLProg in a box and skip straight to writing files,
+                  -- but I didn't want to put PL stuff inside of SL for now.
+                  (_, _) -> do
+                    let mNewEnv m = do
+                          case toplevel of
+                            False -> do
+                              cns <- readDlo dlo_connectors
+                              uni <- readUniverse
+                              newEnv <- liftIO $ makeEnv cns $ succ uni
+                              local (const newEnv) m
+                            True -> m
+                    dl <- mNewEnv $ checkUnusedVars $
+                            compileDApp shared_lifts exports (mCompileApp False) sv
+                    -- Run the rest of the compiler on the DLProg
+                    (displayMsg, fileOutput) <- getCompileName which mname
+                    co <- liftIO $ compileDL displayMsg fileOutput dl
+                    -- Remember the result so we don't compile the same program twice
+                    liftIO $ writeIORef conR co
+                    return co
+              _ -> impossible "Expected Reach.App"
+        getdapp >>= mCompileApp True
+  -- These `go` functions will be used by the CLI to compile a program by name
   case S.null tops of
     True -> do
-      return (S.singleton "default", const $ go $ return defaultApp)
+      let go = const $ compileApp "default" $ liftIO mkDefaultApp
+      return (S.singleton "default", go)
     False -> do
-      let go' which = go $ env_lookup LC_CompilerRequired which exe_ex
-      return (tops, go')
+      let go which =
+            compileApp which $
+              ensure_public =<< sss_sls <$>
+                env_lookup LC_CompilerRequired which exe_ex
+      return (tops, go)

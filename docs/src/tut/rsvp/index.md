@@ -583,8 +583,8 @@ Reach will detect this error and show the following error during verification:
 
 ```
 load: /examples/rsvp-5-cede/index-fail.txt
-md5: 8327117573985aac4f09dce2fee9d5a3
-range: 4-25
+md5: f07e7976fec1b2c377baaaaa8c033f17
+range: 5-26
 ```
 
 This program is interesting, because the invariants and assertions are set up in such a way that almost no other program could possibly satisfy them.
@@ -795,9 +795,9 @@ range: 59-70
 ```
 
 We've added a gas limit using `{!js} stdlib.setGasLimit` for testing on Ethereum.
-Normally the gas limit is computed by looking at the contract code, but it is not always accurate. 
+Normally the gas limit is computed by looking at the contract code, but it is not always accurate.
 There is always a gas limit, even if we don't specify anything.
-We've set the "limit" to the largest possible amount of gas that could ever be spent. 
+We've set the "limit" to the largest possible amount of gas that could ever be spent.
 Thus, we're removing the limit by setting it to be "infinity".
 
 Next, we modify the `willGo` function so that the Guest, before they register, inspects the event details and looks at the reservation price.

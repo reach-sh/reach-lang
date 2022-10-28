@@ -1,3 +1,4 @@
+Compiling `default`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest

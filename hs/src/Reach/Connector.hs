@@ -42,6 +42,7 @@ data Connector = Connector
   , conReserved :: SLVar -> Bool
   , conCompileCode :: Value -> IO (Either String Value)
   , conContractNewOpts :: Maybe Value -> Either String Value
+  , conCompileConnectorInfo :: Maybe Value -> Either String Value
   }
 
 instance Eq Connector where

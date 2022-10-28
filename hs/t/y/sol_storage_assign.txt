@@ -1,70 +1,70 @@
-Compiling "test1"...
+Compiling `test1`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 7 theorems; No failures!
-Compiling "test10"...
+Compiling `test10`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 7 theorems; No failures!
-Compiling "test11"...
+Compiling `test11`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 7 theorems; No failures!
-Compiling "test12"...
+Compiling `test12`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 7 theorems; No failures!
-Compiling "test2"...
+Compiling `test2`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 7 theorems; No failures!
-Compiling "test3"...
+Compiling `test3`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 7 theorems; No failures!
-Compiling "test4"...
+Compiling `test4`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 7 theorems; No failures!
-Compiling "test5"...
+Compiling `test5`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 7 theorems; No failures!
-Compiling "test6"...
+Compiling `test6`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 7 theorems; No failures!
-Compiling "test7"...
+Compiling `test7`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 7 theorems; No failures!
-Compiling "test8"...
+Compiling `test8`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 7 theorems; No failures!
-Compiling "test9"...
+Compiling `test9`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest

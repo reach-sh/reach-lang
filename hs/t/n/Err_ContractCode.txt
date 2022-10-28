@@ -1,4 +1,4 @@
-reachc: error[RE0137]: Failed to compile or parse contract code for "ETH": Invalid code path: "index.sol": Bytes(9)
+reachc: error[RE0137]: Failed to compile or parse contract code for "ETH": Invalid code path: "index.sol"
 
   ./Err_ContractCode.rsh:5:26:application
 

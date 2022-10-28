@@ -1,22 +1,22 @@
-Compiling "mt_array"...
+Compiling `mt_array`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 7 theorems; No failures!
-Compiling "mt_object"...
+Compiling `mt_object`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 7 theorems; No failures!
-Compiling "mt_struct"...
+Compiling `mt_struct`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 7 theorems; No failures!
-Compiling "mt_tuple"...
+Compiling `mt_tuple`...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest

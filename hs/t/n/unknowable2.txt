@@ -1,3 +1,4 @@
+Compiling `main`...
 Verifying knowledge assertions
 Verification failed:
   of theorem unknowable("Bob", x/41)
