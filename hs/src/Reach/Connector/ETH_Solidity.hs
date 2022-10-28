@@ -892,11 +892,6 @@ solTransfer who amt mtok = do
       tok' <- solF tok
       return $ solApply "safeTokenTransfer" [tok', who', amt']
 
-solEvent :: Int -> [DLVar] -> App Docs
-solEvent which msg = do
-  arg_ty' <- solArgType Nothing msg
-  return $ [ "event" <+> solApply (solMsg_evt which) ["address _who", arg_ty' <+> "_a"] <> semi ]
-
 solAsnType :: [DLVar] -> App Doc
 solAsnType = solType . vsToType
 
@@ -1110,7 +1105,7 @@ instance SolStmts DLStmt where
       let emitl = "emit" <+> go id emitVars
       asn <- case (lk, lvs') of
         (L_Api p, [v]) -> do
-          return $ [ solSet (memVarF $ bunpack p) v ]
+          return $ [ solSet (memVarF $ bunpack $ nameReturn p) v ]
         (_, _) -> return []
       case pv of
         DLV_Eff -> do
@@ -1400,7 +1395,6 @@ instance SolStmts HandlerX where
                   $ CL_Com (CLIntervalCheck at timev secsv interval)
                   $ CL_Halt at
         (frameDefn, ctp) <- solSF $ HandlerY cl' ct
-        evtDefn <- solEvent which msg
         (hashCheck, svs_init, am, sfl) <-
           case which == 0 of
             True -> do
@@ -1428,7 +1422,7 @@ instance SolStmts HandlerX where
               return $ mkFun [argDefn] callBody
                 <> solFunction name [intArg, memDefn] Nothing body
             _ -> return $ mkFun [argDefn] body
-        return $ evtDefn <> frameDefn <> funDefs
+        return $ frameDefn <> funDefs
       C_Loop _at svsl msgl ct -> do
         addVars solArgSVSVar svsl
         let svs = map varLetVar svsl
@@ -1694,7 +1688,7 @@ instance SolStmts ExportBlockCall where
 createAPIRng :: ApiInfos -> App Docs
 createAPIRng env = createMem $ M.fromList $ map go $ M.toAscList env
   where
-    go (k, ms) = (k, t')
+    go (k, ms) = (nameReturn k, t')
       where
         ai = fromMaybe (impossible "car") $ headMay $ M.elems ms
         t' = CLD_Mem $ ai_ret_ty ai
@@ -1867,8 +1861,14 @@ instance SolStmts CLStmt where
         , (from, "payable(msg.sender)")
         ]
       return []
-    CLEmitPublish _at which _msg -> do
-      return $ [ "emit" <+> solApply (solMsg_evt which) ["msg.sender", "_a"] <> semi ]
+    CLEmitPublish _at which msg -> do
+      -- XXX This should be in CLike, but how can we force the inclusion of
+      -- _who?
+      arg_ty' <- solArgType Nothing msg
+      let e = solMsg_evt which
+      let ed = [ "event" <+> solApply e ["address _who", arg_ty' <+> "_a"] <> semi ]
+      modifyCtxtIO ctxt_outputs $ M.insert (show e) ed
+      return $ [ "emit" <+> solApply e ["msg.sender", "_a"] <> semi ]
     CLTimeCheck at actual given -> do
       actual' <- solF actual
       given' <- solF given
@@ -1915,7 +1915,7 @@ instance SolStmts CLStmt where
         -- rather not get those, than have users lose funds to dead contracts.
         ]
     CLMemorySet _at v a -> do
-      let v' = "_mem." <> pclv v
+      let v' = memVarF $ bunpack v
       a' <- solF a
       return $ [ solSet v' a' ]
 
@@ -1946,7 +1946,7 @@ instance SolStmts FunX where
             case clf_mode of
               CLFM_Internal -> return (False, True, Nothing)
               CLFM_External {..} -> do
-                ret <- solType cfm_erngv
+                ret <- solType_withArgLoc cfm_erngv
                 return (True, not cfm_view, Just ret)
           return $ (AM_Call, SFLFun ext mut name' mret)
     am' <- solF am
@@ -1956,14 +1956,16 @@ instance SolStmts FunX where
           addVars solRawVar clf_dom
           forM clf_dom $ \vl -> do
             let v = varLetVar vl
-            ty' <- solType $ varType v
+            let ty = varType v
+            ty' <- solType ty
             let v' = solRawVar v
-            return $ solDecl v' $ ty' <> am'
+            let am'' = if mustBeMem ty then am' else ""
+            return $ solDecl v' $ ty' <> am''
         CLFM_Internal -> do
           let vs = map varLetVar clf_dom
-          argTy <- solType $ vsToType vs
+          argTy <- solType_withArgLoc $ vsToType vs
           addVars_ (\v -> "_a." <> solRawVar v) vs
-          return $ [ solDecl "_a" argTy, solDecl memVar memTy ]
+          return $ [ solDecl "_a" argTy, solDecl ("memory" <+> memVar) memTy ]
     (frameDefn, body) <- solSF clf_tail
     return $ frameDefn <> solFunctionLike sfl args body
 
