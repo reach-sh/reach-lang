@@ -64,7 +64,7 @@ data CLTail
   = CL_Com CLStmt CLTail
   | CL_If SrcLoc DLArg CLTail CLTail
   | CL_Switch SrcLoc DLVar (SwitchCases CLTail)
-  | CL_Jump SrcLoc CLVar [DLVar]
+  | CL_Jump SrcLoc CLVar [DLVar] (Maybe (Maybe CLVar))
   | CL_Halt SrcLoc
   deriving (Eq)
 
@@ -73,7 +73,7 @@ instance Pretty CLTail where
     CL_Com e k -> pretty e <> hardline <> pretty k
     CL_If _ ca tt ft -> prettyIfp ca tt ft
     CL_Switch _ ov csm -> prettySwitch ov csm
-    CL_Jump _ which args -> "jump" <+> pretty which <> parens (render_das args)
+    CL_Jump _ which args mmret -> "jump" <+> pretty which <> parens (render_das args) <+> pretty mmret
     CL_Halt _ -> "exit()"
 
 data CLFunMode

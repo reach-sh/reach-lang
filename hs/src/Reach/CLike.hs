@@ -71,11 +71,11 @@ fun n d = env_insert_ eFunsR s d
             CLFM_External _ t -> t
     CLFun {..} = d
 
-funw :: CLVar -> [CLVar] -> SrcLoc -> [DLVarLet] -> Bool -> DLType -> CLTail -> App ()
-funw ni ns at clf_dom isView rng intt = do
+funw :: CLVar -> [CLVar] -> SrcLoc -> [DLVarLet] -> Bool -> DLType -> Maybe CLVar -> CLTail -> App ()
+funw ni ns at clf_dom isView rng mret intt = do
   let di = CLFun { clf_mode = CLFM_Internal, clf_tail = intt, .. }
   let domvs = map varLetVar clf_dom
-  let extt = CL_Jump at ni domvs
+  let extt = CL_Jump at ni domvs (Just mret)
   let de = CLFun { clf_mode = CLFM_External isView rng, clf_tail = extt, .. }
   fun ni di
   forM_ ns $ flip fun de
@@ -229,7 +229,7 @@ instance (CLikeF a) => CLike (FIX a) where
     stept <- clf_ (FEnv {..}) $ bltM fi_steps
     let intt = CL_Com (CLStateRead fi_at f_statev) stept
     let ns = v : fi_as
-    funw (nameApi v) ns fi_at domvls fi_isView rng intt
+    funw (nameApi v) ns fi_at domvls fi_isView rng (Just f_rng) intt
 
 instance (CLikeF a) => CLike (M.Map SLPart (FunInfo a)) where
   cl = cl . CMap FIX
@@ -250,7 +250,7 @@ instance CLikeF ApiInfoY where
     return
       $ CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once timev) $ DLE_Arg at $ DLA_Literal $ DLL_Int at UI_Word $ 0))
       $ flip (foldr go) lets
-      $ CL_Jump at (nameMethi aiy_which) [timev, argv]
+      $ CL_Jump at (nameMethi aiy_which) [timev, argv] Nothing
 
 type ApiInfoX = FunInfo ApiInfoY
 type ApiInfosX = M.Map SLPart ApiInfoX
@@ -357,7 +357,7 @@ instance CLikeTr CTail CLTail where
       let args = svs <> asnvs'
       -- XXX move this concept backwards so that CT_Jump is just a sequence of
       -- variables
-      let kt = CL_Jump at (nameLoop which) args
+      let kt = CL_Jump at (nameLoop which) args Nothing
       let go (v', a) = CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once v') (DLE_Arg at a)))
       let t = foldr go kt asn'
       return t
@@ -379,12 +379,13 @@ instance CLike CHX where
           $ CL_Com (CLTimeCheck ch_at ch_timev given_timev)
           -- XXX change to StoreRead and something to decompose a Data instance
           -- and fail if the tag doesn't match
+          -- XXX don't on the ctor
           $ CL_Com (CLStateBind ch_at ch_svs ch_last)
           -- XXX move this back to EPP
           $ CL_Com (CLIntervalCheck ch_at ch_timev ch_secsv ch_int)
           $ body'
     let isView = False
-    funw (nameMethi which) [ nameMeth which ] ch_at clf_dom isView T_Null intt
+    funw (nameMethi which) [ nameMeth which ] ch_at clf_dom isView T_Null Nothing intt
   cl (CHX (which, (C_Loop {..}))) = do
     let n = nameLoop which
     let clf_dom = cl_svs <> cl_vars
