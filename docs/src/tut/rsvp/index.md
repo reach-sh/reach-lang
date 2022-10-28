@@ -795,7 +795,10 @@ range: 59-70
 ```
 
 We've added a gas limit using `{!js} stdlib.setGasLimit` for testing on Ethereum.
-This prevents `{!rsh} API`s from expending all of their tokens on gas fees.
+Normally the gas limit is computed by looking at the contract code, but it is not always accurate. 
+There is always a gas limit, even if we don't specify anything.
+We've set the "limit" to the largest possible amount of gas that could ever be spent. 
+Thus, we're removing the limit by setting it to be "infinity".
 
 Next, we modify the `willGo` function so that the Guest, before they register, inspects the event details and looks at the reservation price.
 This is representative of a user interface that informs the Guest of how much they'll be expected to pay to make a reservation.
