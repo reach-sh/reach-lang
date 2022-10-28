@@ -165,7 +165,11 @@ solIf c t f = solIf_ <$> solF c <*> solS t <*> solS f
 solIfs_ :: [(Doc, Docs)] -> Docs
 solIfs_ = \case
   [] -> []
-  ((c, t) : more) -> solIf_ c t $ solIfs_ more
+  ((c, t) : more) ->
+    [ "if" <+> parens c <+> "{" ] <> t <>
+    case solIfs_ more of
+      [] -> [ "}" ]
+      rec_hd : rec_tl -> [ "} else " <> rec_hd ] <> rec_tl
 
 solDecl :: Doc -> Doc -> Doc
 solDecl n ty = ty <+> n
@@ -1922,13 +1926,13 @@ instance SolStmts CLStmt where
       return $ [ solSet v' a' ]
 
 vsToInternalArg :: [DLVar] -> DLType
-vsToInternalArg = vsToType
+vsToInternalArg = T_Tuple . map varType
 makeInternalArg :: [DLVar] -> Doc -> [DLArg] -> App Docs
-makeInternalArg vs ia args = do
-  let go v a = (show (solRawVar v), a)
-  solLargeArg' False ia $ DLLA_Struct $ zipWith go vs args
+makeInternalArg _ ia args = solLargeArg' False ia $ DLLA_Tuple args
 bindInternalArg :: [DLVar] -> Doc -> App ()
-bindInternalArg vs ia = addVars_ (\v -> ia <> "." <> solRawVar v) vs
+bindInternalArg vs ia = extendVarMap $ M.fromList $ zipWith go vs ([0 ..] :: [Int])
+  where
+    go v i = (v, ia <> ".elem" <> pretty i)
 
 instance SolStmts CLTail where
   solS = \case
