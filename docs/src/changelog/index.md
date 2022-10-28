@@ -7,7 +7,10 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verRC("0.1.12")}
 
+@{rcHead("0.1.12-rc.8")}
+
 @{rcHead("0.1.12-rc.7")}
+
 + 2022/10/25: Added `{!rsh} Tuple.includes`.
 + 2022/10/25: Added `{!js} manager` optional field for `{!js} stdlib.launchToken`
 + 2022/10/25: Added `{!rsh} BytesDyn` casting from fixed-length bytes.
