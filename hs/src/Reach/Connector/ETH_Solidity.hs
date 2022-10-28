@@ -92,23 +92,26 @@ solBraces body = braces (nest $ hardline <> vsep body)
 
 data SolFunctionLike
   = SFLCtor
-  | SFLFun Bool Bool Doc
+  | SFLFun Bool Bool Doc (Maybe Doc)
 
-solFunctionLike :: SolFunctionLike -> [Doc] -> Doc -> Docs -> Docs
-solFunctionLike sfl args ret body = [ sflp <+> solBraces body ]
+solFunctionLike :: SolFunctionLike -> [Doc] -> Docs -> Docs
+solFunctionLike sfl args body = [ sflp <+> solBraces body ]
   where
     sflp =
       case sfl of
         SFLCtor -> solApply "constructor" args
-        SFLFun ext mut name ->
-          "function" <+> solApply name args <+> ext' <+> mut' <+> ret'
+        SFLFun ext mut name mret ->
+          "function" <+> solApply name args <+> ext' <+> mut' <> ret'
           where
-            ret' = "returns" <+> parens ret
+            ret' = case mret of
+                     Nothing -> ""
+                     Just ret -> " returns" <+> parens ret
             ext' = if ext then "external" else "internal"
             mut' = if mut then "payable" else "view"
 
-solFunction :: Doc -> [Doc] -> Doc -> Docs -> Docs
-solFunction name = solFunctionLike (SFLFun False True name)
+solFunction :: Doc -> [Doc] -> Maybe Doc -> Docs -> Docs
+solFunction name args mret body =
+  solFunctionLike (SFLFun False True name mret) args body
 
 solContract :: String -> Docs -> Docs
 solContract s body = ["contract" <+> pretty s <+> solBraces body]
@@ -1406,16 +1409,16 @@ instance SolStmts HandlerX where
             False -> do
               csv <- solStateAndTimeCheck at prev
               csvs <- solStateBind at svs
-              return (csv, csvs, AM_Call, SFLFun True True (solMsg_fun which))
+              return (csv, csvs, AM_Call, SFLFun True True (solMsg_fun which) Nothing)
         -- This is a re-entrancy lock, because we know that
         -- all methods start by checking the current state.
         let lock = [solSet "current_step" "0x0"]
         argDefn <- solArgDefn am Nothing msg
         let body = hashCheck <> lock <> svs_init <> ctp
-        let mkFun args b = solFunctionLike sfl args "" b
+        let mkFun args b = solFunctionLike sfl args b
         funDefs <-
           case sfl of
-            SFLFun _ _ name -> do
+            SFLFun _ _ name _ -> do
               am' <- (memTy <>) <$> solF AM_Memory
               let createStruct = solDecl "_r" am' <> semi
               let memDefn = solDecl memVar am'
@@ -1423,7 +1426,7 @@ instance SolStmts HandlerX where
               let callFun = solApply name ["_a", "_r"] <> semi
               let callBody = [createStruct, callFun]
               return $ mkFun [argDefn] callBody
-                <> solFunction name [intArg, memDefn] "" body
+                <> solFunction name [intArg, memDefn] Nothing body
             _ -> return $ mkFun [argDefn] body
         return $ evtDefn <> frameDefn <> funDefs
       C_Loop _at svsl msgl ct -> do
@@ -1433,8 +1436,7 @@ instance SolStmts HandlerX where
         addVars solArgMsgVar msgl
         (frameDefn, body) <- solSF ct
         argDefn <- solArgDefn AM_Memory (Just $ svs) msg
-        let ret = ""
-        let funDefn = solFunction (solLoop_fun which) [argDefn] ret body
+        let funDefn = solFunction (solLoop_fun which) [argDefn] Nothing body
         return $ frameDefn <> funDefn
 
 instance SolStmts CHandlers where
@@ -1540,9 +1542,9 @@ apiDef who qualify (ApiInfo {..}) = do
             , pretty ("return _r." <> who_orig) <> semi
             ]
           ]
-  ret <- solType_withArgLoc ai_ret_ty
+  ret <- Just <$> solType_withArgLoc ai_ret_ty
   let internalName = "_reach_internal_" <> pretty who_s
-  let mk w ext = solFunctionLike (SFLFun ext True (pretty w)) argDefns ret
+  let mk w ext = solFunctionLike (SFLFun ext True (pretty w) ret) argDefns
   let extBody = ["return " <> solApply internalName args <> semi]
   let alias = case bunpack <$> ai_alias of
               Just ai -> mk ai True extBody
@@ -1563,9 +1565,9 @@ genApiJump p ms = do
           thn = [ "return " <> solApply ("_reach_internal_" <> inst) args <> semi ]
           inst = "_" <> who <> pretty w
   let go = map (mk . fst) $ M.toAscList ms
-  ret <- solType_withArgLoc $ ai_ret_ty ai
+  ret <- Just <$> (solType_withArgLoc $ ai_ret_ty ai)
   let body = require : go
-  return $ solFunctionLike (SFLFun True True who) argDefns ret body
+  return $ solFunctionLike (SFLFun True True who ret) argDefns body
 
 newtype SApiX = SApiX (SLPart, (M.Map Int ApiInfo))
 
@@ -1613,7 +1615,7 @@ solDefineType t = case t of
           , solDecl "idx" "uint256"
           , solDecl "val" tnmem
           ]
-    let ret = solDecl "arrp" memem
+    let ret = Just $ solDecl "arrp" memem
     let assign idx val = (solArrayRef "arrp" idx) <+> "=" <+> val <> semi
     let body =
           [ ("for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++")
@@ -1727,16 +1729,16 @@ instance SolStmts SMapY where
     keyTy <- solType_ kt
     valTy <- solType mt
     let args = [solDecl "addr" keyTy]
-    let ret = valTy <> " memory res"
+    let ret = Just $ valTy <> " memory res"
     let ref = (solArrayRef name "addr")
     do_none <- solLargeArg' False "res" $ mdaToMaybeLA ty Nothing
     let do_some = [solSet "res" ref]
     eq <- solEq (ref <> ".which") (solVariant valTy "Some")
     let int_defn =
-          solFunctionLike (SFLFun False False $ solMapRefInt_ name) args ret $
+          solFunctionLike (SFLFun False False (solMapRefInt_ name) ret) args $
             solIf_ eq do_some do_none
     let ext_defn =
-          solFunctionLike (SFLFun True False $ solMapRefExt_ name) args ret $
+          solFunctionLike (SFLFun True False (solMapRefExt_ name) ret) args $
             [solSet "res" (solApply (solMapRefInt_ name) ["addr"])]
     return $
       [ "mapping (" <> keyTy <> " => " <> valTy <> ") " <> name <> semi ]
@@ -1773,15 +1775,15 @@ instance SolStmts SViewY where
     wrappedDomTy <- solType $ T_Tuple dom
     dom' <- zipWithM mkdom args dom
     rng' <- solType_p AM_Memory rng
-    let ret = rng'
-    let retWrapped = rng' <> " _viewRet"
+    let ret = Just rng'
+    let retWrapped = Just $ rng' <> " _viewRet"
     let vkWrapped = vk <> "_wrapped"
     let wrapperBody =
           [(mayMemSol wrappedDomTy) <> " _t" <> semi]
           <> (map (\(a, i) -> "_t.elem" <> pretty i <> " = "
                     <> solRawVar a <> semi) $ zip args ([0 ..] :: [Int]))
           <> ["return " <> solApply vkWrapped ["_t"] <> semi]
-    let mkWrapper name = solFunctionLike (SFLFun True False name) dom' ret wrapperBody
+    let mkWrapper name = solFunctionLike (SFLFun True False name ret) dom' wrapperBody
     let wrapper = mkWrapper vk
     let view_defns :: Docs = concatMap (mkWrapper . pretty . mk . bunpack) aliases
     illegal <- solRequireS "invalid view_i" "false"
@@ -1944,11 +1946,6 @@ instance SolStmts FunX where
       ty' <- solType $ varType v
       let v' = solRawVar v
       return $ solDecl v' $ ty' <> am'
-    ret <-
-      case clf_mode of
-        CLFM_Internal -> do
-          return ""
-        CLFM_External {..} -> solType cfm_erngv
     extra_args <-
       case clf_mode of
         CLFM_External {} -> return []
@@ -1960,14 +1957,16 @@ instance SolStmts FunX where
         True -> return SFLCtor
         False -> do
           let name' = pclv name
-          let (ext, mut) =
-                case clf_mode of
-                  CLFM_Internal -> (False, True)
-                  CLFM_External {..} -> (True, not cfm_view)
-          return $ SFLFun ext mut name'
+          (ext, mut, mret) <-
+            case clf_mode of
+              CLFM_Internal -> return (False, True, Nothing)
+              CLFM_External {..} -> do
+                ret <- solType cfm_erngv
+                return (True, not cfm_view, Just ret)
+          return $ SFLFun ext mut name' mret
     addVars solRawVar clf_dom
     (frameDefn, body) <- solSF clf_tail
-    return $ frameDefn <> solFunctionLike sfl args' ret body
+    return $ frameDefn <> solFunctionLike sfl args' body
 
 instance SolStmts CLProg where
   solS (CLProg {..}) = do
