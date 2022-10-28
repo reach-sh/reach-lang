@@ -10,8 +10,12 @@ import Reach.AST.CP
 import Reach.Counter
 import Reach.Pretty
 import Reach.Texty
+import Reach.Util
 
 type CLVar = B.ByteString
+
+pclv :: CLVar -> Doc
+pclv = pretty . bunpack
 
 data CLSym = CLSym CLVar [DLType] DLType
   deriving (Ord, Eq)
@@ -26,9 +30,10 @@ data CLStmt
   = CLDL DLStmt
   | CLTxnBind SrcLoc DLVar DLVar DLVar
   | CLTimeCheck SrcLoc DLVar DLVar
+  | CLEmitPublish SrcLoc Int [DLVar]
   | CLStateRead SrcLoc DLVar
   | CLStateBind SrcLoc [DLVarLet] Int
-  | CLIntervalCheck SrcLoc DLVar (CInterval DLTimeArg)
+  | CLIntervalCheck SrcLoc DLVar DLVar (CInterval DLTimeArg)
   | CLStateSet SrcLoc Int [(DLVar, DLArg)]
   | CLTokenUntrack SrcLoc DLArg
   | CLStateDestroy SrcLoc
@@ -45,10 +50,11 @@ instance Pretty CLStmt where
           , ("time", timev)
           , ("secs", secsv)
           ]
+    CLEmitPublish _ which vars -> "emitPublish" <> parens (render_das [pretty which, pretty vars])
     CLTimeCheck _ actual given -> "checkTime" <> parens (render_das [actual, given])
     CLStateRead _ v -> pretty v <+> ":=" <+> "state"
     CLStateBind _ svs prev -> pretty svs <+> ":=" <+> "state" <> pretty prev
-    CLIntervalCheck _ actual int -> "checkInterval" <> parens (render_das [pretty actual, pretty int])
+    CLIntervalCheck _ timev secsv int -> "checkInterval" <> parens (render_das [pretty timev, pretty secsv, pretty int])
     CLStateSet _ which svs -> "state" <> pretty which <+> "<-" <+> pretty svs
     CLTokenUntrack _ a -> "Token.untrack" <> parens (pretty a)
     CLMemorySet _ v a -> "mem" <+> pretty v <+> "<-" <+> pretty a
@@ -95,8 +101,7 @@ instance Pretty CLFun where
     pretty clf_mode <+> parens (render_das clf_dom) <+> "=>" <+> render_nest (pretty clf_tail)
 
 data CLDef
-  = CLD_Sto DLType
-  | CLD_Mem DLType
+  = CLD_Mem DLType
   | CLD_Map
     { cldm_kt :: DLType
     , cldm_ty :: DLType
@@ -106,10 +111,14 @@ data CLDef
 
 instance Pretty CLDef where
   pretty = \case
-    CLD_Sto t -> "sto" <+> pretty t
     CLD_Mem t -> "mem" <+> pretty t
     CLD_Map k v -> "map" <+> pretty k <+> pretty v
     CLD_Evt t -> "evt" <+> brackets (render_das t)
+
+viewCLD_Mem :: CLDef -> Maybe DLType
+viewCLD_Mem = \case
+  CLD_Mem x -> Just x
+  _ -> Nothing
 
 type CLDefs = M.Map CLVar CLDef
 
