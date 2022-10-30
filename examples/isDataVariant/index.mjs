@@ -8,7 +8,7 @@ const ctcA = accA.contract(backend);
 
 const Player = (acc) => ({
   getDT: () => {
-    return ['A', null];
+    return ['Aardvark', null];
   },
   checkBool: (b) => {
     // Check result for test

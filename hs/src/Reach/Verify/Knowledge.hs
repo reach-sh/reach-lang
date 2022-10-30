@@ -196,6 +196,7 @@ kgq_la ctxt mv = \case
   DLLA_Data _ _ a -> onea a
   DLLA_Struct kvs -> moreas $ map snd kvs
   DLLA_Bytes _ -> mempty
+  DLLA_BytesDyn _ -> mempty
   DLLA_StringDyn _ -> mempty
   where
     moreas = mconcatMap onea
@@ -212,6 +213,7 @@ kgq_e ctxt mv = \case
   DLE_ArraySet _ a e n -> kgq_la ctxt mv (DLLA_Tuple [a, e, n])
   DLE_ArrayConcat _ x_da y_da ->
     kgq_a_onlym ctxt mv x_da >> kgq_a_onlym ctxt mv y_da
+  DLE_BytesDynCast _ a -> kgq_a_onlym ctxt mv a
   DLE_TupleRef _ a _ -> kgq_a_onlym ctxt mv a
   DLE_ObjectRef _ a _ -> kgq_a_onlym ctxt mv a
   DLE_Interact _ _ who what t as ->
@@ -291,7 +293,7 @@ kgq_m ctxt = \case
       >> kgq_l ctxt f
   DL_Var {} -> mempty
   DL_Set _ dv da -> kgq_a_only ctxt dv da
-  DL_LocalIf _ ca t f -> kgq_l ctxt' t >> kgq_l ctxt' f
+  DL_LocalIf _ _ ca t f -> kgq_l ctxt' t >> kgq_l ctxt' f
     where
       ctxt' = ctxt_add_back ctxt ca
   DL_LocalSwitch _ ov csm -> mapM_ cm1 csm
@@ -309,7 +311,7 @@ kgq_m ctxt = \case
       >> knows ctxt (P_Var a) (S.singleton (P_Map x))
       >> kgq_a_only ctxt ans r
       >> kgq_l ctxt f
-  DL_LocalDo _ t -> kgq_l ctxt t
+  DL_LocalDo _ _ t -> kgq_l ctxt t
 
 kgq_l :: KCtxt -> DLTail -> IO ()
 kgq_l ctxt = \case

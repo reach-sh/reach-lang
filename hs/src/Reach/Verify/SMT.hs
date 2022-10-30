@@ -1084,6 +1084,8 @@ smt_la at_de dla = do
     DLLA_Struct kvs -> cons $ map snd kvs
     DLLA_Bytes bs -> do
       return $ smtApply "bytes" [Atom (show $ crc32 bs)]
+    DLLA_BytesDyn bs -> do
+      return $ smtApply "bytesDyn" [Atom (show $ crc32 bs)]
     DLLA_StringDyn st -> do
       return $ smtApply "stringDyn" [Atom (show $ crc32 $ bpack $ T.unpack st)]
 
@@ -1123,6 +1125,9 @@ smt_e at_dv mdv de = do
     DLE_ArrayConcat {} ->
       --- FIXME: This might be possible to do by generating a function
       impossible "array_concat"
+    DLE_BytesDynCast at a -> do
+      a' <- smt_a at a
+      bound at $ smtApply "Bytes_toBytesDyn" [a']
     DLE_TupleRef at arr_da i -> do
       let t = argTypeOf arr_da
       s <- smtTypeSort t
@@ -1308,7 +1313,7 @@ smt_m = \case
     dv' <- smt_a at (DLA_Var dv)
     va' <- smt_a at va
     smtAssertCtxt (smtEq dv' va')
-  DL_LocalIf at ca t f -> do
+  DL_LocalIf at _ ca t f -> do
     ca_se <- smt_a at ca
     let with_f = smtNewPathConstraint $ smtNot ca_se
     let with_t = smtNewPathConstraint $ ca_se
@@ -1325,7 +1330,7 @@ smt_m = \case
       _ -> impossible $ "Map.reduce outside invariant"
   DL_Only _at (Left who) loc -> smt_lm who loc
   DL_Only {} -> impossible $ "right only before EPP"
-  DL_LocalDo _ t -> smt_l t
+  DL_LocalDo _ _ t -> smt_l t
 
 smt_l :: DLTail -> App ()
 smt_l = \case

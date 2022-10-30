@@ -5,11 +5,12 @@ module Reach.Sanitize
 where
 
 import qualified Data.Aeson as AS
+import qualified Data.ByteString as B
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
-import Reach.AST.PL
-import qualified Data.ByteString as B
+import Reach.AST.CP
+import Reach.AST.EP
 
 class Sanitize a where
   sani :: a -> a
@@ -50,6 +51,7 @@ instance Sanitize DLLargeArg where
     DLLA_Data t v va -> DLLA_Data t v (sani va)
     DLLA_Struct kvs -> DLLA_Struct $ map go kvs
     DLLA_Bytes b -> DLLA_Bytes b
+    DLLA_BytesDyn b -> DLLA_BytesDyn b
     DLLA_StringDyn t -> DLLA_StringDyn t
     where
       go (k, v) = (,) k (sani v)
@@ -63,8 +65,16 @@ instance Sanitize DLWithBill where
 instance Sanitize DLRemoteALGOOC where
   sani = id
 
+instance Sanitize DLRemoteALGOSTR where
+  sani = \case
+    RA_Unset -> RA_Unset
+    RA_List at l -> RA_List at $ sani l
+    RA_Tuple t -> RA_Tuple $ sani t
+
 instance Sanitize DLRemoteALGO where
-  sani (DLRemoteALGO x y z w v u t s) = DLRemoteALGO (sani x) (sani y) (sani z) (sani w) (sani v) (sani u) (sani t) (sani s)
+  sani (DLRemoteALGO a b c d e f g h i j k) =
+    DLRemoteALGO (sani a) (sani b) (sani c) (sani d) (sani e) (sani f) (sani g) (sani h) (sani i)
+                 (sani j) (sani k)
 
 instance Sanitize AS.Value where
   sani = id
@@ -85,6 +95,7 @@ instance Sanitize DLExpr where
     DLE_ArrayRef _ a i -> DLE_ArrayRef sb (sani a) (sani i)
     DLE_ArraySet _ a i v -> DLE_ArraySet sb (sani a) (sani i) (sani v)
     DLE_ArrayConcat _ x y -> DLE_ArrayConcat sb (sani x) (sani y)
+    DLE_BytesDynCast _ x -> DLE_BytesDynCast sb (sani x)
     DLE_TupleRef _ a i -> DLE_TupleRef sb (sani a) i
     DLE_ObjectRef _ a f -> DLE_ObjectRef sb (sani a) f
     DLE_Interact _ fs p m t as -> DLE_Interact sb fs p m t (sani as)
@@ -126,12 +137,12 @@ instance Sanitize DLStmt where
       DL_ArrayReduce sb a (sani b) (sani c) d e f (sani g)
     DL_Var _ v -> DL_Var sb v
     DL_Set _ v a -> DL_Set sb v (sani a)
-    DL_LocalIf _ a b c -> DL_LocalIf sb (sani a) (sani b) (sani c)
+    DL_LocalIf _ mans a b c -> DL_LocalIf sb (sani mans) (sani a) (sani b) (sani c)
     DL_LocalSwitch _ a b -> DL_LocalSwitch sb a (sani b)
     DL_Only _ a b -> DL_Only sb a (sani b)
     DL_MapReduce _ mri a b c d e f ->
       DL_MapReduce sb mri a b (sani c) d e (sani f)
-    DL_LocalDo _ t -> DL_LocalDo sb (sani t)
+    DL_LocalDo _ mans t -> DL_LocalDo sb (sani mans) (sani t)
 
 instance Sanitize DLTail where
   sani = \case

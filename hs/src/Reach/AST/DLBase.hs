@@ -26,7 +26,6 @@ import Reach.Texty
 import Reach.Util
 import Data.Bifunctor
 import Data.Bool (bool)
-import Control.DeepSeq (NFData)
 
 type ConnectorName = T.Text
 
@@ -360,6 +359,9 @@ instance PrettySubst DLArg where
 argLitZero :: DLArg
 argLitZero = DLA_Literal $ DLL_Int sb UI_Word 0
 
+argLitNull :: DLArg
+argLitNull = DLA_Literal DLL_Null
+
 staticZero :: DLArg -> Bool
 staticZero = \case
   DLA_Literal (DLL_Int _ _ 0) -> True
@@ -403,6 +405,7 @@ data DLLargeArg
   | DLLA_Data (M.Map SLVar DLType) String DLArg
   | DLLA_Struct [(SLVar, DLArg)]
   | DLLA_Bytes B.ByteString
+  | DLLA_BytesDyn B.ByteString
   | DLLA_StringDyn T.Text
   deriving (Eq, Ord, Generic, Show)
 
@@ -423,6 +426,7 @@ instance CanDupe DLLargeArg where
     DLLA_Data _ _ x -> canDupe x
     DLLA_Struct m -> canDupe $ map snd m
     DLLA_Bytes _ -> False
+    DLLA_BytesDyn _ -> False
     DLLA_StringDyn _ -> False
 
 render_dasM :: PrettySubst a => [a] -> PrettySubstApp Doc
@@ -462,6 +466,7 @@ instance PrettySubst DLLargeArg where
       kvs' <- render_dasM kvs
       return $ "struct" <> brackets kvs'
     DLLA_Bytes bs -> return $ pretty bs
+    DLLA_BytesDyn bs -> return $ pretty bs
     DLLA_StringDyn t -> return $ dquotes (pretty t)
 
 mdaToMaybeLA :: DLType -> Maybe DLArg -> DLLargeArg
@@ -479,6 +484,7 @@ data DLArgExpr
   | DLAE_Data (M.Map SLVar DLType) String DLArgExpr
   | DLAE_Struct [(SLVar, DLArgExpr)]
   | DLAE_Bytes B.ByteString
+  | DLAE_BytesDyn B.ByteString
   | DLAE_StringDyn T.Text
   deriving (Show)
 
@@ -491,6 +497,7 @@ argExprToArgs = \case
   DLAE_Data _ _ ae -> one ae
   DLAE_Struct aes -> many $ map snd aes
   DLAE_Bytes _ -> []
+  DLAE_BytesDyn _ -> []
   DLAE_StringDyn _ -> []
   where
     one = argExprToArgs
@@ -504,6 +511,7 @@ largeArgToArgExpr = \case
   DLLA_Data m v a -> DLAE_Data m v $ DLAE_Arg a
   DLLA_Struct kvs -> DLAE_Struct $ map (\(k, v) -> (,) k $ DLAE_Arg v) kvs
   DLLA_Bytes b -> DLAE_Bytes b
+  DLLA_BytesDyn b -> DLAE_BytesDyn b
   DLLA_StringDyn t -> DLAE_StringDyn t
 
 largeArgTypeOf :: DLLargeArg -> DLType
@@ -518,6 +526,7 @@ argExprTypeOf menv = \case
   DLAE_Data t _ _ -> T_Data t
   DLAE_Struct kvs -> T_Struct $ map (second rec) kvs
   DLAE_Bytes bs -> T_Bytes $ fromIntegral $ B.length bs
+  DLAE_BytesDyn _ -> T_BytesDyn
   DLAE_StringDyn _ -> T_StringDyn
   where
     rec = argExprTypeOf menv
@@ -649,11 +658,13 @@ instance Pretty ApiInfo where
         , ("ret", pretty ai_ret_ty)
         ]
 
+type ApiInfos = M.Map SLPart (M.Map Int ApiInfo)
+
 data PrimVM -- Primitive Verification Mode
   = PV_Safe -- No static assertion, yes dynamic check
   | PV_Veri -- Yes static assertion, no dynamic check
   | PV_None
-  deriving (Eq, Generic, NFData, Ord, Show)
+  deriving (Eq, Generic, Ord, Show)
 
 data PrimOp
   = ADD UIntTy PrimVM
@@ -746,6 +757,12 @@ data DLRemoteALGOOC
   | RA_DeleteApplication
   deriving (Eq, Ord)
 
+data DLRemoteALGOSTR -- simTokensRecv in `remote().ALGO({ simTokensRecv: [1, 2, 3] })`
+  = RA_Unset               -- User never gave simTokensRecv
+  | RA_List SrcLoc [DLArg] -- List of UInts given by user
+  | RA_Tuple DLArg         -- Tuple of UInts compiled from list given by user
+  deriving (Eq, Ord, Show)
+
 data DLRemoteALGO = DLRemoteALGO
   { ralgo_fees :: DLArg
   , ralgo_accounts :: [DLArg]
@@ -755,11 +772,14 @@ data DLRemoteALGO = DLRemoteALGO
   , ralgo_onCompletion :: DLRemoteALGOOC
   , ralgo_strictPay :: Bool
   , ralgo_rawCall :: Bool
+  , ralgo_simNetRecv :: DLArg
+  , ralgo_simTokensRecv :: DLRemoteALGOSTR
+  , ralgo_simReturnVal :: Maybe DLArg
   }
   deriving (Eq, Ord)
 
 zDLRemoteALGO :: DLRemoteALGO
-zDLRemoteALGO = DLRemoteALGO argLitZero mempty mempty False mempty RA_NoOp False False
+zDLRemoteALGO = DLRemoteALGO argLitZero mempty mempty False mempty RA_NoOp False False argLitZero RA_Unset Nothing
 
 instance PrettySubst DLRemoteALGO where
   prettySubst (DLRemoteALGO {..}) = do
@@ -819,6 +839,7 @@ data DLExpr
   | DLE_ArrayRef SrcLoc DLArg DLArg
   | DLE_ArraySet SrcLoc DLArg DLArg DLArg
   | DLE_ArrayConcat SrcLoc DLArg DLArg
+  | DLE_BytesDynCast SrcLoc DLArg
   | DLE_TupleRef SrcLoc DLArg Integer
   | DLE_TupleSet SrcLoc DLArg Integer DLArg
   | DLE_ObjectRef SrcLoc DLArg String
@@ -933,6 +954,9 @@ instance PrettySubst DLExpr where
     DLE_ArrayConcat _ x y -> do
       as' <- render_dasM [x, y]
       return $ "Array.concat" <> parens as'
+    DLE_BytesDynCast _ x -> do
+      x' <- prettySubst x
+      return $ "BytesDyn" <> parens x'
     DLE_TupleRef _ a i -> do
       a' <- prettySubst a
       return $ a' <> brackets (pretty i)
@@ -1061,6 +1085,7 @@ instance IsPure DLExpr where
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True
     DLE_ArrayConcat {} -> True
+    DLE_BytesDynCast {} -> True
     DLE_TupleRef {} -> True
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> False
@@ -1103,6 +1128,7 @@ instance IsLocal DLExpr where
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True
     DLE_ArrayConcat {} -> True
+    DLE_BytesDynCast {} -> True
     DLE_TupleRef {} -> True
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> True
@@ -1141,6 +1167,7 @@ instance CanDupe DLExpr where
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True
     DLE_ArrayConcat {} -> True
+    DLE_BytesDynCast {} -> True
     DLE_TupleRef {} -> True
     DLE_TupleSet {} -> True
     DLE_ObjectRef {} -> True
@@ -1246,8 +1273,8 @@ data DLStmt
   | DL_ArrayReduce SrcLoc DLVar [DLArg] DLArg DLVar [DLVar] DLVar DLBlock
   | DL_Var SrcLoc DLVar
   | DL_Set SrcLoc DLVar DLArg
-  | DL_LocalDo SrcLoc DLTail
-  | DL_LocalIf SrcLoc DLArg DLTail DLTail
+  | DL_LocalDo SrcLoc (Maybe DLVar) DLTail
+  | DL_LocalIf SrcLoc (Maybe DLVar) DLArg DLTail DLTail
   | DL_LocalSwitch SrcLoc DLVar (SwitchCases DLTail)
   | DL_Only SrcLoc (Either SLPart Bool) DLTail
   | DL_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DLBlock
@@ -1261,8 +1288,8 @@ instance SrcLocOf DLStmt where
     DL_ArrayReduce a _ _ _ _ _ _ _ -> a
     DL_Var a _ -> a
     DL_Set a _ _ -> a
-    DL_LocalDo a _ -> a
-    DL_LocalIf a _ _ _ -> a
+    DL_LocalDo a _ _ -> a
+    DL_LocalIf a _ _ _ _ -> a
     DL_LocalSwitch a _ _ -> a
     DL_Only a _ _ -> a
     DL_MapReduce a _ _ _ _ _ _ _ -> a
@@ -1276,8 +1303,8 @@ instance Pretty DLStmt where
     DL_ArrayReduce _ ans xs z b as i f -> prettyReduce ans xs z b as i f
     DL_Var _at dv -> "let" <+> pretty dv <> semi
     DL_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
-    DL_LocalDo _at k -> "do" <+> braces (pretty k) <> semi
-    DL_LocalIf _at ca t f -> "local" <+> prettyIfp ca t f
+    DL_LocalDo _at ans k -> "do"  <> parens (pretty ans) <+> braces (pretty k) <> semi
+    DL_LocalIf _at ans ca t f -> "local" <> parens (pretty ans) <+> prettyIfp ca t f
     DL_LocalSwitch _at ov csm -> "local" <+> prettySwitch ov csm
     DL_Only _at who b -> prettyOnly who b
     DL_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a () f
@@ -1290,8 +1317,8 @@ instance IsPure DLStmt where
     DL_ArrayReduce _ _ _ _ _ _ _ f -> isPure f
     DL_Var {} -> True
     DL_Set {} -> True -- XXX This might be bad
-    DL_LocalDo _ k -> isPure k
-    DL_LocalIf _ _ t f -> isPure t && isPure f
+    DL_LocalDo _ _ k -> isPure k
+    DL_LocalIf _ _ _ t f -> isPure t && isPure f
     DL_LocalSwitch _ _ csm -> isPure csm
     DL_Only _ _ b -> isPure b
     DL_MapReduce _ _ _ _ _ _ _ f -> isPure f
@@ -1300,7 +1327,7 @@ mkCom :: (DLStmt -> k -> k) -> DLStmt -> k -> k
 mkCom mk m k =
   case m of
     DL_Nop _ -> k
-    DL_LocalDo _ k' ->
+    DL_LocalDo _ _ k' ->
       dtReplace mk k k'
     _ -> mk m k
 
@@ -1328,7 +1355,6 @@ dtList :: SrcLoc -> [DLStmt] -> DLTail
 dtList at = \case
   [] -> DT_Return at
   m : ms -> DT_Com m $ dtList at ms
-
 data DLBlock
   = DLBlock SrcLoc [SLCtxtFrame] DLTail DLArg
   deriving (Eq)
@@ -1478,6 +1504,9 @@ allFluidVars =
 class HasCounter a where
   getCounter :: a -> Counter
 
+class HasUntrustworthyMaps a where
+  getUntrustworthyMaps :: a -> Bool
+
 type InterfaceLikeMap a = M.Map (Maybe SLPart) (M.Map SLVar a)
 
 flattenInterfaceLikeMap :: forall a . InterfaceLikeMap a -> M.Map SLPart a
@@ -1491,6 +1520,26 @@ flattenInterfaceLikeMap = M.fromList . concatMap go . M.toList
 type DLView = (IType, [B.ByteString])
 
 type DLViews = InterfaceLikeMap DLView
+
+type ViewsInfo = InterfaceLikeMap DLExportBlock
+
+data ViewInfo = ViewInfo [DLVar] ViewsInfo
+  deriving (Eq)
+
+instance Pretty ViewInfo where
+  pretty (ViewInfo vs vi) =
+    pform "view" (pretty vs <+> pretty vi)
+
+type ViewInfos = M.Map Int ViewInfo
+
+data DLViewsX = DLViewsX DLViews ViewInfos
+  deriving (Eq)
+
+instance Pretty DLViewsX where
+  pretty (DLViewsX vs vis) = render_obj $ M.fromList
+    [ ("vs"::String, pretty vs)
+    , ("vis", pretty vis)
+    ]
 
 type Aliases = M.Map SLVar (Maybe B.ByteString)
 
@@ -1510,3 +1559,15 @@ arraysLength arrays = do
 adjustApiName :: Show a => String -> a -> Bool -> String
 adjustApiName who which qualify = prefix <> who <> suffix
   where (prefix, suffix) = bool ("", "") ("_", show which) qualify
+
+-- NOTE switch to Maybe DLAssignment and make sure we have a consistent order,
+-- like with M.toAscList
+data FromInfo
+  = FI_Continue [(DLVar, DLArg)]
+  | FI_Halt [DLArg]
+  deriving (Eq)
+
+instance Pretty FromInfo where
+  pretty = \case
+    FI_Continue svs -> pform "continue" (pretty svs)
+    FI_Halt toks -> pform "halt" (pretty toks)

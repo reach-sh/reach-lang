@@ -1,6 +1,8 @@
 import { ethers } from 'ethers';
 import { checkedBigNumberify } from './shared_backend';
 import { j2s, labelMaps, hasProp, isUint8Array } from './shared_impl';
+import buffer from 'buffer';
+const Buffer = buffer.Buffer;
 // "CBR", canonical backend representation
 
 type BigNumber = ethers.BigNumber;
@@ -44,6 +46,7 @@ export interface BackendTy<T extends CBR_Val> {
   name: string,
   canonicalize: (uv: unknown) => T,
   defaultValue: T,
+  toString: () => string,
 };
 
 export const BV_Null: CBR_Null = null;
@@ -100,28 +103,45 @@ export const BV_UInt = (val: BigNumber, max: BigNumber): CBR_UInt => {
   return BT_UInt(max).canonicalize(val);
 };
 
-export const BT_Bytes = (len: number): BackendTy<CBR_Bytes> => ({
+const zpad = (len: number, b: Buffer): Buffer => {
+  const res = Buffer.alloc(len, 0);
+  b.copy(res);
+  return res;
+};
+type BLabel = 'string' | 'hex string' | 'Uint8Array' | 'unknown';
+const arr_to_buf = (s: Uint8Array): Buffer => Buffer.from(s);
+const str_to_buf = (s: string): Buffer => Buffer.from(s);
+const hex_to_buf = (s: string): Buffer => Buffer.from(s.slice(2), 'hex');
+const buf_to_arr = (b: Buffer): Uint8Array => new Uint8Array(b);
+const buf_to_str = (b: Buffer): string => b.toString();
+const buf_to_hex = (b: Buffer): string => '0x' + b.toString('hex');
+const to_buf = (val: unknown): [BLabel, Buffer] => {
+  if (typeof val === 'string') {
+    return val.slice(0, 2) === '0x'
+      ? ['hex string', hex_to_buf(val)]
+      : ['string', str_to_buf(val)];
+  } else if (isUint8Array(val)) {
+    return ['Uint8Array', arr_to_buf(val as Uint8Array)];
+  } else {
+    return ['unknown', str_to_buf('')];
+  }
+};
+export const BT_Bytes = (len: number|BigNumber): BackendTy<CBR_Bytes> => ({
   name: `Bytes(${len})`,
-  defaultValue: ''.padEnd(len, '\0'),
+  defaultValue: buf_to_str(zpad(bigNumberToNumber(len), str_to_buf(''))),
   canonicalize: (val: unknown): CBR_Bytes => {
-    if (typeof(val) == 'string') {
-      const lenn = bigNumberToNumber(len);
-      const checkLen = (label:string, alen:number, fill:string): string => {
-        const v = val as string;
-        if ( v.length > alen ) {
-          throw Error(`Bytes(${len}) must be a ${label}string less than or equal to ${alen}, but given ${label}string of length ${v.length}`);
-        }
-        return v.padEnd(alen, fill);
-      };
-      if ( val.slice(0,2) === '0x' ) {
-        return checkLen('hex ', lenn*2+2, '0');
-      } else {
-        return checkLen('', lenn, '\0');
-      }
-    } else if (isUint8Array(val)) {
-      return val as Uint8Array;
-    } else {
-      throw Error(`Bytes expected string or Uint8Array, but got ${j2s(val)}`);
+    const [label, b] = to_buf(val);
+    const alen = b.length;
+    const lenn = bigNumberToNumber(len);
+    if (alen > lenn) {
+      throw Error(`Bytes(${lenn}) must be less than or equal to ${lenn} bytes, but given ${label} of ${alen} bytes`);
+    }
+    const zb = zpad(lenn, b);
+    if      (label === 'hex string') { return buf_to_hex(zb); }
+    else if (label === 'string')      { return buf_to_str(zb); }
+    else if (label === 'Uint8Array') { return buf_to_arr(zb); }
+    else {
+      throw Error(`Bytes expected string or Uint8Array, but got ${j2s(val)}: ${typeof val}`);
     }
   },
 });

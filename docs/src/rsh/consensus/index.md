@@ -55,8 +55,8 @@ md5: 78e1541e01ce0791b4b41d2bcd57aaa2
 In this program, the Reach backend calls the frontend `{!rsh} interact` function, `{!rsh} checkView` with the expected value of the views at each point in the program.
 The frontend compares that value with what is returned by
 ```js
-[ await ctc.getViews().Main.last(),
-  await ctc.getViews().Main.i() ]
+[ await ctc.views.Main.last(),
+  await ctc.views.Main.i() ]
 ```
 
 When a view is bound to a function, it may inspect any values in its scope, including linear state.
@@ -517,7 +517,8 @@ Reach assumes that network tokens and non-network tokens behave identically, but
 
 ---
 
-`{!rsh} Token.burn(tok, amt)`, or `{!rsh} tok.burn(amt)`, where `{!rsh} tok` is a `{!rsh} Token` value and `{!rsh} amt` is a `{!rsh} UInt` value, may be used to @{defn("burn")} tokens in the contract account, meaning that they are utterly destroyed and can never be recovered.
+`{!rsh} Token.burn(tok, amt?)`, or `{!rsh} tok.burn(amt?)`, where `{!rsh} tok` is a `{!rsh} Token` value and `{!rsh} amt` is a `{!rsh} UInt` value, may be used to @{defn("burn")} tokens in the contract account, meaning that they are utterly destroyed and can never be recovered. 
+If `{!rsh} amt` is not given, the current balance of the token will be used.
 
 ---
 
@@ -618,6 +619,16 @@ In addition, a remote function may be augmented with one of the following operat
   + `{!rsh} opts.strictPay` does not optimize away `pay` or `axfer` transactions that are statically zero.
     If this is needed, and not included, then `{!rsh} remote` calls that require a payment transaction to always be present, even if the amount is zero, could fail.
   + `{!rsh} opts.rawCall` is a boolean (default `{!rsh} false`) that when `{!rsh} true` omits the ABI method selector from the call.
+  + `{!rsh} opts.simNetRecv` is an integer field (default `{!rsh} 0`).
+    The field represents how many network tokens Reach will assume your contract received from the remote call, for the purposes of transaction simulation.
+    This is useful when using `{!rsh} withBill` and `{!rsh} enforce` to enforce that your contract received a certain number network tokens from the remote call.
+  + `{!rsh} opts.simTokensRecv` is a tuple-of-integers field (default all zeros).
+    The field represents how many of each non-network token Reach will assume your contract received from the remote call, for the purposes of transaction simulation.
+    Amounts must be specified in the same order as in the call to `{!rsh} bill` or `{!rsh} withBill`.
+    This is useful when using `{!rsh} withBill` and `{!rsh} enforce` to enforce that your contract received a certain number non-network tokens from the remote call.
+  + `{!rsh} opts.simReturnVal` is a field whose type must match the returned type of the remote function (default depends on return type).
+    The field represents the return value of the remote function, for the purposes of transaction simulation.
+    This is useful when using `{!rsh} enforce` on the return value of the remote function.
 
 If the remote contract is not expected to return non-network tokens then a pair is returned, where the amount of network tokens received is the first element, and the original result is the second element.
 

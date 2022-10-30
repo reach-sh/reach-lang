@@ -1,6 +1,6 @@
 reachc: error[RE0088]: These types are mismatched:
-  expected: UInt
-       got: Tuple(UInt, Token)
+  expected: UInt from reach standard library:35:14:return
+       got: Tuple(UInt, Token) from reach standard library:36:14:return
 
   reach standard library:33:49:block app
 

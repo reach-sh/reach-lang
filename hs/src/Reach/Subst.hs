@@ -10,7 +10,7 @@ import qualified Data.Aeson as AS
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Reach.AST.DLBase
-import Reach.AST.PL
+import Reach.AST.CP
 
 type SubstEnv = M.Map DLVar DLVar
 
@@ -26,6 +26,9 @@ instance (Traversable f, Subst a) => Subst (f a) where
 
 instance {-# OVERLAPS #-} (Subst a, Subst b) => Subst (a, b) where
   subst (x, y) = (,) <$> subst x <*> subst y
+
+instance {-# OVERLAPS #-} (Subst a, Subst b, Subst c) => Subst (a, b, c) where
+  subst (x, y, z) = (,,) <$> subst x <*> subst y <*> subst z
 
 instance {-# OVERLAPS #-} Subst a => Subst (SwitchCases a) where
   subst csm = mapM go csm
@@ -53,6 +56,7 @@ instance Subst DLLargeArg where
     DLLA_Data t v a -> DLLA_Data t v <$> subst a
     DLLA_Struct kvs -> DLLA_Struct <$> mapM go kvs
     DLLA_Bytes b -> return $ DLLA_Bytes b
+    DLLA_BytesDyn b -> return $ DLLA_BytesDyn b
     DLLA_StringDyn t -> return $ DLLA_StringDyn t
     where
       go (k, v) = (,) k <$> subst v
@@ -80,8 +84,16 @@ instance Subst DLWithBill where
 instance Subst DLRemoteALGOOC where
   subst = return
 
+instance Subst DLRemoteALGOSTR where
+  subst = \case
+    RA_Unset -> return RA_Unset
+    RA_List at l -> RA_List at <$> subst l
+    RA_Tuple t -> RA_Tuple <$> subst t
+
 instance Subst DLRemoteALGO where
-  subst (DLRemoteALGO x y z w v u t s) = DLRemoteALGO <$> subst x <*> subst y <*> subst z <*> subst w <*> subst v <*> subst u <*> subst t <*> subst s
+  subst (DLRemoteALGO a b c d e f g h i j k) =
+    DLRemoteALGO <$> subst a <*> subst b <*> subst c <*> subst d <*> subst e <*> subst f <*>
+                 subst g <*> subst h <*> subst i <*> subst j <*> subst k
 
 instance Subst AS.Value where
   subst = return
@@ -102,6 +114,7 @@ instance Subst DLExpr where
     DLE_ArrayRef at a b -> DLE_ArrayRef at <$> subst a <*> subst b
     DLE_ArraySet at a b c -> DLE_ArraySet at <$> subst a <*> subst b <*> subst c
     DLE_ArrayConcat at a b -> DLE_ArrayConcat at <$> subst a <*> subst b
+    DLE_BytesDynCast at a -> DLE_BytesDynCast at <$> subst a
     DLE_TupleRef at x y -> DLE_TupleRef at <$> subst x <*> pure y
     DLE_ObjectRef at x y -> DLE_ObjectRef at <$> subst x <*> pure y
     DLE_Interact a b c d e f -> DLE_Interact a b c d e <$> subst f
@@ -140,12 +153,12 @@ instance Subst DLStmt where
       DL_ArrayReduce at ans <$> subst x <*> subst z <*> pure b <*> pure a <*> pure i <*> subst f
     DL_Var at v -> return $ DL_Var at v
     DL_Set at v a -> DL_Set at v <$> subst a
-    DL_LocalIf at c t f -> DL_LocalIf at <$> subst c <*> subst t <*> subst f
+    DL_LocalIf at mans c t f -> DL_LocalIf at <$> subst mans <*> subst c <*> subst t <*> subst f
     DL_LocalSwitch at v csm -> DL_LocalSwitch at <$> subst v <*> subst csm
     DL_Only at who b -> DL_Only at who <$> subst b
     DL_MapReduce at mri x a b u v bl ->
       DL_MapReduce at mri x a <$> subst b <*> pure u <*> pure v <*> subst bl
-    DL_LocalDo at t -> DL_LocalDo at <$> subst t
+    DL_LocalDo at mans t -> DL_LocalDo at <$> subst mans <*> subst t
 
 instance Subst DLTail where
   subst = \case

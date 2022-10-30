@@ -28,7 +28,7 @@ import qualified Data.Text.Lazy.IO as LTIO
 import Generics.Deriving (Generic)
 import Reach.AST.Base
 import Reach.AST.DLBase
-import Reach.AST.PL
+import Reach.AST.CP
 import Reach.CommandLine
 import Reach.Connector
 import Reach.Counter
@@ -269,7 +269,7 @@ data SolCtxt = SolCtxt
   , ctxt_typed :: IORef (M.Map Int Doc)
   , ctxt_typef :: IORef (M.Map Int Doc)
   , ctxt_typeidx :: Counter
-  , ctxt_plo :: PLOpts
+  , ctxt_cpo :: CPOpts
   , ctxt_intidx :: Counter
   , ctxt_ints :: IORef (M.Map Int Doc)
   , ctxt_outputs :: IORef (M.Map String Doc)
@@ -305,8 +305,8 @@ addInterface f dom rng = do
 
 allocVarIdx :: App Int
 allocVarIdx = do
-  PLOpts {..} <- ctxt_plo <$> ask
-  liftIO $ incCounter plo_counter
+  c <- getCounter . ctxt_cpo <$> ask
+  liftIO $ incCounter c
 
 allocVar :: App Doc
 allocVar = (pretty . (++) "v" . show) <$> allocVarIdx
@@ -398,6 +398,7 @@ instance DepthOf DLLargeArg where
     DLLA_Data _ _ x -> depthOf x
     DLLA_Struct kvs -> depthOf $ map snd kvs
     DLLA_Bytes {} -> return 1
+    DLLA_BytesDyn {} -> return 1
     DLLA_StringDyn {} -> return 1
 
 instance DepthOf DLTokenNew where
@@ -435,6 +436,7 @@ instance DepthOf DLExpr where
     DLE_ArrayRef _ x y -> add1 $ depthOf [x, y]
     DLE_ArraySet _ x y z -> depthOf [x, y, z]
     DLE_ArrayConcat _ x y -> add1 $ depthOf [x, y]
+    DLE_BytesDynCast _ x -> add1 $ depthOf x
     DLE_TupleRef _ x _ -> add1 $ depthOf x
     DLE_TupleSet _ t _ v -> add1 $ depthOf [t, v]
     DLE_ObjectRef _ x _ -> add1 $ depthOf x
@@ -681,7 +683,12 @@ solLargeArg' usesStorage dv la =
         go (k, a) = do
           let name = dv <> "." <> pretty k
           asnArg usesStorage name a
-    DLLA_Bytes s -> do
+    DLLA_Bytes s -> doBytes s
+    DLLA_BytesDyn s -> doBytes s
+    DLLA_StringDyn s ->
+      return $ one "" $ solString $ T.unpack s
+  where
+    doBytes s = do
       let g3 :: Char -> String -> String
           g3 a b = (printf "%02x" a) <> b
       let g2 x = "hex" <> solString (B.foldr g3 "" x)
@@ -700,9 +707,6 @@ solLargeArg' usesStorage dv la =
           let cs = chunks bcs s
           let go i x = one (".elem" <> pretty i) (g2 x)
           return $ c $ zipWith go ([0 ..] :: [Int]) cs
-    DLLA_StringDyn s ->
-      return $ one "" $ solString $ T.unpack s
-  where
     one :: Doc -> Doc -> Doc
     one f v = dv <> f <+> "=" <+> v <> semi
     c = vsep
@@ -740,6 +744,9 @@ solExpr sp = \case
     spa $ return $ solApply (solArraySet ti) args'
   DLE_ArrayConcat {} ->
     impossible "array concat"
+  DLE_BytesDynCast _ ae -> do
+    ae' <- solArg ae
+    return $ "bytes.concat" <> parens ae'
   DLE_TupleRef _ ae i -> do
     ae' <- solArg ae
     return $ ae' <> ".elem" <> pretty i <> sp
@@ -1246,7 +1253,7 @@ solCom = \case
     addMemVar dv
     mempty
   DL_Set _ dv da -> solSet (solMemVar dv) <$> solArg da
-  DL_LocalIf _ ca t f ->
+  DL_LocalIf _ _ ca t f ->
     solIf <$> solArg ca <*> solPLTail t <*> solPLTail f
   DL_LocalSwitch at ov csm -> solSwitch solPLTail at ov csm
   DL_Only {} -> impossible $ "only in CT"
@@ -1298,7 +1305,7 @@ solCom = \case
         ]
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
-  DL_LocalDo _ t -> solPLTail t
+  DL_LocalDo _ _ t -> solPLTail t
 
 solCom_ :: AppT a -> DLStmt -> AppT a
 solCom_ iter m k = do
@@ -1568,7 +1575,8 @@ apiArgs tyMsg (ApiInfo {..}) = do
 
 apiDef :: SLPart -> Bool -> ApiInfo -> App Doc
 apiDef who qualify ApiInfo {..} = do
-  let who_s = adjustApiName (bunpack who) ai_which qualify
+  let who_orig = (bunpack who)
+  let who_s = adjustApiName who_orig ai_which qualify
   let mf = solMsg_fun ai_which
   (argDefns, tyLifts, args, m_arg_ty) <- apiArgs "_t.msg" $ ApiInfo {..}
   when (length args > apiMaxArgs) $
@@ -1581,7 +1589,7 @@ apiDef who qualify ApiInfo {..} = do
           [ solBraces (vsep $
             [ "ApiRng memory _r;"
             , solApply mf ["_t", "_r"] <> semi
-            , pretty ("return _r." <> who_s) <> semi
+            , pretty ("return _r." <> who_orig) <> semi
             ])
           ]
   retExt <- funRetSig ai_ret_ty True
@@ -1606,7 +1614,7 @@ genApiJump p ms = do
   let require = solApply "require" [chk_st] <> semi
   let mk w = solWhen (chk_which w) thn
         where
-          thn = "return " <> solApply ("this." <> inst) args <> semi <> hardline
+          thn = "return " <> solApply ("_reach_internal_" <> inst) args <> semi <> hardline
           inst = "_" <> who <> pretty w
   let go = vsep $ map (mk . fst) $ M.toAscList ms
   ret <- funRetSig (ai_ret_ty ai) True
@@ -1742,16 +1750,15 @@ createAPIRng env =
       fields <- fmap concat $ forM (M.toAscList env) $ \(k, ms) -> do
           let qualify = M.size ms > 1
           let k' = bunpack k
-          fs <- mapM (\ (w, ai) -> do
-                  let n = pretty $ adjustApiName k' w qualify
-                  -- let n = pretty $ prefix <> k' <> suffix
+          fs <- mapM (\ (_w, ai) -> do
+                  let n = pretty k'
                   t <- solType_ $ ai_ret_ty ai
                   return (n, t)
                 ) $ M.toAscList ms
           case qualify of
             True  -> do
-              let (_, st) = fromMaybe (impossible "createApiRng: empty list") $ headMay fs
-              return $ (pretty $ k', st) : fs
+              let one = fromMaybe (impossible "createApiRng: empty list") $ headMay fs
+              return $ [one]
             False -> return fs
 
       return $ fromMaybe (impossible "createAPIRng") $ solStruct "ApiRng" fields
@@ -1774,9 +1781,13 @@ baseTypes =
 contractId :: String
 contractId = "ReachContract"
 
-solPLProg :: PLProg -> IO (ConnectorObject, Doc)
-solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at = at, cpp_views = (vs, vi), cpp_apis = ai, cpp_handlers = hs} } = do
-  let DLInit {..} = dli
+solCPProg :: CPProg -> IO (ConnectorObject, Doc)
+solCPProg (CPProg {..}) = do
+  let at = cpp_at
+  let DLViewsX vs vi = cpp_views
+  let ai = cpp_apis
+  let hs = cpp_handlers
+  let DLInit {..} = cpp_init
   let ctxt_handler_num = 0
   ctxt_varm <- newIORef mempty
   ctxt_mvars <- newIORef mempty
@@ -1792,7 +1803,7 @@ solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at =
   ctxt_outputs <- newIORef mempty
   ctxt_tlfuns <- newIORef mempty
   ctxt_which_msg <- newIORef mempty
-  let ctxt_plo = plo
+  let ctxt_cpo = cpp_opts
   let ctxt_uses_apis = not $ M.null ai
   flip runReaderT (SolCtxt {..}) $ do
     let map_defn (mpv, mi) = do
@@ -2147,14 +2158,14 @@ connect_eth _ = Connector {..}
     conName = conName'
     conCons = conCons'
     conReserved = flip S.member solReservedNames
-    conGen moutn pl = case moutn of
+    conGen moutn cp = case moutn of
       Just outn -> go (outn "sol")
       Nothing -> withSystemTempDirectory "reachc-sol" $ \dir ->
         go (dir </> "compiled.sol")
       where
         go :: FilePath -> IO ConnectorInfo
         go solf = do
-          (cinfo, sol) <- solPLProg pl
+          (cinfo, sol) <- solCPProg cp
           unless dontWriteSol $ do
             LTIO.writeFile solf $ render sol
           compile_sol cinfo solf

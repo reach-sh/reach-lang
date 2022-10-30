@@ -316,6 +316,7 @@ data DLVal
   | V_UInt Integer
   | V_Token Int
   | V_Bytes String -- XXX BS.ByteString
+  | V_BytesDyn String -- XXX BS.ByteString
   | V_StringDyn T.Text
   | V_Digest DLVal
   | V_Address Account
@@ -521,6 +522,7 @@ instance Interp DLLargeArg where
       evd_args <- mapM (\arg -> interp arg) $ M.fromList assoc_slvars_dlargs
       return $ V_Struct $ M.toAscList evd_args
     DLLA_Bytes bs -> return $ V_Bytes $ bunpack bs
+    DLLA_BytesDyn bs -> return $ V_Bytes $ bunpack bs
     DLLA_StringDyn t -> return $ V_StringDyn t
 
 instance Interp DLExpr where
@@ -546,6 +548,7 @@ instance Interp DLExpr where
       arr1 <- vArray <$> interp dlarg1
       arr2 <- vArray <$> interp dlarg2
       return $ V_Array $ arr1 <> arr2
+    DLE_BytesDynCast _at v -> interp v
     DLE_TupleRef _at dlarg n -> do
       arr <- vTuple <$> interp dlarg
       return $ saferIndex (fromIntegral n) arr
@@ -743,8 +746,8 @@ instance Interp DLStmt where
       ev <- interp arg
       addToStore var ev
       return V_Null
-    DL_LocalDo _at dltail -> interp dltail
-    DL_LocalIf _at arg tail1 tail2 -> do
+    DL_LocalDo _at _ dltail -> interp dltail
+    DL_LocalIf _at _ arg tail1 tail2 -> do
       ev <- interp arg
       case ev of
         V_Bool True -> interp tail1

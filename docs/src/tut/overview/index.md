@@ -285,12 +285,6 @@ $ REACH_CONNECTOR_MODE=CFX reach run
 
 ## {#over-react} Web app
 
-:::note
-You can [watch a 7-minute video](https://www.youtube.com/watch?v=jHEKIMNvs-o) on YouTube
-which demonstrates this section's code in action
-and provides a brief explanation of how it works.
-:::
-
 The previous section uses Node.js to perform a test run at the command line.
 However, most Reach developers deploy their DApps via a Web application, as we describe below.
 

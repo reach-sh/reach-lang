@@ -3,15 +3,17 @@ import * as backend from './build/index.main.mjs';
 
 const stdlib = loadStdlib();
 const isAlgo = stdlib.connector === 'ALGO';
-const [ accA, accB, accC, accD ] = await stdlib.newTestAccounts(4, stdlib.parseCurrency(100));
+const [ accA, accB, accC, accD, accE ] = await stdlib.newTestAccounts(5, stdlib.parseCurrency(100));
 
 const accOpts = {
   clawback: accB,
   freeze: accC,
   reserve: accD,
+  manager: accE,
 };
+const metadataHash = "12345678901234567890123456789012";
 const gil = await stdlib.launchToken(accA, 'Gil', 'GIL', {
-  ...(isAlgo ? {...accOpts, defaultFrozen: true} : {}),
+  ...(isAlgo ? {...accOpts, defaultFrozen: true, metadataHash,} : {}),
 });
 
 if (isAlgo) {
@@ -36,6 +38,8 @@ if (isAlgo) {
   for (const k in accOpts) {
     stdlib.assert(stdlib.addressEq(m[k], accOpts[k]));
   };
+  // In the result the `metadataHash` field is renamed to just `metadata`...
+  stdlib.assert(m.metadata === metadataHash, "metadataHash match");
   stdlib.assert(m.defaultFrozen === true);
   console.log(`All assertions passed. =]`);
 }

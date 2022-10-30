@@ -124,7 +124,7 @@ export type IBackend<ConnectorTy extends AnyBackendTy> = {
   _Participants: {[n: string]: any},
   _APIs: {[n: string]: any | {[n: string]: any}},
   _stateSourceMap: {[key: number]: any},
-  _getEvents: (stdlib:Object) => ({ [n:string]: [any] })
+  _getEvents: (stdlib:Object) => ({ [n:string]: ConnectorTy[] })
 };
 
 export type OnProgress = (obj: {current: BigNumber, target: BigNumber}) => any;
@@ -223,10 +223,12 @@ export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
 export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
   getABI: (x?:boolean) => unknown,
+  getEventTys: () => Record<string, ConnectorTy[]>,
   setupView: ISetupView<ContractInfo, VerifyResult, ConnectorTy>,
   setupEvents: ISetupEvent<ContractInfo, VerifyResult>,
   givenInfoP: (Promise<ContractInfo>|undefined)
   _setup: (args: ISetupArgs<ContractInfo, VerifyResult>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
+  doAppOptIn: (ctc: ContractInfo) => Promise<void>
 } & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, (SpecificKeys)>;
 
 export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
@@ -234,7 +236,10 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
   getViews: () => ViewMap,
   getContractAddress: () => Promise<CBR_Address>,
   // backend-specific
+  appOptIn: () => Promise<void>
   getABI: (x?:boolean) => unknown,
+  getEventTys: () => Record<string, ConnectorTy[]>,
+  getInternalState: () => Promise<{[key: string]: any }>;
   participants: ParticipantMap,
   p: ParticipantMap
   views: ViewMap,
@@ -283,18 +288,18 @@ export type EventStream<T> = {
   monitor: (f: any) => void
 }
 
-export const stdlibShared = 
-  <ContractInfo, 
-   Backend extends IBackend<any>, 
-   Account extends IAccount<any, any, any, any, any>, 
+export const stdlibShared =
+  <ContractInfo,
+   Backend extends IBackend<any>,
+   Account extends IAccount<any, any, any, any, any>,
    Contract extends IContract<ContractInfo, any, any, any>,
    ConnectorStdlib extends
      Omit<Stdlib_User<any, any, any, any, ContractInfo, any, any, any, Backend, Contract, Account>, "contract">
-  >(connectorStdlib: ConnectorStdlib) => 
+  >(connectorStdlib: ConnectorStdlib) =>
 {
   const contract = (bin: Backend, ctcInfo?: Promise<ContractInfo>): Promise<Contract> =>
     connectorStdlib.createAccount().then(acc => acc.contract(bin, ctcInfo));
-  
+
   return { ...connectorStdlib, contract };
 }
 
@@ -322,7 +327,7 @@ export const stdContract =
   <ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
     stdContractArgs: IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy>):
   IContract<ContractInfo, RawAddress, Token, ConnectorTy> => {
-  const { bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP } = stdContractArgs;
+  const { bin, getABI, getEventTys, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP, doAppOptIn, } = stdContractArgs;
 
   type SomeSetupArgs = Pick<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo"|"getInfo")>;
   const { setInfo, getInfo }: SomeSetupArgs = (() => {
@@ -387,6 +392,14 @@ export const stdContract =
 
   const views = mkViews(true);
   const unsafeViews = mkViews(false);
+
+  const getInternalState = async () => {
+    const { views } = bin._getViews({ reachStdlib: stdlib }, viewLib);
+    return objectMap(views, (_, tys) => {
+      // @ts-ignore
+      return stdlib.T_Tuple(tys);
+    });
+  }
 
   const participants = objectMap(bin._Participants, ((pn:string, p:any) => {
       void(pn);
@@ -458,13 +471,19 @@ export const stdContract =
         ? createEventStream(k, v)
         : objectMap(v, ((kp, vp: any) =>
           createEventStream(k + "_" + kp, vp)))));
+  const appOptIn = async () => {
+    return await doAppOptIn(await getInfo());
+  }
 
   return {
     ...ctcC,
+    appOptIn,
     getABI,
+    getEventTys,
     getInfo,
     getContractAddress: (() => _initialize().getContractAddress()),
     participants, p: participants,
+    getInternalState,
     views, v: views,
     getViews: () => {
       console.log(`WARNING: ctc.getViews() is deprecated; use ctc.views or ctc.v instead.`);
@@ -505,6 +524,7 @@ export type LaunchTokenOpts = {
   freeze?: any,
   defaultFrozen?: boolean,
   reserve?: any,
+  manager?: string,
   note?: Uint8Array,
 };
 
@@ -532,7 +552,9 @@ export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   contract: (bin: Backend, ctcInfoP?: Promise<ContractInfo>) => Contract,
   stdlib: Object,
   getAddress: () => string,
+  getDebugLabel: () => string,
   setDebugLabel: (lab: string) => IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>,
+  appOptedIn: (ctc: ContractInfo) => Promise<boolean>,
   tokenAccept: (token: Token) => Promise<void>,
   tokenAccepted: (token: Token) => Promise<boolean>,
   tokensAccepted: () => Promise<Array<Token>>
@@ -1329,3 +1351,6 @@ export const protectMnemonic = (phrase: Mnemonic, numWords?: number): Mnemonic =
   }
   return words.join(" ");
 }
+
+export const mkGetEventTys = <BackendTy extends AnyBackendTy>(bin: IBackend<BackendTy>, stdlib: any) => () =>
+  bin._getEvents({ reachStdlib: stdlib });

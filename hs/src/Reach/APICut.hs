@@ -15,6 +15,7 @@ import Generics.Deriving (Generic)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
+import Reach.AST.EP
 import Reach.CollectCounts
 import Reach.Counter
 import Reach.Freshen
@@ -106,8 +107,8 @@ instance Contains DLStmt where
     DL_ArrayReduce {} -> False
     DL_Var {} -> False
     DL_Set {} -> False
-    DL_LocalDo _ t -> has q t
-    DL_LocalIf _ _ t f -> has q t || has q f
+    DL_LocalDo _ _ t -> has q t
+    DL_LocalIf _ _ _ t f -> has q t || has q f
     DL_LocalSwitch _ _ csm -> has q csm
     DL_Only _ (Right _) t -> has q t
     DL_Only {} -> False
@@ -363,9 +364,9 @@ many_ = getFirst . mconcat . map First
 _many :: (a -> App (Maybe a)) -> [a] -> App (Maybe a)
 _many f l = many_ <$> mapM f l
 
-apc :: HasCounter a => a -> (SLPart, Maybe Int) -> EPProg -> IO EPProg
+apc :: HasCounter a => a -> (SLPart, Maybe Int) -> EPart -> IO EPart
 apc hc (eWho, _) = \case
-  EPProg epp_at True epp_interactEnv epp_tail -> do
+  EPart {..} | ep_isApi -> do
     let eSeenOut = False
     eSeenInR <- newIORef False
     eSeenOutR <- newIORef False
@@ -375,23 +376,25 @@ apc hc (eWho, _) = \case
     eConstsR <- newIORef mempty
     let env0 = Env {..}
     et' <- flip runReaderT env0 $ do
-      seek epp_tail >>= \case
+      seek ep_tail >>= \case
         Just k' -> do
           ms <- liftIO $ readIORef eConstsR
-          let mst = dtList epp_at $ toList ms
-          let c' = DL_LocalDo epp_at mst
+          let mst = dtList ep_at $ toList ms
+          let c' = DL_LocalDo ep_at Nothing mst
           let k'' = mkCom ET_Com c' k'
           let badVars = countsl k''
           unless (null badVars) $
-            err epp_at (API_NonCS badVars)
+            err ep_at (API_NonCS badVars)
           return k''
-        Nothing -> err epp_at API_NoIn
-    return $ EPProg epp_at True epp_interactEnv et'
+        Nothing -> err ep_at API_NoIn
+    return $ EPart ep_at True ep_interactEnv et'
   p -> return p
 
-apicut :: PLProg -> IO PLProg
-apicut (PLProg {..}) = do
-  let EPPs apis em = plp_epps
-  em' <- mapWithKeyM (apc plp_opts) em
-  let epps' = EPPs apis em'
-  return PLProg { plp_epps = epps', ..}
+class ApiCut a where
+  apicut :: a -> IO a
+
+instance ApiCut EPProg where
+  apicut (EPProg {..}) = EPProg epp_opts epp_init epp_exports epp_views epp_stateSrcMap epp_apis epp_events <$> mapWithKeyM (apc epp_opts) epp_m
+
+instance ApiCut (PLProg EPProg b) where
+  apicut (PLProg {..}) = PLProg plp_at <$> apicut plp_epp <*> pure plp_cpp

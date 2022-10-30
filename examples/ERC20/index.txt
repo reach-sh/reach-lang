@@ -1,0 +1,12 @@
+Compiling "main"...
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 55 theorems; No failures!
+Compiling "transferTest"...
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 15 theorems; No failures!

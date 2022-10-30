@@ -167,10 +167,10 @@ export interface Stdlib_User_Base<Ty> extends Stdlib_Backend_Shared_User<Ty>, St
 
 // The real thing
 export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, ContractInfo, Address, NetworkAccount, Ty extends AnyBackendTy, Backend extends IBackend<Ty>, Contract extends IContract<ContractInfo, Address, Token, Ty>, Account extends IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>> extends Stdlib_User_Base<Ty>, ProviderLib<Provider, ProviderEnv, ProviderName> {
-  getValidQueryWindow: () => number|true
-  setValidQueryWindow: (n: number|true) => void
+  getValidQueryWindow: () => number | true
+  setValidQueryWindow: (n: number | true) => void
   getQueryLowerBound: () => BigNumber
-  setQueryLowerBound: (n: number|BigNumber) => void
+  setQueryLowerBound: (n: number | BigNumber) => void
   connector: 'ALGO' | 'CFX' | 'ETH'
   randomUInt: () => BigNumber
   hasRandom: { random: () => BigNumber }
@@ -212,5 +212,6 @@ export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, Contrac
   setCustomHttpEventHandler: (h: (e: any) => Promise<void>) => void
   setSigningMonitor: SetSigningMonitor
   tokensAccepted: (acc: Account | Address) => Promise<Array<Token>>
+  appOptedIn: (acc: Account | Address, ctc: ContractInfo) => Promise<boolean>
   contract: (bin: Backend, ctcInfo?: Promise<ContractInfo>) => Promise<Contract>,
 }

@@ -7,8 +7,8 @@ const stdlib = loadStdlib();
 if ( stdlib.connector !== 'ETH' ) { process.exit(0); }
 const { ethers } = stdlib;
 const assertEq = (expected, actual) => {
-  const exps = JSON.stringify(expected);
-  const acts = JSON.stringify(actual);
+  const exps = JSON.stringify(expected, null, 2);
+  const acts = JSON.stringify(actual, null, 2);
   console.log('assertEq', {expected, actual}, {exps, acts});
   stdlib.assert(exps === acts) };
 const getEvt = (id, obj) => {

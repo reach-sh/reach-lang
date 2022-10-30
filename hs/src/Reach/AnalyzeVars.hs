@@ -69,6 +69,9 @@ instance FreeVars v => FreeVars (M.Map k v) where
 instance (FreeVars a, FreeVars b) => FreeVars (a, b) where
   freeVars (a, b) = freeVars a <> freeVars b
 
+instance (FreeVars a, FreeVars b, FreeVars c) => FreeVars (a, b, c) where
+  freeVars (a, b, c) = freeVars a <> freeVars b <> freeVars c
+
 instance (FreeVars a, FreeVars b) => FreeVars (Either a b) where
   freeVars = \case
     Left a -> freeVars a
@@ -87,6 +90,7 @@ instance FreeVars DLLargeArg where
     DLLA_Data _ _ a -> freeVars a
     DLLA_Struct m -> freeVars $ map snd m
     DLLA_Bytes {} -> mempty
+    DLLA_BytesDyn {} -> mempty
     DLLA_StringDyn {} -> mempty
 
 instance FreeVars DLPayAmt where
@@ -101,8 +105,16 @@ instance FreeVars Bool where
 instance FreeVars DLRemoteALGOOC where
   freeVars = const mempty
 
+instance FreeVars DLRemoteALGOSTR where
+  freeVars = \case
+    RA_Unset -> mempty
+    RA_List _ l -> freeVars l
+    RA_Tuple t -> freeVars t
+
 instance FreeVars DLRemoteALGO where
-  freeVars (DLRemoteALGO a b c z w v u t) = freeVars a <> freeVars b <> freeVars c <> freeVars z <> freeVars w <> freeVars v <> freeVars u <> freeVars t
+  freeVars (DLRemoteALGO a b c d e f g h i j k) =
+    freeVars a <> freeVars b <> freeVars c <> freeVars d <> freeVars e <> freeVars f <>
+    freeVars g <> freeVars h <> freeVars i <> freeVars j <> freeVars k
 
 instance FreeVars DLTokenNew where
   freeVars (DLTokenNew a b c d e f) = freeVars [a, b, c, d, e] <> freeVars f
@@ -126,6 +138,7 @@ instance FreeVars DLExpr where
     DLE_ArrayRef _ a b -> freeVars [a, b]
     DLE_ArraySet _ a b c -> freeVars [a, b, c]
     DLE_ArrayConcat _ a b -> freeVars [a, b]
+    DLE_BytesDynCast _ a -> freeVars a
     DLE_TupleRef _ a _ -> freeVars a
     DLE_ObjectRef _ a _ -> freeVars a
     DLE_Interact _ _ _ _ _ a -> freeVars a
@@ -199,11 +212,11 @@ instance FreeVars DLStmt where
     DL_ArrayReduce _ _ xs z b as i f -> freeVars (xs <> [z]) <> bindsFor (as <> [b, i]) f
     DL_Var {} -> mempty
     DL_Set _ v a -> freeVars v <> freeVars a
-    DL_LocalIf _ c t f -> freeVars c <> freeVars [t, f]
+    DL_LocalIf _ _ c t f -> freeVars c <> freeVars [t, f]
     DL_LocalSwitch _ v csm -> freeVars v <> freeVars csm
     DL_Only _ _ t -> freeVars t
     DL_MapReduce _ _ _ _ z a b f -> freeVars z <> bindsFor [a, b] f
-    DL_LocalDo _ t -> freeVars t
+    DL_LocalDo _ _ t -> freeVars t
 
 instance BoundVars DLStmt where
   boundVars = readMMap bvMap $ \case
@@ -213,8 +226,8 @@ instance BoundVars DLStmt where
     DL_ArrayReduce _ ans _ _ b as i f -> boundVars (as <> [ans, b, i]) <> boundVars f
     DL_Var _ v -> boundVars v
     DL_Set {} -> mempty
-    DL_LocalIf _ _ t f -> boundVars [t, f]
+    DL_LocalIf _ _ _ t f -> boundVars [t, f]
     DL_LocalSwitch _ _ csm -> boundVars csm
     DL_Only _ _ t -> boundVars t
     DL_MapReduce _ _ ans _ _ a b f -> boundVars [ans, a, b] <> boundVars f
-    DL_LocalDo _ t -> boundVars t
+    DL_LocalDo _ _ t -> boundVars t

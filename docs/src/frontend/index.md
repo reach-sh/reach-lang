@@ -251,13 +251,14 @@ If you are not building a browser-based DApp, you may want to set the network pr
 stdlib.setProviderByName(string) => void
 ```
 
-Supported provider names are: `{!js} 'MainNet'`, `{!js} 'TestNet'`, and `{!js} 'LocalHost'`.
+Supported provider names are: `{!js} 'MainNet'`, `{!js} 'TestNet'`, `{!js} 'BetaNet'`, and `{!js} 'LocalHost'`.
+`{!js} 'BetaNet'` is sometimes referred to as `{!js} 'DevNet'`.
 
 On Ethereum, `{!js} 'MainNet'` will connect to homestead, and `{!js} 'TestNet'` to ropsten.
 Multiple free API providers are used behind the scenes, [as implemented by ethers.js](https://docs.ethers.io/v5/api/providers/#providers-getDefaultProvider).
 
 On Algorand, `{!js} 'MainNet'` will connect to MainNet, and `{!js} 'TestNet'` to TestNet.
-The free RandLabs API provider is used ([https://algoexplorerapi.io](https://algoexplorerapi.io)).
+The default Node provider is AlgoNode, but the free [RandLabs API](https://randlabs.io/products?product=api) provider can also be used.
 
 Provider connections are created with the code below:
 
@@ -265,24 +266,68 @@ Provider connections are created with the code below:
 
 ``` js
 load: /examples/overview-networks/index.mjs
-md5: a0d32a930197470096ccdd9fcaeace96
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
 range: 9-9
+```
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 15-15
+```
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 21-21
 ```
 
 `{!js} TestNet`
 
 ``` js
 load: /examples/overview-networks/index.mjs
-md5: a0d32a930197470096ccdd9fcaeace96
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
 range: 11-11
+```
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 17-17
+```
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 23-23
+```
+
+`{!js} BetaNet`
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 13-13
+```
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 19-19
+```
+
+``` js
+load: /examples/overview-networks/index.mjs
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 25-25
 ```
 
 `{!js} LocalHost`
 
 ``` js
 load: /examples/overview-networks/index.mjs
-md5: a0d32a930197470096ccdd9fcaeace96
-range: 13-13
+md5: 76842fc8bd99edf6207073f2cb0b8b5b
+range: 27-27
 ```
 
 ---
@@ -322,6 +367,14 @@ This function's API is considered unstable.
 On Ethereum, `{!js} provider` is an instance of `{!js} ethers.provider`.
 See: [https://docs.ethers.io/v5/api/providers/provider/](https://docs.ethers.io/v5/api/providers/provider/)
 
+Example:
+
+```js
+load: /examples/ganache/index.mjs
+md5: cca336d85844697eb44884226f9d2ce0
+range: 10-13
+```
+
 On Algorand, `{!js} provider` is an object:
 ```js
 interface BasicProvider {
@@ -341,14 +394,6 @@ interface Provider extends BasicProvider {
 The `{!js} algodClient` and `{!js} indexer` values are as specified by the [Algorand JS SDK](https://algorand.github.io/js-algorand-sdk/).
 The `{!js} algod_bc` and `{!js} indexer_bc` are objects that represent HTTP connections to those values.
 The `{!js} signAndPostTxns` function obeys [ARC-0008](https://github.com/reach-sh/ARCs/blob/reach-wallet/ARCs/arc-0008.md).
-
-Example:
-
-```js
-load: /examples/ganache/index.mjs
-md5: cca336d85844697eb44884226f9d2ce0
-range: 10-13
-```
 
 ---
 @{ref("js", "getProvider")}
@@ -640,6 +685,15 @@ Next, each address is logged so that participants can see both addresses.
 This can be useful to verify that the address receiving the payment is the correct address.
 
 ---
+@{ref("js", "getDebugLabel")}
+```js
+acc.getDebugLabel() => string
+```
+
+Returns the label used to distinguish an account in debug logs.
+If no label was previously provided with `{!js} acc.setDebugLabel`, then the first four digits of the account address will be used.
+
+---
 @{ref("js", "setDebugLabel")}
 ```js
 acc.setDebugLabel(string) => acc
@@ -695,6 +749,25 @@ acc.tokensAccepted() => Promise<Array<Token>>
 
 Returns a Promise for an array of tokens that are accepted by `acc`.
 On networks which do not keep track of this information (e.g. Ethereum), this returns an empty array.
+
+---
+@{ref("js", "appOptIn")}
+```js
+ctc.appOptIn() => Promise<void>
+```
+
+This does nothing on some networks.
+On others, it opts into the contract `ctc`.
+
+---
+@{ref("js", "appOptedIn")}@{ref("js", "stdlib.appOptedIn")}
+```js
+acc.appOptedIn(info:ContractInfo) => Promise<boolean>
+stdlib.appOptedIn(acc: Account | Address, info: ContractInfo) => Promise<boolean>
+```
+
+On some networks this always returns `true`.
+On others, it checks whether the account has opted into the contract specified by `info`.
 
 ---
 @{ref("js", "tokenMetadata")}
@@ -763,8 +836,7 @@ On networks that do not, this will always return zero.
 stdlib.transfer(from: Account, to: Account | Address, amount, token?: Token, opts?: TransferOpts) => Promise<void>
 ```
 
-Performs a transfer of `{!js} amount` from `{!js} from` to `{!js} to`,
-which are accounts, such as those returned by `{!js} connectAccount`.
+Performs a transfer of `{!js} amount` from `{!js} from`, which is an account, to `{!js} to`, which is either an account or an address. 
 If `{!js} token` is not provided, then the transfer is of network tokens;
 otherwise, it is of the designated non-network token.
 The returned `{!js} Promise` will only be resolved after the transfer completes.
@@ -901,6 +973,30 @@ ctc.getABI(showFull?: boolean) => any
 Returns the ABI to the contract in a connector-specific format.
 When the `{!js} showFull` argument is not `{!js} true`, internal implementation
 details are omitted.
+
+---
+@{ref("js", "ctc.getEventTys")}
+```js
+ctc.getEventTys() => Record<string, ReachType[]>
+```
+
+Returns a mapping from event name to the Reach types of the data emitted for that event.
+This can be used to determine the connector-specific event signature.
+For example:
+
+```js
+const tys = ctc.getEventTys();
+const e = 'Swap';
+const sig = `${e}${tys[e].toString()}`;
+```
+
+---
+@{ref("js", "getInternalState")}
+```js
+ctc.getInternalState() => Promise<{ [key: string], ReachType }>
+```
+
+Returns a mapping that associates the steps of a `{!js} contract` to the `{!js} ReachType` of its internal state variables.
 
 ---
 @{ref("js", "deploy")}
@@ -1143,6 +1239,8 @@ The default is no freeze address.
 The default is `{!js} false`.
 + `{!js} reserve` Address that should hold reserves of the token.
 The default is no reserve address.
++ `{!js} manager` Address that can manage the configuration of the token and destroy it.
+The default is no manager address.
 + `{!js} note` A `{!js} Uint8Array` for the `Note` field of the asset creation transaction.
 The default is no note.
 
@@ -1273,17 +1371,17 @@ The standard library provides a number of utilities functions for interacting wi
 ---
 @{ref("js", "stdlib.protect")}@{ref("js", "protect")}
 ```js
-stdlib.protect(t, x) => x
+stdlib.protect(t:ReachType, x:t) => x
 ```
 
 Asserts that value `{!js} x` has Reach type `{!js} t`. An exception is thrown if this is not the case.
 
 ---
-@{ref("js", "T_Null")}@{ref("js", "T_Bool")}@{ref("js", "T_UInt")}@{ref("js", "T_Bytes")}@{ref("js", "T_Address")}@{ref("js", "T_Array")}@{ref("js", "T_Tuple")}@{ref("js", "T_Object")}
+@{ref("js", "T_Null")}@{ref("js", "T_Bool")}@{ref("js", "T_UInt")}@{ref("js", "T_Bytes")}@{ref("js", "T_Address")}@{ref("js", "T_Array")}@{ref("js", "T_Tuple")}@{ref("js", "T_Object")}@{ref("js", "ReachType")}
 ```js
 stdlib.T_Null // : ReachType
 stdlib.T_Bool // : ReachType
-stdlib.T_UInt // ReachType
+stdlib.T_UInt // : ReachType
 stdlib.T_Bytes(number) // : ReachType
 stdlib.T_BytesDyn // : ReachType
 stdlib.T_StringDyn // : ReachType
@@ -1296,6 +1394,16 @@ stdlib.T_Data({Variant: ReachType ...}) // : ReachType
 ```
 
 Each of these represent the corresponding Reach type.
+
+---
+@{ref("js", "toString")}
+```js
+ReachType.toString() => string
+```
+
+Returns a string representation for a given `{!js} ReachType`.
+This representation is consistent with the loaded connector's ABI.
+For example, on ALGO, `{!js} stdlib.T_UInt.toString()` returns `'uint64'`, but `'uint256'` on ETH.
 
 ---
 @{ref("js", "assert")}
@@ -1371,8 +1479,8 @@ These are additional conversion and comparison utilities.
 ---
 @{ref("js", "digest")}
 ```js
-stdlib.digest(ty:Type, v:ty) => Digest
-stdlib.digest(tys:Type[], vs:tys) => Digest
+stdlib.digest(ty:ReachType, v:ty) => Digest
+stdlib.digest(tys:ReachType[], vs:[tys]) => Digest
 ```
 
 Hashes the values.
@@ -1678,9 +1786,10 @@ In this code, the `{!js} chk` asserts that the unsigned integer `i[1]` is the sa
 @{ref("js", "test.chkErr")}
 ```js
 test.chkErr(id: string, expected:string, f:() => Promise): void
+test.chkErr('overflows', 'add overflow', () => stdlib.safeAdd(stdlib.UInt_max, stdlib.UInt_max));
 ```
 
-Runs a check named `id` that expects `f` to throw an exception that contains the string `expected`.
+Runs a check named `id` that expects `f` to throw an exception that satisfies the regex `expected`.
 
 ---
 @{ref("js", "test.one")}

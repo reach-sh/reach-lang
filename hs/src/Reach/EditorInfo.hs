@@ -65,6 +65,7 @@ completionKind v =
     SLV_Bool _ _ -> Just CK_Constant
     SLV_Int _ _ _ -> Just CK_Constant
     SLV_Bytes _ _ -> Just CK_Constant
+    SLV_BytesDyn _ _ -> Just CK_Constant
     SLV_String _ _ -> Just CK_Constant
     SLV_Array _ _ _ -> Just CK_Constant
     SLV_Tuple _ _ -> Just CK_Constant
@@ -98,8 +99,9 @@ completionKind v =
         SLPrim_Fun -> Just CK_TypeParameter
         SLPrim_Refine -> Just CK_TypeParameter
         SLPrim_Bytes -> Just CK_TypeParameter
+        SLPrim_BytesDynCast -> Just CK_Function
         SLPrim_Data -> Just CK_TypeParameter
-        SLPrim_Data_variant _ _ _ -> Nothing
+        SLPrim_Data_variant _ _ _ _ -> Just CK_Function
         SLPrim_data_match -> Just CK_Method
         SLPrim_Array -> Just CK_TypeParameter
         SLPrim_Array_iota -> Just CK_Method
@@ -118,6 +120,7 @@ completionKind v =
         SLPrim_Struct_toObject -> Just CK_Method
         SLPrim_Struct_fields -> Just CK_Method
         SLPrim_Tuple -> Just CK_TypeParameter
+        SLPrim_tuple_includes -> Just CK_Method
         SLPrim_tuple_length -> Just CK_Method
         SLPrim_tuple_set -> Just CK_Method
         SLPrim_Object -> Just CK_TypeParameter

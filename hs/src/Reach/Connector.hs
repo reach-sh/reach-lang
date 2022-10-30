@@ -26,7 +26,7 @@ import qualified Data.Text.Lazy.IO as LTIO
 import Generics.Deriving hiding (conName)
 import Reach.AST.Base
 import Reach.AST.DLBase
-import Reach.AST.PL
+import Reach.AST.CP
 import Reach.Texty
 import Reach.Util
 import System.Directory
@@ -38,7 +38,7 @@ type ConnectorInfo = Value
 data Connector = Connector
   { conName :: ConnectorName
   , conCons :: DLConstant -> DLLiteral
-  , conGen :: Maybe (T.Text -> String) -> PLProg -> IO ConnectorInfo
+  , conGen :: Maybe (T.Text -> String) -> CPProg -> IO ConnectorInfo
   , conReserved :: SLVar -> Bool
   , conCompileCode :: Value -> IO (Either String Value)
   , conContractNewOpts :: Maybe Value -> Either String Value

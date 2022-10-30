@@ -7,7 +7,7 @@ import qualified Data.Set as S
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
-import Reach.AST.PL
+import Reach.AST.CP
 
 class CollectsTypes a where
   cts :: a -> S.Set DLType
@@ -118,8 +118,15 @@ instance CollectsTypes PrimOp where
 instance CollectsTypes DLRemoteALGOOC where
   cts = const mempty
 
+instance CollectsTypes DLRemoteALGOSTR where
+  cts = \case
+    RA_Unset -> mempty
+    RA_List _ l -> cts l
+    RA_Tuple t -> cts t
+
 instance CollectsTypes DLRemoteALGO where
-  cts (DLRemoteALGO x y z w v u t s) = cts x <> cts y <> cts z <> cts w <> cts v <> cts u <> cts t <> cts s
+  cts (DLRemoteALGO a b c d e f g h i j k) =
+    cts a <> cts b <> cts c <> cts d <> cts e <> cts f <> cts g <> cts h <> cts i <> cts j <> cts k
 
 instance CollectsTypes AS.Value where
   cts = const mempty
@@ -141,6 +148,7 @@ instance CollectsTypes DLExpr where
     DLE_ArrayRef _ a i -> cts a <> cts i
     DLE_ArraySet _ a i v -> cts a <> cts i <> cts v
     DLE_ArrayConcat _ x y -> cts x <> cts y
+    DLE_BytesDynCast _ x -> cts x
     DLE_TupleRef _ t _ -> cts t
     DLE_ObjectRef _ a _ -> cts a
     DLE_Interact _ _ _ _ t as -> cts t <> cts as
@@ -186,11 +194,11 @@ instance CollectsTypes DLStmt where
   cts (DL_ArrayReduce _ ans x z b a i f) = cts ans <> cts x <> cts z <> cts b <> cts a <> cts i <> cts f
   cts (DL_Var _ v) = cts v
   cts (DL_Set _ v a) = cts v <> cts a
-  cts (DL_LocalIf _ a t f) = cts a <> cts t <> cts f
+  cts (DL_LocalIf _ _ a t f) = cts a <> cts t <> cts f
   cts (DL_LocalSwitch _ v csm) = cts v <> cts csm
   cts (DL_Only _ _ b) = cts b
   cts (DL_MapReduce _ _ ans _ z b a f) = cts ans <> cts z <> cts b <> cts a <> cts f
-  cts (DL_LocalDo _ t) = cts t
+  cts (DL_LocalDo _ _ t) = cts t
 
 instance CollectsTypes DLTail where
   cts (DT_Return _) = mempty

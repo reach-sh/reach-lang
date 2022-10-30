@@ -13,7 +13,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Reach.AST.DLBase
 import Reach.AST.LL
-import Reach.AST.PL
+import Reach.AST.EP
 import Reach.Counter
 import Reach.Util
 
@@ -56,6 +56,9 @@ instance FreshenV DLLetVar where
 
 instance (Freshen a, Freshen b) => Freshen (a, b) where
   fu (x, y) = (,) <$> fu x <*> fu y
+
+instance (Freshen a, Freshen b, Freshen c) => Freshen (a, b, c) where
+  fu (x, y, z) = (,,) <$> fu x <*> fu y <*> fu z
 
 instance (Freshen a, Freshen b) => Freshen (Either a b) where
   fu = \case
@@ -107,6 +110,7 @@ instance Freshen DLLargeArg where
     DLLA_Data t v a -> DLLA_Data t v <$> fu a
     DLLA_Struct kvs -> DLLA_Struct <$> mapM go kvs
     DLLA_Bytes b -> return $ DLLA_Bytes b
+    DLLA_BytesDyn b -> return $ DLLA_BytesDyn b
     DLLA_StringDyn t -> return $ DLLA_StringDyn t
     where
       go (k, v) = (,) k <$> fu v
@@ -138,8 +142,16 @@ instance Freshen a => Freshen (DLInvariant a) where
 instance Freshen DLRemoteALGOOC where
   fu = return
 
+instance Freshen DLRemoteALGOSTR where
+  fu = \case
+    RA_Unset -> return RA_Unset
+    RA_List at l -> RA_List at <$> fu l
+    RA_Tuple t -> RA_Tuple <$> fu t
+
 instance Freshen DLRemoteALGO where
-  fu (DLRemoteALGO x y z w v u t s) = DLRemoteALGO <$> fu x <*> fu y <*> fu z <*> fu w <*> fu v <*> fu u <*> fu t <*> fu s
+  fu (DLRemoteALGO a b c d e f g h i j k) =
+    DLRemoteALGO <$> fu a <*> fu b <*> fu c <*> fu d <*> fu e <*> fu f <*> fu g <*> fu h <*>
+                     fu i <*> fu j <*> fu k
 
 instance Freshen AS.Value where
   fu = return
@@ -160,6 +172,7 @@ instance Freshen DLExpr where
     DLE_ArrayRef at a b -> DLE_ArrayRef at <$> fu a <*> fu b
     DLE_ArraySet at a b c -> DLE_ArraySet at <$> fu a <*> fu b <*> fu c
     DLE_ArrayConcat at a b -> DLE_ArrayConcat at <$> fu a <*> fu b
+    DLE_BytesDynCast at a -> DLE_BytesDynCast at <$> fu a
     DLE_TupleRef at x y -> DLE_TupleRef at <$> fu x <*> pure y
     DLE_ObjectRef at x y -> DLE_ObjectRef at <$> fu x <*> pure y
     DLE_Interact a b c d e f -> DLE_Interact a b c d e <$> fu f
@@ -199,7 +212,7 @@ instance Freshen DLStmt where
       DL_Let at f' <$> fu e
     DL_Var at v -> DL_Var at <$> fu_v v
     DL_Set at v a -> DL_Set at <$> fu v <*> fu a
-    DL_LocalIf at c t f -> DL_LocalIf at <$> fu c <*> fu t <*> fu f
+    DL_LocalIf at mans c t f -> DL_LocalIf at <$> fu mans <*> fu c <*> fu t <*> fu f
     DL_LocalSwitch at ov csm ->
       DL_LocalSwitch at <$> fu ov <*> fu csm
     DL_Only at who b -> DL_Only at who <$> fu b
@@ -226,7 +239,7 @@ instance Freshen DLStmt where
       a' <- fu_v a
       fb' <- fu fb
       return $ DL_MapReduce at mri ans' x z' b' a' fb'
-    DL_LocalDo at t -> DL_LocalDo at <$> fu t
+    DL_LocalDo at mans t -> DL_LocalDo at <$> fu mans <*> fu t
 
 instance Freshen DLPayAmt where
   fu = \case

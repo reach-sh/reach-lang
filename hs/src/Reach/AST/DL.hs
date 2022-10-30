@@ -87,7 +87,7 @@ data DLSStmt
   = DLS_Let SrcLoc DLLetVar DLExpr
   | DLS_ArrayMap SrcLoc DLVar [DLArg] [DLVar] DLVar DLSBlock
   | DLS_ArrayReduce SrcLoc DLVar [DLArg] DLArg DLVar [DLVar] DLVar DLSBlock
-  | DLS_If SrcLoc DLArg StmtAnnot DLStmts DLStmts
+  | DLS_If SrcLoc (Maybe DLVar) DLArg StmtAnnot DLStmts DLStmts
   | DLS_Switch SrcLoc DLVar StmtAnnot (SwitchCases DLStmts)
   | DLS_Return SrcLoc Int DLArg
   | DLS_Prompt SrcLoc DLVar StmtAnnot DLStmts
@@ -139,7 +139,7 @@ instance Pretty DLSStmt where
         "const" <+> pretty v <+> "=" <+> pretty e <> semi
       DLS_ArrayMap _ ans x a i f -> prettyMap ans x a i f
       DLS_ArrayReduce _ ans x z b a i f -> prettyReduce ans x z b a i f
-      DLS_If _ ca sa ts fs ->
+      DLS_If _ _ ca sa ts fs ->
         prettyIf (pretty ca <+> braces (pretty sa)) (render_dls ts) (render_dls fs)
       DLS_Switch _ ov sa csm ->
         prettySwitch (pretty ov <+> braces (pretty sa)) csm
@@ -182,7 +182,7 @@ instance SrcLocOf DLSStmt where
     DLS_Let a _ _ -> a
     DLS_ArrayMap a _ _ _ _ _ -> a
     DLS_ArrayReduce a _ _ _ _ _ _ _ -> a
-    DLS_If a _ _ _ _ -> a
+    DLS_If a _ _ _ _ _ -> a
     DLS_Switch a _ _ _ -> a
     DLS_Return a _ _ -> a
     DLS_Prompt a _ _ _ -> a
@@ -207,7 +207,7 @@ instance HasPurity DLSStmt where
     DLS_Let _ _ e -> fb $ isPure e
     DLS_ArrayMap {} -> fb $ True
     DLS_ArrayReduce {} -> fb True
-    DLS_If _ _ a _ _ -> hasPurity a
+    DLS_If _ _ _ a _ _ -> hasPurity a
     DLS_Switch _ _ a _ -> hasPurity a
     DLS_Return _ ret _ -> ImpureUnless $ S.singleton ret
     DLS_Prompt _ (DLVar _ _ _ ret) a _ -> rm ret $ hasPurity a
@@ -239,7 +239,7 @@ instance IsLocal DLSStmt where
     DLS_Let _ _ e -> isLocal e
     DLS_ArrayMap {} -> True
     DLS_ArrayReduce {} -> True
-    DLS_If _ _ a _ _ -> isLocal a
+    DLS_If _ _ _ a _ _ -> isLocal a
     DLS_Switch _ _ a _ -> isLocal a
     DLS_Return {} -> True
     DLS_Prompt _ _ a _ -> isLocal a

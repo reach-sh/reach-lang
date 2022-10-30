@@ -18,7 +18,8 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Set as S
 import Reach.AST.DLBase
-import Reach.AST.PL
+import Reach.AST.EP
+import Reach.AST.CP
 
 newtype Count = Count (Maybe DLVarCat)
   deriving (Show, Eq)
@@ -119,6 +120,7 @@ instance Countable DLLargeArg where
     DLLA_Data _ _ v -> counts v
     DLLA_Struct kvs -> counts $ map snd kvs
     DLLA_Bytes _ -> mempty
+    DLLA_BytesDyn _ -> mempty
     DLLA_StringDyn _ -> mempty
 
 instance Countable DLTokenNew where
@@ -132,8 +134,16 @@ instance Countable DLWithBill where
 instance Countable DLRemoteALGOOC where
   counts = const mempty
 
+instance Countable DLRemoteALGOSTR where
+  counts = \case
+    RA_Unset -> mempty
+    RA_List _ l -> counts l
+    RA_Tuple t -> counts t
+
 instance Countable DLRemoteALGO where
-  counts (DLRemoteALGO x y z w v u t s) = counts x <> counts y <> counts z <> counts w <> counts v <> counts u <> counts t <> counts s
+  counts (DLRemoteALGO a b c d e f g h i j k) =
+    counts a <> counts b <> counts c <> counts d <> counts e <> counts f <> counts g <> counts h <>
+    counts i <> counts j <> counts k
 
 instance Countable AS.Value where
   counts = const mempty
@@ -156,6 +166,7 @@ instance Countable DLExpr where
     DLE_ArrayRef _ aa ea -> counts [aa, ea]
     DLE_ArraySet _ aa ia va -> counts [aa, ia, va]
     DLE_ArrayConcat _ x y -> counts x <> counts y
+    DLE_BytesDynCast _ x -> counts x
     DLE_TupleRef _ t _ -> counts t
     DLE_ObjectRef _ aa _ -> counts aa
     DLE_Interact _ _ _ _ _ as -> counts as
@@ -241,12 +252,12 @@ instance CountableK DLStmt where
       count_rms (as <> [ans, b, i]) (counts f <> kcs) <> counts (xs <> [z])
     DL_Var _ v -> count_rms [v] kcs
     DL_Set _ v a -> counts v <> counts a <> kcs
-    DL_LocalIf _ c t f -> counts c <> counts [t, f] <> kcs
+    DL_LocalIf _ _ c t f -> counts c <> counts [t, f] <> kcs
     DL_LocalSwitch _ v csm -> counts v <> counts csm <> kcs
     DL_Only _ _ t -> countsk kcs t
     DL_MapReduce _ _ ans _ z b a f ->
       count_rms [ans, b, a] (counts f <> kcs) <> counts z
-    DL_LocalDo _ t -> countsk kcs t
+    DL_LocalDo _ _ t -> countsk kcs t
 
 instance CountableK DLAssignment where
   countsk kcs (DLAssignment m) =

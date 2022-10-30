@@ -6,10 +6,33 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 ## 0.1.12: 2022/09 - present
 
 @{verRC("0.1.12")}
-+ 2022/09/19: Added `accounts` field to `{!rsh} remote.ALGO`.
+
+@{rcHead("0.1.12-rc.8")}
+
+@{rcHead("0.1.12-rc.7")}
+
++ 2022/10/25: Added `{!rsh} Tuple.includes`.
++ 2022/10/25: Added `{!js} manager` optional field for `{!js} stdlib.launchToken`
++ 2022/10/25: Added `{!rsh} BytesDyn` casting from fixed-length bytes.
+
+@{rcHead("0.1.12-rc.5")}
+
++ 2022/10/19: Added `{!js} ctc.appOptIn` and `{!js} account.appOptedIn`
++ 2022/10/18: Added `{!js} acc.getDebugLabel`.
+
+@{rcHead("0.1.12-rc.4")}
+
++ 2022/10/12: Updated `{!js} test.chkErr` to use a regex for the expected error.
++ 2022/10/09 Added `{!rsh} opts.simNetRecv`, `{!rsh} opts.simTokensRecv`, and `{!rsh} opts.simReturnVal`.
++ 2022/10/07 Added `{!js} ctc.getEventTys`.
+
+@{rcHead("0.1.12-rc.2")}
+
++ 2022/09/23: Added `{!js} ctc.getInternalState`.
 
 @{rcHead("0.1.12-rc.1")}
 
++ 2022/09/19: Added `accounts` field to `{!rsh} remote.ALGO`.
 + 2022/09/15: Added `{!js} stdlib.contract`.
 + 2022/09/15: Added `{!js} new Reach(env?)`.
 

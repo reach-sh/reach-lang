@@ -1,6 +1,6 @@
 reachc: error[RE0088]: These types are mismatched:
-  expected: Bool
-       got: UInt
+  expected: Bool from ./mismatch_return_type.rsh:14:11:id
+       got: UInt from ./mismatch_return_type.rsh:28:18:decimal
 
   ./mismatch_return_type.rsh:28:9:continue
 

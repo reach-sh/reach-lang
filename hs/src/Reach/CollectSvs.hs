@@ -1,9 +1,9 @@
 module Reach.CollectSvs (CollectSvs(..)) where
 
-import qualified Data.Map         as M
-import qualified Data.Set         as S
-import           Reach.AST.DLBase
-import           Reach.AST.PL
+import qualified Data.Map as M
+import qualified Data.Set as S
+import Reach.AST.DLBase
+import Reach.AST.CP
 
 class CollectSvs a where
   collectSvs :: a -> S.Set DLVar

@@ -12,7 +12,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
 import Reach.AST.Base
 import Reach.AST.DLBase
-import Reach.AST.PL
+import Reach.AST.EP
 import Reach.Backend
 import Reach.Connector
 import Reach.Counter
@@ -263,6 +263,7 @@ jsLargeArg = \case
   DLLA_Struct kvs ->
     jsLargeArg $ DLLA_Obj $ M.fromList kvs
   DLLA_Bytes b -> return $ jsBytes b
+  DLLA_BytesDyn b -> return $ jsBytes b
   DLLA_StringDyn t -> return $ jsString $ T.unpack t
 
 jsBytes :: B.ByteString -> Doc
@@ -374,7 +375,8 @@ jsMapKey k =
 
 jsRemote :: SrcLoc -> DLRemote -> App Doc
 jsRemote at (DLRemote _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv _nnZero) malgo) = do
-  let DLRemoteALGO r_fees r_accounts r_assets _r_addr2acc r_apps _r_oc r_strictPay _r_rawCall = malgo
+  let DLRemoteALGO r_fees r_accounts r_assets _r_addr2acc r_apps _r_oc r_strictPay _r_rawCall
+                   _r_simNetRecv _r_simTokRecv _r_simRetVal = malgo
   fees' <- jsArg r_fees
   let notStaticZero = if r_strictPay then const True else not . staticZero
   let pay_ks_nz = filter (notStaticZero . fst) pay_ks
@@ -421,6 +423,7 @@ jsExpr = \case
     x' <- jsArg x
     y' <- jsArg y
     return $ x' <> "." <> jsApply "concat" [y']
+  DLE_BytesDynCast _ x -> jsArg x
   DLE_TupleRef at aa i -> do
     aa' <- jsArg aa
     i' <- jsCon $ DLL_Int at UI_Word i
@@ -551,16 +554,20 @@ jsExpr = \case
       JM_Simulate -> do
         dr' <- jsRemote at dr
         obj' <- jsArg ro
-        let res' = parens $ jsSimTxn "remote" $
+        let simTxn = jsSimTxn "remote" $
               [ ("obj", obj')
               , ("remote", dr')
               ]
-        let nnRecv = dwb_tok_billed $ dr_bills dr
-        net' <- jsCon $ DLL_Int at UI_Word 0
-        let bill' = jsArray $ map (const net') nnRecv
-        let bill'' = if null nnRecv then [] else [bill']
-        let res'' = parens $ res' <> ", undefined"
-        return $ jsArray $ [ net' ] <> bill'' <> [ res'' ]
+        let DLRemoteALGO { ralgo_simNetRecv, ralgo_simTokensRecv, ralgo_simReturnVal } = dr_ralgo dr
+        netRecv' <- jsArg ralgo_simNetRecv
+        tokensRecv' <- jsArg $ case ralgo_simTokensRecv of
+          RA_Tuple t -> t
+          _ -> impossible "expected RA_Tuple"
+        returnVal' <- maybe (pure "undefined") jsArg ralgo_simReturnVal
+        let arr = jsArray [netRecv'    <> " /* simNetRecv */",
+                           tokensRecv' <> " /* simTokensRecv */",
+                           returnVal'  <> " /* simReturnVal */"]
+        return $ jsNewScope $ simTxn <> hardline <> jsReturn arr
   DLE_TokenNew _ tns -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> return "undefined /* TokenNew */"
@@ -673,7 +680,7 @@ jsCom = \case
     dv' <- jsVar dv
     da' <- jsArg da
     return $ dv' <+> "=" <+> da' <> semi
-  DL_LocalIf _ c t f -> do
+  DL_LocalIf _ _ c t f -> do
     c' <- jsArg c
     t' <- jsPLTail t
     f' <- jsPLTail f
@@ -707,7 +714,7 @@ jsCom = \case
       True -> jsPLTail l
       False -> mempty
   DL_Only {} -> impossible $ "left only after EPP"
-  DL_LocalDo _ t -> jsPLTail t
+  DL_LocalDo _ _ t -> jsPLTail t
 
 jsPLTail :: AppT DLTail
 jsPLTail = \case
@@ -1025,8 +1032,9 @@ ctcTopChk who = rejectIf "typeof(ctcTop) !== 'object' || ctcTop._initialize === 
 interactChk :: Doc -> Doc
 interactChk who = rejectIf "typeof(interact) !== 'object'" $ iExpect who "an interact object" "second"
 
-jsPart :: DLInit -> (SLPart, Maybe Int) -> EPProg -> App Doc
-jsPart dli (p, m_api_which) (EPProg { epp_isApi=ctxt_isAPI, epp_tail }) = do
+jsPart :: DLInit -> (SLPart, Maybe Int) -> EPart -> App Doc
+jsPart dli (p, m_api_which) (EPart {..}) = do
+  let ctxt_isAPI = ep_isApi
   jsc@(JSContracts {..}) <- newJsContract
   let ctxt_ctcs = Just jsc
   let ctxt_who = p
@@ -1037,7 +1045,7 @@ jsPart dli (p, m_api_which) (EPProg { epp_isApi=ctxt_isAPI, epp_tail }) = do
   ctxt_ctr <- asks ctxt_ctr
   local (const JSCtxt {..}) $ do
     maps_defn <- jsMapDefns True
-    et' <- jsETail epp_tail
+    et' <- jsETail ep_tail
     i2t' <- liftIO $ readIORef jsc_i2t
     let ctcs = vsep $ map snd $ M.toAscList i2t'
     let who = adjustApiName (bunpack p) (fromMaybe 0 m_api_which) (isJust m_api_which)
@@ -1129,8 +1137,8 @@ jsEvents events = do
         $ M.toList events
     return $ jsReturn $ jsObject devts
 
-jsViews :: (CPViews, ViewInfos) -> App Doc
-jsViews (cvs, vis) = do
+jsViews :: DLViewsX -> App Doc
+jsViews (DLViewsX cvs vis) = do
   let menv e = e {ctxt_mode = JM_View}
   jsFunctionWStdlib "_getViews" ["viewlib"] $
     local menv $ do
@@ -1213,11 +1221,11 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 24
+reachBackendVersion = 25
 
-jsPIProg :: ConnectorObject -> PLProg -> App Doc
-jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do
-  let DLInit {..} = plp_init
+jsEPProg :: ConnectorObject -> EPProg -> App Doc
+jsEPProg cr (EPProg {..}) = do
+  let DLInit {..} = epp_init
   let preamble =
         vsep
           [ pretty $ "// Automatically generated with Reach " ++ versionHashStr
@@ -1231,31 +1239,30 @@ jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do
         case mw of
           Just w  -> M.insertWith (<>) p [w] acc
           Nothing -> acc
-  let api_whichs = M.foldrWithKey go_api mempty epps_m
+  let api_whichs = M.foldrWithKey go_api mempty epp_m
   api_wrappers <- mapM (uncurry jsApiWrapper) $ M.toAscList api_whichs
-  partsp <- mapM (uncurry (jsPart plp_init)) $ M.toAscList epps_m
+  partsp <- mapM (uncurry (jsPart epp_init)) $ M.toAscList epp_m
   cnpsp <- mapM (uncurry jsCnp) $ M.toAscList cr
   let connMap = M.fromList [(name, "_" <> pretty name) | name <- M.keys cr]
-  ssmDoc <- mapM (\x -> jsAssertInfo (fst x) (snd x) Nothing) plp_stateSrcMap
-  exportsp <- jsExports plp_exports
+  ssmDoc <- mapM (\x -> jsAssertInfo (fst x) (snd x) Nothing) epp_stateSrcMap
+  exportsp <- jsExports epp_exports
   viewsp <-
     local (\e -> e {ctxt_maps = dli_maps}) $
-      jsViews cpp_views
+      jsViews epp_views
   mapsp <- jsMaps dli_maps
-  let partMap = M.foldrWithKey (\ (p, _) _ acc -> M.insert p (pretty $ bunpack p) acc) mempty epps_m
+  let partMap = M.foldrWithKey (\ (p, _) _ acc -> M.insert p (pretty $ bunpack p) acc) mempty epp_m
   let go_api_map k v acc =
         let f = case k of
                 Just k' -> M.insert (bunpack k') . jsObject
                 Nothing -> M.union in
         let v' = M.map (pretty . bunpack . fst) v in
         f v' acc
-  let apiMap = M.foldrWithKey go_api_map mempty epps_apis
-  eventsp <- jsEvents cpp_events
+  let apiMap = M.foldrWithKey go_api_map mempty epp_apis
+  eventsp <- jsEvents epp_events
   return $ vsep $ [preamble, exportsp, eventsp, viewsp, mapsp] <> partsp <> api_wrappers <> cnpsp <> [jsObjectDef "_stateSourceMap" ssmDoc, jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
 
-
 backend_js :: Backend
-backend_js outn crs pl@(PLProg {..}) = do
+backend_js outn crs p = do
   let jsf = outn "mjs"
   let ctxt_who = "Module"
   let ctxt_isAPI = False
@@ -1264,8 +1271,8 @@ backend_js outn crs pl@(PLProg {..}) = do
   let ctxt_while = JWhile_None
   let ctxt_ctcs = Nothing
   let ctxt_maps = mempty
-  let ctxt_ctr = plo_counter plp_opts
+  let ctxt_ctr = getCounter p
   d <-
     flip runReaderT (JSCtxt {..}) $
-      jsPIProg crs pl
+      jsEPProg crs p
   LTIO.writeFile jsf $ render d

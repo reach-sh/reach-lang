@@ -5,7 +5,7 @@ import Data.Foldable (foldr')
 import Data.IORef
 import qualified Data.Map.Strict as M
 import Reach.AST.DLBase
-import Reach.AST.PL
+import Reach.AST.CP
 import Reach.Counter
 import Reach.Subst
 import Reach.Util
@@ -82,10 +82,9 @@ instance DeJump CHandler where
     ch_body' <- dj ch_body
     return $ C_Handler ch_at ch_int ch_from ch_last ch_svs ch_msg ch_timev ch_secsv ch_body'
 
-dejump :: PLProg -> IO PLProg
-dejump PLProg {..} = do
-  let PLOpts {..} = plp_opts
-  let CPProg { cpp_handlers = (CHandlers hs), ..} = plp_cpprog
+dejump :: CPProg -> IO CPProg
+dejump (CPProg {..}) = do
+  let CHandlers hs = cpp_handlers
   let go h@(C_Loop {}) =
         -- XXX: We leave these unchanged because the ALGO backend uses an
         -- array rather than a map. It would be good to change that.
@@ -93,8 +92,7 @@ dejump PLProg {..} = do
       go h = do
         let e_hs = hs
         let e_rho = mempty
-        let e_idx = plo_counter
+        let e_idx = getCounter cpp_opts
         flip runReaderT (Env {..}) $ dj h
   hs' <- mapM go hs
-  let cp' = CPProg { cpp_handlers = (CHandlers hs'), ..}
-  return PLProg { plp_cpprog = cp', .. }
+  return $ CPProg { cpp_handlers = (CHandlers hs'), ..}

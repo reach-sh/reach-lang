@@ -2,7 +2,6 @@
 
 module Reach.AST.SL where
 
-import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
@@ -36,7 +35,7 @@ data SLType
   | ST_Array SLType Integer
   | ST_Tuple [SLType]
   | ST_Object (M.Map SLVar SLType)
-  | ST_Data (M.Map SLVar SLType)
+  | ST_Data MSrcLoc (M.Map SLVar SLType)
   | ST_Struct [(SLVar, SLType)]
   | ST_Fun SLTypeFun
   | ST_UDFun SLType
@@ -52,7 +51,7 @@ data SLTypeFun = SLTypeFun
   , stf_pre_msg :: Maybe SLVal
   , stf_post_msg :: Maybe SLVal
   }
-  deriving (Eq, Generic)
+  deriving (Eq, Generic, Show)
 
 instance Show SLType where
   show = \case
@@ -70,7 +69,7 @@ instance Show SLType where
     ST_Array ty i -> "Array(" <> show ty <> ", " <> show i <> ")"
     ST_Tuple tys -> "Tuple(" <> showTys tys <> ")"
     ST_Object tyMap -> "Object({" <> showTyMap tyMap <> "})"
-    ST_Data tyMap -> "Data({" <> showTyMap tyMap <> "})"
+    ST_Data _ tyMap -> "Data({" <> showTyMap tyMap <> "})"
     ST_Struct tys -> "Struct([" <> showTyList tys <> "])"
     ST_Fun (SLTypeFun tys ty Nothing Nothing Nothing Nothing) ->
       "Fun([" <> showTys tys <> "], " <> show ty <> ")"
@@ -99,7 +98,7 @@ st2dt = \case
   ST_Array ty i -> T_Array <$> st2dt ty <*> pure i
   ST_Tuple tys -> T_Tuple <$> traverse st2dt tys
   ST_Object tyMap -> T_Object <$> traverse st2dt tyMap
-  ST_Data tyMap -> T_Data <$> traverse st2dt tyMap
+  ST_Data _ tyMap -> T_Data <$> traverse st2dt tyMap
   ST_Struct tys -> T_Struct <$> traverse (\(k, t) -> (,) k <$> st2dt t) tys
   ST_Fun {} -> Nothing
   ST_UDFun {} -> Nothing
@@ -121,7 +120,7 @@ dt2st = \case
   T_Array ty i -> ST_Array (dt2st ty) i
   T_Tuple tys -> ST_Tuple $ map dt2st tys
   T_Object tyMap -> ST_Object $ M.map dt2st tyMap
-  T_Data tyMap -> ST_Data $ M.map dt2st tyMap
+  T_Data tyMap -> ST_Data Nothing $ M.map dt2st tyMap
   T_Struct tys -> ST_Struct $ map (\(k, t) -> (k, dt2st t)) tys
 
 st2it :: SLType -> Maybe IType
@@ -147,6 +146,7 @@ data SLVal
   | SLV_Bool SrcLoc Bool
   | SLV_Int SrcLoc (Maybe UIntTy) Integer
   | SLV_Bytes SrcLoc B.ByteString
+  | SLV_BytesDyn SrcLoc B.ByteString
   | SLV_String SrcLoc T.Text
   | SLV_Array SrcLoc DLType [SLVal]
   | SLV_Tuple SrcLoc [SLVal]
@@ -341,7 +341,7 @@ instance Equiv SLType where
     ((ST_Array s1 _len1), (ST_Array s2 _len2)) -> equiv s1 s2
     ((ST_Tuple xs), (ST_Tuple ys)) -> equiv xs ys
     ((ST_Object m), (ST_Object m2)) -> equiv m m2
-    ((ST_Data m), (ST_Data m2)) -> equiv m m2
+    ((ST_Data _ m), (ST_Data _ m2)) -> equiv m m2
     ((ST_Struct s), (ST_Struct s2)) -> equiv s s2
     ((ST_Fun f), (ST_Fun f2)) -> equiv f f2
     ((ST_UDFun f), (ST_UDFun f2)) -> equiv f f2
@@ -395,6 +395,7 @@ instance Pretty SLVal where
     SLV_Bool _ b -> pretty b
     SLV_Int _ _ i -> pretty i
     SLV_Bytes _ b -> pretty b
+    SLV_BytesDyn _ b -> pretty b
     SLV_String _ t -> pretty t
     SLV_Array at t as ->
       "array" <> parens (pretty t <> comma <+> pretty (SLV_Tuple at as))
@@ -430,6 +431,7 @@ instance SrcLocOf SLVal where
     SLV_Bool a _ -> a
     SLV_Int a _ _ -> a
     SLV_Bytes a _ -> a
+    SLV_BytesDyn a _ -> a
     SLV_String a _ -> a
     SLV_Array a _ _ -> a
     SLV_Tuple a _ -> a
@@ -681,7 +683,7 @@ data SPrimOp
   | S_BYTES_XOR
   | S_BTOI_LAST8 Bool
   | S_CTC_ADDR_EQ
-  deriving (Eq, Generic, NFData, Ord, Show)
+  deriving (Eq, Generic, Ord, Show)
 
 sprimToPrim :: UIntTy -> UIntTy -> Bool -> SPrimOp -> PrimOp
 sprimToPrim dom rng useVerifyArith = \case
@@ -741,8 +743,9 @@ data SLPrimitive
   | SLPrim_Fun
   | SLPrim_Refine
   | SLPrim_Bytes
+  | SLPrim_BytesDynCast
   | SLPrim_Data
-  | SLPrim_Data_variant (M.Map SLVar SLType) SLVar SLType
+  | SLPrim_Data_variant MSrcLoc (M.Map SLVar SLType) SLVar SLType
   | SLPrim_data_match
   | SLPrim_Array
   | SLPrim_Array_iota
@@ -761,6 +764,7 @@ data SLPrimitive
   | SLPrim_Struct_toObject
   | SLPrim_Struct_fields
   | SLPrim_Tuple
+  | SLPrim_tuple_includes
   | SLPrim_tuple_length
   | SLPrim_tuple_set
   | SLPrim_Object

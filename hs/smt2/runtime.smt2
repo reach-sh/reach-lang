@@ -44,6 +44,8 @@
 
 (declare-sort BytesDyn 0)
 (declare-fun BytesDyn_toBytes (BytesDyn) Bytes)
+(declare-fun bytesDyn (Int) BytesDyn)
+(declare-fun Bytes_toBytesDyn (Bytes) BytesDyn)
 
 (declare-sort StringDyn 0)
 (declare-fun stringDyn (Int) StringDyn)

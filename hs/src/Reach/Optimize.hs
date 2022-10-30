@@ -10,6 +10,8 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
+import Reach.AST.EP
+import Reach.AST.CP
 import Reach.Counter
 import Reach.Sanitize
 import Reach.UnrollLoops
@@ -66,6 +68,8 @@ instance Semigroup CommonEnv where
 instance Monoid CommonEnv where
   mempty = CommonEnv mempty mempty mempty mempty mempty
 
+type FuseEnv = M.Map DLVar (SwitchCases DLTail)
+
 data Env = Env
   { eFocus :: Focus
   , eParts :: [SLPart]
@@ -77,7 +81,26 @@ data Env = Env
   , eClearMaps :: Bool
   , eSimulate :: Bool
   , eSvs :: S.Set DLVar
+  , eVarsSet ::IORef (M.Map DLVar Int)
+  , eFusionCases :: IORef FuseEnv
   }
+
+mkVar :: SrcLoc -> DLType -> App DLVar
+mkVar at t = do
+  ctr <- asks eCounter
+  idx <- liftIO $ incCounter ctr
+  return $ DLVar at Nothing t idx
+
+updateVarSet :: DLVar -> (Maybe Int -> Maybe Int) -> App (Maybe Int)
+updateVarSet dv update = do
+  eVarsSetR <- asks eVarsSet
+  eVarsSet <- (liftIO . readIORef) eVarsSetR
+  let mVal = update $ M.lookup dv eVarsSet
+  liftIO . modifyIORef' eVarsSetR $ flip M.alter dv $ const mVal
+  return $ mVal
+
+readVarSet :: DLVar -> App (Maybe Int)
+readVarSet dv = updateVarSet dv id
 
 updateClearMaps :: Bool -> Env -> Env
 updateClearMaps b e = e { eClearMaps = b }
@@ -113,7 +136,11 @@ newScope :: App x -> App x
 newScope m = do
   Env {..} <- ask
   eEnvsR' <- liftIO $ dupeIORef eEnvsR
-  local (\e -> e {eEnvsR = eEnvsR'}) m
+  eVarsSet' <- liftIO $ dupeIORef eVarsSet
+  eFusionCases' <- liftIO $ dupeIORef eFusionCases
+  local (\e -> e { eEnvsR = eEnvsR'
+                 , eVarsSet = eVarsSet'
+                 , eFusionCases = eFusionCases' }) m
 
 lookupCommon :: Ord a => (CommonEnv -> M.Map a b) -> a -> App (Maybe b)
 lookupCommon dict obj = do
@@ -214,6 +241,8 @@ mkEnv0 eCounter eDroppedAsserts eConst eParts eMaps eSimulate eSvs = do
         M.fromList $
           map (\x -> (x, mempty)) $ F_Ctor : F_All : F_Consensus : map F_One eParts
   eEnvsR <- liftIO $ newIORef eEnvs
+  eVarsSet <- liftIO $ newIORef mempty
+  eFusionCases <- liftIO $ newIORef mempty
   return $ Env {..}
 
 maybeClearMaps :: App a -> App a
@@ -246,6 +275,91 @@ opt_v2v v = fst <$> opt_v2p v
 opt_v2a :: DLVar -> App DLArg
 opt_v2a v = snd <$> opt_v2p v
 
+-- This deconstructs an `a` into the pieces of a X_Com
+class IsCom a where
+  isCom :: a -> Maybe (DLStmt, a)
+
+instance IsCom DLTail where
+  isCom = \case
+    DT_Com m k -> Just (m, k)
+    _ -> Nothing
+
+instance IsCom CTail where
+  isCom = \case
+    CT_Com m k -> Just (m, k)
+    _ -> Nothing
+
+instance IsCom ETail where
+  isCom = \case
+    ET_Com m k -> Just (m, k)
+    _ -> Nothing
+
+instance IsCom LLStep where
+  isCom = \case
+    LLS_Com m k -> Just (m, k)
+    _ -> Nothing
+
+instance IsCom LLConsensus where
+  isCom = \case
+    LLC_Com m k -> Just (m, k)
+    _ -> Nothing
+
+class LiftPure a where
+  -- Returns what `DLVar` is `DL_Set` to and the pure `DLStmt`s along the way
+  -- Returns `Nothing` if there are impure stmts in `a` or there is no `DL_Set`
+  liftPure :: DLVar -> a -> Maybe (DLArg, [DLStmt])
+
+instance LiftPure DLTail where
+  liftPure dv = \case
+    DT_Return _ -> Nothing
+    DT_Com (DL_Set _ lhs rhs) (DT_Return _)
+      | lhs == dv -> Just (rhs, [])
+    DT_Com ds dt ->
+      case isPure ds of
+        True -> do
+          case liftPure dv dt of
+            Just (a, dt') -> Just (a, ds : dt')
+            Nothing -> Nothing
+        False -> Nothing
+
+floatVar :: (DLStmt -> t -> t) -> SrcLoc -> DLVar -> t -> App t
+floatVar mkk at dv k = do
+  readVarSet dv >>= \case
+    -- There were zero branches that could not be lifted, i.e.
+    -- we generated a `const` assign, now drop this `var`.
+    Just 0 -> return $ k
+    _ -> return $ mkk (DL_Var at dv) k
+
+floatIf :: (DLStmt -> b -> b) -> SrcLoc -> DLVar -> DLArg -> DLTail -> DLTail -> b -> App b
+floatIf mkk at ansDv c tt ft k = do
+  case isPure tt && isPure ft of
+    True ->
+      case (liftPure ansDv tt, liftPure ansDv ft) of
+        (Just (ta, t_lifts), Just (fa, f_lifts)) -> do
+          mVal <- updateVarSet ansDv mSub1
+          -- Track that we successfully lifted this assignment
+          let asn v = DL_Let at (DLV_Let DVC_Many v) $ DLE_PrimOp at IF_THEN_ELSE [c, ta, fa]
+          t <- case mVal of
+                Just 0 -> return $ mkk (asn ansDv) k
+                Just _ -> do
+                  tmp <- mkVar at (varType ansDv)
+                  let s2 = DL_Set at ansDv (DLA_Var tmp)
+                  return $ mkk (asn tmp) (mkk s2 k)
+                Nothing -> impossible "floatIf: trying to float if that does not set a dlvar"
+          return $ foldr mkk t $ t_lifts <> f_lifts
+        _ -> meh
+    False -> meh
+  where
+    meh = return $ mkk (DL_LocalIf at (Just ansDv) c tt ft) k
+    mSub1 = Just . maybe 0 (\ x -> x - 1)
+
+float :: IsCom a => (DLStmt -> a -> a) -> a -> App a
+float mk t =
+  case isCom t of
+    Just (DL_Var at dv, k) -> floatVar mk at dv k
+    Just (DL_LocalIf at (Just dv) c tt ft, k) -> floatIf mk at dv c tt ft k
+    _ -> return t
+
 instance (Traversable t, Optimize a) => Optimize (t a) where
   opt = traverse opt
   gcs = mapM_ gcs
@@ -253,6 +367,10 @@ instance (Traversable t, Optimize a) => Optimize (t a) where
 instance {-# OVERLAPS #-} (Optimize a, Optimize b) => Optimize (a, b) where
   opt (x, y) = (,) <$> opt x <*> opt y
   gcs (x, y) = gcs x >> gcs y
+
+instance {-# OVERLAPS #-} (Optimize a, Optimize b, Optimize c) => Optimize (a, b, c) where
+  opt (x, y, z) = (,,) <$> opt x <*> opt y <*> opt z
+  gcs (x, y, z) = gcs x >> gcs y >> gcs z
 
 instance {-# OVERLAPS #-} (Optimize a, Optimize b) => Optimize (Either a b) where
   opt = \case
@@ -294,6 +412,7 @@ instance Optimize DLLargeArg where
     DLLA_Data t vn vv -> DLLA_Data t vn <$> opt vv
     DLLA_Struct kvs -> DLLA_Struct <$> mapM go kvs
     DLLA_Bytes b -> return $ DLLA_Bytes b
+    DLLA_BytesDyn b -> return $ DLLA_BytesDyn b
     DLLA_StringDyn t -> return $ DLLA_StringDyn t
     where
       go (k, v) = (,) k <$> opt v
@@ -319,9 +438,17 @@ instance Optimize DLRemoteALGOOC where
   opt = return
   gcs _ = return ()
 
+instance Optimize DLRemoteALGOSTR where
+  opt = \case
+    RA_Unset -> return RA_Unset
+    RA_List at l -> RA_List at <$> opt l
+    RA_Tuple t -> RA_Tuple <$> opt t
+  gcs _ = return ()
+
 instance Optimize DLRemoteALGO where
-  opt (DLRemoteALGO x y z w v u t s) =
-    DLRemoteALGO <$> opt x <*> opt y <*> opt z <*> opt w <*> opt v <*> opt u <*> opt t <*> opt s
+  opt (DLRemoteALGO a b c d e f g h i j k) =
+    DLRemoteALGO <$> opt a <*> opt b <*> opt c <*> opt d <*> opt e <*> opt f <*> opt g <*> opt h <*>
+                     opt i <*> opt j <*> opt k
   gcs _ = return ()
 
 instance Optimize AS.Value where
@@ -427,6 +554,7 @@ instance Optimize DLExpr where
     DLE_ArrayRef at a i -> DLE_ArrayRef at <$> opt a <*> opt i
     DLE_ArraySet at a i v -> optSet DLE_ArraySet DLE_ArrayRef at a i v
     DLE_ArrayConcat at x0 y0 -> DLE_ArrayConcat at <$> opt x0 <*> opt y0
+    DLE_BytesDynCast at x -> DLE_BytesDynCast at <$> opt x
     DLE_TupleRef at t i -> do
       t' <- opt t
       let meh = return $ DLE_TupleRef at t' i
@@ -600,8 +728,8 @@ recLearn v vIs = do
   -- know
   mapM_ (uncurry recLearn) $ maybe [] (learn vIs) mExpr
 
-optIf :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (SrcLoc -> DLArg -> k -> k -> r) -> SrcLoc -> DLArg -> k -> k -> App r
-optIf mkDo mkIf at c t f =
+optIf :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (DLArg -> k -> k -> r) -> DLArg -> k -> k -> App r
+optIf mkDo mkIf c t f =
   opt c >>= \case
     DLA_Literal (DLL_Bool True) -> mkDo <$> opt t
     DLA_Literal (DLL_Bool False) -> mkDo <$> opt f
@@ -617,9 +745,9 @@ optIf mkDo mkIf at c t f =
         Left _ ->
           optNotHuh c' >>= \case
             Just c'' ->
-              return $ mkIf at c'' f' t'
+              return $ mkIf c'' f' t'
             Nothing ->
-              return $ mkIf at c' t' f'
+              return $ mkIf c' t' f'
 
 gcsSwitch :: Optimize k => ConstT (SwitchCases k)
 gcsSwitch = mapM_ (\(_, _, n) -> gcs n)
@@ -742,10 +870,10 @@ instance Optimize DLStmt where
       optConst v >>= \case
         False -> DL_Set at v <$> opt a
         True -> optLet at (DLV_Let DVC_Many v) (DLE_Arg at a)
-    DL_LocalIf at c t f ->
-      optIf (DL_LocalDo at) DL_LocalIf at c t f
+    DL_LocalIf at mans c t f ->
+      optIf (DL_LocalDo at mans) (DL_LocalIf at mans) c t f
     DL_LocalSwitch at ov csm ->
-      optSwitch (DL_LocalDo at) DT_Com DL_LocalSwitch at ov csm
+      optSwitch (DL_LocalDo at Nothing) DT_Com DL_LocalSwitch at ov csm
     DL_ArrayMap at ans xs as i f -> do
       s' <- DL_ArrayMap at ans <$> opt xs <*> pure as <*> pure i <*> newScope (opt f)
       maybeUnroll s' xs $ return s'
@@ -762,10 +890,10 @@ instance Optimize DLStmt where
       case l' of
         DT_Return _ -> return $ DL_Nop at
         _ -> return $ DL_Only at ep l'
-    DL_LocalDo at t ->
+    DL_LocalDo at mans t ->
       opt t >>= \case
         DT_Return _ -> return $ DL_Nop at
-        t' -> return $ DL_LocalDo at t'
+        t' -> return $ DL_LocalDo at mans t'
     where
       maybeUnroll :: DLStmt -> [DLArg] -> App DLStmt -> App DLStmt
       maybeUnroll s xs def = do
@@ -774,7 +902,7 @@ instance Optimize DLStmt where
           True -> do
             c <- asks eCounter
             let at = srclocOf s
-            let t = DL_LocalDo at $ DT_Com s $ DT_Return at
+            let t = DL_LocalDo at Nothing $ DT_Com s $ DT_Return at
             UnrollWrapper _ t' <- liftIO $ unrollLoops $ UnrollWrapper c t
             return t'
           _ -> def
@@ -786,18 +914,98 @@ instance Optimize DLStmt where
       cr <- asks eConstR
       let f = Just . (+) 1 . fromMaybe 0
       liftIO $ modifyIORef cr $ M.alter f v
-    DL_LocalIf _ _ t f -> gcs t >> gcs f
+    DL_LocalIf _ _ _ t f -> gcs t >> gcs f
     DL_LocalSwitch _ _ csm -> gcsSwitch csm
     DL_ArrayMap _ _ _ _ _ f -> gcs f
     DL_ArrayReduce _ _ _ _ _ _ _ f -> gcs f
     DL_MapReduce _ _ _ _ _ _ _ f -> gcs f
     DL_Only _ _ l -> gcs l
-    DL_LocalDo _ t -> gcs t
+    DL_LocalDo _ _ t -> gcs t
+
+-- Track that we are attempting to lift this assignment
+preFloat :: DLStmt -> App ()
+preFloat = \case
+  DL_LocalIf _ (Just dv) _ _ _ ->
+    void $ updateVarSet dv $ Just . maybe 1 succ
+  _ -> return ()
+
+updateFusion :: DLVar -> SwitchCases DLTail -> App ()
+updateFusion dv scs = do
+  fusionCasesR <- asks eFusionCases
+  liftIO $ modifyIORef' fusionCasesR $ M.insert dv scs
+
+readFusionCases :: DLVar -> App (Maybe (SwitchCases DLTail))
+readFusionCases dv = do
+  fusionCases <- liftIO . readIORef =<< asks eFusionCases
+  return $ M.lookup dv fusionCases
+
+preFuse :: DLStmt -> App FuseEnv
+preFuse s = do
+  oldEnv <- liftIO . readIORef =<< asks eFusionCases
+  case s of
+    DL_LocalSwitch _ dv _ -> updateFusion dv mempty
+    DL_Let {} -> cantFuse
+    -- XXX We could fuse if the `DL_Var` we encounter is set within a switch.
+    -- The env would need to track the vars a switch needs to set to fuse.
+    -- We'd want to update `DL_LocalSwitch` to track whether it sets a var, for efficiency.
+    -- Q: If we end up fusing, how do we efficiently drop these `DL_Var`?
+    DL_Var {} -> cantFuse
+    _ | not (isPure s) -> cantFuse
+    _ -> return ()
+  return oldEnv
+  where cantFuse = liftIO . flip writeIORef mempty =<< asks eFusionCases
+
+fuseSwitch :: (DLStmt -> a -> a) -> SrcLoc -> DLVar -> SwitchCases DLTail -> a -> App a
+fuseSwitch mk at dv scs k =
+  readFusionCases dv >>= \case
+    Just cases -> ret $ M.mapWithKey (fuse cases) scs
+    Nothing -> ret scs
+  where
+    ret cases = return $ mk (DL_LocalSwitch at dv cases) k
+    fuse cases c (v1, b1, t1) =
+      case M.lookup c cases of
+        Just (v2, _, t2) -> do
+          -- The branch we're inling binds `v2`.
+          -- The branch we're inling *into* binds `v1`.
+          -- Set v2 to v1
+          let t2' = DT_Com (DL_Let at (DLV_Let DVC_Many v2) $ DLE_Arg at $ DLA_Var v1) t2
+          (v1, b1, dtReplace DT_Com t2' t1)
+        Nothing -> (v1, b1, t1)
+
+fuseStmt :: IsCom a => FuseEnv -> (DLStmt -> a -> a) -> a -> App a
+fuseStmt fuseEnv mk t =
+  case isCom t of
+    Just (DL_LocalSwitch at dv scs, k) -> do
+      -- We've processed everything in the tail.
+      -- Now, look in the env to see if there are any
+      -- subsequent switches to fuse into this stmt.
+      k' <- fuseSwitch mk at dv scs k
+      fusionCasesR <- asks eFusionCases
+      case isCom k' of
+        Just (DL_LocalSwitch _ _ scs1, k1) | M.member dv fuseEnv -> do
+          -- If there are previous switches looking to fuse,
+          -- reset the fusionCase env to how it was
+          -- before we processed this branch, add the info
+          -- for this switch to the env, and drop this stmt
+            liftIO $ writeIORef fusionCasesR $ M.insert dv scs1 fuseEnv
+            return $ mk (DL_Nop at) k1
+        -- If there are no previous switches looking to fuse, keep this stmt and return
+        _ -> do
+          liftIO $ writeIORef fusionCasesR fuseEnv
+          return k'
+    _ -> return t
+
+-- Optimize is generally top-down, but this is locally bottom-up. We float/fuse after optimizing the tail
+optCom :: (IsCom b, Optimize b) => (DLStmt -> b -> b) -> DLStmt -> b -> App b
+optCom mk m k = do
+  preFloat m
+  fuseEnv <- preFuse m
+  fuseStmt fuseEnv mk =<< float mk =<< mkCom mk <$> opt m <*> opt k
 
 instance Optimize DLTail where
   opt = \case
     DT_Return at -> return $ DT_Return at
-    DT_Com m k -> mkCom DT_Com <$> opt m <*> opt k
+    DT_Com m k -> optCom DT_Com m k
   gcs = \case
     DT_Return _ -> return ()
     DT_Com m k -> gcs m >> gcs k
@@ -820,9 +1028,9 @@ instance {-# OVERLAPS #-} Optimize a => Optimize (DLInvariant a) where
 
 instance Optimize LLConsensus where
   opt = \case
-    LLC_Com m k -> mkCom LLC_Com <$> opt m <*> opt k
+    LLC_Com m k -> optCom LLC_Com m k
     LLC_If at c t f ->
-      optIf id LLC_If at c t f
+      optIf id (LLC_If at) c t f
     LLC_Switch at ov csm ->
       optSwitch id LLC_Com LLC_Switch at ov csm
     LLC_While at asn inv cond body k -> do
@@ -877,7 +1085,7 @@ opt_send (p, DLSend isClass args amta whena) =
 
 instance Optimize LLStep where
   opt = \case
-    LLS_Com m k -> mkCom LLS_Com <$> opt m <*> opt k
+    LLS_Com m k -> optCom LLS_Com m k
     LLS_Stop at -> pure $ LLS_Stop at
     LLS_ToConsensus at lct send recv mtime ->
       LLS_ToConsensus at <$> opt lct <*> send' <*> recv' <*> mtime'
@@ -933,10 +1141,10 @@ instance {-# OVERLAPPING #-} (Optimize a, Optimize b, Optimize c, Optimize d, Op
 
 instance Optimize ETail where
   opt = \case
-    ET_Com m k -> mkCom ET_Com <$> opt m <*> opt k
+    ET_Com m k -> optCom ET_Com m k
     ET_Stop at -> return $ ET_Stop at
     ET_If at c t f ->
-      optIf id ET_If at c t f
+      optIf id (ET_If at) c t f
     ET_Switch at ov csm ->
       optSwitch id ET_Com ET_Switch at ov csm
     ET_FromConsensus at vi fi k ->
@@ -957,9 +1165,9 @@ instance Optimize ETail where
 
 instance Optimize CTail where
   opt = \case
-    CT_Com m k -> mkCom CT_Com <$> opt m <*> opt k
+    CT_Com m k -> optCom CT_Com m k
     CT_If at c t f ->
-      optIf id CT_If at c t f
+      optIf id (CT_If at) c t f
     CT_Switch at ov csm ->
       optSwitch id CT_Com CT_Switch at ov csm
     CT_From at w fi ->
@@ -990,27 +1198,35 @@ instance Optimize ViewInfo where
   opt (ViewInfo vs vi) = ViewInfo vs <$> (newScope $ opt vi)
   gcs _ = return ()
 
-instance Optimize CPProg where
-  opt (CPProg cpp_at cpp_views cpp_apis cpp_events (CHandlers hs)) =
-    CPProg cpp_at <$> (newScope $ opt cpp_views) <*> pure cpp_apis <*> pure cpp_events
-           <*> (CHandlers <$> mapM (newScope . opt) hs)
-  gcs CPProg { cpp_handlers = CHandlers hs } = gcs hs
+instance Optimize EPart where
+  opt (EPart ep_at ep_isApi ep_interactEnv ep_tail) =
+    newScope $ EPart ep_at ep_isApi ep_interactEnv <$> (focus_one "" $ opt ep_tail)
+  gcs = gcs . ep_tail
+
+updateClearMaps' :: HasUntrustworthyMaps a => a -> App b -> App b
+updateClearMaps' opts m = local (updateClearMaps $ getUntrustworthyMaps opts) m
 
 instance Optimize EPProg where
-  opt (EPProg epp_at epp_isApi epp_interactEnv epp_tail) =
-    newScope $ EPProg epp_at epp_isApi epp_interactEnv <$> (focus_one "" $ opt epp_tail)
-  gcs = gcs . epp_tail
+  opt (EPProg {..}) = updateClearMaps' epp_opts $
+    EPProg epp_opts epp_init <$> opt epp_exports <*> opt epp_views <*> pure epp_stateSrcMap <*> pure epp_apis <*> pure epp_events <*> opt epp_m
+  gcs (EPProg {..}) = gcs epp_m
 
-instance Optimize EPPs where
-  opt (EPPs {..}) = EPPs epps_apis <$> opt epps_m
-  gcs (EPPs {..}) = gcs epps_m
+instance Optimize CHandlers where
+  opt (CHandlers hs) = CHandlers <$> mapM (newScope . opt) hs
+  gcs (CHandlers hs) = gcs hs
 
-instance Optimize PLProg where
-  opt (PLProg plp_at plp_opts plp_init plp_exports plp_stateSrcMap plp_epps plp_cpprog) = do
-    local (updateClearMaps $ plo_untrustworthyMaps plp_opts) $
-      PLProg plp_at plp_opts plp_init <$> opt plp_exports <*> pure plp_stateSrcMap
-             <*> opt plp_epps <*> opt plp_cpprog
-  gcs PLProg {..} = gcs plp_epps >> gcs plp_cpprog
+instance Optimize DLViewsX where
+  opt (DLViewsX a b) = DLViewsX <$> opt a <*> opt b
+  gcs (DLViewsX a b) = gcs a >> gcs b
+
+instance Optimize CPProg where
+  opt (CPProg {..}) = updateClearMaps' cpp_opts $
+    CPProg cpp_at cpp_opts cpp_init <$> (newScope $ opt cpp_views) <*> pure cpp_apis <*> pure cpp_events <*> opt cpp_handlers
+  gcs (CPProg {..}) = gcs cpp_views >> gcs cpp_handlers
+
+instance {-# OVERLAPS #-} (Optimize a, Optimize b) => Optimize (PLProg a b) where
+  opt (PLProg {..}) = PLProg plp_at <$> opt plp_epp <*> opt plp_cpp
+  gcs (PLProg {..}) = gcs plp_epp >> gcs plp_cpp
 
 optimize_ :: (Optimize a) => Counter -> Bool -> S.Set DLVar -> a -> IO a
 optimize_ c sim svs t = do

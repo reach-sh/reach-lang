@@ -1,4 +1,4 @@
-reachc: error[RE0132]: REMOTE_FUN.ALGO received illegal fields: ["foo"]
+reachc: error[RE0132]: REMOTE_FUN.ALGO received illegal fields: foo
 
   ./Err_Remote_ALGO_extra.rsh:10:51:application
 

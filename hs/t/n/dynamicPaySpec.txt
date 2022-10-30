@@ -1,6 +1,6 @@
 reachc: error[RE0088]: These types are mismatched:
-  expected: Tuple(UInt, Tuple(UInt, Token), Tuple(UInt, Token))
-       got: Tuple(UInt, Tuple(UInt, Token))
+  expected: Tuple(UInt, Tuple(UInt, Token), Tuple(UInt, Token)) from ./dynamicPaySpec.rsh:28:19:return
+       got: Tuple(UInt, Tuple(UInt, Token)) from ./dynamicPaySpec.rsh:28:19:return
 
   ./dynamicPaySpec.rsh:28:19:block app
 

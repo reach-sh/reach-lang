@@ -16,8 +16,8 @@ data DKCommon
   | DKC_ArrayReduce SrcLoc DLVar [DLArg] DLArg DLVar [DLVar] DLVar DKBlock
   | DKC_Var SrcLoc DLVar
   | DKC_Set SrcLoc DLVar DLArg
-  | DKC_LocalDo SrcLoc DKTail
-  | DKC_LocalIf SrcLoc DLArg DKTail DKTail
+  | DKC_LocalDo SrcLoc (Maybe DLVar) DKTail
+  | DKC_LocalIf SrcLoc (Maybe DLVar) DLArg DKTail DKTail
   | DKC_LocalSwitch SrcLoc DLVar (SwitchCases DKTail)
   | DKC_Only SrcLoc SLPart DKTail
   | DKC_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DKBlock
@@ -35,8 +35,8 @@ instance Pretty DKCommon where
     DKC_ArrayReduce _ ans x z b a i f -> prettyReduce ans x z b a i f
     DKC_Var _at dv -> "let" <+> pretty dv <> semi
     DKC_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
-    DKC_LocalDo _at k -> "do" <+> render_nest (pretty k) <> semi
-    DKC_LocalIf _at ca t f -> "local" <+> prettyIfp ca t f
+    DKC_LocalDo _at ans k -> "do" <> parens (pretty ans) <+> render_nest (pretty k) <> semi
+    DKC_LocalIf _at ans ca t f -> "local" <> parens (pretty ans) <+> prettyIfp ca t f
     DKC_LocalSwitch _at ov csm -> prettySwitch (pretty ov <+> "{ local}") csm
     DKC_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a () f
     DKC_FluidSet at fv a -> pretty (DLS_FluidSet at fv a)
@@ -55,7 +55,7 @@ data DKTail
       , dk_tc_recv :: DLRecv DKTail
       , dk_tc_mtime :: Maybe (DLTimeArg, DKTail)
       }
-  | DK_If SrcLoc DLArg DKTail DKTail
+  | DK_If SrcLoc (Maybe DLVar) DLArg DKTail DKTail
   | DK_Switch SrcLoc DLVar (SwitchCases DKTail)
   | DK_FromConsensus SrcLoc SrcLoc [SLCtxtFrame] DKTail
   | DK_While
@@ -78,7 +78,7 @@ instance Pretty DKTail where
     DK_Stop _ -> prettyStop
     DK_ToConsensus {..} ->
       prettyToConsensus__ ("?" :: String) dk_tc_send dk_tc_recv dk_tc_mtime
-    DK_If _at ca t f -> prettyIfp ca t f
+    DK_If _at _ ca t f -> prettyIfp ca t f
     DK_Switch _at ov csm -> prettySwitch ov csm
     DK_FromConsensus _at _ret_at _fs k ->
       prettyCommit <> hardline <> pretty k

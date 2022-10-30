@@ -19,7 +19,7 @@ When you try to compile this program, you will get the following error:
 
 ```
 load: /hs/t/n/stack-example.txt
-md5: d41c28b3a520ffb3b3759055729c8583
+md5: 5d56c6a6b2a609bd949a3062eb9c2dd1
 ```
 
 The first block (lines 1-4) provides the category (`error` in this case, but could be `warning`), a code (`RE0088`), and an explanation (`These types are mismatched`).

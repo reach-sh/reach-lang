@@ -33,6 +33,7 @@ import {
   protectSecretKey,
   SecretKeyInput,
   Mnemonic,
+  mkGetEventTys,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -97,7 +98,7 @@ type Interface = real_ethers.utils.Interface;
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-const reachBackendVersion = 24;
+const reachBackendVersion = 25;
 const reachEthBackendVersion = 8;
 export type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
@@ -258,7 +259,7 @@ const newEventQueue = (): EventQueue => {
     } catch (e) {
       const es = `${e}`;
       debug(dhead, `err`, e, es);
-      if ( es.includes('Unable to find block hash') ) {
+      if ( es.includes('Unable to find block hash') || es.includes('after last accepted block') ) {
         debug(dhead, 'ignore');
         toBlock = undefined;
       } else {
@@ -846,8 +847,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return { createEventStream };
     };
     const getABI = stdGetABI(ABI);
+    const getEventTys = mkGetEventTys(bin, stdlib);
 
-    return stdContract({ bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
+    return stdContract({ bin, getABI, getEventTys, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP, doAppOptIn });
   };
 
   function setDebugLabel(newLabel: string): Account {
@@ -856,6 +858,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     // @ts-ignore
     return this;
   };
+
+  function getDebugLabel(): string {
+    return label;
+  }
 
   const tokenAccepted = async (token:Token): Promise<boolean> => {
     debug(`tokenAccepted: Unnecessary on ETHlike`, token);
@@ -899,9 +905,15 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return md;
   };
 
-  const accObj = { networkAccount, getAddress: selfAddress, stdlib, setDebugLabel,
+  const appOptedIn = async (_ctc: ContractInfo): Promise<boolean> => {
+    return true;
+  };
+
+  const accObj = { networkAccount, getAddress: selfAddress, stdlib, getDebugLabel, setDebugLabel,
                    tokenAccepted, tokensAccepted: tokensAccepted_, tokenAccept, tokenMetadata,
-                   contract, setGasLimit, getGasLimit, setStorageLimit, getStorageLimit };
+                   contract, setGasLimit, getGasLimit, setStorageLimit, getStorageLimit,
+                   appOptedIn,
+                 };
   const acc = accObj as unknown as Account;
   const balanceOf_ = (token?: Token): Promise<BigNumber> => balanceOf(acc, token);
   const balancesOf_ = (tokens: Array<Token | null>): Promise<Array<BigNumber>> => balancesOf(acc, tokens);
@@ -1174,6 +1186,13 @@ function setCustomHttpEventHandler() {
   console.warn(`setCustomHttpEventHandler is not supported on this connector`);
 }
 
+const doAppOptIn = async (_ctc: ContractInfo): Promise<void> => {
+  return;
+};
+const appOptedIn = async (_acc: Account | Address, _ctc: ContractInfo): Promise<boolean> => {
+  return true;
+};
+
 // TODO: restore type ann once types are in place
 // const ethLike: EthLike = {
 const ethLike = {
@@ -1192,6 +1211,8 @@ const ethLike = {
   balanceOf,
   balancesOf,
   minimumBalanceOf,
+  appOptedIn,
+  doAppOptIn,
   transfer,
   connectAccount,
   newAccountFromSecret,

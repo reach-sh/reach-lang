@@ -6,10 +6,24 @@ const stdlib = loadStdlib();
 const whichNetwork = 0;
 
 if (whichNetwork === 1)  {
-  stdlib.setProviderByName('MainNet');
+  stdlib.setProviderByName('MainNet'); // Default AlgoNode MainNet
 } else if (whichNetwork === 2) {
-  stdlib.setProviderByName('TestNet');
+  stdlib.setProviderByName('TestNet'); // Default AlgoNode TestNet
 } else if (whichNetwork === 3) {
+  stdlib.setProviderByName('BetaNet'); // Default AlgoNode BetaNet
+} else if (whichNetwork === 4) {
+  stdlib.setProviderByName('algonode/MainNet'); // AlgoNode MainNet
+} else if (whichNetwork === 5) {
+  stdlib.setProviderByName('algonode/TestNet'); // AlgoNode TestNet
+} else if (whichNetwork === 6) {
+  stdlib.setProviderByName('algonode/BetaNet'); // AlgoNode BetaNet
+} else if (whichNetwork === 7) {
+  stdlib.setProviderByName('randlabs/MainNet'); // RandLabs MainNet
+} else if (whichNetwork === 8) {
+  stdlib.setProviderByName('randlabs/TestNet'); // RandLabs TestNet
+} else if (whichNetwork === 9) {
+  stdlib.setProviderByName('randlabs/BetaNet'); // RandLabs BetaNet
+} else if (whichNetwork === 10) {
   stdlib.setProviderByName('LocalHost');
 }
 

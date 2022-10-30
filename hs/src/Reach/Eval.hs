@@ -150,6 +150,7 @@ instance Pandemic DLExpr where
     DLE_ArrayRef at a i -> DLE_ArrayRef at <$> pan a <*> pan i
     DLE_ArraySet at a i v -> DLE_ArraySet at <$> pan a <*> pan i <*> pan v
     DLE_ArrayConcat at x y -> DLE_ArrayConcat at <$> pan x <*> pan y
+    DLE_BytesDynCast at x -> DLE_BytesDynCast at <$> pan x
     DLE_TupleRef at a i -> DLE_TupleRef at <$> pan a <*> pure i
     DLE_ObjectRef at a f -> DLE_ObjectRef at <$> pan a <*> pure f
     DLE_Interact at cxt slp s ty as -> DLE_Interact at cxt slp s ty <$> pan as
@@ -204,8 +205,16 @@ instance Pandemic Bool where
 instance Pandemic DLRemoteALGOOC where
   pan = return
 
+instance Pandemic DLRemoteALGOSTR where
+  pan = \case
+    RA_Unset -> return RA_Unset
+    RA_List at l -> RA_List at <$> pan l
+    RA_Tuple t -> RA_Tuple <$> pan t
+
 instance Pandemic DLRemoteALGO where
-  pan (DLRemoteALGO x y z w v u t s) = DLRemoteALGO <$> pan x <*> pan y <*> pan z <*> pan w <*> pan v <*> pan u <*> pan t <*> pan s
+  pan (DLRemoteALGO a b c d e f g h i j k) =
+    DLRemoteALGO <$> pan a <*> pan b <*> pan c <*> pan d <*> pan e <*> pan f <*> pan g <*> pan h <*>
+                     pan i <*> pan j <*> pan k
 
 instance Pandemic DLPayAmt where
   pan (DLPayAmt net ks) = do
@@ -226,6 +235,9 @@ instance Pandemic DLArg where
 instance Pandemic b => Pandemic (a, b) where
   pan (s,a) = (,) s <$> pan a
 
+instance (Pandemic a, Pandemic b, Pandemic c) => Pandemic (a, b, c) where
+  pan (x, y, z) = (,,) <$> pan x <*> pan y <*> pan z
+
 instance Pandemic DLLargeArg where
   pan = \case
     DLLA_Array t as -> DLLA_Array t <$> pan as
@@ -234,14 +246,12 @@ instance Pandemic DLLargeArg where
     DLLA_Data m s a -> DLLA_Data m s <$> pan a
     DLLA_Struct vars_args -> DLLA_Struct <$> pan vars_args
     DLLA_Bytes s -> return $ DLLA_Bytes s
+    DLLA_BytesDyn s -> return $ DLLA_BytesDyn s
     DLLA_StringDyn s -> return $ DLLA_StringDyn s
 
 instance Pandemic DLSend where
   pan (DLSend b r s t) =
     DLSend b <$> pan r <*> pan s <*> pan t
-
-instance Pandemic (DLVar, Bool, DLStmts) where
-  pan (v,b,sts) = (,,) <$> pan v <*> pure b <*> pan sts
 
 instance Pandemic DLAssignment where
   pan (DLAssignment mvargs) = do
@@ -267,7 +277,7 @@ instance Pandemic DLSStmt where
       DLS_ArrayMap at <$> pan v1 <*> pan a1 <*> pan v2 <*> pan v3 <*> pan bl
     DLS_ArrayReduce at v1 a1 a2 v2 v3 v4 bl -> do
       DLS_ArrayReduce at <$> pan v1 <*> pan a1 <*> pan a2 <*> pan v2 <*> pan v3 <*> pan v4 <*> pan bl
-    DLS_If at a ann sts1 sts2 -> DLS_If at <$> pan a <*> pure ann <*> pan sts1 <*> pan sts2
+    DLS_If at ans a ann sts1 sts2 -> DLS_If at <$> pan ans <*> pan a <*> pure ann <*> pan sts1 <*> pan sts2
     DLS_Switch at v sa sw -> DLS_Switch at <$> pan v <*> pure sa <*> pan sw
     DLS_Return at i a -> DLS_Return at i <$> pan a
     DLS_Prompt at v ann sts -> DLS_Prompt at <$> pan v <*> pure ann <*> pan sts
