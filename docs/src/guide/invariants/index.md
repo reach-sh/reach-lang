@@ -49,8 +49,8 @@ range: 4-4
 In this example, if the engineer ever modified the program in a way that the balance wasn't guaranteed to be two times the wager amount then there would be an error. 
 Alternatively, if the outcome of the game is anything other than `A_WINS`, `B_WINS`, or a `DRAW`, then a different error will be thrown. 
 
-The invariant indicates the importance of tracking the balance and the condition(s) of the loop. 
-In almost all cases, you'll want to track these items inside a `{!rsh} while` loop. 
+The invariant indicates the importance of asserting the balance and the condition(s) of the loop. 
+In almost all cases, you'll want to constrain these items inside a `{!rsh} while` loop. 
 
 ### Balance Invariant
 
@@ -142,8 +142,15 @@ md5: 7e59eeb6efb5e26e97c4c1d4df6669c6
 range: 59-62
 ```
 
-If you can rule out an error in the Participant Interact Interface then consider what invariants may still need to be tracked.
+If you can rule out an error in the Participant Interact Interface then consider what invariants may be required by the `{!rsh} while` loop.
 If you haven't created an invariant for the balance and the condition(s) of the loop then it is possible that your current invariants may be insufficient for the verification engine to formally verify your application.
+A pattern will emerge as we progress through this guide.
+We'll see that the `{!rsh} invariant` should `{!rsh} assert` the balance, loop condition, and `{!rsh} Map` size, if applicable. 
+`{!rsh} check`s within the `{!rsh} parallelReduce` relate to the invariants. 
+
+We'll continue to explore this pattern for writing invariants. 
+We've examined an `{!rsh} invariant` for asserting the `balance`. 
+Now we'll review an `${!rsh} invariant` that asserts the loop's condition.
 
 ### Condition Invariant
 
@@ -281,6 +288,82 @@ range: 44-46
 Balance errors indicate the need to recalculate the balance's formula or identify missing assumptions about the program. 
 In this case, the balance is equal to the product of `howMany` guests completed a reservation and the reservation fee. 
 However, Reach cannot guarantee the efficacy of the program because we failed to `{!rsh} assert` the balance's formula in the invariant.
+
+## Track/Distribute Supply of Non-Network Tokens
+
+Sometimes you may want to write an `{!rsh} assert`ion regarding the supply of non-network tokens. 
+In the "Ticket Sale DApp" an Administrator issues non-network tokens and Buyer `{!rsh} API`s have the ability to buy the tokens, which are referred to as 'tickets', in this DApp.
+
+The `{!rsh} invariant` in this DApp is interesting because it makes `{!rsh} assert`s over the network token balance (line 34) and the non-network token balance (line 35).
+
+```
+load - ticket sales
+md5 -
+range - 33-44
+
+  const [ticketsSold] = parallelReduce([0])
+    .invariant(balance() == amount * ticketsSold)
+    .invariant(balance(tok) == supply - ticketsSold)errors
+    .while(ticketsSold < supply)
+    .api_(B.buyTicket, () => {
+      return[amount, (ret) => {
+        transfer(1, tok).to(this);
+        ret(true);
+        return [ticketsSold + 1];
+      }];
+    });
+  transfer(balance()).to(A);
+```
+
+The `{!rsh} parallelReduce` updates the value of `ticketsSold` and the condition is `true` as long as `ticketsSold` is less than the available `supply` of tickets. 
+The `{!rsh} API` calls on the `buyTicket` function, which increments the number of `ticketsSold` and returns the new value. 
+
+This program doesn't break after removing the first balance invariant. 
+The `{!rsh} parallelReduce` is in a race to sell the non-network tokens. 
+Writing an invariant about the network token balance provides stronger defenses to the program, but is not required for the compiler to complete its formal verification.
+However, removing the second invariant will cause a violation witness.
+
+The critical `{!rsh} invariant` on line 35 and `{!rsh} assert`s that the non-network token balance is equal to the difference of the supply and the number of tickets sold.
+
+Once removed, the compiler returns
+
+```
+load - 
+md5 -
+range -
+
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance sufficient for transfer"
+  at ./index.rsh:39:28:application
+  at /app/index.rsh:38:28:application call to [unknown function] (defined at: /app/index.rsh:38:28:function exp)
+
+  // Violation Witness
+
+  const UInt.max = 1;
+
+  const tokenInfos/169 = <loop variable>;
+  //    ^ could = Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
+  //      from: ./index.rsh:33:39:while
+
+  // Theorem Formalization
+
+  const v189 = 1 <= tokenInfos/169[0][0];
+  //    ^ would be false
+  assert(v189);
+```
+
+We see the `balance sufficient for transfer` error, once again. 
+However, instead of referring to a network token transfer, the message is referring to the transfer of a non-network token. 
+In this example, the message points to the `{!rsh} transfer` on line 39 and the `return` statement on line 38.
+
+The Violation Witness on line XX shows how the `{!rsh} parallelReduce` could fail, followed by the Theorem Formalization.
+
+The second verification failure, "balance zero at application exit" indicates that tokens could remain in the contract when it exits on line 45.
+This Violation Witness also points to the `{!rsh} parallelReduce` with a similar example as before.
+
+This example shows that it is critical to understand a non-network token's balance, as well as, the network token's balance.
 
 ## Invariably, We Have Learned
 
