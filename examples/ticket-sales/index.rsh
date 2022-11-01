@@ -19,8 +19,8 @@ export const main = Reach.App(() => {
   });
   A.publish(cost, tok, supply);
   commit();
-  A.interact.launched(getContract());
   A.pay([[supply, tok]]);
+  A.interact.launched(getContract());
 
   const [ticketsSold] = parallelReduce([0])
     .invariant(balance() == cost * ticketsSold)
@@ -34,7 +34,7 @@ export const main = Reach.App(() => {
         return [ticketsSold + 1];
       }];
     });
-  transfer(balance()).to(A);
+  transfer(cost * ticketsSold).to(A);
   commit();
   exit();
 });
