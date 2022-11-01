@@ -1969,6 +1969,7 @@ newtype FunX = FunX (CLSym, CLFun)
 instance SolStmts FunX where
   solS (FunX ((CLSym name _ _), (CLFun {..}))) = freshVarMap $ do
     -- XXX put args in tuple for publish (in CLike)
+    -- XXX why are there two step checks?
     -- XXX lock
     (am, sfl) <-
       case name == nameMeth 0 of
