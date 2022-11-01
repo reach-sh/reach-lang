@@ -137,7 +137,7 @@ type AccountTransferable = Account | {
   getStorageLimit?: () => BigNumber,
 };
 
-const reachPublish = (m: string | number) => `_reach_m${m}`
+const reachPublish = (m: string | number) => `_reachp_${m}`
 const reachEvent = (e: string | number) => `_reach_e${e}`
 const reachOutputEvent = (e: string | number) => `_reach_oe_${e}`;
 
@@ -219,8 +219,8 @@ const sendRecv_prepArg = (lct:BigNumber, args:Array<any>, tys:Array<any>, evt_cn
   const [ _tys_svs, tys_msg ] = argsSplit(tys, evt_cnt);
   void(_args_svs); void(_tys_svs);
   // @ts-ignore
-  const arg_ty = T_Tuple([T_UInt, T_Tuple(tys_msg)]);
-  return arg_ty.munge([lct, args_msg]);
+  const arg_ty = T_Tuple([T_UInt, ...tys_msg]);
+  return arg_ty.munge([lct, ...args_msg]);
 };
 
 type EQInitArgs = {

@@ -1938,15 +1938,20 @@ instance SolStmts CLTail where
     CL_Com m k -> solScat m k
     CL_If _ ca t f -> solIf ca t f
     CL_Switch at ov csm -> solSwitch at ov csm
-    CL_Jump _at f args mmret -> do
+    CL_Jump _at f args_ mmret -> do
       let f' = pclv f
-      -- Turn the arguments into a single object and call w/ memory
-      let args_ty = vsToInternalArg args
-      args_ty' <- solType args_ty
-      am' <- withArgLoc args_ty
-      let defn = [ solDecl (am' <+> "_ja") args_ty' <> semi ]
-      asn <- makeInternalArg args "_ja" $ map DLA_Var args
-      let call = defn <> asn <> [ solApply f' [ "_ja", memVar ] <> semi ]
+      call <- case args_ of
+        [ arg ] -> do
+          arg' <- solF arg
+          return $ [ solApply f' [ arg', memVar ] <> semi ]
+        args -> do
+          -- Turn the arguments into a single object and call w/ memory
+          let args_ty = vsToInternalArg args
+          args_ty' <- solType args_ty
+          am' <- withArgLoc args_ty
+          let defn = [ solDecl (am' <+> "_ja") args_ty' <> semi ]
+          asn <- makeInternalArg args "_ja" $ map DLA_Var args
+          return $ defn <> asn <> [ solApply f' [ "_ja", memVar ] <> semi ]
       case mmret of
         Nothing -> do
           -- internal to internal call
@@ -1997,10 +2002,16 @@ instance SolStmts FunX where
             let am'' = if mustBeMem ty then am' else ""
             return $ solDecl v' $ ty' <> am''
         CLFM_Internal -> do
-          let vs = map varLetVar clf_dom
-          argTy <- solType_withArgLoc $ vsToInternalArg vs
-          bindInternalArg vs "_a"
-          return $ [ solDecl "_a" argTy, memVarDecl ]
+          let vs_ = map varLetVar clf_dom
+          argTy <- case vs_ of
+            [ v ] -> do
+              addVar v "_a"
+              return $ varType v
+            vs -> do
+              bindInternalArg vs "_a"
+              return $ vsToInternalArg vs
+          argTyl <- solType_withArgLoc argTy
+          return $ [ solDecl "_a" argTyl, memVarDecl ]
     (frameDefn, body) <- solSF clf_tail
     return $ frameDefn <> solFunctionLike sfl args body
 
