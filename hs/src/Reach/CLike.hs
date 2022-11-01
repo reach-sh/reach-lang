@@ -367,20 +367,27 @@ newtype CHX = CHX (Int, CHandler)
 instance CLike CHX where
   cl (CHX (which, (C_Handler {..}))) = do
     given_timev <- allocVar ch_at $ T_UInt UI_Word
-    let clf_dom = (v2vl given_timev) : ch_msg
+    let eff_dom = (v2vl given_timev) : ch_msg
+    let eff_ty = T_Tuple $ map varType $ map varLetVar eff_dom
+    act_var <- allocVar ch_at eff_ty
+    let clf_dom = [ v2vl act_var ]
+    let act_arg = DLA_Var act_var
     tCounter <- asks getCounter
+    let addArg (vl, i) = CL_Com $ CLDL $ DL_Let ch_at (vl2lv vl) (DLE_TupleRef ch_at act_arg i)
+    let addArgs = flip (foldr addArg) $ zip eff_dom [0..]
     body' <- tr_ (TEnv {..}) ch_body
     let intt =
           -- XXX include this in the program itself?
-            CL_Com (CLEmitPublish ch_at which (T_Tuple $ map varType $ map varLetVar clf_dom))
+            CL_Com (CLEmitPublish ch_at which eff_ty)
           -- XXX add extensions to DLE so these can be read directly
           $ CL_Com (CLTxnBind ch_at ch_from ch_timev ch_secsv)
-          -- XXX put given_timev into DL and does this in Core
-          $ CL_Com (CLTimeCheck ch_at ch_timev given_timev)
           -- XXX change to StoreRead and something to decompose a Data instance
           -- and fail if the tag doesn't match
           -- XXX don't on the ctor
           $ CL_Com (CLStateBind ch_at ch_svs ch_last)
+          $ addArgs
+          -- XXX put given_timev into DL and does this in Core
+          $ CL_Com (CLTimeCheck ch_at ch_timev given_timev)
           -- XXX move this back to EPP
           $ CL_Com (CLIntervalCheck ch_at ch_timev ch_secsv ch_int)
           $ body'
