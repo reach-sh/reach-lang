@@ -1,6 +1,5 @@
-// Automatically generated with Reach 0.1.10 (f1275a40*)
+// Automatically generated with Reach 0.1.12 (c4d5d416*)
 pragma abicoder v2;
-
 pragma solidity ^0.8.12;
 
 /**
@@ -550,6 +549,10 @@ contract Stdlib {
     require((z = x - y) <= x, "sub wraparound"); }
   function safeMul(uint256 x, uint256 y) internal pure returns (uint256 z) {
     require(y == 0 || (z = x * y) / y == x, "mul overflow"); }
+  function safeDiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    require(y != 0, "div by zero"); z = x / y; }
+  function safeMod(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    require(y != 0, "div by zero"); z = x % y; }
 
   function unsafeAdd(uint256 x, uint256 y) internal pure returns (uint256 z) {
     unchecked { z = x + y; } }
@@ -557,6 +560,46 @@ contract Stdlib {
     unchecked { z = x - y; } }
   function unsafeMul(uint256 x, uint256 y) internal pure returns (uint256 z) {
     unchecked { z = x * y; } }
+  function unsafeDiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    unchecked { z = x / y; } }
+  function unsafeMod(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    unchecked { z = x % y; } }
+
+  function safeSqrt(uint256 y) internal pure returns (uint256 z) {
+    if (y > 3) {
+      z = y;
+      uint256 x = y / 2 + 1;
+      while (x < z) {
+        z = x;
+        x = (y / x + x) / 2;
+      }
+    } else if (y != 0) {
+      z = 1;
+    }
+  }
+
+  // From OpenZeppelin --- MIT license
+  function uintToStringDyn(uint256 value) internal pure returns (string memory) {
+        // Inspired by OraclizeAPI's implementation - MIT licence
+        // https://github.com/oraclize/ethereum-api/blob/b42146b063c7d6ee1358846c198246239e9360e8/oraclizeAPI_0.4.25.sol
+
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
+    }
 
   function reachRequire(bool succ, uint256 errMsg) internal pure {
     if ( ! succ ) {
@@ -641,35 +684,26 @@ contract Stdlib {
 }
 
 struct T0 {
+  uint256 elem0;
+  uint256 elem1;
+  }
+struct T1 {
   address payable v68;
   uint256 v69;
   }
-struct T1 {
-  uint256 v69;
-  }
 struct T2 {
-  uint256 time;
-  T1 msg;
+  uint256 elem0;
   }
-struct T4 {
-  uint256 time;
-  bool msg;
-  }
-struct T5 {
+struct T3 {
   bytes32 elem0;
   bytes32 elem1;
   bytes32 elem2;
   bytes32 elem3;
   }
-struct T6 {
-  T5 v82;
+struct T4 {
+  uint256 elem0;
+  T3 elem1;
   }
-struct T7 {
-  uint256 time;
-  T6 msg;
-  }
-
-
 contract ReachContract is Stdlib {
   uint256 current_step;
   uint256 current_time;
@@ -678,74 +712,63 @@ contract ReachContract is Stdlib {
   function _reachCreationTime() external view returns (uint256) { return creation_time; }
   function _reachCurrentTime() external view returns (uint256) { return current_time; }
   function _reachCurrentState() external view returns (uint256, bytes memory) { return (current_step, current_svbs); }
-  
-  
-  
-  
-  
-  event _reach_e0(address _who, T2 _a);
-  
-  constructor(T2 memory _a) payable {
-    current_step = 0x0;
-    creation_time = uint256(block.number);
-    
-    
+  event _reach_e0(address _who, T0 _a);
+  event _reach_e1(address _who, T2 _a);
+  event _reach_e2(address _who, T4 _a);
+  receive () external payable {}
+  fallback () external payable {}
+  struct Memory {
+    bool nil;
+    }
+  function _reachi_0(T0 memory _a, Memory memory _Memory) internal  {
     emit _reach_e0(msg.sender, _a);
-    reachRequire((msg.value == uint256(0)), uint256(7) /*'(./examples/overview/index.rsh:17:5:dot,[],"verify network token pay amount")'*/);
-    T0 memory nsvs;
+    reachRequire((((_a.elem0) == uint256(0)) || (current_time == (_a.elem0))), uint256(7) /*'time check at ./index.rsh:17:5:dot'*/);
+    reachRequire((msg.value == uint256(0)), uint256(8) /*'(./index.rsh:17:5:dot,[],"verify network token pay amount")'*/);
+    T1 memory nsvs;
     nsvs.v68 = payable(msg.sender);
-    nsvs.v69 = _a.msg.v69;
+    nsvs.v69 = (_a.elem1);
     current_step = uint256(1);
     current_time = uint256(block.number);
     current_svbs = abi.encode(nsvs);
-    
-    
     }
-  
-  event _reach_e1(address _who, T4 _a);
-  
-  function _reach_m1(T4 calldata _a) external payable {
-    reachRequire((current_step == uint256(1)), uint256(9) /*'state step check at ./examples/overview/index.rsh:22:5:dot'*/);
-    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(10) /*'state time check at ./examples/overview/index.rsh:22:5:dot'*/);
-    current_step = 0x0;
-    (T0 memory _svs) = abi.decode(current_svbs, (T0));
-    
-    
+  function _reachi_1(T2 memory _a, Memory memory _Memory) internal  {
     emit _reach_e1(msg.sender, _a);
-    reachRequire((msg.value == _svs.v69), uint256(8) /*'(./examples/overview/index.rsh:22:5:dot,[],"verify network token pay amount")'*/);
-    T0 memory nsvs;
+    reachRequire((current_step == uint256(1)), uint256(9) /*'state check at ./index.rsh:22:5:dot'*/);
+    (T1 memory _svs) = abi.decode(current_svbs, (T1));
+    reachRequire((((_a.elem0) == uint256(0)) || (current_time == (_a.elem0))), uint256(10) /*'time check at ./index.rsh:22:5:dot'*/);
+    reachRequire((msg.value == _svs.v69), uint256(11) /*'(./index.rsh:22:5:dot,[],"verify network token pay amount")'*/);
+    T1 memory nsvs;
     nsvs.v68 = _svs.v68;
     nsvs.v69 = _svs.v69;
     current_step = uint256(2);
     current_time = uint256(block.number);
     current_svbs = abi.encode(nsvs);
-    
-    
     }
-  
-  event _reach_e2(address _who, T7 _a);
-  
-  function _reach_m2(T7 calldata _a) external payable {
-    reachRequire((current_step == uint256(2)), uint256(13) /*'state step check at ./examples/overview/index.rsh:27:5:dot'*/);
-    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(14) /*'state time check at ./examples/overview/index.rsh:27:5:dot'*/);
-    current_step = 0x0;
-    (T0 memory _svs) = abi.decode(current_svbs, (T0));
-    
-    
+  function _reachi_2(T4 memory _a, Memory memory _Memory) internal  {
     emit _reach_e2(msg.sender, _a);
-    reachRequire((msg.value == uint256(0)), uint256(11) /*'(./examples/overview/index.rsh:27:5:dot,[],"verify network token pay amount")'*/);
-    reachRequire(((_svs.v68 == payable(msg.sender))), uint256(12) /*'(./examples/overview/index.rsh:27:5:dot,[],Just "sender correct")'*/);
+    reachRequire((current_step == uint256(2)), uint256(12) /*'state check at ./index.rsh:27:5:dot'*/);
+    (T1 memory _svs) = abi.decode(current_svbs, (T1));
+    _a.elem1;
+    reachRequire((((_a.elem0) == uint256(0)) || (current_time == (_a.elem0))), uint256(13) /*'time check at ./index.rsh:27:5:dot'*/);
+    reachRequire((msg.value == uint256(0)), uint256(14) /*'(./index.rsh:27:5:dot,[],"verify network token pay amount")'*/);
+    reachRequire(((_svs.v68 == payable(msg.sender))), uint256(15) /*'(./index.rsh:27:5:dot,[],Just "sender correct")'*/);
     _svs.v68.transfer(_svs.v69);
     current_step = 0x0;
     current_time = 0x0;
     delete current_svbs;
-    
-    
     }
-  
-  
-  
-  receive () external payable {}
-  fallback () external payable {}
-  
+  constructor(T0 memory v129) {
+    current_step = 0x0;
+    creation_time = uint256(block.number);
+    Memory memory _Memory;
+    _reachi_0(v129, _Memory);
+    }
+  function _reachp_1(T2 calldata v131) external payable returns (bool) {
+    Memory memory _Memory;
+    _reachi_1(v131, _Memory);
+    }
+  function _reachp_2(T4 calldata v133) external payable returns (bool) {
+    Memory memory _Memory;
+    _reachi_2(v133, _Memory);
+    }
   }

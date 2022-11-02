@@ -1508,13 +1508,6 @@ createMem defs = do
   let fs' = ("nil", "bool") : fs
   return $ fromMaybe (impossible "cm") $ solStruct memTy fs'
 
-solTimeCheck :: SrcLoc -> Doc -> Doc -> App Docs
-solTimeCheck at actual' given' = do
-  zeq <- solEq given' $ solNum (0 :: Int)
-  teq <- solEq actual' given'
-  solRequireS ("time check at " <> show at) $
-    solBinOp "||" (parens zeq) (parens teq)
-
 instance SolStmts CLStmt where
   solS = \case
     CLDL m -> solS m
@@ -1533,10 +1526,13 @@ instance SolStmts CLStmt where
       let ed = [ "event" <+> solApply e ["address _who", msg_ty' <+> "_a"] <> semi ]
       modifyCtxtIO ctxt_outputs $ M.insert (show e) ed
       return $ [ "emit" <+> solApply e ["msg.sender", "_a"] <> semi ]
-    CLTimeCheck at actual given -> do
-      actual' <- solF actual
+    CLTimeCheck at given -> do
+      let actual' = "current_time"
       given' <- solF given
-      solTimeCheck at actual' given'
+      zeq <- solEq given' $ solNum (0 :: Int)
+      teq <- solEq actual' given'
+      solRequireS ("time check at " <> show at) $
+        solBinOp "||" (parens zeq) (parens teq)
     CLStateRead _ v -> do
       extendVarMap $ M.fromList
         [ (v, "current_step") ]
@@ -1723,6 +1719,7 @@ solProg p = do
   ctxt_which_msg <- newIORef mempty
   let ctxt_varidx = getCounter p
   p' <- flip runReaderT (SolCtxt {..}) $ solS p
+  -- XXX current_time should be part of CLike (AVM uses it too)
   let state_defn :: Docs =
         [ "uint256 current_step;"
         , "uint256 current_time;"

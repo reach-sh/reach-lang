@@ -29,7 +29,7 @@ instance Show CLSym where
 data CLStmt
   = CLDL DLStmt
   | CLTxnBind SrcLoc DLVar DLVar DLVar
-  | CLTimeCheck SrcLoc DLVar DLVar
+  | CLTimeCheck SrcLoc DLVar
   | CLEmitPublish SrcLoc Int DLType
   | CLStateRead SrcLoc DLVar
   | CLStateBind SrcLoc [DLVarLet] Int
@@ -51,7 +51,7 @@ instance Pretty CLStmt where
           , ("secs", secsv)
           ]
     CLEmitPublish _ which vars -> "emitPublish" <> parens (render_das [pretty which, pretty vars])
-    CLTimeCheck _ actual given -> "checkTime" <> parens (render_das [actual, given])
+    CLTimeCheck _ given -> "checkTime" <> parens (render_das [given])
     CLStateRead _ v -> pretty v <+> ":=" <+> "state"
     CLStateBind _ svs prev -> pretty svs <+> ":=" <+> "state" <> pretty prev
     CLIntervalCheck _ timev secsv int -> "checkInterval" <> parens (render_das [pretty timev, pretty secsv, pretty int])

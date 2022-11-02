@@ -79,6 +79,9 @@ funw ni ns at clf_dom clf_view rng mret intt = do
   let extt = CL_Jump at ni domvs (Just mret)
   let de = CLFun { clf_mode = CLFM_External rng, clf_tail = extt, .. }
   fun ni di
+  -- XXX optimize when one ns?
+  -- I can't in Solidity because of the argument number issue, but I can in AVM
+  -- and EVM
   forM_ ns $ flip fun de
 
 class CLike a where
@@ -227,6 +230,7 @@ instance (CLikeF a) => CLike (FIX a) where
     fCounter <- asks getCounter
     let f_staten = Nothing
     -- XXX when the state is a data, this would be a real switch
+    -- XXX optimize case where there's one step?
     stept <- clf_ (FEnv {..}) $ bltM fi_steps
     let intt = CL_Com (CLStateRead fi_at f_statev) stept
     let ns = v : fi_as
@@ -389,8 +393,9 @@ instance CLike CHX where
           $ CL_Com (CLTxnBind ch_at ch_from ch_timev ch_secsv)
           $ mStateBind
           $ addArgs
-          -- XXX put given_timev into DL and does this in Core
-          $ CL_Com (CLTimeCheck ch_at ch_timev given_timev)
+          -- XXX puit given_timev into DL and does this in Core
+          -- XXX there is implicitly a reference to "current_time"
+          $ CL_Com (CLTimeCheck ch_at given_timev)
           -- XXX move this back to EPP
           $ CL_Com (CLIntervalCheck ch_at ch_timev ch_secsv ch_int)
           $ body'
