@@ -58,7 +58,7 @@ compile_sol_extract solf cn stdout = do
   let xs' = M.filterWithKey (\k' _ -> T.isSuffixOf k' k) xs
   case M.toAscList xs' of
     [ (_, x) ] -> Right x
-    _ -> Left $ "Expected contracts object to have unique key " <> show k <> " but had " <> show ks
+    _ -> Left $ "Expected contracts object to have unique key " <> show k <> " but had " <> show (M.keys xs') <> " from " <> show ks
 
 
 try_compile_sol :: FilePath -> String -> Maybe (Maybe Int) -> IO (Either String (String, CompiledSolRec))

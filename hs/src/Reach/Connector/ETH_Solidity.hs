@@ -50,7 +50,7 @@ dontWriteSol :: Bool
 dontWriteSol = False
 
 maxDepth :: Int
-maxDepth = 13
+maxDepth = 12
 
 apiMaxArgs :: Int
 apiMaxArgs = 12
@@ -1006,8 +1006,8 @@ instance SolStmts DLStmt where
                let s1 = solSet tv_before sub
                tv_after <- allocMemVar at $ T_UInt UI_Word
                tokRecv <- solPrimApply (SUB UI_Word PV_Veri) [getBalance tokArg, tv_before]
-               let s2 = solSet tv_after tokRecv
-               s3 <- solRequire "remote did not transfer unexpected non-network tokens" =<< solEq tv_after "0"
+               let s2 = [ solSet tv_after tokRecv ]
+               s3 <- solRequireS "remote did not transfer unexpected non-network tokens" =<< solEq tv_after "0"
                return (s1, s2 <> s3))
             nnTokRecvZero
       let call' = ".call{value:" <+> netTokPaid <> "}"
@@ -1037,7 +1037,7 @@ instance SolStmts DLStmt where
              , "(bool " <> v_succ <> ", bytes memory " <> v_return <> ")" <+> "=" <+> av' <> solApply call' [e_data] <> semi
              , solApply "checkFunReturn" [v_succ, v_return, err_msg] <> semi
              ]
-          <> checkUnexpectedNonNetTokBals
+          <> concat checkUnexpectedNonNetTokBals
           <> setDynamicNonNetTokBals
           <> checkNonNetTokAllowances
           <> sub'l
@@ -1672,7 +1672,7 @@ instance SolStmts FunX where
         CLFM_External {} -> do
           let howMany = length clf_dom
           when (howMany > apiMaxArgs) $
-            expect_throw Nothing clf_at $ Err_SolTooManyArgs "externally visibile functions" (bunpack name) howMany
+            expect_throw Nothing clf_at $ Err_SolTooManyArgs "externally visible functions" (bunpack name) howMany
           addVars solRawVar clf_dom
           forM clf_dom $ \vl -> do
             let v = varLetVar vl
