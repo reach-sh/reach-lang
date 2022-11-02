@@ -98,7 +98,7 @@ solFunctionLike sfl args body = [ sflp <+> solBraces body ]
   where
     sflp =
       case sfl of
-        SFLCtor -> solApply "constructor" args
+        SFLCtor -> solApply "constructor" args <+> "payable"
         SFLFun ext mut name mret ->
           "function" <+> solApply name args <+> ext' <+> mut' <> ret'
           where

@@ -362,6 +362,8 @@ instance CLikeTr CTail CLTail where
       let args = svs <> asnvs'
       -- XXX move this concept backwards so that CT_Jump is just a sequence of
       -- variables
+      -- XXX make it so that all CLike Internal calls pass things through
+      -- memory
       let kt = CL_Jump at (nameLoop which) args Nothing
       let go (v', a) = CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once v') (DLE_Arg at a)))
       let t = foldr go kt asn'
