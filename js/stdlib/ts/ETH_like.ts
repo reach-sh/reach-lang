@@ -561,7 +561,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const dhead = [label, 'apiMapRef'];
         debug(dhead, {i, ty, f});
         const ethersC = await getC();
-        const mf = `_reachMap${i}Ref`;
+        const mf = `_reachm_${i}Ref`;
         debug(dhead, mf);
         const mfv = await ethersC[mf](f);
         debug(dhead, { mfv });

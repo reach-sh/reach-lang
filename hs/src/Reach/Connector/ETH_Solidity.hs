@@ -192,7 +192,7 @@ solMapVar :: DLMVar -> Doc
 solMapVar (DLMVar i) = pclv $ nameMap i
 
 solMapRefExt_ :: Doc -> Doc
-solMapRefExt_ x = "_reachMap" <> x <> "Ref"
+solMapRefExt_ x = x <> "Ref"
 
 solMapRefInt :: DLMVar -> Doc
 solMapRefInt = solMapRefInt_ . solMapVar
