@@ -7,7 +7,9 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verRC("0.1.12")}
 
-@{rcHead("0.1.12-rc.8")}
+@{rcNext("0.1.12-rc.8")}
+
++ 2022/11/02: Ethereum-like-only: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
 
 @{rcHead("0.1.12-rc.7")}
 
