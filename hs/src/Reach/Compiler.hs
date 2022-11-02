@@ -262,8 +262,13 @@ compile env (CompilerOpts {..}) = do
         -- the knowledge graph.
         --
         -- The SMT engine does the standard SMT checking thing.
-        --
-        verify (VerifyOpts {..}) ol >>= maybeDie
+        unless (cte_REACH_ACCURSED_UNUTTERABLE_DISABLE_VERIFICATION_AND_LOSE_ALL_YOUR_MONEY_AND_YOUR_USERS_MONEY env) $ do
+          let vo_out = woutnMay
+          let vo_mvcs = doIf dlo_connectors dlo_verifyPerConnector
+          let vo_timeout = co_verifyTimeout
+          let vo_dir = dirDotReach'
+          let vo_first_fail_quit = co_verifyFirstFailQuit
+          verify (VerifyOpts {..}) ol >>= maybeDie
         -- Once we know that we've passed the verification engine, we can
         -- remove variables that only occur in `assert` and `invariant`
         -- statements. The only hard part of this is noticing that some loop

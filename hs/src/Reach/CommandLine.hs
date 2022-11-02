@@ -13,7 +13,6 @@ module Reach.CommandLine
 where
 
 import Data.Char
-import Data.Maybe (isJust)
 import Options.Applicative
 import System.Environment
 
@@ -114,6 +113,7 @@ data CompilerToolEnv = CompilerToolEnv
   , cte_GITHUB_ACTIONS :: Maybe String -- Github Actions
   , cte_TF_BUILD :: Maybe String -- Azure Pipelines
   , cte_REACH_DEBUG :: Bool
+  , cte_REACH_ACCURSED_UNUTTERABLE_DISABLE_VERIFICATION_AND_LOSE_ALL_YOUR_MONEY_AND_YOUR_USERS_MONEY :: Bool
   }
 
 getCompilerEnv :: IO CompilerToolEnv
@@ -123,7 +123,8 @@ getCompilerEnv = do
   cte_CI <- lookupEnv "CI"
   cte_GITHUB_ACTIONS <- lookupEnv "GITHUB_ACTIONS"
   cte_TF_BUILD <- lookupEnv "TF_BUILD"
-  cte_REACH_DEBUG <- fmap isJust $ lookupEnv "REACH_DEBUG"
+  cte_REACH_DEBUG <- truthyEnv <$> lookupEnv "REACH_DEBUG"
+  cte_REACH_ACCURSED_UNUTTERABLE_DISABLE_VERIFICATION_AND_LOSE_ALL_YOUR_MONEY_AND_YOUR_USERS_MONEY <- truthyEnv <$> lookupEnv "REACH_ACCURSED_UNUTTERABLE_DISABLE_VERIFICATION_AND_LOSE_ALL_YOUR_MONEY_AND_YOUR_USERS_MONEY"
   return CompilerToolEnv {..}
 
 truthyEnv :: Maybe String -> Bool

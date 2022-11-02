@@ -436,6 +436,7 @@ mkScript connectorMode' wrapped = do
 
           export REACH_CONNECTOR_MODE
           export REACH_DEBUG
+          export REACH_ACCURSED_UNUTTERABLE_DISABLE_VERIFICATION_AND_LOSE_ALL_YOUR_MONEY_AND_YOUR_USERS_MONEY
           export REACH_NO_WARN
           export REACH_IDE
           export REACH_RPC_KEY
@@ -1099,6 +1100,7 @@ compile = command "compile" $ info f d
             -e REACH_CONNECTOR_MODE \
             -e REACH_IDE \
             -e REACH_DEBUG \
+            -e REACH_ACCURSED_UNUTTERABLE_DISABLE_VERIFICATION_AND_LOSE_ALL_YOUR_MONEY_AND_YOUR_USERS_MONEY \
             -e REACH_NO_WARN \
             -e "REACHC_ID=$whoami'" \
             -e "CI=$ci'" \
