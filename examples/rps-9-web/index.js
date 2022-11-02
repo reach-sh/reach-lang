@@ -5,8 +5,8 @@ import * as PlayerViews from "./components/Player/index.js";
 import RenderViews, { renderDOM } from "./views/renderViews";
 import ReachContextProvider from "./context/ReachContext";
 import './index.css';
-import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
+import { loadStdlib } from '@reach-sh/stdlib';
 const reach = loadStdlib(process.env);
 
 const Views = {
