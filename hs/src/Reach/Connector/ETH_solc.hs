@@ -38,7 +38,7 @@ instance FromJSON CompiledSolRec where
   parseJSON = withObject "CompiledSolRec" $ \ctc -> do
     (abio :: Value) <- ctc .: "abi"
     -- Why are we re-encoding? ethers takes the ABI as a string, not an object.
-    let cfg = defConfig {confIndent = Spaces 2, confCompare = compare}
+    let cfg = defConfig {confIndent = Spaces 0, confCompare = compare}
     let csrAbi = T.pack $ LB.unpack $ encodePretty' cfg abio
     csrCode <- ctc .: "bin"
     return $ CompiledSolRec {..}
