@@ -509,7 +509,7 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
   const rcHead = (ver) => `_Available in release candidate ${ver} and later..._`;
   const rcNext = (ver) => `_Available in the next release candidate, which will be ${ver}..._`;
 
-  const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, externalRef, ref, tooltip, directive_note, directive_hiddenNote, directive_alongside, directive_alongsideColumn, directive_testQ, directive_testA, generateIndex, verOld, verCur, verRC, rcHead };
+  const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, externalRef, ref, tooltip, directive_note, directive_hiddenNote, directive_alongside, directive_alongsideColumn, directive_testQ, directive_testA, generateIndex, verOld, verCur, verRC, rcHead, rcNext };
 
   const expanderDirective = () => (tree) => {
     visit(tree, (node) => {
