@@ -886,35 +886,6 @@ solTransfer who amt mtok = do
 solAsnType :: [DLVar] -> App Doc
 solAsnType = solType . vsToType
 
-solAsnSet :: Doc -> [(DLVar, DLArg)] -> App [Doc]
-solAsnSet asnv vs = do
-  let go (v, a) = solSet (asnv <> "." <> solRawVar v) <$> solF a
-  vs' <- mapM go vs
-  vs_ty' <- solAsnType $ map fst vs
-  return $ [solDecl asnv (mayMemSol vs_ty') <> semi] <> vs'
-
-solStateSet :: Int -> [(DLVar, DLArg)] -> App Docs
-solStateSet which svs = do
-  let asnv = "nsvs"
-  setl <- solAsnSet asnv svs
-  return $
-    setl
-      <> [ solSet "current_step" (solNum which)
-         , solSet "current_time" solBlockTime
-         , solSet "current_svbs" (solEncode ["nsvs"])
-         ]
-
-solStateBind :: SrcLoc -> [DLVar] -> App Docs
-solStateBind _at svs = do
-  svs_ty' <- solAsnType svs
-  addVars_ solSVSVar svs
-  return [solSet (parens $ solDecl "_svs" (mayMemSol svs_ty')) $ solApply "abi.decode" ["current_svbs", parens svs_ty']]
-
-solStateCheck :: SrcLoc -> Int -> App Docs
-solStateCheck at prev = do
-  s <- solEq "current_step" (solNum prev)
-  solRequireS ("state check at " <> show at) s
-
 arraySize :: DLArg -> Integer
 arraySize a =
   case argTypeOf a of
@@ -1570,9 +1541,13 @@ instance SolStmts CLStmt where
       extendVarMap $ M.fromList
         [ (v, "current_step") ]
       return []
-    CLStateBind at svs prev -> do
-      s' <- solStateCheck at prev
-      svs' <- solStateBind at $ map varLetVar svs
+    CLStateBind at svs_vl prev -> do
+      s <- solEq "current_step" (solNum prev)
+      s' <- solRequireS ("state check at " <> show at) s
+      let svs = map varLetVar svs_vl
+      svs_ty' <- solAsnType svs
+      addVars_ solSVSVar svs
+      let svs' = [solSet (parens $ solDecl "_svs" (mayMemSol svs_ty')) $ solApply "abi.decode" ["current_svbs", parens svs_ty']]
       return $ s' <> svs'
     CLIntervalCheck at timev secsv (CBetween ifrom ito) -> do
       let checkTime1 op ta = do
@@ -1587,7 +1562,19 @@ instance SolStmts CLStmt where
             Nothing -> return []
             Just x -> checkTime1 op x
       ((<>) <$> checkTime (PGE UI_Word) ifrom <*> checkTime (PLT UI_Word) ito)
-    CLStateSet _at which svs -> solStateSet which svs
+    CLStateSet _at which svs -> do
+      let asnv = "nsvs"
+      let vs = svs
+      let go (v, a) = solSet (asnv <> "." <> solRawVar v) <$> solF a
+      vs' <- mapM go vs
+      vs_ty' <- solAsnType $ map fst vs
+      return $
+        [solDecl asnv (mayMemSol vs_ty') <> semi]
+        <> vs'
+        <> [ solSet "current_step" (solNum which)
+           , solSet "current_time" solBlockTime
+           , solSet "current_svbs" (solEncode ["nsvs"])
+           ]
     CLTokenUntrack _at _tok -> do
       -- We could "selfdestruct" our token holdings but this is not a norm on
       -- ETH, so we won't spend the gas to do so
