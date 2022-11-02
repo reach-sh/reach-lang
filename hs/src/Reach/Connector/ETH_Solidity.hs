@@ -1976,19 +1976,25 @@ instance SolStmts FunX where
     -- XXX put args in tuple for publish (in CLike)
     -- XXX why are there two step checks?
     -- XXX lock
-    (am, sfl) <-
+    (am, sfl, extra) <-
       case name == nameMeth 0 of
-        True -> return (AM_Memory, SFLCtor)
+        True -> do
+          let extra =
+                [ "current_step = 0x0;"
+                , "creation_time = uint256(block.number);"
+                ]
+          return (AM_Memory, SFLCtor, extra)
         False -> do
           let name' = pclv name
           let mut = not clf_view
+          let extra = mempty
           (ext, mret) <-
             case clf_mode of
               CLFM_Internal -> return (False, Nothing)
               CLFM_External {..} -> do
                 ret <- solType_withArgLoc cfm_erngv
                 return (True, Just ret)
-          return $ (AM_Call, SFLFun ext mut name' mret)
+          return $ (AM_Call, SFLFun ext mut name' mret, extra)
     am' <- solF am
     args <-
       case clf_mode of
@@ -2013,7 +2019,7 @@ instance SolStmts FunX where
           argTyl <- solType_withArgLoc argTy
           return $ [ solDecl "_a" argTyl, memVarDecl ]
     (frameDefn, body) <- solSF clf_tail
-    return $ frameDefn <> solFunctionLike sfl args body
+    return $ frameDefn <> solFunctionLike sfl args (extra <> body)
 
 instance SolStmts CLProg where
   solS (CLProg {..}) = do

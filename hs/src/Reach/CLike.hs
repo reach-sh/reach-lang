@@ -376,15 +376,17 @@ instance CLike CHX where
     let addArg (vl, i) = CL_Com $ CLDL $ DL_Let ch_at (vl2lv vl) (DLE_TupleRef ch_at act_arg i)
     let addArgs = flip (foldr addArg) $ zip eff_dom [0..]
     body' <- tr_ (TEnv {..}) ch_body
+    let isCtor = which == 0
+    let mStateBind =
+          -- XXX change to StoreRead and something to decompose a Data instance
+          -- and fail if the tag doesn't match
+          if isCtor then id else CL_Com (CLStateBind ch_at ch_svs ch_last)
     let intt =
           -- XXX include this in the program itself?
             CL_Com (CLEmitPublish ch_at which eff_ty)
           -- XXX add extensions to DLE so these can be read directly
           $ CL_Com (CLTxnBind ch_at ch_from ch_timev ch_secsv)
-          -- XXX change to StoreRead and something to decompose a Data instance
-          -- and fail if the tag doesn't match
-          -- XXX don't on the ctor
-          $ CL_Com (CLStateBind ch_at ch_svs ch_last)
+          $ mStateBind
           $ addArgs
           -- XXX put given_timev into DL and does this in Core
           $ CL_Com (CLTimeCheck ch_at ch_timev given_timev)
