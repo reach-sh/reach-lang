@@ -1,4 +1,4 @@
-diff --git a/examples/tut-9/index.js b/examples/tut-9/index.js
+diff --git a/examples/tut-9/index.mjs b/examples/tut-9/index.mjs
 index 4b2705cea..1f5cf01e7 100644
 --- a/examples/tut-9/index.js
 +++ b/examples/tut-9/index.js

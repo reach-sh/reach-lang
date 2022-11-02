@@ -27,8 +27,8 @@ const Player = {
 export const main = Reach.App(() => {
   const Alice = Participant('Alice', {
     ...Player,
-    wager: UInt, // atomic units of currency
-    deadline: UInt, // time delta (blocks/rounds)
+    wager: UInt, 
+    deadline: UInt, 
   });
   const Bob   = Participant('Bob', {
     ...Player,
