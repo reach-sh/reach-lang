@@ -99,12 +99,11 @@ type Interface = real_ethers.utils.Interface;
 // node --unhandled-rejections=strict
 
 const reachBackendVersion = 25;
-const reachEthBackendVersion = 8;
+const reachEthBackendVersion = 9;
 export type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
   ABI: string,
   Bytecode: string,
-  views: {[viewn: string]: string | {[keyn: string]: string}},
 }}};
 type BackendViewsInfo = IBackendViewsInfo<AnyETH_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyETH_Ty>;
@@ -802,14 +801,12 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           void(args);
           throw Error('viewMapRef not used by ETH backend'); },
       };
-      const views_namesm = bin._Connectors.ETH.views;
       const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo, isSafe = true) =>
         async (...args: any[]): Promise<any> => {
           void(vs);
           const { dom, rng } = vim;
           const ethersC = await getC();
-          const vnv = views_namesm[v];
-          const vkn = (typeof vnv === 'string') ? vnv : vnv[k!];
+          const vkn = `${v}${(typeof k === 'string') ? `_${k}` : ''}`;
           const mungedArgs = args.map((arg, i) => dom[i].munge(arg));
           debug(label, 'getView1', v, k, 'args', args, vkn, dom, rng);
           debug(label, `getView1 mungedArgs = ${mungedArgs}`);

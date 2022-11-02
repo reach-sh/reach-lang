@@ -56,7 +56,7 @@ apiMaxArgs :: Int
 apiMaxArgs = 12
 
 reachEthBackendVersion :: Int
-reachEthBackendVersion = 8
+reachEthBackendVersion = 9
 
 contractId :: String
 contractId = "ReachContract"
