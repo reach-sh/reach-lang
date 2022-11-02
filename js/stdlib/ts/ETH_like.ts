@@ -317,7 +317,7 @@ const makeLogRepFor = ( getCtcAddress: (() => Address), iface:Interface, i:numbe
   debug(`hasLogFor`, i, tys);
   return makeLogRep( getCtcAddress, iface, reachEvent(i), [
     T_Address,
-    T_Tuple([T_UInt, T_Tuple(tys)])
+    T_Tuple([T_UInt, ...tys])
   ]);
 };
 const makeHasLogFor = ( getCtcAddress: (() => Address), iface:Interface, i:number, tys:AnyETH_Ty[]) => {
@@ -717,7 +717,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         if ( ! ep ) { throw Error(`no event log`); }
         debug(dhead, 'Event', ep);
         const from = ep[0];
-        const data = ep[1][1];
+        const data = ep[1].slice(1);
 
         debug(dhead, `OKAY`, data);
         const theBlockBN = bigNumberify(theBlock);
