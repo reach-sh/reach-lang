@@ -89,7 +89,8 @@ instance Pretty CLFunMode where
     CLFM_External {..} -> "external" <> "(" <> pretty cfm_erngv <> ")"
 
 data CLFun = CLFun
-  { clf_dom :: [DLVarLet]
+  { clf_at :: SrcLoc
+  , clf_dom :: [DLVarLet]
   , clf_view :: Bool
   , clf_mode :: CLFunMode
   , clf_tail :: CLTail

@@ -73,6 +73,7 @@ fun n d = env_insert_ eFunsR s d
 
 funw :: CLVar -> [CLVar] -> SrcLoc -> [DLVarLet] -> Bool -> DLType -> Maybe CLVar -> CLTail -> App ()
 funw ni ns at clf_dom clf_view rng mret intt = do
+  let clf_at = at
   let di = CLFun { clf_mode = CLFM_Internal, clf_tail = intt, .. }
   let domvs = map varLetVar clf_dom
   let extt = CL_Jump at ni domvs (Just mret)
@@ -402,6 +403,7 @@ instance CLike CHX where
     clf_tail <- tr_ (TEnv {..}) cl_body
     let clf_mode = CLFM_Internal
     let clf_view = False
+    let clf_at = cl_at
     fun n $ CLFun {..}
 
 instance CLike CHandlers where
