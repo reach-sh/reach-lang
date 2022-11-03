@@ -64,7 +64,7 @@ const algo = async () => {
       })
     ]);
   } catch (e) {
-    const expFailMethod = `m${failingMethod}`;
+    const expFailMethod = `_reachp_${failingMethod}`;
     stdlib.assert(e.toString().includes(expFailMethod));
     console.log(`Error was thrown in the expected method: ${expFailMethod}`);
     return;
@@ -117,7 +117,7 @@ const eth = async () => {
     ]);
   } catch (e) {
     console.log(e);
-    const expFailMethod = `_reach_m${failingMethod}`;
+    const expFailMethod = `_reachp_${failingMethod}`;
     stdlib.assert(e.toString().includes(expFailMethod),
       `Error was thrown in the expected method: ${expFailMethod}`);
     return;
