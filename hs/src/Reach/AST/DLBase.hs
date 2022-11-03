@@ -1528,13 +1528,18 @@ class HasUntrustworthyMaps a where
 
 type InterfaceLikeMap a = M.Map (Maybe SLPart) (M.Map SLVar a)
 
-flattenInterfaceLikeMap :: forall a . InterfaceLikeMap a -> M.Map SLPart a
-flattenInterfaceLikeMap = M.fromList . concatMap go . M.toList
+flattenInterfaceLikeMap_ :: forall a b . (SLPart -> a -> b) -> InterfaceLikeMap a -> M.Map SLPart b
+flattenInterfaceLikeMap_ f = M.fromList . concatMap go . M.toList
   where
-    go :: (Maybe SLPart, (M.Map SLVar a)) -> [(SLPart, a)]
+    go :: (Maybe SLPart, (M.Map SLVar a)) -> [(SLPart, b)]
     go (mp, m) = map (go' mp) $ M.toList m
-    go' :: Maybe SLPart -> (SLVar, a) -> (SLPart, a)
-    go' mp (v, x) = (fromMaybe "" (fmap (flip (<>) "_") mp) <> bpack v, x)
+    go' :: Maybe SLPart -> (SLVar, a) -> (SLPart, b)
+    go' mp (v, x) = (p <> bpack v, f p x)
+      where
+        p = maybe "" (<> "_") mp
+
+flattenInterfaceLikeMap :: forall a . InterfaceLikeMap a -> M.Map SLPart a
+flattenInterfaceLikeMap = flattenInterfaceLikeMap_ (flip const)
 
 data DLView = DLView
   { dvw_at :: SrcLoc
