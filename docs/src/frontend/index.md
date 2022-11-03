@@ -591,7 +591,7 @@ Example:
 
 ```js
 load: /examples/rps-9-web/index.js
-md5: 5e5c8976731882c06e7f094e05ca43b3
+md5: e75e7c639615f9dfe6de440e0564bb02
 range: 32 - 34
 ```
 
@@ -610,7 +610,7 @@ Example:
 
 ```js
 load: /examples/rps-9-web/index.js
-md5: 5e5c8976731882c06e7f094e05ca43b3
+md5: e75e7c639615f9dfe6de440e0564bb02
 range: 26 - 34
 ```
 
