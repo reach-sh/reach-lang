@@ -18,23 +18,26 @@ const lock = () => {
   return lockObj;
 };
 
-const deploy = async (abi, bin, args = []) => {
+const deploy = async (name, abi, bin, args = []) => {
+  console.log(`Deploying contract...`, name);
   const factory = new ethers.ContractFactory(abi, bin, acc.networkAccount);
   const contract = await factory.deploy(...args);
-  await contract.deployTransaction.wait();
+  console.log(`Awaiting contract...`, name, contract);
+  const r = await contract.deployTransaction.wait();
+  console.log(`...waited!`, name, r);
   return contract;
 }
 
 const solDeploy = async (solOutputPath, ctcName) => {
   const ctcJson = await fs.promises.readFile(solOutputPath);
   const ctc = JSON.parse(ctcJson)["contracts"][ctcName];
-  return deploy(ctc.abi, ctc.bin);
+  return deploy('solVersion', ctc.abi, ctc.bin);
 }
 
 const rchDeploy = async (rchModulePath, args) => {
   const mod = await import(rchModulePath);
   const ctc = mod._Connectors.ETH;
-  return deploy(ctc.ABI, ctc.Bytecode, args);
+  return deploy('rchVersion', ctc.ABI, ctc.Bytecode, args);
 }
 
 // ===== Launching the contracts =====
@@ -47,11 +50,11 @@ const oz_erc721tr = await solDeploy("build/oz_erc721_tokenreceiver.json",
 
 // Reach based (dummy) ERC721
 const rch_erc721 = await rchDeploy("./build/index.rch_ERC721.mjs",
-                                   [[/* time: */ 0, [/* zeroAddr: */ "0x" + "0".repeat(40)]]]);
+                                   [[/* time: */ 0, /* zeroAddr: */ "0x" + "0".repeat(40)]]);
 
 // Reach based ERC721TokenReceiver
 const rch_erc721tr = await rchDeploy("./build/index.rch_ERC721_TokenReceiver.mjs",
-                                     [[/* time: */ 0, []]]);
+                                     [[/* time: */ 0]]);
 
 // Setup event handlers for GotAToken events
 const evHandler = (name, lck) => (operator, from, tokenId, data) => {

@@ -207,13 +207,11 @@ export const ozComparisonTests = async () => {
     [
       // time
       0,
-      [
-        reach_meta.name,
-        reach_meta.symbol,
-        reach_meta.decimals,
-        reach_meta.totalSupply,
-        reach_meta.zeroAddress
-      ],
+      reach_meta.name,
+      reach_meta.symbol,
+      reach_meta.decimals,
+      reach_meta.totalSupply,
+      reach_meta.zeroAddress
     ],
   ];
   const reachDeploy = async () => {

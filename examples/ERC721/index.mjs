@@ -50,29 +50,31 @@ const lock = () => {
   return lockObj;
 };
 
-const deploy = async (abi, bin, args = []) => {
-  console.log("Deploying...")
+const deploy = async (name, abi, bin, args = []) => {
+  console.log("Deploying...", name)
   const factory = new ethers.ContractFactory(abi, bin, accDeploy.networkAccount);
   const contract = await factory.deploy(...args);
+  console.log('Waiting', name, contract)
   const txn = await contract.deployTransaction.wait();
+  console.log('Done waiting', name, txn)
   return [contract, txn.gasUsed];
 }
 
 const solDeploy = async (solOutputPath, ctcName, args = []) => {
   const ctcJson = await fs.promises.readFile(solOutputPath);
   const ctc = JSON.parse(ctcJson)["contracts"][ctcName];
-  return deploy(ctc.abi, ctc.bin, args);
+  return deploy('sol', ctc.abi, ctc.bin, args);
 }
 
 const rchDeploy = async (rchModulePath, args) => {
   const mod = await import(rchModulePath);
   const ctc = mod._Connectors.ETH;
-  return deploy(ctc.ABI, ctc.Bytecode, args);
+  return deploy('reach', ctc.ABI, ctc.Bytecode, args);
 }
 
 const deployReceiver = async () => {
   const [receiverCtc, receiverCtcGasUsed]
-        = await rchDeploy("./build/index.testTokenReceiver.mjs", [[0, false]]);
+        = await rchDeploy("./build/index.testTokenReceiver.mjs", [[0]]);
   return receiverCtc;
 }
 
@@ -290,20 +292,18 @@ const reach_erc721_constructor_args = [
   [
     // time
     0,
-    [
-      // v3236, string, name
-      "Reach_ERC721",
-      // v3237, string, symbol
-      "RCH",
-      // v3238, string, tokenURI
-      "Reach_ERC721/",
-      // v3239, uint256, I think this is totalSupply
-      5,
-      // v3240, address payable, I think this is the zero address
-      zeroAddr,
-      // Empty BytesDyn
-      [],
-    ],
+    // v3236, string, name
+    "Reach_ERC721",
+    // v3237, string, symbol
+    "RCH",
+    // v3238, string, tokenURI
+    "Reach_ERC721/",
+    // v3239, uint256, I think this is totalSupply
+    5,
+    // v3240, address payable, I think this is the zero address
+    zeroAddr,
+    // Empty BytesDyn
+    [],
   ],
 ];
 const reachERC721Deploy = async () => {
