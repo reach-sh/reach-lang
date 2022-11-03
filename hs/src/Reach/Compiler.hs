@@ -251,11 +251,6 @@ compile env (CompilerOpts {..}) = do
         ol <- bigopt (showp, "ol") ll
         -- ol <- optimize ll
         showp "ol" ol
-        let vo_out = woutnMay
-        let vo_mvcs = doIf dlo_connectors dlo_verifyPerConnector
-        let vo_timeout = co_verifyTimeout
-        let vo_dir = dirDotReach'
-        let vo_first_fail_quit = co_verifyFirstFailQuit
         -- This runs all of the different verifications.
         --
         -- The knowledge checker is basically a graph connected-ness search on
