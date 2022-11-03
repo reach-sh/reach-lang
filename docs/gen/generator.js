@@ -756,7 +756,7 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     const chEl = doc.createElement('div');
     chEl.classList.add("codeHeader");
     if ( spec.load ) {
-      chEl.appendChild(mkEl(`<a href="${repoBaseNice}${spec.load}">${spec.load}</a>`));
+      chEl.appendChild(mkEl(`<a target="_blank" href="${repoBaseNice}${spec.load}">${spec.load}</a>`));
     } else {
       chEl.appendChild(mkEl(`&nbsp;`));
     }
