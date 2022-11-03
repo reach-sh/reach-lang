@@ -1,46 +1,46 @@
-import { setTimeout } from "timers/promises";
-import CleanCss from "clean-css";
-import { createHash } from "crypto";
-import fs from "fs-extra";
-import * as htmlMinify from "html-minifier";
-import path from "path";
-import { fileURLToPath } from "url";
-import UglifyJS from "uglify-js";
-import shiki from "shiki";
-import yaml from "js-yaml";
-import rehypeFormat from "rehype-format";
-import rehypeRaw from "rehype-raw";
-import rehypeDocument from "rehype-document";
-import rehypeStringify from "rehype-stringify";
-import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import remarkFrontmatter from "remark-frontmatter";
-import remarkGfm from "remark-gfm";
-import remarkParse from "remark-parse";
-import remarkRehype from "remark-rehype";
-import remarkSlug from "remark-slug";
-import remarkToc from "remark-toc";
-import remarkDirective from "remark-directive";
-import { h } from "hastscript";
-import { unified } from "unified";
-import { visit } from "unist-util-visit";
-import { JSDOM } from "jsdom";
-import githubSlugger from "github-slugger";
+import { setTimeout } from 'timers/promises';
+import CleanCss from 'clean-css';
+import { createHash } from 'crypto';
+import fs from 'fs-extra';
+import * as htmlMinify from 'html-minifier';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import UglifyJS from 'uglify-js';
+import shiki from 'shiki';
+import yaml from 'js-yaml';
+import rehypeFormat from 'rehype-format';
+import rehypeRaw from 'rehype-raw';
+import rehypeDocument from 'rehype-document';
+import rehypeStringify from 'rehype-stringify';
+import rehypeAutolinkHeadings from 'rehype-autolink-headings';
+import remarkFrontmatter from 'remark-frontmatter';
+import remarkGfm from 'remark-gfm';
+import remarkParse from 'remark-parse';
+import remarkRehype from 'remark-rehype';
+import remarkSlug from 'remark-slug';
+import remarkToc from 'remark-toc';
+import remarkDirective from 'remark-directive';
+import { h } from 'hastscript';
+import { unified } from 'unified';
+import { visit } from 'unist-util-visit';
+import { JSDOM } from 'jsdom';
+import githubSlugger from 'github-slugger';
 const slugify = githubSlugger.slug;
-const topDoc = new JSDOM("").window.document;
+const topDoc = new JSDOM('').window.document;
 
-const hh = (x) => (x === "" ? "/" : `/${x}/`);
-const INTERNAL = ["config.json"];
+const hh = (x) => (x === '' ? '/' : `/${x}/`);
+const INTERNAL = ['config.json'];
 
 const normalizeDir = (x) => {
 	const s = path.normalize(x);
-	const y = s.endsWith("/") ? s.slice(0, -1) : s;
-	return y === "." ? "" : y;
+	const y = s.endsWith('/') ? s.slice(0, -1) : s;
+	return y === '.' ? '' : y;
 };
 
 const __filename = fileURLToPath(import.meta.url);
 const rootDir = path.dirname(__filename);
 const reachRoot = `${rootDir}/../../`;
-const repoBaseNice = "https://github.com/reach-sh/reach-lang/tree/master";
+const repoBaseNice = 'https://github.com/reach-sh/reach-lang/tree/master';
 const srcDir = normalizeDir(`${rootDir}/../src`);
 const outDir = normalizeDir(`${rootDir}/../build`);
 let forReal = false;
@@ -60,27 +60,27 @@ const fail = (...args) => {
 
 const languages = [
 	...shiki.BUNDLED_LANGUAGES.map((l) => {
-		if (l.id === "javascript") {
-			l.aliases.push("mjs");
+		if (l.id === 'javascript') {
+			l.aliases.push('mjs');
 		}
 		return l;
 	}),
 	{
-		id: "reach",
-		scopeName: "source.js",
+		id: 'reach',
+		scopeName: 'source.js',
 		// XXX customize this
-		path: "languages/javascript.tmLanguage.json",
-		aliases: ["rsh"],
+		path: 'languages/javascript.tmLanguage.json',
+		aliases: ['rsh'],
 	},
 ];
-const languageNormalizeDict = { txt: "txt" };
+const languageNormalizeDict = { txt: 'txt' };
 for (const l of languages) {
 	languageNormalizeDict[l.id] = l.id;
 	for (const alias of l.aliases || []) {
 		languageNormalizeDict[alias] = l.id;
 	}
 }
-const documentScopes = ["h", "term"];
+const documentScopes = ['h', 'term'];
 const normalizeScope = (s) => {
 	const ns = (documentScopes.includes(s) && s) || languageNormalizeDict[s];
 	if (!ns) {
@@ -104,22 +104,22 @@ const xrefPut = (s, t, v) => {
 			fail(`Duplicated xref`, s, t, e, v);
 		}
 	}
-	if (v.title == "") {
+	if (v.title == '') {
 		fail(`Xref insertion with empty title`, s, t, v);
 	}
-	const parts = t.split(".");
+	const parts = t.split('.');
 	for (let i = 1; i < parts.length; i++) {
-		const prefix = parts.slice(0, i).join(".");
+		const prefix = parts.slice(0, i).join('.');
 		xrefs[ns].prefixes[prefix] = true;
 	}
-	xrefs[ns]["xrefs"][t] = v;
+	xrefs[ns]['xrefs'][t] = v;
 };
 const xrefGetInfo = (xrefsOrPrefixes, s, t) => {
 	const ns = normalizeScope(s);
 	return (xrefs[ns] || freshXrefScopeDict())[xrefsOrPrefixes][t];
 };
-const xrefGetIsPrefix = (s, t) => xrefGetInfo("prefixes", s, t);
-const xrefGetMaybe = (s, t) => xrefGetInfo("xrefs", s, t);
+const xrefGetIsPrefix = (s, t) => xrefGetInfo('prefixes', s, t);
+const xrefGetMaybe = (s, t) => xrefGetInfo('xrefs', s, t);
 const xrefGet = (s, t) => {
 	const r = xrefGetMaybe(s, t);
 	if (r === undefined) {
@@ -130,19 +130,19 @@ const xrefGet = (s, t) => {
 };
 
 const urlExtension = (url) => {
-	return url.split(/[#?]/)[0].split(".").pop().trim();
+	return url.split(/[#?]/)[0].split('.').pop().trim();
 };
 
 const prependTocNode = (options = {}) => {
 	return (tree, file) => {
 		tree.children = [
 			{
-				type: "heading",
+				type: 'heading',
 				depth: 6,
 				children: [
 					{
-						type: "text",
-						value: "toc",
+						type: 'text',
+						value: 'toc',
 						position: {
 							start: {
 								line: 1,
@@ -177,8 +177,8 @@ const prependTocNode = (options = {}) => {
 
 const copyFmToConfig = (configJson) => {
 	return (tree, file) => {
-		visit(tree, "yaml", (node, index, p) => {
-			const fm = yaml.load(node.value, "utf8");
+		visit(tree, 'yaml', (node, index, p) => {
+			const fm = yaml.load(node.value, 'utf8');
 			for (const k in fm) {
 				configJson[k] = fm[k];
 			}
@@ -206,7 +206,7 @@ const processXRefs =
 		visit(tree, (node) => {
 			const d = node.data || (node.data = {});
 			const hp = d.hProperties || (d.hProperties = {});
-			if (node.type === "heading") {
+			if (node.type === 'heading') {
 				const cs = node.children;
 				if (cs.length === 0) {
 					return;
@@ -214,9 +214,9 @@ const processXRefs =
 				const c0v = cs[0].value;
 
 				let v = c0v;
-				let t = slugify(cs.map((x) => x.value).join(" "));
-				if (c0v && c0v.startsWith("{#")) {
-					const cp = c0v.indexOf("} ", 2);
+				let t = slugify(cs.map((x) => x.value).join(' '));
+				if (c0v && c0v.startsWith('{#')) {
+					const cp = c0v.indexOf('} ', 2);
 					t = c0v.slice(2, cp);
 					v = c0v.slice(cp + 2);
 					const xrefTitle =
@@ -224,24 +224,24 @@ const processXRefs =
 						cs
 							.slice(1)
 							.map((x) => x.value)
-							.join(" ");
-					xrefPut("h", t, { title: xrefTitle, path: `${h}#${t}` });
+							.join(' ');
+					xrefPut('h', t, { title: xrefTitle, path: `${h}#${t}` });
 				}
-				if (t === "on-this-page") {
-					fail(here, "uses reserved id", t);
+				if (t === 'on-this-page') {
+					fail(here, 'uses reserved id', t);
 				}
 
 				d.id = hp.id = t;
 				cs[0].value = v;
 				if (hp.class === undefined) {
-					hp.class = "";
+					hp.class = '';
 				}
 				hp.class = `${hp.class} refHeader`;
-			} else if (node.type === "link") {
+			} else if (node.type === 'link') {
 				const u = node.url;
-				if (u && u.startsWith("##")) {
-					node.url = xrefGet("h", u.slice(2)).path;
-				} else if (u.startsWith("https")) {
+				if (u && u.startsWith('##')) {
+					node.url = xrefGet('h', u.slice(2)).path;
+				} else if (u.startsWith('https')) {
 					hp.target = `_blank`;
 				}
 			}
@@ -256,7 +256,7 @@ const writeFileMkdir = async (p, c) => {
 };
 
 const sher = await shiki.getHighlighter({
-	theme: "css-variables",
+	theme: 'css-variables',
 	langs: languages,
 });
 const shikiHighlight = async (code, lang) => {
@@ -264,17 +264,17 @@ const shikiHighlight = async (code, lang) => {
 	return fc
 		.replace(
 			'<pre class="shiki" style="background-color: var(--shiki-color-background)"><code>',
-			""
+			''
 		)
-		.replaceAll('<span class="line">', "")
-		.replaceAll("</span></span>", "</span>")
-		.replace("</code></pre>", "");
+		.replaceAll('<span class="line">', '')
+		.replaceAll('</span></span>', '</span>')
+		.replace('</code></pre>', '');
 };
 
 // Library
 const cleanCss = new CleanCss({ level: 2 });
 const processCss = async ({ iPath, oPath }) => {
-	const input = await fs.readFile(iPath, "utf8");
+	const input = await fs.readFile(iPath, 'utf8');
 	const output = cleanCss.minify(input);
 	await writeFileMkdir(oPath, output.styles);
 };
@@ -298,24 +298,24 @@ const processHtml = async ({ iPath, oPath }) => {
 		minifyCSS: true,
 	};
 	const xrefHref = (t) => {
-		const { path } = xrefGet("h", t);
+		const { path } = xrefGet('h', t);
 		return path;
 	};
 	const menuItem = (t, gtext = false) => {
-		const { title, path } = xrefGet("h", t);
+		const { title, path } = xrefGet('h', t);
 		const text = gtext || title;
 		return `<a class="nav-link follow" href="${path}">${text}</a>`;
 	};
 
-	const raw = await fs.readFile(iPath, "utf8");
-	const expand = makeExpander("baseHtml", { menuItem, xrefHref });
+	const raw = await fs.readFile(iPath, 'utf8');
+	const expand = makeExpander('baseHtml', { menuItem, xrefHref });
 	const exp = await expand(raw);
 	const output = await htmlMinify.minify(exp, defaultOptions);
 	await writeFileMkdir(oPath, output);
 };
 
 const processJs = async ({ iPath, oPath }) => {
-	const input = await fs.readFile(iPath, "utf8");
+	const input = await fs.readFile(iPath, 'utf8');
 	const output = false ? { code: input } : new UglifyJS.minify(input, {});
 	if (output.error) {
 		throw output.error;
@@ -341,11 +341,11 @@ const makeExpander = (msg, expandEnv) => {
 		}
 	};
 	const expand = async (s) => {
-		const ms = s.indexOf("@{"); // }
+		const ms = s.indexOf('@{'); // }
 		if (ms === -1) {
 			return s;
 		}
-		/* { */ const me = s.indexOf("}", ms);
+		/* { */ const me = s.indexOf('}', ms);
 		if (me === -1) {
 			throw Error(
 				`No closing } in interpolation: ${msg}: ${s.slice(ms)}`
@@ -375,9 +375,9 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 	};
 
 	const seclink = (t) => {
-		const { path, title } = xrefGet("h", t);
-		if (title == "") {
-			fail("seclink with empty title linked to: ", path);
+		const { path, title } = xrefGet('h', t);
+		if (title == '') {
+			fail('seclink with empty title linked to: ', path);
 		}
 		return `[${title}](${path})`;
 	};
@@ -393,41 +393,41 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 	const workshopInit = (which) => {
 		const s = [
 			`We assume that you'll go through this workshop in a directory named \`~/reach/${which}\`:`,
-			"```",
+			'```',
 			`$ mkdir -p ~/reach/${which} && cd ~/reach/${which}`,
-			"```",
+			'```',
 			`And that you have a copy of Reach [installed](##ref-install) in \`~/reach\` so you can write`,
-			"```",
+			'```',
 			`$ ../reach version`,
-			"```",
+			'```',
 			`And it will run Reach.`,
 			`You should start off by initializing your Reach program:`,
-			"```",
+			'```',
 			`$ ../reach init`,
-			"```",
+			'```',
 		];
-		return s.join("\n");
+		return s.join('\n');
 	};
 
 	const workshopWIP = (dir) => {
 		const d = `examples/${dir}`;
 		const more = dir
 			? `If you'd like to see a draft version of our code, please visit [\`${d}\`](${repoBaseNice}/${d}).\n`
-			: "";
+			: '';
 		return `:::note\nThis page is a placeholder for a future more detailed workshop.\nYou could try to implement it yourself though, given the sketch above!\n${more}:::\n`;
 	};
 
 	const errver = (f, t) => {
 		const m = (s, x) => `${s} version \`${x}\``;
-		const fm = m("before", f);
-		const tm = m("after", t);
+		const fm = m('before', f);
+		const tm = m('after', t);
 		const msg = f && t ? `${fm} or ${tm}` : f ? fm : tm;
 		return `:::note\nThis error will not happen ${msg}.\n:::`;
 	};
 
 	const defn = (phrase) => {
 		const t = encodeURI(`term_${phrase}`);
-		xrefPut("term", phrase, {
+		xrefPut('term', phrase, {
 			title: `Term: ${phrase}`,
 			path: `${h}#${t}`,
 		});
@@ -440,11 +440,11 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 			title: `${scope}: ${symbol}`,
 			path: `${h}#${t}`,
 		});
-		const s = topDoc.createElement("span");
-		s.classList.add("ref");
+		const s = topDoc.createElement('span');
+		s.classList.add('ref');
 		s.id = t;
-		s.setAttribute("data-scope", scope);
-		s.setAttribute("data-symbol", symbol);
+		s.setAttribute('data-scope', scope);
+		s.setAttribute('data-symbol', symbol);
 		return s.outerHTML;
 	};
 
@@ -453,7 +453,7 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 			title: `${scope}: ${symbol}`,
 			path: url,
 		});
-		return "";
+		return '';
 	};
 
 	const tooltip = (text, hoverText) => {
@@ -463,17 +463,17 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 	const makeDirectiveWithClass = (classString) => {
 		return (node) => {
 			const data = node.data;
-			data.hName = "div";
+			data.hName = 'div';
 			const attrs = node.attributes || {};
-			attrs.class = (attrs.class || "") + " " + classString;
+			attrs.class = (attrs.class || '') + ' ' + classString;
 			data.hProperties = attrs;
 		};
 	};
 
-	const directive_note = makeDirectiveWithClass("note");
-	const directive_alongside = makeDirectiveWithClass("row gx-3");
+	const directive_note = makeDirectiveWithClass('note');
+	const directive_alongside = makeDirectiveWithClass('row gx-3');
 	const directive_alongsideColumn = makeDirectiveWithClass(
-		"col-xl-4 col-md-6 col-sm-12"
+		'col-xl-4 col-md-6 col-sm-12'
 	);
 
 	let c_hiddenNote = 0;
@@ -482,21 +482,21 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 		const toggleTarget = `hiddenNote_${c_hiddenNote++}`;
 		const children = node.children;
 		const hasLabel = children[0].data.directiveLabel;
-		const label = hasLabel ? children[0].children[0].value : "";
+		const label = hasLabel ? children[0].children[0].value : '';
 		const newChildren = [
 			{
-				type: "html",
+				type: 'html',
 				value: `<button class="btn btn-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#${toggleTarget}" aria-expanded="false"> <i class="fas fa-info-circle me-2"></i><span>${label}</span></button>`,
 			},
 			{
-				type: "containerDirective",
-				name: "note",
+				type: 'containerDirective',
+				name: 'note',
 				children: hasLabel ? children.slice(1) : children,
-				attributes: { class: "collapse", id: toggleTarget },
+				attributes: { class: 'collapse', id: toggleTarget },
 			},
 		];
 		node.children = newChildren;
-		data.hName = "div";
+		data.hName = 'div';
 		data.hProperties = node.attributes || {};
 	};
 
@@ -504,11 +504,11 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 	const directive_testQ = (node) => {
 		const data = node.data;
 		const which = c_qna++;
-		data.hName = "div";
+		data.hName = 'div';
 		data.hProperties = {
-			class: "q-and-a",
-			"data-bs-toggle": "collapse",
-			"aria-expanded": "false",
+			class: 'q-and-a',
+			'data-bs-toggle': 'collapse',
+			'aria-expanded': 'false',
 			href: `#q${which}`,
 		};
 
@@ -521,9 +521,9 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 	const directive_testA = (node) => {
 		const data = node.data;
 		const which = data.which;
-		data.hName = "div";
+		data.hName = 'div';
 		data.hProperties = {
-			class: "collapse",
+			class: 'collapse',
 			id: `q${which}`,
 		};
 	};
@@ -573,9 +573,9 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 	const expanderDirective = () => (tree) => {
 		visit(tree, (node) => {
 			if (
-				node.type === "textDirective" ||
-				node.type === "leafDirective" ||
-				node.type === "containerDirective"
+				node.type === 'textDirective' ||
+				node.type === 'leafDirective' ||
+				node.type === 'containerDirective'
 			) {
 				const data = node.data || (node.data = {});
 				const k = `directive_${node.name}`;
@@ -583,10 +583,10 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 					try {
 						expanderEnv[k](node);
 					} catch (e) {
-						fail("expanderDirective", k, "err", e);
+						fail('expanderDirective', k, 'err', e);
 					}
 				} else {
-					fail("expanderDirective", node.name, "missing");
+					fail('expanderDirective', node.name, 'missing');
 				}
 			}
 		});
@@ -595,18 +595,18 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 	let paraN = 0;
 	const addParalinks = () => (tree) => {
 		visit(tree, (node) => {
-			if (node.type === "paragraph") {
-				const tcs = node.children.filter((x) => x.type === "text");
+			if (node.type === 'paragraph') {
+				const tcs = node.children.filter((x) => x.type === 'text');
 				if (tcs.length > 0) {
 					const i = paraN++;
 					const is = i.toString();
 					const id = `p_${is}`;
 					node.children.unshift({
-						type: "html",
+						type: 'html',
 						value: `<i id="${id}" class="pid"></i>`,
 					});
 					node.children.push({
-						type: "html",
+						type: 'html',
 						value: `<a href="#${id}" class="pid">${is}</a>`,
 					});
 				}
@@ -616,7 +616,7 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 
 	const expand = makeExpander(iPath, { ...configJson, ...expanderEnv });
 
-	const raw = await fs.readFile(iPath, "utf8");
+	const raw = await fs.readFile(iPath, 'utf8');
 	let md = await expand(raw);
 
 	const output = await unified()
@@ -640,7 +640,7 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 		.use(remarkRehype, { allowDangerousHtml: true })
 		.use(rehypeRaw)
 		.use(rehypeAutolinkHeadings, {
-			behavior: "append",
+			behavior: 'append',
 		})
 		.use(rehypeFormat)
 		.use(rehypeStringify)
@@ -650,14 +650,14 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 
 	// Process OTP.
 	let otpVal = undefined;
-	const tocEl = doc.getElementById("toc");
+	const tocEl = doc.getElementById('toc');
 	if (tocEl) {
 		tocEl.remove();
-		const otpEl = doc.querySelector("ul");
+		const otpEl = doc.querySelector('ul');
 		otpEl
-			.querySelectorAll("li, ul")
-			.forEach((el) => el.classList.add("dynamic"));
-		otpEl.querySelectorAll("p").forEach((el) => {
+			.querySelectorAll('li, ul')
+			.forEach((el) => el.classList.add('dynamic'));
+		otpEl.querySelectorAll('p').forEach((el) => {
 			const p = el.parentNode;
 			while (el.firstChild) {
 				p.insertBefore(el.firstChild, el);
@@ -669,7 +669,7 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 	}
 
 	// Update config.json with title and pathname.
-	const theader = doc.querySelector("h1");
+	const theader = doc.querySelector('h1');
 	const title = theader.textContent;
 	configJson.title = title;
 	configJson.titleId = theader.id;
@@ -690,8 +690,8 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 	}
 
 	// Adjust image urls.
-	doc.querySelectorAll("img").forEach((img) => {
-		if (!img.src.startsWith("/")) {
+	doc.querySelectorAll('img').forEach((img) => {
+		if (!img.src.startsWith('/')) {
 			img.src = `${h}${img.src}`;
 		}
 	});
@@ -702,15 +702,15 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 	const linkifySpans = (elem, language) => {
 		const activePrefixes = [];
 		const linkifySpan = (s, language) => {
-			const text = s.textContent.startsWith(".")
+			const text = s.textContent.startsWith('.')
 				? s.textContent.substring(1)
 				: s.textContent;
-			const prefixedTexts = activePrefixes.map((p) => p + "." + text);
+			const prefixedTexts = activePrefixes.map((p) => p + '.' + text);
 			prefixedTexts.push(text);
 			const refs = prefixedTexts.map((t) => xrefGetMaybe(language, t));
 			const ref = refs.find((r) => r);
 			if (ref !== undefined) {
-				const a = doc.createElement("a");
+				const a = doc.createElement('a');
 				a.href = ref.path;
 				a.title = ref.title;
 				a.innerHTML = s.outerHTML;
@@ -725,14 +725,14 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 				}
 			}
 		};
-		for (const s of elem.querySelectorAll("span")) {
+		for (const s of elem.querySelectorAll('span')) {
 			linkifySpan(s, language);
 		}
 	};
 	const mkEl = (s) => doc.createRange().createContextualFragment(s);
 	let numberOfCopyButtons = 0;
-	for (const pre of doc.querySelectorAll("pre")) {
-		const code = pre.querySelector("code");
+	for (const pre of doc.querySelectorAll('pre')) {
+		const code = pre.querySelector('code');
 		if (!code) {
 			continue;
 		}
@@ -747,11 +747,11 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 		if (
 			code.classList &&
 			code.classList.length == 1 &&
-			code.classList[0].startsWith("language")
+			code.classList[0].startsWith('language')
 		) {
-			const arrLC = code.classList[0].replace("language-", "").split("_");
+			const arrLC = code.classList[0].replace('language-', '').split('_');
 			for (let i = 0; i < arrLC.length; i++) {
-				if (arrLC[i] == "unnumbered" || arrLC[i] == "nonum") {
+				if (arrLC[i] == 'unnumbered' || arrLC[i] == 'nonum') {
 					spec.numbered = false;
 				} else {
 					spec.language = arrLC[i];
@@ -762,18 +762,18 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 		{
 			const arr = code.textContent.trimEnd().split(/\r?\n/g);
 			if (arr.length > 0) {
-				const line1 = arr[0].replace(/\s+/g, "");
-				if (line1.slice(0, 5) == "load:") {
+				const line1 = arr[0].replace(/\s+/g, '');
+				if (line1.slice(0, 5) == 'load:') {
 					const partialProgramPath = line1.slice(5);
-					const programPath = path.join("../..", partialProgramPath);
+					const programPath = path.join('../..', partialProgramPath);
 					const eprefix = `${iPath}: load ${programPath}`;
-					const line2 = arr[1].replace(/\s+/g, "");
-					if (line2.startsWith("md5:") === false) {
+					const line2 = arr[1].replace(/\s+/g, '');
+					if (line2.startsWith('md5:') === false) {
 						throw Error(`${eprefix}: No md5`);
 					}
-					const hashObject = createHash("md5");
+					const hashObject = createHash('md5');
 					hashObject.update(await fs.readFile(programPath));
-					const sum_actual = hashObject.digest("hex");
+					const sum_actual = hashObject.digest('hex');
 					const sum_expected = line2.slice(4);
 					if (sum_actual !== sum_expected) {
 						throw Error(
@@ -783,8 +783,8 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 					spec.load = line1.slice(5);
 					const rangeIsPresent = arr.length > 2;
 					if (rangeIsPresent) {
-						const line3 = arr[2].replace(/\s+/g, "");
-						if (line3.slice(0, 6) == "range:") {
+						const line3 = arr[2].replace(/\s+/g, '');
+						if (line3.slice(0, 6) == 'range:') {
 							spec.range = line3.slice(6);
 						}
 					}
@@ -796,7 +796,7 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 		if (spec.load) {
 			code.textContent = await fs.readFile(
 				`${reachRoot}${spec.load}`,
-				"utf8"
+				'utf8'
 			);
 			spec.language = urlExtension(spec.load);
 		}
@@ -816,7 +816,7 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 			let firstLineIndex = null;
 			let lastLineIndex = null;
 			if (spec.range) {
-				const rangeArr = spec.range.split("-");
+				const rangeArr = spec.range.split('-');
 				firstLineIndex = rangeArr[0] - 1;
 				if (rangeArr.length > 1) {
 					lastLineIndex = rangeArr[1] - 1;
@@ -834,7 +834,7 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 				i++;
 				out_arr.push(f(i, l));
 			}
-			return [out_arr.join(""), in_arr.length != 1];
+			return [out_arr.join(''), in_arr.length != 1];
 		};
 
 		const [olStrMid, hasSome] = splitRange(
@@ -843,8 +843,8 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 		);
 		const olStr = `<ol class="snippet">${olStrMid}</ol>`;
 		code.remove();
-		const chEl = doc.createElement("div");
-		chEl.classList.add("codeHeader");
+		const chEl = doc.createElement('div');
+		chEl.classList.add('codeHeader');
 		if (spec.load) {
 			chEl.appendChild(
 				mkEl(
@@ -854,43 +854,43 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 		} else {
 			chEl.appendChild(mkEl(`&nbsp;`));
 		}
-		const cpEl = doc.createElement("a");
-		cpEl.classList.add("far", "fa-copy", "copyBtn");
+		const cpEl = doc.createElement('a');
+		cpEl.classList.add('far', 'fa-copy', 'copyBtn');
 		const copyCode =
-			spec.language === "cmd" ? rawCode.replace(/^\$ /, "") : rawCode;
+			spec.language === 'cmd' ? rawCode.replace(/^\$ /, '') : rawCode;
 		cpEl.setAttribute(
-			"data-clipboard-text",
+			'data-clipboard-text',
 			splitRange(copyCode, (i, l) => `${l}\n`)[0].trimEnd()
 		);
-		cpEl.href = "#";
+		cpEl.href = '#';
 
 		// Set up tooltips on copy.
 		numberOfCopyButtons++;
 		cpEl.id = `copyBtn${numberOfCopyButtons}`;
-		cpEl.setAttribute("title", "Copy to clipboard");
+		cpEl.setAttribute('title', 'Copy to clipboard');
 
 		chEl.appendChild(cpEl);
 		pre.append(chEl);
 		pre.append(mkEl(olStr));
-		pre.classList.add("snippet");
+		pre.classList.add('snippet');
 		const shouldNumber = spec.numbered && hasSome;
-		pre.classList.add(shouldNumber ? "numbered" : "unnumbered");
+		pre.classList.add(shouldNumber ? 'numbered' : 'unnumbered');
 		linkifySpans(pre, spec.language);
 	}
-	for (const c of doc.querySelectorAll("code")) {
+	for (const c of doc.querySelectorAll('code')) {
 		const rt = c.textContent.trimEnd();
-		if (!rt.startsWith("{!")) {
+		if (!rt.startsWith('{!')) {
 			continue;
 		}
-		const le = rt.indexOf("} ");
+		const le = rt.indexOf('} ');
 		if (!le) {
 			continue;
 		}
 		const lang = rt.slice(2, le);
 		const rc = rt.slice(le + 2);
 		const hc = await shikiHighlight(rc, lang);
-		const s = doc.createElement("span");
-		s.classList.add("snip");
+		const s = doc.createElement('span');
+		s.classList.add('snip');
 		s.appendChild(mkEl(hc));
 		linkifySpans(s, lang);
 		c.outerHTML = s.outerHTML;
@@ -899,11 +899,11 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 	// Write files
 	const configJsonSaved = {};
 	for (const k of [
-		"bookPath",
-		"title",
-		"titleId",
-		"hasOtp",
-		"hasPageHeader",
+		'bookPath',
+		'title',
+		'titleId',
+		'hasOtp',
+		'hasPageHeader',
 	]) {
 		configJsonSaved[k] = configJson[k];
 	}
@@ -913,7 +913,7 @@ const processMd = async ({ baseConfig, relDir, in_folder, iPath, oPath }) => {
 	await fs.writeFile(oPath, JSON.stringify([cfgVal, pageVal, otpVal]));
 };
 
-const splitMt = (x) => (x === "" ? [] : x.split("/"));
+const splitMt = (x) => (x === '' ? [] : x.split('/'));
 
 const bookL = [];
 const bookT = { path: [], children: {} };
@@ -947,20 +947,20 @@ const generateBook = async (destp, bookp) => {
 		return x.title.localeCompare(y.title);
 	};
 	const hify = (ctc) => {
-		const d = h("div", { class: "row chapter dynamic" });
+		const d = h('div', { class: 'row chapter dynamic' });
 		const cs = [];
 		if (ctc.isBook || Object.keys(ctc.children).length === 0) {
-			d.children.push(h("div", { class: "col-auto chapter-empty-col" }));
+			d.children.push(h('div', { class: 'col-auto chapter-empty-col' }));
 		} else {
 			d.children.push(
-				h("div", { class: "col-auto chapter-icon-col" }, [
-					h("i", { class: "chapter-icon fas fa-angle-right" }),
+				h('div', { class: 'col-auto chapter-icon-col' }, [
+					h('i', { class: 'chapter-icon fas fa-angle-right' }),
 				])
 			);
 			cs.push(
 				h(
-					"div",
-					{ class: "pages", style: "display:none" },
+					'div',
+					{ class: 'pages', style: 'display:none' },
 					hifyList(ctc)
 				)
 			);
@@ -969,10 +969,10 @@ const generateBook = async (destp, bookp) => {
 			fail(`Missing chapter title`, ctc.path);
 		}
 		d.children.push(
-			h("div", { class: "col" }, [
+			h('div', { class: 'col' }, [
 				h(
-					"a",
-					{ class: "chapter-title", href: hh(ctc.here) },
+					'a',
+					{ class: 'chapter-title', href: hh(ctc.here) },
 					ctc.title
 				),
 				...cs,
@@ -990,14 +990,14 @@ const generateBook = async (destp, bookp) => {
 		const bc = [];
 		const bcPush = () => {
 			bc.push(
-				h("div", { class: "row chapter dynamic" }, [
-					h("div", { class: "col-auto chapter-icon-col" }, [
-						h("i", { class: "fas fa-angle-down" }),
+				h('div', { class: 'row chapter dynamic' }, [
+					h('div', { class: 'col-auto chapter-icon-col' }, [
+						h('i', { class: 'fas fa-angle-down' }),
 					]),
-					h("div", { class: "col my-auto" }, [
+					h('div', { class: 'col my-auto' }, [
 						h(
-							"a",
-							{ class: "book-title", href: hh(ct.here) },
+							'a',
+							{ class: 'book-title', href: hh(ct.here) },
 							ct.title
 						),
 					]),
@@ -1009,20 +1009,20 @@ const generateBook = async (destp, bookp) => {
 			ct = (ct.children || {})[n] || {};
 			bcPush();
 		}
-		const bcd = h("div", { class: "bookCrumbs dynamic" }, bc);
+		const bcd = h('div', { class: 'bookCrumbs dynamic' }, bc);
 		return [bcd].concat(hifyList(ct));
 	};
-	const toc = { type: "root", children: [] };
+	const toc = { type: 'root', children: [] };
 	toc.children = hifyTop(bookT, splitMt(bookp));
 	await fs.writeFile(destp, bookPipe.stringify(toc));
 };
 
 const processAll = async (base_html, inputBaseConfig, folder) => {
-	let relDir = normalizeDir(folder.replace(srcDir, ""));
-	relDir = relDir.startsWith("/") ? relDir.slice(1) : relDir;
+	let relDir = normalizeDir(folder.replace(srcDir, ''));
+	relDir = relDir.startsWith('/') ? relDir.slice(1) : relDir;
 	const in_folder = `${srcDir}/${relDir}`;
 
-	const cfgFile = "config.json";
+	const cfgFile = 'config.json';
 	const thisConfigP = `${in_folder}/${cfgFile}`;
 	const thisConfig = (await fs.exists(thisConfigP))
 		? await fs.readJson(thisConfigP)
@@ -1070,14 +1070,14 @@ const processAll = async (base_html, inputBaseConfig, folder) => {
 				);
 			} else if (ignored.includes(p)) {
 				return;
-			} else if (e === "md") {
+			} else if (e === 'md') {
 				return await processMd(opts_p);
 			} else if (forReal) {
-				if (e === "css") {
+				if (e === 'css') {
 					return await processCss(opts_p);
-				} else if (e === "html") {
+				} else if (e === 'html') {
 					return await processHtml(opts_p);
-				} else if (e === "js") {
+				} else if (e === 'js') {
 					return await processJs(opts_p);
 				} else if (!INTERNAL.includes(p)) {
 					return await fs.copyFile(
@@ -1091,13 +1091,13 @@ const processAll = async (base_html, inputBaseConfig, folder) => {
 };
 
 const generateRedirects = async () => {
-	const rehtml = await fs.readFile("redirect.html", { encoding: "utf8" });
-	const ms = await fs.readFile("manifest.txt", { encoding: "utf8" });
-	const fl = ms.trimEnd().split("\n");
+	const rehtml = await fs.readFile('redirect.html', { encoding: 'utf8' });
+	const ms = await fs.readFile('manifest.txt', { encoding: 'utf8' });
+	const fl = ms.trimEnd().split('\n');
 	await Promise.all(
 		fl.map(async (f) => {
-			const { path } = xrefGet("h", f);
-			const expand = makeExpander("generateRedirects", { URL: path });
+			const { path } = xrefGet('h', f);
+			const expand = makeExpander('generateRedirects', { URL: path });
 			const re_f = await expand(rehtml);
 			await fs.writeFile(`${outDir}/${f}.html`, re_f);
 		})
@@ -1108,17 +1108,17 @@ const searchData = [];
 const [sd_r, sd_t, sd_h, sd_p, sd_ghd] = [0, 1, 2, 3, 4];
 const gatherSearchData = async ({ doc, title, here }) => {
 	const h = hh(here);
-	const mini = (x) => x.replace(/\s+/g, " ").trim();
-	doc.querySelectorAll(".ref").forEach((el) => {
+	const mini = (x) => x.replace(/\s+/g, ' ').trim();
+	doc.querySelectorAll('.ref').forEach((el) => {
 		searchData.push({
 			objectID: `${h}#${el.id}`,
 			pt: title,
 			t: sd_r,
-			s: el.getAttribute("data-scope"),
-			c: el.getAttribute("data-symbol"),
+			s: el.getAttribute('data-scope'),
+			c: el.getAttribute('data-symbol'),
 		});
 	});
-	doc.querySelectorAll(".term").forEach((el) => {
+	doc.querySelectorAll('.term').forEach((el) => {
 		searchData.push({
 			objectID: `${h}#${el.id}`,
 			pt: title,
@@ -1126,7 +1126,7 @@ const gatherSearchData = async ({ doc, title, here }) => {
 			c: mini(el.textContent),
 		});
 	});
-	doc.querySelectorAll(".refHeader").forEach((el) => {
+	doc.querySelectorAll('.refHeader').forEach((el) => {
 		searchData.push({
 			objectID: `${h}#${el.id}`,
 			pt: title,
@@ -1134,14 +1134,14 @@ const gatherSearchData = async ({ doc, title, here }) => {
 			c: mini(el.textContent),
 		});
 	});
-	doc.querySelectorAll("i.pid").forEach((el) => {
+	doc.querySelectorAll('i.pid').forEach((el) => {
 		// XXX it would be cool to get the closest header, but .closest won't do
 		// it, because the header won't be a parent
 		searchData.push({
 			objectID: `${h}#${el.id}`,
 			pt: title,
 			t: sd_p,
-			c: mini(el.parentElement.textContent).replace(/\d+$/, ""),
+			c: mini(el.parentElement.textContent).replace(/\d+$/, ''),
 		});
 	});
 };
@@ -1175,8 +1175,8 @@ XREF_KEYS_ARRAY.forEach((key) => {
 });
 
 await fs.writeFile(
-	"/proj/docs/gen/xrefs.json",
-	JSON.stringify(SORTED_XREFS, null, 2) + "\n"
+	'/proj/docs/gen/xrefs.json',
+	JSON.stringify(SORTED_XREFS, null, 2) + '\n'
 );
 
 if (hasError) {
