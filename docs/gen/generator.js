@@ -222,8 +222,8 @@ const processXRefs = ({here}) => (tree) => {
       const u = node.url;
       if ( u && u.startsWith("##") ) {
         node.url = xrefGet('h', u.slice(2)).path;
-      } else if (u.startsWith('https')) {
-		hp.target = `_blank`;
+      } else if ( u.startsWith('https') ) {
+        hp.target = `_blank`;
 	}
     }
   });
