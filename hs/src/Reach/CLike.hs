@@ -143,12 +143,12 @@ viewReorg (DLViewsX vs vis) = vx
   where
     igo (ViewInfo svs vsi) = (map v2vl svs, flattenInterfaceLikeMap vsi)
     vism = M.map igo vis
-    vx = M.mapWithKey go $ flattenInterfaceLikeMap vs
-    go k (DLView {..}) = FunInfo {..}
+    vx = M.mapWithKey go $ flattenInterfaceLikeMap_ (,) vs
+    go k (p, (DLView {..})) = FunInfo {..}
       where
         fi_at = dvw_at
         (fi_dom, fi_rng) = itype2arr dvw_it
-        fi_as = dvw_as
+        fi_as = map (p <>) dvw_as
         fi_isView = True
         fi_steps = M.mapMaybe fgo vism
         fgo (cvy_svs, m) = do

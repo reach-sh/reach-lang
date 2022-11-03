@@ -15,7 +15,7 @@ const expectedViews = ['x', 'val', 'val2', 'f', 'succ', 'V2_y', 'V2_yVal', 'V2_g
 const chkAlgoAbi = () => {
   const algoAbi = ctcAlice.getABI().sigs;
   expectedViews.forEach((ev) => {
-    stdlib.assert(algoAbi.find(x => x.startsWith(ev)), `Found expected view ${ev}`);
+    stdlib.assert(algoAbi.find(x => x.startsWith(ev)), `Did not find expected view ${ev}`);
   });
 }
 
@@ -23,7 +23,7 @@ const chkEthAbi = () => {
   const ethAbi = ctcAlice.getABI();
 
   expectedViews.forEach((ev) => {
-    stdlib.assert(ethAbi.find(x => x.name == ev) != undefined, "Found expected view");
+    stdlib.assert(ethAbi.find(x => x.name == ev) != undefined, `Did not find expected view: ${ev}`);
   });
 }
 
