@@ -1,4 +1,4 @@
-# {#tutcomp} Rock, Paper, Scissors!
+# {#tut} Rock, Paper, Scissors! (React Classes)
 
 This tutorial walks through the creation of a simple decentralized application.
 It contains everything you need to know to build and test this application and assumes no prior experience with DApp/blockchain development of any kind.
@@ -7,7 +7,7 @@ On the other hand, if this is too simple, then you may want to start [the worksh
 
 If you're ready, click through to the [first step](##tut-1)!
 
-## {#tutcomp-1} Install and Initialize
+## {#tut-1} Install and Initialize
 
 Reach is designed to work on POSIX systems with [make](https://en.wikipedia.org/wiki/Make_(software)), [Docker](https://www.docker.com/get-started), and [Docker Compose](https://docs.docker.com/compose/install/) installed.
 The best way to install Docker on Mac and Windows is with [Docker Desktop](https://www.docker.com/products/docker-desktop).
@@ -85,7 +85,7 @@ Get language support for Reach in your editor by visiting @{seclink("guide-edito
 
 Now that your Reach installation is in order, you should open a text editor and get ready to [write your first Reach application](##tut-2)!
 
-## {#tutcomp-2} Scaffolding and Setup
+## {#tut-2} Scaffolding and Setup
 
 In this tutorial, we'll be building a version of _Rock, Paper, Scissors!_ where two players, _Alice_ and _Bob_, can wager on the result of the game.
 We'll start simple and slowly make the application more fully-featured.
@@ -184,7 +184,7 @@ When you write a DApp using Reach, do you
 
 ::::
 
-## {#tutcomp-3} Rock, Paper, and Scissors
+## {#tut-3} Rock, Paper, and Scissors
 
 In this section, we'll have Alice and Bob actually execute the game of _Rock, Paper, Scissors!_.
 
@@ -352,7 +352,7 @@ How do participants in a Reach application share information with each other and
 
 ::::
 
-## {#tutcomp-4} Bets and Wagers
+## {#tut-4} Bets and Wagers
 
 Although it's fun to play _Rock, Paper, Scissors!_ with friends for a laugh, it's even better to play it with enemies and your entire life-savings on the line!
 Let's change our program so that Alice can offer a wager to Bob and whoever wins will take the pot.
@@ -550,7 +550,7 @@ How do Reach programs manage token funds?
 
 ::::
 
-## {#tutcomp-5} Trust and Commitments
+## {#tut-5} Trust and Commitments
 
 In the last section, we made it so that Alice and Bob can actually exchange currency when they play _Rock, Paper, Scissors!_.
 However, the version of the application we wrote has a fundamental flaw: Bob can win every game!
@@ -953,7 +953,7 @@ True
 
 ::::
 
-## {#tutcomp-6} Timeouts and Participation
+## {#tut-6} Timeouts and Participation
 
 In the last section, we removed a security vulnerability from _Rock, Paper, Scissors!_ that was a clear attack on the viability of the application.
 In this section, we'll focus on a more subtle issue that is important and unique to decentralized applications: [non-participation](##guide-timeout).
@@ -1162,7 +1162,7 @@ What happens in a decentralized application when one participant refuses to take
 
 ::::
 
-## {#tutcomp-7} Play and Play Again
+## {#tut-7} Play and Play Again
 
 In this section, we extend our application so that Alice and Bob will continue to play against each other until there is a clear winner, so if it is a draw they will continue playing.
 
@@ -1379,7 +1379,7 @@ All of the above.
 
 ::::
 
-## {#tutcomp-8} Interaction and Independence
+## {#tut-8} Interaction and Independence
 
 In the last section, we made our _Rock, Paper, Scissors!_ run until there was a definitive winner.
 In this section, we won't be making any changes to the Reach program itself.
@@ -1571,7 +1571,7 @@ False; Reach does not impose any constraints on what kind of frontend is attache
 
 ::::
 
-## {#tutcomp-9} Web Interaction with React Classes
+## {#tut-9} Web Interaction with React Classes
 
 In the last section, we made _Rock, Paper, Scissors!_ run as a command-line application, without any changes to the Reach program.
 In this section, we again won't be making any changes to the Reach program.
@@ -1653,7 +1653,7 @@ range: 10-14
 On these lines we define a few helpful constants and defaults for later,
 some corresponding to the enumerations we defined in Reach.
 
-### {#tutcomp-9-App} Application component
+### {#tut-9-App} Application component
 
 We start defining the main application view, `{!js} App`, as a React component,
 and tell it what to do once it mounts, which is the React term for starting.
@@ -1679,12 +1679,12 @@ For example, when used with Ethereum, it can discover the currently-selected Met
 + On line 29, if `{!js} canFundFromFaucet` was `{!js} false`, we set the component state to skip to @{seclink("tut-9-DeployerOrAttacher")}.
 + On line 39, we render the appropriate view from [rps-9-comp/views/AppViews.js](@{REPO}/examples/rps-9-comp/views/AppViews.js).
 
-### {#tutcomp-9-ConnectAccount} Connect Account dialog
+### {#tut-9-ConnectAccount} Connect Account dialog
 
 When we combine the application component with the view ([rps-9-comp/views/AppViews.js](@{REPO}/examples/rps-9-comp/views/AppViews.js#L19-L28)) it will look like:
 ![](./rps-9-comp/ConnectAccount.png)
 
-### {#tutcomp-9-FundAccount} Fund Account dialog
+### {#tut-9-FundAccount} Fund Account dialog
 
 Next, we define callbacks on `{!js} App` for what to do when the user clicks certain buttons.
 
@@ -1703,7 +1703,7 @@ which is to set the component state to display @{seclink("tut-9-DeployerOrAttach
 When we combine this with the view ([rps-9-comp/views/AppViews.js](@{REPO}/examples/rps-9-comp/views/AppViews.js#L30-L54)) it will look like:
 ![](./rps-9-comp/FundAccount.png)
 
-### {#tutcomp-9-DeployerOrAttacher} Choose Role
+### {#tut-9-DeployerOrAttacher} Choose Role
 
 ```
 load: /examples/rps-9-comp/index.js
@@ -1717,7 +1717,7 @@ based on whether the user clicks `Deployer` or `Attacher`.
 When we combine this with the view ([rps-9-comp/views/AppViews.js](@{REPO}/examples/rps-9-comp/views/AppViews.js#L56-L78)) it will look like:
 ![](./rps-9-comp/DeployerOrAttacher.png)
 
-### {#tutcomp-9-Player} Player component
+### {#tut-9-Player} Player component
 
 Next, we will define `{!js} Player` as a React component,
 that will hold all of the behavior of the players and
@@ -1750,27 +1750,27 @@ which set the component state to display @{seclink("tut-9-Done")} and @{seclink(
 + On line 53, we define what happens when the user clicks `Rock`, `Paper`, or `Scissors`:
 The `{!js} Promise` from line 45 is resolved.
 
-### {#tutcomp-9-GetHand} Get Hand dialog
+### {#tut-9-GetHand} Get Hand dialog
 
 The dialog used to get a hand from the player ([rps-9-comp/views/PlayerViews.js](@{REPO}/examples/rps-9-comp/views/PlayerViews.js#L8-L32)) looks like:
 ![](./rps-9-comp/GetHand.png)
 
-### {#tutcomp-9-WaitingForResults} Waiting for results display
+### {#tut-9-WaitingForResults} Waiting for results display
 
 The dialog used to get a hand from the player ([rps-9-comp/views/PlayerViews.js](@{REPO}/examples/rps-9-comp/views/PlayerViews.js#L34-L42)) looks like:
 ![](./rps-9-comp/WaitingForResults.png)
 
-### {#tutcomp-9-Done} Done display
+### {#tut-9-Done} Done display
 
 The display when the player sees the end of the game ([rps-9-comp/views/PlayerViews.js](@{REPO}/examples/rps-9-comp/views/PlayerViews.js#L44-L54)) looks like:
 ![](./rps-9-comp/Done.png)
 
-### {#tutcomp-9-Timeout} Timeout display
+### {#tut-9-Timeout} Timeout display
 
 The display when the player sees a timeout ([rps-9-comp/views/PlayerViews.js](@{REPO}/examples/rps-9-comp/views/PlayerViews.js#L56-L64)) looks like:
 ![](./rps-9-comp/Timeout.png)
 
-### {#tutcomp-9-Deployer} Deployer component
+### {#tut-9-Deployer} Deployer component
 
 Next, we will define `{!js} Deployer` as a React component for Alice,
 which extends `{!js} Player`.
@@ -1806,27 +1806,27 @@ as the participant interact interface object.
 which displays the deployed contract info as JSON.
 + On line 71, we render the appropriate view from [rps-9-comp/views/DeployerViews.js](@{REPO}/examples/rps-9-comp/views/DeployerViews.js).
 
-### {#tutcomp-9-SetWager} Set Wager dialog
+### {#tut-9-SetWager} Set Wager dialog
 
 The dialog used to set the wager ([rps-9-comp/views/DeployerViews.js](@{REPO}/examples/rps-9-comp/views/DeployerViews.js#L20-L38)) looks like:
 ![](./rps-9-comp/SetWager.png)
 
-### {#tutcomp-9-Deploy} Deploy dialog
+### {#tut-9-Deploy} Deploy dialog
 
 The dialog used to deploy ([rps-9-comp/views/DeployerViews.js](@{REPO}/examples/rps-9-comp/views/DeployerViews.js#L40-L53)) looks like:
 ![](./rps-9-comp/Deploy.png)
 
-### {#tutcomp-9-Deploying} Deploying display
+### {#tut-9-Deploying} Deploying display
 
 The display shown while deploying ([rps-9-comp/views/DeployerViews.js](@{REPO}/examples/rps-9-comp/views/DeployerViews.js#L55-L61)) looks like:
 ![](./rps-9-comp/Deploying.png)
 
-### {#tutcomp-9-WaitingForAttacher} Waiting for Attacher display
+### {#tut-9-WaitingForAttacher} Waiting for Attacher display
 
 The display shown while waiting for the attacher ([rps-9-comp/views/DeployerViews.js](@{REPO}/examples/rps-9-comp/views/DeployerViews.js#L63-L90)) looks like:
 ![](./rps-9-comp/WaitingForAttacher.png)
 
-### {#tutcomp-9-Attacher} Attacher component
+### {#tut-9-Attacher} Attacher component
 
 Our Web frontend needs to implement the participant interact interface for Bob, which we defined as:
 
@@ -1858,27 +1858,27 @@ and wait for a `{!js} Promise` which can be resolved via user interaction.
 the `{!js} Promise` from line 90 is resolved, and we set the component state to display @{seclink("tut-9-WaitingForTurn")}.
 + On line 93, we render the appropriate view from [rps-9-comp/views/AttacherViews.js](@{REPO}/examples/rps-9-comp/views/AttacherViews.js)
 
-### {#tutcomp-9-Attach} Attach dialog
+### {#tut-9-Attach} Attach dialog
 
 The dialog used to attach ([rps-9-comp/views/AttacherViews.js](@{REPO}/examples/rps-9-comp/views/AttacherViews.js#L18-L39)) looks like:
 ![](./rps-9-comp/Attach.png)
 
-### {#tutcomp-9-Attaching} Attaching display
+### {#tut-9-Attaching} Attaching display
 
 The display when attaching ([rps-9-comp/views/AttacherViews.js](@{REPO}/examples/rps-9-comp/views/AttacherViews.js#L41-L49)) looks like:
 ![](./rps-9-comp/Attaching.png)
 
-### {#tutcomp-9-AcceptTerms} Accept Terms dialog
+### {#tut-9-AcceptTerms} Accept Terms dialog
 
 The dialog used to accept the terms of the wager ([rps-9-comp/views/AttacherViews.js](@{REPO}/examples/rps-9-comp/views/AttacherViews.js#L51-L70)) looks like:
 ![](./rps-9-comp/AcceptTerms.png)
 
-### {#tutcomp-9-WaitingForTurn} Waiting for Turn display
+### {#tut-9-WaitingForTurn} Waiting for Turn display
 
 The display when waiting for a turn ([rps-9-comp/views/AttacherViews.js](@{REPO}/examples/rps-9-comp/views/AttacherViews.js#L72-L81)) looks like:
 ![](./rps-9-comp/WaitingForTurn.png)
 
-### {#tutcomp-9-Final} Putting it all together
+### {#tut-9-Final} Putting it all together
 
 ```
 load: /examples/rps-9-comp/index.js
@@ -2001,7 +2001,7 @@ True
 
 ::::
 
-### {#tutcomp-10} Onward and Further
+### {#tut-10} Onward and Further
 
 Let's review what we've done through this tutorial:
 

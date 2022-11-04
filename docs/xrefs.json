@@ -1380,132 +1380,132 @@
     "path": "/trouble/#trouble"
   },
   "tut": {
-    "title": "Rock, Paper, Scissors!",
-    "path": "/tut/rps/rps-comp/#tut"
+    "title": "Rock, Paper, Scissors! (React Classes)",
+    "path": "/tut/rps/#tut"
   },
   "tut-1": {
     "title": "Install and Initialize",
-    "path": "/tut/rps/rps-comp/#tut-1"
+    "path": "/tut/rps/#tut-1"
   },
   "tut-10": {
     "title": "Onward and Further",
-    "path": "/tut/rps/rps-comp/#tut-10"
+    "path": "/tut/rps/#tut-10"
   },
   "tut-2": {
     "title": "Scaffolding and Setup",
-    "path": "/tut/rps/rps-comp/#tut-2"
+    "path": "/tut/rps/#tut-2"
   },
   "tut-3": {
     "title": "Rock, Paper, and Scissors",
-    "path": "/tut/rps/rps-comp/#tut-3"
+    "path": "/tut/rps/#tut-3"
   },
   "tut-4": {
     "title": "Bets and Wagers",
-    "path": "/tut/rps/rps-comp/#tut-4"
+    "path": "/tut/rps/#tut-4"
   },
   "tut-5": {
     "title": "Trust and Commitments",
-    "path": "/tut/rps/rps-comp/#tut-5"
+    "path": "/tut/rps/#tut-5"
   },
   "tut-6": {
     "title": "Timeouts and Participation",
-    "path": "/tut/rps/rps-comp/#tut-6"
+    "path": "/tut/rps/#tut-6"
   },
   "tut-7": {
     "title": "Play and Play Again",
-    "path": "/tut/rps/rps-comp/#tut-7"
+    "path": "/tut/rps/#tut-7"
   },
   "tut-7-rpc": {
-    "title": "Rock, Paper, Scissors in Python",
+    "title": "Rock, Paper, Scissors! (Python)",
     "path": "/tut/rps/7-rpc/#tut-7-rpc"
   },
   "tut-8": {
     "title": "Interaction and Independence",
-    "path": "/tut/rps/rps-comp/#tut-8"
+    "path": "/tut/rps/#tut-8"
   },
   "tut-9": {
-    "title": "Web Interaction",
-    "path": "/tut/rps/rps-comp/#tut-9"
+    "title": "Web Interaction with React Classes",
+    "path": "/tut/rps/#tut-9"
   },
   "tut-9-AcceptTerms": {
     "title": "Accept Terms dialog",
-    "path": "/tut/rps/rps-comp/#tut-9-AcceptTerms"
+    "path": "/tut/rps/#tut-9-AcceptTerms"
   },
   "tut-9-App": {
     "title": "Application component",
-    "path": "/tut/rps/rps-comp/#tut-9-App"
+    "path": "/tut/rps/#tut-9-App"
   },
   "tut-9-Attach": {
     "title": "Attach dialog",
-    "path": "/tut/rps/rps-comp/#tut-9-Attach"
+    "path": "/tut/rps/#tut-9-Attach"
   },
   "tut-9-Attacher": {
     "title": "Attacher component",
-    "path": "/tut/rps/rps-comp/#tut-9-Attacher"
+    "path": "/tut/rps/#tut-9-Attacher"
   },
   "tut-9-Attaching": {
     "title": "Attaching display",
-    "path": "/tut/rps/rps-comp/#tut-9-Attaching"
+    "path": "/tut/rps/#tut-9-Attaching"
   },
   "tut-9-ConnectAccount": {
     "title": "Connect Account dialog",
-    "path": "/tut/rps/rps-comp/#tut-9-ConnectAccount"
+    "path": "/tut/rps/#tut-9-ConnectAccount"
   },
   "tut-9-Deploy": {
-    "title": "Deploy display",
-    "path": "/tut/rps/rps-comp/#tut-9-Deploy"
+    "title": "Deploy dialog",
+    "path": "/tut/rps/#tut-9-Deploy"
   },
   "tut-9-Deployer": {
     "title": "Deployer component",
-    "path": "/tut/rps/rps-comp/#tut-9-Deployer"
+    "path": "/tut/rps/#tut-9-Deployer"
   },
   "tut-9-DeployerOrAttacher": {
     "title": "Choose Role",
-    "path": "/tut/rps/rps-comp/#tut-9-DeployerOrAttacher"
+    "path": "/tut/rps/#tut-9-DeployerOrAttacher"
   },
   "tut-9-Deploying": {
     "title": "Deploying display",
-    "path": "/tut/rps/rps-comp/#tut-9-Deploying"
+    "path": "/tut/rps/#tut-9-Deploying"
   },
   "tut-9-Done": {
-    "title": "Done dialog",
-    "path": "/tut/rps/rps-comp/#tut-9-Done"
+    "title": "Done display",
+    "path": "/tut/rps/#tut-9-Done"
   },
   "tut-9-Final": {
     "title": "Putting it all together",
-    "path": "/tut/rps/rps-comp/#tut-9-Final"
+    "path": "/tut/rps/#tut-9-Final"
   },
   "tut-9-FundAccount": {
     "title": "Fund Account dialog",
-    "path": "/tut/rps/rps-comp/#tut-9-FundAccount"
+    "path": "/tut/rps/#tut-9-FundAccount"
   },
   "tut-9-GetHand": {
     "title": "Get Hand dialog",
-    "path": "/tut/rps/rps-comp/#tut-9-GetHand"
+    "path": "/tut/rps/#tut-9-GetHand"
   },
   "tut-9-Player": {
     "title": "Player component",
-    "path": "/tut/rps/rps-comp/#tut-9-Player"
+    "path": "/tut/rps/#tut-9-Player"
   },
   "tut-9-SetWager": {
-    "title": "Set Wager display",
-    "path": "/tut/rps/rps-comp/#tut-9-SetWager"
+    "title": "Set Wager dialog",
+    "path": "/tut/rps/#tut-9-SetWager"
   },
   "tut-9-Timeout": {
-    "title": "Timeout dialog",
-    "path": "/tut/rps/rps-comp/#tut-9-Timeout"
+    "title": "Timeout display",
+    "path": "/tut/rps/#tut-9-Timeout"
   },
   "tut-9-WaitingForAttacher": {
-    "title": "Waiting for Attacher dialog",
-    "path": "/tut/rps/rps-comp/#tut-9-WaitingForAttacher"
+    "title": "Waiting for Attacher display",
+    "path": "/tut/rps/#tut-9-WaitingForAttacher"
   },
   "tut-9-WaitingForResults": {
-    "title": "Waiting for results dialog",
-    "path": "/tut/rps/rps-comp/#tut-9-WaitingForResults"
+    "title": "Waiting for results display",
+    "path": "/tut/rps/#tut-9-WaitingForResults"
   },
   "tut-9-WaitingForTurn": {
     "title": "Waiting for Turn display",
-    "path": "/tut/rps/rps-comp/#tut-9-WaitingForTurn"
+    "path": "/tut/rps/#tut-9-WaitingForTurn"
   },
   "tut-rsvp": {
     "title": "Répondez S'il Vous Plaît",
@@ -1561,127 +1561,127 @@
   },
   "tutcomp": {
     "title": "Rock, Paper, Scissors!",
-    "path": "/tut/rps/#tutcomp"
+    "path": "/tut/rps-comp/#tutcomp"
   },
   "tutcomp-1": {
     "title": "Install and Initialize",
-    "path": "/tut/rps/#tutcomp-1"
+    "path": "/tut/rps-comp/#tutcomp-1"
   },
   "tutcomp-10": {
     "title": "Onward and Further",
-    "path": "/tut/rps/#tutcomp-10"
+    "path": "/tut/rps-comp/#tutcomp-10"
   },
   "tutcomp-2": {
     "title": "Scaffolding and Setup",
-    "path": "/tut/rps/#tutcomp-2"
+    "path": "/tut/rps-comp/#tutcomp-2"
   },
   "tutcomp-3": {
     "title": "Rock, Paper, and Scissors",
-    "path": "/tut/rps/#tutcomp-3"
+    "path": "/tut/rps-comp/#tutcomp-3"
   },
   "tutcomp-4": {
     "title": "Bets and Wagers",
-    "path": "/tut/rps/#tutcomp-4"
+    "path": "/tut/rps-comp/#tutcomp-4"
   },
   "tutcomp-5": {
     "title": "Trust and Commitments",
-    "path": "/tut/rps/#tutcomp-5"
+    "path": "/tut/rps-comp/#tutcomp-5"
   },
   "tutcomp-6": {
     "title": "Timeouts and Participation",
-    "path": "/tut/rps/#tutcomp-6"
+    "path": "/tut/rps-comp/#tutcomp-6"
   },
   "tutcomp-7": {
     "title": "Play and Play Again",
-    "path": "/tut/rps/#tutcomp-7"
+    "path": "/tut/rps-comp/#tutcomp-7"
   },
   "tutcomp-8": {
     "title": "Interaction and Independence",
-    "path": "/tut/rps/#tutcomp-8"
+    "path": "/tut/rps-comp/#tutcomp-8"
   },
   "tutcomp-9": {
-    "title": "Web Interaction with React Classes",
-    "path": "/tut/rps/#tutcomp-9"
+    "title": "Web Interaction",
+    "path": "/tut/rps-comp/#tutcomp-9"
   },
   "tutcomp-9-AcceptTerms": {
     "title": "Accept Terms dialog",
-    "path": "/tut/rps/#tutcomp-9-AcceptTerms"
+    "path": "/tut/rps-comp/#tutcomp-9-AcceptTerms"
   },
   "tutcomp-9-App": {
     "title": "Application component",
-    "path": "/tut/rps/#tutcomp-9-App"
+    "path": "/tut/rps-comp/#tutcomp-9-App"
   },
   "tutcomp-9-Attach": {
     "title": "Attach dialog",
-    "path": "/tut/rps/#tutcomp-9-Attach"
+    "path": "/tut/rps-comp/#tutcomp-9-Attach"
   },
   "tutcomp-9-Attacher": {
     "title": "Attacher component",
-    "path": "/tut/rps/#tutcomp-9-Attacher"
+    "path": "/tut/rps-comp/#tutcomp-9-Attacher"
   },
   "tutcomp-9-Attaching": {
     "title": "Attaching display",
-    "path": "/tut/rps/#tutcomp-9-Attaching"
+    "path": "/tut/rps-comp/#tutcomp-9-Attaching"
   },
   "tutcomp-9-ConnectAccount": {
     "title": "Connect Account dialog",
-    "path": "/tut/rps/#tutcomp-9-ConnectAccount"
+    "path": "/tut/rps-comp/#tutcomp-9-ConnectAccount"
   },
   "tutcomp-9-Deploy": {
-    "title": "Deploy dialog",
-    "path": "/tut/rps/#tutcomp-9-Deploy"
+    "title": "Deploy display",
+    "path": "/tut/rps-comp/#tutcomp-9-Deploy"
   },
   "tutcomp-9-Deployer": {
     "title": "Deployer component",
-    "path": "/tut/rps/#tutcomp-9-Deployer"
+    "path": "/tut/rps-comp/#tutcomp-9-Deployer"
   },
   "tutcomp-9-DeployerOrAttacher": {
     "title": "Choose Role",
-    "path": "/tut/rps/#tutcomp-9-DeployerOrAttacher"
+    "path": "/tut/rps-comp/#tutcomp-9-DeployerOrAttacher"
   },
   "tutcomp-9-Deploying": {
     "title": "Deploying display",
-    "path": "/tut/rps/#tutcomp-9-Deploying"
+    "path": "/tut/rps-comp/#tutcomp-9-Deploying"
   },
   "tutcomp-9-Done": {
-    "title": "Done display",
-    "path": "/tut/rps/#tutcomp-9-Done"
+    "title": "Done dialog",
+    "path": "/tut/rps-comp/#tutcomp-9-Done"
   },
   "tutcomp-9-Final": {
     "title": "Putting it all together",
-    "path": "/tut/rps/#tutcomp-9-Final"
+    "path": "/tut/rps-comp/#tutcomp-9-Final"
   },
   "tutcomp-9-FundAccount": {
     "title": "Fund Account dialog",
-    "path": "/tut/rps/#tutcomp-9-FundAccount"
+    "path": "/tut/rps-comp/#tutcomp-9-FundAccount"
   },
   "tutcomp-9-GetHand": {
     "title": "Get Hand dialog",
-    "path": "/tut/rps/#tutcomp-9-GetHand"
+    "path": "/tut/rps-comp/#tutcomp-9-GetHand"
   },
   "tutcomp-9-Player": {
     "title": "Player component",
-    "path": "/tut/rps/#tutcomp-9-Player"
+    "path": "/tut/rps-comp/#tutcomp-9-Player"
   },
   "tutcomp-9-SetWager": {
-    "title": "Set Wager dialog",
-    "path": "/tut/rps/#tutcomp-9-SetWager"
+    "title": "Set Wager display",
+    "path": "/tut/rps-comp/#tutcomp-9-SetWager"
   },
   "tutcomp-9-Timeout": {
-    "title": "Timeout display",
-    "path": "/tut/rps/#tutcomp-9-Timeout"
+    "title": "Timeout dialog",
+    "path": "/tut/rps-comp/#tutcomp-9-Timeout"
   },
   "tutcomp-9-WaitingForAttacher": {
-    "title": "Waiting for Attacher display",
-    "path": "/tut/rps/#tutcomp-9-WaitingForAttacher"
+    "title": "Waiting for Attacher dialog",
+    "path": "/tut/rps-comp/#tutcomp-9-WaitingForAttacher"
   },
   "tutcomp-9-WaitingForResults": {
-    "title": "Waiting for results display",
-    "path": "/tut/rps/#tutcomp-9-WaitingForResults"
+    "title": "Waiting for results dialog",
+    "path": "/tut/rps-comp/#tutcomp-9-WaitingForResults"
   },
   "tutcomp-9-WaitingForTurn": {
     "title": "Waiting for Turn display",
-    "path": "/tut/rps/#tutcomp-9-WaitingForTurn"
+    "path": "/tut/rps-comp/#tutcomp-9-WaitingForTurn"
   },
   "tuts": {
     "title": "Tutorials",
