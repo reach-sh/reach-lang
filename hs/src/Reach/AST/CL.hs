@@ -32,7 +32,7 @@ data CLStmt
   | CLTimeCheck SrcLoc DLVar
   | CLEmitPublish SrcLoc Int DLType
   | CLStateRead SrcLoc DLVar
-  | CLStateBind SrcLoc [DLVarLet] Int
+  | CLStateBind SrcLoc Bool [DLVarLet] Int
   | CLIntervalCheck SrcLoc DLVar DLVar (CInterval DLTimeArg)
   | CLStateSet SrcLoc Int [(DLVar, DLArg)]
   | CLTokenUntrack SrcLoc DLArg
@@ -53,7 +53,7 @@ instance Pretty CLStmt where
     CLEmitPublish _ which vars -> "emitPublish" <> parens (render_das [pretty which, pretty vars])
     CLTimeCheck _ given -> "checkTime" <> parens (render_das [given])
     CLStateRead _ v -> pretty v <+> ":=" <+> "state"
-    CLStateBind _ svs prev -> pretty svs <+> ":=" <+> "state" <> pretty prev
+    CLStateBind _ isSafe svs prev -> pretty svs <+> ":=" <+> "state" <> pretty prev <+> pretty isSafe
     CLIntervalCheck _ timev secsv int -> "checkInterval" <> parens (render_das [pretty timev, pretty secsv, pretty int])
     CLStateSet _ which svs -> "state" <> pretty which <+> "<-" <+> pretty svs
     CLTokenUntrack _ a -> "Token.untrack" <> parens (pretty a)

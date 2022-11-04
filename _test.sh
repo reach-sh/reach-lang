@@ -96,14 +96,17 @@ r () {
   make build
 
   #REACH_CONNECTOR_MODE=ETH ${REACH} run
-  REACH_DEBUG=N REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  #REACH_DEBUG=N REACH_CONNECTOR_MODE=ALGO ${REACH} run
   #REACH_CONNECTOR_MODE=CFX ${REACH} run
-
-  # Ganache
-  #REACH_DEBUG=1 REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
 
 )
 }
+
+ganache () {
+  (cd "$1"
+
+   REACH_DEBUG=1 REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://172.17.0.1:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
+ )}
 
 tealcount1 () {
   if [ -d "${1}/build" ] ; then

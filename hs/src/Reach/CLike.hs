@@ -131,7 +131,7 @@ instance CLikeF CLViewY where
     dom <- asks f_dom
     let bind (dvl, avl) = CL_Com $ CLDL $ DL_Let at (vl2lv avl) $ DLE_Arg at $ DLA_Var $ varLetVar dvl
     let t1 = foldr bind t0 $ zip dom fargs
-    let t2 = CL_Com (CLStateBind at cvy_svs prev) t1
+    let t2 = CL_Com (CLStateBind at True cvy_svs prev) t1
     return $ t2
 
 type CLViewX = FunInfo CLViewY
@@ -387,7 +387,7 @@ instance CLike CHX where
     let mStateBind =
           -- XXX change to StoreRead and something to decompose a Data instance
           -- and fail if the tag doesn't match
-          if isCtor then id else CL_Com (CLStateBind ch_at ch_svs ch_last)
+          if isCtor then id else CL_Com (CLStateBind ch_at False ch_svs ch_last)
     let intt =
           -- XXX include this in the program itself?
             CL_Com (CLEmitPublish ch_at which eff_ty)

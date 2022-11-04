@@ -1537,9 +1537,13 @@ instance SolStmts CLStmt where
       extendVarMap $ M.fromList
         [ (v, "current_step") ]
       return []
-    CLStateBind at svs_vl prev -> do
-      s <- solEq "current_step" (solNum prev)
-      s' <- solRequireS ("state check at " <> show at) s
+    CLStateBind at isSafe svs_vl prev -> do
+      s' <-
+        case isSafe of
+          True -> return []
+          False -> do
+            s <- solEq "current_step" (solNum prev)
+            solRequireS ("state check at " <> show at) s
       let svs = map varLetVar svs_vl
       svs_ty' <- solAsnType svs
       addVars_ solSVSVar svs
