@@ -224,7 +224,7 @@ const processXRefs = ({here}) => (tree) => {
         node.url = xrefGet('h', u.slice(2)).path;
       } else if ( u.startsWith('https') ) {
         hp.target = `_blank`;
-	    }
+      }
     }
   });
 };
