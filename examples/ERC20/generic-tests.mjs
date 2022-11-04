@@ -40,9 +40,9 @@ const startMeUp = async (ctc, meta) => {
 }
 
 export const genericTests = async () => {
-
   const zeroAddress = "0x" + "0".repeat(40);
   const accs = await stdlib.newTestAccounts(4, stdlib.parseCurrency(100));
+  accs.forEach((acc) => acc.setGasLimit(5000000));
   const [acc0, acc1, acc2, acc3] = accs;
   const [addr0, addr1, addr2, addr3] = accs.map(a => a.getAddress());
 
@@ -62,7 +62,6 @@ export const genericTests = async () => {
   const ctcinfo = await ctc0.getInfo();
   const ctc = (acc) => acc.contract(backend, ctcinfo);
 
-
   const assertBalances = async (bal0, bal1, bal2, bal3) => {
     assertEq(bal0, (await ctc0.v.balanceOf(acc0.getAddress()))[1]);
     assertEq(bal1, (await ctc0.v.balanceOf(acc1.getAddress()))[1]);
@@ -73,7 +72,6 @@ export const genericTests = async () => {
     const e = await ctc0.events[event].next();
     const actualArgs = e.what;
     expectedArgs.forEach((expectedArg, i) => assertEq(actualArgs[i], expectedArg, `${event} field ${i}`));
-
   }
 
   const transfer = async (fromAcc, toAcc, amt) => {
@@ -89,7 +87,6 @@ export const genericTests = async () => {
     await ctc(fromAcc).a.approve(spenderAcc.getAddress(), amt);
     await assertEvent("Approval", fromAcc.getAddress(), spenderAcc.getAddress(), amt);
   }
-
 
   //// start actually testing
   console.log("starting connector-generic tests")
@@ -144,7 +141,6 @@ export const genericTests = async () => {
     await stdlib.transfer(acc0, acc1, 10, ctcinfo);
     await assertBalances(totalSupply - 50, 20, 20, 10);
 
-
     // And contracts should accept our ERC-20 as Token values.
     const helperCtcA = acc2.contract(backendTransferTest);
     const helperCtcB = acc3.contract(backendTransferTest, helperCtcA.getInfo());
@@ -160,5 +156,4 @@ export const genericTests = async () => {
 
     console.log("Done with extra ETH tests")
   }
-
 }
