@@ -802,13 +802,15 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           throw Error('viewMapRef not used by ETH backend'); },
       };
       const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo, isSafe = true) =>
-        async (...args: any[]): Promise<any> => {
+        async (...gargs: any[]): Promise<any> => {
           void(vs);
           const { dom, rng } = vim;
           const ethersC = await getC();
           const vkn = `${v}${(typeof k === 'string') ? `_${k}` : ''}`;
-          const mungedArgs = args.map((arg, i) => dom[i].munge(arg));
-          debug(label, 'getView1', v, k, 'args', args, vkn, dom, rng);
+          debug(label, 'getView1', v, k, 'gargs', gargs, vkn, dom, rng);
+          const cArgs = gargs.map((arg, i) => dom[i].canonicalize(arg));
+          debug(label, 'getView1', 'cArgs', cArgs);
+          const mungedArgs = cArgs.map((arg, i) => dom[i].munge(arg));
           debug(label, `getView1 mungedArgs = ${mungedArgs}`);
           let val;
           try { val = await ethersC[vkn](...mungedArgs); }

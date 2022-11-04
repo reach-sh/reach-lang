@@ -2193,9 +2193,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         },
       };
       const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo, isSafe = true) =>
-        async (...args: any[]): Promise<any> => {
-          debug('getView1', v, k, args);
-          const { decode } = vim;
+        async (...gargs: any[]): Promise<any> => {
+          debug('getView1', v, k, gargs);
+          const { dom, decode } = vim;
+          const cArgs = gargs.map((arg, i) => dom[i].canonicalize(arg));
+          debug('getView1', 'cArgs', cArgs);
           const ch = await getC();
           try {
             const step = await getCurrentStep_(ch);
@@ -2203,7 +2205,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             const vtys = vs[vi];
             if (!vtys) { throw Error(`no views for state ${step}`); }
             const vvs = (await getState_(getC, _ => vtys))[1];
-            const vres = await decode(vi, vvs, args);
+            const vres = await decode(vi, vvs, cArgs);
             debug({ vres });
             return isSafe ? ['Some', vres] : vres;
           } catch (e) {
