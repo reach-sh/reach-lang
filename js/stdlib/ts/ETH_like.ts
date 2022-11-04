@@ -27,13 +27,13 @@ import {
   j2s,
   j2sf,
   handleFormat,
-  hideWarnings,
   makeParseCurrency,
   protectMnemonic,
   protectSecretKey,
   SecretKeyInput,
   Mnemonic,
   mkGetEventTys,
+  mShowFundFromFaucetWarning,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -961,9 +961,7 @@ const createAccount = async () => {
 }
 
 const fundFromFaucet = async (account: AccountTransferable | Address, value: any) => {
-  if (! hideWarnings()) {
-    console.error("Warning: your program uses stdlib.fundFromFaucet. That means it only works on Reach devnets!");
-  }
+  mShowFundFromFaucetWarning();
   const f = await _specialFundFromFaucet();
   if (f) {
     return await f(account, value);

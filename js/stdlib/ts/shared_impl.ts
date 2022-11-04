@@ -73,6 +73,14 @@ export const setDEBUG = (b: boolean) => {
 
 export const hideWarnings = (): boolean => truthyEnv(process.env.REACH_NO_WARN);
 
+let faucetWarningShown = false;
+export const mShowFundFromFaucetWarning = () => {
+  if (! (hideWarnings() || faucetWarningShown)) {
+    console.error("Warning: your program uses stdlib.fundFromFaucet. That means it only works on Reach devnets!");
+    faucetWarningShown = true;
+  }
+};
+
 export const getDEBUG = (): boolean => { return DEBUG; };
 
 export const debug = (...msgs: any) => {
