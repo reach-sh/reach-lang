@@ -10,3 +10,5 @@ await genericTests();
 
 import { ozComparisonTests } from "./oz-compare.mjs";
 await ozComparisonTests();
+
+process.exit(0);

@@ -130,7 +130,6 @@ export const ozComparisonTests = async () => {
       await assertEvent.Approval(uctc.signer.address, spender, amt);
     }
 
-
     await assertBalances(totalSupply, 0, 0, 0);
 
     // transfer of more than you have should fail
@@ -193,9 +192,7 @@ export const ozComparisonTests = async () => {
                            [oe.name, oe.symbol, oe.decimals, oe.totalSupply]);
   }
 
-
-  //// Test Reach based ERC20
-
+  // Reach based ERC20
   const reach_meta = {
     name: "Reach_ERC20",
     symbol: "RCH",
@@ -290,4 +287,3 @@ export const ozComparisonTests = async () => {
     }
   }
 }
-
