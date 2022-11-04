@@ -1753,7 +1753,7 @@ solProg p = do
 compile_sol :: ConnectorObject -> FilePath -> IO ConnectorInfo
 compile_sol cinfo solf = compile_sol_ solf contractId >>= \case
   Left x -> impossible x
-  Right (which, CompiledSolRec {..}) ->
+  Right (CompiledSolRec {..}) ->
     return $
       Aeson.Object $
         mToKM $
@@ -1761,7 +1761,6 @@ compile_sol cinfo solf = compile_sol_ solf contractId >>= \case
             M.fromList $
               [ ("ABI", Aeson.String csrAbi)
               , ("Bytecode", Aeson.String $ "0x" <> csrCode)
-              , ("Which", Aeson.String $ T.pack which)
               , ("BytecodeLen", Aeson.Number $ (fromIntegral $ T.length csrCode) / 2)
               , ("version", Aeson.Number $ fromIntegral reachEthBackendVersion)
               ]
@@ -1778,7 +1777,7 @@ ccJson x y z = do
 
 ccSol :: String -> FilePath -> CCApp String
 ccSol cn solf = do
-  (_, CompiledSolRec {..}) <- ExceptT (compile_sol_ solf cn)
+  CompiledSolRec {..} <- ExceptT (compile_sol_ solf cn)
   return $ T.unpack csrCode
 
 ccPath :: String -> CCApp String
