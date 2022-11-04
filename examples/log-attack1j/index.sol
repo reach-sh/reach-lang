@@ -2,9 +2,8 @@ pragma abicoder v2;
 
 pragma solidity ^0.8.0;
 
-struct T6 {
-  uint256 time;
-  bool msg;
+struct T4 {
+  uint256 elem0;
   }
 
 contract WeirdContract {
@@ -13,11 +12,10 @@ contract WeirdContract {
     _x = 0;
   }
 
-  event _reach_e1(address _who, T6 _a);
+  event _reach_e1(address _who, T4 _a);
   function f(uint256 x) external payable {
-    T6 memory a;
-    a.time = 0;
-    a.msg = true;
+    T4 memory a;
+    a.elem0 = 0;
     emit _reach_e1(msg.sender, a);
     _x = x;
   }

@@ -2,23 +2,20 @@
 pragma abicoder v2;
 pragma solidity ^0.8.0;
 
-struct T7 {
-  uint256 v99;
-  }
-struct T8 {
-  uint256 time;
-  T7 msg;
+struct T5 {
+  uint256 elem0;
+  uint256 elem1;
   }
 
 contract LogAttack2  {
   constructor () payable {
   }
 
-  event _reach_e2(address _who, T8 _a);
+  event _reach_e2(address _who, T5 _a);
   function m2() external payable {
-    T8 memory a;
-    a.time = 0;
-    a.msg.v99 = 1337;
+    T5 memory a;
+    a.elem0 = 0;
+    a.elem1 = 1337;
     emit _reach_e2(msg.sender, a);
   }
 }
