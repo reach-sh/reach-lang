@@ -182,7 +182,7 @@ instance (CLikeF a) => CLikeF (BLT Int a) where
     Empty -> do
       at <- asks f_at
       return
-        $ CL_Com (CLDL (DL_Let at DLV_Eff (DLE_Claim at [] CT_Enforce (DLA_Literal $ DLL_Bool False) (Just "Incorrect state"))))
+        $ CL_Com (CLDL (DL_Let at DLV_Eff (DLE_Claim at [] CT_Enforce (DLA_Literal $ DLL_Bool False) (Just "Incorrect state: empty blt"))))
         $ CL_Halt at
     Leaf i mc a -> do
       -- XXX ^ make sure blt actually fills in mc
@@ -195,7 +195,7 @@ instance (CLikeF a) => CLikeF (BLT Int a) where
           statev <- asks f_statev
           return
             $ CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once cmpv) (DLE_PrimOp at (PEQ UI_Word) [ DLA_Var statev, DLA_Literal $ DLL_Int at UI_Word $ fromIntegral i ])))
-            $ CL_Com (CLDL (DL_Let at DLV_Eff (DLE_Claim at [] CT_Enforce (DLA_Var cmpv) (Just "Incorrect state"))))
+            $ CL_Com (CLDL (DL_Let at DLV_Eff (DLE_Claim at [] CT_Enforce (DLA_Var cmpv) (Just "Incorrect state: not leaf"))))
             $ a'
     Branch i l r -> do
       at <- asks f_at

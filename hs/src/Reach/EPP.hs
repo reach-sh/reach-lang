@@ -372,12 +372,10 @@ be_m = \case
         let alias = join $ M.lookup (bunpack p) be_alias
         let prev = be_prev
         let as = be_api_steps
+        let ai' = ApiInfo apiAt tys mc be_which isf ret alias
         liftIO $ modifyIORef as $ M.insertWith (<>) p [(prev, apiAt)]
-        liftIO $
-          modifyIORef be_api_info $ \ m ->
-              M.insert p (M.insert be_which (ApiInfo apiAt tys mc be_which isf ret alias) $ ai m) m
-            where
-              ai = fromMaybe mempty . M.lookup p
+        liftIO $ modifyIORef be_api_info $ flip M.alter p $
+          Just . M.insert prev ai' . fromMaybe mempty
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
