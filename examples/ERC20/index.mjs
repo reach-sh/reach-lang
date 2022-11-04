@@ -1,7 +1,7 @@
 import { loadStdlib } from "@reach-sh/stdlib";
 const stdlib = loadStdlib(process.env);
 if (stdlib.connector !== "ETH") {
-  console.log("This example is only compiled against ETH for now.");
+  console.log("This example is only tested against ETH for now.");
   process.exit(0);
 }
 
@@ -10,7 +10,3 @@ await genericTests();
 
 import { ozComparisonTests } from "./oz-compare.mjs";
 await ozComparisonTests();
-
-
-process.exit(0);
-
