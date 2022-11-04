@@ -1772,7 +1772,7 @@ ccBin = B.unpack
 
 ccJson :: String -> String -> BS.ByteString -> CCApp String
 ccJson x y z = do
-  CompiledSolRec {..} <- except (compile_sol_extract x y z)
+  CompiledSolRec {..} <- except (compile_sol_extract True x y z)
   return $ t2s $ csrCode
 
 ccSol :: String -> FilePath -> CCApp String

@@ -41,10 +41,22 @@ instance FromJSON CompiledSolRec where
     -- Why are we re-encoding? ethers takes the ABI as a string, not an object.
     let cfg = defConfig {confIndent = Spaces 0, confCompare = compare}
     let csrAbi = T.pack $ LB.unpack $ encodePretty' cfg abio
-    a <- ctc .: "evm"
-    b <- a .: "bytecode"
-    csrCode <- b .: "object"
-    return $ CompiledSolRec {..}
+    ma <- ctc .:? "evm"
+    case ma of
+      Just a -> do
+        b <- a .: "bytecode"
+        csrCode <- b .: "object"
+        return $ CompiledSolRec {..}
+      Nothing -> do
+        csrCode <- ctc .: "bin"
+        return $ CompiledSolRec {..}
+
+newtype SolOutputCmd = SolOutputCmd CompiledSolRecs
+
+instance FromJSON SolOutputCmd where
+  parseJSON = withObject "SolOutputCmd" $ \o -> do
+    x <- o .: "contracts"
+    return $ SolOutputCmd x
 
 data SolOutputFull = SolOutputFull
   { sofContracts :: M.Map T.Text CompiledSolRecs
@@ -60,18 +72,26 @@ theKey = "theReachKey"
 
 type E x = Either String x
 
-compile_sol_parse :: BS.ByteString -> E CompiledSolRecsM
-compile_sol_parse stdout =
-  case eitherDecodeStrict stdout of
-    Left m -> Left $ "It produced invalid JSON output, which failed to decode with the message:\n" <> m
-    Right (SolOutputFull cs) ->
-      case M.lookup theKey cs of
-        Nothing -> Left $ "The compilation key was missing"
-        Just (CompiledSolRecs xs) -> return xs
+compile_sol_parse :: Bool -> BS.ByteString -> E CompiledSolRecsM
+compile_sol_parse isCmdLine stdout =
+  case isCmdLine of
+    True ->
+      case eitherDecodeStrict stdout of
+        Left m -> bad m
+        Right (SolOutputCmd (CompiledSolRecs xs)) -> Right xs
+    False ->
+      case eitherDecodeStrict stdout of
+        Left m -> bad m
+        Right (SolOutputFull cs) ->
+          case M.lookup theKey cs of
+            Nothing -> Left $ "The compilation key was missing"
+            Just (CompiledSolRecs xs) -> Right xs
+  where
+    bad m = Left $ "It produced invalid JSON output, which failed to decode with the message:\n" <> m
 
-compile_sol_extract :: String -> String -> BS.ByteString -> E CompiledSolRec
-compile_sol_extract solf cn stdout = do
-  xs <- compile_sol_parse stdout
+compile_sol_extract :: Bool -> String -> String -> BS.ByteString -> E CompiledSolRec
+compile_sol_extract isCmdLine solf cn stdout = do
+  xs <- compile_sol_parse isCmdLine stdout
   let k = s2t $ solf <> ":" <> cn
   let ks = M.keys xs
   let xs' = M.filterWithKey (\k' _ -> T.isSuffixOf k' k) xs
@@ -180,14 +200,14 @@ try_compile_sol solf cn (OP {..}) = do
   (ec, stdout, stderr) <-
     liftIO $ readProcessWithExitCode "solc" ["--standard-json"] $
       LB.toStrict $ encode spec
-  BS.writeFile (solf <> ".json") stdout
+  BS.writeFile (solf <> ".solc.json") stdout
   let show_output =
         case stdout == "" of
           True -> stderr
           False -> "STDOUT:\n" <> stdout <> "\nSTDERR:\n" <> stderr
   case ec of
     ExitFailure _ -> return $ Left $ bunpack show_output
-    ExitSuccess -> return $ compile_sol_extract solf cn stdout
+    ExitSuccess -> return $ compile_sol_extract False solf cn stdout
 
 checkLen :: E CompiledSolRec -> E CompiledSolRec
 checkLen = \case
