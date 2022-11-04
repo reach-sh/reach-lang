@@ -6,6 +6,8 @@ import {
   CBR_Address,
   bigNumberify,
   CBR_Bytes,
+  unk_to_buf,
+  buf_to_arr,
 } from './CBR';
 import util from 'util';
 import {
@@ -1325,10 +1327,10 @@ export const makeParseCurrency = (defaultDecs: number) => (amt: CurrencyAmount, 
   return bigNumberify(ethers.utils.parseUnits(amtStr, decimals));
 };
 
-export const canonicalToBytes = (bv: CBR_Bytes) =>
-  (typeof bv == 'string')
-    ? ethers.utils.toUtf8Bytes(bv)
-    : bv;
+export const canonicalToBytes = (bv: CBR_Bytes) => {
+  const [ _, b ] = unk_to_buf(bv);
+  return buf_to_arr(b);
+};
 
 export const isUint8Array = (val: any) => val?.constructor?.name === 'Uint8Array';
 

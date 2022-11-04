@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { checkedBigNumberify } from './shared_backend';
-import { j2s, labelMaps, hasProp, isUint8Array } from './shared_impl';
+import { debug, j2s, labelMaps, hasProp, isUint8Array } from './shared_impl';
 import buffer from 'buffer';
 const Buffer = buffer.Buffer;
 // "CBR", canonical backend representation
@@ -112,10 +112,10 @@ type BLabel = 'string' | 'hex string' | 'Uint8Array' | 'unknown';
 const arr_to_buf = (s: Uint8Array): Buffer => Buffer.from(s);
 const str_to_buf = (s: string): Buffer => Buffer.from(s);
 const hex_to_buf = (s: string): Buffer => Buffer.from(s.slice(2), 'hex');
-const buf_to_arr = (b: Buffer): Uint8Array => new Uint8Array(b);
+export const buf_to_arr = (b: Buffer): Uint8Array => new Uint8Array(b);
 const buf_to_str = (b: Buffer): string => b.toString();
 const buf_to_hex = (b: Buffer): string => '0x' + b.toString('hex');
-const to_buf = (val: unknown): [BLabel, Buffer] => {
+export const unk_to_buf = (val: unknown): [BLabel, Buffer] => {
   if (typeof val === 'string') {
     return val.slice(0, 2) === '0x'
       ? ['hex string', hex_to_buf(val)]
@@ -130,7 +130,8 @@ export const BT_Bytes = (len: number|BigNumber): BackendTy<CBR_Bytes> => ({
   name: `Bytes(${len})`,
   defaultValue: buf_to_str(zpad(bigNumberToNumber(len), str_to_buf(''))),
   canonicalize: (val: unknown): CBR_Bytes => {
-    const [label, b] = to_buf(val);
+    const [label, b] = unk_to_buf(val);
+    debug(`Canonicalize bytes:`, val, `=>`, label, b);
     const alen = b.length;
     const lenn = bigNumberToNumber(len);
     if (alen > lenn) {
