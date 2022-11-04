@@ -1033,9 +1033,11 @@ instance SolStmts DLStmt where
           <> getDynamicNonNetTokBals
           <> getUnexpectedNonNetTokBals
           <> [ solSet v_before e_before
+             , solSet "locked" "true"
              , solSet ("bytes memory" <+> e_data) e_data_e
              , "(bool " <> v_succ <> ", bytes memory " <> v_return <> ")" <+> "=" <+> av' <> solApply call' [e_data] <> semi
              , solApply "checkFunReturn" [v_succ, v_return, err_msg] <> semi
+             , solSet "locked" "false"
              ]
           <> concat checkUnexpectedNonNetTokBals
           <> setDynamicNonNetTokBals
@@ -1525,7 +1527,9 @@ instance SolStmts CLStmt where
       let e = solMsg_evt which
       let ed = [ "event" <+> solApply e ["address _who", msg_ty' <+> "_a"] <> semi ]
       modifyCtxtIO ctxt_outputs $ M.insert (show e) ed
-      return $ [ "emit" <+> solApply e ["msg.sender", "_a"] <> semi ]
+      -- We are relying on knowing that this is always used for effectful funs
+      s <- solRequireS "locked" "! locked"
+      return $ s <> [ "emit" <+> solApply e ["msg.sender", "_a"] <> semi ]
     CLTimeCheck at given -> do
       let actual' = "current_time"
       given' <- solF given
@@ -1648,7 +1652,6 @@ newtype FunX = FunX (CLSym, CLFun)
 
 instance SolStmts FunX where
   solS (FunX ((CLSym name _ _), (CLFun {..}))) = freshVarMap $ do
-    -- XXX lock
     (am, sfl, extra) <-
       case name == nameMeth 0 of
         True -> do
@@ -1727,6 +1730,7 @@ solProg p = do
         , "uint256 current_time;"
         , "  bytes current_svbs;"
         , "uint256 creation_time;"
+        , "   bool locked;"
         , "function _reachCreationTime() external view returns (uint256) { return creation_time; }"
         , "function _reachCurrentTime() external view returns (uint256) { return current_time; }"
         , "function _reachCurrentState() external view returns (uint256, bytes memory) { return (current_step, current_svbs); }"
