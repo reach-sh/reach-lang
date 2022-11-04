@@ -76,6 +76,7 @@ import {
   SecretKey,
   Mnemonic,
   mkGetEventTys,
+  mShowFundFromFaucetWarning,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -2491,9 +2492,7 @@ const canFundFromFaucet = async (): Promise<boolean> => {
 };
 
 const fundFromFaucet = async (acc: Account | Address, value: unknown) => {
-  if (! hideWarnings()){
-    console.error("Warning: your program uses stdlib.fundFromFaucet. That means it only works on Reach devnets!");
-  }
+  mShowFundFromFaucetWarning();
   const faucet = await getFaucet();
   debug('fundFromFaucet');
   const tag = Math.round(Math.random() * (2 ** 32));
