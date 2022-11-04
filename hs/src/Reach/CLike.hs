@@ -146,6 +146,7 @@ viewReorg (DLViewsX vs vis) = vx
     vx = M.mapWithKey go $ flattenInterfaceLikeMap_ (,) vs
     go k (p, (DLView {..})) = FunInfo {..}
       where
+        fi_noCheck = False
         fi_at = dvw_at
         (fi_dom, fi_rng) = itype2arr dvw_it
         fi_as = map (p <>) dvw_as
@@ -166,6 +167,7 @@ data FEnv = FEnv
   , f_rng :: CLVar
   , f_statev :: DLVar
   , f_staten :: Maybe Int
+  , f_noCheck :: Bool
   }
 
 instance HasCounter FEnv where
@@ -181,14 +183,17 @@ instance (CLikeF a) => CLikeF (BLT Int a) where
   clf = \case
     Empty -> do
       at <- asks f_at
+      noCheck <- asks f_noCheck
+      let f = CL_Com (CLDL (DL_Let at DLV_Eff (DLE_Claim at [] CT_Enforce (DLA_Literal $ DLL_Bool False) (Just "Incorrect state: empty blt"))))
       return
-        $ CL_Com (CLDL (DL_Let at DLV_Eff (DLE_Claim at [] CT_Enforce (DLA_Literal $ DLL_Bool False) (Just "Incorrect state: empty blt"))))
+        $ (if noCheck then id else f)
         $ CL_Halt at
     Leaf i mc a -> do
       -- XXX ^ make sure blt actually fills in mc
       at <- asks f_at
+      noCheck <- asks f_noCheck
       a' <- local (\e -> e { f_staten = Just i }) $ clf a
-      case mc of
+      case mc && not noCheck of
         False -> return a'
         True -> do
           cmpv <- allocVar at T_Bool
@@ -214,6 +219,7 @@ data FunInfo a = FunInfo
   , fi_rng :: DLType
   , fi_as :: [SLPart]
   , fi_steps :: M.Map Int a
+  , fi_noCheck :: Bool
   }
 
 instance (CLikeF a) => CLike (FIX a) where
@@ -229,6 +235,7 @@ instance (CLikeF a) => CLike (FIX a) where
     f_statev <- allocVar fi_at $ T_UInt UI_Word
     fCounter <- asks getCounter
     let f_staten = Nothing
+    let f_noCheck = fi_noCheck
     -- XXX when the state is a data, this would be a real switch
     -- XXX optimize case where there's one step?
     stept <- clf_ (FEnv {..}) $ bltM fi_steps
@@ -266,6 +273,7 @@ apiReorg ais = flip M.map ais apiReorgX
 apiReorgX :: M.Map Int ApiInfo -> ApiInfoX
 apiReorgX aim = FunInfo {..}
   where
+    fi_noCheck = True
     fi_at = get ai_at
     imp = impossible "apiSig"
     fi_dom = flip get' id fi_dom'

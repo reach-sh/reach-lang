@@ -16,6 +16,7 @@ import qualified Data.Text as T
 import Reach.Util
 import Reach.Warning
 import System.Exit
+import System.FilePath
 import System.Process.ByteString
 
 maxContractLen :: Int
@@ -197,8 +198,9 @@ try_compile_sol solf cn (OP {..}) = do
           ])
           ])
         ]
+  let bp = takeDirectory solf
   (ec, stdout, stderr) <-
-    liftIO $ readProcessWithExitCode "solc" ["--standard-json"] $
+    liftIO $ readProcessWithExitCode "solc" [ "--allow-paths", bp, "--standard-json"] $
       LB.toStrict $ encode spec
   BS.writeFile (solf <> ".solc.json") stdout
   let show_output =
