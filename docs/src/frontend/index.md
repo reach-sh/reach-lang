@@ -658,7 +658,7 @@ Example:
 
 ```js
 load: /examples/clawback/index.mjs
-md5: edcec408b29e3995381679f71381dc80
+md5: 5a90362da13dbab86fdde5dccd21b840
 range: 26-26
 ```
 
