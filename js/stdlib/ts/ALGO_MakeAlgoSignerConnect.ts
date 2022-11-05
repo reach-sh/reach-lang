@@ -1,4 +1,4 @@
-export default function ALGO_MakeAlgoSignerConnect( AlgoSigner: any, provider: string ) {
+export default function MakeAlgoSignerConnect( AlgoSigner: any, provider: string ) {
     return class AlgoSignerConnect {
         constructor() {}
 
