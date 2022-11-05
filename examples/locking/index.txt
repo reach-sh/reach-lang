@@ -5,19 +5,3 @@ Verifying for generic connector
 Checked 39 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
  * Step 2 calls a remote object at ./index.rsh:39:14:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object. Furthermore, the remote object may require special transaction parameters which are not expressed in the Reach API or the Algorand ABI standards.
-WARNING: The Solidity compiler, run with optimization, fails on this program, but succeeds without optimization. This indicates a problem with Solidity that Reach is not working around; typically, because it is not possible to do so. You could report this error to Solidity (or Reach). If you do so, this is the message from Solidity:
-It produced invalid JSON output, which failed to decode with the message:
-Error in $: key "contracts" not found
-WARNING: The Solidity compiler, run with optimization, fails on this program, but succeeds without optimization. This indicates a problem with Solidity that Reach is not working around; typically, because it is not possible to do so. You could report this error to Solidity (or Reach). If you do so, this is the message from Solidity:
-It produced invalid JSON output, which failed to decode with the message:
-Error in $: key "contracts" not found
-reachc: The compiler has encountered an internal error:
-
-  The Solidity compiler failed with the message:
-It produced invalid JSON output, which failed to decode with the message:
-Error in $: key "contracts" not found
-
-This error indicates a problem with the Reach compiler, not your program. Please report this error, along with the pertinent program, to the Reach team as soon as possible so we can fix it.
-
-Open an issue at: https://github.com/reach-sh/reach-lang/issues
-
