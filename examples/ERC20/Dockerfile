@@ -1,5 +1,5 @@
 FROM reachsh/reach:latest AS build
-COPY build.sh oz_erc20.sol /app
+COPY build.sh oz_erc20.sol /app/
 RUN /app/build.sh
 
 FROM reachsh/runner:latest
