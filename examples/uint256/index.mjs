@@ -2,7 +2,8 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import * as backendVeriC from './build/index.veriC.mjs';
 import * as backendTrapS from './build/index.trapS.mjs';
 import * as backendTrapC from './build/index.trapC.mjs';
-import * as backend from './build/index.main.mjs';
+import * as backend1 from './build/index.main1.mjs';
+import * as backend2 from './build/index.main2.mjs';
 const stdlib = loadStdlib();
 const bn = stdlib.bigNumberify;
 const assertEq = (i, j, expected, actual) => {
@@ -73,9 +74,9 @@ await trapGo('cast', bn(4));
 await (( stdlib.connector === 'ALGO' ) ? trapNo : trapGo)('cast', bn(2).pow(80));
 
 // Test main
-{
+const checkMain = async (which) => {
 const accA = await mkA();
-const ctcA = accA.contract(backend);
+const ctcA = accA.contract(which ? backend1 : backend2);
 const b1 = bn(2).pow(128);
 const b2 = bn(2).pow(24);
 const s1 = bn(2).pow(32);
@@ -347,3 +348,6 @@ await ctcA.p.A({
   },
 });
 }
+
+await checkMain(true);
+await checkMain(false);

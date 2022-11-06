@@ -74,7 +74,7 @@ export const trapC = Reach.App(() => {
   exit();
 });
 
-export const main = Reach.App(() => {
+const makeMain = (which) => Reach.App(() => {
   const A = Participant('A', {
     vs1: Tuple(UInt256, UInt256, UInt, UInt),
     check: Fun(true, Null),
@@ -125,6 +125,7 @@ export const main = Reach.App(() => {
   const G = F(false);
   const H = F(true);
 
+  if ( which ) {
   H( 0, (u, v) => u + v);
   H( 1, (u, v) => u - v);
   H( 2, (u, v) => u * v);
@@ -132,12 +133,17 @@ export const main = Reach.App(() => {
   H( 4, (u, v) => u % v);
   H( 5, (u, v) => u ^ v);
   H( 6, (u, v) => u | v);
+  } else {
   H( 7, (u, v) => u & v);
   G( 8, (u, v) => u < v);
   G( 9, (u, v) => u <= v);
   G(10, (u, v) => u == v);
   G(11, (u, v) => u >= v);
   G(12, (u, v) => u > v);
+  }
 
   exit();
 });
+
+export const main1 = makeMain(true);
+export const main2 = makeMain(false);
