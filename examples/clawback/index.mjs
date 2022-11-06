@@ -65,7 +65,8 @@ const algo = async () => {
     ]);
   } catch (e) {
     const expFailMethod = `_reachp_${failingMethod}`;
-    stdlib.assert(e.toString().includes(expFailMethod));
+    const es = e.toString();
+    stdlib.assert(es.includes(expFailMethod) || es.includes(`underflow`));
     console.log(`Error was thrown in the expected method: ${expFailMethod}`);
     return;
   }
