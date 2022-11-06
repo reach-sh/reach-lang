@@ -71,7 +71,7 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
   See example below:
   ```reach
   load: /examples/uint256/index.rsh
-  md5: 41cfcbe36ef78fb15097f373bfea3c3e
+  md5: 7d97bedae1816b162d61bfa307dad4ac
   range: 3 - 5
   ```
 
