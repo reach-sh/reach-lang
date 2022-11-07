@@ -78,7 +78,7 @@
     "@storybook/manager-webpack5": "^6.4.20",
     "@storybook/node-logger": "^6.4.20",
     "@storybook/preset-create-react-app": "^1.2.0",
-    "@storybook/react": "^6.1.21",
+    "@storybook/react": "^6.5.13",
     "@storybook/testing-library": "^0.0.9",
     "@types/react-cytoscapejs": "^1.2.2",
     "@types/styled-components": "^5.1.24",
