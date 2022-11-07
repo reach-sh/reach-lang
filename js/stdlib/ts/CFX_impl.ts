@@ -13,7 +13,7 @@ import {
 import type { Env } from './shim'; // =>
 import { process, window } from './shim';
 import waitPort from './waitPort';
-import cfxsdk from 'js-conflux-sdk';
+import cfxsdk from '@reach-sh/js-conflux-sdk';
 import Timeout from 'await-timeout';
 import { canonicalizeConnectorMode, ConnectorMode } from './ConnectorMode';
 import buffer from 'buffer';

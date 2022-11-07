@@ -1,5 +1,5 @@
 // This file immitates the ethers.js API
-import cfxsdk from 'js-conflux-sdk';
+import cfxsdk from '@reach-sh/js-conflux-sdk';
 import Timeout from 'await-timeout';
 const { format } = cfxsdk;
 import { ethers } from 'ethers';

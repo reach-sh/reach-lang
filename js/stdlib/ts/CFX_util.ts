@@ -1,6 +1,6 @@
 // lightly adapted from @conflux-dev/conflux-address-js@1.0.0
 import JSBI from 'jsbi';
-import type { EpochNumber } from 'js-conflux-sdk';
+import type { EpochNumber } from '@reach-sh/js-conflux-sdk';
 import { debug } from './shared_impl';
 
 const ALPHABET = 'ABCDEFGHJKMNPRSTUVWXYZ0123456789'
