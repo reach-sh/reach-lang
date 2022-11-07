@@ -4,7 +4,6 @@ const stdlib = loadStdlib({REACH_NO_WARN: 'Y'});
 const MIN_PRICE = 10;
 const USERS = 10;
 const FAILS = 2;
-let txns = 0;
 
 const accA = await stdlib.newTestAccount(stdlib.parseCurrency(5000));
 const ctcA = accA.contract(backend);
@@ -27,8 +26,7 @@ const startBuyers = async () => {
     const cost = getPurchasePrice(i);
     await acc.tokenAccept(loyalTok.id);
     try{
-      await ctc.apis.Buyer.purchase(cost);
-      txns++;
+      const txns = await ctc.apis.Buyer.purchase(cost);
       console.log(`Purchase number: ${txns}`);
     } catch (e) {
       console.log(`${e}`);
