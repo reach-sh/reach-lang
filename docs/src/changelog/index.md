@@ -9,6 +9,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcNext("0.1.12-rc.9")}
 
++ 2022/11/07: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/11/02: Ethereum-like-only: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
 
 @{rcHead("0.1.12-rc.8")}
