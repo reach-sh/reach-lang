@@ -44,7 +44,7 @@ export const main = Reach.App(() => {
   commit();
 
   A.publish();
-  const ctc = (new Contract(calcApp))([255, 1]);
+  const ctc = (new Contract(calcApp))([0]);
   const { publish, add1 } = remote(ctc, calcInterface);
   commit();
 
