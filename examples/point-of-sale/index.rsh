@@ -30,15 +30,15 @@ export const main = Reach.App(() => {
     .invariant(balance() == total, "network token balance wrong")
     .invariant(balance(tok) == supply - tokensSold, "non-network token balance wrong")
     .while(tokensSold < supply)
-    .api_(B.purchase, (amount) => {
+    .api_(B.purchase, (purchasePrice) => {
       check(tokensSold != supply, "sorry, out of tickets");
       check(isNone(pMap[this]), "sorry, you are already in this list");
-      check(amount >= min, "sorry, amount too low");
-      return[[amount, [0, tok]], (ret) => {
-        pMap[this] = amount;
+      check(purchasePrice >= min, "sorry, amount too low");
+      return[[purchasePrice, [0, tok]], (ret) => {
+        pMap[this] = purchasePrice;
         transfer(1, tok).to(this);
         ret(null);
-        return [tokensSold + 1, total + amount];
+        return [tokensSold + 1, total + purchasePrice];
       }];
     })
     .api_(B.refund, () => {
