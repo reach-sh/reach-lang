@@ -547,7 +547,7 @@ jsExpr = \case
       JM_Backend ->
         return $ jsApply "await stdlib.mapSet" [jsMapVar mpv, fa', na']
       JM_View -> impossible "view mapset"
-  DLE_Remote at _fs ro _rng_ty dr -> do
+  DLE_Remote at _fs ro rng_ty dr -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> return "undefined /* Remote */"
       JM_View -> impossible "view Remote"
@@ -563,10 +563,18 @@ jsExpr = \case
         tokensRecv' <- jsArg $ case ralgo_simTokensRecv of
           RA_Tuple t -> t
           _ -> impossible "expected RA_Tuple"
-        returnVal' <- maybe (pure "undefined") jsArg ralgo_simReturnVal
-        let arr = jsArray [netRecv'    <> " /* simNetRecv */",
-                           tokensRecv' <> " /* simTokensRecv */",
-                           returnVal'  <> " /* simReturnVal */"]
+        returnVal' <-
+          case ralgo_simReturnVal of
+            Just a -> jsArg a
+            Nothing -> do
+              c <- jsContract rng_ty
+              return $ c <> ".defaultValue"
+        let nnRecv = dwb_tok_billed $ dr_bills dr
+        let mTR = if length nnRecv == 0 then [] else [ tokensRecv' <> " /* simTokensRecv */" ]
+        let arr = jsArray $
+              [ netRecv'    <> " /* simNetRecv */" ]
+              <> mTR
+              <> [ returnVal'  <> " /* simReturnVal */" ]
         return $ jsNewScope $ simTxn <> hardline <> jsReturn arr
   DLE_TokenNew _ tns -> do
     (ctxt_mode <$> ask) >>= \case
@@ -1221,7 +1229,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 25
+reachBackendVersion = 26
 
 jsEPProg :: ConnectorObject -> EPProg -> App Doc
 jsEPProg cr (EPProg {..}) = do
