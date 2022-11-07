@@ -177,33 +177,168 @@ data SLVal
   | SLV_ContractCode SrcLoc ConnectorObject
   deriving (Eq, Generic)
 
-isDynamicVal :: SLVal -> Bool
-isDynamicVal = \case
-  SLV_Null {} -> False
-  SLV_Bool {} -> False
-  SLV_Int {} -> False
-  SLV_Bytes {} -> False
-  SLV_BytesDyn {} -> False
-  SLV_String {} -> False
-  SLV_DLC _ -> False
-  SLV_Type {} -> False
-  SLV_Connector {} -> False
-  SLV_Prim {} -> False
-  SLV_Form {} -> False
-  SLV_Kwd {} -> False
-  SLV_ContractCode {} -> False
-  SLV_Clo {} -> False
-  SLV_DLVar {} -> True
-  SLV_Participant {} -> True
-  SLV_RaceParticipant {} -> True
-  SLV_Anybody -> True
-  SLV_Map {} -> True
-  SLV_Array _ _ svs -> any isDynamicVal svs
-  SLV_Tuple _ svs -> any isDynamicVal svs
-  SLV_Object _ _ svs -> any (isDynamicVal . sss_val . snd) $ M.toAscList svs
-  SLV_Struct _ svs -> any (isDynamicVal . snd) svs
-  SLV_Data _ _ _ sv -> isDynamicVal sv
-  SLV_Deprecated _ sv -> isDynamicVal sv
+class IsDynamic a where
+  isDynamic :: a -> Bool
+
+instance IsDynamic ClaimType where
+  isDynamic = \case
+    CT_Unknowable {} -> True
+    _ -> False
+
+instance IsDynamic SLPrimitive where
+  isDynamic = \case
+    SLPrim_makeEnum -> False
+    SLPrim_declassify -> False
+    SLPrim_digest -> False
+    SLPrim_commit -> False
+    SLPrim_committed -> False
+    SLPrim_is_type -> False
+    SLPrim_type_eq -> False
+    SLPrim_typeOf  -> False
+    SLPrim_Fun     -> False
+    SLPrim_Refine  -> False
+    SLPrim_Bytes   -> False
+    SLPrim_BytesDynCast -> False
+    SLPrim_Data    -> False
+    SLPrim_data_match -> False
+    SLPrim_Array -> False
+    SLPrim_Array_iota -> False
+    SLPrim_array -> False
+    SLPrim_array_elemType -> False
+    SLPrim_array_length -> False
+    SLPrim_array_set -> False
+    SLPrim_array_concat -> False
+    SLPrim_array_map {} -> False
+    SLPrim_array_reduce {} -> False
+    SLPrim_array_zip -> False
+    SLPrim_Struct -> False
+    SLPrim_Struct_fromTuple {} -> False
+    SLPrim_Struct_fromObject {} -> False
+    SLPrim_Struct_toTuple -> False
+    SLPrim_Struct_toObject -> False
+    SLPrim_Struct_fields -> False
+    SLPrim_Tuple -> False
+    SLPrim_tuple_includes -> False
+    SLPrim_tuple_length -> False
+    SLPrim_Data_variant {} -> False
+    SLPrim_tuple_set -> False
+    SLPrim_Object -> False
+    SLPrim_Object_has -> False
+    SLPrim_Object_fields -> False
+    SLPrim_Object_set -> False
+    SLPrim_op {} -> False
+    SLPrim_transfer -> False
+    SLPrim_isDataVariant -> False
+    SLPrim_fromSome -> False
+    SLPrim_currentMode -> False
+    SLPrim_distinct -> False
+    SLPrim_xor -> False
+    SLPrim_mod -> False
+    SLPrim_toStringDyn -> False
+    SLPrim_Bytes_fromHex -> False
+    SLPrim_Contract_fromAddress -> False
+    SLPrim_App_Delay {} -> False
+    SLPrim_exit -> False
+    SLPrim_exitted -> False
+    SLPrim_forall -> False
+    SLPrim_part_set -> False
+    SLPrim_race -> False
+    SLPrim_Map -> False
+    SLPrim_Map_new -> False
+    SLPrim_Map_reduce -> False
+    SLPrim_Participant -> False
+    SLPrim_ParticipantClass -> False
+    SLPrim_View -> False
+    SLPrim_API -> False
+    SLPrim_Foldable -> False
+    SLPrim_is -> False
+    SLPrim_remote -> False
+    SLPrim_balance -> False
+    SLPrim_Token_accepted -> False
+    SLPrim_Token_supply -> False
+    SLPrim_init -> False
+    SLPrim_inited -> False
+    SLPrim_setOptions -> False
+    SLPrim_adaptReachAppTupleArgs -> False
+    SLPrim_padTo {} -> False
+    SLPrim_Token_new -> False
+    SLPrim_Token_burn -> False
+    SLPrim_Token_destroy -> False
+    SLPrim_Token_destroyed -> False
+    SLPrim_Token_track -> False
+    SLPrim_didPublish -> False
+    SLPrim_unstrict -> False
+    SLPrim_polyNeq -> False
+    SLPrim_getContract -> False
+    SLPrim_getAddress -> False
+    SLPrim_getCompanion -> False
+    SLPrim_EmitLog -> False
+    SLPrim_Event -> False
+    SLPrim_verifyMuldiv -> False
+    SLPrim_getUntrackedFunds -> False
+    SLPrim_castOrTrunc {} -> False
+    SLPrim_ContractCode -> False
+    SLPrim_Contract_new -> False
+    SLPrim_Contract_new_ctor {} -> False
+    -- These either involve dynamic values or
+    -- are the result of instantiating a prim with app specific values
+    SLPrim_claim ct -> isDynamic ct
+    SLPrim_PrimDelay _ sp x0 x1 -> isDynamic sp && and (map (isDynamic . snd) $ x0 <> x1)
+    SLPrim_localf {} -> True
+    SLPrim_transfer_amt_to {} -> True
+    SLPrim_part_setted {} -> True
+    SLPrim_fluid_read {} -> True
+    SLPrim_fluid_read_didPublish {} -> True
+    SLPrim_fluid_read_canWait {} -> True
+    SLPrim_remotef {} -> True
+    SLPrim_viewis {} -> True
+    SLPrim_event_is {} -> True
+
+instance IsDynamic SLForm where
+  isDynamic = \case
+    SLForm_App -> False
+    SLForm_each -> False
+    SLForm_EachAns {} -> True
+    SLForm_Part_Only {} -> True
+    SLForm_liftInteract {} -> True
+    SLForm_Part_ToConsensus {} -> True
+    SLForm_unknowable -> False
+    SLForm_fork -> False
+    SLForm_fork_partial {} -> True
+    SLForm_parallel_reduce -> False
+    SLForm_parallel_reduce_partial {} -> True
+    SLForm_apiCall -> False
+    SLForm_apiCall_partial {} -> True
+    SLForm_wait -> False
+    SLForm_setApiDetails -> True
+
+instance IsDynamic SLVal where
+  isDynamic = \case
+    SLV_Null {} -> False
+    SLV_Bool {} -> False
+    SLV_Int {} -> False
+    SLV_Bytes {} -> False
+    SLV_BytesDyn {} -> False
+    SLV_String {} -> False
+    SLV_DLC _ -> False
+    SLV_Type {} -> False
+    SLV_Connector {} -> False
+    SLV_Kwd {} -> False
+    SLV_ContractCode {} -> False
+    SLV_Clo {} -> False
+    SLV_Prim p -> isDynamic p
+    SLV_Form f -> isDynamic f
+    SLV_DLVar {} -> True
+    SLV_Participant {} -> True
+    SLV_RaceParticipant {} -> True
+    SLV_Anybody -> True
+    SLV_Map {} -> True
+    SLV_Array _ _ svs -> any isDynamic svs
+    SLV_Tuple _ svs -> any isDynamic svs
+    SLV_Object _ _ svs -> any (isDynamic . sss_val . snd) $ M.toAscList svs
+    SLV_Struct _ svs -> any (isDynamic . snd) svs
+    SLV_Data _ _ _ sv -> isDynamic sv
+    SLV_Deprecated _ sv -> isDynamic sv
 
 uintTyM :: SLVal -> Maybe UIntTy
 uintTyM = \case

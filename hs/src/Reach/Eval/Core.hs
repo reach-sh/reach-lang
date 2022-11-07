@@ -108,7 +108,7 @@ data Env = Env
   , e_droppedAsserts :: Counter
   , e_infections :: IORef Infections
   , e_compileProg :: CompileProg
-  , e_universe :: Counter
+  , e_universe :: Int
   }
 
 instance HasCounter Env where
@@ -252,7 +252,7 @@ locStMode x m = do
   locSt st' m
 
 readUniverse :: App Int
-readUniverse = liftIO . readCounter =<< asks e_universe
+readUniverse = asks e_universe
 
 captureLifts :: App a -> App (DLStmts, a)
 captureLifts m = do
@@ -554,7 +554,7 @@ env_lookup ctx x env = do
       liftIO $ emitWarning (Just at) $ W_Deprecated d
       return $ sv {sss_val = v}
     SLSSVal { sss_universe, sss_val }
-      | sss_universe /= uni && isDynamicVal sss_val -> do
+      | sss_universe /= uni && isDynamic sss_val -> do
         expect_ $ Err_Invalid_Universe x
     v -> return $ v
 

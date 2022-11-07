@@ -44,6 +44,8 @@ export const main = Reach.App(() => {
     B.publish(d);
     // Can access stdlib functions
     const e = add(b, d);
+    assert(balance() == 0);
+    transfer(balance()).to(B);
     assert(e == 5 + d);
     commit();
   }));
