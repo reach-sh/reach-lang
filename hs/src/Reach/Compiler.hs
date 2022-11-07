@@ -39,6 +39,7 @@ import Reach.Verify
 import System.Directory
 import System.Exit
 import System.FilePath
+import Reach.Counter (newCounter)
 
 make_connectors :: CompilerToolEnv -> Connectors
 make_connectors env =
@@ -246,7 +247,7 @@ mkCompileProg (CompilerToolEnv {..}) (CompilerOpts {..}) buildDir dotReachDirAbs
       -- }
       --
       -- and this pass turns it into
-      -- 
+      --
       -- publish(d)
       -- ... checks about payment ...
       -- switch (d) {
@@ -385,7 +386,8 @@ compile env co@(CompilerOpts {..}) = do
     -- interpreter where most of the primitives are constructing a residual
     -- program in the "DL" language. Creating a statement in that language is
     -- called "lifting".)
-    (run, shared_lifts, exe_ex) <- evalBundle all_connectors djp co_printKeywordInfo
+    uniC <- newCounter 0
+    (run, shared_lifts, exe_ex) <- evalBundle all_connectors djp co_printKeywordInfo uniC
     when co_printKeywordInfo $ do
       let exportMap = M.map sss_val exe_ex
       printBaseKeywordInfo exportMap
@@ -395,7 +397,7 @@ compile env co@(CompilerOpts {..}) = do
     -- DApps that get compiled to the ones passed at the command-line. This is
     -- mostly boring administrative stuff and not interesting compilation.
     let compileProg = mkCompileProg env co outd dirDotReach'
-    (avail, compileDApp) <- prepareDAppCompiles compileProg run shared_lifts exe_ex
+    (avail, compileDApp) <- prepareDAppCompiles compileProg run shared_lifts exe_ex uniC
     -- This compileDApp function came out of `prepareDAppCompiles` and it
     -- embeds a call to Eval/Core, but shares the module state from
     -- `shared_lifts`. This is going to do evaluation of the source (or SL)

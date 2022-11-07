@@ -122,8 +122,8 @@ makeMapEnv = do
   me_ms <- newIORef mempty
   return $ MapEnv {..}
 
-makeEnv :: Connectors -> Universe -> IO Env
-makeEnv cns uni = do
+makeEnv :: Connectors -> Counter -> IO Env
+makeEnv cns uniC = do
   e_id <- newCounter 0
   let e_who = Nothing
   let e_stack = []
@@ -163,7 +163,7 @@ makeEnv cns uni = do
   e_droppedAsserts <- newCounter 0
   let e_appr = Left $ app_default_opts e_id e_droppedAsserts cns
   let e_compileProg = const $ impossible "compileProg"
-  e_universe <- newCounter uni
+  e_universe <- readCounter uniC
   return (Env {..})
 
 checkUnusedVars :: App a -> App a
@@ -181,9 +181,9 @@ checkUnusedVars m = do
       expect_throw Nothing at $ Err_Unused_Variables l
   return a
 
-evalBundle :: Connectors -> JSBundle -> Bool -> IO (ReaderT Env m a -> m a, DLStmts, SLEnv)
-evalBundle cns (JSBundle mods) addToEnvForEditorInfo = do
-  evalEnv <- makeEnv cns 0
+evalBundle :: Connectors -> JSBundle -> Bool -> Counter -> IO (ReaderT Env m a -> m a, DLStmts, SLEnv)
+evalBundle cns (JSBundle mods) addToEnvForEditorInfo uniC = do
+  evalEnv <- makeEnv cns uniC
   let run = flip runReaderT evalEnv
   let exe = fst $ hdDie mods
   let evalPlus = do
@@ -231,8 +231,8 @@ getCompileName topName appName = case appName of
   where
     backticks s = '`' : s <> "`"
 
-prepareDAppCompiles :: Monad m => CompileDLProg -> (App ConnectorObject -> IO ConnectorObject) -> DLStmts -> SLEnv -> m (S.Set SLVar, SLVar -> IO ConnectorObject)
-prepareDAppCompiles compileDL run shared_lifts exe_ex = do
+prepareDAppCompiles :: Monad m => CompileDLProg -> (App ConnectorObject -> IO ConnectorObject) -> DLStmts -> SLEnv -> Counter -> m (S.Set SLVar, SLVar -> IO ConnectorObject)
+prepareDAppCompiles compileDL run shared_lifts exe_ex uniC = do
   let tops =
         M.keysSet $
           flip M.filter exe_ex $
@@ -257,8 +257,8 @@ prepareDAppCompiles compileDL run shared_lifts exe_ex = do
                           case toplevel of
                             False -> do
                               cns <- readDlo dlo_connectors
-                              uni <- readUniverse
-                              newEnv <- liftIO $ makeEnv cns $ succ uni
+                              void $ liftIO $ incCounter uniC
+                              newEnv <- liftIO $ makeEnv cns $ uniC
                               local (const newEnv) m
                             True -> m
                     dl <- mNewEnv $ checkUnusedVars $
