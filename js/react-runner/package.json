@@ -13,7 +13,7 @@
     "ethers": "^5.5.4",
     "express": "^4.17.3",
     "hi-base32": "^0.5.1",
-    "js-conflux-sdk": "git+https://github.com/reach-sh/js-conflux-sdk#v1_6_0_blockNumber",
+    "@reach-sh/js-conflux-sdk": "^1.6.0",
     "jsbi": "^3.1.6",
     "node-fetch": "^2.6.1",
     "nth-check": "^2.0.1",
