@@ -10,7 +10,7 @@ export const main = Reach.App(() => {
     launched: Fun([Contract], Null),
   });
   const B = API('Buyer', {
-    purchase: Fun([UInt], Null),
+    purchase: Fun([UInt], UInt),
     refund: Fun([], UInt),
   });
   init();
@@ -36,9 +36,10 @@ export const main = Reach.App(() => {
       check(purchasePrice >= min, "sorry, amount too low");
       return[[purchasePrice, [0, tok]], (ret) => {
         pMap[this] = purchasePrice;
+        const sold = tokensSold + 1;
         transfer(1, tok).to(this);
-        ret(null);
-        return [tokensSold + 1, total + purchasePrice];
+        ret(sold);
+        return [sold, total + purchasePrice];
       }];
     })
     .api_(B.refund, () => {
