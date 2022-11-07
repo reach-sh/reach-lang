@@ -37,6 +37,7 @@ import Reach.Counter
 import Reach.Eval.Error
 import Reach.Eval.Types
 import Reach.JSUtil
+import Reach.Pandemic
 import Reach.Parser
 import Reach.Texty (pretty)
 import Reach.Util
@@ -103,7 +104,7 @@ data Env = Env
   , e_exn :: IORef ExnEnv
   , e_appr :: Either DLOpts (IORef AppInitSt)
   , e_droppedAsserts :: Counter
-  , e_infections :: IORef (M.Map Int (SrcLoc, SLVar))
+  , e_infections :: IORef Infections
   }
 
 instance HasCounter Env where
