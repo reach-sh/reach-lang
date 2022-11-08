@@ -4,6 +4,10 @@ FILE=$2
 shift 2
 ARGS=( "$@" )
 
+if [ "$REACH_BUILD_PLATFORM" != "" ] ; then
+  ARGS+=( "--platform" "$REACH_BUILD_PLATFORM" )
+fi
+
 MD5=md5sum; if [ ! "$(command -v $MD5)" ]; then MD5=md5; fi
 
 HERE=$(dirname "$0")
