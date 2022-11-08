@@ -844,7 +844,7 @@ On networks that do not, this will always return zero.
 stdlib.transfer(from: Account, to: Account | Address, amount, token?: Token, opts?: TransferOpts) => Promise<void>
 ```
 
-Performs a transfer of `{!js} amount` from `{!js} from`, which is an account, to `{!js} to`, which is either an account or an address. 
+Performs a transfer of `{!js} amount` from `{!js} from`, which is an account, to `{!js} to`, which is either an account or an address.
 If `{!js} token` is not provided, then the transfer is of network tokens;
 otherwise, it is of the designated non-network token.
 The returned `{!js} Promise` will only be resolved after the transfer completes.
@@ -1314,7 +1314,7 @@ An @{defn("isolated testing mode")} is a `REACH_CONNECTOR_MODE` that matches
 
 You may provide an optional `{!js} onProgress` callback, used for reporting progress,
 which may be called many times up until the specified network time.
-It will receive an object with keys `{!js} current` and `{!js} target`,
+It will receive an object with keys `{!js} current` and `{!js} target`.
 
 Example:
 
@@ -1332,7 +1332,7 @@ The `{!js} while` statement in this code has an `{!js} await` that has the code 
 stdlib.waitUntilSecs(secs, onProgress?) => Promise<secs>
 ```
 
-Like `{!js} stdlib.waitUntilSecs`, but waits for a certain network seconds deadline.
+Like `{!js} stdlib.waitUntilTime`, but waits for a certain network seconds deadline.
 
 ---
 @{ref("js", "stdlib.wait")}@{ref("js", "wait")}
