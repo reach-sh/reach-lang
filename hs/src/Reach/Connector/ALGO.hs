@@ -1007,7 +1007,7 @@ data Env = Env
   , eCompanionRec :: CompanionRec
   , eLibrary :: IORef (M.Map LibFun (Label, App ()))
   , eGetStateKeys :: IO Int
-  , eMeths :: IORef (M.Map String CMeth)
+  , eABI :: IORef (M.Map String ABInfo)
   , eRes :: IORef (M.Map T.Text AS.Value)
   }
 
@@ -3182,12 +3182,6 @@ cmethRetTy = \case
   CView {..} -> cview_ret_ty
   CAlias {..} -> cmethRetTy calias_meth
 
-cmethIsApi :: CMeth -> Bool
-cmethIsApi = \case
-  CApi {} -> True
-  CView {} -> False
-  CAlias {..} -> cmethIsApi calias_meth
-
 cmethIsView :: CMeth -> Bool
 cmethIsView = \case
   CApi {} -> False
@@ -3418,7 +3412,10 @@ instance Compile CPProg where
     let vsiTop = analyzeViews vsi
     vsi_sm <- M.fromList <$> concatMapM cview (M.toAscList vsiTop)
     let meth_sm = M.union ai_sm vsi_sm
-    liftIO $ writeIORef eMeths meth_sm
+    let mkABI m = ABInfo {..}
+          where
+            abiPure = cmethIsView m
+    liftIO $ writeIORef eABI $ M.map mkABI meth_sm
     maxApiRetSize <- maxTypeSize $ M.map cmethRetTy meth_sm
     let meth_im = M.mapKeys sigStrToInt meth_sm
     let mGV_companion =
@@ -3606,6 +3603,10 @@ instance HasPre CPProg where
         where
           qualify = M.size ms > 1
 
+data ABInfo = ABInfo
+  { abiPure :: Bool
+  }
+
 compile_algo :: (Compile a, HasPre a) => CompilerToolEnv -> Disp -> a -> IO ConnectorInfo
 compile_algo env disp x = do
   -- This is the final result
@@ -3676,7 +3677,7 @@ compile_algo env disp x = do
   eMapKeysl <- recordSizeAndKeys gbad "mapData" eMapDataSize algoMaxLocalSchemaEntries_usable
   unless (getUntrustworthyMaps ePre || null eMapKeysl) $ do
     gwarn $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
-  eMeths <- newIORef mempty
+  eABI <- newIORef mempty
   let run :: CompanionInfo -> App () -> IO (TEALs, Notify, IO ())
       run eCompanion m = do
         let eHP_ = fromIntegral $ fromEnum (maxBound :: GlobalVar)
@@ -3752,15 +3753,15 @@ compile_algo env disp x = do
           aarray $ S.toAscList $ S.map (AS.String . LT.toStrict) ss
   wss W_ALGOConservative "warnings" gWarnings
   wss W_ALGOUnsupported "unsupported" gFailures
-  meth_sm <- readIORef eMeths
-  let apiEntry lab f = (lab, aarray $ map (AS.String . s2t) $ M.keys $ M.filter f meth_sm)
+  abi <- readIORef eABI
+  let apiEntry lab f = (lab, aarray $ map (AS.String . s2t) $ M.keys $ M.filter f abi)
   modifyIORef eRes $
     M.insert "ABI" $
       aobject $
         M.fromList $
           [ apiEntry "sigs" (const True)
-          , apiEntry "impure" cmethIsApi
-          , apiEntry "pure" cmethIsView
+          , apiEntry "impure" (not . abiPure)
+          , apiEntry "pure" abiPure
           ]
   modifyIORef eRes $
     M.insert "version" $
