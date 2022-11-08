@@ -2605,7 +2605,7 @@ doSwitch lab ck _at dv csm = do
         cstore
         go cload
 
-cm :: App () -> DLStmt -> App ()
+cm :: App a -> DLStmt -> App a
 cm km = \case
   DL_Nop _ -> km
   DL_Let _ DLV_Eff de ->
@@ -2692,7 +2692,7 @@ cm km = \case
     impossible $ "only in CP"
   DL_LocalDo _ _ t -> cp km t
 
-cp :: App () -> DLTail -> App ()
+cp :: App a -> DLTail -> App a
 cp km = \case
   DT_Return _ -> km
   DT_Com m k -> cm (cp km k) m
