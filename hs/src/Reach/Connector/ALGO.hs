@@ -1002,6 +1002,12 @@ instance HasCounter Env where
 
 type App = ReaderT Env IO
 
+class CompileK a where
+  cpk :: App b -> a -> App b
+
+class Compile a where
+  cp :: a -> App ()
+
 data LibFun
   = LF_cMapLoad
   | LF_checkTxn_net
@@ -1220,7 +1226,7 @@ dont_concat_first :: [App ()]
 dont_concat_first = nop : repeat (op "concat")
 
 padding :: Integer -> App ()
-padding = cla . bytesZeroLit
+padding = cp . bytesZeroLit
 
 badlike :: (Env -> ErrorSetRef) -> LT.Text -> App ()
 badlike eGet lab = do
@@ -1355,7 +1361,7 @@ cfrombs = \case
 
 ctzero :: DLType -> App ()
 ctzero = \case
-  T_UInt UI_Word -> cint 0
+  T_UInt UI_Word -> cint_ sb 0
   t -> do
     padding =<< typeSizeOf t
     cfrombs t
@@ -1366,20 +1372,28 @@ chkint at = checkIntLiteralC at conName' conCons'
 cint_ :: SrcLoc -> Integer -> App ()
 cint_ at i = output $ TInt $ chkint at i
 
+instance Compile Integer where
+  cp = cint_ sb
+
+instance Compile Int where
+  cp x = cp y
+    where
+      y :: Integer = fromIntegral x
+
 cint :: Integer -> App ()
-cint = cint_ sb
+cint = cp
 
-cl :: DLLiteral -> App ()
-cl = \case
-  DLL_Null -> cbs ""
-  DLL_Bool b -> cint $ if b then 1 else 0
-  DLL_Int at UI_Word i -> cint_ at i
-  DLL_Int at UI_256 i ->
-    cbs $ itob 32 $ checkIntLiteral at "UInt256" 0 uint256_Max i
-  DLL_TokenZero -> cint 0
+instance Compile DLLiteral where
+  cp = \case
+    DLL_Null -> cbs ""
+    DLL_Bool b -> cint $ (if b then 1 else 0)
+    DLL_Int at UI_Word i -> cint_ at i
+    DLL_Int at UI_256 i ->
+      cp $ itob 32 $ checkIntLiteral at "UInt256" 0 uint256_Max i
+    DLL_TokenZero -> cint 0
 
-cbool :: Bool -> App ()
-cbool = cl . DLL_Bool
+instance Compile Bool where
+  cp = cp . DLL_Bool
 
 ca_boolb :: DLArg -> Maybe B.ByteString
 ca_boolb = \case
@@ -1390,15 +1404,15 @@ ca_boolb = \case
 cas_boolbs :: [DLArg] -> Maybe B.ByteString
 cas_boolbs = mconcat . map ca_boolb
 
-cv :: DLVar -> App ()
-cv = lookup_let
+instance Compile DLVar where
+  cp = lookup_let
 
-ca :: DLArg -> App ()
-ca = \case
-  DLA_Var v -> cv v
-  DLA_Constant c -> cl $ conCons' c
-  DLA_Literal c -> cl c
-  DLA_Interact {} -> impossible "consensus interact"
+instance Compile DLArg where
+  cp = \case
+    DLA_Var v -> cp v
+    DLA_Constant c -> cp $ conCons' c
+    DLA_Literal c -> cp c
+    DLA_Interact {} -> impossible "consensus interact"
 
 argSmall :: DLArg -> App Bool
 argSmall = \case
@@ -1437,11 +1451,11 @@ cprim = \case
       case (from, to) of
         (UI_Word, UI_256) -> do
           padding $ 3 * 8
-          ca v
+          cp v
           output $ Titob False
           op "concat"
         (UI_256, UI_Word) -> do
-          ca v
+          cp v
           -- [ v ]
           let ext i = cint (8 * i) >> op "extract_uint64"
           unless (trunc || pv == PV_Veri) $ do
@@ -1456,10 +1470,10 @@ cprim = \case
     _ -> impossible "cprim: UCAST args"
   MUL_DIV _ -> \case
     [x, y, z] -> do
-      ca x
-      ca y
+      cp x
+      cp y
       op "mulw"
-      ca z
+      cp z
       op "divw"
     _ -> impossible "cprim: MUL_DIV args"
   LSH -> call "<<"
@@ -1476,55 +1490,55 @@ cprim = \case
     [x] -> do
       bl <- fromIntegral <$> (typeSizeOf $ argTypeOf x)
       let (start, len) = if bl > 8 then (bl - 8, 8) else (0, 0)
-      ca x
+      cp x
       output $ TExtract start len
       op "btoi"
     _ -> impossible "btoiLast8"
   BYTES_ZPAD xtra -> \case
     [x] -> do
-      ca x
+      cp x
       czpad xtra
     _ -> impossible $ "zpad"
   IF_THEN_ELSE -> \case
     [be, DLA_Literal (DLL_Bool True), DLA_Literal (DLL_Bool False)] -> do
-      ca be
+      cp be
     [be, DLA_Literal (DLL_Bool False), DLA_Literal (DLL_Bool True)] -> do
-      ca be
+      cp be
       op "!"
     [be, DLA_Literal (DLL_Bool True), fe] -> do
-      ca be
-      ca fe
+      cp be
+      cp fe
       op "||"
     [be, DLA_Literal (DLL_Bool False), fe] -> do
       -- be \ fe |  T  | F
       --    T    |  F  | F
       --    F    |  T  | F
-      ca be
+      cp be
       op "!"
-      ca fe
+      cp fe
       op "&&"
     [be, te, DLA_Literal (DLL_Bool False)] -> do
-      ca be
-      ca te
+      cp be
+      cp te
       op "&&"
     [be, te, DLA_Literal (DLL_Bool True)] -> do
       -- be \ te |  T  | F
       --    T    |  T  | F
       --    F    |  T  | T
-      ca be
+      cp be
       op "!"
-      ca te
+      cp te
       op "||"
     [be, te, fe] -> do
-      ca fe
-      ca te
-      ca be
+      cp fe
+      cp te
+      cp be
       op "select"
     _ -> impossible "ite args"
   CTC_ADDR_EQ -> \case
     [ ctca, aa ] -> do
       cContractToAddr ctca
-      ca aa
+      cp aa
       op "=="
     _ -> impossible "ctcAddrEq args"
   GET_CONTRACT -> const $ do
@@ -1534,7 +1548,7 @@ cprim = \case
   STRINGDYN_CONCAT -> call "concat" -- assumes two-args/type safe
   UINT_TO_STRINGDYN ui -> \case
     [i] -> do
-      ca i
+      cp i
       case ui of
         UI_256 -> return ()
         UI_Word -> output $ Titob False
@@ -1542,7 +1556,7 @@ cprim = \case
     _ -> impossible "UInt.toStringDyn"
   where
     call o = \args -> do
-      forM_ args ca
+      forM_ args cp
       op o
     bcall t o = call $ (if t == UI_256 then "b" else "") <> o
     bcallz t o args = do
@@ -1551,7 +1565,7 @@ cprim = \case
         libCall LF_checkUInt256ResultLen $ do
           op "dup"
           op "len"
-          cint =<< (typeSizeOf $ T_UInt UI_256)
+          cp =<< (typeSizeOf $ T_UInt UI_256)
           op "swap"
           op "-"
           -- This traps on purpose when the result is longer than 256
@@ -1563,7 +1577,7 @@ cprim = \case
 cContractToAddr :: DLArg -> App ()
 cContractToAddr ctca = do
   cbs "appID"
-  ca ctca
+  cp ctca
   ctobs $ T_UInt UI_Word
   op "concat"
   op "sha512_256"
@@ -1601,8 +1615,8 @@ cextract s l =
     True -> do
       output $ TExtract (fromIntegral s) (fromIntegral l)
     False -> do
-      cint s
-      cint l
+      cp s
+      cp l
       op "extract3"
 
 creplace :: Integer -> App () -> App ()
@@ -1612,7 +1626,7 @@ creplace s cnew = do
       cnew
       output $ TReplace2 (fromIntegral s)
     False -> do
-      cint s
+      cp s
       cnew
       op "replace3"
 
@@ -1632,7 +1646,7 @@ cArraySet _at t mcbig eidx cnew = do
     Right cidx -> do
       --- [ big ]
       cidx
-      cint tsz
+      cp tsz
       op "*"
       --- [ big, start ]
       cnew
@@ -1667,7 +1681,7 @@ cfor maxi body = do
       op "+"
       op "dup"
       store_idx
-      cint maxi
+      cp maxi
       op "<"
       output $ TFor_bnz top_lab maxi end_lab
     label end_lab
@@ -1676,7 +1690,7 @@ cfor maxi body = do
 doArrayRef :: SrcLoc -> DLArg -> Bool -> Either DLArg (App ()) -> App ()
 doArrayRef at aa frombs ie = do
   let (t, _) = argArrTypeLen aa
-  ca aa
+  cp aa
   cArrayRef at t frombs ie
 
 cArrayRef :: SrcLoc -> DLType -> Bool -> Either DLArg (App ()) -> App ()
@@ -1684,7 +1698,7 @@ cArrayRef _at t frombs ie = do
   tsz <- typeSizeOf t
   let ie' =
         case ie of
-          Left ia -> ca ia
+          Left ia -> cp ia
           Right x -> x
   case t of
     T_Bool -> do
@@ -1699,52 +1713,55 @@ cArrayRef _at t frombs ie = do
           let start = ii * tsz
           cextract start tsz
         _ -> do
-          cint tsz
+          cp tsz
           ie'
           op "*"
-          cint tsz
+          cp tsz
           op "extract3"
       case frombs of
         True -> cfrombs t
         False -> nop
 
-cla :: DLLargeArg -> App ()
-cla = \case
-  DLLA_Array t as ->
-    case t of
-      T_Bool ->
-        case cas_boolbs as of
-          Nothing -> normal
-          Just x -> cbs x
-      _ -> normal
-    where
-      normal = cconcatbs $ map (\a -> (t, ca a)) as
-  DLLA_Tuple as ->
-    cconcatbs $ map (\a -> (argTypeOf a, ca a)) as
-  DLLA_Obj m -> cla $ DLLA_Struct $ M.toAscList m
-  DLLA_Data tm vn va -> do
-    let h ((k, v), i) = (k, (i, v))
-    let tm' = M.fromList $ map h $ zip (M.toAscList tm) [0 ..]
-    let (vi, vt) = fromMaybe (impossible $ "dla_data") $ M.lookup vn tm'
-    cbs $ B.singleton $ BI.w2c vi
-    ca va
-    ctobs vt
-    vlen <- (+) 1 <$> typeSizeOf (argTypeOf va)
-    op "concat"
-    dlen <- typeSizeOf $ T_Data tm
-    czpad $ fromIntegral $ dlen - vlen
-    check_concat_len dlen
-  DLLA_Struct kvs ->
-    cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd kvs
-  DLLA_Bytes bs -> cbs bs
-  DLLA_BytesDyn bs -> cbs bs
-  DLLA_StringDyn t -> cbs $ bpack $ T.unpack t
+instance Compile DLLargeArg where
+  cp = \case
+    DLLA_Array t as ->
+      case t of
+        T_Bool ->
+          case cas_boolbs as of
+            Nothing -> normal
+            Just x -> cp x
+        _ -> normal
+      where
+        normal = cconcatbs $ map (\a -> (t, cp a)) as
+    DLLA_Tuple as ->
+      cconcatbs $ map (\a -> (argTypeOf a, cp a)) as
+    DLLA_Obj m -> cp $ DLLA_Struct $ M.toAscList m
+    DLLA_Data tm vn va -> do
+      let h ((k, v), i) = (k, (i, v))
+      let tm' = M.fromList $ map h $ zip (M.toAscList tm) [0 ..]
+      let (vi, vt) = fromMaybe (impossible $ "dla_data") $ M.lookup vn tm'
+      cp $ B.singleton $ BI.w2c vi
+      cp va
+      ctobs vt
+      vlen <- (+) 1 <$> typeSizeOf (argTypeOf va)
+      op "concat"
+      dlen <- typeSizeOf $ T_Data tm
+      czpad $ fromIntegral $ dlen - vlen
+      check_concat_len dlen
+    DLLA_Struct kvs ->
+      cconcatbs $ map (\a -> (argTypeOf a, cp a)) $ map snd kvs
+    DLLA_Bytes bs -> cp bs
+    DLLA_BytesDyn bs -> cp bs
+    DLLA_StringDyn t -> cp $ bpack $ T.unpack t
+
+instance Compile B.ByteString where
+  cp bs = do
+    when (B.length bs > fromIntegral algoMaxStringSize) $
+      bad $ "Cannot create raw bytes of length greater than " <> texty algoMaxStringSize <> "."
+    output $ TBytes bs
 
 cbs :: B.ByteString -> App ()
-cbs bs = do
-  when (B.length bs > fromIntegral algoMaxStringSize) $
-    bad $ "Cannot create raw bytes of length greater than " <> texty algoMaxStringSize <> "."
-  output $ TBytes bs
+cbs = cp
 
 cTupleRef :: SrcLoc -> DLType -> Integer -> App ()
 cTupleRef _at tt idx = do
@@ -1784,7 +1801,7 @@ cMapLoad = libCall LF_cMapLoad $ do
   label labReal
   let getOne mi = do
         -- [ Address ]
-        cbs $ keyVary mi
+        cp $ keyVary mi
         -- [ Address, Key ]
         op "app_local_get"
         -- [ MapData ]
@@ -1823,7 +1840,7 @@ cMapStore _at cnew = do
     -- Special case one key:
     [0] -> do
       -- [ Address ]
-      cbs $ keyVary 0
+      cp $ keyVary 0
       -- [ Address, Key ]
       cnew
       -- [ Address, Key, Value ]
@@ -1834,7 +1851,7 @@ cMapStore _at cnew = do
         -- [ Address, MapData' ]
         code "dig" ["1"]
         -- [ Address, MapData', Address ]
-        cbs $ keyVary mi
+        cp $ keyVary mi
         -- [ Address, MapData', Address, Key ]
         code "dig" ["2"]
         -- [ Address, MapData', Address, Key, MapData' ]
@@ -1867,7 +1884,7 @@ cSvsLoad size = do
     -- [ SvsData_0? ]
     forM_ (zip keysl $ False : repeat True) $ \(mi, doConcat) -> do
       -- [ SvsData_N? ]
-      cbs $ keyVary mi
+      cp $ keyVary mi
       -- [ SvsData_N?, Key ]
       op "app_global_get"
       -- [ SvsData_N?, NewPiece ]
@@ -1884,7 +1901,7 @@ cSvsSave _at svs = do
   let la = DLLA_Tuple svs
   let lat = largeArgTypeOf la
   size <- typeSizeOf lat
-  cla la
+  cp la
   ctobs lat
   (_, keysl) <- computeStateSizeAndKeys bad "svs" size algoMaxGlobalSchemaEntries_usable
   ssr <- asks eStateSizeR
@@ -1892,7 +1909,7 @@ cSvsSave _at svs = do
   -- [ SvsData ]
   forM_ keysl $ \vi -> do
     -- [ SvsData ]
-    cbs $ keyVary vi
+    cp $ keyVary vi
     -- [ SvsData, Key ]
     code "dig" ["1"]
     -- [ SvsData, Key, SvsData ]
@@ -1923,458 +1940,458 @@ cGetBalance _at mmin = \case
   Just tok -> do
     cContractAddr
     incResource R_Asset tok
-    ca tok
+    cp tok
     code "asset_holding_get" [ "AssetBalance" ]
     op "pop"
 
-ce :: DLExpr -> App ()
-ce = \case
-  DLE_Arg _ a -> ca a
-  DLE_LArg _ a -> cla a
-  DLE_Impossible at _ (Err_Impossible_Case s) ->
-    impossible $ "ce: impossible case `" <> s <> "` encountered at: " <> show at
-  DLE_Impossible at _ err -> expect_thrown at err
-  DLE_VerifyMuldiv at _ _ _ err ->
-    expect_thrown at err
-  DLE_PrimOp _ p args -> cprim p args
-  DLE_ArrayRef at aa ia -> doArrayRef at aa True (Left ia)
-  DLE_ArraySet at aa ia va -> do
-    let (t, _) = argArrTypeLen aa
-    case t of
-      T_Bool -> do
-        ca aa
-        ca ia
-        ca va
-        op "setbyte"
-      _ -> do
-        let cnew = ca va >> ctobs t
-        mcbig <-
-          argSmall aa >>= \case
-            False -> do
-              ca aa
-              return $ Nothing
-            True -> do
-              return $ Just $ ca aa
-        let eidx =
-              case ia of
-                DLA_Literal (DLL_Int _ UI_Word ii) -> Left ii
-                _ -> Right $ ca ia
-        cArraySet at t mcbig eidx cnew
-  DLE_ArrayConcat _ x y -> do
-    let (xt, xlen) = argArrTypeLen x
-    let (_, ylen) = argArrTypeLen y
-    ca x
-    ca y
-    xtz <- typeSizeOf xt
-    check_concat_len $ (xlen + ylen) * xtz
-    op "concat"
-  DLE_BytesDynCast _ v -> do
-    ca v
-  DLE_TupleRef at ta idx -> do
-    ca ta
-    cTupleRef at (argTypeOf ta) idx
-  DLE_TupleSet at tup_a index val_a -> do
-    ca tup_a
-    cTupleSet at (ca val_a) (argTypeOf tup_a) index
-  DLE_ObjectRef at obj_a fieldName -> do
-    ca obj_a
-    uncurry (cTupleRef at) $ objectRefAsTupleRef obj_a fieldName
-  DLE_ObjectSet at obj_a fieldName val_a -> do
-    ca obj_a
-    uncurry (cTupleSet at (ca val_a)) $ objectRefAsTupleRef obj_a fieldName
-  DLE_Interact {} -> impossible "consensus interact"
-  DLE_Digest _ args -> cdigest $ map go args
-    where
-      go a = (argTypeOf a, ca a)
-  DLE_Transfer mt_at who mt_amt mt_mtok -> do
-    let mt_always = False
-    let mt_mrecv = Just $ Left who
-    let mt_mcclose = Nothing
-    let mt_next = False
-    let mt_submit = True
-    void $ makeTxn $ MakeTxn {..}
-  DLE_TokenInit mt_at tok -> do
-    block_ "TokenInit" $ do
-      let mt_always = True
-      let mt_mtok = Just tok
-      let mt_amt = DLA_Literal $ DLL_Int sb UI_Word 0
-      let mt_mrecv = Nothing
+instance Compile DLExpr where
+  cp = \case
+    DLE_Arg _ a -> cp a
+    DLE_LArg _ a -> cp a
+    DLE_Impossible at _ (Err_Impossible_Case s) ->
+      impossible $ "ce: impossible case `" <> s <> "` encountered at: " <> show at
+    DLE_Impossible at _ err -> expect_thrown at err
+    DLE_VerifyMuldiv at _ _ _ err ->
+      expect_thrown at err
+    DLE_PrimOp _ p args -> cprim p args
+    DLE_ArrayRef at aa ia -> doArrayRef at aa True (Left ia)
+    DLE_ArraySet at aa ia va -> do
+      let (t, _) = argArrTypeLen aa
+      case t of
+        T_Bool -> do
+          cp aa
+          cp ia
+          cp va
+          op "setbyte"
+        _ -> do
+          let cnew = cp va >> ctobs t
+          mcbig <-
+            argSmall aa >>= \case
+              False -> do
+                cp aa
+                return $ Nothing
+              True -> do
+                return $ Just $ cp aa
+          let eidx =
+                case ia of
+                  DLA_Literal (DLL_Int _ UI_Word ii) -> Left ii
+                  _ -> Right $ cp ia
+          cArraySet at t mcbig eidx cnew
+    DLE_ArrayConcat _ x y -> do
+      let (xt, xlen) = argArrTypeLen x
+      let (_, ylen) = argArrTypeLen y
+      cp x
+      cp y
+      xtz <- typeSizeOf xt
+      check_concat_len $ (xlen + ylen) * xtz
+      op "concat"
+    DLE_BytesDynCast _ v -> do
+      cp v
+    DLE_TupleRef at ta idx -> do
+      cp ta
+      cTupleRef at (argTypeOf ta) idx
+    DLE_TupleSet at tup_a index val_a -> do
+      cp tup_a
+      cTupleSet at (cp val_a) (argTypeOf tup_a) index
+    DLE_ObjectRef at obj_a fieldName -> do
+      cp obj_a
+      uncurry (cTupleRef at) $ objectRefAsTupleRef obj_a fieldName
+    DLE_ObjectSet at obj_a fieldName val_a -> do
+      cp obj_a
+      uncurry (cTupleSet at (cp val_a)) $ objectRefAsTupleRef obj_a fieldName
+    DLE_Interact {} -> impossible "consensus interact"
+    DLE_Digest _ args -> cdigest $ map go args
+      where
+        go a = (argTypeOf a, cp a)
+    DLE_Transfer mt_at who mt_amt mt_mtok -> do
+      let mt_always = False
+      let mt_mrecv = Just $ Left who
+      let mt_mcclose = Nothing
       let mt_next = False
       let mt_submit = True
-      let mt_mcclose = Nothing
-      let ct_at = mt_at
-      let ct_mtok = Nothing
-      let ct_amt = DLA_Literal $ minimumBalance_l
-      addInitTok tok
-      void $ checkTxn $ CheckTxn {..}
       void $ makeTxn $ MakeTxn {..}
-  DLE_TokenAccepted _ addr tok -> do
-    ca addr
-    ca tok
-    incResource R_Account addr
-    incResource R_Asset tok
-    code "asset_holding_get" [ "AssetBalance" ]
-    op "swap"
-    op "pop"
-  DLE_CheckPay ct_at fs ct_amt ct_mtok -> do
-    void $ checkTxn $ CheckTxn {..}
-    show_stack "CheckPay" Nothing ct_at fs
-  DLE_Claim at fs t a mmsg -> do
-    let check = ca a >> assert
-    case t of
-      CT_Assert -> impossible "assert"
-      CT_Assume -> check
-      CT_Enforce -> check
-      CT_Require -> check
-      CT_Possible -> impossible "possible"
-      CT_Unknowable {} -> impossible "unknowable"
-    show_stack "Claim" mmsg at fs
-  DLE_Wait {} -> nop
-  DLE_PartSet _ _ a -> ca a
-  DLE_MapRef _ (DLMVar i) fa -> do
-    incResource R_Account fa
-    ca fa
-    cMapLoad
-    mdt <- getMapDataTy
-    cTupleRef sb mdt $ fromIntegral i
-  DLE_MapSet at mpv@(DLMVar i) fa mva -> do
-    incResource R_Account fa
-    Env {..} <- ask
-    mdt <- getMapDataTy
-    mt <- getMapTy mpv
-    case (length eMapKeysl) == 1 && (M.size eMaps) == 1 of
-      -- Special case one key and one map
-      True -> do
-        ca fa
-        cMapStore at $ do
-          cla $ mdaToMaybeLA mt mva
-      _ -> do
-        ca fa
-        cMapStore at $ do
-          ca fa
-          cMapLoad
-          let cnew = cla $ mdaToMaybeLA mt mva
-          cTupleSet at cnew mdt $ fromIntegral i
-  DLE_Remote at fs ro rng_ty (DLRemote rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo) -> do
-    let DLRemoteALGO _fees r_accounts r_assets r_addr2acc r_apps r_oc r_strictPay r_rawCall _ _ _ = malgo
-    warn_lab <- asks eWhich >>= \case
-      Just which -> return $ "Step " <> show which
-      Nothing -> return $ "This program"
-    warn $ LT.pack $
-      warn_lab <> " calls a remote object at " <> show at <> ". This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object. Furthermore, the remote object may require special transaction parameters which are not expressed in the Reach API or the Algorand ABI standards."
-    let ts = map argTypeOf as
-    let rm = fromMaybe (impossible "XXX") rm'
-    sig <- signatureStr r_addr2acc rm ts (Just rng_ty)
-    remoteTxns <- liftIO $ newCounter 0
-    let mayIncTxn m = do
-          b <- m
-          when b $
-            void $ liftIO $ incCounter remoteTxns
-          return b
-    -- Figure out what we're calling
-    salloc_ "remote address" $ \storeAddr loadAddr -> do
-      cContractToAddr ro
-      storeAddr
-      salloc_ "minb" $ \storeMinB loadMinB -> do
-        cContractAddr
-        op "min_balance"
-        storeMinB
-        -- XXX We are caching the minimum balance because if we are deleting an
-        -- application we made, then our minimum balance will decrease. The
-        -- alternative is to track how much exactly it will go down by.
-        let mmin = Just loadMinB
-        salloc_ "pre balances" $ \storeBals loadBals -> do
-          let mtoksBill = Nothing : map Just nnRecv
-          let mtoksiAll = zip [0..] mtoksBill
-          let (mtoksiBill, mtoksiZero) = splitAt (length mtoksBill) mtoksiAll
-          let paid = M.fromList $ (Nothing, pay_net) : (map (\(x, y) -> (Just y, x)) pay_ks)
-          let balsT = T_Tuple $ map (const $ T_UInt UI_Word) mtoksiAll
-          let gb_pre _ mtok = do
-                cGetBalance at mmin mtok
-                case M.lookup mtok paid of
-                  Nothing -> return ()
-                  Just amt -> do
-                    ca amt
-                    op "-"
-          cconcatbs $ map (\(i, mtok) -> (T_UInt UI_Word, gb_pre i mtok)) mtoksiAll
-          storeBals
-          -- Start the call
-          let mt_at = at
-          let mt_mcclose = Nothing
-          let mt_mrecv = Just $ Right loadAddr
-          let mt_always = r_strictPay
-          hadNet <- (do
-            let mt_amt = pay_net
-            let mt_mtok = Nothing
-            let mt_next = False
-            let mt_submit = False
-            mayIncTxn $ makeTxn $ MakeTxn {..})
-          let foldMy a l f = foldM f a l
-          hadSome <- foldMy hadNet pay_ks $ \mt_next (mt_amt, tok) -> do
-            let mt_mtok = Just tok
-            let mt_submit = False
-            x <- mayIncTxn $ makeTxn $ MakeTxn {..}
-            return $ mt_next || x
-          itxnNextOrBegin hadSome
-          output $ TConst "appl"
-          makeTxn1 "TypeEnum"
-          ca ro
-          incResource R_App ro
-          makeTxn1 "ApplicationID"
-          unless r_rawCall $ do
-            cbs $ sigStrToBytes sig
-            makeTxn1 "ApplicationArgs"
-          accountsR <- liftIO $ newCounter 1
-          let processArg a = do
-                ca a
-                let t = argTypeOf a
-                ctobs t
-                case t of
-                  -- XXX This is bad and will not work in most cases
-                  T_Address -> do
-                    incResource R_Account a
-                    let m = makeTxn1 "Accounts"
-                    case r_addr2acc of
-                      False -> do
-                        op "dup"
-                        m
-                      True -> do
-                        i <- liftIO $ incCounter accountsR
-                        m
-                        cint $ fromIntegral i
-                        ctobs $ T_UInt UI_Word
-                  _ -> return ()
-          let processArg' a = do
-                processArg a
-                makeTxn1 "ApplicationArgs"
-          let processArgTuple tas = do
-                cconcatbs_ (const $ return ()) $
-                  map (\a -> (argTypeOf a, processArg a)) tas
-                makeTxn1 "ApplicationArgs"
-          case splitArgs as of
-            (_, Nothing) -> do
-              forM_ as processArg'
-            (as14, Just asMore) -> do
-              forM_ as14 processArg'
-              processArgTuple asMore
-          -- XXX If we can "inherit" resources, then this needs to be removed and
-          -- we need to check that nnZeros actually stay 0
-          forM_ (r_assets <> map snd pay_ks <> nnRecv) $ \a -> do
-            incResource R_Asset a
-            ca a
-            makeTxn1 "Assets"
-          forM_ r_accounts $ \a -> do
-            incResource R_Account a
-            ca a
-            makeTxn1 "Accounts"
-          forM_ r_apps $ \a -> do
-            incResource R_App a
-            ca a
-            makeTxn1 "Applications"
-          let oc f = do
-                output $ TConst f
-                makeTxn1 "OnCompletion"
-          case r_oc of
-            RA_NoOp -> return ()
-            RA_OptIn -> oc "OptIn"
-            RA_CloseOut -> oc "CloseOut"
-            RA_ClearState -> oc "ClearState"
-            RA_UpdateApplication -> oc "UpdateApplication"
-            RA_DeleteApplication -> oc "DeleteApplication"
-          op "itxn_submit"
-          show_stack ("Remote: " <> sig) Nothing at fs
-          appl_idx <- liftIO $ readCounter remoteTxns
-          let gb_post idx mtok = do
-                cGetBalance at mmin mtok
-                loadBals
-                cTupleRef at balsT idx
-                op "-"
-          cconcatbs $ map (\(i, mtok) -> (T_UInt UI_Word, gb_post i mtok)) mtoksiBill
-          forM_ mtoksiZero $ \(idx, mtok) -> do
-            cGetBalance at mmin mtok
-            loadBals
-            cTupleRef at balsT idx
-            asserteq
-          code "gitxn" [ texty appl_idx, "LastLog" ]
-          output $ TExtract 4 0 -- (0 = to the end)
-          op "concat"
-  DLE_TokenNew at (DLTokenNew {..}) -> do
-    block_ "TokenNew" $ do
-      let ct_at = at
-      let ct_mtok = Nothing
-      let ct_amt = DLA_Literal $ minimumBalance_l
+    DLE_TokenInit mt_at tok -> do
+      block_ "TokenInit" $ do
+        let mt_always = True
+        let mt_mtok = Just tok
+        let mt_amt = DLA_Literal $ DLL_Int sb UI_Word 0
+        let mt_mrecv = Nothing
+        let mt_next = False
+        let mt_submit = True
+        let mt_mcclose = Nothing
+        let ct_at = mt_at
+        let ct_mtok = Nothing
+        let ct_amt = DLA_Literal $ minimumBalance_l
+        addInitTok tok
+        void $ checkTxn $ CheckTxn {..}
+        void $ makeTxn $ MakeTxn {..}
+    DLE_TokenAccepted _ addr tok -> do
+      cp addr
+      cp tok
+      incResource R_Account addr
+      incResource R_Asset tok
+      code "asset_holding_get" [ "AssetBalance" ]
+      op "swap"
+      op "pop"
+    DLE_CheckPay ct_at fs ct_amt ct_mtok -> do
       void $ checkTxn $ CheckTxn {..}
+      show_stack "CheckPay" Nothing ct_at fs
+    DLE_Claim at fs t a mmsg -> do
+      let check = cp a >> assert
+      case t of
+        CT_Assert -> impossible "assert"
+        CT_Assume -> check
+        CT_Enforce -> check
+        CT_Require -> check
+        CT_Possible -> impossible "possible"
+        CT_Unknowable {} -> impossible "unknowable"
+      show_stack "Claim" mmsg at fs
+    DLE_Wait {} -> nop
+    DLE_PartSet _ _ a -> cp a
+    DLE_MapRef _ (DLMVar i) fa -> do
+      incResource R_Account fa
+      cp fa
+      cMapLoad
+      mdt <- getMapDataTy
+      cTupleRef sb mdt $ fromIntegral i
+    DLE_MapSet at mpv@(DLMVar i) fa mva -> do
+      incResource R_Account fa
+      Env {..} <- ask
+      mdt <- getMapDataTy
+      mt <- getMapTy mpv
+      case (length eMapKeysl) == 1 && (M.size eMaps) == 1 of
+        -- Special case one key and one map
+        True -> do
+          cp fa
+          cMapStore at $ do
+            cp $ mdaToMaybeLA mt mva
+        _ -> do
+          cp fa
+          cMapStore at $ do
+            cp fa
+            cMapLoad
+            let cnew = cp $ mdaToMaybeLA mt mva
+            cTupleSet at cnew mdt $ fromIntegral i
+    DLE_Remote at fs ro rng_ty (DLRemote rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo) -> do
+      let DLRemoteALGO _fees r_accounts r_assets r_addr2acc r_apps r_oc r_strictPay r_rawCall _ _ _ = malgo
+      warn_lab <- asks eWhich >>= \case
+        Just which -> return $ "Step " <> show which
+        Nothing -> return $ "This program"
+      warn $ LT.pack $
+        warn_lab <> " calls a remote object at " <> show at <> ". This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object. Furthermore, the remote object may require special transaction parameters which are not expressed in the Reach API or the Algorand ABI standards."
+      let ts = map argTypeOf as
+      let rm = fromMaybe (impossible "XXX") rm'
+      sig <- signatureStr r_addr2acc rm ts (Just rng_ty)
+      remoteTxns <- liftIO $ newCounter 0
+      let mayIncTxn m = do
+            b <- m
+            when b $
+              void $ liftIO $ incCounter remoteTxns
+            return b
+      -- Figure out what we're calling
+      salloc_ "remote address" $ \storeAddr loadAddr -> do
+        cContractToAddr ro
+        storeAddr
+        salloc_ "minb" $ \storeMinB loadMinB -> do
+          cContractAddr
+          op "min_balance"
+          storeMinB
+          -- XXX We are caching the minimum balance because if we are deleting an
+          -- application we made, then our minimum balance will decrease. The
+          -- alternative is to track how much exactly it will go down by.
+          let mmin = Just loadMinB
+          salloc_ "pre balances" $ \storeBals loadBals -> do
+            let mtoksBill = Nothing : map Just nnRecv
+            let mtoksiAll = zip [0..] mtoksBill
+            let (mtoksiBill, mtoksiZero) = splitAt (length mtoksBill) mtoksiAll
+            let paid = M.fromList $ (Nothing, pay_net) : (map (\(x, y) -> (Just y, x)) pay_ks)
+            let balsT = T_Tuple $ map (const $ T_UInt UI_Word) mtoksiAll
+            let gb_pre _ mtok = do
+                  cGetBalance at mmin mtok
+                  case M.lookup mtok paid of
+                    Nothing -> return ()
+                    Just amt -> do
+                      cp amt
+                      op "-"
+            cconcatbs $ map (\(i, mtok) -> (T_UInt UI_Word, gb_pre i mtok)) mtoksiAll
+            storeBals
+            -- Start the call
+            let mt_at = at
+            let mt_mcclose = Nothing
+            let mt_mrecv = Just $ Right loadAddr
+            let mt_always = r_strictPay
+            hadNet <- (do
+              let mt_amt = pay_net
+              let mt_mtok = Nothing
+              let mt_next = False
+              let mt_submit = False
+              mayIncTxn $ makeTxn $ MakeTxn {..})
+            let foldMy a l f = foldM f a l
+            hadSome <- foldMy hadNet pay_ks $ \mt_next (mt_amt, tok) -> do
+              let mt_mtok = Just tok
+              let mt_submit = False
+              x <- mayIncTxn $ makeTxn $ MakeTxn {..}
+              return $ mt_next || x
+            itxnNextOrBegin hadSome
+            output $ TConst "appl"
+            makeTxn1 "TypeEnum"
+            cp ro
+            incResource R_App ro
+            makeTxn1 "ApplicationID"
+            unless r_rawCall $ do
+              cp $ sigStrToBytes sig
+              makeTxn1 "ApplicationArgs"
+            accountsR <- liftIO $ newCounter 1
+            let processArg a = do
+                  cp a
+                  let t = argTypeOf a
+                  ctobs t
+                  case t of
+                    -- XXX This is bad and will not work in most cases
+                    T_Address -> do
+                      incResource R_Account a
+                      let m = makeTxn1 "Accounts"
+                      case r_addr2acc of
+                        False -> do
+                          op "dup"
+                          m
+                        True -> do
+                          i <- liftIO $ incCounter accountsR
+                          m
+                          cp i
+                          ctobs $ T_UInt UI_Word
+                    _ -> return ()
+            let processArg' a = do
+                  processArg a
+                  makeTxn1 "ApplicationArgs"
+            let processArgTuple tas = do
+                  cconcatbs_ (const $ return ()) $
+                    map (\a -> (argTypeOf a, processArg a)) tas
+                  makeTxn1 "ApplicationArgs"
+            case splitArgs as of
+              (_, Nothing) -> do
+                forM_ as processArg'
+              (as14, Just asMore) -> do
+                forM_ as14 processArg'
+                processArgTuple asMore
+            -- XXX If we can "inherit" resources, then this needs to be removed and
+            -- we need to check that nnZeros actually stay 0
+            forM_ (r_assets <> map snd pay_ks <> nnRecv) $ \a -> do
+              incResource R_Asset a
+              cp a
+              makeTxn1 "Assets"
+            forM_ r_accounts $ \a -> do
+              incResource R_Account a
+              cp a
+              makeTxn1 "Accounts"
+            forM_ r_apps $ \a -> do
+              incResource R_App a
+              cp a
+              makeTxn1 "Applications"
+            let oc f = do
+                  output $ TConst f
+                  makeTxn1 "OnCompletion"
+            case r_oc of
+              RA_NoOp -> return ()
+              RA_OptIn -> oc "OptIn"
+              RA_CloseOut -> oc "CloseOut"
+              RA_ClearState -> oc "ClearState"
+              RA_UpdateApplication -> oc "UpdateApplication"
+              RA_DeleteApplication -> oc "DeleteApplication"
+            op "itxn_submit"
+            show_stack ("Remote: " <> sig) Nothing at fs
+            appl_idx <- liftIO $ readCounter remoteTxns
+            let gb_post idx mtok = do
+                  cGetBalance at mmin mtok
+                  loadBals
+                  cTupleRef at balsT idx
+                  op "-"
+            cconcatbs $ map (\(i, mtok) -> (T_UInt UI_Word, gb_post i mtok)) mtoksiBill
+            forM_ mtoksiZero $ \(idx, mtok) -> do
+              cGetBalance at mmin mtok
+              loadBals
+              cTupleRef at balsT idx
+              asserteq
+            code "gitxn" [ texty appl_idx, "LastLog" ]
+            output $ TExtract 4 0 -- (0 = to the end)
+            op "concat"
+    DLE_TokenNew at (DLTokenNew {..}) -> do
+      block_ "TokenNew" $ do
+        let ct_at = at
+        let ct_mtok = Nothing
+        let ct_amt = DLA_Literal $ minimumBalance_l
+        void $ checkTxn $ CheckTxn {..}
+        itxnNextOrBegin False
+        let vTypeEnum = "acfg"
+        output $ TConst vTypeEnum
+        makeTxn1 "TypeEnum"
+        cp dtn_supply >> makeTxn1 "ConfigAssetTotal"
+        maybe (cint_ at 6) cp dtn_decimals >> makeTxn1 "ConfigAssetDecimals"
+        cp dtn_sym >> makeTxn1 "ConfigAssetUnitName"
+        cp dtn_name >> makeTxn1 "ConfigAssetName"
+        cp dtn_url >> makeTxn1 "ConfigAssetURL"
+        cp dtn_metadata >> makeTxn1 "ConfigAssetMetadataHash"
+        cContractAddr >> makeTxn1 "ConfigAssetManager"
+        op "itxn_submit"
+        code "itxn" ["CreatedAssetID"]
+    DLE_TokenBurn {} ->
+      -- Burning does nothing on Algorand, because we already own it and we're
+      -- the creator, and that's the rule for being able to destroy
+      return ()
+    DLE_TokenDestroy _at aida -> do
       itxnNextOrBegin False
       let vTypeEnum = "acfg"
       output $ TConst vTypeEnum
       makeTxn1 "TypeEnum"
-      ca dtn_supply >> makeTxn1 "ConfigAssetTotal"
-      maybe (cint_ at 6) ca dtn_decimals >> makeTxn1 "ConfigAssetDecimals"
-      ca dtn_sym >> makeTxn1 "ConfigAssetUnitName"
-      ca dtn_name >> makeTxn1 "ConfigAssetName"
-      ca dtn_url >> makeTxn1 "ConfigAssetURL"
-      ca dtn_metadata >> makeTxn1 "ConfigAssetMetadataHash"
-      cContractAddr >> makeTxn1 "ConfigAssetManager"
+      incResource R_Asset aida
+      cp aida
+      makeTxn1 "ConfigAsset"
       op "itxn_submit"
-      code "itxn" ["CreatedAssetID"]
-  DLE_TokenBurn {} ->
-    -- Burning does nothing on Algorand, because we already own it and we're
-    -- the creator, and that's the rule for being able to destroy
-    return ()
-  DLE_TokenDestroy _at aida -> do
-    itxnNextOrBegin False
-    let vTypeEnum = "acfg"
-    output $ TConst vTypeEnum
-    makeTxn1 "TypeEnum"
-    incResource R_Asset aida
-    ca aida
-    makeTxn1 "ConfigAsset"
-    op "itxn_submit"
-    -- XXX We could give the minimum balance back to the creator
-    return ()
-  DLE_TimeOrder {} -> impossible "timeorder"
-  DLE_EmitLog at k vs -> do
-    let internal = do
-          (v, n) <- case vs of
-            [v'@(DLVar _ _ _ n')] -> return (v', n')
-            _ -> impossible "algo ce: Expected one value"
-          clog $
-            [ DLA_Literal (DLL_Int at UI_Word $ fromIntegral n)
-            , DLA_Var v
-            ]
-          cv v
-          return $ v
-    case k of
-      L_Internal -> void $ internal
-      L_Api {} -> do
-        v <- internal
-        --op "dup" -- API log values are never used
-        ctobs $ varType v
-        gvStore GV_apiRet
-      L_Event ml en -> do
-        let name = maybe en (\l -> bunpack l <> "_" <> en) ml
-        clogEvent name vs
-        --cl DLL_Null -- Event log values are never used
-  DLE_setApiDetails at p _ _ _ -> do
-    which <- fromMaybe (impossible "setApiDetails no which") <$> asks eWhich
-    mac <- multipleApiCalls p
-    let p' = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) which mac
-    callCompanion at $ CompanionLabel True p'
-  DLE_GetUntrackedFunds at mtok tb -> do
-    after_lab <- freshLabel "getActualBalance"
-    cGetBalance at Nothing mtok
-    -- [ bal ]
-    ca tb
-    -- [ bal, rsh_bal ]
-    case mtok of
-      Nothing -> do
-        -- [ bal, rsh_bal ]
-        op "-"
-        -- [ extra ]
-        return ()
-      Just _ -> do
-        cb_lab <- freshLabel $ "getUntrackedFunds" <> "_z"
-        -- [ bal, rsh_bal ]
-        op "dup2"
-        -- [ bal, rsh_bal, bal, rsh_bal ]
-        op "<"
-        -- [ bal, rsh_bal, {0, 1} ]
-        -- Branch IF the bal < rsh_bal
-        code "bnz" [ cb_lab ]
-        -- [ bal, rsh_bal ]
-        op "-"
-        code "b" [ after_lab ]
-        -- This happens because of clawback
-        label cb_lab
-        -- [ bal, rsh_bal ]
-        op "pop"
-        -- [ bal ]
-        op "pop"
-        -- [  ]
-        cint 0
-        -- [ extra ]
-        return ()
-    label after_lab
-  DLE_DataTag _ d -> do
-    ca d
-    cint 0
-    op "getbyte"
-  DLE_FromSome _ mo da -> do
-    ca da
-    ca mo
-    salloc_ "fromSome object" $ \cstore cload -> do
-      cstore
-      cextractDataOf cload da
-      cload
+      -- XXX We could give the minimum balance back to the creator
+      return ()
+    DLE_TimeOrder {} -> impossible "timeorder"
+    DLE_EmitLog at k vs -> do
+      let internal = do
+            (v, n) <- case vs of
+              [v'@(DLVar _ _ _ n')] -> return (v', n')
+              _ -> impossible "algo ce: Expected one value"
+            clog $
+              [ DLA_Literal (DLL_Int at UI_Word $ fromIntegral n)
+              , DLA_Var v
+              ]
+            cp v
+            return $ v
+      case k of
+        L_Internal -> void $ internal
+        L_Api {} -> do
+          v <- internal
+          --op "dup" -- API log values are never used
+          ctobs $ varType v
+          gvStore GV_apiRet
+        L_Event ml en -> do
+          let name = maybe en (\l -> bunpack l <> "_" <> en) ml
+          clogEvent name vs
+          --cl DLL_Null -- Event log values are never used
+    DLE_setApiDetails at p _ _ _ -> do
+      which <- fromMaybe (impossible "setApiDetails no which") <$> asks eWhich
+      mac <- multipleApiCalls p
+      let p' = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) which mac
+      callCompanion at $ CompanionLabel True p'
+    DLE_GetUntrackedFunds at mtok tb -> do
+      after_lab <- freshLabel "getActualBalance"
+      cGetBalance at Nothing mtok
+      -- [ bal ]
+      cp tb
+      -- [ bal, rsh_bal ]
+      case mtok of
+        Nothing -> do
+          -- [ bal, rsh_bal ]
+          op "-"
+          -- [ extra ]
+          return ()
+        Just _ -> do
+          cb_lab <- freshLabel $ "getUntrackedFunds" <> "_z"
+          -- [ bal, rsh_bal ]
+          op "dup2"
+          -- [ bal, rsh_bal, bal, rsh_bal ]
+          op "<"
+          -- [ bal, rsh_bal, {0, 1} ]
+          -- Branch IF the bal < rsh_bal
+          code "bnz" [ cb_lab ]
+          -- [ bal, rsh_bal ]
+          op "-"
+          code "b" [ after_lab ]
+          -- This happens because of clawback
+          label cb_lab
+          -- [ bal, rsh_bal ]
+          op "pop"
+          -- [ bal ]
+          op "pop"
+          -- [  ]
+          cint 0
+          -- [ extra ]
+          return ()
+      label after_lab
+    DLE_DataTag _ d -> do
+      cp d
       cint 0
       op "getbyte"
-    -- [ Default, Object, Tag ]
-    -- [ False, True, Cond ]
-    op "select"
-  DLE_ContractFromAddress _at _addr -> do
-    cla $ mdaToMaybeLA T_Contract Nothing
-  DLE_ContractNew at cns dr -> do
-    block_ "ContractNew" $ do
-      let DLContractNew {..} = cns M.! conName'
-      let ALGOCodeOut {..} = either impossible id $ aesonParse dcn_code
-      let ALGOCodeOpts {..} = either impossible id $ aesonParse dcn_opts
-      let ai_GlobalNumUint = aco_globalUints
-      let ai_GlobalNumByteSlice = aco_globalBytes
-      let ai_LocalNumUint = aco_localUints
-      let ai_LocalNumByteSlice = aco_localBytes
-      let ai_ExtraProgramPages =
-            extraPages $ length aco_approval + length aco_clearState
-      let appInfo = AppInfo {..}
-      let ct_at = at
-      let ct_mtok = Nothing
-      let ct_amt = DLA_Literal $ DLL_Int at UI_Word $ minimumBalance_app appInfo ApplTxn_Create
-      void $ checkTxn $ CheckTxn {..}
-      itxnNextOrBegin False
-      let vTypeEnum = "appl"
-      output $ TConst vTypeEnum
-      makeTxn1 "TypeEnum"
-      let cbss f bs = do
-            let (before, after) = B.splitAt (fromIntegral algoMaxStringSize) bs
-            cbs before
-            makeTxn1 f
-            unless (B.null after) $
-              cbss f after
-      cbss "ApprovalProgramPages" $ B.pack aco_approval
-      cbss "ClearStateProgramPages" $ B.pack aco_clearState
-      let unz f n = unless (n == 0) $ cint n >> makeTxn1 f
-      unz "GlobalNumUint" $ ai_GlobalNumUint
-      unz "GlobalNumByteSlice" $ ai_GlobalNumByteSlice
-      unz "LocalNumUint" $ ai_LocalNumUint
-      unz "LocalNumByteSlice" $ ai_LocalNumByteSlice
-      unz "ExtraProgramPages" $ ai_ExtraProgramPages
-      -- XXX support all of the DLRemote options
-      let DLRemote _ _ as _ _ = dr
-      forM_ as $ \a -> do
-        ca a
-        let t = argTypeOf a
-        ctobs t
-        makeTxn1 "ApplicationArgs"
-      op "itxn_submit"
-      code "itxn" ["CreatedApplicationID"]
-  where
-    -- On ALGO, objects are represented identically to tuples of their fields in ascending order.
-    -- Consequently, we can pretend objects are tuples and use tuple functions as a shortcut.
-    objectRefAsTupleRef :: DLArg -> String -> (DLType, Integer)
-    objectRefAsTupleRef obj_a fieldName = (objAsTup_t, fieldIndex)
-      where
-        fieldIndex = objstrFieldIndex obj_t fieldName
-        objAsTup_t = T_Tuple $ map snd $ objstrTypes obj_t
-        obj_t = argTypeOf obj_a
-    show_stack :: String -> Maybe BS.ByteString -> SrcLoc -> [SLCtxtFrame] -> App ()
-    show_stack what msg at fs = do
-      let msg' =
-            case msg of
-              Nothing -> ""
-              Just x -> ": " <> x
-      comment $ LT.pack $ "^ " <> what <> (bunpack msg')
-      comment $ LT.pack $ "at " <> (unsafeRedactAbsStr $ show at)
-      forM_ fs $ \f ->
-        comment $ LT.pack $ unsafeRedactAbsStr $ show f
+    DLE_FromSome _ mo da -> do
+      cp da
+      cp mo
+      salloc_ "fromSome object" $ \cstore cload -> do
+        cstore
+        cextractDataOf cload da
+        cload
+        cint 0
+        op "getbyte"
+      -- [ Default, Object, Tag ]
+      -- [ False, True, Cond ]
+      op "select"
+    DLE_ContractFromAddress _at _addr -> do
+      cp $ mdaToMaybeLA T_Contract Nothing
+    DLE_ContractNew at cns dr -> do
+      block_ "ContractNew" $ do
+        let DLContractNew {..} = cns M.! conName'
+        let ALGOCodeOut {..} = either impossible id $ aesonParse dcn_code
+        let ALGOCodeOpts {..} = either impossible id $ aesonParse dcn_opts
+        let ai_GlobalNumUint = aco_globalUints
+        let ai_GlobalNumByteSlice = aco_globalBytes
+        let ai_LocalNumUint = aco_localUints
+        let ai_LocalNumByteSlice = aco_localBytes
+        let ai_ExtraProgramPages =
+              extraPages $ length aco_approval + length aco_clearState
+        let appInfo = AppInfo {..}
+        let ct_at = at
+        let ct_mtok = Nothing
+        let ct_amt = DLA_Literal $ DLL_Int at UI_Word $ minimumBalance_app appInfo ApplTxn_Create
+        void $ checkTxn $ CheckTxn {..}
+        itxnNextOrBegin False
+        let vTypeEnum = "appl"
+        output $ TConst vTypeEnum
+        makeTxn1 "TypeEnum"
+        let cbss f bs = do
+              let (before, after) = B.splitAt (fromIntegral algoMaxStringSize) bs
+              cp before
+              makeTxn1 f
+              unless (B.null after) $
+                cbss f after
+        cbss "ApprovalProgramPages" $ B.pack aco_approval
+        cbss "ClearStateProgramPages" $ B.pack aco_clearState
+        let unz f n = unless (n == 0) $ cp n >> makeTxn1 f
+        unz "GlobalNumUint" $ ai_GlobalNumUint
+        unz "GlobalNumByteSlice" $ ai_GlobalNumByteSlice
+        unz "LocalNumUint" $ ai_LocalNumUint
+        unz "LocalNumByteSlice" $ ai_LocalNumByteSlice
+        unz "ExtraProgramPages" $ ai_ExtraProgramPages
+        -- XXX support all of the DLRemote options
+        let DLRemote _ _ as _ _ = dr
+        forM_ as $ \a -> do
+          cp a
+          let t = argTypeOf a
+          ctobs t
+          makeTxn1 "ApplicationArgs"
+        op "itxn_submit"
+        code "itxn" ["CreatedApplicationID"]
+    where
+      -- On ALGO, objects are represented identically to tuples of their fields in ascending order.
+      -- Consequently, we can pretend objects are tuples and use tuple functions as a shortcut.
+      objectRefAsTupleRef :: DLArg -> String -> (DLType, Integer)
+      objectRefAsTupleRef obj_a fieldName = (objAsTup_t, fieldIndex)
+        where
+          fieldIndex = objstrFieldIndex obj_t fieldName
+          objAsTup_t = T_Tuple $ map snd $ objstrTypes obj_t
+          obj_t = argTypeOf obj_a
+      show_stack :: String -> Maybe BS.ByteString -> SrcLoc -> [SLCtxtFrame] -> App ()
+      show_stack what msg at fs = do
+        let msg' =
+              case msg of
+                Nothing -> ""
+                Just x -> ": " <> x
+        comment $ LT.pack $ "^ " <> what <> (bunpack msg')
+        comment $ LT.pack $ "at " <> (unsafeRedactAbsStr $ show at)
+        forM_ fs $ \f ->
+          comment $ LT.pack $ unsafeRedactAbsStr $ show f
 
 multipleApiCalls :: SLPart -> App Bool
 multipleApiCalls w = do
@@ -2410,8 +2427,8 @@ clogEvent :: String -> [DLVar] -> App ()
 clogEvent eventName vs = do
   sigStr <- signatureStr False eventName (map varType vs) Nothing
   let as = map DLA_Var vs
-  let cheader = cbs (bpack sigStr) >> op "sha512_256" >> output (TSubstring 0 4)
-  cconcatbs $ (T_Bytes 4, cheader) : map (\a -> (argTypeOf a, ca a)) as
+  let cheader = cp (bpack sigStr) >> op "sha512_256" >> output (TSubstring 0 4)
+  cconcatbs $ (T_Bytes 4, cheader) : map (\a -> (argTypeOf a, cp a)) as
   sz <- typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as
   clog_ $ 4 + sz
 
@@ -2421,7 +2438,7 @@ clog_ = output . TLog
 clog :: [DLArg] -> App ()
 clog as = do
   let la = DLLA_Tuple as
-  cla la
+  cp la
   sz <- typeSizeOf $ largeArgTypeOf la
   clog_ sz
 
@@ -2504,12 +2521,12 @@ checkTxn (CheckTxn {..}) =
     True -> return False
     False -> block_ "checkTxn" $ do
       checkTxnUsage ct_at ct_mtok
-      ca ct_amt
+      cp ct_amt
       case ct_mtok of
         Nothing -> do
           checkTxn_lib False
         Just tok -> do
-          ca tok
+          cp tok
           checkTxn_lib True
       return True
 
@@ -2539,11 +2556,11 @@ makeTxn (MakeTxn {..}) =
                 where
                   textra = do
                     incResource R_Asset tok
-                    ca tok
+                    cp tok
                     makeTxn1 "XferAsset"
       makeTxnUsage mt_at mt_mtok
       itxnNextOrBegin mt_next
-      ca mt_amt
+      cp mt_amt
       makeTxn1 fAmount
       output $ TConst vTypeEnum
       makeTxn1 "TypeEnum"
@@ -2555,7 +2572,7 @@ makeTxn (MakeTxn {..}) =
         Nothing -> cContractAddr
         Just (Left a) -> do
           incResource R_Account a
-          ca a
+          cp a
         Just (Right cr) -> cr
       cfrombs T_Address
       makeTxn1 fReceiver
@@ -2598,153 +2615,153 @@ doSwitch lab ck _at dv csm = do
             cm1 y y
           _ -> cblt lab cm1 $ bltL csml
   letSmall dv >>= \case
-    True -> go (ca $ DLA_Var dv)
+    True -> go (cp $ DLA_Var dv)
     False -> do
       salloc_ (textyv dv <> " for switch") $ \cstore cload -> do
-        ca $ DLA_Var dv
+        cp $ DLA_Var dv
         cstore
         go cload
 
-cm :: App a -> DLStmt -> App a
-cm km = \case
-  DL_Nop _ -> km
-  DL_Let _ DLV_Eff de ->
-    -- XXX this could leave something on the stack
-    ce de >> km
-  DL_Let _ (DLV_Let vc dv) de -> do
-    sm <- exprSmall de
-    recordNew <-
-      case de of
-        DLE_TokenNew {} -> do
-          return True
-        DLE_EmitLog _ _ [dv'] -> do
-          isNewTok $ DLA_Var dv'
-        _ -> do
-          return False
-    when recordNew $
-      addNewTok $ DLA_Var dv
-    sallocVarLet (DLVarLet (Just vc) dv) sm (ce de) km
-  DL_ArrayMap at ansv as xs iv (DLBlock _ _ body ra) -> do
-    anssz <- typeSizeOf $ argTypeOf $ DLA_Var ansv
-    let xlen = arraysLength as
-    let rt = argTypeOf ra
-    check_concat_len anssz
-    salloc_ (textyv ansv) $ \store_ans load_ans -> do
-      cbs ""
-      store_ans
-      cfor xlen $ \load_idx -> do
-        load_ans
-        let finalK = cp (ca ra >> ctobs rt) body
-        let bodyF (x, a) k = do
-             doArrayRef at a True $ Right load_idx
-             sallocLet x (return ()) $
-               store_let iv True load_idx $
-               k
-        foldr bodyF finalK $ zip xs as
-        op "concat"
+instance CompileK DLStmt where
+  cpk km = \case
+    DL_Nop _ -> km
+    DL_Let _ DLV_Eff de ->
+      -- XXX this could leave something on the stack
+      cp de >> km
+    DL_Let _ (DLV_Let vc dv) de -> do
+      sm <- exprSmall de
+      recordNew <-
+        case de of
+          DLE_TokenNew {} -> do
+            return True
+          DLE_EmitLog _ _ [dv'] -> do
+            isNewTok $ DLA_Var dv'
+          _ -> do
+            return False
+      when recordNew $
+        addNewTok $ DLA_Var dv
+      sallocVarLet (DLVarLet (Just vc) dv) sm (cp de) km
+    DL_ArrayMap at ansv as xs iv (DLBlock _ _ body ra) -> do
+      anssz <- typeSizeOf $ argTypeOf $ DLA_Var ansv
+      let xlen = arraysLength as
+      let rt = argTypeOf ra
+      check_concat_len anssz
+      salloc_ (textyv ansv) $ \store_ans load_ans -> do
+        cbs ""
         store_ans
-      store_let ansv True load_ans km
-  DL_ArrayReduce at ansv as za av xs iv (DLBlock _ _ body ra) -> do
-    let xlen = arraysLength as
-    salloc_ (textyv ansv) $ \store_ans load_ans -> do
-      ca za
-      store_ans
-      store_let av True load_ans $ do
         cfor xlen $ \load_idx -> do
-          let finalK = cp (ca ra) body
+          load_ans
+          let finalK = cpk (cp ra >> ctobs rt) body
           let bodyF (x, a) k = do
                doArrayRef at a True $ Right load_idx
                sallocLet x (return ()) $
                  store_let iv True load_idx $
                  k
           foldr bodyF finalK $ zip xs as
+          op "concat"
           store_ans
         store_let ansv True load_ans km
-  DL_Var _ dv ->
-    salloc $ \loc -> do
-      store_var dv loc $
-        store_let dv True (output $ TLoad loc (textyv dv)) $
-          km
-  DL_Set _ dv da -> do
-    loc <- lookup_var dv
-    ca da
-    output $ TStore loc (textyv dv)
-    km
-  DL_LocalIf _ _ a tp fp -> do
-    ca a
-    false_lab <- freshLabel "localIfF"
-    join_lab <- freshLabel "localIfK"
-    code "bz" [false_lab]
-    cp (return ()) tp
-    code "b" [join_lab]
-    label false_lab
-    cp (return ()) fp
-    label join_lab
-    km
-  DL_LocalSwitch at dv csm -> do
-    end_lab <- freshLabel $ "LocalSwitchK"
-    doSwitch "LocalSwitch" (cp (code "b" [end_lab])) at dv csm
-    label end_lab
-    km
-  DL_MapReduce {} ->
-    impossible $ "cannot inspect maps at runtime"
-  DL_Only {} ->
-    impossible $ "only in CP"
-  DL_LocalDo _ _ t -> cp km t
+    DL_ArrayReduce at ansv as za av xs iv (DLBlock _ _ body ra) -> do
+      let xlen = arraysLength as
+      salloc_ (textyv ansv) $ \store_ans load_ans -> do
+        cp za
+        store_ans
+        store_let av True load_ans $ do
+          cfor xlen $ \load_idx -> do
+            let finalK = cpk (cp ra) body
+            let bodyF (x, a) k = do
+                 doArrayRef at a True $ Right load_idx
+                 sallocLet x (return ()) $
+                   store_let iv True load_idx $
+                   k
+            foldr bodyF finalK $ zip xs as
+            store_ans
+          store_let ansv True load_ans km
+    DL_Var _ dv ->
+      salloc $ \loc -> do
+        store_var dv loc $
+          store_let dv True (output $ TLoad loc (textyv dv)) $
+            km
+    DL_Set _ dv da -> do
+      loc <- lookup_var dv
+      cp da
+      output $ TStore loc (textyv dv)
+      km
+    DL_LocalIf _ _ a tp fp -> do
+      cp a
+      false_lab <- freshLabel "localIfF"
+      join_lab <- freshLabel "localIfK"
+      code "bz" [false_lab]
+      let j = code "b" [join_lab]
+      cpk j tp
+      label false_lab
+      cpk j fp
+      label join_lab
+      km
+    DL_LocalSwitch at dv csm -> do
+      end_lab <- freshLabel $ "LocalSwitchK"
+      doSwitch "LocalSwitch" (cpk (code "b" [end_lab])) at dv csm
+      label end_lab
+      km
+    DL_MapReduce {} ->
+      impossible $ "cannot inspect maps at runtime"
+    DL_Only {} ->
+      impossible $ "only in CP"
+    DL_LocalDo _ _ t -> cpk km t
 
-cp :: App a -> DLTail -> App a
-cp km = \case
-  DT_Return _ -> km
-  DT_Com m k -> cm (cp km k) m
+instance CompileK DLTail where
+  cpk km = \case
+    DT_Return _ -> km
+    DT_Com m k -> cpk (cpk km k) m
 
-ct :: CTail -> App ()
-ct = \case
-  CT_Com m k -> cm (ct k) m
-  CT_If _ a tt ft -> do
-    ca a
-    false_lab <- freshLabel "ifF"
-    code "bz" [false_lab]
-    nct tt
-    label false_lab
-    nct ft
-  CT_Switch at dv csm ->
-    doSwitch "Switch" nct at dv csm
-  CT_Jump _at which svs (DLAssignment msgm) -> do
-    -- NOTE: I considered statically assigning these to heap pointers and
-    -- limiting the total memory available (we can't assign them to where they
-    -- will end up, because this tail might be using the same things)
-    --
-    -- XXX I could determine when the jump target has the same svs as us and
-    -- then save space by letting it load itself
-    mapM_ ca $ (map DLA_Var svs) <> map snd (M.toAscList msgm)
-    code "b" [loopLabel which]
-  CT_From at which msvs -> do
-    isHalt <- do
-      case msvs of
-        FI_Halt toks -> do
-          let mt_at = at
-          let mt_always = True
-          let mt_mrecv = Nothing
-          let mt_submit = True
-          let mt_next = False
-          let mt_mcclose = Just $ cDeployer
-          let mt_amt = DLA_Literal $ DLL_Int at UI_Word 0
-          forM_ toks $ \tok -> do
-            let mt_mtok = Just tok
-            void $ makeTxn $ MakeTxn {..}
-          return True
-        FI_Continue svs -> do
-          cSvsSave at $ map snd svs
-          cint $ fromIntegral which
-          gvStore GV_currentStep
-          cRound
-          gvStore GV_currentTime
-          return False
-    when isHalt $
-      callCompanion at $ CompanionDeletePre
-    code "b" ["updateState" <> if isHalt then "Halt" else "NoOp"]
-  where
-    nct = dupeResources . ct
+instance Compile CTail where
+  cp = \case
+    CT_Com m k -> cpk (cp k) m
+    CT_If _ a tt ft -> do
+      cp a
+      false_lab <- freshLabel "ifF"
+      code "bz" [false_lab]
+      nct tt
+      label false_lab
+      nct ft
+    CT_Switch at dv csm ->
+      doSwitch "Switch" nct at dv csm
+    CT_Jump _at which svs (DLAssignment msgm) -> do
+      -- NOTE: I considered statically assigning these to heap pointers and
+      -- limiting the total memory available (we can't assign them to where they
+      -- will end up, because this tail might be using the same things)
+      --
+      -- XXX I could determine when the jump target has the same svs as us and
+      -- then save space by letting it load itself
+      mapM_ cp $ (map DLA_Var svs) <> map snd (M.toAscList msgm)
+      code "b" [loopLabel which]
+    CT_From at which msvs -> do
+      isHalt <- do
+        case msvs of
+          FI_Halt toks -> do
+            let mt_at = at
+            let mt_always = True
+            let mt_mrecv = Nothing
+            let mt_submit = True
+            let mt_next = False
+            let mt_mcclose = Just $ cDeployer
+            let mt_amt = DLA_Literal $ DLL_Int at UI_Word 0
+            forM_ toks $ \tok -> do
+              let mt_mtok = Just tok
+              void $ makeTxn $ MakeTxn {..}
+            return True
+          FI_Continue svs -> do
+            cSvsSave at $ map snd svs
+            cp which
+            gvStore GV_currentStep
+            cRound
+            gvStore GV_currentTime
+            return False
+      when isHalt $
+        callCompanion at $ CompanionDeletePre
+      code "b" ["updateState" <> if isHalt then "Halt" else "NoOp"]
+    where
+      nct = dupeResources . cp
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
@@ -2821,7 +2838,7 @@ gvType = \case
 defn_fixed :: Label -> Bool -> App ()
 defn_fixed l b = do
   label l
-  cbool b
+  cp b
   op "return"
 
 defn_done :: App ()
@@ -2863,7 +2880,7 @@ bindFromGV gv ensure at vls m = do
             (dv, i) : more -> sallocVarLet dv False cgen $ go more
               where
                 which_av = if shouldDup dv then av_dup else av
-                cgen = ce $ DLE_TupleRef at (DLA_Var which_av) i
+                cgen = cp $ DLE_TupleRef at (DLA_Var which_av) i
       store_let av True (gvLoad gv) $
         store_let av_dup True (return ()) $
           go $ zip vls [0 ..]
@@ -2882,7 +2899,7 @@ cloop which (C_Loop {..}) = recordWhich which $ do
   block (loopLabel which) $ do
     -- STACK: [ ...svs ...vars ] TOP on right
     bindFromStack cl_at (cl_svs <> cl_vars) $
-      ct cl_body
+      cp cl_body
 
 -- NOTE This could be compiled to a jump table if that were possible with TEAL
 cblt :: String -> (Int -> a -> App ()) -> BLT Int a -> App ()
@@ -2894,7 +2911,7 @@ cblt lab go t = do
       Empty -> op "err"
       Branch rv l r -> do
         op "dup"
-        cint $ fromIntegral rv
+        cp rv
         op "<"
         llab <- freshLabel $ lab <> "_lt_" <> show rv
         code "bnz" [llab]
@@ -2906,7 +2923,7 @@ cblt lab go t = do
         case (which == low && mhi == Just which) of
           True -> op "pop"
           False -> do
-            cint $ fromIntegral which
+            cp which
             asserteq
         go which h
 
@@ -2944,7 +2961,7 @@ callCompanion at cc = do
             incResource R_App $ DLA_Literal $ DLL_Int at UI_Word 0
             freeResource R_App $ cr_ro
           False -> do
-            ca cr_ro
+            cp cr_ro
             unless del $ do
               incResource R_App cr_ro
         makeTxn1 "ApplicationID"
@@ -2952,7 +2969,7 @@ callCompanion at cc = do
   case cc of
     CompanionGet -> do
       let t = T_Contract
-      let go = cla . mdaToMaybeLA t
+      let go = cp . mdaToMaybeLA t
       case mcr of
         Nothing -> go Nothing
         Just _ -> do
@@ -2960,16 +2977,16 @@ callCompanion at cc = do
           sallocLet dv (gvLoad GV_companion) $
             go $ Just $ DLA_Var dv
     CompanionCreate -> do
-      let mpay pc = ce $ DLE_CheckPay at [] (DLA_Literal $ DLL_Int at UI_Word $ pc * algoMinimumBalance) Nothing
+      let mpay pc = cp $ DLE_CheckPay at [] (DLA_Literal $ DLL_Int at UI_Word $ pc * algoMinimumBalance) Nothing
       case mcr of
         Nothing -> do
           mpay 1
         Just _ -> do
           mpay 2
           startCall True False
-          cbs cr_approval
+          cp cr_approval
           makeTxn1 "ApprovalProgram"
-          cbs cr_clearstate
+          cp cr_clearstate
           makeTxn1 "ClearStateProgram"
           op "itxn_submit"
           credit cr_ctor
@@ -3019,7 +3036,7 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
       callCompanion at $ CompanionCreate
     callCompanion at $ CompanionLabel False lab
     comment "check step"
-    cint $ fromIntegral prev
+    cp prev
     gvLoad GV_currentStep
     asserteq
     comment "check time"
@@ -3044,18 +3061,18 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
       let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
           checkTime1 cmp clhs rhsa = do
             clhs
-            ca rhsa
+            cp rhsa
             op cmp
             assert
       let checkFrom_ = checkTime1 ">="
       let checkTo_ = checkTime1 "<"
       let makeCheck check_ = \case
-            Left x -> check_ (cv timev) x
-            Right x -> check_ (cv secsv) x
+            Left x -> check_ (cp timev) x
+            Right x -> check_ (cp secsv) x
       let checkFrom = makeCheck checkFrom_
       let checkTo = makeCheck checkTo_
       let checkBoth v xx yy = do
-            cv v
+            cp v
             checkFrom_ (op "dup") xx
             checkTo_ (return ()) yy
       let CBetween ifrom ito = int
@@ -3068,7 +3085,7 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
             (Left xx, Left yy) -> checkBoth timev xx yy
             (Right xx, Right yy) -> checkBoth secsv xx yy
             (_, _) -> checkFrom x >> checkFrom y
-      ct body
+      cp body
 
 getMapTy :: DLMVar -> App DLType
 getMapTy mpv = do
@@ -3183,7 +3200,7 @@ capi qualify (who, (ApiInfo {..})) = do
           case ai_msg_tys of
             [T_Data tm] ->
               case M.lookup cid tm of
-                Just (T_Tuple ts) -> (ts, doWrapData ts $ cla . DLLA_Data tm cid)
+                Just (T_Tuple ts) -> (ts, doWrapData ts $ cp . DLLA_Data tm cid)
                 _ -> imp
             _ -> imp
     cid = fromMaybe imp ai_mcase_id
@@ -3312,8 +3329,8 @@ cmeth sigi = \case
         let fargs = fromMaybe mempty mfargs
         block_ (LT.pack $ bunpack who <> "_" <> show hi) $
           bindFromArgs fargs $ bindFromSvs_ at svsl $
-            flip cp t $ do
-              ca r
+            flip cpk t $ do
+              cp r
               ctobs $ argTypeOf r
               gvStore GV_apiRet
               code "b" [ "apiReturn_check" ]
@@ -3541,7 +3558,7 @@ compile_algo env disp (CPProg {..}) = do
     gvStore GV_txnCounter
     code "txn" ["ApplicationID"]
     code "bz" ["alloc"]
-    cbs keyState
+    cp keyState
     op "app_global_get"
     let nats = [0 ..]
     let shouldDups = reverse $ zipWith (\_ i -> i /= 0) keyState_gvs nats
@@ -3567,7 +3584,7 @@ compile_algo env disp (CPProg {..}) = do
       -- different failure if there are too few and if there are too few, who
       -- cares?
       code "txn" ["NumAppArgs"]
-      cint argCount
+      cp argCount
       asserteq
     argLoad ArgMethod
     cfrombs $ T_UInt UI_Word
@@ -3577,7 +3594,7 @@ compile_algo env disp (CPProg {..}) = do
     label "api"
     cint 0
     gvStore GV_argTime
-    cbool True
+    cp True
     gvStore GV_wasMeth
     cblt "method" cmeth $ bltM meth_im
     label "publish"
@@ -3621,7 +3638,7 @@ compile_algo env disp (CPProg {..}) = do
     output $ TCheckOnCompletion
     code "b" ["updateState"]
     label "updateState"
-    cbs keyState
+    cp keyState
     forM_ keyState_gvs $ \gv -> do
       gvLoad gv
       ctobs $ gvType gv
@@ -3631,7 +3648,7 @@ compile_algo env disp (CPProg {..}) = do
     code "bz" ["checkSize"]
     label "apiReturn_noCheck"
     -- SHA-512/256("return")[0..4] = 0x151f7c75
-    cbs $ BS.pack [0x15, 0x1f, 0x7c, 0x75]
+    cp $ BS.pack [0x15, 0x1f, 0x7c, 0x75]
     gvLoad GV_apiRet
     op "concat"
     clog_ $ 4 + maxApiRetSize
@@ -3651,7 +3668,7 @@ compile_algo env disp (CPProg {..}) = do
       -- There's no point to checking this, because if the fee is too much,
       -- there's no harm and if it is too low, the network will reject it
       -- anyways
-      cint algoMinTxnFee
+      cp algoMinTxnFee
       op "*"
       code "txn" ["Fee"]
       op "<="
@@ -3668,7 +3685,7 @@ compile_algo env disp (CPProg {..}) = do
     label "alloc"
     let ctf f x = do
           liftIO $ modifyIORef resr $ M.insert (LT.toStrict f) $ AS.Number $ fromIntegral x
-          cint x
+          cp x
           code "txn" [f]
           asserteq
     ctf "GlobalNumUint" $ appGlobalStateNumUInt
