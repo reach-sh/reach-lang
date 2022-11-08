@@ -969,16 +969,29 @@ checkCost rlab notify disp ls ci ts = do
 
 type Lets = M.Map DLVar (App ())
 
+data Pre = Pre
+  { pOpts :: CPOpts
+  , pApiLs :: [LabelRec]
+  , pProgLs :: [LabelRec]
+  , pMaps :: DLMapInfos
+  , pApiCalls :: M.Map SLPart Int
+  }
+
+instance HasUntrustworthyMaps Pre where
+  getUntrustworthyMaps = getUntrustworthyMaps . pOpts
+
+instance HasCounter Pre where
+  getCounter = getCounter . pOpts
+
 data Env = Env
-  { eOpts :: CPOpts
+  { ePre :: Pre
+  , eMapDataSize :: Integer
+  , eMapDataTy :: DLType
+  , eMapKeysl :: [Word8]
   , eFailuresR :: ErrorSetRef
   , eWarningsR :: ErrorSetRef
   , eCounter :: Counter
   , eStateSizeR :: IORef Integer
-  , eMaps :: DLMapInfos
-  , eMapDataTy :: DLType
-  , eMapDataSize :: Integer
-  , eMapKeysl :: [Word8]
   , eWhich :: Maybe Int
   , eLabel :: Counter
   , eOutputR :: IORef TEALs
@@ -993,12 +1006,18 @@ data Env = Env
   , eCompanion :: CompanionInfo
   , eCompanionRec :: CompanionRec
   , eLibrary :: IORef (M.Map LibFun (Label, App ()))
-  , eApiCalls :: M.Map SLPart Int
   , eGetStateKeys :: IO Int
+  , eMeths :: IORef (M.Map String CMeth)
+  , eRes :: IORef (M.Map T.Text AS.Value)
   }
 
 instance HasCounter Env where
   getCounter = eCounter
+
+insertResult :: T.Text -> AS.Value -> App ()
+insertResult k v = do
+  r <- asks eRes
+  liftIO $ modifyIORef r $ M.insert k v
 
 type App = ReaderT Env IO
 
@@ -2057,9 +2076,10 @@ instance Compile DLExpr where
     DLE_MapSet at mpv@(DLMVar i) fa mva -> do
       incResource R_Account fa
       Env {..} <- ask
+      let Pre {..} = ePre
       mdt <- getMapDataTy
       mt <- getMapTy mpv
-      case (length eMapKeysl) == 1 && (M.size eMaps) == 1 of
+      case (length eMapKeysl) == 1 && (M.size pMaps) == 1 of
         -- Special case one key and one map
         True -> do
           cp fa
@@ -2395,7 +2415,7 @@ instance Compile DLExpr where
 
 multipleApiCalls :: SLPart -> App Bool
 multipleApiCalls w = do
-  apiCalls <- asks eApiCalls
+  apiCalls <- pApiCalls <$> asks ePre
   case M.lookup w apiCalls of
     Just n  -> return $ n > 1
     Nothing -> return False
@@ -3089,7 +3109,7 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
 
 getMapTy :: DLMVar -> App DLType
 getMapTy mpv = do
-  ms <- asks eMaps
+  ms <- pMaps <$> asks ePre
   return $
     case M.lookup mpv ms of
       Nothing -> impossible "getMapTy"
@@ -3384,171 +3404,27 @@ analyzeViews (DLViewsX vs vis) = vsit
     vsih = M.map goh vis
     goh (ViewInfo svs vi) = (map v2vl svs, flattenInterfaceLikeMap vi)
 
-compile_algo :: CompilerToolEnv -> Disp -> CPProg -> IO ConnectorInfo
-compile_algo env disp (CPProg {..}) = do
-  let at = cpp_at
-  let eOpts = cpp_opts
-  let dli = cpp_init
-  let vsi = cpp_views
-  let ai = cpp_apis
-  let CHandlers hm = cpp_handlers
-  -- This is the final result
-  resr <- newIORef mempty
-  totalLenR <- newIORef (0 :: Integer)
-  let compileProg lab ts' = do
-        t <- renderOut ts'
-        tf <- disp (lab <> ".teal") t
-        bc <- compileTEAL tf
-        Verify.run lab bc [gvSlot GV_svs, gvSlot GV_apiRet]
-        return bc
-  let addProg lab ts' = do
-        tbs <- compileProg lab ts'
-        modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
-        let tc = LT.toStrict $ encodeBase64 tbs
-        modifyIORef resr $ M.insert (T.pack lab) $ AS.String tc
-        return tbs
-  -- Clear state is never allowed
-  cr_clearstate <- addProg "appClear" []
-  -- Companion
-  let makeCompanionMaker = do
-        let ts =
-              [ TCode "txn" [ "Sender" ]
-              , TCode "global" [ "CreatorAddress" ]
-              , TCode "==" []
-              ]
-        let cr_ctor = fromIntegral $ length ts
-        let cr_call = cr_ctor
-        let cr_del = cr_call
-        cr_approval <- compileProg "appCompanion" ts
-        return $ \cr_rv -> do
-          let cr_ro = DLA_Var cr_rv
-          return $ CompanionRec {..}
-  companionCache <- newIORef $ Nothing
-  let readCompanionCache = do
-        c <- readIORef companionCache
-        case c of
-          Just x -> return x
-          Nothing -> do
-            x <- makeCompanionMaker
-            writeIORef companionCache $ Just x
-            return x
-  -- We start doing real work
-  (gFailuresR, gbad) <- newErrorSetRef
-  (gWarningsR, gwarn) <- newErrorSetRef
-  eMaps <- verifyMapTypes gbad $ dli_maps dli
-  let eMapDataTy = mapDataTy eMaps
-  eMapDataSize <- typeSizeOf__ gbad eMapDataTy
-  let eSP = 255
-  let eVars = mempty
-  let eLets = mempty
-  let eLetSmalls = mempty
-  let eWhich = Nothing
-  let eApiCalls = M.map M.size ai
-  let recordSize prefix size = do
-        modifyIORef resr $
-          M.insert (prefix <> "Size") $
-            AS.Number $ fromIntegral size
-  let recordSizeAndKeys :: NotifyF -> T.Text -> Integer -> Integer -> IO [Word8]
-      recordSizeAndKeys badx prefix size limit = do
-        (keys, keysl) <- computeStateSizeAndKeys badx (LT.fromStrict prefix) size limit
-        recordSize prefix size
-        modifyIORef resr $
-          M.insert (prefix <> "Keys") $
-            AS.Number $ fromIntegral keys
-        return $ keysl
-  eMapKeysl <- recordSizeAndKeys gbad "mapData" eMapDataSize algoMaxLocalSchemaEntries_usable
-  let mapDataKeys = length eMapKeysl
-  unless (getUntrustworthyMaps eOpts || null eMapKeysl) $ do
-    gwarn $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
-  let h2lr = \case
-        (i, C_Handler {..}) -> Just $ LabelRec {..}
-          where
-            lr_lab = handlerLabel i
-            lr_at = ch_at
-            lr_what = "Step " <> show i
-        (_, C_Loop {}) -> Nothing
-  let a2lr qualify (p, ApiInfo {..}) = LabelRec {..}
-        where
-          lr_lab = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) ai_which qualify
-          lr_at = ai_at
-          lr_what = "API " <> LT.unpack lr_lab
-  let as2lrs (p, ms) =
-        map (a2lr qualify . (p,) . snd) $ M.toAscList ms
-        where qualify = M.size ms > 1
-  let pubLs = mapMaybe h2lr $ M.toAscList hm
-  let apiLs = concatMap as2lrs $ M.toAscList ai
-  let progLs = pubLs <> apiLs
-  meth_sm_r <- newIORef mempty
-  let run :: CompanionInfo -> App () -> IO (TEALs, Notify, IO ())
-      run eCompanion m = do
-        let eHP_ = fromIntegral $ fromEnum (maxBound :: GlobalVar)
-        let eHP =
-              case eCompanion of
-                Nothing -> eHP_ - 1
-                Just _ -> eHP_
-        eCounter <- dupeCounter $ getCounter eOpts
-        eStateSizeR <- newIORef 0
-        eLabel <- newCounter 0
-        eOutputR <- newIORef mempty
-        eNewToks <- newIORef mempty
-        eInitToks <- newIORef mempty
-        eResources <- newResources
-        (eFailuresR, lbad) <- newErrorSetRef
-        (eWarningsR, lwarn) <- newErrorSetRef
-        let finalize = do
-              mergeIORef gFailuresR S.union eFailuresR
-              mergeIORef gWarningsR S.union eWarningsR
-        companionMaker <- readCompanionCache
-        cr_rv <- allocVar_ eCounter at T_Contract
-        eCompanionRec <- companionMaker cr_rv
-        eLibrary <- newIORef mempty
-        let eGetStateKeys = do
-              stateSize <- readIORef eStateSizeR
-              l <- recordSizeAndKeys lbad "state" stateSize algoMaxGlobalSchemaEntries_usable
-              return $ length l
-        flip runReaderT (Env {..}) $
-          store_let cr_rv True (gvLoad GV_companion) $
-            m
-        void $ eGetStateKeys
-        ts <- readIORef eOutputR
-        let notify b = if b then lbad else lwarn
-        return (ts, notify, finalize)
-  let showCost = cte_REACH_DEBUG env
-  let runProg m = do
-        let lab = "appApproval"
-        let disp' = disp . (lab <>)
-        let rec r inclAll ci = do
-              let r' = r + 1
-              let rlab= "ALGO." <> show r
-              loud $ rlab <> " run"
-              (ts, notify, finalize) <- run ci m
-              loud $ rlab <> " optimize"
-              let !ts' = optimize $ DL.toList ts
-              let ls = if inclAll then progLs else apiLs
-              loud $ rlab <> " check"
-              checkCost rlab notify disp' ls ci ts' >>= \case
-                Right ci' -> rec r' inclAll ci'
-                Left msg ->
-                  case inclAll of
-                    False -> rec r' True ci
-                    True -> do
-                      finalize
-                      when showCost $ putStr msg
-                      modifyIORef resr $ M.insert "companionInfo" (AS.toJSON ci)
-                      return ts'
-        ts' <- rec (0::Integer) False Nothing
-        void $ addProg lab ts'
-  runProg $ do
+class HasPre a where
+  getPre :: a -> Pre
+
+instance Compile CPProg where
+  cp (CPProg {..}) = do
+    Env {..} <- ask
+    let at = cpp_at
+    let vsi = cpp_views
+    let ai = cpp_apis
+    let CHandlers hm = cpp_handlers
     ai_sm <- M.fromList <$> concatMapM capis (M.toAscList ai)
     let vsiTop = analyzeViews vsi
     vsi_sm <- M.fromList <$> concatMapM cview (M.toAscList vsiTop)
     let meth_sm = M.union ai_sm vsi_sm
-    liftIO $ writeIORef meth_sm_r meth_sm
+    liftIO $ writeIORef eMeths meth_sm
     maxApiRetSize <- maxTypeSize $ M.map cmethRetTy meth_sm
     let meth_im = M.mapKeys sigStrToInt meth_sm
-    mGV_companion <- asks eCompanion >>= \case
-      Nothing -> return []
-      Just _ -> return [GV_companion]
+    let mGV_companion =
+          case eCompanion of
+            Nothing -> []
+            Just _ -> [GV_companion]
     let keyState_gvs :: [GlobalVar]
         keyState_gvs = [GV_currentStep, GV_currentTime] <> mGV_companion
     let keyState_ty :: DLType
@@ -3684,14 +3560,15 @@ compile_algo env disp (CPProg {..}) = do
     code "b" [ "apiReturn_noCheck" ]
     label "alloc"
     let ctf f x = do
-          liftIO $ modifyIORef resr $ M.insert (LT.toStrict f) $ AS.Number $ fromIntegral x
+          insertResult (LT.toStrict f) $ AS.Number $ fromIntegral x
           cp x
           code "txn" [f]
           asserteq
     ctf "GlobalNumUint" $ appGlobalStateNumUInt
-    stateKeys <- liftIO =<< (asks eGetStateKeys)
+    stateKeys <- liftIO $ eGetStateKeys
     ctf "GlobalNumByteSlice" $ appGlobalStateNumBytes + fromIntegral stateKeys
     ctf "LocalNumUint" $ appLocalStateNumUInt
+    let mapDataKeys = length eMapKeysl
     ctf "LocalNumByteSlice" $ appLocalStateNumBytes + fromIntegral mapDataKeys
     forM_ keyState_gvs $ \gv -> do
       ctzero $ gvType gv
@@ -3699,12 +3576,172 @@ compile_algo env disp (CPProg {..}) = do
     code "b" ["updateStateNoOp"]
     -- Library functions
     libDefns
+
+instance HasPre CPProg where
+  getPre (CPProg {..}) = Pre {..}
+    where
+      pOpts = cpp_opts
+      dli = cpp_init
+      pMaps = dli_maps dli
+      pApiCalls = M.map M.size ai
+      ai = cpp_apis
+      CHandlers hm = cpp_handlers
+      pubLs = mapMaybe h2lr $ M.toAscList hm
+      pApiLs = concatMap as2lrs $ M.toAscList ai
+      pProgLs = pubLs <> pApiLs
+      h2lr = \case
+        (i, C_Handler {..}) -> Just $ LabelRec {..}
+          where
+            lr_lab = handlerLabel i
+            lr_at = ch_at
+            lr_what = "Step " <> show i
+        (_, C_Loop {}) -> Nothing
+      a2lr qualify (p, ApiInfo {..}) = LabelRec {..}
+        where
+          lr_lab = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) ai_which qualify
+          lr_at = ai_at
+          lr_what = "API " <> LT.unpack lr_lab
+      as2lrs (p, ms) =
+        map (a2lr qualify . (p,) . snd) $ M.toAscList ms
+        where qualify = M.size ms > 1
+
+compile_algo :: (Compile a, HasPre a) => CompilerToolEnv -> Disp -> a -> IO ConnectorInfo
+compile_algo env disp x = do
+  -- This is the final result
+  eRes <- newIORef mempty
+  totalLenR <- newIORef (0 :: Integer)
+  let compileProg lab ts' = do
+        t <- renderOut ts'
+        tf <- disp (lab <> ".teal") t
+        bc <- compileTEAL tf
+        Verify.run lab bc [gvSlot GV_svs, gvSlot GV_apiRet]
+        return bc
+  let addProg lab ts' = do
+        tbs <- compileProg lab ts'
+        modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
+        let tc = LT.toStrict $ encodeBase64 tbs
+        modifyIORef eRes $ M.insert (T.pack lab) $ AS.String tc
+        return tbs
+  -- Clear state is never allowed
+  cr_clearstate <- addProg "appClear" []
+  -- Companion
+  let makeCompanionMaker = do
+        let ts =
+              [ TCode "txn" [ "Sender" ]
+              , TCode "global" [ "CreatorAddress" ]
+              , TCode "==" []
+              ]
+        let cr_ctor = fromIntegral $ length ts
+        let cr_call = cr_ctor
+        let cr_del = cr_call
+        cr_approval <- compileProg "appCompanion" ts
+        return $ \cr_rv -> do
+          let cr_ro = DLA_Var cr_rv
+          return $ CompanionRec {..}
+  companionCache <- newIORef $ Nothing
+  let readCompanionCache = do
+        c <- readIORef companionCache
+        case c of
+          Just y -> return y
+          Nothing -> do
+            y <- makeCompanionMaker
+            writeIORef companionCache $ Just y
+            return y
+  -- We start doing real work
+  (gFailuresR, gbad) <- newErrorSetRef
+  (gWarningsR, gwarn) <- newErrorSetRef
+  let ePre = getPre x
+  let Pre {..} = ePre
+  verifyMapTypes gbad pMaps
+  let eMapDataTy = mapDataTy pMaps
+  eMapDataSize <- typeSizeOf__ gbad eMapDataTy
+  let eSP = 255
+  let eVars = mempty
+  let eLets = mempty
+  let eLetSmalls = mempty
+  let eWhich = Nothing
+  let recordSize prefix size = do
+        modifyIORef eRes $
+          M.insert (prefix <> "Size") $
+            AS.Number $ fromIntegral size
+  let recordSizeAndKeys :: NotifyF -> T.Text -> Integer -> Integer -> IO [Word8]
+      recordSizeAndKeys badx prefix size limit = do
+        (keys, keysl) <- computeStateSizeAndKeys badx (LT.fromStrict prefix) size limit
+        recordSize prefix size
+        modifyIORef eRes $
+          M.insert (prefix <> "Keys") $
+            AS.Number $ fromIntegral keys
+        return $ keysl
+  eMapKeysl <- recordSizeAndKeys gbad "mapData" eMapDataSize algoMaxLocalSchemaEntries_usable
+  unless (getUntrustworthyMaps ePre || null eMapKeysl) $ do
+    gwarn $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
+  eMeths <- newIORef mempty
+  let run :: CompanionInfo -> App () -> IO (TEALs, Notify, IO ())
+      run eCompanion m = do
+        let eHP_ = fromIntegral $ fromEnum (maxBound :: GlobalVar)
+        let eHP =
+              case eCompanion of
+                Nothing -> eHP_ - 1
+                Just _ -> eHP_
+        eCounter <- dupeCounter $ getCounter ePre
+        eStateSizeR <- newIORef 0
+        eLabel <- newCounter 0
+        eOutputR <- newIORef mempty
+        eNewToks <- newIORef mempty
+        eInitToks <- newIORef mempty
+        eResources <- newResources
+        (eFailuresR, lbad) <- newErrorSetRef
+        (eWarningsR, lwarn) <- newErrorSetRef
+        let finalize = do
+              mergeIORef gFailuresR S.union eFailuresR
+              mergeIORef gWarningsR S.union eWarningsR
+        companionMaker <- readCompanionCache
+        cr_rv <- allocVar_ eCounter sb T_Contract
+        eCompanionRec <- companionMaker cr_rv
+        eLibrary <- newIORef mempty
+        let eGetStateKeys = do
+              stateSize <- readIORef eStateSizeR
+              l <- recordSizeAndKeys lbad "state" stateSize algoMaxGlobalSchemaEntries_usable
+              return $ length l
+        flip runReaderT (Env {..}) $
+          store_let cr_rv True (gvLoad GV_companion) $
+            m
+        void $ eGetStateKeys
+        ts <- readIORef eOutputR
+        let notify b = if b then lbad else lwarn
+        return (ts, notify, finalize)
+  let showCost = cte_REACH_DEBUG env
+  let runProg m = do
+        let lab = "appApproval"
+        let disp' = disp . (lab <>)
+        let rec r inclAll ci = do
+              let r' = r + 1
+              let rlab= "ALGO." <> show r
+              loud $ rlab <> " run"
+              (ts, notify, finalize) <- run ci m
+              loud $ rlab <> " optimize"
+              let !ts' = optimize $ DL.toList ts
+              let ls = if inclAll then pProgLs else pApiLs
+              loud $ rlab <> " check"
+              checkCost rlab notify disp' ls ci ts' >>= \case
+                Right ci' -> rec r' inclAll ci'
+                Left msg ->
+                  case inclAll of
+                    False -> rec r' True ci
+                    True -> do
+                      finalize
+                      when showCost $ putStr msg
+                      modifyIORef eRes $ M.insert "companionInfo" (AS.toJSON ci)
+                      return ts'
+        ts' <- rec (0::Integer) False Nothing
+        void $ addProg lab ts'
+  runProg $ cp x
   totalLen <- readIORef totalLenR
   when showCost $
     putStrLn $ "The program is " <> show totalLen <> " bytes."
   unless (totalLen <= algoMaxAppProgramLen_really) $ do
     gbad $ LT.pack $ "The program is too long; its length is " <> show totalLen <> ", but the maximum possible length is " <> show algoMaxAppProgramLen_really
-  modifyIORef resr $
+  modifyIORef eRes $
     M.insert "extraPages" $
       AS.Number $ fromIntegral $ extraPages totalLen
   gFailures <- readIORef gFailuresR
@@ -3712,13 +3749,13 @@ compile_algo env disp (CPProg {..}) = do
   let wss w lab ss = do
         unless (null ss) $
           emitWarning Nothing $ w $ S.toAscList $ S.map LT.unpack ss
-        modifyIORef resr $ M.insert lab $
+        modifyIORef eRes $ M.insert lab $
           aarray $ S.toAscList $ S.map (AS.String . LT.toStrict) ss
   wss W_ALGOConservative "warnings" gWarnings
   wss W_ALGOUnsupported "unsupported" gFailures
-  meth_sm <- readIORef meth_sm_r
+  meth_sm <- readIORef eMeths
   let apiEntry lab f = (lab, aarray $ map (AS.String . s2t) $ M.keys $ M.filter f meth_sm)
-  modifyIORef resr $
+  modifyIORef eRes $
     M.insert "ABI" $
       aobject $
         M.fromList $
@@ -3726,17 +3763,16 @@ compile_algo env disp (CPProg {..}) = do
           , apiEntry "impure" cmethIsApi
           , apiEntry "pure" cmethIsView
           ]
-  modifyIORef resr $
+  modifyIORef eRes $
     M.insert "version" $
       AS.Number $ fromIntegral $ reachAlgoBackendVersion
-  res <- readIORef resr
+  res <- readIORef eRes
   return $ aobject res
 
-verifyMapTypes :: (Traversable t, Monad m) => (LT.Text -> m ()) -> t DLMapInfo -> m (t DLMapInfo)
-verifyMapTypes badx = mapM $ \ DLMapInfo {..} -> do
+verifyMapTypes :: (Traversable t, Monad m) => (LT.Text -> m ()) -> t DLMapInfo -> m ()
+verifyMapTypes badx = mapM_ $ \DLMapInfo {..} -> do
     unless (dlmi_kt == T_Address) $ do
       badx $ LT.pack $ "Cannot use '" <> show dlmi_kt <> "' as Map key. Only 'Address' keys are allowed."
-    return $ DLMapInfo {..}
 
 data ALGOConnectorInfo = ALGOConnectorInfo
   { aci_appApproval :: String
