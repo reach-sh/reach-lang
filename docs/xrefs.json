@@ -731,6 +731,10 @@
     "title": "Index",
     "path": "/index/#doc-index"
   },
+  "erc20": {
+    "title": "ERC20",
+    "path": "/tut/erc20/#erc20"
+  },
   "guide": {
     "title": "Guide",
     "path": "/guide/#guide"
