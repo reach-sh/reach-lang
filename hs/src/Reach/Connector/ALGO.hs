@@ -3603,7 +3603,8 @@ instance HasPre CPProg where
           lr_what = "API " <> LT.unpack lr_lab
       as2lrs (p, ms) =
         map (a2lr qualify . (p,) . snd) $ M.toAscList ms
-        where qualify = M.size ms > 1
+        where
+          qualify = M.size ms > 1
 
 compile_algo :: (Compile a, HasPre a) => CompilerToolEnv -> Disp -> a -> IO ConnectorInfo
 compile_algo env disp x = do
@@ -3711,31 +3712,29 @@ compile_algo env disp x = do
         let notify b = if b then lbad else lwarn
         return (ts, notify, finalize)
   let showCost = cte_REACH_DEBUG env
-  let runProg m = do
-        let lab = "appApproval"
-        let disp' = disp . (lab <>)
-        let rec r inclAll ci = do
-              let r' = r + 1
-              let rlab= "ALGO." <> show r
-              loud $ rlab <> " run"
-              (ts, notify, finalize) <- run ci m
-              loud $ rlab <> " optimize"
-              let !ts' = optimize $ DL.toList ts
-              let ls = if inclAll then pProgLs else pApiLs
-              loud $ rlab <> " check"
-              checkCost rlab notify disp' ls ci ts' >>= \case
-                Right ci' -> rec r' inclAll ci'
-                Left msg ->
-                  case inclAll of
-                    False -> rec r' True ci
-                    True -> do
-                      finalize
-                      when showCost $ putStr msg
-                      modifyIORef eRes $ M.insert "companionInfo" (AS.toJSON ci)
-                      return ts'
-        ts' <- rec (0::Integer) False Nothing
-        void $ addProg lab ts'
-  runProg $ cp x
+  do
+    let lab = "appApproval"
+    let rec r inclAll ci = do
+          let r' = r + 1
+          let rlab = "ALGO." <> show r
+          loud $ rlab <> " run"
+          (ts, notify, finalize) <- run ci $ cp x
+          loud $ rlab <> " optimize"
+          let !ts' = optimize $ DL.toList ts
+          let ls = if inclAll then pProgLs else pApiLs
+          loud $ rlab <> " check"
+          let disp' = disp . (lab <>)
+          checkCost rlab notify disp' ls ci ts' >>= \case
+            Right ci' -> rec r' inclAll ci'
+            Left msg ->
+              case inclAll of
+                False -> rec r' True ci
+                True -> do
+                  finalize
+                  when showCost $ putStr msg
+                  modifyIORef eRes $ M.insert "companionInfo" (AS.toJSON ci)
+                  return ts'
+    void $ addProg lab =<< rec (0::Integer) False Nothing
   totalLen <- readIORef totalLenR
   when showCost $
     putStrLn $ "The program is " <> show totalLen <> " bytes."
