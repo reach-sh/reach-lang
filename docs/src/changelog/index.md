@@ -9,6 +9,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcNext("0.1.12-rc.9")}
 
++ 2022/11/08: Added support for [AlgoSigner](https://github.com/PureStake/algosigner) as wallet fallback for Algorand.
 + 2022/11/07: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/11/02: Ethereum-like-only: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
 
@@ -99,7 +100,6 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
   In this case, we have observed too many programs containing major errors because they confuse `{!rsh} this`, which would refer to the _previous_ actor in these contexts with the _current_ actor.
   This confusion creates scenarios where applications are incorrectly protected: either they are overly protected, by enforcing that an actor do two things in a row; or they are under protected, by allowing anyone to perform any action after the desired actor does something else first.
   Given this danger, we are introducing this backwards incompatible change.
-=======
 + 2022/07/30: Added support for [PeraWallet Connect](https://github.com/perawallet/connect) as wallet fallback for Algorand.
 + 2022/07/30: Upgraded React to 18.2.0 in `{!cmd} reach react`.
 + 2022/07/30: Many more customization options were added to `{!js} stdlib.setWalletFallback`.

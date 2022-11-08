@@ -210,6 +210,14 @@ stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', MyAlgoConnect }));
 ```
 
+Alternatively, you can call the `ALGO_MakeAlgoSignerConnect` export `@reach-sh/stdlib`, with the `AlgoSigner` global object from [AlgoSigner](https://github.com/PureStake/algosigner) and a provider name to use the AlgoSigner extension.
+For example, this sets the wallet fallback to be AlgoSigner and the Algorand TestNet:
+```js
+import { ALGO_MakeAlgoSignerConnect as MakeAlgoSignerConnect } from '@reach-sh/stdlib';
+stdlib.setWalletFallback(reach.walletFallback({
+  providerEnv, MyAlgoConnect: MakeAlgoSignerConnect(AlgoSigner, 'TestNet') }));
+```
+
 ---
 
 If the key `WalletConnect` is provided, and bound to the `ALGO_WalletConnect` export of `@reach-sh/stdlib`, then [WalletConnect](https://walletconnect.com/) is used to connect to the [PeraWallet](https://perawallet.app/) for signing.
