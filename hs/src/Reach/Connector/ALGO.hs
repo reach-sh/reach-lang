@@ -264,9 +264,6 @@ appGlobalStateNumBytes = 1
 algoMaxStringSize :: Integer
 algoMaxStringSize = 4096
 
-algoMinTxnFee :: Integer
-algoMinTxnFee = 1000
-
 algoMaxLocalSchemaEntries :: Integer
 algoMaxLocalSchemaEntries = 16
 
@@ -2797,12 +2794,6 @@ data ArgId
 argLoad :: ArgId -> App ()
 argLoad ai = code "txna" ["ApplicationArgs", etexty ai]
 
-boundedCount :: forall a. (Enum a, Bounded a) => a -> Integer
-boundedCount _ = 1 + (fromIntegral $ fromEnum $ (maxBound :: a))
-
-argCount :: Integer
-argCount = boundedCount ArgMethod
-
 data GlobalVar
   = GV_txnCounter
   | GV_currentStep
@@ -3431,13 +3422,6 @@ instance Compile CPProg where
       code "b" ["checkSize"]
       -- The NON-OptIn case:
       label "normal"
-    when False $ do
-      -- NOTE: We don't actually care about this, because there will be a
-      -- different failure if there are too few and if there are too few, who
-      -- cares?
-      code "txn" ["NumAppArgs"]
-      cp argCount
-      asserteq
     argLoad ArgMethod
     cfrombs $ T_UInt UI_Word
     label "preamble"
@@ -3516,15 +3500,6 @@ instance Compile CPProg where
     -- We're last
     code "txn" ["GroupIndex"]
     asserteq
-    when False $ do
-      -- There's no point to checking this, because if the fee is too much,
-      -- there's no harm and if it is too low, the network will reject it
-      -- anyways
-      cp algoMinTxnFee
-      op "*"
-      code "txn" ["Fee"]
-      op "<="
-      assert
     code "b" ["done"]
     defn_done
     label "apiReturn_check"
