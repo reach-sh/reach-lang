@@ -974,7 +974,6 @@ data Pre = Pre
   , pApiLs :: [LabelRec]
   , pProgLs :: [LabelRec]
   , pMaps :: DLMapInfos
-  , pApiCalls :: M.Map SLPart Int
   }
 
 instance HasUntrustworthyMaps Pre where
@@ -2294,8 +2293,7 @@ instance Compile DLExpr where
           --cl DLL_Null -- Event log values are never used
     DLE_setApiDetails at p _ _ _ -> do
       which <- fromMaybe (impossible "setApiDetails no which") <$> asks eWhich
-      mac <- multipleApiCalls p
-      let p' = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) which mac
+      let p' = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) which True
       callCompanion at $ CompanionLabel True p'
     DLE_GetUntrackedFunds at mtok tb -> do
       after_lab <- freshLabel "getActualBalance"
@@ -2412,13 +2410,6 @@ instance Compile DLExpr where
         comment $ LT.pack $ "at " <> (unsafeRedactAbsStr $ show at)
         forM_ fs $ \f ->
           comment $ LT.pack $ unsafeRedactAbsStr $ show f
-
-multipleApiCalls :: SLPart -> App Bool
-multipleApiCalls w = do
-  apiCalls <- pApiCalls <$> asks ePre
-  case M.lookup w apiCalls of
-    Just n  -> return $ n > 1
-    Nothing -> return False
 
 splitArgs :: [a] -> ([a], Maybe [a])
 splitArgs l =
@@ -3188,9 +3179,9 @@ cmethIsView = \case
   CView {} -> True
   CAlias {..} -> cmethIsView calias_meth
 
-capi :: Bool -> (SLPart, ApiInfo) -> App [(String, CMeth)]
-capi qualify (who, (ApiInfo {..})) = do
-  let f = adjustApiName (bunpack who) ai_which qualify
+capi :: (SLPart, ApiInfo) -> App [(String, CMeth)]
+capi (who, (ApiInfo {..})) = do
+  let f = adjustApiName (bunpack who) ai_which True
   capi_label <- freshLabel f
   let capi_who = who
   let capi_which = ai_which
@@ -3252,14 +3243,9 @@ genApiJump who ms = do
 
 capis :: (SLPart, M.Map a ApiInfo) -> App [(String, CMeth)]
 capis (p, ms) = do
-  ms' <- concatMapM (capi qualify . (p,) . snd) $ M.toAscList ms
-  case qualify of
-    True  -> do
-      m <- genApiJump p ms'
-      return $ m : ms'
-    False -> return ms'
-  where
-    qualify = M.size ms > 1
+  ms' <- concatMapM (capi . (p,) . snd) $ M.toAscList ms
+  m <- genApiJump p ms'
+  return $ m : ms'
 
 cview :: (SLPart, VSITopInfo) -> App [(String, CMeth)]
 cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs aliases) = do
@@ -3580,7 +3566,6 @@ instance HasPre CPProg where
       pOpts = cpp_opts
       dli = cpp_init
       pMaps = dli_maps dli
-      pApiCalls = M.map M.size ai
       ai = cpp_apis
       CHandlers hm = cpp_handlers
       pubLs = mapMaybe h2lr $ M.toAscList hm
@@ -3593,15 +3578,13 @@ instance HasPre CPProg where
             lr_at = ch_at
             lr_what = "Step " <> show i
         (_, C_Loop {}) -> Nothing
-      a2lr qualify (p, ApiInfo {..}) = LabelRec {..}
+      a2lr (p, ApiInfo {..}) = LabelRec {..}
         where
-          lr_lab = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) ai_which qualify
+          lr_lab = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) ai_which True
           lr_at = ai_at
           lr_what = "API " <> LT.unpack lr_lab
       as2lrs (p, ms) =
-        map (a2lr qualify . (p,) . snd) $ M.toAscList ms
-        where
-          qualify = M.size ms > 1
+        map (a2lr . (p,) . snd) $ M.toAscList ms
 
 data ABInfo = ABInfo
   { abiPure :: Bool
