@@ -114,7 +114,7 @@ md5: fa159888f678f8f5057e5564e8f319c1
 range: 21-25
 ```
 
-Essentially, this theorem representation shows that the balance would not be equal to two times the wager amount. For a deeper study on Theorem Formalization, read our guide, @{seclink("how-to-read-verification-failures")}).
+Essentially, this theorem representation shows that the balance would not be equal to two times the wager amount. For a deeper study on Theorem Formalization, read our guide, @{seclink("how-to-read-verification-failures")}.
 
 If you didn't already know that the balance was failing in the while loop then you'd want to investigate the lines that the Violation Witness points to. 
 
@@ -150,7 +150,7 @@ We'll see that the `{!rsh} invariant` should `{!rsh} assert` the balance, loop c
 
 We'll continue to explore this pattern for writing invariants. 
 We've examined an `{!rsh} invariant` for asserting the `balance`. 
-Now we'll review an `${!rsh} invariant` that asserts the loop's condition.
+Now we'll review an `{!rsh} invariant` that asserts the loop's condition.
 
 ### Condition Invariant
 
@@ -216,7 +216,7 @@ range: 44-54
 ```
 
 In RSVP, the `{!rsh} parallelReduce` tracks two constants, `done` and `howMany`.
-The first invariant on line 49 asserts that the size of the `{!rsh} Map`, `Guests`, is equal to `howMany`. 
+The first invariant on line 49 asserts that the size of `{!rsh} Map` `Guests` is equal to `howMany`. 
 If we remove this invariant, the compiler will not be able to verify that the size of the Guestbook is the same as how many guests have reserved or checked in. 
 
 ### Map Invariant
@@ -287,17 +287,17 @@ range: 44-46
 
 Balance errors indicate the need to recalculate the balance's formula or identify missing assumptions about the program. 
 In this case, the balance is equal to the product of `howMany` guests completed a reservation and the reservation fee. 
-However, Reach cannot guarantee the efficacy of the program because we failed to `{!rsh} assert` the balance's formula in the invariant.
+However, Reach cannot guarantee the efficacy of the program because we failed to `{!rsh} assert` the balance's formula in the `{!rsh} invariant`.
 
-## Track/Distribute Supply of Non-Network Tokens
+## Distribute Supply of Non-Network Tokens
 
 Sometimes you may want to write an `{!rsh} assert`ion regarding the supply of non-network tokens. 
-In "Ticket Sales" an Administrator issues non-network tokens and Buyer `{!rsh} API`s have the ability to buy the tokens, which are referred to as 'tickets', in this DApp.
+In _Ticket Sales_ an Administrator issues non-network tokens and Buyer `{!rsh} API`s have the ability to buy the tokens, which are referred to as 'tickets', in this DApp.
 
 The `{!rsh} invariant` in this DApp is interesting because it makes `{!rsh} assert`s over the network token balance (line 26) and the non-network token balance (line 27).
 
 ```
-load: /examples/ticket-sales
+load: /examples/ticket-sales/index.rsh
 md5: c425745032273893d106fe3de005f15e
 range: 25-37
 ```
@@ -433,7 +433,7 @@ range: 57-58
 ``` rsh
 load: /examples/point-of-sale/index-balinv.rsh
 md5: b2c319bf236e4d7ddade29937e162e39
-range: 56
+range: 56-56
 ```
 
 `{!rsh} invariant`s are always required for balances that will be transferred inside a `{!rsh} parallelReduce`.
@@ -491,10 +491,10 @@ For more practice, continue to find examples, remove the invariants, and study t
 
 If you'd like to experiment with invariants in additional examples then I recommend starting with the [NFT-Auction-API](https://github.com/reach-sh/reach-lang/blob/master/examples/nft-auction-api/index.rsh) and the [Chicken-Parallel](https://github.com/reach-sh/reach-lang/blob/master/examples/chicken-parallel/index.rsh) examples. 
 
-This can be a good way of developing a sense of when and how to use invariants. 
+This can be a good way of developing a sense of when and how to use `{!rsh} invariant`s. 
 Common error messages you may see are "balance zero at application exit" and "balance sufficient for transfer". 
 If you see these errors in your applications, take time to consider the formula of the balance in your application. 
 Seek to identify a mathematical relationship between loop conditions and the balance.
 
-You should now have a better understanding of how to write invariants and their importance in developing secure Reach DApps.
+You should now have a better understanding of how to write `{!rsh} invariant`s and their importance in developing secure Reach DApps.
 If you need additional advice for your DApp, reach out in our [Discord](@{DISCORD}).
