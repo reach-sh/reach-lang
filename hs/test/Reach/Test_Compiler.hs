@@ -104,6 +104,9 @@ test_examples = goldenTests "../examples" f
         [ "./pkg/index.rsh"
         , "./pkg/local.rsh"
         , "./pkg/index-master.rsh"
+        , "./point-of-sale/index-balinv.rsh"
+        , "./point-of-sale/index-mapinv.rsh"
+        , "./point-of-sale/index-tokinv.rsh"
         , "./rps-4-attack/index-bad.rsh"
         , "./rps-4-attack/index-fails.rsh"
         , "./rps-7-loops/index-balinv.rsh"
@@ -112,6 +115,7 @@ test_examples = goldenTests "../examples" f
         , "./rsvp-5-cede/index-fail.rsh"
         , "./rsvp-6-vevt/index-balinv.rsh"
         , "./rsvp-6-vevt/index-mapinv.rsh"
+        , "./ticket-sales/index-tokinv.rsh"
         ]
     f fp =
       case S.member fp fails of
