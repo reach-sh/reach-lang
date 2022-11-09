@@ -1,0 +1,34 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance sufficient for transfer"
+  at ./index-mapinv.rsh:48:26:application
+  at /app/index-mapinv.rsh:46:35:application call to [unknown function] (defined at: /app/index-mapinv.rsh:46:35:function exp)
+
+  // Violation Witness
+
+  const UInt.max = 33037;
+
+  const map0_1/961 = <fresh Map>;
+  //    ^ could = <map: (None(null ))>[<abstract address 1> <- Some(30613 )]
+  //      from: ./index-mapinv.rsh:27:45:while
+  const netBalance/665 = <loop variable>;
+  //    ^ could = 30612
+  //      from: ./index-mapinv.rsh:27:45:while
+  const this/740 = <an honest join from "Buyer_refund">;
+  //    ^ could = <abstract address 1>
+  //      from: ./index-mapinv.rsh:27:45:dot
+
+  // Theorem Formalization
+
+  const v925 = fromSome(map0_1/961[this/740], 0 ) <= netBalance/665;
+  //    ^ would be false
+  assert(v925);
+
+  Verifying when NO participants are honest
+Checked 68 theorems; 3 failures (and 2 omitted repeats) :'(
+
+For a guide to understanding verification failures, see: https://docs.reach.sh/rsh/errors/#how-to-read-verification-failures

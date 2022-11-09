@@ -318,7 +318,7 @@ range - 33-44
 The `{!rsh} parallelReduce` updates the value of `ticketsSold` and the condition is `true` as long as `ticketsSold` is less than the available `supply` of tickets. 
 The `{!rsh} API` calls on the `buyTicket` function, which increments the number of `ticketsSold` and returns the new value. 
 
-This program doesn't break after removing the first balance invariant. 
+This program doesn't break after removing the first balance invariant because the network tokens aren't transferred within the `{!rsh} parallelReduce`. 
 The `{!rsh} parallelReduce` is in a race to sell the non-network tokens. 
 Writing an invariant about the network token balance provides stronger defenses to the program, but is not required for the compiler to complete its formal verification.
 However, removing the second invariant will cause a violation witness.
@@ -365,11 +365,155 @@ This Violation Witness also points to the `{!rsh} parallelReduce` with a similar
 
 This example shows that it is critical to understand a non-network token's balance, as well as, the network token's balance.
 
+## All Together Now
+
+Let's look at one more example that asserts `{!rsh} invariant`s over network tokens, non-network tokens, and a `{!rsh} Map`.  
+
+``` rsh
+load: /examples/point-of-sale/index.rsh
+md5: 102ed2e3f3a0d59a4f1a5aa5084823cf
+range: 26-44
+```
+
+This is a point-of-sale Reach application that allows an `{!rsh} API` member to make a purchase or request a refund. 
+An interesting feature in the point-of-sale application is that it takes in varying cost amounts and stores the inputs in a `{!rsh} Map` which is available to be returned through the refund function.
+
+You should be able to identify that the `{!rsh} invariant`(s) assert network and, if applicable, non-network balances, the loop condition, and the `{!rsh} Map` size, if applicable. 
+We also can identify a relationship between the `{!rsh} Map` `{!rsh} invariant` and the `{!rsh} check`.
+`{!rsh} Map`s with transfers inside a `{!rsh} parallelReduce` require an `{!rsh} invariant` and a `{!rsh} check`. 
+
+The other two `{!rsh} check`s are defensive. 
+`check(tokensSold != supply)` on line 34 offers insurance against split-second API calls, and `check(purchasePrice > min)` on line 36 is like a `try catch` to ensure that purchase calls meet the minimum price.
+
+### Lost Without a Map
+
+Let's remove each of the invariants and observe the outputs.
+First, we remove the `{!rsh} Map` `{!rsh} invariant`:
+
+``` rsh
+load: /examples/point-of-sale/index-mapinv.rsh
+md5: 76b0af6be62a70fe1ad5cca2f5f85307
+range: 27-31
+```
+
+The verification fails because the compiler cannot confirm that the balance is sufficient for a transfer. 
+
+``` rsh
+load: /examples/point-of-sale/index-mapinv.txt
+md5: f28ba47027648e7e39b34e44b73cc763
+range: 7-9
+```
+
+Failures point to the `{!rsh} api_` refund return object on line 46 and the `{!rsh} transfer` on line 48.
+
+``` rsh
+load: /examples/point-of-sale/index-mapinv.rsh
+md5: 76b0af6be62a70fe1ad5cca2f5f85307
+range: 46-48
+```
+
+Without the `{!rsh} invariant`, Reach is not able `{!rsh} assert` the size of the `{!rsh} Map`.
+When an `{!rsh} API` member attempts to call a refund, the verification engine cannot guarantee that the balance will be sufficient to payout the transfer amount. 
+It is critical to know the size of a `{!rsh} Map` if it will be used in a `{!rsh} transfer`. 
+
+### Out of Balance
+
+Removing the balance `{!rsh} invariant` has similar results:
+
+``` rsh
+load: /examples/point-of-sale/index-balinv.rsh
+md5: b2c319bf236e4d7ddade29937e162e39
+range: 27-31
+```
+
+As we saw before, the verification engine is not able to ensure that the balance is sufficient for a transfer in the `{!rsh} api_`'s refund functionality. 
+
+``` rsh
+load: /examples/point-of-sale/index-balinv.txt
+md5: 90ef94492eaaae686c052e46a29a9373
+range: 7-9
+```
+
+Removing the balance `{!rsh} invariant` causes a second failure point at line 54 when the contract transfers the `total` to the Administrator. 
+
+``` rsh
+load: /examples/point-of-sale/index-balinv.txt
+md5: 90ef94492eaaae686c052e46a29a9373
+range: 34-35
+```
+
+``` rsh
+load: /examples/point-of-sale/index-balinv.rsh
+md5: b2c319bf236e4d7ddade29937e162e39
+range: 54
+```
+
+The third and final error states that the verification engine cannot confirm that the network token balance is zero when the application exits on line 56.
+
+``` rsh
+load: /examples/point-of-sale/index-balinv.txt
+md5: 90ef94492eaaae686c052e46a29a9373
+range: 57-58
+```
+
+``` rsh
+load: /examples/point-of-sale/index-balinv.rsh
+md5: b2c319bf236e4d7ddade29937e162e39
+range: 56
+```
+
+`{!rsh} invariant`s are always required for balances that will be transferred inside a `{!rsh} parallelReduce`.
+Failing to make an `{!rsh} assert`ion over the balance with an `{!rsh} invariant` creates a host of verification errors that could be difficult to resolve without properly understanding the application. 
+
+### Tokens
+
+For our final example, we remove the non-network token balance `{!rsh} invariant`.
+
+``` rsh
+load: /examples/point-of-sale/index-tokinv.rsh
+md5: 2280bcf03c528e31b6c37104786dc927
+range: 27-31
+```
+
+We observe that the verification failure message is the same, "balance sufficient for transfer". 
+However, it fails inside the `{!rsh} api_` purchase functionality.
+
+``` rsh
+load: /examples/point-of-sale/index-tokinv.txt
+md5: 557d91780cd2f51743d5b84eca1d7989
+range: 7-9
+```
+
+Non-network tokens are transferred on line 39 and the non-network token balance is updated in line 36. 
+
+``` rsh
+load: /examples/point-of-sale/index-tokinv.rsh
+md5: 2280bcf03c528e31b6c37104786dc927
+range: 36-40
+```
+
+Similar to network tokens, transferring non-network tokens within a `{!rsh} parallelReduce` requires an `{!rsh} invariant`.
+
+Failing to provide the non-network token `{!rsh} invariant` also creates a "balance zero at application exit" error on line 56, which is where the application `{!rsh} exit`s.
+
+``` rsh
+load: /examples/point-of-sale/index-tokinv.txt
+md5: 557d91780cd2f51743d5b84eca1d7989
+range: 28-29
+```
+
+All tokens must be accounted for when the application is ready to exit. 
+Reach is not able to confirm balances after exiting a `{!rsh} parallelReduce` without `{!rsh} invariant`s.
+If the compiler fails with "balance zero at application exit" then ensure you've created `{!rsh} invariant`s that `{!rsh} assert` the correct equations for network and non-network tokens.  
+
 ## Invariably, We Have Learned
 
 At this point, we've examined four invariants and how their absence results in Violation Witness errors. 
 This demonstrates how important it is to understand your program before it is time to write `{!rsh} invariant`s.
-For more practice, continue to find examples, remove the invariants, and study the resulting compile errors. 
+You should be prepared to create `{!rsh} invariant`s as soon as you need a `{!rsh} parallelReduce`.
+
+Learn to quickly identify where your application needs a `{!rsh} parallelReduce` and what `{!rsh} invariant`(s) will be required to correctly `{!rsh} assert` the balance(s) and condition(s).
+For more practice, continue to find examples, remove the invariants, and study the compile errors. 
 
 If you'd like to experiment with invariants in additional examples then I recommend starting with the [NFT-Auction-API](https://github.com/reach-sh/reach-lang/blob/master/examples/nft-auction-api/index.rsh) and the [Chicken-Parallel](https://github.com/reach-sh/reach-lang/blob/master/examples/chicken-parallel/index.rsh) examples. 
 
