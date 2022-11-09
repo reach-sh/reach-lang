@@ -2,11 +2,12 @@ import { loadStdlib, test } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
 // Basics
+const GAS_LIMIT = 5000000;
 const stdlib = loadStdlib({ REACH_NO_WARN: 'Y' });
 const err = {
-  'ETH': 'transaction may fail',
+  'ETH': 'transaction failed',
   'ALGO': 'assert failed',
-  'CFX': 'transaction is reverted',
+  'CFX': 'Receipt outcomeStatus is nonzero',
 }[stdlib.connector];
 
 // Framework
@@ -14,6 +15,7 @@ const makeRSVP = async ({ hostLabel, name, reservation, timeLimit }) => {
   const sbal = stdlib.parseCurrency(100);
   const accHost = await stdlib.newTestAccount(sbal);
   accHost.setDebugLabel(hostLabel);
+  accHost.setGasLimit(GAS_LIMIT);
 
   const stdPerson = (obj) => {
     const { acc } = obj;
@@ -52,6 +54,7 @@ const makeRSVP = async ({ hostLabel, name, reservation, timeLimit }) => {
   const makeGuest = async (label) => {
     const acc = await stdlib.newTestAccount(sbal);
     acc.setDebugLabel(label);
+    acc.setGasLimit(GAS_LIMIT);
 
     const willGo = async () => {
       const ctcGuest = acc.contract(backend, ctcInfo);
