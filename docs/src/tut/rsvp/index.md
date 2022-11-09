@@ -599,16 +599,16 @@ The program starts exactly the same as before:
 
 ```
 load: /examples/rsvp-5-cede/index.mjs
-md5: dfb66d14685af393468aaed525281e51
-range: 1-43
+md5: 2721732986c261f7ca435a92246fc621
+range: 1-45
 ```
 
 But after we define the details, there's a difference:
 
 ```
 load: /examples/rsvp-5-cede/index.mjs
-md5: dfb66d14685af393468aaed525281e51
-range: 45-50
+md5: 2721732986c261f7ca435a92246fc621
+range: 47-52
 ```
 
 We define the Host's contract handle and have them run the Admin participant, which creates and launches the single contract instance for everyone.
@@ -616,16 +616,16 @@ As mentioned above, we could have a separate account do this, but we choose not 
 
 ```
 load: /examples/rsvp-5-cede/index.mjs
-md5: dfb66d14685af393468aaed525281e51
-range: 52-67
+md5: 2721732986c261f7ca435a92246fc621
+range: 54-70
 ```
 
 The code for guests is much simpler, because in each case we just have either the Guest call the `register` function or the Host call the `checkin` function.
 
 ```
 load: /examples/rsvp-5-cede/index.mjs
-md5: dfb66d14685af393468aaed525281e51
-range: 69-77
+md5: 2721732986c261f7ca435a92246fc621
+range: 72-80
 ```
 
 Everything else about the program is the same.
