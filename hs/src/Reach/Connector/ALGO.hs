@@ -974,6 +974,7 @@ data Pre = Pre
 
 data Env = Env
   { ePre :: Pre
+  , eMaxApiRetSize :: IORef Integer
   , eMapDataSize :: Integer
   , eMapDataTy :: DLType
   , eMapKeysl :: [Word8]
@@ -998,6 +999,10 @@ data Env = Env
   , eGetStateKeys :: IO Int
   , eABI :: IORef (M.Map String ABInfo)
   , eRes :: IORef (M.Map T.Text AS.Value)
+  }
+
+data ABInfo = ABInfo
+  { abiPure :: Bool
   }
 
 instance HasCounter Env where
@@ -1771,8 +1776,8 @@ instance Compile B.ByteString where
 cbs :: B.ByteString -> App ()
 cbs = cp
 
-cTupleRef :: SrcLoc -> DLType -> Integer -> App ()
-cTupleRef _at tt idx = do
+cTupleRef :: DLType -> Integer -> App ()
+cTupleRef tt idx = do
   -- [ Tuple ]
   let ts = tupleTypes tt
   (t, start, sz) <- computeExtract ts idx
@@ -1840,8 +1845,8 @@ cMapLoad = libCall LF_cMapLoad $ do
       return ()
   op "retsub"
 
-cMapStore :: SrcLoc -> App () -> App ()
-cMapStore _at cnew = do
+cMapStore :: App () -> App ()
+cMapStore cnew = do
   Env {..} <- ask
   -- [ Address ]
   case eMapKeysl of
@@ -1995,15 +2000,15 @@ instance Compile DLExpr where
       op "concat"
     DLE_BytesDynCast _ v -> do
       cp v
-    DLE_TupleRef at ta idx -> do
+    DLE_TupleRef _ ta idx -> do
       cp ta
-      cTupleRef at (argTypeOf ta) idx
+      cTupleRef (argTypeOf ta) idx
     DLE_TupleSet at tup_a index val_a -> do
       cp tup_a
       cTupleSet at (cp val_a) (argTypeOf tup_a) index
-    DLE_ObjectRef at obj_a fieldName -> do
+    DLE_ObjectRef _ obj_a fieldName -> do
       cp obj_a
-      uncurry (cTupleRef at) $ objectRefAsTupleRef obj_a fieldName
+      uncurry cTupleRef $ objectRefAsTupleRef obj_a fieldName
     DLE_ObjectSet at obj_a fieldName val_a -> do
       cp obj_a
       uncurry (cTupleSet at (cp val_a)) $ objectRefAsTupleRef obj_a fieldName
@@ -2061,7 +2066,7 @@ instance Compile DLExpr where
       cp fa
       cMapLoad
       mdt <- getMapDataTy
-      cTupleRef sb mdt $ fromIntegral i
+      cTupleRef mdt $ fromIntegral i
     DLE_MapSet at mpv@(DLMVar i) fa mva -> do
       incResource R_Account fa
       Env {..} <- ask
@@ -2072,11 +2077,10 @@ instance Compile DLExpr where
         -- Special case one key and one map
         True -> do
           cp fa
-          cMapStore at $ do
-            cp $ mdaToMaybeLA mt mva
+          cMapStore $ cp $ mdaToMaybeLA mt mva
         _ -> do
           cp fa
-          cMapStore at $ do
+          cMapStore $ do
             cp fa
             cMapLoad
             let cnew = cp $ mdaToMaybeLA mt mva
@@ -2213,13 +2217,13 @@ instance Compile DLExpr where
             let gb_post idx mtok = do
                   cGetBalance at mmin mtok
                   loadBals
-                  cTupleRef at balsT idx
+                  cTupleRef balsT idx
                   op "-"
             cconcatbs $ map (\(i, mtok) -> (T_UInt UI_Word, gb_post i mtok)) mtoksiBill
             forM_ mtoksiZero $ \(idx, mtok) -> do
               cGetBalance at mmin mtok
               loadBals
-              cTupleRef at balsT idx
+              cTupleRef balsT idx
               asserteq
             code "gitxn" [ texty appl_idx, "LastLog" ]
             output $ TExtract 4 0 -- (0 = to the end)
@@ -3331,7 +3335,7 @@ bindFromArgs vs m = do
       let tupleTy = T_Tuple $ map varLetType vsMore
       let goTuple (v, i) = sallocVarLet v False
             (code "txna" ["ApplicationArgs", texty (15 :: Integer)]
-             >> cTupleRef (SrcLoc Nothing Nothing Nothing) tupleTy i)
+             >> cTupleRef tupleTy i)
       goSingles vs14 (foldl' (flip goTuple) m (zip vsMore [(0 :: Integer) ..]))
 
 data VSIBlockVS = VSIBlockVS [DLVarLet] DLExportBlock
@@ -3371,10 +3375,34 @@ analyzeViews (DLViewsX vs vis) = vsit
 class HasPre a where
   getPre :: a -> Pre
 
+instance HasPre CPProg where
+  getPre (CPProg {..}) = Pre {..}
+    where
+      dli = cpp_init
+      pMaps = dli_maps dli
+      ai = cpp_apis
+      CHandlers hm = cpp_handlers
+      pubLs = mapMaybe h2lr $ M.toAscList hm
+      pApiLs = concatMap as2lrs $ M.toAscList ai
+      pProgLs = pubLs <> pApiLs
+      h2lr = \case
+        (i, C_Handler {..}) -> Just $ LabelRec {..}
+          where
+            lr_lab = handlerLabel i
+            lr_at = ch_at
+            lr_what = "Step " <> show i
+        (_, C_Loop {}) -> Nothing
+      a2lr (p, ApiInfo {..}) = LabelRec {..}
+        where
+          lr_lab = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) ai_which True
+          lr_at = ai_at
+          lr_what = "API " <> LT.unpack lr_lab
+      as2lrs (p, ms) =
+        map (a2lr . (p,) . snd) $ M.toAscList ms
+
 instance Compile CPProg where
   cp (CPProg {..}) = do
     Env {..} <- ask
-    let at = cpp_at
     let vsi = cpp_views
     let ai = cpp_apis
     let CHandlers hm = cpp_handlers
@@ -3387,41 +3415,8 @@ instance Compile CPProg where
             abiPure = cmethIsView m
     liftIO $ writeIORef eABI $ M.map mkABI meth_sm
     maxApiRetSize <- maxTypeSize $ M.map cmethRetTy meth_sm
+    liftIO $ writeIORef eMaxApiRetSize maxApiRetSize
     let meth_im = M.mapKeys sigStrToInt meth_sm
-    let mGV_companion =
-          case eCompanion of
-            Nothing -> []
-            Just _ -> [GV_companion]
-    let keyState_gvs :: [GlobalVar]
-        keyState_gvs = [GV_currentStep, GV_currentTime] <> mGV_companion
-    let keyState_ty :: DLType
-        keyState_ty = T_Tuple $ map gvType keyState_gvs
-    useResource R_Txn
-    cint 0
-    gvStore GV_txnCounter
-    code "txn" ["ApplicationID"]
-    code "bz" ["alloc"]
-    cp keyState
-    op "app_global_get"
-    let nats = [0 ..]
-    let shouldDups = reverse $ zipWith (\_ i -> i /= 0) keyState_gvs nats
-    forM_ (zip (zip keyState_gvs shouldDups) nats) $ \((gv, shouldDup), i) -> do
-      when shouldDup $ op "dup"
-      cTupleRef at keyState_ty i
-      gvStore gv
-    unless (null eMapKeysl) $ do
-      -- NOTE We could allow an OptIn if we are not going to halt
-      code "txn" ["OnCompletion"]
-      output $ TConst "OptIn"
-      op "=="
-      code "bz" ["normal"]
-      output $ TCheckOnCompletion
-      code "txn" ["Sender"]
-      cMapStore at $ do
-        padding eMapDataSize
-      code "b" ["checkSize"]
-      -- The NON-OptIn case:
-      label "normal"
     argLoad ArgMethod
     cfrombs $ T_UInt UI_Word
     label "preamble"
@@ -3450,112 +3445,122 @@ instance Compile CPProg where
     cblt "publish" ch $ bltM hm_h
     forM_ (M.toAscList hm_l) $ \(hi, hh) ->
       cloop hi hh
-    label "updateStateHalt"
+
+cp_shell :: (Compile a) => a -> App ()
+cp_shell x = do
+  Env {..} <- ask
+  let mGV_companion =
+        case eCompanion of
+          Nothing -> []
+          Just _ -> [GV_companion]
+  let keyState_gvs :: [GlobalVar]
+      keyState_gvs = [GV_currentStep, GV_currentTime] <> mGV_companion
+  let keyState_ty :: DLType
+      keyState_ty = T_Tuple $ map gvType keyState_gvs
+  useResource R_Txn
+  cint 0
+  gvStore GV_txnCounter
+  code "txn" ["ApplicationID"]
+  code "bz" ["alloc"]
+  cp keyState
+  op "app_global_get"
+  let nats = [0 ..]
+  let shouldDups = reverse $ zipWith (\_ i -> i /= 0) keyState_gvs nats
+  forM_ (zip (zip keyState_gvs shouldDups) nats) $ \((gv, shouldDup), i) -> do
+    when shouldDup $ op "dup"
+    cTupleRef keyState_ty i
+    gvStore gv
+  unless (null eMapKeysl) $ do
+    -- NOTE We could allow an OptIn if we are not going to halt
     code "txn" ["OnCompletion"]
-    output $ TConst $ "DeleteApplication"
-    asserteq
+    output $ TConst "OptIn"
+    op "=="
+    code "bz" ["normal"]
     output $ TCheckOnCompletion
-    callCompanion at $ CompanionDelete
-    do
-      let mt_at = at
-      let mt_always = True
-      let mt_mrecv = Nothing
-      let mt_mtok = Nothing
-      let mt_submit = True
-      let mt_next = False
-      let mt_mcclose = Just $ cDeployer
-      let mt_amt = DLA_Literal $ DLL_Int at UI_Word 0
-      void $ makeTxn $ MakeTxn {..}
-    code "b" ["updateState"]
-    label "updateStateNoOp"
-    code "txn" ["OnCompletion"]
-    output $ TConst $ "NoOp"
-    asserteq
-    output $ TCheckOnCompletion
-    code "b" ["updateState"]
-    label "updateState"
-    cp keyState
-    forM_ keyState_gvs $ \gv -> do
-      gvLoad gv
-      ctobs $ gvType gv
-    forM_ (tail keyState_gvs) $ const $ op "concat"
-    op "app_global_put"
-    gvLoad GV_wasMeth
-    code "bz" ["checkSize"]
-    label "apiReturn_noCheck"
-    -- SHA-512/256("return")[0..4] = 0x151f7c75
-    cp $ BS.pack [0x15, 0x1f, 0x7c, 0x75]
-    gvLoad GV_apiRet
-    op "concat"
-    clog_ $ 4 + maxApiRetSize
+    code "txn" ["Sender"]
+    cMapStore $ padding eMapDataSize
     code "b" ["checkSize"]
-    label "checkSize"
-    gvLoad GV_txnCounter
-    op "dup"
-    -- The size is correct
-    cint 1
-    op "+"
-    code "global" ["GroupSize"]
-    asserteq
-    -- We're last
-    code "txn" ["GroupIndex"]
-    asserteq
-    code "b" ["done"]
-    defn_done
-    label "apiReturn_check"
-    code "txn" ["OnCompletion"]
-    -- XXX A remote Reach API could have an `OnCompletion` of `DeleteApplication` due to `updateStateHalt`.
-    output $ TConst "NoOp"
-    asserteq
-    output $ TCheckOnCompletion
-    code "b" [ "apiReturn_noCheck" ]
-    label "alloc"
-    let ctf f x = do
-          insertResult (LT.toStrict f) $ AS.Number $ fromIntegral x
-          cp x
-          code "txn" [f]
-          asserteq
-    ctf "GlobalNumUint" $ appGlobalStateNumUInt
-    stateKeys <- liftIO $ eGetStateKeys
-    ctf "GlobalNumByteSlice" $ appGlobalStateNumBytes + fromIntegral stateKeys
-    ctf "LocalNumUint" $ appLocalStateNumUInt
-    let mapDataKeys = length eMapKeysl
-    ctf "LocalNumByteSlice" $ appLocalStateNumBytes + fromIntegral mapDataKeys
-    forM_ keyState_gvs $ \gv -> do
-      ctzero $ gvType gv
-      gvStore gv
-    code "b" ["updateStateNoOp"]
-    -- Library functions
-    libDefns
-
-instance HasPre CPProg where
-  getPre (CPProg {..}) = Pre {..}
-    where
-      dli = cpp_init
-      pMaps = dli_maps dli
-      ai = cpp_apis
-      CHandlers hm = cpp_handlers
-      pubLs = mapMaybe h2lr $ M.toAscList hm
-      pApiLs = concatMap as2lrs $ M.toAscList ai
-      pProgLs = pubLs <> pApiLs
-      h2lr = \case
-        (i, C_Handler {..}) -> Just $ LabelRec {..}
-          where
-            lr_lab = handlerLabel i
-            lr_at = ch_at
-            lr_what = "Step " <> show i
-        (_, C_Loop {}) -> Nothing
-      a2lr (p, ApiInfo {..}) = LabelRec {..}
-        where
-          lr_lab = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) ai_which True
-          lr_at = ai_at
-          lr_what = "API " <> LT.unpack lr_lab
-      as2lrs (p, ms) =
-        map (a2lr . (p,) . snd) $ M.toAscList ms
-
-data ABInfo = ABInfo
-  { abiPure :: Bool
-  }
+    -- The NON-OptIn case:
+    label "normal"
+  cp x
+  label "updateStateHalt"
+  code "txn" ["OnCompletion"]
+  output $ TConst $ "DeleteApplication"
+  asserteq
+  output $ TCheckOnCompletion
+  callCompanion sb $ CompanionDelete
+  do
+    let mt_at = sb
+    let mt_always = True
+    let mt_mrecv = Nothing
+    let mt_mtok = Nothing
+    let mt_submit = True
+    let mt_next = False
+    let mt_mcclose = Just $ cDeployer
+    let mt_amt = DLA_Literal $ DLL_Int sb UI_Word 0
+    void $ makeTxn $ MakeTxn {..}
+  code "b" ["updateState"]
+  label "updateStateNoOp"
+  code "txn" ["OnCompletion"]
+  output $ TConst $ "NoOp"
+  asserteq
+  output $ TCheckOnCompletion
+  code "b" ["updateState"]
+  label "updateState"
+  cp keyState
+  forM_ keyState_gvs $ \gv -> do
+    gvLoad gv
+    ctobs $ gvType gv
+  forM_ (tail keyState_gvs) $ const $ op "concat"
+  op "app_global_put"
+  gvLoad GV_wasMeth
+  code "bz" ["checkSize"]
+  label "apiReturn_noCheck"
+  -- SHA-512/256("return")[0..4] = 0x151f7c75
+  cp $ BS.pack [0x15, 0x1f, 0x7c, 0x75]
+  gvLoad GV_apiRet
+  op "concat"
+  maxApiRetSize <- liftIO $ readIORef eMaxApiRetSize
+  clog_ $ 4 + maxApiRetSize
+  code "b" ["checkSize"]
+  label "checkSize"
+  gvLoad GV_txnCounter
+  op "dup"
+  -- The size is correct
+  cint 1
+  op "+"
+  code "global" ["GroupSize"]
+  asserteq
+  -- We're last
+  code "txn" ["GroupIndex"]
+  asserteq
+  code "b" ["done"]
+  defn_done
+  label "apiReturn_check"
+  code "txn" ["OnCompletion"]
+  -- XXX A remote Reach API could have an `OnCompletion` of `DeleteApplication` due to `updateStateHalt`.
+  output $ TConst "NoOp"
+  asserteq
+  output $ TCheckOnCompletion
+  code "b" [ "apiReturn_noCheck" ]
+  label "alloc"
+  let ctf f v = do
+        insertResult (LT.toStrict f) $ AS.Number $ fromIntegral v
+        cp v
+        code "txn" [f]
+        asserteq
+  ctf "GlobalNumUint" $ appGlobalStateNumUInt
+  stateKeys <- liftIO $ eGetStateKeys
+  ctf "GlobalNumByteSlice" $ appGlobalStateNumBytes + fromIntegral stateKeys
+  ctf "LocalNumUint" $ appLocalStateNumUInt
+  let mapDataKeys = length eMapKeysl
+  ctf "LocalNumByteSlice" $ appLocalStateNumBytes + fromIntegral mapDataKeys
+  forM_ keyState_gvs $ \gv -> do
+    ctzero $ gvType gv
+    gvStore gv
+  code "b" ["updateStateNoOp"]
+  -- Library functions
+  libDefns
 
 compile_algo :: (HasUntrustworthyMaps a, HasCounter a, Compile a, HasPre a) => CompilerToolEnv -> Disp -> a -> IO ConnectorInfo
 compile_algo env disp x = do
@@ -3630,6 +3635,7 @@ compile_algo env disp x = do
   unless (getUntrustworthyMaps x || null eMapKeysl) $ do
     gwarn $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
   eABI <- newIORef mempty
+  eMaxApiRetSize <- newIORef 0
   let run :: CompanionInfo -> App () -> IO (TEALs, Notify, IO ())
       run eCompanion m = do
         let eHP_ = fromIntegral $ fromEnum (maxBound :: GlobalVar)
@@ -3671,7 +3677,7 @@ compile_algo env disp x = do
           let r' = r + 1
           let rlab = "ALGO." <> show r
           loud $ rlab <> " run"
-          (ts, notify, finalize) <- run ci $ cp x
+          (ts, notify, finalize) <- run ci $ cp_shell x
           loud $ rlab <> " optimize"
           let !ts' = optimize $ DL.toList ts
           let ls = if inclAll then pProgLs else pApiLs
