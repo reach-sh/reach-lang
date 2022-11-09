@@ -292,27 +292,14 @@ However, Reach cannot guarantee the efficacy of the program because we failed to
 ## Track/Distribute Supply of Non-Network Tokens
 
 Sometimes you may want to write an `{!rsh} assert`ion regarding the supply of non-network tokens. 
-In the "Ticket Sale DApp" an Administrator issues non-network tokens and Buyer `{!rsh} API`s have the ability to buy the tokens, which are referred to as 'tickets', in this DApp.
+In "Ticket Sales" an Administrator issues non-network tokens and Buyer `{!rsh} API`s have the ability to buy the tokens, which are referred to as 'tickets', in this DApp.
 
-The `{!rsh} invariant` in this DApp is interesting because it makes `{!rsh} assert`s over the network token balance (line 34) and the non-network token balance (line 35).
+The `{!rsh} invariant` in this DApp is interesting because it makes `{!rsh} assert`s over the network token balance (line 26) and the non-network token balance (line 27).
 
 ```
-load - ticket sales
-md5 -
-range - 33-44
-
-  const [ticketsSold] = parallelReduce([0])
-    .invariant(balance() == amount * ticketsSold)
-    .invariant(balance(tok) == supply - ticketsSold)errors
-    .while(ticketsSold < supply)
-    .api_(B.buyTicket, () => {
-      return[amount, (ret) => {
-        transfer(1, tok).to(this);
-        ret(true);
-        return [ticketsSold + 1];
-      }];
-    });
-  transfer(balance()).to(A);
+load: /examples/ticket-sales
+md5: c425745032273893d106fe3de005f15e
+range: 25-37
 ```
 
 The `{!rsh} parallelReduce` updates the value of `ticketsSold` and the condition is `true` as long as `ticketsSold` is less than the available `supply` of tickets. 
@@ -323,51 +310,38 @@ The `{!rsh} parallelReduce` is in a race to sell the non-network tokens.
 Writing an invariant about the network token balance provides stronger defenses to the program, but is not required for the compiler to complete its formal verification.
 However, removing the second invariant will cause a violation witness.
 
-The critical `{!rsh} invariant` on line 35 and `{!rsh} assert`s that the non-network token balance is equal to the difference of the supply and the number of tickets sold.
+The critical `{!rsh} invariant` on line 27 `{!rsh} assert`s that the non-network token balance is equal to the difference of the supply and the number of tickets sold.
 
 Once removed, the compiler returns
 
 ```
-load - 
-md5 -
-range -
-
-Verification failed:
-  when ALL participants are honest
-  of theorem: assert
-  msg: "balance sufficient for transfer"
-  at ./index.rsh:39:28:application
-  at /app/index.rsh:38:28:application call to [unknown function] (defined at: /app/index.rsh:38:28:function exp)
-
-  // Violation Witness
-
-  const UInt.max = 1;
-
-  const tokenInfos/169 = <loop variable>;
-  //    ^ could = Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
-  //      from: ./index.rsh:33:39:while
-
-  // Theorem Formalization
-
-  const v189 = 1 <= tokenInfos/169[0][0];
-  //    ^ would be false
-  assert(v189);
+load: /examples/ticket-sales/index-tokinv.txt
+md5: bcb528856342039ea775659891bc24d0
+range: 4-23
 ```
 
-We see the `balance sufficient for transfer` error, once again. 
+We see the "balance sufficient for transfer" error, once again. 
 However, instead of referring to a network token transfer, the message is referring to the transfer of a non-network token. 
-In this example, the message points to the `{!rsh} transfer` on line 39 and the `return` statement on line 38.
+In this example, the message points to the `{!rsh} transfer` on line 31 and the `return` statement on line 30.
 
-The Violation Witness on line XX shows how the `{!rsh} parallelReduce` could fail, followed by the Theorem Formalization.
+The Violation Witness on line 15 shows how the `{!rsh} parallelReduce` could fail, followed by the Theorem Formalization.
 
-The second verification failure, "balance zero at application exit" indicates that tokens could remain in the contract when it exits on line 45.
+```
+load: /examples/ticket-sales/index-tokinv.txt
+md5: bcb528856342039ea775659891bc24d0
+range: 25-37
+```
+
+The second verification failure, "balance zero at application exit" indicates that tokens could remain in the contract when it exits on line 38.
 This Violation Witness also points to the `{!rsh} parallelReduce` with a similar example as before.
 
 This example shows that it is critical to understand a non-network token's balance, as well as, the network token's balance.
+Failing to understand how to `{!rsh} assert` the `{!rsh} invariant`(s) will make it difficult to successfully compile the Reach application.
 
 ## All Together Now
 
-Let's look at one more example that asserts `{!rsh} invariant`s over network tokens, non-network tokens, and a `{!rsh} Map`.  
+Let's look at one more example that asserts `{!rsh} invariant`s over network tokens, non-network tokens, and a `{!rsh} Map`.
+At this point, we will have already discussed the error messages so we'll move at a faster pace.
 
 ``` rsh
 load: /examples/point-of-sale/index.rsh
@@ -404,7 +378,7 @@ md5: f28ba47027648e7e39b34e44b73cc763
 range: 7-9
 ```
 
-Failures point to the `{!rsh} api_` refund return object on line 46 and the `{!rsh} transfer` on line 48.
+Failures point to the `{!rsh} API` refund return object on line 46 and the `{!rsh} transfer` on line 48.
 
 ``` rsh
 load: /examples/point-of-sale/index-mapinv.rsh
@@ -426,7 +400,7 @@ md5: b2c319bf236e4d7ddade29937e162e39
 range: 27-31
 ```
 
-As we saw before, the verification engine is not able to ensure that the balance is sufficient for a transfer in the `{!rsh} api_`'s refund functionality. 
+As we saw before, the verification engine is not able to ensure that the balance is sufficient for a transfer in the `{!rsh} API`'s refund functionality. 
 
 ``` rsh
 load: /examples/point-of-sale/index-balinv.txt
@@ -476,7 +450,7 @@ range: 27-31
 ```
 
 We observe that the verification failure message is the same, "balance sufficient for transfer". 
-However, it fails inside the `{!rsh} api_` purchase functionality.
+However, it fails inside the `{!rsh} API` purchase functionality.
 
 ``` rsh
 load: /examples/point-of-sale/index-tokinv.txt

@@ -1,0 +1,48 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance sufficient for transfer"
+  at ./index-tokinv.rsh:31:28:application
+  at /app/index-tokinv.rsh:30:26:application call to [unknown function] (defined at: /app/index-tokinv.rsh:30:26:function exp)
+
+  // Violation Witness
+
+  const UInt.max = 1;
+
+  const tokenInfos/267 = <loop variable>;
+  //    ^ could = Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
+  //      from: ./index-tokinv.rsh:25:39:while
+
+  // Theorem Formalization
+
+  const v299 = 1 <= tokenInfos/267[0][0];
+  //    ^ would be false
+  assert(v299);
+
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance zero at application exit"
+  at ./index-tokinv.rsh:38:7:application
+
+  // Violation Witness
+
+  const UInt.max = 1;
+
+  const tokenInfos/267 = <loop variable>;
+  //    ^ could = Array.const(Tuple(UInt, UInt, Bool), [1, 0, false ] )
+  //      from: ./index-tokinv.rsh:25:39:while
+
+  // Theorem Formalization
+
+  const v323 = 0 == tokenInfos/267[0][0];
+  //    ^ would be false
+  assert(v323);
+
+  Verifying when NO participants are honest
+Checked 23 theorems; 4 failures (and 2 omitted repeats) :'(
+
+For a guide to understanding verification failures, see: https://docs.reach.sh/rsh/errors/#how-to-read-verification-failures
