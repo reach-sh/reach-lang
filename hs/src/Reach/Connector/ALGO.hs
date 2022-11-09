@@ -970,17 +970,10 @@ checkCost rlab notify disp ls ci ts = do
 type Lets = M.Map DLVar (App ())
 
 data Pre = Pre
-  { pOpts :: CPOpts
-  , pApiLs :: [LabelRec]
+  { pApiLs :: [LabelRec]
   , pProgLs :: [LabelRec]
   , pMaps :: DLMapInfos
   }
-
-instance HasUntrustworthyMaps Pre where
-  getUntrustworthyMaps = getUntrustworthyMaps . pOpts
-
-instance HasCounter Pre where
-  getCounter = getCounter . pOpts
 
 data Env = Env
   { ePre :: Pre
@@ -3563,7 +3556,6 @@ instance Compile CPProg where
 instance HasPre CPProg where
   getPre (CPProg {..}) = Pre {..}
     where
-      pOpts = cpp_opts
       dli = cpp_init
       pMaps = dli_maps dli
       ai = cpp_apis
@@ -3590,7 +3582,7 @@ data ABInfo = ABInfo
   { abiPure :: Bool
   }
 
-compile_algo :: (Compile a, HasPre a) => CompilerToolEnv -> Disp -> a -> IO ConnectorInfo
+compile_algo :: (HasUntrustworthyMaps a, HasCounter a, Compile a, HasPre a) => CompilerToolEnv -> Disp -> a -> IO ConnectorInfo
 compile_algo env disp x = do
   -- This is the final result
   eRes <- newIORef mempty
@@ -3658,7 +3650,7 @@ compile_algo env disp x = do
             AS.Number $ fromIntegral keys
         return $ keysl
   eMapKeysl <- recordSizeAndKeys gbad "mapData" eMapDataSize algoMaxLocalSchemaEntries_usable
-  unless (getUntrustworthyMaps ePre || null eMapKeysl) $ do
+  unless (getUntrustworthyMaps x || null eMapKeysl) $ do
     gwarn $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
   eABI <- newIORef mempty
   let run :: CompanionInfo -> App () -> IO (TEALs, Notify, IO ())
@@ -3668,7 +3660,7 @@ compile_algo env disp x = do
               case eCompanion of
                 Nothing -> eHP_ - 1
                 Just _ -> eHP_
-        eCounter <- dupeCounter $ getCounter ePre
+        eCounter <- dupeCounter $ getCounter x
         eStateSizeR <- newIORef 0
         eLabel <- newCounter 0
         eOutputR <- newIORef mempty

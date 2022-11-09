@@ -126,3 +126,6 @@ instance Pretty CPProg where
 
 instance HasCounter CPProg where
   getCounter = getCounter . cpp_opts
+
+instance HasUntrustworthyMaps CPProg where
+  getUntrustworthyMaps = getUntrustworthyMaps . cpp_opts
