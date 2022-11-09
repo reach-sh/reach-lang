@@ -3629,7 +3629,9 @@ compile_algo env disp x = do
   (gWarningsR, gwarn) <- newErrorSetRef
   let ePre = getPre x
   let Pre {..} = ePre
-  verifyMapTypes gbad pMaps
+  forM_ pMaps $ \DLMapInfo {..} -> do
+    unless (dlmi_kt == T_Address) $ do
+      gbad $ LT.pack $ "Cannot use '" <> show dlmi_kt <> "' as Map key. Only 'Address' keys are allowed."
   let eMapDataTy = mapDataTy pMaps
   eMapDataSize <- typeSizeOf__ gbad eMapDataTy
   let eSP = 255
@@ -3743,11 +3745,6 @@ compile_algo env disp x = do
       AS.Number $ fromIntegral $ reachAlgoBackendVersion
   res <- readIORef eRes
   return $ aobject res
-
-verifyMapTypes :: (Traversable t, Monad m) => (LT.Text -> m ()) -> t DLMapInfo -> m ()
-verifyMapTypes badx = mapM_ $ \DLMapInfo {..} -> do
-    unless (dlmi_kt == T_Address) $ do
-      badx $ LT.pack $ "Cannot use '" <> show dlmi_kt <> "' as Map key. Only 'Address' keys are allowed."
 
 data ALGOConnectorInfo = ALGOConnectorInfo
   { aci_appApproval :: String
