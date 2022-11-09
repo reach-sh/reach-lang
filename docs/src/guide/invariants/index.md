@@ -202,7 +202,7 @@ The verification engine is only able to formally verify the things inside a whil
 By establishing invariants for the condition and the balance the verification engine is able to formally verify the entire application. 
 Without proper invariants the application cannot be formally verified and will fail to compile. 
 
-## Invariants in paralellReduce
+## Invariants in parallelReduce
 
 Let's look at the RSVP application. 
 This DApp is more complicated than the @{seclink("tut")} DApp, but the same principles apply. 
