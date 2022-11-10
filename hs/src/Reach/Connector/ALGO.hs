@@ -2902,7 +2902,7 @@ cblt lab go t = do
         label llab
         rec low (Just $ rv - 1) l
       Leaf which _mustCheck h -> do
-        -- ^ XXX mustCheck is supposed to be this test
+        -- XXX mustCheck is supposed to be this test
         case (which == low && mhi == Just which) of
           True -> op "pop"
           False -> do
