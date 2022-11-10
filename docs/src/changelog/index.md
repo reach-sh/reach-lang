@@ -7,6 +7,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verRC("0.1.12")}
 
+@{rcNext("0.1.12-rc.10")}
+
 @{rcNext("0.1.12-rc.9")}
 
 + 2022/11/08: Added support for [AlgoSigner](https://github.com/PureStake/algosigner) as wallet fallback for Algorand.
