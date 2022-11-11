@@ -14,6 +14,7 @@ import qualified Data.ByteString as BS
 import Data.ByteString.Base64 (encodeBase64', decodeBase64)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Internal as BI
+import Data.Char
 import qualified Data.DList as DL
 import Data.Function
 import Data.IORef
@@ -3500,25 +3501,41 @@ symToSig :: CLSym -> App String
 symToSig (CLSym f d r) = signatureStr False (bunpack f) d (Just r)
 
 sigToLab :: String -> LT.Text
-sigToLab _ = error "XXX sigToLab"
+sigToLab = LT.pack . map go
+  where
+    go :: Char -> Char
+    go c =
+      case isAlphaNum c of
+        True -> c
+        False -> '_'
 
-data CLFX = CLFX String CLFun
+data CLFX = CLFX LT.Text CLFun
+data CLEX = CLEX String CLExtFun
+data CLIX = CLIX CLVar CLIntFun
 
 instance Compile CLFX where
-  cp (CLFX sig (CLFun {..})) = do
+  cp (CLFX lab (CLFun {..})) = do
     let at = clf_at
-    let lab = sigToLab sig
-    let isCtor =
-          case clf_mode of
-            CLFM_Internal {..} -> cfm_iisCtor
-            CLFM_External {} -> False
+    callCompanion at $ CompanionLabel False lab
+    -- XXX arguments
+    cp clf_tail
+
+instance Compile CLIX where
+  cp (CLIX n (CLIntFun {..})) = do
+    let at = clf_at cif_fun
+    let lab = LT.pack $ bunpack n
     block_ lab $ do
       label lab
-      when isCtor $ do
+      when cif_isCtor $ do
         callCompanion at $ CompanionCreate
-      callCompanion at $ CompanionLabel False lab
-      -- XXX arguments
-      cp clf_tail
+      cp $ CLFX lab cif_fun
+
+instance Compile CLEX where
+  cp (CLEX sig (CLExtFun {..})) = do
+    let lab = sigToLab sig
+    block_ lab $ do
+      label lab
+      cp $ CLFX lab cef_fun
 
 instance HasPre CLProg where
   getPre (CLProg {..}) = Pre {..}
@@ -3530,52 +3547,37 @@ instance Compile CLProg where
     Env {..} <- ask
     let sig_go (sym, f) = do
           sig <- symToSig sym
-          return (sig, (CLFX sig f))
-    sig_funs <- M.fromList <$> (mapM sig_go $ M.toAscList clp_funs)
-    let mkABI (CLFX _ (CLFun {..})) =
-          case clf_mode of
-            CLFM_External {} -> Just $ ABInfo {..}
-            _ -> Nothing
+          return (sig, (CLEX sig f))
+    sig_api <- M.fromList <$> (mapM sig_go $ M.toAscList clp_api)
+    let mkABI (CLEX _ (CLExtFun {..})) = ABInfo {..}
           where
-            abiPure = clf_view
-    liftIO $ writeIORef eABI $ M.mapMaybe mkABI sig_funs
-    let apiret_go (CLFX _ (CLFun {..})) =
-          case clf_mode of
-            CLFM_External {..} -> cfm_erng
-            _ -> T_Null
-    maxApiRetSize <- maxTypeSize $ M.map apiret_go sig_funs
+            abiPure = clf_view cef_fun
+    liftIO $ writeIORef eABI $ M.map mkABI sig_api
+    let apiret_go (CLEX _ (CLExtFun {..})) = cef_rng
+    maxApiRetSize <- maxTypeSize $ M.map apiret_go sig_api
     liftIO $ writeIORef eMaxApiRetSize maxApiRetSize
-    let mkRec :: CLFX -> LabelRec
+    let mkRec :: CLEX -> LabelRec
         mkRec = error "XXX mkRec"
-    let api_go e@(CLFX _ (CLFun {..})) =
-          case clf_mode of
-            CLFM_External {..} ->
-              case cfm_eisApi of
-                True -> Just $ mkRec e
-                _ -> Nothing
+    let api_go e@(CLEX _ (CLExtFun {..})) =
+          case cef_isApi of
+            True -> Just $ mkRec e
             _ -> Nothing
-    let apiLs = mapMaybe api_go $ M.elems sig_funs
+    let apiLs = mapMaybe api_go $ M.elems sig_api
     liftIO $ writeIORef eApiLs $ Just apiLs
-    let pub_go e@(CLFX _ (CLFun {..})) =
-          case clf_mode of
-            CLFM_External {..} ->
-              case cfm_eisPub of
-                True -> Just $ mkRec e
-                _ -> Nothing
+    let pub_go e@(CLEX _ (CLExtFun {..})) =
+          case cef_isPub of
+            True -> Just $ mkRec e
             _ -> Nothing
-    let pubLs = mapMaybe pub_go $ M.elems sig_funs
+    let pubLs = mapMaybe pub_go $ M.elems sig_api
     liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs
     -- This is where the actual code starts
     -- We branch on the method
     argLoad ArgMethod
     cfrombs $ T_UInt UI_Word
     label "preamble"
-    cblt "method" (const cp) $ bltM $ M.mapKeys sigStrToInt sig_funs
+    cblt "method" (const cp) $ bltM $ M.mapKeys sigStrToInt sig_api
     -- Now we dump the implementation of internal functions
-    forM_ sig_funs $ \sf@(CLFX _ f) ->
-      case clf_mode f of
-        CLFM_External {} -> return ()
-        CLFM_Internal {} -> cp sf
+    mapM_ (cp . uncurry CLIX) $ M.toAscList clp_funs
 
 -- General Shell
 cp_shell :: (Compile a) => a -> App ()
