@@ -1520,7 +1520,8 @@ instance SolStmts CLStmt where
         , (from, "payable(msg.sender)")
         ]
       return []
-    CLEmitPublish _at which msg_ty -> do
+    CLEmitPublish _at which vars -> do
+      let msg_ty = T_Tuple $ map varType vars
       -- XXX This should be in CLike, but how can we force the inclusion of
       -- _who?
       msg_ty' <- solType msg_ty
@@ -1583,21 +1584,6 @@ instance SolStmts CLStmt where
       -- We could "selfdestruct" our token holdings but this is not a norm on
       -- ETH, so we won't spend the gas to do so
       return []
-    CLStateDestroy _at -> do
-      return $
-        [ solSet "current_step" "0x0"
-        , solSet "current_time" "0x0"
-        , "delete current_svbs;"
-        --
-        -- , solApply "selfdestruct" ["payable(msg.sender)"] <> semi
-        --
-        -- We don't do this, because selfdestruct-ing is dangerous, because
-        -- although the contract is gone, that means the messages sent to it
-        -- are like no-ops, so they can take funds from clients that think they
-        -- are calling real contracts. Ideally, we'd be able to get back our
-        -- funds (e.g. on Conflux where there are storage costs), we would
-        -- rather not get those, than have users lose funds to dead contracts.
-        ]
     CLMemorySet _at v a -> do
       let v' = memVarF $ bunpack v
       a' <- solF a
@@ -1646,7 +1632,24 @@ instance SolStmts CLTail where
                   Just retv ->
                     [ "return" <+> memVarF (bunpack retv) <> semi ]
           return $ alloc <> call <> ret
-    CL_Halt _ -> return []
+    CL_Halt _ hm ->
+      case hm of
+        HM_Forever -> do
+          return $
+            [ solSet "current_step" "0x0"
+            , solSet "current_time" "0x0"
+            , "delete current_svbs;"
+            --
+            -- , solApply "selfdestruct" ["payable(msg.sender)"] <> semi
+            --
+            -- We don't do this, because selfdestruct-ing is dangerous, because
+            -- although the contract is gone, that means the messages sent to it
+            -- are like no-ops, so they can take funds from clients that think they
+            -- are calling real contracts. Ideally, we'd be able to get back our
+            -- funds (e.g. on Conflux where there are storage costs), we would
+            -- rather not get those, than have users lose funds to dead contracts.
+            ]
+        _ -> return []
 
 newtype FunX = FunX (CLSym, CLFun)
 
@@ -1666,9 +1669,9 @@ instance SolStmts FunX where
           let extra = mempty
           (ext, mret) <-
             case clf_mode of
-              CLFM_Internal -> return (False, Nothing)
+              CLFM_Internal {} -> return (False, Nothing)
               CLFM_External {..} -> do
-                ret <- solType_withArgLoc cfm_erngv
+                ret <- solType_withArgLoc cfm_erng
                 return (True, Just ret)
           return $ (AM_Call, SFLFun ext mut name' mret, extra)
     am' <- solF am
@@ -1686,7 +1689,7 @@ instance SolStmts FunX where
             let v' = solRawVar v
             let am'' = if mustBeMem ty then am' else ""
             return $ solDecl v' $ ty' <> am''
-        CLFM_Internal -> do
+        CLFM_Internal {} -> do
           let vs_ = map varLetVar clf_dom
           argTy <- case vs_ of
             [ v ] -> do

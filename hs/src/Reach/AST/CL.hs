@@ -30,13 +30,12 @@ data CLStmt
   = CLDL DLStmt
   | CLTxnBind SrcLoc DLVar DLVar DLVar
   | CLTimeCheck SrcLoc DLVar
-  | CLEmitPublish SrcLoc Int DLType
+  | CLEmitPublish SrcLoc Int [DLVar]
   | CLStateRead SrcLoc DLVar
   | CLStateBind SrcLoc Bool [DLVarLet] Int
   | CLIntervalCheck SrcLoc DLVar DLVar (CInterval DLTimeArg)
   | CLStateSet SrcLoc Int [(DLVar, DLArg)]
   | CLTokenUntrack SrcLoc DLArg
-  | CLStateDestroy SrcLoc
   | CLMemorySet SrcLoc CLVar DLArg
   deriving (Eq)
 
@@ -58,14 +57,25 @@ instance Pretty CLStmt where
     CLStateSet _ which svs -> "state" <> pretty which <+> "<-" <+> pretty svs
     CLTokenUntrack _ a -> "Token.untrack" <> parens (pretty a)
     CLMemorySet _ v a -> "mem" <+> pretty v <+> "<-" <+> pretty a
-    CLStateDestroy _ -> "stateDestroy"
+
+data HaltMode
+  = HM_Pure
+  | HM_Impure
+  | HM_Forever
+  deriving (Eq)
+
+instance Pretty HaltMode where
+  pretty = \case
+    HM_Pure -> "pure"
+    HM_Impure -> "impure"
+    HM_Forever -> "forever"
 
 data CLTail
   = CL_Com CLStmt CLTail
   | CL_If SrcLoc DLArg CLTail CLTail
   | CL_Switch SrcLoc DLVar (SwitchCases CLTail)
   | CL_Jump SrcLoc CLVar [DLVar] (Maybe (Maybe CLVar))
-  | CL_Halt SrcLoc
+  | CL_Halt SrcLoc HaltMode
   deriving (Eq)
 
 instance Pretty CLTail where
@@ -74,19 +84,22 @@ instance Pretty CLTail where
     CL_If _ ca tt ft -> prettyIfp ca tt ft
     CL_Switch _ ov csm -> prettySwitch ov csm
     CL_Jump _ which args mmret -> "jump" <+> pretty which <> parens (render_das args) <+> pretty mmret
-    CL_Halt _ -> "exit()"
+    CL_Halt _ m -> "halt" <> parens (pretty m)
 
 data CLFunMode
   = CLFM_Internal
+    { cfm_iisCtor :: Bool
+    }
   | CLFM_External
-    { cfm_erngv :: DLType
+    { cfm_erng :: DLType
+    , cfm_eisApi :: Bool
     }
   deriving (Eq)
 
 instance Pretty CLFunMode where
   pretty = \case
-    CLFM_Internal -> "internal"
-    CLFM_External {..} -> "external" <> "(" <> pretty cfm_erngv <> ")"
+    CLFM_Internal {..} -> "internal" <> parens (pretty cfm_iisCtor)
+    CLFM_External {..} -> "external" <> parens (pretty cfm_erng)
 
 data CLFun = CLFun
   { clf_at :: SrcLoc
@@ -123,6 +136,9 @@ viewCLD_Mem = \case
 
 type CLDefs = M.Map CLVar CLDef
 
+-- XXX I should separate internal and external functions more. I should not
+-- allow overloading of internal so I don't need to have the same CLSym
+-- structure for them
 type CLFuns = M.Map CLSym CLFun
 
 data CLOpts = CLOpts
@@ -142,6 +158,7 @@ data CLProg = CLProg
   , clp_opts :: CLOpts
   , clp_defs :: CLDefs
   , clp_funs :: CLFuns
+  , clp_maps :: DLMapInfos
   , clp_old :: CPProg
   }
   deriving (Eq)
@@ -159,3 +176,5 @@ instance Pretty CLProg where
 instance HasCounter CLProg where
   getCounter = getCounter . clp_opts
 
+instance HasUntrustworthyMaps CLProg where
+  getUntrustworthyMaps = getUntrustworthyMaps . clp_opts

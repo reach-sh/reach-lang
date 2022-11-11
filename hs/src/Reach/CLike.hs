@@ -67,17 +67,17 @@ fun n d = env_insert_ eFunsR s d
     s = CLSym n dom rng
     dom = map varLetType clf_dom
     rng = case clf_mode of
-            CLFM_Internal -> T_Null
-            CLFM_External t -> t
+            CLFM_Internal {} -> T_Null
+            CLFM_External {..} -> cfm_erng
     CLFun {..} = d
 
-funw :: CLVar -> [CLVar] -> SrcLoc -> [DLVarLet] -> Bool -> DLType -> Maybe CLVar -> CLTail -> App ()
-funw ni ns at clf_dom clf_view rng mret intt = do
+funw :: CLVar -> [CLVar] -> SrcLoc -> [DLVarLet] -> Bool -> Bool -> DLType -> Bool -> Maybe CLVar -> CLTail -> App ()
+funw ni ns at clf_dom clf_view cfm_iisCtor cfm_erng cfm_eisApi mret intt = do
   let clf_at = at
-  let di = CLFun { clf_mode = CLFM_Internal, clf_tail = intt, .. }
+  let di = CLFun { clf_mode = CLFM_Internal {..}, clf_tail = intt, .. }
   let domvs = map varLetVar clf_dom
   let extt = CL_Jump at ni domvs (Just mret)
-  let de = CLFun { clf_mode = CLFM_External rng, clf_tail = extt, .. }
+  let de = CLFun { clf_mode = CLFM_External {..}, clf_tail = extt, .. }
   fun ni di
   -- XXX optimize when one ns?
   -- I can't in Solidity because of the argument number issue, but I can in AVM
@@ -125,7 +125,7 @@ instance CLikeF CLViewY where
     prev <- fromMaybe (impossible "clf cvy") <$> asks f_staten
     let (DLinExportBlock _ mfargs (DLBlock at _ t r)) = cvy_body
     rng <- asks f_rng
-    let k = CL_Com (CLMemorySet at rng r) $ CL_Halt at
+    let k = CL_Com (CLMemorySet at rng r) $ CL_Halt at HM_Pure
     let t0 = dtReplace (CL_Com . CLDL) k t
     let fargs = fromMaybe mempty mfargs
     dom <- asks f_dom
@@ -147,6 +147,7 @@ viewReorg (DLViewsX vs vis) = vx
     go k (p, (DLView {..})) = FunInfo {..}
       where
         fi_noCheck = False
+        fi_isApi = False
         fi_at = dvw_at
         (fi_dom, fi_rng) = itype2arr dvw_it
         fi_as = map (p <>) dvw_as
@@ -187,7 +188,7 @@ instance (CLikeF a) => CLikeF (BLT Int a) where
       let f = CL_Com (CLDL (DL_Let at DLV_Eff (DLE_Claim at [] CT_Enforce (DLA_Literal $ DLL_Bool False) (Just "Incorrect state: empty blt"))))
       return
         $ (if noCheck then id else f)
-        $ CL_Halt at
+        $ CL_Halt at HM_Pure
     Leaf i mc a -> do
       -- XXX ^ make sure blt actually fills in mc
       at <- asks f_at
@@ -216,6 +217,7 @@ data FunInfo a = FunInfo
   { fi_at :: SrcLoc
   , fi_dom :: [DLType]
   , fi_isView :: Bool
+  , fi_isApi :: Bool
   , fi_rng :: DLType
   , fi_as :: [SLPart]
   , fi_steps :: M.Map Int a
@@ -241,7 +243,8 @@ instance (CLikeF a) => CLike (FIX a) where
     stept <- clf_ (FEnv {..}) $ bltM fi_steps
     let intt = CL_Com (CLStateRead fi_at f_statev) stept
     let ns = v : fi_as
-    funw (nameApi v) ns fi_at domvls fi_isView rng (Just f_rng) intt
+    let isCtor = False
+    funw (nameApi v) ns fi_at domvls fi_isView isCtor rng fi_isApi (Just f_rng) intt
 
 instance (CLikeF a) => CLike (M.Map SLPart (FunInfo a)) where
   cl = cl . CMap FIX
@@ -274,6 +277,7 @@ apiReorgX :: M.Map Int ApiInfo -> ApiInfoX
 apiReorgX aim = FunInfo {..}
   where
     fi_noCheck = True
+    fi_isApi = True
     fi_at = get ai_at
     imp = impossible "apiSig"
     fi_dom = flip get' id fi_dom'
@@ -355,10 +359,9 @@ instance CLikeTr CTail CLTail where
         FI_Continue svs -> do
           -- XXX change to StoreSet
           -- XXX expose saving of time
-          return $ CL_Com (CLStateSet at which svs) ht
+          return $ CL_Com (CLStateSet at which svs) (ht HM_Impure)
         FI_Halt toks -> do
-          -- XXX change to StoreSet
-          let ht' = CL_Com (CLStateDestroy at) ht
+          let ht' = ht HM_Forever
           -- XXX move this into language
           return $ foldr (CL_Com . CLTokenUntrack at) ht' toks
     CT_Jump at which svs (DLAssignment asnm) -> do
@@ -383,7 +386,8 @@ instance CLike CHX where
   cl (CHX (which, (C_Handler {..}))) = do
     given_timev <- allocVar ch_at $ T_UInt UI_Word
     let eff_dom = (v2vl given_timev) : ch_msg
-    let eff_ty = T_Tuple $ map varType $ map varLetVar eff_dom
+    let msg_vars = map varLetVar eff_dom
+    let eff_ty = T_Tuple $ map varType msg_vars
     act_var <- allocVar ch_at eff_ty
     let clf_dom = [ v2vl act_var ]
     let act_arg = DLA_Var act_var
@@ -398,7 +402,7 @@ instance CLike CHX where
           if isCtor then id else CL_Com (CLStateBind ch_at False ch_svs ch_last)
     let intt =
           -- XXX include this in the program itself?
-            CL_Com (CLEmitPublish ch_at which eff_ty)
+            CL_Com (CLEmitPublish ch_at which msg_vars)
           -- XXX add extensions to DLE so these can be read directly
           $ CL_Com (CLTxnBind ch_at ch_from ch_timev ch_secsv)
           $ mStateBind
@@ -410,13 +414,15 @@ instance CLike CHX where
           $ CL_Com (CLIntervalCheck ch_at ch_timev ch_secsv ch_int)
           $ body'
     let isView = False
-    funw (nameMethi which) [ nameMeth which ] ch_at clf_dom isView T_Null Nothing intt
+    let isApi = False
+    funw (nameMethi which) [ nameMeth which ] ch_at clf_dom isView isCtor T_Null isApi Nothing intt
   cl (CHX (which, (C_Loop {..}))) = do
     let n = nameLoop which
     let clf_dom = cl_svs <> cl_vars
     tCounter <- asks getCounter
     clf_tail <- tr_ (TEnv {..}) cl_body
-    let clf_mode = CLFM_Internal
+    let cfm_iisCtor = False
+    let clf_mode = CLFM_Internal {..}
     let clf_view = False
     let clf_at = cl_at
     fun n $ CLFun {..}
@@ -443,4 +449,5 @@ clike = plp_cpp_mod $ \old@(CPProg {..}) -> do
   clp_defs <- readIORef eDefsR
   clp_funs <- readIORef eFunsR
   let clp_old = old
+  let clp_maps = dli_maps cpp_init
   return $ CLProg {..}
