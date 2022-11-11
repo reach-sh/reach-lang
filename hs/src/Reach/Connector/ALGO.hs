@@ -433,7 +433,7 @@ typeSizeOf__ notify t = maybeOrDynType notify 32 (typeSizeOf_ t)
 typeSizeOf :: DLType -> App Integer
 typeSizeOf = typeSizeOf__ bad_nc
 
-maxTypeSize :: M.Map SLVar DLType -> App Integer
+maxTypeSize :: M.Map a DLType -> App Integer
 maxTypeSize m = maybeOrDynType bad_nc 0 (maxTypeSize_ m)
 
 encodeBase64 :: B.ByteString -> LT.Text
@@ -967,13 +967,13 @@ checkCost rlab notify disp ls ci ts = do
 type Lets = M.Map DLVar (App ())
 
 data Pre = Pre
-  { pApiLs :: [LabelRec]
-  , pProgLs :: [LabelRec]
-  , pMaps :: DLMapInfos
+  { pMaps :: DLMapInfos
   }
 
 data Env = Env
   { ePre :: Pre
+  , eApiLs :: IORef (Maybe [LabelRec])
+  , eProgLs :: IORef (Maybe [LabelRec])
   , eMaxApiRetSize :: IORef Integer
   , eMapDataSize :: Integer
   , eMapDataTy :: DLType
@@ -2278,13 +2278,18 @@ instance Compile DLExpr where
         L_Internal -> void $ internal
         L_Api {} -> do
           v <- internal
-          --op "dup" -- API log values are never used
-          ctobs $ varType v
-          gvStore GV_apiRet
+          -- `internal` just pushed the value of v onto the stack.
+          -- We know it is not going to be used, so we can consume it.
+          -- We know that CLMemorySet will consume it and doesn't do stack
+          -- manipulation, so we say that to compile it, you do a nop op, thus
+          -- it will be consumed.
+          store_let v True nop $
+            cpk nop $ CLMemorySet at "api" (DLA_Var v)
         L_Event ml en -> do
           let name = maybe en (\l -> bunpack l <> "_" <> en) ml
           clogEvent name vs
-          --cl DLL_Null -- Event log values are never used
+          -- Event log values are never used, so we don't push anything
+          return ()
     DLE_setApiDetails at p _ _ _ -> do
       which <- fromMaybe (impossible "setApiDetails no which") <$> asks eWhich
       let p' = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) which True
@@ -2596,8 +2601,8 @@ cextractDataOf cd va = do
       cextract 1 sz
       cfrombs vt
 
-doSwitch :: String -> (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
-doSwitch lab ck _at dv csm = do
+doSwitch :: String -> (a -> App ()) -> DLVar -> SwitchCases a -> App ()
+doSwitch lab ck dv csm = do
   let go cload = do
         let cm1 _vi (vn, (vv, vu, k)) = do
               l <- freshLabel $ lab <> "_" <> vn
@@ -2703,9 +2708,9 @@ instance CompileK DLStmt where
       cpk j fp
       label join_lab
       km
-    DL_LocalSwitch at dv csm -> do
+    DL_LocalSwitch _ dv csm -> do
       end_lab <- freshLabel $ "LocalSwitchK"
-      doSwitch "LocalSwitch" (cpk (code "b" [end_lab])) at dv csm
+      doSwitch "LocalSwitch" (cpk (code "b" [end_lab])) dv csm
       label end_lab
       km
     DL_MapReduce {} ->
@@ -2718,55 +2723,6 @@ instance CompileK DLTail where
   cpk km = \case
     DT_Return _ -> km
     DT_Com m k -> cpk (cpk km k) m
-
-instance Compile CTail where
-  cp = \case
-    CT_Com m k -> cpk (cp k) m
-    CT_If _ a tt ft -> do
-      cp a
-      false_lab <- freshLabel "ifF"
-      code "bz" [false_lab]
-      nct tt
-      label false_lab
-      nct ft
-    CT_Switch at dv csm ->
-      doSwitch "Switch" nct at dv csm
-    CT_Jump _at which svs (DLAssignment msgm) -> do
-      -- NOTE: I considered statically assigning these to heap pointers and
-      -- limiting the total memory available (we can't assign them to where they
-      -- will end up, because this tail might be using the same things)
-      --
-      -- XXX I could determine when the jump target has the same svs as us and
-      -- then save space by letting it load itself
-      mapM_ cp $ (map DLA_Var svs) <> map snd (M.toAscList msgm)
-      code "b" [loopLabel which]
-    CT_From at which msvs -> do
-      isHalt <- do
-        case msvs of
-          FI_Halt toks -> do
-            let mt_at = at
-            let mt_always = True
-            let mt_mrecv = Nothing
-            let mt_submit = True
-            let mt_next = False
-            let mt_mcclose = Just $ cDeployer
-            let mt_amt = DLA_Literal $ DLL_Int at UI_Word 0
-            forM_ toks $ \tok -> do
-              let mt_mtok = Just tok
-              void $ makeTxn $ MakeTxn {..}
-            return True
-          FI_Continue svs -> do
-            cSvsSave at $ map snd svs
-            cp which
-            gvStore GV_currentStep
-            cRound
-            gvStore GV_currentTime
-            return False
-      when isHalt $
-        callCompanion at $ CompanionDeletePre
-      code "b" ["updateState" <> if isHalt then "Halt" else "NoOp"]
-    where
-      nct = dupeResources . cp
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
@@ -3017,73 +2973,30 @@ callCompanion at cc = do
 ch :: Int -> CHandler -> App ()
 ch _ (C_Loop {}) = impossible $ "ch loop"
 ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich which $ do
-  freeResource R_Account $ DLA_Var from
-  let msg = map varLetVar msgl
-  let isCtor = which == 0
-  argSize <- (+) 1 <$> (typeSizeOf $ T_Tuple $ map varType $ msg)
+  argSize <- (+) 1 <$> (typeSizeOf $ T_Tuple $ map (varType . varLetVar) msgl)
   when (argSize > algoMaxAppTotalArgLen) $
     bad $ LT.pack $
       "Step " <> show which <> "'s argument length is " <> show argSize
       <> ", but the limit is " <> show algoMaxAppTotalArgLen
       <> ". Step " <> show which <> " starts at " <> show at
-  let bindFromMsg = bindFromGV GV_argMsg (gvStore GV_argMsg) at
-  let bindFromSvs = bindFromSvs_ at svsl
   let lab = handlerLabel which
   block_ lab $ do
     label lab
+    let isCtor = which == 0
     when isCtor $ do
       callCompanion at $ CompanionCreate
     callCompanion at $ CompanionLabel False lab
-    comment "check step"
-    cp prev
-    gvLoad GV_currentStep
-    asserteq
-    comment "check time"
-    gvLoad GV_argTime
-    op "dup"
-    cint 0
-    op "=="
-    op "swap"
-    gvLoad GV_currentTime
-    op "=="
-    op "||"
-    assert
     let bindVars =
           id
-            . (store_let from True (code "txn" ["Sender"]))
-            . (bindTime timev)
-            . (bindSecs secsv)
-            . bindFromSvs
-            . (bindFromMsg $ map v2vl msg)
+            . (flip cpk $ CLTxnBind at from timev secsv)
+            . (flip cpk $ CLStateBind at False svsl prev)
+            . (bindFromGV GV_argMsg (gvStore GV_argMsg) at msgl)
     bindVars $ do
-      clogEvent ("_reach_e" <> show which) msg
-      let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
-          checkTime1 cmp clhs rhsa = do
-            clhs
-            cp rhsa
-            op cmp
-            assert
-      let checkFrom_ = checkTime1 ">="
-      let checkTo_ = checkTime1 "<"
-      let makeCheck check_ = \case
-            Left x -> check_ (cp timev) x
-            Right x -> check_ (cp secsv) x
-      let checkFrom = makeCheck checkFrom_
-      let checkTo = makeCheck checkTo_
-      let checkBoth v xx yy = do
-            cp v
-            checkFrom_ (op "dup") xx
-            checkTo_ (return ()) yy
-      let CBetween ifrom ito = int
-      case (ifrom, ito) of
-        (Nothing, Nothing) -> return ()
-        (Just x, Nothing) -> checkFrom x
-        (Nothing, Just y) -> checkTo y
-        (Just x, Just y) ->
-          case (x, y) of
-            (Left xx, Left yy) -> checkBoth timev xx yy
-            (Right xx, Right yy) -> checkBoth secsv xx yy
-            (_, _) -> checkFrom x >> checkFrom y
+      given_time <- allocVar at $ T_UInt UI_Word
+      store_let given_time True (gvLoad GV_argTime) $
+        cpk nop $ CLTimeCheck at given_time
+      cpk nop $ CLEmitPublish at which $ map varLetVar msgl
+      cpk nop $ CLIntervalCheck at timev secsv int
       cp body
 
 getMapTy :: DLMVar -> App DLType
@@ -3318,10 +3231,7 @@ cmeth sigi = \case
         block_ (LT.pack $ bunpack who <> "_" <> show hi) $
           bindFromArgs fargs $ bindFromSvs_ at svsl $
             flip cpk t $ do
-              cp r
-              ctobs $ argTypeOf r
-              gvStore GV_apiRet
-              code "b" [ "apiReturn_check" ]
+              cp $ CL_Com (CLMemorySet at "ret" r) (CL_Halt at HM_Pure)
   CAlias {} -> impossible "cmeth: unsupported alias"
 
 bindFromArgs :: [DLVarLet] -> App a -> App a
@@ -3375,30 +3285,43 @@ analyzeViews (DLViewsX vs vis) = vsit
 class HasPre a where
   getPre :: a -> Pre
 
+-- CP Case
+instance Compile CTail where
+  cp = \case
+    CT_Com m k -> cpk (cp k) m
+    CT_If _ a tt ft -> do
+      cp a
+      false_lab <- freshLabel "ifF"
+      code "bz" [false_lab]
+      nct tt
+      label false_lab
+      nct ft
+    CT_Switch _ dv csm ->
+      doSwitch "Switch" nct dv csm
+    CT_Jump _at which svs (DLAssignment msgm) -> do
+      -- NOTE: I considered statically assigning these to heap pointers and
+      -- limiting the total memory available (we can't assign them to where they
+      -- will end up, because this tail might be using the same things)
+      --
+      -- XXX I could determine when the jump target has the same svs as us and
+      -- then save space by letting it load itself
+      mapM_ cp $ (map DLA_Var svs) <> map snd (M.toAscList msgm)
+      code "b" [loopLabel which]
+    CT_From at which msvs -> do
+      case msvs of
+        FI_Halt toks -> do
+          let k = CL_Halt at HM_Forever
+          cp $ foldr CL_Com k $ map (CLTokenUntrack at) toks
+        FI_Continue svs -> do
+          cpk nop $ CLStateSet at which svs
+          cp $ CL_Halt at HM_Impure
+    where
+      nct = dupeResources . cp
+
 instance HasPre CPProg where
   getPre (CPProg {..}) = Pre {..}
     where
-      dli = cpp_init
-      pMaps = dli_maps dli
-      ai = cpp_apis
-      CHandlers hm = cpp_handlers
-      pubLs = mapMaybe h2lr $ M.toAscList hm
-      pApiLs = concatMap as2lrs $ M.toAscList ai
-      pProgLs = pubLs <> pApiLs
-      h2lr = \case
-        (i, C_Handler {..}) -> Just $ LabelRec {..}
-          where
-            lr_lab = handlerLabel i
-            lr_at = ch_at
-            lr_what = "Step " <> show i
-        (_, C_Loop {}) -> Nothing
-      a2lr (p, ApiInfo {..}) = LabelRec {..}
-        where
-          lr_lab = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) ai_which True
-          lr_at = ai_at
-          lr_what = "API " <> LT.unpack lr_lab
-      as2lrs (p, ms) =
-        map (a2lr . (p,) . snd) $ M.toAscList ms
+      pMaps = dli_maps cpp_init
 
 instance Compile CPProg where
   cp (CPProg {..}) = do
@@ -3417,6 +3340,25 @@ instance Compile CPProg where
     maxApiRetSize <- maxTypeSize $ M.map cmethRetTy meth_sm
     liftIO $ writeIORef eMaxApiRetSize maxApiRetSize
     let meth_im = M.mapKeys sigStrToInt meth_sm
+    let h2lr = \case
+          (i, C_Handler {..}) -> Just $ LabelRec {..}
+            where
+              lr_lab = handlerLabel i
+              lr_at = ch_at
+              lr_what = "Step " <> show i
+          (_, C_Loop {}) -> Nothing
+    let a2lr (p, ApiInfo {..}) = LabelRec {..}
+          where
+            lr_lab = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) ai_which True
+            lr_at = ai_at
+            lr_what = "API " <> LT.unpack lr_lab
+    let as2lrs (p, ms) = map (a2lr . (p,) . snd) $ M.toAscList ms
+    let pubLs = mapMaybe h2lr $ M.toAscList hm
+    let apiLs = concatMap as2lrs $ M.toAscList ai
+    liftIO $ writeIORef eApiLs $ Just apiLs
+    liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs
+    -- This is where the code actually starts
+    -- We are duping the method so we can branch on it twice
     argLoad ArgMethod
     cfrombs $ T_UInt UI_Word
     label "preamble"
@@ -3446,6 +3388,178 @@ instance Compile CPProg where
     forM_ (M.toAscList hm_l) $ \(hi, hh) ->
       cloop hi hh
 
+-- CL Case
+instance CompileK CLStmt where
+  cpk k = \case
+    CLDL m -> cpk k m
+    CLTxnBind _ from timev secsv -> do
+      freeResource R_Account $ DLA_Var from
+      store_let from True (code "txn" ["Sender"]) $
+        bindTime timev $
+          bindSecs secsv $
+            k
+    CLTimeCheck _ given -> do
+      cp given
+      op "dup"
+      cint 0
+      op "=="
+      op "swap"
+      gvLoad GV_currentTime
+      op "=="
+      op "||"
+      assert
+      k
+    CLEmitPublish _ which vars -> do
+      clogEvent ("_reach_e" <> show which) vars >> k
+    CLStateRead _ v -> do
+      store_let v True (gvLoad GV_currentStep) k
+    CLStateBind at isSafe svs_vl prev -> do
+      unless isSafe $ do
+        cp prev
+        gvLoad GV_currentStep
+        asserteq
+      bindFromSvs_ at svs_vl k
+    CLIntervalCheck _ timev secsv (CBetween ifrom ito) -> do
+      let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
+          checkTime1 cmp clhs rhsa = do
+            clhs
+            cp rhsa
+            op cmp
+            assert
+      let checkFrom_ = checkTime1 ">="
+      let checkTo_ = checkTime1 "<"
+      let makeCheck check_ = \case
+            Left x -> check_ (cp timev) x
+            Right x -> check_ (cp secsv) x
+      let checkFrom = makeCheck checkFrom_
+      let checkTo = makeCheck checkTo_
+      let checkBoth v xx yy = do
+            cp v
+            checkFrom_ (op "dup") xx
+            checkTo_ (return ()) yy
+      case (ifrom, ito) of
+        (Nothing, Nothing) -> return ()
+        (Just x, Nothing) -> checkFrom x
+        (Nothing, Just y) -> checkTo y
+        (Just x, Just y) ->
+          case (x, y) of
+            (Left xx, Left yy) -> checkBoth timev xx yy
+            (Right xx, Right yy) -> checkBoth secsv xx yy
+            (_, _) -> checkFrom x >> checkFrom y
+      k
+    CLStateSet at which svs -> do
+      cSvsSave at $ map snd svs
+      cp which
+      gvStore GV_currentStep
+      cRound
+      gvStore GV_currentTime
+      k
+    CLTokenUntrack at tok -> do
+      let mt_at = at
+      let mt_always = True
+      let mt_mrecv = Nothing
+      let mt_submit = True
+      let mt_next = False
+      let mt_mcclose = Just $ cDeployer
+      let mt_amt = DLA_Literal $ DLL_Int at UI_Word 0
+      let mt_mtok = Just tok
+      void $ makeTxn $ MakeTxn {..}
+      k
+    CLMemorySet _ _ a -> do
+      cp a
+      ctobs $ argTypeOf a
+      gvStore GV_apiRet
+      k
+
+instance Compile CLTail where
+  cp = \case
+    CL_Com m k -> cpk (cp k) m
+    CL_If _ a tt ft -> do
+      cp a
+      false_lab <- freshLabel "ifF"
+      code "bz" [false_lab]
+      nct tt
+      label false_lab
+      nct ft
+    CL_Switch _ dv csm ->
+      doSwitch "Switch" nct dv csm
+    CL_Jump _at f args _mmret -> do
+      mapM_ cp args
+      code "b" [ LT.pack $ bunpack f]
+    CL_Halt at ht ->
+      case ht of
+        HM_Pure -> code "b" ["apiReturn_check"]
+        HM_Impure -> code "b" ["updateStateNoOp"]
+        HM_Forever -> do
+          callCompanion at $ CompanionDeletePre
+          code "b" ["updateStateHalt"]
+    where
+      nct = dupeResources . cp
+
+symToSig :: CLSym -> App String
+symToSig (CLSym f d r) = signatureStr False (bunpack f) d (Just r)
+
+sigToLab :: String -> LT.Text
+sigToLab _ = error "XXX sigToLab"
+
+data CLFX = CLFX String CLFun
+
+instance Compile CLFX where
+  cp (CLFX sig (CLFun {..})) = do
+    let at = clf_at
+    let lab = sigToLab sig
+    let isCtor =
+          case clf_mode of
+            CLFM_Internal {..} -> cfm_iisCtor
+            CLFM_External {} -> False
+    block_ lab $ do
+      label lab
+      when isCtor $ do
+        callCompanion at $ CompanionCreate
+      callCompanion at $ CompanionLabel False lab
+      -- XXX arguments
+      cp clf_tail
+
+instance HasPre CLProg where
+  getPre (CLProg {..}) = Pre {..}
+    where
+      pMaps = clp_maps
+
+instance Compile CLProg where
+  cp (CLProg {..}) = do
+    Env {..} <- ask
+    let sig_go (sym, f) = do
+          sig <- symToSig sym
+          return (sig, (CLFX sig f))
+    sig_funs <- M.fromList <$> (mapM sig_go $ M.toAscList clp_funs)
+    let mkABI (CLFX _ (CLFun {..})) =
+          case clf_mode of
+            CLFM_External {} -> Just $ ABInfo {..}
+            _ -> Nothing
+          where
+            abiPure = clf_view
+    liftIO $ writeIORef eABI $ M.mapMaybe mkABI sig_funs
+    let go (CLFX _ (CLFun {..})) =
+          case clf_mode of
+            CLFM_External {..} -> cfm_erng
+            _ -> T_Null
+    maxApiRetSize <- maxTypeSize $ M.map go sig_funs
+    liftIO $ writeIORef eMaxApiRetSize maxApiRetSize
+    -- liftIO $ writeIORef eApiLs $ Just apiLs
+    -- liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs
+    -- This is where the actual code starts
+    -- We branch on the method
+    argLoad ArgMethod
+    cfrombs $ T_UInt UI_Word
+    label "preamble"
+    cblt "method" (const cp) $ bltM $ M.mapKeys sigStrToInt sig_funs
+    -- Now we dump the implementation of internal functions
+    forM_ sig_funs $ \sf@(CLFX _ f) ->
+      case clf_mode f of
+        CLFM_External {} -> return ()
+        CLFM_Internal {} -> cp sf
+
+-- General Shell
 cp_shell :: (Compile a) => a -> App ()
 cp_shell x = do
   Env {..} <- ask
@@ -3609,6 +3723,7 @@ compile_algo env disp x = do
   (gWarningsR, gwarn) <- newErrorSetRef
   let ePre = getPre x
   let Pre {..} = ePre
+  -- XXX remove this once we have boxes
   forM_ pMaps $ \DLMapInfo {..} -> do
     unless (dlmi_kt == T_Address) $ do
       gbad $ LT.pack $ "Cannot use '" <> show dlmi_kt <> "' as Map key. Only 'Address' keys are allowed."
@@ -3635,6 +3750,8 @@ compile_algo env disp x = do
   unless (getUntrustworthyMaps x || null eMapKeysl) $ do
     gwarn $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
   eABI <- newIORef mempty
+  eProgLs <- newIORef mempty
+  eApiLs <- newIORef mempty
   eMaxApiRetSize <- newIORef 0
   let run :: CompanionInfo -> App () -> IO (TEALs, Notify, IO ())
       run eCompanion m = do
@@ -3680,7 +3797,10 @@ compile_algo env disp x = do
           (ts, notify, finalize) <- run ci $ cp_shell x
           loud $ rlab <> " optimize"
           let !ts' = optimize $ DL.toList ts
-          let ls = if inclAll then pProgLs else pApiLs
+          progLs <- readIORef eProgLs
+          apiLs <- readIORef eApiLs
+          let mls = if inclAll then progLs else apiLs
+          let ls = fromMaybe (impossible "prog labels") mls
           loud $ rlab <> " check"
           let disp' = disp . (lab <>)
           checkCost rlab notify disp' ls ci ts' >>= \case
@@ -3837,7 +3957,7 @@ connect_algo env = Connector {..}
         go (\w -> d </> T.unpack w) clp
       Just outn -> go outn clp
     go :: (T.Text -> String) -> CLProg -> IO ConnectorInfo
-    go outn = compile_algo env disp . clp_old
+    go outn = compile_algo env disp
       where
         disp :: String -> T.Text -> IO String
         disp which c = do
