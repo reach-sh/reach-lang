@@ -3,13 +3,22 @@
 Below is a list of changes to Reach.
 Versions and changes-within-versions are listed in reverse-chronological order: newest things first.
 
+## 0.1.13: 2022/11 - present
+
+@{verRC("0.1.13")}
+
+@{rcNext("0.1.13-rc.0")}
+
+XXX
++ 2022/08/31: Upgraded to Algorand node v3.9.2, indexer 2.14.0, SDK 1.20.0.
++ 2022/01/13: Algorand-only: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
++ 2022/08/31: Algorand-only: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
+
 ## 0.1.12: 2022/09 - present
 
-@{verRC("0.1.12")}
+@{verCur("0.1.12")}
 
-@{rcNext("0.1.12-rc.10")}
-
-@{rcNext("0.1.12-rc.9")}
+@{rcHead("0.1.12-rc.9")}
 
 + 2022/11/08: Added support for [AlgoSigner](https://github.com/PureStake/algosigner) as wallet fallback for Algorand.
 + 2022/11/07: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
@@ -59,7 +68,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 ## 0.1.11: 2022/06 - 2022/09
 
-@{verCur("0.1.11")}
+@{verOld("0.1.11")}
 
 @{rcHead("0.1.11-rc.10")}
 
