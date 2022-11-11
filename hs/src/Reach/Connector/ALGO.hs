@@ -3539,14 +3539,32 @@ instance Compile CLProg where
           where
             abiPure = clf_view
     liftIO $ writeIORef eABI $ M.mapMaybe mkABI sig_funs
-    let go (CLFX _ (CLFun {..})) =
+    let apiret_go (CLFX _ (CLFun {..})) =
           case clf_mode of
             CLFM_External {..} -> cfm_erng
             _ -> T_Null
-    maxApiRetSize <- maxTypeSize $ M.map go sig_funs
+    maxApiRetSize <- maxTypeSize $ M.map apiret_go sig_funs
     liftIO $ writeIORef eMaxApiRetSize maxApiRetSize
-    -- liftIO $ writeIORef eApiLs $ Just apiLs
-    -- liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs
+    let mkRec :: CLFX -> LabelRec
+        mkRec = error "XXX mkRec"
+    let api_go e@(CLFX _ (CLFun {..})) =
+          case clf_mode of
+            CLFM_External {..} ->
+              case cfm_eisApi of
+                True -> Just $ mkRec e
+                _ -> Nothing
+            _ -> Nothing
+    let apiLs = mapMaybe api_go $ M.elems sig_funs
+    liftIO $ writeIORef eApiLs $ Just apiLs
+    let pub_go e@(CLFX _ (CLFun {..})) =
+          case clf_mode of
+            CLFM_External {..} ->
+              case cfm_eisPub of
+                True -> Just $ mkRec e
+                _ -> Nothing
+            _ -> Nothing
+    let pubLs = mapMaybe pub_go $ M.elems sig_funs
+    liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs
     -- This is where the actual code starts
     -- We branch on the method
     argLoad ArgMethod

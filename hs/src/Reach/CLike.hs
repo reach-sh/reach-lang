@@ -71,8 +71,8 @@ fun n d = env_insert_ eFunsR s d
             CLFM_External {..} -> cfm_erng
     CLFun {..} = d
 
-funw :: CLVar -> [CLVar] -> SrcLoc -> [DLVarLet] -> Bool -> Bool -> DLType -> Bool -> Maybe CLVar -> CLTail -> App ()
-funw ni ns at clf_dom clf_view cfm_iisCtor cfm_erng cfm_eisApi mret intt = do
+funw :: CLVar -> [CLVar] -> SrcLoc -> [DLVarLet] -> Bool -> Bool -> DLType -> Bool -> Bool -> Maybe CLVar -> CLTail -> App ()
+funw ni ns at clf_dom clf_view cfm_iisCtor cfm_erng cfm_eisApi cfm_eisPub mret intt = do
   let clf_at = at
   let di = CLFun { clf_mode = CLFM_Internal {..}, clf_tail = intt, .. }
   let domvs = map varLetVar clf_dom
@@ -244,7 +244,7 @@ instance (CLikeF a) => CLike (FIX a) where
     let intt = CL_Com (CLStateRead fi_at f_statev) stept
     let ns = v : fi_as
     let isCtor = False
-    funw (nameApi v) ns fi_at domvls fi_isView isCtor rng fi_isApi (Just f_rng) intt
+    funw (nameApi v) ns fi_at domvls fi_isView isCtor rng fi_isApi False (Just f_rng) intt
 
 instance (CLikeF a) => CLike (M.Map SLPart (FunInfo a)) where
   cl = cl . CMap FIX
@@ -415,7 +415,8 @@ instance CLike CHX where
           $ body'
     let isView = False
     let isApi = False
-    funw (nameMethi which) [ nameMeth which ] ch_at clf_dom isView isCtor T_Null isApi Nothing intt
+    let isPub = True
+    funw (nameMethi which) [ nameMeth which ] ch_at clf_dom isView isCtor T_Null isApi isPub Nothing intt
   cl (CHX (which, (C_Loop {..}))) = do
     let n = nameLoop which
     let clf_dom = cl_svs <> cl_vars

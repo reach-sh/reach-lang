@@ -93,6 +93,7 @@ data CLFunMode
   | CLFM_External
     { cfm_erng :: DLType
     , cfm_eisApi :: Bool
+    , cfm_eisPub :: Bool
     }
   deriving (Eq)
 
