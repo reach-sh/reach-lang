@@ -86,34 +86,39 @@ instance Pretty CLTail where
     CL_Jump _ which args mmret -> "jump" <+> pretty which <> parens (render_das args) <+> pretty mmret
     CL_Halt _ m -> "halt" <> parens (pretty m)
 
-data CLFunMode
-  = CLFM_Internal
-    { cfm_iisCtor :: Bool
-    }
-  | CLFM_External
-    { cfm_erng :: DLType
-    , cfm_eisApi :: Bool
-    , cfm_eisPub :: Bool
-    }
-  deriving (Eq)
-
-instance Pretty CLFunMode where
-  pretty = \case
-    CLFM_Internal {..} -> "internal" <> parens (pretty cfm_iisCtor)
-    CLFM_External {..} -> "external" <> parens (pretty cfm_erng)
-
 data CLFun = CLFun
   { clf_at :: SrcLoc
   , clf_dom :: [DLVarLet]
   , clf_view :: Bool
-  , clf_mode :: CLFunMode
   , clf_tail :: CLTail
   }
   deriving (Eq)
 
 instance Pretty CLFun where
   pretty (CLFun {..}) =
-    pretty clf_mode <+> (if clf_view then "view" else "mut") <+> parens (render_das clf_dom) <+> "=>" <+> render_nest (pretty clf_tail)
+    (if clf_view then "view" else "mut") <+> parens (render_das clf_dom) <+> "=>" <+> render_nest (pretty clf_tail)
+
+data CLIntFun = CLIntFun
+  { cif_isCtor :: Bool
+  , cif_fun :: CLFun
+  }
+  deriving (Eq)
+
+instance Pretty CLIntFun where
+  pretty (CLIntFun {..}) =
+    "internal" <+> (if cif_isCtor then "ctor " else "") <> pretty cif_fun
+
+data CLExtFun = CLExtFun
+  { cef_rng :: DLType
+  , cef_isApi :: Bool
+  , cef_isPub :: Bool
+  , cef_fun :: CLFun
+  }
+  deriving (Eq)
+
+instance Pretty CLExtFun where
+  pretty (CLExtFun {..}) =
+    "external" <+> "returns" <+> pretty cef_rng <+> pretty cef_fun
 
 data CLDef
   = CLD_Mem DLType
@@ -137,10 +142,8 @@ viewCLD_Mem = \case
 
 type CLDefs = M.Map CLVar CLDef
 
--- XXX I should separate internal and external functions more. I should not
--- allow overloading of internal so I don't need to have the same CLSym
--- structure for them
-type CLFuns = M.Map CLSym CLFun
+type CLFuns = M.Map CLVar CLIntFun
+type CLAPI = M.Map CLSym CLExtFun
 
 data CLOpts = CLOpts
   { clo_untrustworthyMaps :: Bool
@@ -159,6 +162,7 @@ data CLProg = CLProg
   , clp_opts :: CLOpts
   , clp_defs :: CLDefs
   , clp_funs :: CLFuns
+  , clp_api :: CLAPI
   , clp_maps :: DLMapInfos
   , clp_old :: CPProg
   }
@@ -173,6 +177,8 @@ instance Pretty CLProg where
     <> render_obj clp_defs <> hardline
     <> "// Functions:" <> hardline
     <> render_obj clp_funs
+    <> "// API:" <> hardline
+    <> render_obj clp_api
 
 instance HasCounter CLProg where
   getCounter = getCounter . clp_opts

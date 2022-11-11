@@ -1651,64 +1651,79 @@ instance SolStmts CLTail where
             ]
         _ -> return []
 
-newtype FunX = FunX (CLSym, CLFun)
+data FunX = FunX
+  { fx_sfl :: SolFunctionLike
+  , fx_args :: [Doc]
+  , fx_extra :: Docs
+  , fx_tail :: CLTail
+  }
+newtype IntX = IntX (CLVar, CLIntFun)
+newtype ExtX = ExtX (CLSym, CLExtFun)
 
 instance SolStmts FunX where
-  solS (FunX ((CLSym name _ _), (CLFun {..}))) = freshVarMap $ do
-    (am, sfl, extra) <-
-      case name == nameMeth 0 of
+  solS (FunX {..}) = freshVarMap $ do
+    (frameDefn, body) <- solSF fx_tail
+    return $ frameDefn <> solFunctionLike fx_sfl fx_args (fx_extra <> body)
+
+instance SolStmts IntX where
+  solS (IntX (name, CLIntFun {..})) = do
+    let CLFun {..} = cif_fun
+    let fx_tail = clf_tail
+    (fx_sfl, fx_extra) <-
+      case cif_isCtor of
         True -> do
           let extra =
                 [ "current_step = 0x0;"
                 , "creation_time = uint256(block.number);"
                 ]
-          return (AM_Memory, SFLCtor, extra)
+          return (SFLCtor, extra)
         False -> do
           let name' = pclv name
           let mut = not clf_view
           let extra = mempty
-          (ext, mret) <-
-            case clf_mode of
-              CLFM_Internal {} -> return (False, Nothing)
-              CLFM_External {..} -> do
-                ret <- solType_withArgLoc cfm_erng
-                return (True, Just ret)
-          return $ (AM_Call, SFLFun ext mut name' mret, extra)
-    am' <- solF am
-    args <-
-      case clf_mode of
-        CLFM_External {} -> do
-          let howMany = length clf_dom
-          when (howMany > apiMaxArgs) $
-            expect_throw Nothing clf_at $ Err_SolTooManyArgs "externally visible functions" (bunpack name) howMany
-          addVars solRawVar clf_dom
-          forM clf_dom $ \vl -> do
-            let v = varLetVar vl
-            let ty = varType v
-            ty' <- solType ty
-            let v' = solRawVar v
-            let am'' = if mustBeMem ty then am' else ""
-            return $ solDecl v' $ ty' <> am''
-        CLFM_Internal {} -> do
-          let vs_ = map varLetVar clf_dom
-          argTy <- case vs_ of
-            [ v ] -> do
-              addVar v "_a"
-              return $ varType v
-            vs -> do
-              bindInternalArg vs "_a"
-              return $ vsToInternalArg vs
-          argTyl <- solType_withArgLoc argTy
-          return $ [ solDecl "_a" argTyl, memVarDecl ]
-    (frameDefn, body) <- solSF clf_tail
-    return $ frameDefn <> solFunctionLike sfl args (extra <> body)
+          return $ (SFLFun False mut name' Nothing, extra)
+    let vs_ = map varLetVar clf_dom
+    argTy <- case vs_ of
+      [ v ] -> do
+        addVar v "_a"
+        return $ varType v
+      vs -> do
+        bindInternalArg vs "_a"
+        return $ vsToInternalArg vs
+    argTyl <- solType_withArgLoc argTy
+    let fx_args = [ solDecl "_a" argTyl, memVarDecl ]
+    solS $ FunX {..}
+
+instance SolStmts ExtX where
+  solS (ExtX ((CLSym name _ _), CLExtFun {..})) = do
+    let CLFun {..} = cef_fun
+    let fx_tail = clf_tail
+    let fx_extra = mempty
+    let name' = pclv name
+    let mut = not clf_view
+    mret <- Just <$> solType_withArgLoc cef_rng
+    let fx_sfl = SFLFun True mut name' mret
+    am' <- solF AM_Call
+    let howMany = length clf_dom
+    when (howMany > apiMaxArgs) $
+      expect_throw Nothing clf_at $ Err_SolTooManyArgs "externally visible functions" (bunpack name) howMany
+    addVars solRawVar clf_dom
+    fx_args <- forM clf_dom $ \vl -> do
+      let v = varLetVar vl
+      let ty = varType v
+      ty' <- solType ty
+      let v' = solRawVar v
+      let am'' = if mustBeMem ty then am' else ""
+      return $ solDecl v' $ ty' <> am''
+    solS $ FunX {..}
 
 instance SolStmts CLProg where
   solS (CLProg {..}) = do
     defs <- solSM DefX clp_defs
     mem <- createMem clp_defs
-    funs <- solSM FunX clp_funs
-    return $ defs <> mem <> funs
+    funs <- solSM IntX clp_funs
+    apis <- solSM ExtX clp_api
+    return $ defs <> mem <> funs <> apis
 
 solProg :: (HasCounter a, SolStmts a) => a -> IO (ConnectorObject, Doc)
 solProg p = do

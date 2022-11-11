@@ -24,6 +24,7 @@ type App = ReaderT Env IO
 data Env = Env
   { eDefsR :: IORef CLDefs
   , eFunsR :: IORef CLFuns
+  , eAPIR :: IORef CLAPI
   , eCounter :: Counter
   }
 
@@ -61,28 +62,31 @@ env_insert_ f k v = do
 def :: CLVar -> CLDef -> App ()
 def v d = env_insert_ eDefsR v d
 
-fun :: CLVar -> CLFun -> App ()
-fun n d = env_insert_ eFunsR s d
+funi :: CLVar -> CLIntFun -> App ()
+funi n d = env_insert_ eFunsR n d
+
+fune :: CLVar -> CLExtFun -> App ()
+fune n d = env_insert_ eAPIR s d
   where
     s = CLSym n dom rng
-    dom = map varLetType clf_dom
-    rng = case clf_mode of
-            CLFM_Internal {} -> T_Null
-            CLFM_External {..} -> cfm_erng
-    CLFun {..} = d
+    dom = map varLetType $ clf_dom cef_fun
+    rng = cef_rng
+    CLExtFun {..} = d
 
 funw :: CLVar -> [CLVar] -> SrcLoc -> [DLVarLet] -> Bool -> Bool -> DLType -> Bool -> Bool -> Maybe CLVar -> CLTail -> App ()
-funw ni ns at clf_dom clf_view cfm_iisCtor cfm_erng cfm_eisApi cfm_eisPub mret intt = do
+funw ni ns at clf_dom clf_view cif_isCtor cef_rng cef_isApi cef_isPub mret intt = do
   let clf_at = at
-  let di = CLFun { clf_mode = CLFM_Internal {..}, clf_tail = intt, .. }
+  let cif_fun = CLFun { clf_tail = intt, ..}
+  let di = CLIntFun {..}
   let domvs = map varLetVar clf_dom
   let extt = CL_Jump at ni domvs (Just mret)
-  let de = CLFun { clf_mode = CLFM_External {..}, clf_tail = extt, .. }
-  fun ni di
+  let cef_fun = CLFun { clf_tail = extt, ..}
+  let de = CLExtFun {..}
+  funi ni di
   -- XXX optimize when one ns?
   -- I can't in Solidity because of the argument number issue, but I can in AVM
   -- and EVM
-  forM_ ns $ flip fun de
+  forM_ ns $ flip fune de
 
 class CLike a where
   cl :: a -> App ()
@@ -422,11 +426,11 @@ instance CLike CHX where
     let clf_dom = cl_svs <> cl_vars
     tCounter <- asks getCounter
     clf_tail <- tr_ (TEnv {..}) cl_body
-    let cfm_iisCtor = False
-    let clf_mode = CLFM_Internal {..}
+    let cif_isCtor = False
     let clf_view = False
     let clf_at = cl_at
-    fun n $ CLFun {..}
+    let cif_fun = CLFun {..}
+    funi n $ CLIntFun {..}
 
 instance CLike CHandlers where
   cl (CHandlers hm) = cl $ CMap CHX hm
@@ -438,6 +442,7 @@ clike = plp_cpp_mod $ \old@(CPProg {..}) -> do
   let clp_opts = CLOpts cpo_untrustworthyMaps cpo_counter
   eDefsR <- newIORef mempty
   eFunsR <- newIORef mempty
+  eAPIR <- newIORef mempty
   let eCounter = getCounter clp_opts
   flip runReaderT (Env {..}) $ do
     -- XXX creation time
@@ -449,6 +454,7 @@ clike = plp_cpp_mod $ \old@(CPProg {..}) -> do
     cl cpp_handlers
   clp_defs <- readIORef eDefsR
   clp_funs <- readIORef eFunsR
+  clp_api <- readIORef eAPIR
   let clp_old = old
   let clp_maps = dli_maps cpp_init
   return $ CLProg {..}
