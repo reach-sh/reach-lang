@@ -1669,19 +1669,10 @@ instance SolStmts IntX where
   solS (IntX (name, CLIntFun {..})) = do
     let CLFun {..} = cif_fun
     let fx_tail = clf_tail
-    (fx_sfl, fx_extra) <-
-      case cif_isCtor of
-        True -> do
-          let extra =
-                [ "current_step = 0x0;"
-                , "creation_time = uint256(block.number);"
-                ]
-          return (SFLCtor, extra)
-        False -> do
-          let name' = pclv name
-          let mut = not clf_view
-          let extra = mempty
-          return $ (SFLFun False mut name' Nothing, extra)
+    let name' = pclv name
+    let mut = not clf_view
+    let fx_sfl = SFLFun False mut name' Nothing
+    let fx_extra = mempty
     let vs_ = map varLetVar clf_dom
     argTy <- case vs_ of
       [ v ] -> do
@@ -1698,12 +1689,20 @@ instance SolStmts ExtX where
   solS (ExtX ((CLSym name _ _), CLExtFun {..})) = do
     let CLFun {..} = cef_fun
     let fx_tail = clf_tail
-    let fx_extra = mempty
     let name' = pclv name
     let mut = not clf_view
     mret <- Just <$> solType_withArgLoc cef_rng
-    let fx_sfl = SFLFun True mut name' mret
-    am' <- solF AM_Call
+    (am, fx_sfl, fx_extra) <-
+      case cef_kind of
+        CE_Publish 0 -> do
+          let extra =
+                [ "current_step = 0x0;"
+                , "creation_time = uint256(block.number);"
+                ]
+          return (AM_Memory, SFLCtor, extra)
+        _ -> do
+          return (AM_Call, SFLFun True mut name' mret, mempty)
+    am' <- solF am
     let howMany = length clf_dom
     when (howMany > apiMaxArgs) $
       expect_throw Nothing clf_at $ Err_SolTooManyArgs "externally visible functions" (bunpack name) howMany

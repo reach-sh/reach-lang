@@ -55,7 +55,6 @@ import System.Process.ByteString
 import Text.Read
 import qualified Reach.Connector.ALGO_Verify as Verify
 
-
 -- Errors for ALGO
 
 data AlgoError
@@ -1287,8 +1286,7 @@ lookup_let dv = do
   Env {..} <- ask
   case M.lookup dv eLets of
     Just m -> m
-    Nothing ->
-      impossible $ show eWhich <> " lookup_let " <> show (pretty dv) <> " not in " <> (List.intercalate ", " $ map (show . pretty) $ M.keys eLets)
+    Nothing -> impossible $ show eWhich <> "lookup_let " <> show (pretty dv) <> " not in " <> (List.intercalate ", " $ map (show . pretty) $ M.keys eLets)
 
 store_var :: DLVar -> ScratchSlot -> App a -> App a
 store_var dv ss m = do
@@ -3517,24 +3515,24 @@ instance Compile CLFX where
   cp (CLFX lab (CLFun {..})) = do
     let at = clf_at
     callCompanion at $ CompanionLabel False lab
-    -- XXX arguments
-    cp clf_tail
+    bindFromArgs clf_dom $ cp clf_tail
 
 instance Compile CLIX where
   cp (CLIX n (CLIntFun {..})) = do
-    let at = clf_at cif_fun
     let lab = LT.pack $ bunpack n
     block_ lab $ do
       label lab
-      when cif_isCtor $ do
-        callCompanion at $ CompanionCreate
       cp $ CLFX lab cif_fun
 
 instance Compile CLEX where
   cp (CLEX sig (CLExtFun {..})) = do
+    let at = clf_at cef_fun
     let lab = sigToLab sig
     block_ lab $ do
       label lab
+      case cef_kind of
+        CE_Publish 0 -> callCompanion at $ CompanionCreate
+        _ -> return ()
       cp $ CLFX lab cef_fun
 
 instance HasPre CLProg where
@@ -3557,16 +3555,25 @@ instance Compile CLProg where
     maxApiRetSize <- maxTypeSize $ M.map apiret_go sig_api
     liftIO $ writeIORef eMaxApiRetSize maxApiRetSize
     let mkRec :: CLEX -> LabelRec
-        mkRec = error "XXX mkRec"
+        mkRec (CLEX sig (CLExtFun {..})) = LabelRec {..}
+          where
+            CLFun {..} = cef_fun
+            lr_at = clf_at
+            lr_lab = sigToLab sig
+            lr_what =
+              case cef_kind of
+                CE_API n -> "API " <> n
+                CE_View n -> "View " <> n
+                CE_Publish w -> "Step " <> show w
     let api_go e@(CLEX _ (CLExtFun {..})) =
-          case cef_isApi of
-            True -> Just $ mkRec e
+          case cef_kind of
+            CE_API {} -> Just $ mkRec e
             _ -> Nothing
     let apiLs = mapMaybe api_go $ M.elems sig_api
     liftIO $ writeIORef eApiLs $ Just apiLs
     let pub_go e@(CLEX _ (CLExtFun {..})) =
-          case cef_isPub of
-            True -> Just $ mkRec e
+          case cef_kind of
+            CE_Publish {} -> Just $ mkRec e
             _ -> Nothing
     let pubLs = mapMaybe pub_go $ M.elems sig_api
     liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs

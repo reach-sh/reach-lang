@@ -73,8 +73,8 @@ fune n d = env_insert_ eAPIR s d
     rng = cef_rng
     CLExtFun {..} = d
 
-funw :: CLVar -> [CLVar] -> SrcLoc -> [DLVarLet] -> Bool -> Bool -> DLType -> Bool -> Bool -> Maybe CLVar -> CLTail -> App ()
-funw ni ns at clf_dom clf_view cif_isCtor cef_rng cef_isApi cef_isPub mret intt = do
+funw :: CLVar -> [CLVar] -> SrcLoc -> [DLVarLet] -> Bool -> DLType -> CLExtKind -> Maybe CLVar -> CLTail -> App ()
+funw ni ns at clf_dom clf_view cef_rng cef_kind mret intt = do
   let clf_at = at
   let cif_fun = CLFun { clf_tail = intt, ..}
   let di = CLIntFun {..}
@@ -247,8 +247,8 @@ instance (CLikeF a) => CLike (FIX a) where
     stept <- clf_ (FEnv {..}) $ bltM fi_steps
     let intt = CL_Com (CLStateRead fi_at f_statev) stept
     let ns = v : fi_as
-    let isCtor = False
-    funw (nameApi v) ns fi_at domvls fi_isView isCtor rng fi_isApi False (Just f_rng) intt
+    let k = (if fi_isApi then CE_API else CE_View) $ bunpack v
+    funw (nameApi v) ns fi_at domvls fi_isView rng k (Just f_rng) intt
 
 instance (CLikeF a) => CLike (M.Map SLPart (FunInfo a)) where
   cl = cl . CMap FIX
@@ -405,28 +405,25 @@ instance CLike CHX where
           -- and fail if the tag doesn't match
           if isCtor then id else CL_Com (CLStateBind ch_at False ch_svs ch_last)
     let intt =
-          -- XXX include this in the program itself?
-            CL_Com (CLEmitPublish ch_at which msg_vars)
           -- XXX add extensions to DLE so these can be read directly
-          $ CL_Com (CLTxnBind ch_at ch_from ch_timev ch_secsv)
+            CL_Com (CLTxnBind ch_at ch_from ch_timev ch_secsv)
           $ mStateBind
           $ addArgs
-          -- XXX puit given_timev into DL and does this in Core
+          -- XXX include this in the program itself?
+          $ CL_Com (CLEmitPublish ch_at which msg_vars)
+          -- XXX put given_timev into DL and does this in Core
           -- XXX there is implicitly a reference to "current_time"
           $ CL_Com (CLTimeCheck ch_at given_timev)
           -- XXX move this back to EPP
           $ CL_Com (CLIntervalCheck ch_at ch_timev ch_secsv ch_int)
           $ body'
     let isView = False
-    let isApi = False
-    let isPub = True
-    funw (nameMethi which) [ nameMeth which ] ch_at clf_dom isView isCtor T_Null isApi isPub Nothing intt
+    funw (nameMethi which) [ nameMeth which ] ch_at clf_dom isView T_Null (CE_Publish which) Nothing intt
   cl (CHX (which, (C_Loop {..}))) = do
     let n = nameLoop which
     let clf_dom = cl_svs <> cl_vars
     tCounter <- asks getCounter
     clf_tail <- tr_ (TEnv {..}) cl_body
-    let cif_isCtor = False
     let clf_view = False
     let clf_at = cl_at
     let cif_fun = CLFun {..}

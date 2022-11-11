@@ -99,26 +99,39 @@ instance Pretty CLFun where
     (if clf_view then "view" else "mut") <+> parens (render_das clf_dom) <+> "=>" <+> render_nest (pretty clf_tail)
 
 data CLIntFun = CLIntFun
-  { cif_isCtor :: Bool
-  , cif_fun :: CLFun
+  { cif_fun :: CLFun
   }
   deriving (Eq)
 
 instance Pretty CLIntFun where
   pretty (CLIntFun {..}) =
-    "internal" <+> (if cif_isCtor then "ctor " else "") <> pretty cif_fun
+    "internal" <+> pretty cif_fun
+
+data CLExtKind
+  = CE_API String
+  | CE_View String
+  | CE_Publish Int
+  deriving (Eq)
+
+instance Pretty CLExtKind where
+  pretty = \case
+    CE_API n -> "API" <> pp n
+    CE_View n -> "View" <> pp n
+    CE_Publish w -> "Step" <> pp w
+    where
+      pp :: Pretty a => a -> Doc
+      pp = parens . pretty
 
 data CLExtFun = CLExtFun
   { cef_rng :: DLType
-  , cef_isApi :: Bool
-  , cef_isPub :: Bool
+  , cef_kind :: CLExtKind
   , cef_fun :: CLFun
   }
   deriving (Eq)
 
 instance Pretty CLExtFun where
   pretty (CLExtFun {..}) =
-    "external" <+> "returns" <+> pretty cef_rng <+> pretty cef_fun
+    "external" <+> "returns" <+> pretty cef_rng <+> pretty cef_kind <+> pretty cef_fun
 
 data CLDef
   = CLD_Mem DLType
