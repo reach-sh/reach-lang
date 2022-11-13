@@ -4,8 +4,6 @@ export default function ALGO_MakeAlgoSignerConnect( AlgoSigner: any, provider: s
 
         async connect() {
             await AlgoSigner.connect();
-            console.log(provider);
-            console.log(await AlgoSigner.accounts({ledger:provider}));
             return await AlgoSigner.accounts({ledger:provider});
         }
 
