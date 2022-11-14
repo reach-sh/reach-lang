@@ -2726,7 +2726,7 @@ instance CompileK DLTail where
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
-reachAlgoBackendVersion = 11
+reachAlgoBackendVersion = 12
 
 -- State:
 keyState :: B.ByteString
