@@ -32,7 +32,6 @@ import Generics.Deriving (Generic)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.CL
-import Reach.BinaryLeafTree
 import Reach.CommandLine
 import Reach.Connector
 import Reach.Counter
@@ -485,11 +484,14 @@ type TEALs = DL.DList TEAL
 builtin :: S.Set TealOp
 builtin = S.fromList ["byte", "int", "substring", "extract", "log", "store", "load", "itob"]
 
+base64d :: BS.ByteString -> LT.Text
+base64d bs = "base64(" <> encodeBase64 bs <> ")"
+
 render :: IORef Int -> TEAL -> IO TEALt
 render ilvlr = \case
   TInt x -> r ["int", texty x]
   TConst x -> r ["int", x]
-  TBytes bs -> r ["byte", "base64(" <> encodeBase64 bs <> ")"]
+  TBytes bs -> r ["byte", base64d bs]
   TExtract x y -> r ["extract", texty x, texty y]
   TReplace2 x -> r ["replace2", texty x]
   TSubstring x y -> r ["substring", texty x, texty y]
@@ -750,6 +752,7 @@ buildCFG rlab ts = do
         writeIORef calls_r mempty
   let call t = modifyIORef calls_r $ (:) (l2s t)
   let jump t = recCost 1 >> jump_ (l2s t)
+  let fswitch ls = recCost 1 >> (mapM_ jump_ $ map l2s ls)
   incBudget -- initial budget
   forM_ ts $ \case
     TFor_top cnt -> do
@@ -758,6 +761,8 @@ buildCFG rlab ts = do
       recCost 1
       modK (\x -> x `div` cnt)
       jump lab'
+    TCode "match" labs -> fswitch labs
+    TCode "switch" labs -> fswitch labs
     TCode "bnz" [lab'] -> jump lab'
     TCode "bz" [lab'] -> jump lab'
     TCode "b" [lab'] -> do
@@ -2414,9 +2419,6 @@ sigStrToBytes sig = shabs
     sha = hashWith SHA512t_256 $ bpack sig
     shabs = BS.take 4 $ BA.convert sha
 
-sigStrToInt :: String -> Int
-sigStrToInt = fromIntegral . btoi . sigStrToBytes
-
 clogEvent :: String -> [DLVar] -> App ()
 clogEvent eventName vs = do
   sigStr <- signatureStr False eventName (map varType vs) Nothing
@@ -2586,34 +2588,39 @@ cextractDataOf cd va = do
       cextract 1 sz
       cfrombs vt
 
+cmatch :: (Compile a) => App () -> [(BS.ByteString, a)] -> App ()
+cmatch ca es = do
+  code "pushbytess" $ map (base64d . fst) es
+  ca
+  cswatchTail "match" (map snd es) cp
+
+cswatchTail :: TealOp -> [a] -> (a -> App ()) -> App ()
+cswatchTail w es ce = do
+  els <- forM es $ \e -> do
+    l <- freshLabel "swatch"
+    return (e, l)
+  code w $ map snd els
+  op "err"
+  forM_ els $ \(e, l) -> label l >> ce e
+
 doSwitch :: String -> (a -> App ()) -> DLVar -> SwitchCases a -> App ()
 doSwitch lab ck dv csm = do
   let go cload = do
-        let cm1 _vi (vn, (vv, vu, k)) = do
-              l <- freshLabel $ lab <> "_" <> vn
-              block l $
-                case vu of
-                  False -> ck k
-                  True -> do
-                    flip (sallocLet vv) (ck k) $ do
-                      cextractDataOf cload (DLA_Var vv)
-        cload
         cint 0
         op "getbyte"
-        let csml = zip [0 ..] (M.toAscList csm)
-        case csml of
-          [ (0, x), (1, y) ] -> do
-            y_lab <- freshLabel $ lab <> "_" <> "nz"
-            code "bnz" [ y_lab ]
-            cm1 x x
-            label y_lab
-            cm1 y y
-          _ -> cblt lab cm1 $ bltL csml
+        cswatchTail "switch" (M.toAscList csm) $ \(vn, (vv, vu, k)) -> do
+          l <- freshLabel $ lab <> "_" <> vn
+          block l $
+            case vu of
+              False -> ck k
+              True -> do
+                flip (sallocLet vv) (ck k) $ do
+                  cextractDataOf cload (DLA_Var vv)
   letSmall dv >>= \case
-    True -> go (cp $ DLA_Var dv)
+    True -> go (cp dv)
     False -> do
       salloc_ (textyv dv <> " for switch") $ \cstore cload -> do
-        cp $ DLA_Var dv
+        cp dv
         cstore
         go cload
 
@@ -2769,32 +2776,6 @@ defn_done = defn_fixed "done" True
 
 cRound :: App ()
 cRound = code "global" ["Round"]
-
--- NOTE This could be compiled to a jump table if that were possible with TEAL
-cblt :: String -> (Int -> a -> App ()) -> BLT Int a -> App ()
-cblt lab go t = do
-  -- liftIO $ putStrLn $ show t
-  rec 0 Nothing t
-  where
-    rec low mhi = \case
-      Empty -> op "err"
-      Branch rv l r -> do
-        op "dup"
-        cp rv
-        op "<"
-        llab <- freshLabel $ lab <> "_lt_" <> show rv
-        code "bnz" [llab]
-        rec rv mhi r
-        label llab
-        rec low (Just $ rv - 1) l
-      Leaf which _mustCheck h -> do
-        -- XXX mustCheck is supposed to be this test
-        case (which == low && mhi == Just which) of
-          True -> op "pop"
-          False -> do
-            cp which
-            asserteq
-        go which h
 
 apiLabel :: SLPart -> Label
 apiLabel w = "api_" <> (LT.pack $ bunpack w)
@@ -3194,10 +3175,9 @@ instance Compile CLProg where
     liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs
     -- This is where the actual code starts
     -- We branch on the method
-    code "txna" ["ApplicationArgs", "0"]
-    cfrombs $ T_UInt UI_Word
     label "preamble"
-    cblt "method" (const cp) $ bltM $ M.mapKeys sigStrToInt sig_api
+    let getMeth = code "txna" ["ApplicationArgs", "0"]
+    cmatch getMeth $ M.toAscList $ M.mapKeys sigStrToBytes sig_api
     -- Now we dump the implementation of internal functions
     mapM_ (cp . uncurry CLIX) $ M.toAscList clp_funs
 
