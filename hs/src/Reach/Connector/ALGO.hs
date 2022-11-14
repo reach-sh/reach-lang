@@ -2440,6 +2440,7 @@ clogEvent eventName vs = do
   cconcatbs $ (T_Bytes 4, cheader) : map (\a -> (argTypeOf a, cp a)) as
   sz <- typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as
   clog_ $ 4 + sz
+  comment $ LT.pack $ "^ log: " <> show eventName <> " " <> show vs <> " " <> show sigStr
 
 clog_ :: Integer -> App ()
 clog_ = output . TLog
@@ -2839,8 +2840,8 @@ bindFromGV gv ensure at vls m = do
         store_let av_dup True (return ()) $
           go $ zip vls [0 ..]
 
-bindFromStack :: SrcLoc -> [DLVarLet] -> App a -> App a
-bindFromStack _at vsl m = do
+bindFromStack :: [DLVarLet] -> App a -> App a
+bindFromStack vsl m = do
   -- STACK: [ ...vs ] TOP on right
   let go m' v = sallocLet v (return ()) m'
   -- The 'l' is important here because it means we're nesting the computation
@@ -2852,7 +2853,7 @@ cloop _ (C_Handler {}) = impossible $ "cloop h"
 cloop which (C_Loop {..}) = recordWhich which $ do
   block (loopLabel which) $ do
     -- STACK: [ ...svs ...vars ] TOP on right
-    bindFromStack cl_at (cl_svs <> cl_vars) $
+    bindFromStack (cl_svs <> cl_vars) $
       cp cl_body
 
 -- NOTE This could be compiled to a jump table if that were possible with TEAL
@@ -2972,17 +2973,11 @@ callCompanion at cc = do
 ch :: Int -> CHandler -> App ()
 ch _ (C_Loop {}) = impossible $ "ch loop"
 ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich which $ do
-  argSize <- (+) 1 <$> (typeSizeOf $ T_Tuple $ map (varType . varLetVar) msgl)
-  when (argSize > algoMaxAppTotalArgLen) $
-    bad $ LT.pack $
-      "Step " <> show which <> "'s argument length is " <> show argSize
-      <> ", but the limit is " <> show algoMaxAppTotalArgLen
-      <> ". Step " <> show which <> " starts at " <> show at
+  checkArgSize ("Step " <> show which) at msgl
   let lab = handlerLabel which
   block_ lab $ do
     label lab
-    let isCtor = which == 0
-    when isCtor $ do
+    when (which == 0) $ do
       callCompanion at $ CompanionCreate
     callCompanion at $ CompanionLabel False lab
     let bindVars =
@@ -3515,25 +3510,40 @@ instance Compile CLFX where
   cp (CLFX lab (CLFun {..})) = do
     let at = clf_at
     callCompanion at $ CompanionLabel False lab
-    bindFromArgs clf_dom $ cp clf_tail
+    cp clf_tail
 
 instance Compile CLIX where
   cp (CLIX n (CLIntFun {..})) = do
+    let CLFun {..} = cif_fun
     let lab = LT.pack $ bunpack n
     block_ lab $ do
       label lab
-      cp $ CLFX lab cif_fun
+      bindFromStack clf_dom $
+        cp $ CLFX lab cif_fun
+
+checkArgSize :: String -> SrcLoc -> [DLVarLet] -> App ()
+checkArgSize lab at msg = do
+  -- The extra 4 bytes are the selector
+  argSize <- (+) 4 <$> (typeSizeOf $ T_Tuple $ map (varType . varLetVar) msg)
+  when (argSize > algoMaxAppTotalArgLen) $
+    bad $ LT.pack $
+      lab <> "'s argument length is " <> show argSize
+      <> ", but the limit is " <> show algoMaxAppTotalArgLen
+      <> ". " <> lab <> " starts at " <> show at <> "."
 
 instance Compile CLEX where
   cp (CLEX sig (CLExtFun {..})) = do
-    let at = clf_at cef_fun
+    let CLFun {..} = cef_fun
+    let at = clf_at
     let lab = sigToLab sig
+    checkArgSize (show $ pretty cef_kind) at $ clf_dom
     block_ lab $ do
       label lab
       case cef_kind of
         CE_Publish 0 -> callCompanion at $ CompanionCreate
         _ -> return ()
-      cp $ CLFX lab cef_fun
+      bindFromArgs clf_dom $
+        cp $ CLFX lab cef_fun
 
 instance HasPre CLProg where
   getPre (CLProg {..}) = Pre {..}
@@ -3560,11 +3570,7 @@ instance Compile CLProg where
             CLFun {..} = cef_fun
             lr_at = clf_at
             lr_lab = sigToLab sig
-            lr_what =
-              case cef_kind of
-                CE_API n -> "API " <> n
-                CE_View n -> "View " <> n
-                CE_Publish w -> "Step " <> show w
+            lr_what = show $ pretty cef_kind
     let api_go e@(CLEX _ (CLExtFun {..})) =
           case cef_kind of
             CE_API {} -> Just $ mkRec e

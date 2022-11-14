@@ -111,7 +111,7 @@ const zpad = (len: number, b: Buffer): Buffer => {
 type BLabel = 'string' | 'hex string' | 'Uint8Array' | 'unknown';
 const arr_to_buf = (s: Uint8Array): Buffer => Buffer.from(s);
 const str_to_buf = (s: string): Buffer => Buffer.from(s);
-const hex_to_buf = (s: string): Buffer => Buffer.from(s.slice(2), 'hex');
+export const hex_to_buf = (s: string): Buffer => Buffer.from(s.slice(2), 'hex');
 export const buf_to_arr = (b: Buffer): Uint8Array => new Uint8Array(b);
 const buf_to_str = (b: Buffer): string => b.toString();
 const buf_to_hex = (b: Buffer): string => '0x' + b.toString('hex');
