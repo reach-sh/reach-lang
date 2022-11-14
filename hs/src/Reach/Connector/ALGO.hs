@@ -1206,14 +1206,10 @@ block :: Label -> App a -> App a
 block lab m = block_ lab $ label lab >> m
 
 dupn :: Int -> App ()
-dupn k = do
-  when (k > 0) $ do
-    op "dup"
-    let f = \case
-          0 -> return ()
-          1 -> op "dup"
-          n -> op "dup2" >> f (n - 2)
-    f (k - 1)
+dupn = \case
+  0 -> nop
+  1 -> op "dup"
+  k -> code "dupn" [ texty k ]
 
 assert :: App ()
 assert = op "assert"
