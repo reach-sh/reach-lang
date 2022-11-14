@@ -17,5 +17,5 @@ git diff algorand_data
 make generate-network
 ```
 
-Then look at the modified genesis.json and config.json files and port the changes (to preserve the faucet address)
+Then look at the modified genesis.json [you want the new proto field] and config.json files and port the changes (to preserve the faucet address) [restore all the other files that got changed]
 
