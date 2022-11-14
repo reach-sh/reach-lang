@@ -28,12 +28,9 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Vector as Vector
 import Data.Word
-import Numeric (showHex)
 import Generics.Deriving (Generic)
-import Reach.AddCounts
 import Reach.AST.Base
 import Reach.AST.DLBase
-import Reach.AST.CP
 import Reach.AST.CL
 import Reach.BinaryLeafTree
 import Reach.CommandLine
@@ -46,7 +43,7 @@ import Reach.Texty (pretty)
 import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Warning
-import Safe (atMay, headMay)
+import Safe (atMay)
 import Safe.Foldable (maximumMay)
 import System.Exit
 import System.FilePath
@@ -1051,8 +1048,8 @@ libCall lf impl = do
 separateResources :: App a -> App a
 separateResources = dupeResources . resetToks
 
-recordWhich :: Int -> App a -> App a
-recordWhich n = local (\e -> e {eWhich = Just n}) . separateResources
+recordWhich :: Maybe Int -> App a -> App a
+recordWhich mn = local (\e -> e {eWhich = mn}) . separateResources
 
 data Resource
   = R_Asset
@@ -1208,11 +1205,6 @@ block_ lab m = do
 block :: Label -> App a -> App a
 block lab m = block_ lab $ label lab >> m
 
-block_' :: String -> App a -> App a
-block_' str m = do
-  lab <- freshLabel str
-  block lab m
-
 dupn :: Int -> App ()
 dupn k = do
   when (k > 0) $ do
@@ -1261,9 +1253,6 @@ freshLabel :: String -> App LT.Text
 freshLabel d = do
   i <- (liftIO . incCounter) =<< (eLabel <$> ask)
   return $ "l" <> LT.pack (show i) <> "_" <> LT.pack d
-
-loopLabel :: Int -> LT.Text
-loopLabel w = "loopBody" <> LT.pack (show w)
 
 store_let :: DLVar -> Bool -> App () -> App a -> App a
 store_let dv small cgen m = do
@@ -2741,26 +2730,11 @@ cContractAddr = code "global" ["CurrentApplicationAddress"]
 cDeployer :: App ()
 cDeployer = code "global" ["CreatorAddress"]
 
-etexty :: Enum a => a -> LT.Text
-etexty = texty . fromEnum
-
-data ArgId
-  = ArgMethod
-  | ArgPublish
-  | ArgTime
-  | ArgMsg
-  deriving (Eq, Ord, Show, Enum, Bounded)
-
-argLoad :: ArgId -> App ()
-argLoad ai = code "txna" ["ApplicationArgs", etexty ai]
-
 data GlobalVar
   = GV_txnCounter
   | GV_currentStep
   | GV_currentTime
   | GV_svs
-  | GV_argTime
-  | GV_argMsg
   | GV_wasMeth
   | GV_apiRet
   | GV_companion
@@ -2785,8 +2759,6 @@ gvType = \case
   GV_currentTime -> T_UInt UI_Word
   GV_companion -> T_Contract
   GV_svs -> T_Null
-  GV_argTime -> T_UInt UI_Word
-  GV_argMsg -> T_Null
   GV_wasMeth -> T_Bool
   GV_apiRet -> T_Null
 
@@ -2802,11 +2774,40 @@ defn_done = defn_fixed "done" True
 cRound :: App ()
 cRound = code "global" ["Round"]
 
-bindTime :: DLVar -> App a -> App a
-bindTime dv = store_let dv True cRound
+-- NOTE This could be compiled to a jump table if that were possible with TEAL
+cblt :: String -> (Int -> a -> App ()) -> BLT Int a -> App ()
+cblt lab go t = do
+  -- liftIO $ putStrLn $ show t
+  rec 0 Nothing t
+  where
+    rec low mhi = \case
+      Empty -> op "err"
+      Branch rv l r -> do
+        op "dup"
+        cp rv
+        op "<"
+        llab <- freshLabel $ lab <> "_lt_" <> show rv
+        code "bnz" [llab]
+        rec rv mhi r
+        label llab
+        rec low (Just $ rv - 1) l
+      Leaf which _mustCheck h -> do
+        -- XXX mustCheck is supposed to be this test
+        case (which == low && mhi == Just which) of
+          True -> op "pop"
+          False -> do
+            cp which
+            asserteq
+        go which h
 
-bindSecs :: DLVar -> App a -> App a
-bindSecs dv = store_let dv True (code "global" ["LatestTimestamp"])
+apiLabel :: SLPart -> Label
+apiLabel w = "api_" <> (LT.pack $ bunpack w)
+
+bindFromSvs :: SrcLoc -> [DLVarLet] -> App a -> App a
+bindFromSvs at svs m = do
+  sz <- typeSizeOf $ T_Tuple $ map varLetType svs
+  let ensure = cSvsLoad $ sz
+  bindFromGV GV_svs ensure at svs m
 
 bindFromGV :: GlobalVar -> App () -> SrcLoc -> [DLVarLet] -> App a -> App a
 bindFromGV gv ensure at vls m = do
@@ -2839,60 +2840,6 @@ bindFromGV gv ensure at vls m = do
       store_let av True (gvLoad gv) $
         store_let av_dup True (return ()) $
           go $ zip vls [0 ..]
-
-bindFromStack :: [DLVarLet] -> App a -> App a
-bindFromStack vsl m = do
-  -- STACK: [ ...vs ] TOP on right
-  let go m' v = sallocLet v (return ()) m'
-  -- The 'l' is important here because it means we're nesting the computation
-  -- from the left, so the bindings match the (reverse) push order
-  foldl' go m $ map varLetVar vsl
-
-cloop :: Int -> CHandler -> App ()
-cloop _ (C_Handler {}) = impossible $ "cloop h"
-cloop which (C_Loop {..}) = recordWhich which $ do
-  block (loopLabel which) $ do
-    -- STACK: [ ...svs ...vars ] TOP on right
-    bindFromStack (cl_svs <> cl_vars) $
-      cp cl_body
-
--- NOTE This could be compiled to a jump table if that were possible with TEAL
-cblt :: String -> (Int -> a -> App ()) -> BLT Int a -> App ()
-cblt lab go t = do
-  -- liftIO $ putStrLn $ show t
-  rec 0 Nothing t
-  where
-    rec low mhi = \case
-      Empty -> op "err"
-      Branch rv l r -> do
-        op "dup"
-        cp rv
-        op "<"
-        llab <- freshLabel $ lab <> "_lt_" <> show rv
-        code "bnz" [llab]
-        rec rv mhi r
-        label llab
-        rec low (Just $ rv - 1) l
-      Leaf which _mustCheck h -> do
-        -- XXX mustCheck is supposed to be this test
-        case (which == low && mhi == Just which) of
-          True -> op "pop"
-          False -> do
-            cp which
-            asserteq
-        go which h
-
-handlerLabel :: Int -> Label
-handlerLabel w = "publish" <> texty w
-
-apiLabel :: SLPart -> Label
-apiLabel w = "api_" <> (LT.pack $ bunpack w)
-
-bindFromSvs_ :: SrcLoc -> [DLVarLet] -> App a -> App a
-bindFromSvs_ at svs m = do
-  sz <- typeSizeOf $ T_Tuple $ map varLetType svs
-  let ensure = cSvsLoad $ sz
-  bindFromGV GV_svs ensure at svs m
 
 data CompanionCall
   = CompanionCreate
@@ -2970,29 +2917,6 @@ callCompanion at cc = do
       whenJust mcr $ \_ -> do
         incResource R_App cr_ro
 
-ch :: Int -> CHandler -> App ()
-ch _ (C_Loop {}) = impossible $ "ch loop"
-ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich which $ do
-  checkArgSize ("Step " <> show which) at msgl
-  let lab = handlerLabel which
-  block_ lab $ do
-    label lab
-    when (which == 0) $ do
-      callCompanion at $ CompanionCreate
-    callCompanion at $ CompanionLabel False lab
-    let bindVars =
-          id
-            . (flip cpk $ CLTxnBind at from timev secsv)
-            . (flip cpk $ CLStateBind at False svsl prev)
-            . (bindFromGV GV_argMsg (gvStore GV_argMsg) at msgl)
-    bindVars $ do
-      given_time <- allocVar at $ T_UInt UI_Word
-      store_let given_time True (gvLoad GV_argTime) $
-        cpk nop $ CLTimeCheck at given_time
-      cpk nop $ CLEmitPublish at which $ map varLetVar msgl
-      cpk nop $ CLIntervalCheck at timev secsv int
-      cp body
-
 getMapTy :: DLMVar -> App DLType
 getMapTy mpv = do
   ms <- pMaps <$> asks ePre
@@ -3040,347 +2964,8 @@ compileTEAL tealf = compileTEAL_ tealf >>= \case
       False -> failed
   Right stdout -> return stdout
 
-data CMeth
-  = CApi
-    { capi_who :: SLPart
-    , capi_sig :: String
-    , capi_ret_ty :: DLType
-    , capi_which :: Int
-    , capi_arg_tys :: [DLType]
-    , capi_doWrap :: App ()
-    , capi_label :: LT.Text
-    , capi_jumps :: [(Int, LT.Text)]
-    }
-  | CView
-    { cview_who :: SLPart
-    , cview_sig :: String
-    , cview_ret_ty :: DLType
-    , cview_hs :: VSIHandler
-    , cview_lab :: LT.Text
-    }
-  | CAlias
-    { calias_who :: SLPart
-    , calias_meth :: CMeth }
-
-cmethRetTy :: CMeth -> DLType
-cmethRetTy = \case
-  CApi {..} -> capi_ret_ty
-  CView {..} -> cview_ret_ty
-  CAlias {..} -> cmethRetTy calias_meth
-
-cmethIsView :: CMeth -> Bool
-cmethIsView = \case
-  CApi {} -> False
-  CView {} -> True
-  CAlias {..} -> cmethIsView calias_meth
-
-capi :: (SLPart, ApiInfo) -> App [(String, CMeth)]
-capi (who, (ApiInfo {..})) = do
-  let f = adjustApiName (bunpack who) ai_which True
-  capi_label <- freshLabel f
-  let capi_who = who
-  let capi_which = ai_which
-  let mk_sig n = signatureStr False n capi_arg_tys mret
-  capi_sig <- mk_sig f
-  let c = CApi {..}
-  let apis = [(capi_sig, c)]
-  let mk_alias a = do
-        a' <- mk_sig $ bunpack a
-        return $ apis <> [(a', CAlias a c)]
-  maybe (return apis) mk_alias ai_alias
-  where
-    imp = impossible "apiSig"
-    (capi_arg_tys, capi_doWrap) =
-      case ai_compile of
-        AIC_SpreadArg ->
-          case ai_msg_tys of
-            [T_Tuple ts] -> (ts, return ())
-            _ -> imp
-        AIC_Case ->
-          case ai_msg_tys of
-            [T_Data tm] ->
-              case M.lookup cid tm of
-                Just (T_Tuple ts) -> (ts, doWrapData ts $ cp . DLLA_Data tm cid)
-                _ -> imp
-            _ -> imp
-    cid = fromMaybe imp ai_mcase_id
-    capi_ret_ty = ai_ret_ty
-    mret = Just $ capi_ret_ty
-    capi_jumps = []
-
-apiArgsAndRet :: CMeth -> ([DLType], DLType)
-apiArgsAndRet = \case
-  CApi {..}   -> (capi_arg_tys, capi_ret_ty)
-  CAlias {..} -> apiArgsAndRet $ calias_meth
-  _ -> impossible $ "apiArgsAndRet: Expected API"
-
-genApiJump :: SLPart -> [(String, CMeth)] -> App (String, CMeth)
-genApiJump who ms = do
-  let ms' = map snd ms
-  -- Grab any one of the methods to store argument/return type information.
-  -- All methods have same signature.
-  let m = fromMaybe (impossible "genApiJump") $ headMay ms'
-  let whichs = map capi_which ms'
-  let labels = map capi_label ms'
-  let (arg_tys, mret) = apiArgsAndRet m
-  sig <- signatureStr False (bunpack who) arg_tys $ Just mret
-  return $ (sig, CApi {
-      capi_who = who
-    , capi_label = capi_label m
-    , capi_jumps = zip whichs labels
-    -- These fields don't really matter
-    , capi_sig = sig
-    , capi_ret_ty = capi_ret_ty m
-    , capi_which = capi_which m
-    , capi_arg_tys = capi_arg_tys m
-    , capi_doWrap = capi_doWrap m
-    })
-
-capis :: (SLPart, M.Map a ApiInfo) -> App [(String, CMeth)]
-capis (p, ms) = do
-  ms' <- concatMapM (capi . (p,) . snd) $ M.toAscList ms
-  m <- genApiJump p ms'
-  return $ m : ms'
-
-cview :: (SLPart, VSITopInfo) -> App [(String, CMeth)]
-cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs aliases) = do
-    cview_sig <- mk_sig f
-    cview_lab <- freshLabel $ bunpack who
-    let v = CView {..}
-    let mka a = do
-          a' <- mk_sig $ bunpack a
-          return [(a', CAlias a v)]
-    (:) (cview_sig, v) <$> concatMapM mka aliases
-  where
-    cview_who = who
-    f = bunpack who
-    mk_sig n = signatureStr False n cview_arg_tys $ Just cview_ret_ty
-
-doWrapData :: [DLType] -> (DLArg -> App ()) -> App ()
-doWrapData tys mk = do
-  -- Tuple of tys is on stack
-  av <- allocVar sb $ T_Tuple tys
-  sallocLet av (return ()) $ mk (DLA_Var av)
-  -- Data of tys is on stack
-  return ()
-
-sigDump :: Int -> String
-sigDump sigi =
-   i "i" (show sigi)
-   <> i "h" (showHex sigi "")
-   <> i "b64" (LT.unpack $ encodeBase64 $ itob 4 $ fromIntegral sigi)
-  where
-    i l s = " " <> l <> "(" <> s <> ")"
-
-cmeth :: Int -> CMeth -> App ()
-cmeth sigi = \case
-  CAlias alias (CApi {..}) -> do
-    let alias' = bunpack alias
-    comment $ LT.pack $ "API Alias: " <> alias'
-    comment $ LT.pack $ sigDump sigi
-    block_' alias' $ do
-      code "b" [capi_label]
-  CAlias alias (CView {..}) -> do
-    let alias' = bunpack alias
-    comment $ LT.pack $ "View Alias: " <> alias'
-    comment $ LT.pack $ sigDump sigi
-    block_' alias' $ do
-      code "b" [cview_lab]
-  CApi _ sig _ which tys doWrap lab [] -> do
-    block lab $ do
-      comment $ LT.pack $ "API: " <> sig
-      comment $ LT.pack $ sigDump sigi
-      let f :: DLType -> Integer -> (DLType, App ())
-          f t i = (t, code "txna" ["ApplicationArgs", texty i])
-      let effectiveTys = case splitArgs tys of
-           (_, Nothing) -> tys
-           -- It would be more type correct to read and unpack arg 15 multiple
-           -- times.  But because the tuple encoding is just concatenated bytes,
-           -- the result of concatenating a tuple is the same as repeated
-           -- concatenation of the tuple member types.  So it is simpler to
-           -- just concatenate the arg 15 tuple.
-           (tys14, Just tysMore) -> tys14 <> [T_Tuple tysMore]
-      cconcatbs_ (const $ return ()) $ zipWith f effectiveTys [1 ..]
-      doWrap
-      code "b" [handlerLabel which]
-  -- This API occurs in multiple places throughout the program.
-  -- Jump to the correct handler
-  CApi who sig _ _ _ _ _ wls -> do
-    block_' (bunpack who) $ do
-      comment $ LT.pack $ "API: " <> sig
-      comment $ LT.pack $ sigDump sigi
-      gvLoad GV_currentStep
-      let go _ l = code "b" [l]
-      cblt "api" go $ bltM $ M.fromList wls
-  CView who sig _ hs lab -> do
-    block lab $ do
-      comment $ LT.pack $ "View: " <> sig
-      comment $ LT.pack $ sigDump sigi
-      gvLoad GV_currentStep
-      flip (cblt "viewStep") (bltM hs) $ \hi vbvs -> separateResources $ do
-        vbvs' <- liftIO $ add_counts vbvs
-        let VSIBlockVS svsl deb = vbvs'
-        let (DLinExportBlock _ mfargs (DLBlock at _ t r)) = deb
-        let fargs = fromMaybe mempty mfargs
-        block_ (LT.pack $ bunpack who <> "_" <> show hi) $
-          bindFromArgs fargs $ bindFromSvs_ at svsl $
-            flip cpk t $ do
-              cp $ CL_Com (CLMemorySet at "ret" r) (CL_Halt at HM_Pure)
-  CAlias {} -> impossible "cmeth: unsupported alias"
-
-bindFromArgs :: [DLVarLet] -> App a -> App a
-bindFromArgs vs m = do
-  let goSingle (v, i) = sallocVarLet v False (code "txna" ["ApplicationArgs", texty i] >> cfrombs (varLetType v))
-  let goSingles singles k = foldl' (flip goSingle) k (zip singles [(1 :: Integer) ..])
-  case splitArgs vs of
-    (vs', Nothing) -> do
-      goSingles vs' m
-    (vs14, Just vsMore) -> do
-      let tupleTy = T_Tuple $ map varLetType vsMore
-      let goTuple (v, i) = sallocVarLet v False
-            (code "txna" ["ApplicationArgs", texty (15 :: Integer)]
-             >> cTupleRef tupleTy i)
-      goSingles vs14 (foldl' (flip goTuple) m (zip vsMore [(0 :: Integer) ..]))
-
-data VSIBlockVS = VSIBlockVS [DLVarLet] DLExportBlock
-type VSIHandler = M.Map Int VSIBlockVS
-data VSITopInfo = VSITopInfo [DLType] DLType VSIHandler [B.ByteString]
-type VSITop = M.Map SLPart VSITopInfo
-
-instance AC VSIBlockVS where
-  ac (VSIBlockVS svs eb) = do
-    eb' <- ac eb
-    svs' <- ac_vls svs
-    return $ VSIBlockVS svs' eb'
-
-selectFromM :: Ord b => (x -> c -> d) -> b -> M.Map a (x, M.Map b c) -> M.Map a d
-selectFromM f k m = M.mapMaybe go m
-  where
-    go (x, m') = f x <$> M.lookup k m'
-
-analyzeViews :: DLViewsX -> VSITop
-analyzeViews (DLViewsX vs vis) = vsit
-  where
-    vsit = M.fromList $ concatMap (\ (mi, m) -> map (got mi) $ M.toList m) $ M.toList vs
-    got mi (who, (DLView _at it aliases)) = (f, v $ map mk aliases)
-      where
-        v = VSITopInfo args ret hs
-        mk n = maybe "" (<> "_") mi <> n
-        f = mk $ bpack who
-        hs = selectFromM VSIBlockVS f vsih
-        (args, ret) =
-          case it of
-            IT_Val t -> ([], t)
-            IT_Fun d r -> (d, r)
-            IT_UDFun _ -> impossible $ "udview " <> who
-    vsih = M.map goh vis
-    goh (ViewInfo svs vi) = (map v2vl svs, flattenInterfaceLikeMap vi)
-
 class HasPre a where
   getPre :: a -> Pre
-
--- CP Case
-instance Compile CTail where
-  cp = \case
-    CT_Com m k -> cpk (cp k) m
-    CT_If _ a tt ft -> do
-      cp a
-      false_lab <- freshLabel "ifF"
-      code "bz" [false_lab]
-      nct tt
-      label false_lab
-      nct ft
-    CT_Switch _ dv csm ->
-      doSwitch "Switch" nct dv csm
-    CT_Jump _at which svs (DLAssignment msgm) -> do
-      -- NOTE: I considered statically assigning these to heap pointers and
-      -- limiting the total memory available (we can't assign them to where they
-      -- will end up, because this tail might be using the same things)
-      --
-      -- XXX I could determine when the jump target has the same svs as us and
-      -- then save space by letting it load itself
-      mapM_ cp $ (map DLA_Var svs) <> map snd (M.toAscList msgm)
-      code "b" [loopLabel which]
-    CT_From at which msvs -> do
-      case msvs of
-        FI_Halt toks -> do
-          let k = CL_Halt at HM_Forever
-          cp $ foldr CL_Com k $ map (CLTokenUntrack at) toks
-        FI_Continue svs -> do
-          cpk nop $ CLStateSet at which svs
-          cp $ CL_Halt at HM_Impure
-    where
-      nct = dupeResources . cp
-
-instance HasPre CPProg where
-  getPre (CPProg {..}) = Pre {..}
-    where
-      pMaps = dli_maps cpp_init
-
-instance Compile CPProg where
-  cp (CPProg {..}) = do
-    Env {..} <- ask
-    let vsi = cpp_views
-    let ai = cpp_apis
-    let CHandlers hm = cpp_handlers
-    ai_sm <- M.fromList <$> concatMapM capis (M.toAscList ai)
-    let vsiTop = analyzeViews vsi
-    vsi_sm <- M.fromList <$> concatMapM cview (M.toAscList vsiTop)
-    let meth_sm = M.union ai_sm vsi_sm
-    let mkABI m = ABInfo {..}
-          where
-            abiPure = cmethIsView m
-    liftIO $ writeIORef eABI $ M.map mkABI meth_sm
-    maxApiRetSize <- maxTypeSize $ M.map cmethRetTy meth_sm
-    liftIO $ writeIORef eMaxApiRetSize maxApiRetSize
-    let meth_im = M.mapKeys sigStrToInt meth_sm
-    let h2lr = \case
-          (i, C_Handler {..}) -> Just $ LabelRec {..}
-            where
-              lr_lab = handlerLabel i
-              lr_at = ch_at
-              lr_what = "Step " <> show i
-          (_, C_Loop {}) -> Nothing
-    let a2lr (p, ApiInfo {..}) = LabelRec {..}
-          where
-            lr_lab = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) ai_which True
-            lr_at = ai_at
-            lr_what = "API " <> LT.unpack lr_lab
-    let as2lrs (p, ms) = map (a2lr . (p,) . snd) $ M.toAscList ms
-    let pubLs = mapMaybe h2lr $ M.toAscList hm
-    let apiLs = concatMap as2lrs $ M.toAscList ai
-    liftIO $ writeIORef eApiLs $ Just apiLs
-    liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs
-    -- This is where the code actually starts
-    -- We are duping the method so we can branch on it twice
-    argLoad ArgMethod
-    cfrombs $ T_UInt UI_Word
-    label "preamble"
-    op "dup"
-    code "bz" ["publish"]
-    label "api"
-    cint 0
-    gvStore GV_argTime
-    cp True
-    gvStore GV_wasMeth
-    cblt "method" cmeth $ bltM meth_im
-    label "publish"
-    -- Load and store the time
-    argLoad ArgTime
-    cfrombs $ T_UInt UI_Word
-    gvStore GV_argTime
-    -- Push the message on the stack for later
-    argLoad ArgMsg
-    -- Load the publish number
-    argLoad ArgPublish
-    cfrombs $ T_UInt UI_Word
-    let isLoop = \case
-          C_Loop {} -> True
-          C_Handler {} -> False
-    let (hm_l, hm_h) = M.partition isLoop hm
-    cblt "publish" ch $ bltM hm_h
-    forM_ (M.toAscList hm_l) $ \(hi, hh) ->
-      cloop hi hh
 
 -- CL Case
 instance CompileK CLStmt where
@@ -3389,8 +2974,8 @@ instance CompileK CLStmt where
     CLTxnBind _ from timev secsv -> do
       freeResource R_Account $ DLA_Var from
       store_let from True (code "txn" ["Sender"]) $
-        bindTime timev $
-          bindSecs secsv $
+        store_let timev True cRound $
+          store_let secsv True (code "global" ["LatestTimestamp"]) $
             k
     CLTimeCheck _ given -> do
       cp given
@@ -3412,7 +2997,7 @@ instance CompileK CLStmt where
         cp prev
         gvLoad GV_currentStep
         asserteq
-      bindFromSvs_ at svs_vl k
+      bindFromSvs at svs_vl k
     CLIntervalCheck _ timev secsv (CBetween ifrom ito) -> do
       let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
           checkTime1 cmp clhs rhsa = do
@@ -3502,12 +3087,12 @@ sigToLab = LT.pack . map go
         True -> c
         False -> '_'
 
-data CLFX = CLFX LT.Text CLFun
+data CLFX = CLFX LT.Text (Maybe Int) CLFun
 data CLEX = CLEX String CLExtFun
 data CLIX = CLIX CLVar CLIntFun
 
 instance Compile CLFX where
-  cp (CLFX lab (CLFun {..})) = do
+  cp (CLFX lab mwhich (CLFun {..})) = recordWhich mwhich $ do
     let at = clf_at
     callCompanion at $ CompanionLabel False lab
     cp clf_tail
@@ -3519,7 +3104,15 @@ instance Compile CLIX where
     block_ lab $ do
       label lab
       bindFromStack clf_dom $
-        cp $ CLFX lab cif_fun
+        cp $ CLFX lab cif_mwhich cif_fun
+
+bindFromStack :: [DLVarLet] -> App a -> App a
+bindFromStack vsl m = do
+  -- STACK: [ ...vs ] TOP on right
+  let go m' v = sallocLet v (return ()) m'
+  -- The 'l' is important here because it means we're nesting the computation
+  -- from the left, so the bindings match the (reverse) push order
+  foldl' go m $ map varLetVar vsl
 
 checkArgSize :: String -> SrcLoc -> [DLVarLet] -> App ()
 checkArgSize lab at msg = do
@@ -3531,19 +3124,39 @@ checkArgSize lab at msg = do
       <> ", but the limit is " <> show algoMaxAppTotalArgLen
       <> ". " <> lab <> " starts at " <> show at <> "."
 
+bindFromArgs :: [DLVarLet] -> App a -> App a
+bindFromArgs vs m = do
+  let goSingle (v, i) = sallocVarLet v False (code "txna" ["ApplicationArgs", texty i] >> cfrombs (varLetType v))
+  let goSingles singles k = foldl' (flip goSingle) k (zip singles [(1 :: Integer) ..])
+  case splitArgs vs of
+    (vs', Nothing) -> do
+      goSingles vs' m
+    (vs14, Just vsMore) -> do
+      let tupleTy = T_Tuple $ map varLetType vsMore
+      let goTuple (v, i) = sallocVarLet v False
+            (code "txna" ["ApplicationArgs", texty (15 :: Integer)]
+             >> cTupleRef tupleTy i)
+      goSingles vs14 (foldl' (flip goTuple) m (zip vsMore [(0 :: Integer) ..]))
+
 instance Compile CLEX where
   cp (CLEX sig (CLExtFun {..})) = do
     let CLFun {..} = cef_fun
     let at = clf_at
     let lab = sigToLab sig
     checkArgSize (show $ pretty cef_kind) at $ clf_dom
+    let mwhich = case cef_kind of
+                   CE_Publish n -> Just n
+                   _ -> Nothing
+    let isMeth = cp True >> gvStore GV_wasMeth
     block_ lab $ do
       label lab
       case cef_kind of
         CE_Publish 0 -> callCompanion at $ CompanionCreate
-        _ -> return ()
+        CE_Publish _ -> return ()
+        CE_View {} -> isMeth
+        CE_API {} -> isMeth
       bindFromArgs clf_dom $
-        cp $ CLFX lab cef_fun
+        cp $ CLFX lab mwhich cef_fun
 
 instance HasPre CLProg where
   getPre (CLProg {..}) = Pre {..}
@@ -3585,7 +3198,7 @@ instance Compile CLProg where
     liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs
     -- This is where the actual code starts
     -- We branch on the method
-    argLoad ArgMethod
+    code "txna" ["ApplicationArgs", "0"]
     cfrombs $ T_UInt UI_Word
     label "preamble"
     cblt "method" (const cp) $ bltM $ M.mapKeys sigStrToInt sig_api
