@@ -9,6 +9,7 @@ import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
 import Reach.AST.EP
+import Reach.AST.CL
 import Reach.AST.CP
 import Reach.CollectCounts
 import Reach.AnalyzeVars
@@ -299,8 +300,7 @@ instance {-# OVERLAPS #-} AC a => AC (DLinExportBlock a) where
     return $ DLinExportBlock at vs' a'
 
 instance AC EPart where
-  ac (EPart {..}) =
-    fresh $ EPart ep_at ep_isApi ep_interactEnv <$> ac ep_tail
+  ac (EPart {..}) = fresh $ EPart ep_at ep_isApi ep_interactEnv <$> ac ep_tail
 
 instance AC EPProg where
   ac (EPProg {..}) = EPProg epp_opts epp_init <$> ac epp_exports <*> ac epp_views <*> pure epp_stateSrcMap <*> pure epp_apis <*> pure epp_events <*> ac epp_m
@@ -315,8 +315,7 @@ instance AC DLViewsX where
   ac (DLViewsX a b) = DLViewsX <$> ac a <*> ac b
 
 instance AC CPProg where
-  ac (CPProg {..}) =
-    CPProg cpp_at cpp_opts cpp_init <$> ac cpp_views <*> pure cpp_apis <*> pure cpp_events <*> ac cpp_handlers
+  ac (CPProg {..}) = CPProg cpp_at cpp_opts cpp_init <$> ac cpp_views <*> pure cpp_apis <*> pure cpp_events <*> ac cpp_handlers
 
 ac_vi :: AppT ViewsInfo
 ac_vi = mapM (mapM (fresh . ac))
@@ -417,9 +416,75 @@ instance AC LLStep where
       return $ LLS_ToConsensus lls_tc_at lct' send' recv' mtime'
 
 instance AC LLProg where
-  ac (LLProg llp_at llp_opts llp_parts llp_init llp_exports llp_views llp_apis llp_aliases llp_events llp_step) =
-    LLProg llp_at llp_opts llp_parts llp_init <$>
-      ac llp_exports <*> pure llp_views <*> pure llp_apis <*> pure llp_aliases <*> pure llp_events <*> ac llp_step
+  ac (LLProg {..}) = LLProg llp_at llp_opts llp_parts llp_init <$> ac llp_exports <*> pure llp_views <*> pure llp_apis <*> pure llp_aliases <*> pure llp_events <*> ac llp_step
+
+instance AC CLStmt where
+  ac = \case
+    CLDL m -> CLDL <$> ac m
+    CLTxnBind at x y z ->
+      -- XXX could convert to ac_vdef
+      return $ CLTxnBind at x y z
+    CLTimeCheck at x -> do
+      ac_visit x
+      return $ CLTimeCheck at x
+    CLEmitPublish at w vs -> do
+      ac_visit vs
+      return $ CLEmitPublish at w vs
+    CLStateRead at x -> do
+      -- XXX ac_vdef
+      return $ CLStateRead at x
+    CLStateBind at safe vs s -> do
+      vs' <- ac_vls vs
+      return $ CLStateBind at safe vs' s
+    CLIntervalCheck at x y int -> do
+      ac_visit x
+      ac_visit y
+      ac_visit int
+      return $ CLIntervalCheck at x y int
+    CLStateSet at w vs -> do
+      ac_visit $ map snd vs
+      return $ CLStateSet at w vs
+    CLTokenUntrack at a -> do
+      ac_visit a
+      return $ CLTokenUntrack at a
+    CLMemorySet at v a -> do
+      ac_visit a
+      return $ CLMemorySet at v a
+
+instance AC CLTail where
+  ac = \case
+    CL_Com m k -> do
+      k' <- ac k
+      m' <- ac m
+      return $ CL_Com m' k'
+    CL_If at c t f -> do
+      f' <- ac f
+      t' <- ac t
+      ac_visit $ c
+      return $ CL_If at c t' f'
+    CL_Switch at v csm -> do
+      csm' <- ac csm
+      ac_visit $ v
+      return $ CL_Switch at v csm'
+    CL_Jump at f vs mmret -> do
+      ac_visit $ vs
+      return $ CL_Jump at f vs mmret
+    CL_Halt at hm -> return $ CL_Halt at hm
+
+instance AC CLFun where
+  ac (CLFun {..}) = fresh $ do
+    t' <- ac clf_tail
+    dom' <- ac_vls clf_dom
+    return $ CLFun clf_at dom' clf_view t'
+
+instance AC CLIntFun where
+  ac (CLIntFun {..}) = CLIntFun <$> ac cif_fun <*> pure cif_mwhich
+
+instance AC CLExtFun where
+  ac (CLExtFun {..}) = CLExtFun cef_rng cef_kind <$> ac cef_fun
+
+instance AC CLProg where
+  ac (CLProg {..}) = CLProg clp_at clp_opts clp_defs <$> ac clp_funs <*> ac clp_api <*> pure clp_maps
 
 add_counts' :: AC b => Bool -> b -> IO b
 add_counts' e_sim x = do

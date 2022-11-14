@@ -2,13 +2,13 @@ module Reach.CLike
   ( clike
   , nameMap
   , nameReturn
-  , nameMeth
   ) where
 
 import Control.Monad.Reader
 import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Reach.AddCounts
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.CP
@@ -399,8 +399,8 @@ instance CLike CHX where
     let clf_dom = [ v2vl act_var ]
     let act_arg = DLA_Var act_var
     tCounter <- asks getCounter
-    let addArg (vl, i) = CL_Com $ CLDL $ DL_Let ch_at (vl2lv vl) (DLE_TupleRef ch_at act_arg i)
-    let addArgs = flip (foldr addArg) $ zip eff_dom [0..]
+    let addArg (v, i) = CL_Com $ CLDL $ DL_Let ch_at (DLV_Let DVC_Many v) (DLE_TupleRef ch_at act_arg i)
+    let addArgs = flip (foldr addArg) $ zip msg_vars [0..]
     body' <- tr_ (TEnv {..}) ch_body
     let isCtor = which == 0
     let mStateBind =
@@ -437,7 +437,7 @@ instance CLike CHandlers where
   cl (CHandlers hm) = cl $ CMap CHX hm
 
 clike :: PLProg a CPProg -> IO (PLProg a CLProg)
-clike = plp_cpp_mod $ \old@(CPProg {..}) -> do
+clike = plp_cpp_mod $ \CPProg {..} -> do
   let CPOpts {..} = cpp_opts
   let clp_at = cpp_at
   let clp_opts = CLOpts cpo_untrustworthyMaps cpo_counter
@@ -456,6 +456,7 @@ clike = plp_cpp_mod $ \old@(CPProg {..}) -> do
   clp_defs <- readIORef eDefsR
   clp_funs <- readIORef eFunsR
   clp_api <- readIORef eAPIR
-  let clp_old = old
   let clp_maps = dli_maps cpp_init
-  return $ CLProg {..}
+  -- We created new references to some variables, so we need to correct the
+  -- counts
+  add_counts $ CLProg {..}
