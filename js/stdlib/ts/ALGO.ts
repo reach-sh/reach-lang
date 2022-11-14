@@ -2098,11 +2098,12 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         // promises and then we wouldn't need to wait here.
 
         const lr = makeHasLogForR(funcNum, out_tys);
-        const ctc_args = lr.parse0(txn);
-        debug(dhead, {ctc_args});
-        if ( ctc_args === undefined ) {
+        const raw_ctc_evt = lr.parse0(txn);
+        debug(dhead, {raw_ctc_evt});
+        if ( raw_ctc_evt === undefined ) {
           throw Error(`impossible: txn doesn't have right log as first`);
         }
+        const ctc_args = raw_ctc_evt.splice(1); // dropping time
 
         const fromAddr = txn['sender'];
         const from = T_Address.canonicalize({addr: fromAddr});
