@@ -84,7 +84,10 @@ import {
   bigNumberToBigInt,
 } from './shared_user';
 import {
-  CBR_Address, CBR_Val,
+  CBR_Address,
+  CBR_Val,
+  hex_to_buf,
+  buf_to_arr,
 } from './CBR';
 import waitPort from './waitPort';
 import {
@@ -822,7 +825,7 @@ const newEventQueue = (): EventQueue => {
 
 const { addressEq, assert, gt, protect } = stdlib;
 
-const { T_UInt, T_Tuple, T_Contract, T_Bytes, T_Address, T_Digest } = typeDefs;
+const { T_UInt, T_Tuple, T_Contract, T_Bytes, T_Address, T_Digest, T_Null } = typeDefs;
 
 const { randomUInt, hasRandom } = makeRandom(8);
 
@@ -1247,24 +1250,47 @@ const transfer = async (
     txn);
 };
 
+const sigLen = 4;
+interface SignatureChecker {
+  hex: string;
+  ui8: Uint8Array;
+  cmp: (x: string) => boolean;
+  sig: string;
+  hp: string;
+  b64: string;
+};
+const makeSignatureChecker = (name:string, tys:AnyALGO_Ty[], mret:(AnyALGO_Ty| undefined)): SignatureChecker => {
+  const tyns = tys.map(ty => ty.netName);
+  const retn = mret ? mret.netName : '';
+  const sig = `${name}(${tyns.join(',')})${retn}`;
+  const hu = sha512_256(sig);
+  const hp = hu.slice(0, sigLen*2); // hu is hex nibbles
+  const trunc = (x: string): string => ui8h(base64ToUI8A(x).slice(0, sigLen));
+  const cmp = (log:string) => trunc(log) == hp;
+  const buf = hex_to_buf(`0x` + hp);
+  return {
+    hex: hp,
+    ui8: buf_to_arr(buf),
+    b64: base64ify(buf),
+    cmp,
+    sig,
+    hp,
+  };
+};
+
 interface LogRep {
   parse: (log: string) => (any[]|undefined),
   parse0: (txn: RecvTxn) => (any[]|undefined),
   parse0b: (txn: RecvTxn) => boolean,
 };
 const makeLogRep = (evt:string, tys:AnyALGO_Ty[]): LogRep => {
-  const hLen = 4;
-  const tyns = tys.map(ty => ty.netName);
-  const sig = `${evt}(${tyns.join(',')})`;
-  const hu = sha512_256(sig);
-  const hp = hu.slice(0, hLen*2); // hu is hex nibbles
-  const trunc = (x: string): string => ui8h(base64ToUI8A(x).slice(0, hLen));
-  debug(`makeLogRep`, { evt, tyns, sig, hu, hp });
+  const sc = makeSignatureChecker(evt, tys, undefined);
+  debug(`makeLogRep`, { evt, sc });
   const parse = (log:string): (any[]|undefined) => {
-    if ( trunc(log) !== hp ) { return undefined; }
+    if ( ! sc.cmp(log) ) { return undefined; }
     debug(`parse`, { log });
     // @ts-ignore
-    const [ logb, ...pd ] = T_Tuple([bytestringyNet(hLen), ...tys]).fromNet(reNetify(log));
+    const [ logb, ...pd ] = T_Tuple([bytestringyNet(sigLen), ...tys]).fromNet(reNetify(log));
     debug(`parse`, { logb, pd });
     return pd;
   };
@@ -1278,9 +1304,14 @@ const makeLogRep = (evt:string, tys:AnyALGO_Ty[]): LogRep => {
 };
 
 const reachEvent = (i:number) => `_reach_e${i}`;
-const makeHasLogFor = (i:number, tys:AnyALGO_Ty[]) => {
+const makeHasLogForR = (i:number, tys:AnyALGO_Ty[]) => {
   debug(`hasLogFor`, i, tys);
-  const lr = makeLogRep(reachEvent(i), tys);
+  const rtys = [ T_UInt, ...tys ];
+  const lr = makeLogRep(reachEvent(i), rtys);
+  return lr;
+}
+const makeHasLogFor = (i:number, tys:AnyALGO_Ty[]) => {
+  const lr = makeHasLogForR(i, tys);
   return lr.parse0b;
 };
 
@@ -1974,15 +2005,15 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             (foreignArr.length === 0) ? undefined : foreignArr;
           debug(dhead, {foreignArr, foreignVal});
 
-          const actual_args = [ lct, msg ];
-          const actual_tys = [ T_UInt, T_Tuple(msg_tys) ];
+          const actual_args = [ [ lct, ...msg ] ];
+          const actual_tys = [ T_Tuple([ T_UInt, ...msg_tys]) ];
           debug(dhead, '--- ARGS =', actual_args);
 
           const safe_args: Array<NV> = actual_args.map(
             // @ts-ignore
             (m, i) => actual_tys[i].toNet(m));
-          safe_args.unshift(new Uint8Array([funcNum]));
-          safe_args.unshift(new Uint8Array([0]));
+          const sc = makeSignatureChecker(`_reachp_${funcNum}`, actual_tys, T_Null);
+          safe_args.unshift(sc.ui8);
           safe_args.forEach((x) => {
             if (! ( x instanceof Uint8Array ) ) {
               // The types say this is impossible now,
@@ -2066,7 +2097,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         // ^ XXX it would be nice if Reach could support variables bound to
         // promises and then we wouldn't need to wait here.
 
-        const lr = makeLogRep(reachEvent(funcNum), out_tys);
+        const lr = makeHasLogForR(funcNum, out_tys);
         const ctc_args = lr.parse0(txn);
         debug(dhead, {ctc_args});
         if ( ctc_args === undefined ) {
