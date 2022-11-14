@@ -1,4 +1,4 @@
-FROM ethereum/client-go:v1.10.16
+FROM ethereum/client-go:v1.10.26
 
 # hadolint ignore=DL3018
 RUN apk add curl --no-cache
