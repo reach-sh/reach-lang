@@ -76,6 +76,9 @@ fune n d = env_insert_ eAPIR s d
 funw :: CLVar -> [CLVar] -> SrcLoc -> [DLVarLet] -> Bool -> DLType -> CLExtKind -> Maybe CLVar -> CLTail -> App ()
 funw ni ns at clf_dom clf_view cef_rng cef_kind mret intt = do
   let clf_at = at
+  let cif_mwhich = case cef_kind of
+                     CE_Publish n -> Just n
+                     _ -> Nothing
   let cif_fun = CLFun { clf_tail = intt, ..}
   let di = CLIntFun {..}
   let domvs = map varLetVar clf_dom
@@ -425,6 +428,7 @@ instance CLike CHX where
     tCounter <- asks getCounter
     clf_tail <- tr_ (TEnv {..}) cl_body
     let clf_view = False
+    let cif_mwhich = Nothing
     let clf_at = cl_at
     let cif_fun = CLFun {..}
     funi n $ CLIntFun {..}

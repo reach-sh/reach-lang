@@ -100,6 +100,7 @@ instance Pretty CLFun where
 
 data CLIntFun = CLIntFun
   { cif_fun :: CLFun
+  , cif_mwhich :: Maybe Int
   }
   deriving (Eq)
 
