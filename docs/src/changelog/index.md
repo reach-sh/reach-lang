@@ -11,6 +11,9 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 XXX
 + 2022/11/14: Algorand connector now targets AVM version 8.
+  This means that we use more efficient opcodes, like `switch`, `match`, and `dupn`.
+  These can have a dramatic effect on code size and opcode budgets.
+
 + 2022/11/14: Algorand-only: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
 + 2022/11/14: Algorand-only: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/11/14: Upgraded to Algorand node v3.12.0-beta, indexer 2.15.0-rc1, SDK 1.23.2.

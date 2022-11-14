@@ -1276,7 +1276,7 @@ lookup_let dv = do
   Env {..} <- ask
   case M.lookup dv eLets of
     Just m -> m
-    Nothing -> impossible $ show eWhich <> "lookup_let " <> show (pretty dv) <> " not in " <> (List.intercalate ", " $ map (show . pretty) $ M.keys eLets)
+    Nothing -> bad $ LT.pack $ show eWhich <> "lookup_let " <> show (pretty dv) <> " not in " <> (List.intercalate ", " $ map (show . pretty) $ M.keys eLets)
 
 store_var :: DLVar -> ScratchSlot -> App a -> App a
 store_var dv ss m = do

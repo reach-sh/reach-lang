@@ -6,7 +6,6 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import Reach.AST.Base
 import Reach.AST.DLBase
-import Reach.AST.CP
 import Reach.Counter
 import Reach.Pretty
 import Reach.Texty
@@ -178,15 +177,11 @@ data CLProg = CLProg
   , clp_funs :: CLFuns
   , clp_api :: CLAPI
   , clp_maps :: DLMapInfos
-  , clp_old :: CPProg
   }
   deriving (Eq)
 
 instance Pretty CLProg where
   pretty (CLProg {..}) = ""
-    <> "/*** OLD ***/" <> hardline
-    <> pretty clp_old <> hardline
-    <> "/*** CL ***/" <> hardline
     <> "// Definitions:" <> hardline
     <> render_obj clp_defs <> hardline
     <> "// Functions:" <> hardline
