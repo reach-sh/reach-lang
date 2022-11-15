@@ -8,7 +8,7 @@ WARNING: Compiler instructed to emit for Algorand, but the conservative analysis
  * Step 3 calls a remote object at ./index.rsh:49:9:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object. Furthermore, the remote object may require special transaction parameters which are not expressed in the Reach API or the Algorand ABI standards.
  * Step 3 calls a remote object at ./index.rsh:50:9:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object. Furthermore, the remote object may require special transaction parameters which are not expressed in the Reach API or the Algorand ABI standards.
 WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
- * Step(1) uses 2064 bytes of logs, but the limit is 1024. Step(1) starts at ./index.rsh:27:5:dot.
- * Step(1)'s argument length is 2060, but the limit is 2048. Step(1) starts at ./index.rsh:27:5:dot.
- * Step(2) uses 2064 bytes of logs, but the limit is 1024. Step(2) starts at ./index.rsh:38:5:dot.
- * Step(2)'s argument length is 2060, but the limit is 2048. Step(2) starts at ./index.rsh:38:5:dot.
+ * Step 1 uses 2064 bytes of logs, but the limit is 1024. Step 1 starts at ./index.rsh:27:5:dot.
+ * Step 1's argument length is 2060, but the limit is 2048. Step 1 starts at ./index.rsh:27:5:dot.
+ * Step 2 uses 2064 bytes of logs, but the limit is 1024. Step 2 starts at ./index.rsh:38:5:dot.
+ * Step 2's argument length is 2060, but the limit is 2048. Step 2 starts at ./index.rsh:38:5:dot.
