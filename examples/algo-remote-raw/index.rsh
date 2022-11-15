@@ -18,7 +18,7 @@ export const client = Reach.App(() => {
 
   const ret = r_ctc.bobPub.ALGO({
     rawCall: true
-  })(Bytes.fromHex("0x748a9052"), [0, 255, 1]);
+  })(Bytes.fromHex("0x0c468f80"), [0, 255, 1]);
   void ret;
   commit();
   A.interact.log("remote call return:", ret);
