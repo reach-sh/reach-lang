@@ -194,7 +194,7 @@ jobs:
     - run:
         command: |
           ./.circleci/hs-test.sh "<<parameters.mode>>"
-        no_output_timeout: 30m
+        no_output_timeout: 60m
     - store_test_results:
         path: "hs/test-reports"
     - persist_to_workspace:
