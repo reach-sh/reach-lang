@@ -205,7 +205,6 @@ ref-frontends
 ref-install
 ref-model
 ref-network-algo
-ref-network-cfx
 ref-network-eth
 ref-networks
 ref-programs-appinit

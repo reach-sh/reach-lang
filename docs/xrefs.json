@@ -727,22 +727,6 @@
     "title": "Reach is for Builders",
     "path": "/build/#build"
   },
-  "cfx-faq": {
-    "title": "FAQ",
-    "path": "/networks/#cfx-faq"
-  },
-  "cfx-faq-cplocal": {
-    "title": "How can I use ConfluxPortal with the Reach devnet?",
-    "path": "/networks/#cfx-faq-cplocal"
-  },
-  "cfx-faq-mainnet": {
-    "title": "How do I run my Reach DApp on CFX TestNet or MainNet?",
-    "path": "/networks/#cfx-faq-mainnet"
-  },
-  "cfx-faq-sponsor": {
-    "title": "How can I use gas and storage sponsorship?",
-    "path": "/networks/#cfx-faq-sponsor"
-  },
   "doc-index": {
     "title": "Index",
     "path": "/index/#doc-index"
@@ -1003,12 +987,8 @@
     "title": "Creating an Account Handle",
     "path": "/frontend/#ref-frontends-js-acc"
   },
-  "ref-frontends-js-acc-cfx": {
-    "title": "Conflux-specific",
-    "path": "/frontend/#ref-frontends-js-acc-cfx"
-  },
   "ref-frontends-js-acc-eth": {
-    "title": "EVM-specific (Ethereum and Conflux)",
+    "title": "EVM-specific (Ethereum)",
     "path": "/frontend/#ref-frontends-js-acc-eth"
   },
   "ref-frontends-js-ask": {
@@ -1082,10 +1062,6 @@
   "ref-network-algo": {
     "title": "Algorand",
     "path": "/networks/#ref-network-algo"
-  },
-  "ref-network-cfx": {
-    "title": "Conflux",
-    "path": "/networks/#ref-network-cfx"
   },
   "ref-network-eth": {
     "title": "Ethereum",
