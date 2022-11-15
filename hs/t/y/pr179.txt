@@ -5,4 +5,4 @@ Verifying for generic connector
   Verifying when NO participants are honest
 Checked 162 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
- * Step(0) uses 1176 bytes of logs, but the limit is 1024. Step(0) starts at ./pr179.rsh:61:11:dot.
+ * Step 0 uses 1176 bytes of logs, but the limit is 1024. Step 0 starts at ./pr179.rsh:61:11:dot.
