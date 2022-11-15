@@ -3057,8 +3057,11 @@ symToSig :: CLSym -> App String
 symToSig (CLSym f d r) = signatureStr False (bunpack f) d (Just r)
 
 sigToLab :: String -> LT.Text
-sigToLab = LT.pack . map go
+sigToLab x = LT.pack final
   where
+    final = take 16 full <> show hashed
+    hashed = BS.unpack $ sha256bs $ B.pack full
+    full = map go x
     go :: Char -> Char
     go c =
       case isAlphaNum c of
