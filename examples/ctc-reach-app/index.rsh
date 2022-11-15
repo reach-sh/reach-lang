@@ -3,10 +3,6 @@
 
 const minBal = 100000;
 
-const ReachCtcInterface = {
-  'publish': Fun([UInt, UInt, UInt, Tuple(UInt, UInt)], Null),
-}
-
 export const calcApp = Reach.App(() => {
   const A = Participant('Alice', {});
   const B = API({ add1: Fun([UInt], UInt) });
@@ -29,7 +25,7 @@ export const main = Reach.App(() => {
     chk: Fun(true, Null),
   });
   const calcInterface = {
-    ...ReachCtcInterface,
+    'publish': Fun([Bytes(4), Tuple(UInt)], Null),
     'add1': Fun([UInt], UInt)
   };
   init();
@@ -53,7 +49,7 @@ export const main = Reach.App(() => {
     publish
       .pay(minBal)
       .ALGO({ rawCall: true })
-      (0, 0, 0, [255, 1]);
+      (Bytes.fromHex("0xc194ad99"), [0]);
   }
   commit();
 
