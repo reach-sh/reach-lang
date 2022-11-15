@@ -1974,8 +1974,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               }
             };
             const readCI = (lab:string) => companionInfo[lab]||0;
-            const companionCalls = readCI(`publish${funcNum}`) + (whichApi ? readCI(`api_${whichApi}`) : 0);
-            debug('companion', { whichApi, companionCalls, companionInfo });
+            const ccPublish = `_reachp_${funcNum}`;
+            const ccApi = `_api_${whichApi}${funcNum}`;
+            const companionCalls = readCI(ccPublish) + (whichApi ? readCI(ccApi) : 0);
+            debug('companion', { whichApi, ccPublish, ccApi, companionCalls, companionInfo });
             if ( companionCalls > 0 ) {
               howManyMoreFees += companionCalls;
               addCompanion();
