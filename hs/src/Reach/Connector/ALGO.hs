@@ -974,7 +974,7 @@ data Pre = Pre
 
 data Env = Env
   { ePre :: Pre
-  , eApiLs :: IORef (Maybe [LabelRec])
+  , eApiLs :: IORef [LabelRec]
   , eProgLs :: IORef (Maybe [LabelRec])
   , eMaxApiRetSize :: IORef Integer
   , eMapDataSize :: Integer
@@ -2280,8 +2280,13 @@ instance Compile DLExpr where
           -- Event log values are never used, so we don't push anything
           return ()
     DLE_setApiDetails at p _ _ _ -> do
-      which <- fromMaybe (impossible "setApiDetails no which") <$> asks eWhich
+      Env {..} <- ask
+      let which = fromMaybe (impossible "setApiDetails no which") eWhich
       let p' = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) which True
+      let lr_at = at
+      let lr_lab = p'
+      let lr_what = bunpack $ "API " <> p
+      liftIO $ modifyIORef eApiLs $ (<>) [LabelRec {..}]
       callCompanion at $ CompanionLabel True p'
     DLE_GetUntrackedFunds at mtok tb -> do
       after_lab <- freshLabel "getActualBalance"
@@ -3058,16 +3063,18 @@ instance Compile CLTail where
 symToSig :: CLSym -> App String
 symToSig (CLSym f d r) = signatureStr False (bunpack f) d (Just r)
 
-sigToLab :: String -> LT.Text
-sigToLab x = LT.pack $ map go final
-  where
-    final = take 16 x <> hashed
-    hashed = B.unpack $ encodeBase64' $ sha256bs $ B.pack x
-    go :: Char -> Char
-    go c =
-      case isAlphaNum c of
-        True -> c
-        False -> '_'
+sigToLab :: String -> CLExtKind -> LT.Text
+sigToLab x = \case
+  CE_Publish n -> LT.pack $ "_reachp_" <> show n
+  _ -> LT.pack $ map go final
+    where
+      final = take 16 x <> hashed
+      hashed = B.unpack $ encodeBase64' $ sha256bs $ B.pack x
+      go :: Char -> Char
+      go c =
+        case isAlphaNum c of
+          True -> c
+          False -> '_'
 
 data CLFX = CLFX LT.Text (Maybe Int) CLFun
 data CLEX = CLEX String CLExtFun
@@ -3124,7 +3131,7 @@ instance Compile CLEX where
   cp (CLEX sig (CLExtFun {..})) = do
     let CLFun {..} = cef_fun
     let at = clf_at
-    let lab = sigToLab sig
+    let lab = sigToLab sig cef_kind
     checkArgSize (show $ pretty cef_kind) at $ clf_dom
     let mwhich = case cef_kind of
                    CE_Publish n -> Just n
@@ -3159,25 +3166,7 @@ instance Compile CLProg where
     let apiret_go (CLEX _ (CLExtFun {..})) = cef_rng
     maxApiRetSize <- maxTypeSize $ M.map apiret_go sig_api
     liftIO $ writeIORef eMaxApiRetSize maxApiRetSize
-    let mkRec :: CLEX -> LabelRec
-        mkRec (CLEX sig (CLExtFun {..})) = LabelRec {..}
-          where
-            CLFun {..} = cef_fun
-            lr_at = clf_at
-            lr_lab = sigToLab sig
-            lr_what = show $ pretty cef_kind
-    let api_go e@(CLEX _ (CLExtFun {..})) =
-          case cef_kind of
-            CE_API {} -> Just $ mkRec e
-            _ -> Nothing
-    let apiLs = mapMaybe api_go $ M.elems sig_api
-    liftIO $ writeIORef eApiLs $ Just apiLs
-    let pub_go e@(CLEX _ (CLExtFun {..})) =
-          case cef_kind of
-            CE_Publish {} -> Just $ mkRec e
-            _ -> Nothing
-    let pubLs = mapMaybe pub_go $ M.elems sig_api
-    liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs
+    liftIO $ writeIORef eApiLs $ []
     -- This is where the actual code starts
     -- We branch on the method
     label "preamble"
@@ -3185,6 +3174,21 @@ instance Compile CLProg where
     cmatch getMeth $ M.toAscList $ M.mapKeys sigStrToBytes sig_api
     -- Now we dump the implementation of internal functions
     mapM_ (cp . uncurry CLIX) $ M.toAscList clp_funs
+    -- After looking at the code, we learned about the APIs
+    let mkRec :: CLEX -> LabelRec
+        mkRec (CLEX sig (CLExtFun {..})) = LabelRec {..}
+          where
+            CLFun {..} = cef_fun
+            lr_at = clf_at
+            lr_lab = sigToLab sig cef_kind
+            lr_what = show $ pretty cef_kind
+    apiLs <- liftIO $ readIORef eApiLs
+    let pub_go e@(CLEX _ (CLExtFun {..})) =
+          case cef_kind of
+            CE_Publish {} -> Just $ mkRec e
+            _ -> Nothing
+    let pubLs = mapMaybe pub_go $ M.elems sig_api
+    liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs
 
 -- General Shell
 cp_shell :: (Compile a) => a -> App ()
@@ -3426,7 +3430,7 @@ compile_algo env disp x = do
           let !ts' = optimize $ DL.toList ts
           progLs <- readIORef eProgLs
           apiLs <- readIORef eApiLs
-          let mls = if inclAll then progLs else apiLs
+          let mls = if inclAll then progLs else Just apiLs
           let ls = fromMaybe (impossible "prog labels") mls
           loud $ rlab <> " check"
           let disp' = disp . (lab <>)
