@@ -807,11 +807,12 @@ range: 9 - 9
 
 @{ref("rsh", "Bytes.fromHex")}
 ```reach
-Bytes(4).fromHex('0x01ffc9a7');
+Bytes.fromHex('0x01ffc9a7');
 ```
 
-`{!rsh} Bytes(n).fromHex(BYTES)` allows a value of `{!rsh} Bytes(n)` to be constructed with hexadecimal notation.
+`{!rsh} Bytes.fromHex(BYTES)` allows a value of `{!rsh} Bytes(n)` to be constructed with hexadecimal notation.
 The value of `BYTES` must be known at compile time.
+`n` is determined by the length of `BYTES`.
 
 ### String Concatenation
 
