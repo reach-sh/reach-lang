@@ -2606,6 +2606,7 @@ cswatchTail w es ce = do
 doSwitch :: String -> (a -> App ()) -> DLVar -> SwitchCases a -> App ()
 doSwitch lab ck dv csm = do
   let go cload = do
+        cload
         cint 0
         op "getbyte"
         cswatchTail "switch" (M.toAscList csm) $ \(vn, (vv, vu, k)) -> do
