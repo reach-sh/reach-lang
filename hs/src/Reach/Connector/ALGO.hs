@@ -3060,7 +3060,7 @@ sigToLab :: String -> LT.Text
 sigToLab x = LT.pack final
   where
     final = take 16 full <> show hashed
-    hashed = BS.unpack $ sha256bs $ B.pack full
+    hashed = BS.unpack $ encodeBase64' $ sha256bs $ B.pack full
     full = map go x
     go :: Char -> Char
     go c =
