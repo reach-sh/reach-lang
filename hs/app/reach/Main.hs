@@ -92,7 +92,6 @@ data Effect
 
 data Connector
   = ALGO
-  | CFX
   | ETH
   deriving (Eq, Show, Enum, Bounded)
 
@@ -515,7 +514,6 @@ imagesCommon =
 imagesFor :: Connector -> [Image]
 imagesFor = \case
   ALGO -> [devnetFor ALGO]
-  CFX -> [devnetFor CFX]
   ETH -> [devnetFor ETH]
 
 imagesForAllConnectors :: [Image]
@@ -555,13 +553,11 @@ connectorEnv Env {..} (ConnectorMode c m) = do
 devnetFor :: Connector -> Text
 devnetFor = \case
   ALGO -> "devnet-algo"
-  CFX -> "devnet-cfx"
   ETH -> "devnet-eth"
 
 pConnector :: ParsecT String () IO Connector
 pConnector =
   f ALGO "ALGO"
-    <|> f CFX "CFX"
     <|> f ETH "ETH"
   where
     f a b = const a <$> string b
@@ -708,7 +704,6 @@ withCompose DockerMeta {..} wrapped = do
         (_, _, Live) -> []
         (WithProject Console _, ALGO, Devnet) -> ["9392"]
         (_, ALGO, _) -> ["4180:4180", "8980:8980", "9392:9392"]
-        (_, CFX, _) -> ["12537:12537", "1337:1337"]
         (_, ETH, _) -> ["8545:8545"]
   let reachConnectorMode = packs cm
   let debug' = if debug then "1" else ""
@@ -724,12 +719,6 @@ withCompose DockerMeta {..} wrapped = do
         - ALGO_INDEXER_PORT=8980
         - ALGO_NODE_WRITE_ONLY=no
       |]
-  let devnetCFX =
-        [N.text|
-        - CFX_DEBUG
-        - CFX_NODE_URI=http://reach-devnet-cfx:12537
-        - CFX_NETWORK_ID=999
-      |]
   let deps'' d =
         [N.text|
     depends_on:
@@ -742,8 +731,6 @@ withCompose DockerMeta {..} wrapped = do
         (ALGO, Browser) -> (Just c, devnetALGO)
         (ETH, Devnet) -> (Just c, "- ETH_NODE_URI=http://reach-devnet-eth:8545")
         (ETH, Browser) -> (Just c, "- ETH_NODE_URI=http://reach-devnet-eth:8545")
-        (CFX, Devnet) -> (Just c, devnetCFX)
-        (CFX, Browser) -> (Just c, devnetCFX)
   connEnv <- case compose of
     StandaloneDevnet -> liftIO $ connectorEnv env cm
     WithProject Console _ -> liftIO $ connectorEnv env cm
@@ -1280,7 +1267,7 @@ down' = script $ do
       pdr "$$d"; ddr "$$d"
     done
   |]
-  forM_ (packs <$> [ALGO, CFX, ETH]) $ \c ->
+  forM_ (packs <$> [ALGO, ETH]) $ \c ->
     write
       [N.text|
     # Stop devnet containers w/ status == running
@@ -1619,7 +1606,7 @@ config2 :: Subcommand
 config2 = command "config2" $ info f mempty
   where
     f = go <$> switch (short 'v') <*> strArgument (metavar "REACHC_ID")
-    nets = zip [0 ..] $ Nothing : (Just <$> [ALGO, CFX, ETH])
+    nets = zip [0 ..] $ Nothing : (Just <$> [ALGO, ETH])
     maxNet = length . show . maybe 0 id . maximumMay . fmap fst $ nets
     lpad (i :: Int) = replicate (maxNet - (length $ show i)) ' ' <> show i
     go v' rcid = do

@@ -97,7 +97,7 @@ const stdlib = loadStdlib(process.env);
 Alternatively, you can construct a custom object that has all of the environment keys and fields you need.
 Each network supports different keys; see @{seclink("ref-networks")} for details.
 
-As a special case, you may instead pass in the string `'ETH'`, `'ALGO'`, or `'CFX'`,
+As a special case, you may instead pass in the string `'ETH'` or `'ALGO'`,
 to select the desired connector directly.
 
 ---
@@ -132,7 +132,6 @@ When you call this function, if no browser wallet is available, then `{!js} make
 
 The value that `{!js} make` should return differs between connectors:
 - On Ethereum, it must match the interface of MetaMask.
-- On Conflux, it must match the interface of ConfluxPortal.
 - On Algorand, it must match the [ARC-0011](https://github.com/algorandfoundation/ARCs/blob/main/ARCs/arc-0011.md) standard.
 
 ---
@@ -190,7 +189,7 @@ stdlib.walletFallback(opts: object): () => wallet
 This function returns a value that may be passed to `{!js} setWalletFallback` to synthesize a wallet for use in browsers that do not supply a compliant wallet.
 Its customization options, `{!js} opts`, depend on the connector.
 
-On Ethereum and Conflux, it always errors and cannot provide a wallet.
+On Ethereum, it always errors and cannot provide a wallet.
 
 On Algorand, it can provide a wallet that directly connects to the Algorand network, like `{!js} setProviderByName` (& `{!js} setProviderByEnv`), but provide interactive signing.
 The network connection is specified via the `providerEnv` key, which may be a string (which is used as an argument to `{!js} providerEnvByName`) or an environment (which is used as an argument to `{!js} setProviderByEnv`).
@@ -870,7 +869,7 @@ range: 24-25
 
 This transfers one (1) unit of the network token from Alice's account `accAlice`, to Bob's account `accBob`.
 
-## {#ref-frontends-js-acc-eth} EVM-specific (Ethereum and Conflux)
+## {#ref-frontends-js-acc-eth} EVM-specific (Ethereum)
 
 When connected to an EVM-based consensus network, the standard library provides additional functionality.
 
@@ -897,23 +896,6 @@ range: 30-32
 
 Here, there is a `{!js} myGasLimit` object created, which is set to `{!js} 5000000`.
 This is then applied to both the `{!js} accAlice` and `{!js} accBob` by using the `{!js} setGasLimit` method so that the maximum gas cost is set for each account.
-
-## {#ref-frontends-js-acc-cfx} Conflux-specific
-
-When connected to the Conflux consensus network, the standard library provides additional functionality.
-
----
-@{ref("js", "setStorageLimit")}
-```js
-acc.setStorageLimit(n) => void
-```
-
-Modifies the storage limit for each transaction originating from the given account for the rest of the program.
-`{!js} n` must be a value that `{!js} bigNumberify` will accept.
-
-On the Conflux consensus networks, the Reach standard library will automatically use a storage limit of 2024 to execute transactions, i.e. make publications.
-Storage fees are refunded once the storage space is no longer used by the contract.
-The `{!js} setStorageLimit` function allows you to choose a different storage limit, as you see fit.
 
 # {#ref-frontends-js-ctc} Creating a Contract Handle
 

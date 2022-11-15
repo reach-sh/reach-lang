@@ -8,7 +8,7 @@ import xml.etree.ElementTree as xml
 def env(k):
     return os.environ.get(k)
 
-conns = [ 'ETH', 'ALGO', 'CFX' ]
+conns = [ 'ETH', 'ALGO' ]
 total = 0
 cfails = {}
 for c in conns:

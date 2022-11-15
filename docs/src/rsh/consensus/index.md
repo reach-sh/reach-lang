@@ -492,7 +492,7 @@ It is written with the expression `{!rsh} new Token(PARAMS)`, where `{!rsh} PARA
 + `metadata`: A value of type `{!rsh} Bytes(32)`; defaults to empty.
 This value is intended to be a digest of a larger metadata document.
 + `supply`: A value of type `{!rsh} UInt`; defaults to `{!rsh} UInt.max`.
-+ `decimals`: A value of type `{!rsh} UInt`; defaults to `{!rsh} 6` on Algorand, and `{!rsh} 18` on Ethereum and Conflux.
++ `decimals`: A value of type `{!rsh} UInt`; defaults to `{!rsh} 6` on Algorand, and `{!rsh} 18` on Ethereum.
 
 The following examples demonstrate how the details above may be used:
 
@@ -656,7 +656,7 @@ const ctcMaybe = Contract.fromAddress(address);
 Takes an `{!rsh} Address}` and returns a `{!rsh} Maybe(Contract)`.
 
 On Algorand this always returns `{!rsh} None`.
-On Ethereum and Conflux, it returns `{!rsh} None` for addresses of externally owned accounts, and it returns `{!rsh} Some` for addresses of contracts under most circumstances.
+On Ethereum, it returns `{!rsh} None` for addresses of externally owned accounts, and it returns `{!rsh} Some` for addresses of contracts under most circumstances.
 However, it also returns `{!rsh} None` for addresses of contracts that are under construction, for addresses of contracts that have been destroyed, and for addresses of contracts that have not yet been created.
 
 

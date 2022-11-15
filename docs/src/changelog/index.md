@@ -9,7 +9,6 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcNext("0.1.13-rc.0")}
 
-XXX
 + 2022/11/14: Algorand connector now targets AVM version 8.
   This means that we use more efficient opcodes, like `switch`, `match`, and `dupn`.
   These can have a dramatic effect on code size and opcode budgets.
@@ -22,7 +21,9 @@ XXX
 + 2022/11/14: Upgraded to geth 1.10.26.
 + 2022/11/14: Upgraded to MyAlgoConnect 1.4.1 and WalletConnect 1.8.0 and PeraConnect 0.2.3.
 
-## 0.1.12: 2022/09 - present
++ 2022/11/14: **Backwards Incompatible**: We have removed support for Conflux (previously accessed through the `CFX` connector mode).
+
+## 0.1.12: 2022/09 - 2022/11
 
 @{verCur("0.1.12")}
 

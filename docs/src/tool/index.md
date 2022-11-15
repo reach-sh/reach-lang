@@ -37,10 +37,6 @@ The following are all valid options:
 - `ALGO-browser`
 - `ALGO-devnet`
 - `ALGO-live`
-- `CFX` (this is a shortcut for `CFX-devnet`)
-- `CFX-browser`
-- `CFX-devnet`
-- `CFX-live`
 - `ETH` (this is a shortcut for `ETH-devnet`)
 - `ETH-browser`
 - `ETH-devnet`
@@ -73,7 +69,6 @@ Although normally expressed in a [semantic versioning](##guide-versions)-friendl
   rpc-server: fb449c94
   runner: fb449c94
   devnet-algo: fb449c94
-  devnet-cfx fb449c94
   devnet-eth: fb449c94
   ```
 
@@ -191,8 +186,6 @@ The options are:
   + `ETH-live`, which uses a live Ethereum network node, specified by the environment variable `ETH_NODE_URI`.
   + `ALGO-devnet` (or `ALGO` for short), which uses a Dockerized private Algorand network.
   + `ALGO-live`, which uses a live Algorand network node, specified by the environment variables documented in [the Algorand connector section](##ref-network-algo).
-  + `CFX-devnet` (or `CFX` for short), which uses a Dockerized private Conflux network.
-  + `CFX-live`, which uses a live Conflux network node, specified by the environment variable `CFX_NODE_URI`.
 
 + The environment variable `{!cmd} REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the console.
 
@@ -275,7 +268,6 @@ The options are:
 
   + `ETH-browser` (or `ETH` for short), which targets a Dockerized private Ethereum network via a browser extension, like MetaMask.
   + `ALGO-browser` (or `ALGO` for short), which targets a Dockerized private Algorand network via an ARC-0011 browser wallet.
-  + `CFX-browser` (or `CFX` for short), which targets a Dockerized private Conflux network via a browser extension, like ConfluxPortal.
 
 + The environment variable `{!cmd} REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the browser console.
 

@@ -26,7 +26,7 @@ import Data.Functor ((<&>))
 import qualified Data.Text.IO as TextIO
 
 data CloudOrLocal = Cloud | Local deriving (Show, Read, Enum, Bounded)
-data Connector = ALGO | CFX | ETH deriving (Show, Read, Enum, Bounded)
+data Connector = ALGO | ETH deriving (Show, Read, Enum, Bounded)
 
 -- Utility functions to read the above types
 readCloudOrLocal :: String -> CloudOrLocal
@@ -102,7 +102,7 @@ getProjectConfig cliOpts = do
   let cfg_cloudOrLocal = unwrapConfigOption "Unspecified whether to use Reach Cloud or Reach Local." $
                          env_cloudOrLocal <|> cli_cloudOrLocal <|> rtml_cloudOrLocal <|> gtml_cloudOrLocal
 
-  -- What connector to use (algo/cfx/eth/...)
+  -- What connector to use (algo/eth/...)
   -- REACH_CONNECTOR_MODE / --connector=... / connector = "algo" or "eth" or ...
   let env_connector = readConnector <$> envVar "REACH_CONNECTOR_MODE"
   let cli_connector = readConnector <$> Cli.cli_connector cliOpts

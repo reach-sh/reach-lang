@@ -1,9 +1,0 @@
-depends_on:
-  - devnet-cfx
-environment:
-  - REACH_DEBUG
-  - REACH_NO_WARN
-  - REACH_CONNECTOR_MODE=CFX-devnet
-  - CFX_DEBUG
-  - CFX_NODE_URI=http://reach-devnet-cfx:12537
-  - CFX_NETWORK_ID=999

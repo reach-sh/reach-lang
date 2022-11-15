@@ -1,7 +1,0 @@
-environment:
-  - REACH_DEBUG
-  - REACH_NO_WARN
-  - REACH_CONNECTOR_MODE=CFX-live
-  - CFX_DEBUG
-  - CFX_NODE_URI
-  - CFX_NETWORK_ID

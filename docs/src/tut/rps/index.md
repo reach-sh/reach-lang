@@ -1937,25 +1937,6 @@ reach.setWalletFallback(reach.walletFallback({
 
 Because these are fallbacks, you need to decide for your users which wallet they'll use, or make a user interface element to let them select which wallet fallback to use.
 
-:::
-
-Similarly, to run with Conflux:
-
-```cmd
-$ REACH_CONNECTOR_MODE=CFX ./reach react
-```
-
-:::note
-To adapt this example for Conflux TestNet or MainNet,
-you can add this after the imports:
-
-```js
-reach.setProviderByName('TestNet'); // or 'MainNet'
-```
-
-For details, see [the Conflux FAQ](##cfx-faq-mainnet).
-:::
-
 ---
 If you'd like to instead use Reach in your own JavaScript project,
 you can call:

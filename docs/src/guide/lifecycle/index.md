@@ -183,7 +183,7 @@ The Reach contract should incorporate a robust test suite to ensure its security
 * Tests should be runnable with `{!cmd} reach run`
   * Prefer to write the test suite in `index.mjs`
   * Prefer to use `{!js} test.one` and `{!js} test.run` from stdlib
-* Tests should pass on all connectors (ETH, ALGO, CFX) that will actually be used by the DApp
+* Tests should pass on all connectors (ETH, ALGO) that will actually be used by the DApp
 * Tests should be plugged into CI and run on every PR that changes the contract
   * Tests should run using a designated version of Reach
   * It is useful to run a nightly job on the CI to detect regressions early
