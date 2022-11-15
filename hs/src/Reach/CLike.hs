@@ -82,7 +82,7 @@ funw ni ns at clf_dom clf_view cef_rng cef_kind mret intt = do
   let cif_fun = CLFun { clf_tail = intt, ..}
   let di = CLIntFun {..}
   let domvs = map varLetVar clf_dom
-  let extt = CL_Jump at ni domvs (Just mret)
+  let extt = CL_Jump at ni domvs False (Just mret)
   let cef_fun = CLFun { clf_tail = extt, ..}
   let de = CLExtFun {..}
   funi ni di
@@ -272,7 +272,7 @@ instance CLikeF ApiInfoY where
     return
       $ CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once timev) $ DLE_Arg at $ DLA_Literal $ DLL_Int at UI_Word $ 0))
       $ flip (foldr go) lets
-      $ CL_Jump at (nameMethi aiy_which) [timev, argv] Nothing
+      $ CL_Jump at (nameMethi aiy_which) [timev, argv] True Nothing
 
 type ApiInfoX = FunInfo ApiInfoY
 type ApiInfosX = M.Map SLPart ApiInfoX
@@ -382,7 +382,7 @@ instance CLikeTr CTail CLTail where
       -- variables
       -- XXX make it so that all CLike Internal calls pass things through
       -- memory
-      let kt = CL_Jump at (nameLoop which) args Nothing
+      let kt = CL_Jump at (nameLoop which) args False Nothing
       let go (v', a) = CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once v') (DLE_Arg at a)))
       let t = foldr go kt asn'
       return t

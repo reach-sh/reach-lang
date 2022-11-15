@@ -3040,8 +3040,10 @@ instance Compile CLTail where
       nct ft
     CL_Switch _ dv csm ->
       doSwitch "Switch" nct dv csm
-    CL_Jump _at f args _mmret -> do
-      mapM_ cp args
+    CL_Jump _at f args isApi _mmret -> do
+      case isApi of
+        True -> cp $ DLLA_Tuple $ map DLA_Var args
+        False -> mapM_ cp args
       code "b" [ LT.pack $ bunpack f]
     CL_Halt at ht ->
       case ht of
@@ -3057,11 +3059,10 @@ symToSig :: CLSym -> App String
 symToSig (CLSym f d r) = signatureStr False (bunpack f) d (Just r)
 
 sigToLab :: String -> LT.Text
-sigToLab x = LT.pack final
+sigToLab x = LT.pack $ map go final
   where
-    final = take 16 full <> show hashed
-    hashed = BS.unpack $ encodeBase64' $ sha256bs $ B.pack full
-    full = map go x
+    final = take 16 x <> hashed
+    hashed = B.unpack $ encodeBase64' $ sha256bs $ B.pack x
     go :: Char -> Char
     go c =
       case isAlphaNum c of

@@ -1603,7 +1603,7 @@ instance SolStmts CLTail where
     CL_Com m k -> solScat m k
     CL_If _ ca t f -> solIf ca t f
     CL_Switch at ov csm -> solSwitch at ov csm
-    CL_Jump _at f args_ mmret -> do
+    CL_Jump _at f args_ _isApi mmret -> do
       let f' = pclv f
       call <- case args_ of
         [ arg ] -> do

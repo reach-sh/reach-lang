@@ -466,9 +466,9 @@ instance AC CLTail where
       csm' <- ac csm
       ac_visit $ v
       return $ CL_Switch at v csm'
-    CL_Jump at f vs mmret -> do
+    CL_Jump at f vs isApi mmret -> do
       ac_visit $ vs
-      return $ CL_Jump at f vs mmret
+      return $ CL_Jump at f vs isApi mmret
     CL_Halt at hm -> return $ CL_Halt at hm
 
 instance AC CLFun where
