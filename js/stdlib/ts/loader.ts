@@ -1,6 +1,5 @@
 import * as stdlib_ETH from './ETH';
 import * as stdlib_ALGO from './ALGO';
-import * as stdlib_CFX from './CFX';
 import {
   getConnectorMode,
   canonicalizeConnectorMode,
@@ -50,7 +49,6 @@ export function loadStdlib(connectorModeOrEnv?: string | {[key: string]: string}
   switch (connector) {
     case 'ETH': stdlib_x = stdlib_ETH; break;
     case 'ALGO': stdlib_x = stdlib_ALGO; break;
-    case 'CFX': stdlib_x = stdlib_CFX; break;
     default: throw Error(`impossible: unknown connector ${connector}`);
   }
 

@@ -4,7 +4,6 @@ This section describes the consensus network connectors
 supported by Reach version @{VERSION}:
 + @{seclink("ref-network-algo")}
 + @{seclink("ref-network-eth")}
-+ @{seclink("ref-network-cfx")}
 
 ## {#ref-network-algo} Algorand
 
@@ -81,116 +80,6 @@ Reach uses the following environment variables:
 + `ALGO_ACCOUNT`,
   which allows you to request the use of a specific account from the user's ARC-6 compliant wallet by address.
   This should usually be left unspecified, which allows the user to instead select their preferred account.
-
-## {#ref-network-cfx} Conflux
-
-The [Conflux](https://confluxnetwork.org/) Reach connector works almost identically to the [Ethereum connector](##ref-network-eth), except that it behaves differently at runtime: using, for example, [Conflux Portal](https://portal.confluxnetwork.org/) rather than [MetaMask](https://metamask.io/), and connecting to Conflux nodes.
-
-Backends must respect the following environment variables:
-
-+ `CFX_NODE_URI` is used to contact the Conflux node.
-It defaults to `http://localhost:12537`.
-+ `CFX_NETWORK_ID` is used to determine the Conflux network id.
-It defaults to `999`.
-
-### {#cfx-faq} FAQ
-
-#### {#cfx-faq-mainnet} How do I run my Reach DApp on CFX TestNet or MainNet?
-
-You can add the following JavaScript near the beginning of your index.js or index.mjs file
-in order to run on Conflux TestNet:
-
-```js
-reach.setProviderByName('TestNet');
-```
-
-Or this to run on Conflux MainNet:
-
-```js
-reach.setProviderByName('MainNet');
-```
-
-#### {#cfx-faq-cplocal} How can I use ConfluxPortal with the Reach devnet?
-
-If you find that ConfluxPortal's Localhost 12537 default configuration does not work correctly with Reach apps,
-you can try configuring ConfluxPortal to use a custom RPC endpoint:
-
-+ Click the network dropdown in Conflux Portal
-+ Select: Custom RPC
-+ Use RPC url: http://127.0.0.1:12537
-
-If your locally-running Conflux devnet restarts,
-you may find that you need to reset ConfluxPortal's account history,
-which you can do like so:
-
-+ Select the desired account
-+ Click the profile image of the account (top-right)
-+ Click Settings > Advanced > Reset Account > (confirm) Reset
-+ Switch to a different network and back
-+ CTRL+SHIFT+R to hard-reset the webpage.
-
-#### {#cfx-faq-sponsor} How can I use gas and storage sponsorship?
-
-Conflux, like many other networks, charges fees for using the network and interacting with smart contracts.
-These fees are normally pay by the originator the transaction: who we would call the "publisher" in Reach.
-However, unlike other networks, Conflux does not require these fees to be paid for by the originator.
-Instead, Conflux allows fees to be paid for by a third-party.
-This is called "sponsorship".
-
-Conflux maintains documentation for this feature on their [internal contract](https://developer.confluxnetwork.org/conflux-rust/internal_contract/internal_contract/) documentation page.
-You can follow the directions on the Conflux page exactly and it will work with Reach, because Reach programs, when deployed on Conflux, are just normal programs.
-
-We duplicate these instructions below; if you have any difficulties with these directions, please refer to the [Conflux source](https://developer.confluxnetwork.org/conflux-rust/internal_contract/internal_contract/) and then let us know, so we can update them.
-
----
-
-There are three steps to enabling sponsorship.
-
-First, you have to directly interact with [the Conflux SDK](https://github.com/Conflux-Chain/js-conflux-sdk).
-This will require adding an `npm` package dependency and initializing the library.
-The [Conflux SDK Quickstart](https://confluxnetwork.gitbook.io/js-conflux-sdk/quick_start) walks through this process.
-It will look something like:
-```js
-// import Conflux Class
-const { Conflux } = require('js-conflux-sdk');
-// initialize a Conflux object
-const conflux = new Conflux({
-  // some options
-});
-```
-
-Second, you must call the `addPrivilegeByAdmin` Conflux internal contract from the creator (i.e. deployer) of the smart contract.
-This function requires you to provide an address that is eligible for sponsorship.
-It is documented in [this section](https://developer.confluxnetwork.org/conflux-rust/internal_contract/internal_contract/#whitelist-maintenance) of the Conflux manual.
-If you use an address which is all zeros, then every address is sponsored.
-The code will look something like:
-```js
-const sponsor_contract = conflux.InternalContract('SponsorWhitelistControl');
-await sponsor_contract.addPrivilegeByAdmin(contractAddress, ["0x0000000000000000000000000000000000000000"])
-  .sendTransaction({from: creatorAddress});
-```
-
-In this code sample, we assume that `{!js} contractAddress` is the address of the Reach contract, which you might have acquired via `{!js} await ctc.getContractAddress()` and `{!js} creatorAddress` is the address of the creator of the Reach contract.
-
-Third, you have to provide a sponsoring account by calling `setSponsorForGas` (or `setSponsorForCollateral`) on the Conflux internal contract.
-This function must be called by the sponsoring account.
-It is documented in [this section](https://developer.confluxnetwork.org/conflux-rust/internal_contract/internal_contract/#add-sponsor-balance) of the Conflux manual.
-The code will look something like:
-```js
-await sponsor_contract.setSponsorForGas(contractAddress, amount)
-  .sendTransaction({from: sponsorAddress});
-```
-
-In this code sample, we assume that `{!js} contractAddress` is the address of the Reach contract, which you might have acquired via `{!js} await ctc.getContractAddress()`, `{!js} amount` is the maximum amount the sponsor is willing to sponsor, and `{!js} sponsorAddress` is the address of the sponsor.
-
----
-
-If your application is made of equal peers, you may not want to enable the sponsorship feature.
-But, if your application has a clear party with extra authority and resources, you might like to make them the creator and sponsor of the contract, because this incentivizes participation in the program by lowering the cost to do so.
-
-As of November 2021, the Conflux Foundation is willing to sponsor some smart contracts.
-[This forum post](https://forum.conflux.fun/t/announcement-usage-adjustment-of-ecosystem-fund-for-the-conflux-sponsorship-mechanism-2022-11-11/12056) discusses how to request sponsorship of your contract.
-If the Foundation agrees to sponsor your program, then you only need to do steps one and two above: you can skip step three.
 
 ## {#ref-network-eth} Ethereum
 

@@ -189,7 +189,6 @@ range: 11-16
 Reach can currently compile the DApp to run on any of the following consensus network types:
 
 * `ALGO` -- Algorand
-* `CFX` -- Conflux
 * `ETH` -- Ethereum (and other EVM-based networks)
 
 1. Instruct the Reach compiler to connect to a network by setting the `{!cmd} REACH_CONNECTOR_MODE` environment variable.
@@ -205,7 +204,7 @@ Open a command prompt, and run the following command:
     $ ./reach run
     ```
 
-1. You can repeat the first step to switch the consensus network to `CFX` and `ETH`.
+1. You can repeat the first step to switch the consensus network to `ETH`.
 
     > For consistency, output in this tutorial reflects `{!cmd} REACH_CONNECTOR_MODE=ALGO`.
 
@@ -404,7 +403,6 @@ The following are examples of contract information written in JSON:
 |Consensus Network|Contract Information Example|
 |-|-|
 |Algorand|`{"type":"BigNumber","hex":"0x6e"}`|
-|Conflux|`"NET999:TYPE.CONTRACT:ACDWGDGH6DKDAJ528Y5CCWMX8NBVPHXU72S3FPF8CY"`|
 |Ethereum|`"0x403372276F841d7451E6417Cc7B17fDD159FE34C"`|
 
 In this tutorial, the `seller` outputs the contract information to the Seller Terminal, and the `buyer` copies & pastes the contract information from the Seller Terminal to the Buyer Terminal (including the quotation marks if present).

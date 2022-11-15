@@ -81,7 +81,6 @@ hs_test("closed")
 
 connector("fake", "ALGO")
 connector("fake", "ETH")
-connector("fake", "CFX")
 
 add_build_job("build-sink", { "requires": build_sink_deps })
 

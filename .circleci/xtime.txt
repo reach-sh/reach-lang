@@ -3,7 +3,3 @@
 # https://reachsh.atlassian.net/browse/CORE-463
 ETH.cache-events
 
-# FIXME
-CFX.api-full
-CFX.cache-events
-CFX.rpc-api-full

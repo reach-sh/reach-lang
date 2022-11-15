@@ -171,7 +171,7 @@ export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, Contrac
   setValidQueryWindow: (n: number | true) => void
   getQueryLowerBound: () => BigNumber
   setQueryLowerBound: (n: number | BigNumber) => void
-  connector: 'ALGO' | 'CFX' | 'ETH'
+  connector: 'ALGO' | 'ETH'
   randomUInt: () => BigNumber
   hasRandom: { random: () => BigNumber }
   hasConsoleLogger: { log: (...a: any) => void }

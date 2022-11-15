@@ -277,12 +277,6 @@ $ REACH_CONNECTOR_MODE=ALGO reach run
 then Reach will start up a private Algorand devnet and use the Algorand connector.
 The developer does not need to change anything about their program because Reach is entirely agnostic to the consensus network choice during deployment.
 
-The same goes for Conflux:
-
-```cmd
-$ REACH_CONNECTOR_MODE=CFX reach run
-```
-
 ## {#over-react} Web app
 
 The previous section uses Node.js to perform a test run at the command line.
@@ -367,10 +361,6 @@ $ REACH_CONNECTOR_MODE=ETH reach react
 
 ```cmd
 $ REACH_CONNECTOR_MODE=ALGO reach react
-```
-
-```cmd
-$ REACH_CONNECTOR_MODE=CFX reach react
 ```
 
 ## {#over-next} Next steps

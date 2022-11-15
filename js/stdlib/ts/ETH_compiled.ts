@@ -9,7 +9,6 @@ export type { // =>
 } from './ETH_like_compiled';
 
 const ethCompiled: EthLikeCompiled = makeEthLikeCompiled(ethCompiledImpl);
-// The following should be identical to CFX_compiled.ts
 export const {
   stdlib,
   typeDefs,
