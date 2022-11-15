@@ -43,6 +43,7 @@
     "await-timeout": "^0.6.0",
     "express": "^4.17.3",
     "jsbi": "^3.1.6",
+    "superagent": "^8.0.3",
     "node-fetch": "^2.6.1",
     "tslib": "^2.3.1",
     "wait-port": "^0.2.9",
