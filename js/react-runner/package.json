@@ -14,6 +14,7 @@
     "express": "^4.17.3",
     "hi-base32": "^0.5.1",
     "jsbi": "^3.1.6",
+    "superagent": "^8.0.3",
     "node-fetch": "^2.6.1",
     "nth-check": "^2.0.1",
     "path-browserify": "^1.0.1",
