@@ -1,6 +1,5 @@
 Unknown image: reachsh/reach.
 Unknown image: reachsh/react-runner.
 Unknown image: reachsh/devnet-algo.
-Unknown image: reachsh/devnet-cfx.
 Unknown image: reachsh/devnet-eth.
 Please open an issue at https://github.com/reach-sh/reach-lang/issues including the failures listed above.
