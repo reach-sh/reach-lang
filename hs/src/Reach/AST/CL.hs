@@ -115,12 +115,9 @@ data CLExtKind
 
 instance Pretty CLExtKind where
   pretty = \case
-    CE_API n -> "API" <> pp n
-    CE_View n -> "View" <> pp n
-    CE_Publish w -> "Step" <> pp w
-    where
-      pp :: Pretty a => a -> Doc
-      pp = parens . pretty
+    CE_API n -> "API " <> pretty n
+    CE_View n -> "View " <> pretty n
+    CE_Publish w -> "Step " <> pretty w
 
 data CLExtFun = CLExtFun
   { cef_rng :: DLType

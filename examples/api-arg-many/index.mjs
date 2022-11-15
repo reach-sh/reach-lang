@@ -22,7 +22,7 @@ const expect = (result) => {
   return
 }
 
-const debugPrint = false;
+const debugPrint = true;
 const d = (...args) => {
   if (debugPrint) {
     console.log(...args)
@@ -45,32 +45,33 @@ const startMeUp = async (ctcDeployer, extraFields) => {
   }
 }
 
-
-
 const runRemote = async () => {
   d("Running remote API call from client contract.")
 
   const ctcServer = accDeployer.contract(backendServer);
   const ctcClient = accDeployer.contract(backendClient);
 
+  d("REMOTE: Start up Server");
   await startMeUp(ctcServer.p.Deployer, {})
   const serverInfo = await ctcServer.getInfo()
+
+  d("REMOTE: Start up Client");
   await startMeUp(ctcClient.p.Deployer, {serverCtcInfo: serverInfo})
   const clientInfo = await ctcClient.getInfo()
 
+  d("REMOTE: Call Poke");
   const res = await ctcClient.apis.poke(...args)
   expect(stdlib.bigNumberToNumber(res))
 }
 
-
-
-
 const run = async (isRaw, isView) => {
   d(`Running: raw=${isRaw}, view=${isView}...`)
   const ctc = accDeployer.contract(backendServer);
+  d(`Calling getABI`);
+  const ABI = ctc.getABI(true);
+  d(`Start me up`);
   await startMeUp(ctc.p.Deployer, {})
   const ctcInfo = await ctc.getInfo();
-  const ABI = ctc.getABI(true);
   const ALGO = stdlib;
   const { algosdk } = ALGO;
 
@@ -130,13 +131,17 @@ const run = async (isRaw, isView) => {
     const from = thisAcc.addr;
     const params = await ALGO.getTxnParams('raw');
     const { sigs } = ABI;
-    const methods = sigs.map(algosdk.ABIMethod.fromSignature);
+    const methods = sigs.map((x) => {
+      d(`fromSig on '${x}'`);
+      return algosdk.ABIMethod.fromSignature(x);
+    });
     const mname = isView ? "vSumMany" : "sumMany"
     const meth = methods.find((x) => x.name === mname);
     stdlib.assert(meth !== undefined, `no ${mname} method exists`);
     const eargs = abiEncode(args, meth.args.map((a) => a.type))
     const sel = meth.getSelector();
     const aargs = [ sel, ...eargs ];
+    d({ mname, meth, eargs, sel, aargs });
     const txnApp = algosdk.makeApplicationNoOpTxn(from, params, ci, aargs);
     txnApp.fee = ALGO.MinTxnFee * 2;
     const rtxns = [ txnApp ];
@@ -155,7 +160,6 @@ const run = async (isRaw, isView) => {
   }
 }
 
-
 if ( conn === 'ETH' || conn === 'CFX' ) {
   // Not yet supported for ETH-like
 } else {
@@ -167,4 +171,3 @@ if ( conn === 'ETH' || conn === 'CFX' ) {
   await run(true, true)
   d("Finished running.")
 }
-

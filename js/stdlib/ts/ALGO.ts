@@ -1261,7 +1261,9 @@ interface SignatureChecker {
 };
 const makeSignatureChecker = (name:string, tys:AnyALGO_Ty[], mret:(AnyALGO_Ty| undefined)): SignatureChecker => {
   const tyns = tys.map(ty => ty.netName);
-  const retn = mret ? mret.netName : '';
+  const retn1 = mret ? mret.netName : '';
+  // XXX hack until algosdk is fixed
+  const retn = retn1 === 'byte[0]' ? 'void' : retn1;
   const sig = `${name}(${tyns.join(',')})${retn}`;
   const hu = sha512_256(sig);
   const hp = hu.slice(0, sigLen*2); // hu is hex nibbles
