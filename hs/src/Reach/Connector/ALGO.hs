@@ -359,9 +359,10 @@ maxTypeSize_ m = do
   ts <- mapM typeSizeOf_ $ M.elems m
   return $ fromMaybe 0 $ maximumMay ts
 
-typeSig_ :: Bool -> DLType -> App String
-typeSig_ addr2acc = \case
-  T_Null -> r "byte[0]"
+typeSig_ :: Bool -> Bool -> DLType -> App String
+typeSig_ addr2acc isRet = \case
+  -- XXX hack until algosdk is fixed
+  T_Null -> r $ if isRet then "void" else "byte[0]"
   T_Bool -> r "byte" -- "bool"
   T_UInt UI_Word -> r "uint64"
   T_UInt UI_256 -> r "uint256"
@@ -387,11 +388,11 @@ typeSig_ addr2acc = \case
     r = return
     -- The ABI allows us to do this, but we don't know how to do in the remote
     -- call generator
-    -- rec = typeSig_ addr2acc
+    -- rec = typeSig_ addr2acc False
     array sz = "[" <> show sz <> "]"
 
 typeSig :: DLType -> App String
-typeSig = typeSig_ False
+typeSig = typeSig_ False False
 
 typeSizeOf_ :: DLType -> Maybe Integer
 typeSizeOf_ = \case
@@ -2414,8 +2415,8 @@ splitArgs l =
 
 signatureStr :: Bool -> String -> [DLType] -> Maybe DLType -> App String
 signatureStr addr2acc f args mret = do
-  args' <- mapM (typeSig_ addr2acc) args
-  rets <- fromMaybe "" <$> traverse typeSig mret
+  args' <- mapM (typeSig_ addr2acc False) args
+  rets <- fromMaybe "" <$> traverse (typeSig_ False True) mret
   return $ f <> "(" <> intercalate "," args' <> ")" <> rets
 
 sigStrToBytes :: String -> BS.ByteString

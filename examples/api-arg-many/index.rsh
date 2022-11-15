@@ -40,12 +40,10 @@ export const mainServer = Reach.App(() => {
   })
   init()
 
-
   Deployer.publish()
   V.vSumMany.set(sum)
   Deployer.interact.ready()
   commit()
-
 
   const [args, sumManyRet] = call(A.sumMany)
   sumManyRet(sum(...args))
@@ -54,7 +52,6 @@ export const mainServer = Reach.App(() => {
   // Needs a last call to delete the program.
   Deployer.publish()
   commit()
-
 })
 
 export const mainClient = Reach.App(() => {
@@ -83,13 +80,10 @@ export const mainClient = Reach.App(() => {
   const sumServer = remote(serverCtcInfo, {
     sumMany: manyArgFunSig,
   })
-
   commit()
 
   const [args, pokeRet] = call(A.poke)
   const sumRet = sumServer.sumMany(...args)
   pokeRet(sumRet)
   commit()
-
 })
-
