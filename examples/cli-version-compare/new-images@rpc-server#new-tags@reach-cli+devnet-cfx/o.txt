@@ -3,7 +3,6 @@ New images are available for:
 
 New tags are available for:
  * reachsh/reach-cli     bf5922b9:  latest
- * reachsh/devnet-cfx    e9f029f0:  stable, 0.1, 0.1.8, 2022-01-31
 
 The following images are fully synchronized:
  * reachsh/reach         fd08459b:  stable, 0, 0.1, 0.1.8, 34107655, 2022-01-31

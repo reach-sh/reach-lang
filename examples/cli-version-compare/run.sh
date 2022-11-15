@@ -43,7 +43,7 @@ e () {
 
     if [ ! "$o" = "$x" ]; then
       printf '\e[31;1mUnexpected output:\e[0m\n'
-      echo "$o" | diff --color "./$1/o.txt" -
+      echo "$o" | diff -u --color "./$1/o.txt" -
     fi
 
     echo

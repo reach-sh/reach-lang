@@ -7,7 +7,6 @@ The following images are fully synchronized:
  * reachsh/react-runner  1c35abc8:  stable, 0, 0.1, 0.1.8, 34107655, 2022-01-31
  * reachsh/rpc-server    f70fd052:  stable, 0, 0.1, 0.1.8, 34107655, 2022-01-31
  * reachsh/runner        90bbb280:  stable, 0, 0.1, 0.1.8, 34107655, 2022-01-31
- * reachsh/devnet-cfx    e9f029f0:  stable, 0, 0.1, 0.1.8, 34107655, 2022-01-31
  * reachsh/devnet-eth    110bc4d6:  stable, 0, 0.1, 0.1.8, 34107655, 2022-01-31
 
 There's a newer version of the `reach` script available.

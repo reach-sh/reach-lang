@@ -10,4 +10,3 @@ New (optional) connectors are available:
 The following images are fully synchronized:
  * reachsh/reach         b20f3155:  4bfdf20d, 2022-01-27
  * reachsh/rpc-server    68d9ade0:  4bfdf20d, 2022-01-27
- * reachsh/devnet-cfx    302eb89c:  4bfdf20d, 2022-01-27
