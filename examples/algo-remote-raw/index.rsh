@@ -13,12 +13,12 @@ export const client = Reach.App(() => {
   });
 
   A.publish(ctc);
-  // Reach publish format: [method, publish, time, msg]
-  const r_ctc = remote(ctc, {bobPub: Fun([UInt, UInt, UInt, Tuple(UInt, UInt)], Null)});
+  // Reach publish format: [method, [time, ...msg]]
+  const r_ctc = remote(ctc, {bobPub: Fun([Bytes(4), Tuple(UInt, UInt, UInt)], Null)});
 
   const ret = r_ctc.bobPub.ALGO({
     rawCall: true
-  })(0, 1, 0, [255, 1]);
+  })(Bytes.fromHex("0x748a9052"), [0, 255, 1]);
   void ret;
   commit();
   A.interact.log("remote call return:", ret);
