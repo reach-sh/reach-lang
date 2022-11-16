@@ -29,7 +29,6 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.CL
 import Reach.CLike
-import Reach.CommandLine
 import Reach.Connector
 import Reach.Connector.ETH_solc
 import Reach.Counter
@@ -39,7 +38,6 @@ import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Version
 import System.FilePath
-import System.IO.Temp
 import Text.Printf
 import Safe.Foldable (maximumMay)
 
@@ -1900,23 +1898,18 @@ conCons' = \case
   DLC_UInt_max  -> DLL_Int sb UI_Word $ 2 ^ (256 :: Integer) - 1
   DLC_Token_zero -> DLL_TokenZero
 
-connect_eth :: CompilerToolEnv -> Connector
-connect_eth _ = Connector {..}
+connect_eth :: Connector
+connect_eth = Connector {..}
   where
     conName = conName'
     conCons = conCons'
     conReserved = flip S.member solReservedNames
-    conGen moutn cl = case moutn of
-      Just outn -> go (outn "sol")
-      Nothing -> withSystemTempDirectory "reachc-sol" $ \dir ->
-        go (dir </> "compiled.sol")
-      where
-        go :: FilePath -> IO ConnectorInfo
-        go solf = do
-          (cinfo, sol) <- solProg cl
-          unless dontWriteSol $ do
-            LTIO.writeFile solf $ render sol
-          compile_sol cinfo solf
+    conGen (ConGenConfig {..}) cl = do
+      let solf = cgDisp "sol"
+      (cinfo, sol) <- solProg cl
+      unless dontWriteSol $ do
+        LTIO.writeFile solf $ render sol
+      compile_sol cinfo solf
     conCompileCode v = runExceptT $ do
       (c::String) <- ccPath =<< aesonParse' v
       return $ toJSON c

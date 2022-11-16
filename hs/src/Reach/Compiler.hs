@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
-module Reach.Compiler (CompilerOpts (..), compile, make_connectors) where
+module Reach.Compiler (CompilerOpts (..), compile) where
 
 -- We allow name shadowing because we want to use `p` for every program AST
 -- to ensure that we don't accidentally use things out of order.
@@ -23,6 +23,7 @@ import Reach.CommandLine
 import Reach.Connector
 import Reach.Connector.ALGO
 import Reach.Connector.ETH_Solidity
+import Reach.Counter (newCounter)
 import Reach.EditorInfo
 import Reach.EPP
 import Reach.EraseLogic
@@ -39,15 +40,15 @@ import Reach.Verify
 import System.Directory
 import System.Exit
 import System.FilePath
-import Reach.Counter (newCounter)
+import System.IO.Temp
 
-make_connectors :: CompilerToolEnv -> Connectors
-make_connectors env =
+all_connectors :: Connectors
+all_connectors =
   M.fromList $
     map
       (\x -> (conName x, x))
-      [ connect_eth env
-      , connect_algo env
+      [ connect_eth
+      , connect_algo
       ]
 
 mkCompileProg :: CompilerToolEnv -> CompilerOpts -> FilePath -> FilePath -> String -> String -> DLProg -> IO ConnectorObject
@@ -341,10 +342,17 @@ mkCompileProg (CompilerToolEnv {..}) (CompilerOpts {..}) buildDir dotReachDirAbs
       -- basically have the bytecode in them, plus stuff the runtime needs.
       --
       -- This only looks at the "C" piece
-      crs <- forM dlo_connectors $ \c -> do
-        let n = conName c
-        loud $ "running connector " <> show n
-        conGen c woutnMay $ plp_cpp p
+      crs <-
+        withSystemTempDirectory "reachc" $ \dir -> do
+          let cgDisp =
+                case woutnMay of
+                  Nothing -> \x -> dir </> (T.unpack x)
+                  Just outn -> outn
+          let cgCfg = ConGenConfig {..}
+          forM dlo_connectors $ \c -> do
+            let n = conName c
+            loud $ "running connector " <> show n
+            conGen c cgCfg $ plp_cpp p
       -- Those connector info things will be given to the JS code to get
       -- included in the actual backend.
       loud $ "running backend js"
@@ -374,7 +382,6 @@ compile env co@(CompilerOpts {..}) = do
   djp <- gatherDeps_top source co_installPkgs dirDotReach'
   -- interOut co_output "bundle.js" $ render $ pretty djp
   unless co_installPkgs $ do
-    let all_connectors = make_connectors env
     -- Next, we run the "top-level" of every module. This is going to visit the
     -- modules in topo-order, but it only evaluates things that are at the
     -- top-level. It basically returns a structure that can be used to actually

@@ -12,6 +12,7 @@ module Reach.UnsafeUtil
   , unsafeHashStr
   , unsafeNub
   , unsafeLoud
+  , unsafeDebug
   , loud
   )
 where
@@ -20,7 +21,7 @@ import Control.Monad
 import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
-import Reach.CommandLine (CompilerToolArgs (cta_errorFormatJson), getCompilerArgs)
+import Reach.CommandLine
 import Reach.Util
 import System.Console.Pretty (supportsPretty)
 import System.Directory
@@ -70,3 +71,7 @@ loud = when unsafeLoud . putStrLn
 
 unsafeNub :: Eq a => [a] -> [a]
 unsafeNub = nub
+
+unsafeDebug :: Bool
+unsafeDebug = unsafePerformIO $ cte_REACH_DEBUG <$> getCompilerEnv
+{-# NOINLINE unsafeDebug #-}

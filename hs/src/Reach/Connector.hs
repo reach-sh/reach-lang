@@ -2,6 +2,7 @@ module Reach.Connector
   ( ConnectorName
   , ConnectorObject
   , ConnectorInfo
+  , ConGenConfig (..)
   , Connector (..)
   , Connectors
   , checkIntLiteral
@@ -35,10 +36,14 @@ type ConnectorObject = M.Map ConnectorName Value
 
 type ConnectorInfo = Value
 
+data ConGenConfig = ConGenConfig
+  { cgDisp :: T.Text -> String
+  }
+
 data Connector = Connector
   { conName :: ConnectorName
   , conCons :: DLConstant -> DLLiteral
-  , conGen :: Maybe (T.Text -> String) -> CLProg -> IO ConnectorInfo
+  , conGen :: ConGenConfig -> CLProg -> IO ConnectorInfo
   , conReserved :: SLVar -> Bool
   , conCompileCode :: Value -> IO (Either String Value)
   , conContractNewOpts :: Maybe Value -> Either String Value

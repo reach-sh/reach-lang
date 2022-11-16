@@ -32,7 +32,6 @@ import Generics.Deriving (Generic)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.CL
-import Reach.CommandLine
 import Reach.Connector
 import Reach.Counter
 import Reach.Dotty
@@ -46,7 +45,6 @@ import Safe (atMay)
 import Safe.Foldable (maximumMay)
 import System.Exit
 import System.FilePath
-import System.IO.Temp
 import System.Process.ByteString
 import Text.Read
 import qualified Reach.Connector.ALGO_Verify as Verify
@@ -3308,8 +3306,8 @@ cp_shell x = do
   -- Library functions
   libDefns
 
-compile_algo :: (HasUntrustworthyMaps a, HasCounter a, Compile a, HasPre a) => CompilerToolEnv -> Disp -> a -> IO ConnectorInfo
-compile_algo env disp x = do
+compile_algo :: (HasUntrustworthyMaps a, HasCounter a, Compile a, HasPre a) => Disp -> a -> IO ConnectorInfo
+compile_algo disp x = do
   -- This is the final result
   eRes <- newIORef mempty
   totalLenR <- newIORef (0 :: Integer)
@@ -3419,7 +3417,7 @@ compile_algo env disp x = do
         ts <- readIORef eOutputR
         let notify b = if b then lbad else lwarn
         return (ts, notify, finalize)
-  let showCost = cte_REACH_DEBUG env
+  let showCost = unsafeDebug
   do
     let lab = "appApproval"
     let rec r inclAll ci = do
@@ -3579,25 +3577,20 @@ ccPath fp =
     ".teal" -> ccTok <$> ccTEAL fp
     x -> throwE $ "Invalid code path: " <> show x
 
-connect_algo :: CompilerToolEnv -> Connector
-connect_algo env = Connector {..}
+connect_algo :: Connector
+connect_algo = Connector {..}
   where
     conName = conName'
     conCons = conCons'
-    conGen moutn clp = case moutn of
-      Nothing -> withSystemTempDirectory "reachc-algo" $ \d ->
-        go (\w -> d </> T.unpack w) clp
-      Just outn -> go outn clp
-    go :: (T.Text -> String) -> CLProg -> IO ConnectorInfo
-    go outn = compile_algo env disp
-      where
-        disp :: String -> T.Text -> IO String
-        disp which c = do
-          let oi = which
-          let oit = T.pack oi
-          let f = outn oit
-          conWrite (Just outn) oit c
-          return f
+    conGen (ConGenConfig {..}) clp = do
+      let disp :: Disp
+          disp which c = do
+            let oi = which
+            let oit = T.pack oi
+            let f = cgDisp oit
+            conWrite (Just cgDisp) oit c
+            return f
+      compile_algo disp clp
     conReserved = const False
     conCompileCode v = runExceptT $ do
       ALGOCodeIn {..} <- aesonParse' v
