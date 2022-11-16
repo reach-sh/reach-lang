@@ -21,6 +21,7 @@ import Data.Maybe (fromMaybe)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
+import qualified Data.Text.Lazy.IO as LTIO
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
@@ -30,6 +31,7 @@ import Reach.Connector
 import Reach.Counter
 import Reach.EmbeddedFiles
 import Reach.Freshen
+import Reach.OutputUtil
 import Reach.Pretty
 import Reach.Texty
 import Reach.UnrollLoops
@@ -1906,16 +1908,16 @@ newSolverSet (VerifyOpts {..}) p a mkl = do
 verify_smt :: VerifySt -> LLProg -> String -> [String] -> IO ExitCode
 verify_smt vst lp prog args = do
   let vo@VerifyOpts {..} = vst_vo vst
-  let logpMay = ($ "smt") <$> vo_out
+  let vo_out' = wrapOutput "smt" vo_out
   ulp <- unrollLoops lp
-  case logpMay of
-    Nothing -> return ()
-    Just x -> writeFile (x <> ".ulp") (show $ pretty ulp)
-  let mkLogger t = case fmap (<> t) logpMay of
-        Just logp -> do
-          (close, logpl) <- newFileLogger logp
-          return (close, Just logpl)
-        Nothing -> return (return (), Nothing)
+  mayOutput (vo_out' False ".ulp") $ flip LTIO.writeFile $ render $ pretty ulp
+  let mkLogger t = do
+        let (shouldWrite, logp) = vo_out' False $ T.pack t
+        case shouldWrite of
+          False -> return (return (), Nothing)
+          True -> do
+            (close, logpl) <- newFileLogger logp
+            return (close, Just logpl)
   smt <- newSolverSet vo prog args mkLogger
   --unlessM (SMT.produceUnsatCores smt) $
   --  impossible "Prover doesn't support possible?"

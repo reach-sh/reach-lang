@@ -409,10 +409,9 @@ kgq_lp mh vst (LLProg { llp_parts = (SLParts {..}), llp_step }) = do
   kgq_s ctxt llp_step
 
 verify_knowledge :: VerifySt -> LLProg -> IO ()
-verify_knowledge vst lp =
-  case mout of
-    Nothing -> go Nothing
-    Just p -> withFile p WriteMode (go . Just)
-  where
-    go mh = kgq_lp mh vst lp
-    mout = ($ "know") <$> (vo_out $ vst_vo vst)
+verify_knowledge vst lp = do
+  let go mh = kgq_lp mh vst lp
+  let (should, p) = vo_out (vst_vo vst) False "know"
+  case should of
+    False -> go Nothing
+    True -> withFile p WriteMode (go . Just)

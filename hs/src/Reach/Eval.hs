@@ -1,4 +1,10 @@
-module Reach.Eval (evalBundle, prepareDAppCompiles) where
+module Reach.Eval
+  ( evalBundle
+  , CompileDLProg
+  , prepareDAppCompiles
+  , Evald
+  , evEnv
+  ) where
 
 import Control.Monad.Extra
 import Control.Monad.Reader
@@ -181,10 +187,18 @@ checkUnusedVars m = do
       expect_throw Nothing at $ Err_Unused_Variables l
   return a
 
-evalBundle :: Connectors -> JSBundle -> Bool -> Counter -> IO (ReaderT Env m a -> m a, DLStmts, SLEnv)
-evalBundle cns (JSBundle mods) addToEnvForEditorInfo uniC = do
-  evalEnv <- makeEnv cns uniC
-  let run = flip runReaderT evalEnv
+data Evald m a = Evald
+  { evRun :: ReaderT Env m a -> m a
+  , evUniC :: Counter
+  , evLifts :: DLStmts
+  , evEnv :: SLEnv
+  }
+
+evalBundle :: Connectors -> JSBundle -> Bool -> IO (Evald m a)
+evalBundle cns (JSBundle mods) addToEnvForEditorInfo = do
+  evUniC <- newCounter 0
+  evalEnv <- makeEnv cns evUniC
+  let evRun = flip runReaderT evalEnv
   let exe = fst $ hdDie mods
   let evalPlus = do
         (shared_lifts, libm) <- captureLifts $ evalLibs cns mods
@@ -201,8 +215,8 @@ evalBundle cns (JSBundle mods) addToEnvForEditorInfo uniC = do
                       Just e -> M.mapKeys (\k -> n <> "." <> k) <$> evalObjEnv e
                 innerEnvs <- mapWithKeyM innerEnv $ M.map sss_sls envWithBase
                 return $ M.union envWithBase $ M.unions innerEnvs
-  (shared_lifts, _, exe_ex) <- run $ evalPlus
-  return (run, shared_lifts, exe_ex)
+  (evLifts, _, evEnv) <- evRun $ evalPlus
+  return $ Evald {..}
 
 type CompileDLProg = SLVar -> SLVar -> DLProg -> IO ConnectorObject
 
@@ -231,17 +245,17 @@ getCompileName topName appName = case appName of
   where
     backticks s = '`' : s <> "`"
 
-prepareDAppCompiles :: Monad m => CompileDLProg -> (App ConnectorObject -> IO ConnectorObject) -> DLStmts -> SLEnv -> Counter -> m (S.Set SLVar, SLVar -> IO ConnectorObject)
-prepareDAppCompiles compileDL run shared_lifts exe_ex uniC = do
+prepareDAppCompiles :: Monad m => CompileDLProg -> Evald IO ConnectorObject -> m (S.Set SLVar, SLVar -> IO ConnectorObject)
+prepareDAppCompiles compileDL (Evald {..}) = do
   let tops =
         M.keysSet $
-          flip M.filter exe_ex $
+          flip M.filter evEnv $
             \v ->
               case sss_val v of
                 SLV_Prim SLPrim_App_Delay {} -> True
                 _ -> False
-  let compileApp which getdapp = run $ do
-        exports <- getExports exe_ex
+  let compileApp which getdapp = evRun $ do
+        exports <- getExports evEnv
         let mCompileApp toplevel = \case
               sv@(SLV_Prim (SLPrim_App_Delay _ _ _ conR mname)) -> do
                 con <- liftIO $ readIORef conR
@@ -257,12 +271,12 @@ prepareDAppCompiles compileDL run shared_lifts exe_ex uniC = do
                           case toplevel of
                             False -> do
                               cns <- readDlo dlo_connectors
-                              void $ liftIO $ incCounter uniC
-                              newEnv <- liftIO $ makeEnv cns $ uniC
+                              void $ liftIO $ incCounter evUniC
+                              newEnv <- liftIO $ makeEnv cns $ evUniC
                               local (const newEnv) m
                             True -> m
                     dl <- mNewEnv $ checkUnusedVars $
-                            compileDApp shared_lifts exports (mCompileApp False) sv
+                            compileDApp evLifts exports (mCompileApp False) sv
                     -- Run the rest of the compiler on the DLProg
                     (displayMsg, fileOutput) <- getCompileName which mname
                     co <- liftIO $ compileDL displayMsg fileOutput dl
@@ -280,5 +294,5 @@ prepareDAppCompiles compileDL run shared_lifts exe_ex uniC = do
       let go which =
             compileApp which $
               ensure_public =<< sss_sls <$>
-                env_lookup LC_CompilerRequired which exe_ex
+                env_lookup LC_CompilerRequired which evEnv
       return (tops, go)

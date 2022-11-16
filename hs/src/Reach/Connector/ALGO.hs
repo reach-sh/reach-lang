@@ -25,7 +25,9 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Set as S
 import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import qualified Data.Text.Lazy as LT
+import qualified Data.Text.Lazy.IO as LTIO
 import qualified Data.Vector as Vector
 import Data.Word
 import Generics.Deriving (Generic)
@@ -36,6 +38,7 @@ import Reach.Connector
 import Reach.Counter
 import Reach.Dotty
 import Reach.FixedPoint
+import Reach.OutputUtil
 import qualified Reach.Texty as T
 import Reach.Texty (pretty)
 import Reach.UnsafeUtil
@@ -887,12 +890,14 @@ data CompanionRec = CompanionRec
   , cr_del :: Integer
   }
 
-checkCost :: String -> Notify -> Disp -> [LabelRec] -> CompanionInfo -> [TEAL] -> IO (Either String CompanionInfo)
+checkCost :: String -> Notify -> Outputer -> [LabelRec] -> CompanionInfo -> [TEAL] -> IO (Either String CompanionInfo)
 checkCost rlab notify disp ls ci ts = do
   msgR <- newIORef mempty
   let addMsg x = modifyIORef msgR $ flip (<>) $ x <> "\n"
   caR <- newIORef (mempty :: S.Set CompanionAdds)
-  let rgs lab gs = void $ disp ("." <> lab <> "dot") $ LT.toStrict $ T.render $ dotty gs
+  let rgs lab gs = do
+        mayOutput (disp False ("." <> lab <> "dot")) $
+          flip LTIO.writeFile (T.render $ dotty gs)
   loud $ rlab <> " buildCFG"
   (gs, restrictCFG) <- buildCFG rlab ts
   rgs "" gs
@@ -903,7 +908,7 @@ checkCost rlab notify disp ls ci ts = do
     loud $ rlab <> " restrictCFG " <> show lr_lab
     (gs', analyzeCFG, budgetCFG) <- restrictCFG lr_lab
     when True $
-      rgs (LT.unpack lr_lab <> ".") gs'
+      rgs (T.pack $ LT.unpack lr_lab <> ".") gs'
     let doReport precise tooMuch msg_ = do
           let msg = msg_ <> "."
           when tooMuch $ do
@@ -2913,8 +2918,6 @@ mapDataTy m = T_Tuple $ map (dlmi_tym . snd) $ M.toAscList m
 getMapDataTy :: App DLType
 getMapDataTy = asks eMapDataTy
 
-type Disp = String -> T.Text -> IO String
-
 cStateSlice :: Integer -> Word8 -> App ()
 cStateSlice size iw = do
   let i = fromIntegral iw
@@ -3306,14 +3309,15 @@ cp_shell x = do
   -- Library functions
   libDefns
 
-compile_algo :: (HasUntrustworthyMaps a, HasCounter a, Compile a, HasPre a) => Disp -> a -> IO ConnectorInfo
+compile_algo :: (HasUntrustworthyMaps a, HasCounter a, Compile a, HasPre a) => Outputer -> a -> IO ConnectorInfo
 compile_algo disp x = do
   -- This is the final result
   eRes <- newIORef mempty
   totalLenR <- newIORef (0 :: Integer)
-  let compileProg lab ts' = do
+  let compileProg :: String -> [TEAL] -> IO BS.ByteString
+      compileProg lab ts' = do
         t <- renderOut ts'
-        tf <- disp (lab <> ".teal") t
+        tf <- mustOutput disp (T.pack lab <> ".teal") $ flip TIO.writeFile t
         bc <- compileTEAL tf
         Verify.run lab bc [gvSlot GV_svs, gvSlot GV_apiRet]
         return bc
@@ -3432,7 +3436,7 @@ compile_algo disp x = do
           let mls = if inclAll then progLs else Just apiLs
           let ls = fromMaybe (impossible "prog labels") mls
           loud $ rlab <> " check"
-          let disp' = disp . (lab <>)
+          let disp' = wrapOutput (T.pack lab) disp
           checkCost rlab notify disp' ls ci ts' >>= \case
             Right ci' -> rec r' inclAll ci'
             Left msg ->
@@ -3582,15 +3586,7 @@ connect_algo = Connector {..}
   where
     conName = conName'
     conCons = conCons'
-    conGen (ConGenConfig {..}) clp = do
-      let disp :: Disp
-          disp which c = do
-            let oi = which
-            let oit = T.pack oi
-            let f = cgDisp oit
-            conWrite (Just cgDisp) oit c
-            return f
-      compile_algo disp clp
+    conGen (ConGenConfig {..}) clp = compile_algo cgOutput clp
     conReserved = const False
     conCompileCode v = runExceptT $ do
       ALGOCodeIn {..} <- aesonParse' v

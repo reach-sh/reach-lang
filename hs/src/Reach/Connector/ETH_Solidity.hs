@@ -33,6 +33,7 @@ import Reach.Connector
 import Reach.Connector.ETH_solc
 import Reach.Counter
 import Reach.EmbeddedFiles
+import Reach.OutputUtil
 import Reach.Texty
 import Reach.UnsafeUtil
 import Reach.Util
@@ -1905,10 +1906,9 @@ connect_eth = Connector {..}
     conCons = conCons'
     conReserved = flip S.member solReservedNames
     conGen (ConGenConfig {..}) cl = do
-      let solf = cgDisp "sol"
       (cinfo, sol) <- solProg cl
-      unless dontWriteSol $ do
-        LTIO.writeFile solf $ render sol
+      let o@(_, solf) = cgOutput (not dontWriteSol) "sol"
+      mayOutput o $ flip LTIO.writeFile (render sol)
       compile_sol cinfo solf
     conCompileCode v = runExceptT $ do
       (c::String) <- ccPath =<< aesonParse' v

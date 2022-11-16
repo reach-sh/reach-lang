@@ -4,12 +4,12 @@ module Reach.Verify.Shared
   )
 where
 
-import qualified Data.Text as T
 import Reach.Connector
 import Reach.Counter
+import Reach.OutputUtil
 
 data VerifyOpts = VerifyOpts
-  { vo_out :: Maybe (T.Text -> String)
+  { vo_out :: Outputer
   , vo_mvcs :: Maybe Connectors
   , vo_timeout :: Integer
   , vo_dir :: FilePath

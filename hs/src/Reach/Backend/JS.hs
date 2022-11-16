@@ -18,6 +18,7 @@ import Reach.Connector
 import Reach.Counter
 import Reach.Texty
 import Reach.UnsafeUtil
+import Reach.OutputUtil
 import Reach.Util
 import Reach.Version
 import Reach.BigOpt
@@ -1270,8 +1271,7 @@ jsEPProg cr (EPProg {..}) = do
   return $ vsep $ [preamble, exportsp, eventsp, viewsp, mapsp] <> partsp <> api_wrappers <> cnpsp <> [jsObjectDef "_stateSourceMap" ssmDoc, jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
 
 backend_js :: Backend
-backend_js outn crs p = do
-  let jsf = outn "mjs"
+backend_js out crs p = do
   let ctxt_who = "Module"
   let ctxt_isAPI = False
   let ctxt_txn = 0
@@ -1283,4 +1283,5 @@ backend_js outn crs p = do
   d <-
     flip runReaderT (JSCtxt {..}) $
       jsEPProg crs p
-  LTIO.writeFile jsf $ render d
+  void $ mustOutput out "mjs" $
+    flip LTIO.writeFile $ render d

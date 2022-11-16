@@ -30,6 +30,7 @@ import Reach.AST.DLBase
 import Reach.AST.CL
 import Reach.Texty
 import Reach.Util
+import Reach.OutputUtil
 import System.Directory
 
 type ConnectorObject = M.Map ConnectorName Value
@@ -37,7 +38,7 @@ type ConnectorObject = M.Map ConnectorName Value
 type ConnectorInfo = Value
 
 data ConGenConfig = ConGenConfig
-  { cgDisp :: T.Text -> String
+  { cgOutput :: Outputer
   }
 
 data Connector = Connector

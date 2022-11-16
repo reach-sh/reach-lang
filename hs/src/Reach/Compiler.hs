@@ -1,5 +1,9 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
-module Reach.Compiler (CompilerOpts (..), compile) where
+module Reach.Compiler
+  ( CompilerConfig (..)
+  , compile
+  , printKeywordInfo
+  ) where
 
 -- We allow name shadowing because we want to use `p` for every program AST
 -- to ensure that we don't accidentally use things out of order.
@@ -10,7 +14,6 @@ import Data.Maybe
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
-import qualified Filesystem.Path.CurrentOS as FP
 import Reach.APICut
 import Reach.AST.Base
 import Reach.AST.DL
@@ -19,28 +22,36 @@ import Reach.AST.PL
 import Reach.Backend.JS
 import Reach.BigOpt
 import Reach.CLike
-import Reach.CommandLine
 import Reach.Connector
 import Reach.Connector.ALGO
 import Reach.Connector.ETH_Solidity
-import Reach.Counter (newCounter)
 import Reach.EditorInfo
 import Reach.EPP
 import Reach.EraseLogic
 import Reach.Eval
 import Reach.FloatAPI
 import Reach.Linearize
+import Reach.OutputUtil
 import Reach.Parser (gatherDeps_top)
-import Reach.Simulator.Server
 import Reach.StateDiagram
 import Reach.Texty
 import Reach.Util
 import Reach.UnsafeUtil
 import Reach.Verify
-import System.Directory
 import System.Exit
 import System.FilePath
-import System.IO.Temp
+
+data CompilerConfig = CompilerConfig
+  { ccOutput :: Outputer
+  , ccDotReachDir :: FilePath
+  , ccSource :: FilePath
+  , ccInstallPkgs :: Bool
+  , ccTops :: Maybe (S.Set String)
+  , ccShouldVerify :: Bool
+  , ccStopAfterEval :: Bool
+  , ccVerifyTimeout :: Integer
+  , ccVerifyFirstFailQuit :: Bool
+  }
 
 all_connectors :: Connectors
 all_connectors =
@@ -51,28 +62,23 @@ all_connectors =
       , connect_algo
       ]
 
-mkCompileProg :: CompilerToolEnv -> CompilerOpts -> FilePath -> FilePath -> String -> String -> DLProg -> IO ConnectorObject
-mkCompileProg (CompilerToolEnv {..}) (CompilerOpts {..}) buildDir dotReachDirAbs appDescr outputFile dl = do
-  let outnMay = flip doIf $ co_intermediateFiles || cte_REACH_DEBUG
-  let co_output ext = FP.encodeString $ FP.append (FP.decodeString buildDir) $ (FP.filename $ FP.decodeString co_source) `FP.replaceExtension` ext
-  let interOut outn_ = case outnMay outn_ of
-        Just f -> LTIO.writeFile . f
-        Nothing -> \_ _ -> return ()
+mkCompileProg :: CompilerConfig -> CompileDLProg
+mkCompileProg (CompilerConfig {..}) appDescr outputFile dl = do
+  let ccOutput' = wrapOutput (T.pack outputFile <> ".") ccOutput
+  let interOut l x = mayOutput (ccOutput' False l) $ flip LTIO.writeFile x
   -- We are now inside the main part of the compiler that actually does
   -- something for each DApp.
   putStrLn $ "Compiling " <> appDescr <> "..."
-  let woutn = co_output . ((T.pack outputFile <> ".") <>)
-  let woutnMay = outnMay woutn
   let showp :: Pretty a => T.Text -> a -> IO a
       showp l x = do
         let x' = pretty x
         let x'' = render x'
         loud $ "showp " <> show l
-        interOut woutn l x''
+        interOut l x''
         return x
   p <- showp "dl" dl
   let DLProg { dlp_opts = DLOpts {..} } = p
-  case co_stopAfterEval of
+  case ccStopAfterEval of
     True -> return mempty
     False -> do
       -- A DL program can contain control flow and function calls like:
@@ -212,26 +218,23 @@ mkCompileProg (CompilerToolEnv {..}) (CompilerOpts {..}) buildDir dotReachDirAbs
       -- the knowledge graph.
       --
       -- The SMT engine does the standard SMT checking thing.
-      case cte_REACH_ACCURSED_UNUTTERABLE_DISABLE_VERIFICATION_AND_LOSE_ALL_YOUR_MONEY_AND_YOUR_USERS_MONEY of
-        True -> do
+      case ccShouldVerify of
+        False -> do
           putStrLn "!!! Verification Disabled.  !!!"
           putStrLn "!!! Assertions NOT checked. !!!"
           putStrLn "!!! This is not safe.       !!!"
-        False -> do
-          let vo_out = woutnMay
+        True -> do
+          let vo_out = ccOutput'
           let vo_mvcs = doIf dlo_connectors dlo_verifyPerConnector
-          let vo_timeout = co_verifyTimeout
-          let vo_dir = dotReachDirAbs
-          let vo_first_fail_quit = co_verifyFirstFailQuit
+          let vo_timeout = ccVerifyTimeout
+          let vo_dir = ccDotReachDir
+          let vo_first_fail_quit = ccVerifyFirstFailQuit
           verify (VerifyOpts {..}) p >>= maybeDie
       -- Once we know that we've passed the verification engine, we can
       -- remove variables that only occur in `assert` and `invariant`
       -- statements. The only hard part of this is noticing that some loop
       -- variables can be removed.
       p <- showp "el" =<< erase_logic p
-      unless (not co_sim) $ do
-        src <- readFile co_source
-        startServer p src
       -- We optimize again because since we just removed logic variables,
       -- there are probably tempories that we can get rid of too.
       p <- showp "eol" =<< bigopt (showp, "eol") p
@@ -342,35 +345,34 @@ mkCompileProg (CompilerToolEnv {..}) (CompilerOpts {..}) buildDir dotReachDirAbs
       -- basically have the bytecode in them, plus stuff the runtime needs.
       --
       -- This only looks at the "C" piece
-      crs <-
-        withSystemTempDirectory "reachc" $ \dir -> do
-          let cgDisp =
-                case woutnMay of
-                  Nothing -> \x -> dir </> (T.unpack x)
-                  Just outn -> outn
-          let cgCfg = ConGenConfig {..}
-          forM dlo_connectors $ \c -> do
-            let n = conName c
-            loud $ "running connector " <> show n
-            conGen c cgCfg $ plp_cpp p
+      let cgOutput = ccOutput'
+      let cgCfg = ConGenConfig {..}
+      crs <- forM dlo_connectors $ \c -> do
+        let n = conName c
+        loud $ "running connector " <> show n
+        conGen c cgCfg $ plp_cpp p
       -- Those connector info things will be given to the JS code to get
       -- included in the actual backend.
       loud $ "running backend js"
-      backend_js woutn crs $ plp_epp p
+      backend_js ccOutput' crs $ plp_epp p
       return crs
+
+printKeywordInfo :: IO ()
+printKeywordInfo = do
+  djp <- gatherDeps_top ReachStdLib False (impossible "dot reach dir")
+  e <- evalBundle all_connectors djp True
+  printBaseKeywordInfo $ M.map sss_val $ evEnv e
 
 -- This function is the actual compiler.
 --
 -- It reads from the environment (for things like debugging) and the actual
 -- command-line options.
-compile :: CompilerToolEnv -> CompilerOpts -> IO ()
-compile env co@(CompilerOpts {..}) = do
-  let source = if co_printKeywordInfo then ReachStdLib else ReachSourceFile co_source
-  let outd = fromMaybe (takeDirectory co_source </> "build") co_moutputDir
-  let co_dirDotReach = fromMaybe (takeDirectory co_source </> ".reach") co_mdirDotReach
-  createDirectoryIfMissing True outd
-  let co_tops = if null co_topl then Nothing else Just (S.fromList co_topl)
-  dirDotReach' <- makeAbsolute co_dirDotReach
+compile :: CompilerConfig -> IO ()
+compile (CompilerConfig {..}) = do
+  let source = ReachSourceFile ccSource
+  let ccSourceRoot = takeBaseName ccSource
+  let ccOutput' = wrapOutput (T.pack $ ccSourceRoot <> ".") ccOutput
+  let compileProg = mkCompileProg $ CompilerConfig {ccOutput = ccOutput', ..}
   -- First, we actually read the source files. This function is the only thing
   -- that will read the disk. It produces a "JS Bundle" which is a map from
   -- locations to code. This is so that we don't read the same module code
@@ -379,42 +381,34 @@ compile env co@(CompilerOpts {..}) = do
   -- evaluator so they can be run in order. It mostly exists as a misguided
   -- attempt to risk the IO monad to one place in the compiler, but it is maybe
   -- useful today.
-  djp <- gatherDeps_top source co_installPkgs dirDotReach'
-  -- interOut co_output "bundle.js" $ render $ pretty djp
-  unless co_installPkgs $ do
-    -- Next, we run the "top-level" of every module. This is going to visit the
-    -- modules in topo-order, but it only evaluates things that are at the
-    -- top-level. It basically returns a structure that can be used to actually
-    -- compile `Reach.App` structures.
-    --
-    -- `shared_lifts` are basically the module-level bindings that are
-    -- available for every DApp. (The word "lifts" is used in reference to
-    -- Racket's `syntax-local-lift`. Remember, Reach is basically a Scheme
-    -- interpreter where most of the primitives are constructing a residual
-    -- program in the "DL" language. Creating a statement in that language is
-    -- called "lifting".)
-    uniC <- newCounter 0
-    (run, shared_lifts, exe_ex) <- evalBundle all_connectors djp co_printKeywordInfo uniC
-    when co_printKeywordInfo $ do
-      let exportMap = M.map sss_val exe_ex
-      printBaseKeywordInfo exportMap
-      exitSuccess
+  djp <- gatherDeps_top source ccInstallPkgs ccDotReachDir
+  when ccInstallPkgs $ exitSuccess
+  -- Next, we run the "top-level" of every module. This is going to visit the
+  -- modules in topo-order, but it only evaluates things that are at the
+  -- top-level. It basically returns a structure that can be used to actually
+  -- compile `Reach.App` structures.
+  --
+  -- `shared_lifts` are basically the module-level bindings that are
+  -- available for every DApp. (The word "lifts" is used in reference to
+  -- Racket's `syntax-local-lift`. Remember, Reach is basically a Scheme
+  -- interpreter where most of the primitives are constructing a residual
+  -- program in the "DL" language. Creating a statement in that language is
+  -- called "lifting".)
+  evald <- evalBundle all_connectors djp False
 
-    -- This does a tiny bit more environment setup and it restricts the set of
-    -- DApps that get compiled to the ones passed at the command-line. This is
-    -- mostly boring administrative stuff and not interesting compilation.
-    let compileProg = mkCompileProg env co outd dirDotReach'
-    (avail, compileDApp) <- prepareDAppCompiles compileProg run shared_lifts exe_ex uniC
-    -- This compileDApp function came out of `prepareDAppCompiles` and it
-    -- embeds a call to Eval/Core, but shares the module state from
-    -- `shared_lifts`. This is going to do evaluation of the source (or SL)
-    -- program and produce the residual DL program. SL is Scheme with JS
-    -- syntax and DL is basically ML with a bunch of DApp specific ideas.
-    --
-    -- `compileProg` is embedded into `compileDApp`, and will be called on
-    -- the resulting DLProg.
-    let chosen = S.toAscList $ fromMaybe avail co_tops
-    forM_ chosen compileDApp
+  -- This does a tiny bit more environment setup and it restricts the set of
+  -- DApps that get compiled to the ones passed at the command-line. This is
+  -- mostly boring administrative stuff and not interesting compilation.
+  (avail, compileDApp) <- prepareDAppCompiles compileProg evald
+  -- This compileDApp function came out of `prepareDAppCompiles` and it
+  -- embeds a call to Eval/Core, but shares the module state from
+  -- `shared_lifts`. This is going to do evaluation of the source (or SL)
+  -- program and produce the residual DL program. SL is Scheme with JS
+  -- syntax and DL is basically ML with a bunch of DApp specific ideas.
+  --
+  -- `compileProg` is embedded into `compileDApp`, and will be called on
+  -- the resulting DLProg.
+  mapM_ compileDApp $ S.toAscList $ fromMaybe avail ccTops
 
 doIf :: a -> Bool -> Maybe a
 doIf b = \case

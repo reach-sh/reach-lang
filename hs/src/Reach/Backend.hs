@@ -1,7 +1,7 @@
 module Reach.Backend (Backend) where
 
-import qualified Data.Text as T
 import Reach.AST.EP
 import Reach.Connector
+import Reach.OutputUtil
 
-type Backend = (T.Text -> String) -> ConnectorObject -> EPProg -> IO ()
+type Backend = Outputer -> ConnectorObject -> EPProg -> IO ()
