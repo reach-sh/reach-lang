@@ -86,10 +86,15 @@ smtApply :: String -> [SExpr] -> SExpr
 smtApply f args = List (Atom f : args)
 
 smtAndAll :: [SExpr] -> SExpr
-smtAndAll = \case
-  [] -> Atom "true"
-  [x] -> x
-  xs -> smtApply "and" xs
+smtAndAll ys =
+  case filter (not . isTrue) ys of
+    [] -> Atom "true"
+    [x] -> x
+    xs -> smtApply "and" xs
+  where
+    isTrue = \case
+      Atom "true" -> True
+      _ -> False
 
 smtOrAll :: [SExpr] -> SExpr
 smtOrAll = \case
@@ -110,7 +115,7 @@ smtImplies :: SExpr -> SExpr -> SExpr
 smtImplies x y = smtApply "=>" [x, y]
 
 smtAnd :: SExpr -> SExpr -> SExpr
-smtAnd x y = smtApply "and" [x, y]
+smtAnd l r = smtAndAll [l, r]
 
 --- SMT conversion code
 
@@ -1830,6 +1835,22 @@ seqPop = \case
   (Seq.:|>) x _ -> x
   _ -> impossible $ "empty seq"
 
+type SortRes = (Seq.Seq SExpr, SExpr)
+ssSort :: Seq.Seq (Seq.Seq SExpr) -> SortRes
+ssSort raw = (ds, a)
+  where
+    a = List [ Atom "assert", ae ]
+    (ds, ae) = foldr go (mempty, Atom "true") raw
+    go :: Seq.Seq SExpr -> SortRes -> SortRes
+    go ss r = foldr go' r ss
+    go' :: SExpr -> SortRes -> SortRes
+    go' s (ds', a') =
+      case s of
+        List [ Atom "assert", x ] ->
+          (ds', smtAnd x a')
+        _ ->
+          ((Seq.<|) s ds', a')
+
 newSolverSet :: VerifyOpts -> String -> [String] -> (String -> IO (IO (), Maybe Logger)) -> IO Solver
 newSolverSet (VerifyOpts {..}) p a mkl = do
   let short_a = Atom $ "10"
@@ -1868,9 +1889,11 @@ newSolverSet (VerifyOpts {..}) p a mkl = do
           tc (reachCheckUsing short_a) >>= \case
             Atom "unknown" -> do
               sn <- incCounter subc
-              ss <- readIORef rib
+              ssRaw <- readIORef rib
+              let (ssDefs, ssAssert) = ssSort ssRaw
               let doSS f = do
-                    traverse_ (traverse_ f) ss
+                    mapM_ f ssDefs
+                    void $ f ssAssert
                     f (reachCheckUsing long_a)
               hr <- newIORef $ crc32 ("" :: B.ByteString)
               doSS $ \s -> do
