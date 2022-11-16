@@ -1,5 +1,6 @@
 ARG UBUNTU_IMAGE
 ARG SOLC_IMAGE
+
 FROM $SOLC_IMAGE as solc
 RUN apk add make curl bash
 COPY Makefile.docker ./Makefile
@@ -9,7 +10,7 @@ RUN make ROOT=.docker-root sol/stdlib.json
 
 FROM reachsh/devnet-algo:latest AS algo
 
-FROM $UBUNTU_IMAGE
+FROM $UBUNTU_IMAGE as build
 
 RUN set -e
 RUN apt-get update \
@@ -111,4 +112,37 @@ ARG REACH_GIT_HASH
 ENV REACH_GIT_HASH="${REACH_GIT_HASH}"
 ENV REACHC_HASH="${REACH_GIT_HASH}"
 
-# TODO: cut down image size
+FROM $UBUNTU_IMAGE as reachc
+
+RUN apt-get update && apt-get install -y \
+  libnuma1 \
+  musl \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /usr/bin/solc /usr/bin/solc
+COPY --from=build /usr/bin/goal /usr/bin/goal
+COPY --from=build /usr/bin/z3 /usr/bin/z3
+COPY --from=build /usr/bin/reachc /usr/bin/reachc
+RUN chmod +x /usr/bin/reachc
+COPY --from=solc /sol/stdlib.json /stdlib_sol.json
+
+WORKDIR /app
+ENTRYPOINT ["/usr/bin/reachc"]
+ARG REACH_GIT_HASH
+ENV REACH_GIT_HASH="${REACH_GIT_HASH}"
+ENV REACHC_HASH="${REACH_GIT_HASH}"
+EXPOSE 3001
+
+FROM $UBUNTU_IMAGE as reach-cli
+
+RUN apt-get update && apt-get install -y \
+  libnuma1 \
+  && rm -rf /var/lib/apt/lists/*
+COPY --from=build /root/.local/bin/reach /usr/bin/reach
+COPY app/reach/embed/ /app/embed/
+
+WORKDIR /app/src
+ENTRYPOINT ["/usr/bin/reach"]
+
+ARG REACH_GIT_HASH
+ENV REACH_GIT_HASH="${REACH_GIT_HASH}"
