@@ -359,7 +359,7 @@ mkCompileProg (CompilerConfig {..}) appDescr outputFile dl = do
 
 printKeywordInfo :: IO ()
 printKeywordInfo = do
-  djp <- gatherDeps_top ReachStdLib False (impossible "dot reach dir")
+  djp <- gatherDeps_top ReachStdLib False "."
   e <- evalBundle all_connectors djp True
   printBaseKeywordInfo $ M.map sss_val $ evEnv e
 
