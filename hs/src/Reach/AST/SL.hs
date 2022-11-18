@@ -310,7 +310,7 @@ instance IsDynamic SLForm where
     SLForm_apiCall -> False
     SLForm_apiCall_partial {} -> True
     SLForm_wait -> False
-    SLForm_setApiDetails -> True
+    SLForm_setApiDetails -> False
 
 instance IsDynamic SLVal where
   isDynamic = \case

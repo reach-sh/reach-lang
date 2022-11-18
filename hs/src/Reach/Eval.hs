@@ -128,9 +128,9 @@ makeMapEnv = do
   me_ms <- newIORef mempty
   return $ MapEnv {..}
 
-makeEnv :: Connectors -> Counter -> IO Env
-makeEnv cns uniC = do
-  e_id <- newCounter 0
+makeEnv :: Connectors -> Counter -> Counter -> IO Env
+makeEnv cns idC uniC = do
+  let e_id = idC
   let e_who = Nothing
   let e_stack = []
   let e_stv =
@@ -190,6 +190,7 @@ checkUnusedVars m = do
 data Evald m a = Evald
   { evRun :: ReaderT Env m a -> m a
   , evUniC :: Counter
+  , evIdC :: Counter
   , evLifts :: DLStmts
   , evEnv :: SLEnv
   }
@@ -197,7 +198,8 @@ data Evald m a = Evald
 evalBundle :: Connectors -> JSBundle -> Bool -> IO (Evald m a)
 evalBundle cns (JSBundle mods) addToEnvForEditorInfo = do
   evUniC <- newCounter 0
-  evalEnv <- makeEnv cns evUniC
+  evIdC <- newCounter 0
+  evalEnv <- makeEnv cns evIdC evUniC
   let evRun = flip runReaderT evalEnv
   let exe = fst $ hdDie mods
   let evalPlus = do
@@ -272,7 +274,7 @@ prepareDAppCompiles compileDL (Evald {..}) = do
                             False -> do
                               cns <- readDlo dlo_connectors
                               void $ liftIO $ incCounter evUniC
-                              newEnv <- liftIO $ makeEnv cns $ evUniC
+                              newEnv <- liftIO $ makeEnv cns evIdC evUniC
                               local (const newEnv) m
                             True -> m
                     dl <- mNewEnv $ checkUnusedVars $
