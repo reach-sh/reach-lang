@@ -2728,7 +2728,7 @@ instance CompileK DLTail where
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
-reachAlgoBackendVersion = 12
+reachAlgoBackendVersion = 13
 
 -- State:
 keyState :: B.ByteString
@@ -3309,7 +3309,7 @@ cp_shell x = do
   -- Library functions
   libDefns
 
-compile_algo :: (HasUntrustworthyMaps a, HasCounter a, Compile a, HasPre a) => Outputer -> a -> IO ConnectorInfo
+compile_algo :: (HasCounter a, Compile a, HasPre a) => Outputer -> a -> IO ConnectorInfo
 compile_algo disp x = do
   -- This is the final result
   eRes <- newIORef mempty
@@ -3354,7 +3354,7 @@ compile_algo disp x = do
             return y
   -- We start doing real work
   (gFailuresR, gbad) <- newErrorSetRef
-  (gWarningsR, gwarn) <- newErrorSetRef
+  (gWarningsR, _gwarn) <- newErrorSetRef
   let ePre = getPre x
   let Pre {..} = ePre
   -- XXX remove this once we have boxes
@@ -3381,8 +3381,6 @@ compile_algo disp x = do
             AS.Number $ fromIntegral keys
         return $ keysl
   eMapKeysl <- recordSizeAndKeys gbad "mapData" eMapDataSize algoMaxLocalSchemaEntries_usable
-  unless (getUntrustworthyMaps x || null eMapKeysl) $ do
-    gwarn $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
   eABI <- newIORef mempty
   eProgLs <- newIORef mempty
   eApiLs <- newIORef mempty

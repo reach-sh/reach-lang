@@ -156,16 +156,12 @@ type CLFuns = M.Map CLVar CLIntFun
 type CLAPI = M.Map CLSym CLExtFun
 
 data CLOpts = CLOpts
-  { clo_untrustworthyMaps :: Bool
-  , clo_counter :: Counter
+  { clo_counter :: Counter
   }
   deriving (Eq)
 
 instance HasCounter CLOpts where
   getCounter (CLOpts {..}) = clo_counter
-
-instance HasUntrustworthyMaps CLOpts where
-  getUntrustworthyMaps (CLOpts {..}) = clo_untrustworthyMaps
 
 data CLProg = CLProg
   { clp_at :: SrcLoc
@@ -188,6 +184,3 @@ instance Pretty CLProg where
 
 instance HasCounter CLProg where
   getCounter = getCounter . clp_opts
-
-instance HasUntrustworthyMaps CLProg where
-  getUntrustworthyMaps = getUntrustworthyMaps . clp_opts

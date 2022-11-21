@@ -12,7 +12,7 @@ import qualified Data.Aeson.KeyMap as KM
 import Data.Bifunctor (Bifunctor (first))
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL
-import Data.Foldable (foldr')
+import Data.Foldable (foldr', foldrM)
 import Data.IORef (IORef, newIORef, readIORef)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
@@ -112,6 +112,9 @@ forWithKeyM = flip mapWithKeyM
 
 forWithKeyM_ :: (Monad m) => M.Map k a -> (k -> a -> m ()) -> m ()
 forWithKeyM_ m f = mapM_ (uncurry f) $ M.toAscList m
+
+foldrWithKeyM :: (Monad m) => (k -> a -> b -> m b) -> b -> M.Map k a -> m b
+foldrWithKeyM f x m = foldrM (uncurry f) x $ M.toAscList m
 
 justValues :: [(a, Maybe b)] -> [(a, b)]
 justValues = foldr' (\(k, mv) acc -> maybe acc ((: acc) . (k,)) mv) []

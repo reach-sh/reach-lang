@@ -78,7 +78,6 @@ data Env = Env
   , eDroppedAsserts :: Counter
   , eConst :: S.Set DLVar
   , eMaps :: DLMapInfos
-  , eClearMaps :: Bool
   , eSimulate :: Bool
   , eSvs :: S.Set DLVar
   , eVarsSet ::IORef (M.Map DLVar Int)
@@ -98,9 +97,6 @@ updateVarSet dv update = do
 
 readVarSet :: DLVar -> App (Maybe Int)
 readVarSet dv = updateVarSet dv id
-
-updateClearMaps :: Bool -> Env -> Env
-updateClearMaps b e = e { eClearMaps = b }
 
 getMapTy :: DLMVar -> App (Maybe DLType)
 getMapTy mpv = do
@@ -233,7 +229,6 @@ updateLookup up = do
 mkEnv0 :: Counter -> Counter -> S.Set DLVar -> [SLPart] -> DLMapInfos -> Bool -> S.Set DLVar -> IO Env
 mkEnv0 eCounter eDroppedAsserts eConst eParts eMaps eSimulate eSvs = do
   let eFocus = F_Ctor
-  let eClearMaps = False
   let eEnvs =
         M.fromList $
           map (\x -> (x, mempty)) $ F_Ctor : F_All : F_Consensus : map F_One eParts
@@ -241,21 +236,6 @@ mkEnv0 eCounter eDroppedAsserts eConst eParts eMaps eSimulate eSvs = do
   eVarsSet <- liftIO $ newIORef mempty
   eFusionCases <- liftIO $ newIORef mempty
   return $ Env {..}
-
-maybeClearMaps :: App a -> App a
-maybeClearMaps m = asks eClearMaps >>= \case
-  True -> doClearMaps m
-  False -> m
-
-doClearMaps :: App a -> App a
-doClearMaps m = do
-  let clear = M.filterWithKey $ \k _ ->
-        case k of
-          DLE_MapRef {} -> False
-          _ -> True
-  updateLookupWhen (const True) $ \ce ->
-      ce {cePrev = clear $ cePrev ce}
-  m
 
 opt_v2p :: DLVar -> App (DLVar, DLArg)
 opt_v2p v = do
@@ -1031,12 +1011,12 @@ instance Optimize LLConsensus where
     LLC_Switch at ov csm ->
       optSwitch id LLC_Com LLC_Switch at ov csm
     LLC_While at asn inv cond body k -> do
-      inv' <- newScope $ doClearMaps $ opt inv
+      inv' <- newScope $ opt inv
       optWhile (\asn' cond' body' k' -> LLC_While at asn' inv' cond' body' k') asn cond body k
     LLC_Continue at asn ->
       LLC_Continue at <$> opt asn
     LLC_FromConsensus at1 at2 fs s ->
-      LLC_FromConsensus at1 at2 fs <$> (maybeClearMaps $ focus_all $ opt s)
+      LLC_FromConsensus at1 at2 fs <$> (focus_all $ opt s)
     LLC_ViewIs at vn vk a k ->
       LLC_ViewIs at vn vk <$> opt a <*> opt k
   gcs = \case
@@ -1110,7 +1090,7 @@ instance Optimize LLProg where
     cs <- asks eConst
     let mis = dli_maps llp_init
     env0 <- liftIO $ mkEnv0 (getCounter llp_opts) (llo_droppedAsserts llp_opts) cs psl mis False mempty
-    local (const env0) $ local (updateClearMaps $ llo_untrustworthyMaps llp_opts) $
+    local (const env0) $
       focus_ctor $
         LLProg llp_at llp_opts llp_parts <$> opt llp_init <*> opt llp_exports <*> pure llp_views
                <*> pure llp_apis <*> pure llp_aliases <*> pure llp_events <*> opt llp_step
@@ -1145,7 +1125,7 @@ instance Optimize ETail where
     ET_Switch at ov csm ->
       optSwitch id ET_Com ET_Switch at ov csm
     ET_FromConsensus at vi fi k ->
-      ET_FromConsensus at vi fi <$> (focus_one "" $ maybeClearMaps $ opt k)
+      ET_FromConsensus at vi fi <$> (focus_one "" $ opt k)
     ET_ToConsensus {..} -> do
       ET_ToConsensus et_tc_at et_tc_from et_tc_prev <$> opt et_tc_lct <*> pure et_tc_which <*> opt et_tc_from_me <*> pure et_tc_from_msg <*> pure et_tc_from_out <*> pure et_tc_from_timev <*> pure et_tc_from_secsv <*> pure et_tc_from_didSendv <*> opt_mtime et_tc_from_mtime <*> (focus_con $ opt et_tc_cons)
     ET_While at asn cond body k -> optWhile (ET_While at) asn cond body k
@@ -1200,12 +1180,8 @@ instance Optimize EPart where
     newScope $ EPart ep_at ep_isApi ep_interactEnv <$> (focus_one "" $ opt ep_tail)
   gcs = gcs . ep_tail
 
-updateClearMaps' :: HasUntrustworthyMaps a => a -> App b -> App b
-updateClearMaps' opts m = local (updateClearMaps $ getUntrustworthyMaps opts) m
-
 instance Optimize EPProg where
-  opt (EPProg {..}) = updateClearMaps' epp_opts $
-    EPProg epp_opts epp_init <$> opt epp_exports <*> opt epp_views <*> pure epp_stateSrcMap <*> pure epp_apis <*> pure epp_events <*> opt epp_m
+  opt (EPProg {..}) = EPProg epp_opts epp_init <$> opt epp_exports <*> opt epp_views <*> pure epp_stateSrcMap <*> pure epp_apis <*> pure epp_events <*> opt epp_m
   gcs (EPProg {..}) = gcs epp_m
 
 instance Optimize CHandlers where
@@ -1221,8 +1197,7 @@ instance Optimize DLViewsX where
   gcs (DLViewsX a b) = gcs a >> gcs b
 
 instance Optimize CPProg where
-  opt (CPProg {..}) = updateClearMaps' cpp_opts $
-    CPProg cpp_at cpp_opts cpp_init <$> (newScope $ opt cpp_views) <*> pure cpp_apis <*> pure cpp_events <*> opt cpp_handlers
+  opt (CPProg {..}) = CPProg cpp_at cpp_opts cpp_init <$> (newScope $ opt cpp_views) <*> pure cpp_apis <*> pure cpp_events <*> opt cpp_handlers
   gcs (CPProg {..}) = gcs cpp_views >> gcs cpp_handlers
 
 instance {-# OVERLAPS #-} (Optimize a, Optimize b) => Optimize (PLProg a b) where

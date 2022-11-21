@@ -792,7 +792,6 @@ epp (LLProg {..}) = do
   let cpp_apis = api_info
   let cpp_events = llp_events
   cpp_handlers <- CHandlers <$> mapM mkh hs
-  let cpo_untrustworthyMaps = llo_untrustworthyMaps
   let cpo_counter = llo_counter
   let cpp_opts = CPOpts {..}
   let plp_cpp = CPProg {..}
@@ -820,7 +819,6 @@ epp (LLProg {..}) = do
         let ee_flow = flow
         ep_tail <- flip runReaderT (EEnv {..}) $ mkep_
         return $ EPart {..}
-  let epo_untrustworthyMaps = llo_untrustworthyMaps
   let epo_counter = llo_counter
   let epp_opts = EPOpts {..}
   let epp_init = llp_init

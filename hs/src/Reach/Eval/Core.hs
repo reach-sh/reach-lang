@@ -339,7 +339,6 @@ app_default_opts :: Counter -> Counter -> Connectors -> DLOpts
 app_default_opts idxr dar cns =
   DLOpts
     { dlo_verifyArithmetic = False
-    , dlo_untrustworthyMaps = False
     , dlo_verifyPerConnector = False
     , dlo_autoTrackPublishedTokens = True
     , dlo_connectors = cns
@@ -348,16 +347,20 @@ app_default_opts idxr dar cns =
     , dlo_droppedAsserts = dar
     }
 
-app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)
+app_options :: M.Map SLVar (SrcLoc -> DLOpts -> SLVal -> App (Either String DLOpts))
 app_options =
   M.fromList
-    [ ("verifyArithmetic", opt_bool (\opts b -> opts {dlo_verifyArithmetic = b}))
-    , ("untrustworthyMaps", opt_bool (\opts b -> opts {dlo_untrustworthyMaps = b}))
-    , ("verifyPerConnector", opt_bool (\opts b -> opts {dlo_verifyPerConnector = b}))
-    , ("autoTrackPublishedTokens", opt_bool (\opts b -> opts {dlo_autoTrackPublishedTokens = b}))
-    , ("connectors", opt_connectors)
+    [ ("verifyArithmetic", bland $ opt_bool (\opts b -> opts {dlo_verifyArithmetic = b}))
+    , ("untrustworthyMaps", opt_deprecated D_UntrustworthyMaps)
+    , ("verifyPerConnector", bland $ opt_bool (\opts b -> opts {dlo_verifyPerConnector = b}))
+    , ("autoTrackPublishedTokens", bland $ opt_bool (\opts b -> opts {dlo_autoTrackPublishedTokens = b}))
+    , ("connectors", bland $ opt_connectors)
     ]
   where
+    bland f _at opts v = return $ f opts v
+    opt_deprecated msg at opts _v = do
+      liftIO $ emitWarning (Just at) $ W_Deprecated msg
+      return $ Right opts
     opt_bool f opts v =
       case v of
         SLV_Bool _ b -> Right $ f opts b
@@ -3933,11 +3936,12 @@ evalPrim p sargs =
                 expect_thrown opt_at $
                   Err_App_InvalidOption k (S.toList $ M.keysSet app_options)
               Just opt ->
-                case opt acc v of
-                  Right x -> x
+                opt opt_at acc v >>= \case
+                  Right x -> return x
                   Left x -> expect_thrown opt_at $ Err_App_InvalidOptionValue k x
-      aisiPut aisi_env $ \ae ->
-        ae {ae_dlo = M.foldrWithKey use_opt (ae_dlo ae) opts}
+      dlo <- ae_dlo <$> aisiGet aisi_env
+      dlo' <- foldrWithKeyM use_opt dlo opts
+      aisiPut aisi_env $ \ae -> ae { ae_dlo = dlo' }
       return $ public $ SLV_Null at "setOptions"
     SLPrim_adaptReachAppTupleArgs -> do
       tat <- withAt id

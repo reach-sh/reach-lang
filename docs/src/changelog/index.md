@@ -9,7 +9,16 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcNext("0.1.13-rc.0")}
 
-+ 2022/11/14: Algorand connector now targets AVM version 8.
++ 2022/11/21: Algorand-only: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
+
++ 2022/11/21: Algorand-only: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
+
++ 2022/11/21: The `{!rsh} untrustworthyMaps` option has been removed, because all maps are now trustworthy.
+
++ 2022/11/21: The Algorand connector now uses boxes to implement maps.
+  This enables support for any type as a valid map key and ensures that all maps are now trustworthy.
+
++ 2022/11/14: The Algorand connector now targets AVM version 8.
   This means that we use more efficient opcodes, like `switch`, `match`, and `dupn`.
   These can have a dramatic effect on code size and opcode budgets.
 
