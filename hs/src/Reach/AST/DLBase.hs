@@ -761,39 +761,55 @@ data DLRemoteALGOSTR -- simTokensRecv in `remote().ALGO({ simTokensRecv: [1, 2, 
   deriving (Eq, Ord, Show)
 
 data DLRemoteALGO = DLRemoteALGO
-  { ralgo_fees :: DLArg
-  , ralgo_accounts :: [DLArg]
-  , ralgo_assets :: [DLArg]
-  , ralgo_addr2acc :: Bool
-  , ralgo_apps :: [DLArg]
-  , ralgo_onCompletion :: DLRemoteALGOOC
-  , ralgo_strictPay :: Bool
-  , ralgo_rawCall :: Bool
-  , ralgo_simNetRecv :: DLArg
-  , ralgo_simTokensRecv :: DLRemoteALGOSTR
-  , ralgo_simReturnVal :: Maybe DLArg
+  { ra_fees :: DLArg
+  , ra_accounts :: [DLArg]
+  , ra_assets :: [DLArg]
+  , ra_addr2acc :: Bool
+  , ra_apps :: [DLArg]
+  , ra_boxes :: [DLArg]
+  , ra_onCompletion :: DLRemoteALGOOC
+  , ra_strictPay :: Bool
+  , ra_rawCall :: Bool
+  , ra_simNetRecv :: DLArg
+  , ra_simTokensRecv :: DLRemoteALGOSTR
+  , ra_simReturnVal :: Maybe DLArg
   }
   deriving (Eq, Ord)
 
 zDLRemoteALGO :: DLRemoteALGO
-zDLRemoteALGO = DLRemoteALGO argLitZero mempty mempty False mempty RA_NoOp False False argLitZero RA_Unset Nothing
+zDLRemoteALGO = DLRemoteALGO {..}
+  where
+    ra_fees = argLitZero
+    ra_accounts = mempty
+    ra_assets = mempty
+    ra_addr2acc = False
+    ra_apps = mempty
+    ra_boxes = mempty
+    ra_onCompletion = RA_NoOp
+    ra_strictPay = False
+    ra_rawCall = False
+    ra_simNetRecv = argLitZero
+    ra_simTokensRecv = RA_Unset
+    ra_simReturnVal = Nothing
 
 instance PrettySubst DLRemoteALGO where
   prettySubst (DLRemoteALGO {..}) = do
-    f' <- prettySubst ralgo_fees
-    a' <- mapM prettySubst ralgo_assets
-    p' <- mapM prettySubst ralgo_apps
-    let a2a' = pretty ralgo_addr2acc
-    let sp = pretty ralgo_strictPay
+    f' <- prettySubst ra_fees
+    a' <- mapM prettySubst ra_assets
+    p' <- mapM prettySubst ra_apps
+    b' <- mapM prettySubst ra_boxes
+    let a2a' = pretty ra_addr2acc
+    let sp = pretty ra_strictPay
     return $
       render_obj $
         M.fromList
           [ ("fees" :: String, f')
           , ("assets", render_das a')
           , ("addr2acc", pretty a2a')
+          , ("boxes", render_das b')
           , ("apps", render_das p')
           , ("strictPay", pretty sp)
-          , ("rawCall", pretty ralgo_rawCall)
+          , ("rawCall", pretty ra_rawCall)
           ]
 
 data DLContractNew = DLContractNew

@@ -2118,7 +2118,7 @@ instance Compile DLExpr where
           ctobs vt
           cMapSet
     DLE_Remote at fs ro rng_ty (DLRemote rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo) -> do
-      let DLRemoteALGO _fees r_accounts r_assets r_addr2acc r_apps r_oc r_strictPay r_rawCall _ _ _ = malgo
+      let DLRemoteALGO {..} = malgo
       warn_lab <- asks eWhich >>= \case
         Just which -> return $ "Step " <> show which
         Nothing -> return $ "This program"
@@ -2126,7 +2126,7 @@ instance Compile DLExpr where
         warn_lab <> " calls a remote object at " <> show at <> ". This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object. Furthermore, the remote object may require special transaction parameters which are not expressed in the Reach API or the Algorand ABI standards."
       let ts = map argTypeOf as
       let rm = fromMaybe (impossible "XXX") rm'
-      sig <- signatureStr r_addr2acc rm ts (Just rng_ty)
+      sig <- signatureStr ra_addr2acc rm ts (Just rng_ty)
       remoteTxns <- liftIO $ newCounter 0
       let mayIncTxn m = do
             b <- m
@@ -2164,7 +2164,7 @@ instance Compile DLExpr where
             let mt_at = at
             let mt_mcclose = Nothing
             let mt_mrecv = Just $ Right loadAddr
-            let mt_always = r_strictPay
+            let mt_always = ra_strictPay
             hadNet <- (do
               let mt_amt = pay_net
               let mt_mtok = Nothing
@@ -2183,7 +2183,7 @@ instance Compile DLExpr where
             cp ro
             incResource R_App ro
             makeTxn1 "ApplicationID"
-            unless r_rawCall $ do
+            unless ra_rawCall $ do
               cp $ sigStrToBytes sig
               makeTxn1 "ApplicationArgs"
             accountsR <- liftIO $ newCounter 1
@@ -2196,7 +2196,7 @@ instance Compile DLExpr where
                     T_Address -> do
                       incResource R_Account a
                       let m = makeTxn1 "Accounts"
-                      case r_addr2acc of
+                      case ra_addr2acc of
                         False -> do
                           op "dup"
                           m
@@ -2221,22 +2221,26 @@ instance Compile DLExpr where
                 processArgTuple asMore
             -- XXX If we can "inherit" resources, then this needs to be removed and
             -- we need to check that nnZeros actually stay 0
-            forM_ (r_assets <> map snd pay_ks <> nnRecv) $ \a -> do
+            forM_ (ra_assets <> map snd pay_ks <> nnRecv) $ \a -> do
               incResource R_Asset a
               cp a
               makeTxn1 "Assets"
-            forM_ r_accounts $ \a -> do
+            forM_ ra_boxes $ \a -> do
+              incResource_ R_Box (-1, a)
+              cp a
+              makeTxn1 "Boxes"
+            forM_ ra_accounts $ \a -> do
               incResource R_Account a
               cp a
               makeTxn1 "Accounts"
-            forM_ r_apps $ \a -> do
+            forM_ ra_apps $ \a -> do
               incResource R_App a
               cp a
               makeTxn1 "Applications"
             let oc f = do
                   output $ TConst f
                   makeTxn1 "OnCompletion"
-            case r_oc of
+            case ra_onCompletion of
               RA_NoOp -> return ()
               RA_OptIn -> oc "OptIn"
               RA_CloseOut -> oc "CloseOut"

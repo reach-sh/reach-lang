@@ -206,18 +206,19 @@ export function Array_set <T>(arr: Array<T>, idx: number, elem: T): Array<T> {
   return arrp;
 }
 
-export type MapRefT<A> = (f:string) => Promise<MaybeRep<A>>;
-export interface MapOpts<A> {
+export type MapRefT<K, A, ConnectorTy extends AnyBackendTy> = (kt:ConnectorTy, k:K, vt:ConnectorTy) => Promise<MaybeRep<A>>;
+export interface MapOpts<K, A, ConnectorTy extends AnyBackendTy> {
   ctc: {
-    apiMapRef: (i:number, ty: unknown) => MapRefT<A>
+    apiMapRef: (i:number) => MapRefT<K, A, ConnectorTy>
   },
-  ty: unknown,
+  kt: ConnectorTy,
+  vt: ConnectorTy,
   isAPI: boolean,
   idx: number,
 };
-export interface LinearMap<A> {
-  ref: MapRefT<A>,
-  set: (f:string, v:A|undefined) => Promise<void>,
+export interface LinearMap<K, A, ConnectorTy extends AnyBackendTy> {
+  ref: MapRefT<K, A>,
+  set: (kt:ConnectorTy, k:K, vt:ConnectorTy, v:A|undefined) => Promise<void>,
 };
 
 const basicMap = <A>(): LinearMap<A> => {
@@ -230,7 +231,7 @@ const basicMap = <A>(): LinearMap<A> => {
   };
   return { ref: basicRef, set: basicSet };
 };
-const copyMap = <A>(or: MapRefT<A>): LinearMap<A> => {
+export const copyMap = <A>(or: MapRefT<A>): LinearMap<A> => {
   const m: LinearMap<A> = basicMap();
   const seen: {[key: string]: boolean} = {};
   const copySet = async (f:string, v:A|undefined): Promise<void> => {
@@ -248,18 +249,18 @@ const copyMap = <A>(or: MapRefT<A>): LinearMap<A> => {
 };
 
 // dupe: () => {[key: string]: A},
-export const newMap = <A>(opts: MapOpts<A>): LinearMap<A> => {
+export const newMap = <K, A, ConnectorTy extends AnyBackendTy>(opts: MapOpts<A>): LinearMap<K, A, ConnectorTy> => {
   if ( opts.isAPI ) {
     return copyMap(opts.ctc.apiMapRef(opts.idx, opts.ty));
   } else {
     return basicMap();
   }
 };
-export const mapSet = async <A>(m: LinearMap<A>, f: string, v: A|undefined): Promise<void> => {
-  await m.set(f, v);
+export const mapSet = async <K, A, Ty extends AnyBackendTy>(m: LinearMap<K, A, Ty>, kt:Ty, k:K, vt:Ty, v:A|undefined): Promise<void> => {
+  await m.set(kt, k, vt, v);
 };
-export const mapRef = async <A>(m: LinearMap<A>, f: string): Promise<MaybeRep<A>> => {
-  return await m.ref(f);
+export const mapRef = async <K, A, Ty extends AnyBackendTy>(m: LinearMap<K, A, Ty>, kt:Ty, k:K, vt:Ty): Promise<MaybeRep<A>> => {
+  return await m.ref(kt, k, vt);
 };
 
 export const Array_asyncMap = async <B>(as:any[][], f:(x:any[], i:number) => Promise<B>): Promise<B[]> => {
@@ -275,46 +276,4 @@ export const Array_asyncReduce = async <B>(as:any[][], b: B, f:((xs:any[], y:B, 
     accum = await f(as_i, accum, i);
   }
   return accum;
-};
-
-export const simMapDupe = <A>(sim_r:any, mapi:number, mapo:LinearMap<A>): void => {
-  sim_r.maps[mapi] = copyMap(mapo.ref);
-};
-
-const simMapLog = (sim_r:any, f: string): void => {
-  sim_r.mapRefs.push(f);
-};
-
-export const simMapRef = async <A>(sim_r:any, mapi:number, f: string): Promise<MaybeRep<A>> => {
-  simMapLog(sim_r, f);
-  return await mapRef(sim_r.maps[mapi], f);
-};
-
-export const simMapSet = async <A>(sim_r:any, mapi:number, f: string, nv: A): Promise<void> => {
-  simMapLog(sim_r, f);
-  return await mapSet(sim_r.maps[mapi], f, nv);
-};
-
-export const simTokenNew = (sim_r:any, n:any, s:any, u:any, m:any, p:any, d:any, ctr:any): any => {
-  sim_r.txns.push({kind: 'tokenNew', n, s, u, m, p, d });
-  // XXX This is a hack... it is assumed that `ctr` is unique across tokens in a simulation block
-  return ctr;
-};
-
-export const simContractNew = (sim_r:any, cns:any, remote:any, ctr:any): any => {
-  sim_r.txns.push({kind: 'contractNew', cns, remote });
-  // XXX This is a hack... it is assumed that `ctr` is unique across tokens in a simulation block
-  return ctr;
-};
-
-export const simTokenBurn = (sim_r:any, tok:any, amt:any): void => {
-  sim_r.txns.push({kind: 'tokenBurn', tok, amt});
-};
-
-export const simTokenDestroy = (sim_r:any, tok:any): void => {
-  sim_r.txns.push({kind: 'tokenDestroy', tok});
-};
-
-export const simTokenAccepted_ = (sim_r:any, addr:any, tok:any): void => {
-  sim_r.txns.push({kind: 'tokenAccepted', addr, tok});
 };

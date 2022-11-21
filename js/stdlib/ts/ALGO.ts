@@ -77,6 +77,7 @@ import {
   Mnemonic,
   mkGetEventTys,
   mShowFundFromFaucetWarning,
+  IBoxKey,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -101,9 +102,6 @@ import {
   bytestringyNet,
 } from './ALGO_compiled';
 export type { Token } from './ALGO_compiled';
-import {
-  simTokenAccepted_
-} from './shared_backend';
 import type { MapRefT, MaybeRep } from './shared_backend'; // =>
 import { window, process } from './shim';
 import { sha512_256 } from 'js-sha512';
@@ -115,6 +113,7 @@ type BigNumber = ethers.BigNumber;
 
 type AnyALGO_Ty = ALGO_Ty<CBR_Val>;
 type ConnectorTy= AnyALGO_Ty;
+type BoxKey = IBoxKey<ConnectorTy>;
 export type Ty = AnyALGO_Ty;
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
@@ -752,13 +751,6 @@ const isCreateTxn = (txn:IndexerTxn): boolean => {
   const at = txn['application-transaction'];
   return at ? bigNumberify(at['application-id']).eq(0) : false;
 };
-const emptyOptIn = (txn:IndexerTxn) => {
-  const at = txn['application-transaction'];
-  const ataa = at && at['application-args'] || [];
-  return at ?
-    (at['on-completion'] === 'optin' && ataa.length == 0)
-    : false;
-};
 const apiOnly = (txn:IndexerTxn) => {
   const ls = txn['logs'];
   if ( ls && ls.length === 1 ) {
@@ -816,12 +808,12 @@ const newEventQueue = (): EventQueue => {
   const getTxnTime = (x:IndexerTxn): BigNumber => bigNumberify(x['confirmed-round']);
   return makeEventQueue<EQInitArgs, IndexerTxn, RecvTxn>({
     raw2proc: indexerTxn2RecvTxn,
-    alwaysIgnored: (x) => (emptyOptIn(x) || apiOnly(x)),
+    alwaysIgnored: apiOnly,
     getTxns, getTxnTime,
   });
 };
 
-const { addressEq, assert, gt, protect } = stdlib;
+const { addressEq, assert, gt, protect, simTokenAccepted_ } = stdlib;
 
 const { T_UInt, T_Tuple, T_Contract, T_Bytes, T_Address, T_Digest, T_Null } = typeDefs;
 
@@ -1462,7 +1454,6 @@ const getDeletedApplicationInfoM = async (id: number): Promise<OrExn<AppInfo>> =
   }
 }
 
-
 const getLocalState_ = async (addr: Address, ApplicationID: BigNumber): Promise<AppStateKVs | undefined> => {
   const dhead = 'getLocalState';
   if (await nodeCanRead()) {
@@ -1510,23 +1501,14 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     ensureConnectorAvailable(bin, 'ALGO', reachBackendVersion, reachAlgoBackendVersion);
     must_be_supported(bin);
 
-    const { stateSize, stateKeys, mapDataKeys, mapDataSize, ABI, companionInfo } = bin._Connectors.ALGO;
+    const { stateSize, stateKeys, ABI, companionInfo } = bin._Connectors.ALGO;
     const hasCompanion = companionInfo !== null;
-    const hasMaps = mapDataKeys > 0;
-    const { mapDataTy } = bin._getMaps({reachStdlib: stdlib});
-    const emptyMapDataTy = T_Bytes(mapDataTy.netSize);
-    const emptyMapData =
-      // This is a bunch of Nones
-      mapDataTy.fromNet(
-        emptyMapDataTy.toNet(emptyMapDataTy.canonicalize('')));
-    debug({ emptyMapData });
 
     type GlobalState = [BigNumber, BigNumber, ContractInfo];
     type ContractHandler = {
       ApplicationID: BigNumber,
       Deployer: Address,
-      viewMapRef: (mapi:number, a:Address) => Promise<any>,
-      ensureOptIn: (() => Promise<void>),
+      viewMapRef: (mapi:number, vt:Ty, v:any) => Promise<any>,
       getAppState: (() => Promise<AppStateKVs|undefined>),
       getGlobalState: ((appSt_g?:AppStateKVs|undefined) => Promise<GlobalState|undefined>),
       canIWin: ((lct:BigNumber) => Promise<boolean>),
@@ -1563,22 +1545,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const getLocalState = async (addr: Address): Promise<AppStateKVs | undefined> => {
           return await getLocalState_(addr, ApplicationID);
         }
-
-        // Application Local State Opt-in
-        const didOptIn = async (): Promise<boolean> =>
-          (await doAccountAppOptedIn(thisAcc.addr, ApplicationID));
-        const doOptIn = async (): Promise<void> =>
-          (await doAccountAppOptIn(thisAcc, ApplicationID));
-
-        let ensuredOptIn: boolean = false;
-        const ensureOptIn = async (): Promise<void> => {
-          if ( ! ensuredOptIn ) {
-            if ( ! await didOptIn() ) {
-              await doOptIn();
-            }
-            ensuredOptIn = true;
-          }
-        };
 
         let lastAppState : AppStateKVs|undefined = undefined;
         let lastAppStateTime : number = 0;
@@ -1626,8 +1592,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const isin = (await getProvider()).isIsolatedNetwork;
         const isIsolatedNetwork = () => isin;
 
-        const viewMapRef = async (mapi: number, a:Address): Promise<any> => {
-          debug('viewMapRef', { mapi, a });
+        const viewMapRef = async (mapi: number, vt:Ty, v:any): Promise<any> => {
+          debug('viewMapRef', { mapi, vt, v });
           const ls = await getLocalState(cbr2algo_addr(a));
           if ( ls === undefined ) { return ['None', null]; }
           debug('viewMapRef', { ls });
@@ -1642,7 +1608,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           return mr;
         };
 
-        return (_theC = { ApplicationID, ctcAddr, Deployer, getAppState, getGlobalState, ensureOptIn, canIWin, isIsolatedNetwork, viewMapRef });
+        return (_theC = { ApplicationID, ctcAddr, Deployer, getAppState, getGlobalState, canIWin, isIsolatedNetwork, viewMapRef });
       };
     };
 
@@ -1712,9 +1678,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       };
 
       const apiMapRef = (i:number, ty:AnyALGO_Ty): MapRefT<any> => async (f:string): Promise<MaybeRep<any>> => {
-        void(ty);
         const { viewMapRef } = await getC();
-        return await viewMapRef(i, f);
+        return await viewMapRef(i, ty, f);
       };
 
       const simTokenAccepted = async (sim_r:any, addr:any, tok:any): Promise<boolean> => {
@@ -1760,7 +1725,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
                 algosdk.OnApplicationComplete.NoOpOC,
                 base64ToUI8A(appApproval),
                 base64ToUI8A(appClear),
-                appLocalStateNumUInt, appLocalStateNumBytes + mapDataKeys,
+                appLocalStateNumUInt, appLocalStateNumBytes,
                 appGlobalStateNumUInt, appGlobalStateNumBytes + stateKeys,
                 undefined, undefined, undefined, undefined,
                 NOTE_Reach_tag(createTag++), undefined, undefined, extraPages)));
@@ -1775,7 +1740,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           setTrustedVerifyResult({ ApplicationID, Deployer });
           setInfo(ctcInfo);
         }
-        const { ApplicationID, ctcAddr, Deployer, ensureOptIn, canIWin, isIsolatedNetwork } = await getC();
+        const { ApplicationID, ctcAddr, Deployer, canIWin, isIsolatedNetwork } = await getC();
 
         const [ value, toks ] = pay;
         void(toks); // <-- rely on simulation because of ordering
@@ -1816,11 +1781,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             tok: undefined,
           });
         }
-        const { isHalt } = sim_r;
-
-        // Maps
-        if ( hasMaps ) { await ensureOptIn(); }
-        const { mapRefs } = sim_r;
+        const { isHalt, mapRefs } = sim_r;
 
         while ( true ) {
           const params = await getTxnParams(dhead);
@@ -1852,7 +1813,14 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             debug(`recordAccount`, {addr});
             recordAccount_(addr);
           };
-          mapRefs.forEach(recordAccount);
+
+          const mapBoxes: Array<BoxKey> = [ ];
+          const recordBox = (key:BoxKey) => {
+            if ( ! mapBoxes.includes(key) ) {
+              mapBoxes.push(key);
+            }
+          };
+          mapRefs.forEach(recordBox);
 
           const foreignArr: Array<number> = [ ];
           const recordApp = (app:ContractInfo) => {
@@ -1879,6 +1847,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             dr.toks.map(recordAsset);
             dr.accs.map(recordAccount);
             dr.apps.map(recordApp);
+            dr.boxes.map(recordBox);
             howManyMoreFees +=
               1
               + bigNumberToNumber(dr.pays)
@@ -2220,10 +2189,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     const setupView = (setupViewArgs: SetupViewArgs) => {
       const eq = newEventQueue();
       const getC = makeGetC(setupViewArgs, eq);
-      const viewLib: IViewLib = {
-        viewMapRef: async (mapi: number, a:Address): Promise<any> => {
+      const viewLib: IViewLib<Ty> = {
+        viewMapRef: async (mapi: number, vt:Ty, v:any): Promise<any> => {
           const { viewMapRef } = await getC();
-          return await viewMapRef(mapi, a);
+          return await viewMapRef(mapi, vt, v);
         },
       };
       const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo, isSafe = true) =>
@@ -2496,9 +2465,6 @@ const doAccountAppOptIn = async (nacc: NetworkAccount, ctcId: ContractInfo): Pro
         bigNumberToNumber(ctcId),
         undefined, undefined, undefined, undefined,
         NOTE_Reach)));
-    // We are commenting this out because the above ^ might not be
-    // propagated to Indexer on the CI fast enough.
-    // assert(await accountAppOptedIn(acc, ctc), `didOptIn after doOptIn`);
   }
 };
 
@@ -2663,7 +2629,7 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   must_be_supported(bin);
   // @ts-ignore
   const ApplicationID: BigNumber = protect(T_Contract, info);
-  const { appApproval, appClear, mapDataKeys, stateKeys } =
+  const { appApproval, appClear, stateKeys } =
     bin._Connectors.ALGO;
 
   let dhead = `${label}: verifyContract`;
@@ -2698,7 +2664,7 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   const Deployer = appInfo_p['creator'];
 
   const appInfo_LocalState = appInfo_p['local-state-schema'];
-  chkeq_bn(appInfo_LocalState['num-byte-slice'], appLocalStateNumBytes + mapDataKeys, `Num of byte-slices in local state schema does not match Reach backend`);
+  chkeq_bn(appInfo_LocalState['num-byte-slice'], appLocalStateNumBytes, `Num of byte-slices in local state schema does not match Reach backend`);
   chkeq_bn(appInfo_LocalState['num-uint'], appLocalStateNumUInt, `Num of uints in local state schema does not match Reach backend`);
 
   const appInfo_GlobalState = appInfo_p['global-state-schema'];

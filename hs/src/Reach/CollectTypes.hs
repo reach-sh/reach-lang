@@ -125,8 +125,8 @@ instance CollectsTypes DLRemoteALGOSTR where
     RA_Tuple t -> cts t
 
 instance CollectsTypes DLRemoteALGO where
-  cts (DLRemoteALGO a b c d e f g h i j k) =
-    cts a <> cts b <> cts c <> cts d <> cts e <> cts f <> cts g <> cts h <> cts i <> cts j <> cts k
+  cts (DLRemoteALGO {..}) =
+    cts ra_fees <> cts ra_accounts <> cts ra_assets <> cts ra_addr2acc <> cts ra_apps <> cts ra_boxes <> cts ra_onCompletion <> cts ra_strictPay <> cts ra_rawCall <> cts ra_simNetRecv <> cts ra_simTokensRecv <> cts ra_simReturnVal
 
 instance CollectsTypes AS.Value where
   cts = const mempty

@@ -32,6 +32,9 @@ import {
   Stdlib_Backend_Base
 } from './interfaces';
 import {
+  defineSimStuff,
+} from './shared_sim';
+import {
   debug,
   labelMaps,
   MkPayAmt,
@@ -51,6 +54,8 @@ export type { // =>
 // Types
 export type Token = CBR_Address;
 export type PayAmt = MkPayAmt<Token>;
+export type ContractInfo = string;
+type ConnectorTy = AnyETH_Ty;
 
 // TODO: restore return type annotation once types are in place
 export function makeEthLikeCompiled(ethLikeCompiledArgs: EthLikeCompiledArgs) {
@@ -435,8 +440,9 @@ const arith: Arith = makeArith(UInt_max);
 
 const emptyContractInfo = "0x00000000000000000000000000000000";
 
-const stdlib: Stdlib_Backend_Base<AnyETH_Ty> = {
+const stdlib: Stdlib_Backend_Base<Token, ContractInfo, ConnectorTy> = {
   ...shared_backend,
+  ...defineSimStuff<Token, ContractInfo, ConnectorTy>(),
   ...arith,
   ...typeDefs,
   addressEq,

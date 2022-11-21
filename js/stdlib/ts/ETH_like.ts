@@ -1,7 +1,7 @@
 import Timeout from 'await-timeout';
 import { ethers as real_ethers } from 'ethers';
 import {
-  assert, protect, simTokenAccepted_,
+  assert, protect,
 } from './shared_backend';
 import type { MaybeRep, MapRefT } from './shared_backend'; // =>
 import {
@@ -172,8 +172,9 @@ const {
   T_Address, T_Tuple,
   T_UInt, T_Contract,
   addressEq,
+  simTokenAccepted_,
 } = stdlib;
-const reachStdlib: Stdlib_Backend<AnyETH_Ty> = stdlib;
+const reachStdlib: Stdlib_Backend<Token, ContractInfo, ConnectorTy> = stdlib;
 
 /** @description convenience function for drilling down to the actual address */
 const getAddr = async (acc: AccountTransferable): Promise<Address> => {
@@ -796,9 +797,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     const setupView = (setupViewArgs: SetupViewArgs) => {
       const eq = newEventQueue();
       const getC = makeGetC(setupViewArgs, eq);
-      const viewLib: IViewLib = {
-        viewMapRef: async (...args: any): Promise<any> => {
-          void(args);
+      const viewLib: IViewLib<Ty> = {
+        viewMapRef: async (mapi: number, vt:Ty, v:any): Promise<any> => {
+          void mapi; void vt; void v;
           throw Error('viewMapRef not used by ETH backend'); },
       };
       const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo, isSafe = true) =>

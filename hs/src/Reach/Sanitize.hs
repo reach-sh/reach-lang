@@ -78,9 +78,8 @@ instance Sanitize DLRemoteALGOSTR where
     RA_Tuple t -> RA_Tuple $ sani t
 
 instance Sanitize DLRemoteALGO where
-  sani (DLRemoteALGO a b c d e f g h i j k) =
-    DLRemoteALGO (sani a) (sani b) (sani c) (sani d) (sani e) (sani f) (sani g) (sani h) (sani i)
-                 (sani j) (sani k)
+  sani (DLRemoteALGO {..}) =
+    DLRemoteALGO ( sani ra_fees )( sani ra_accounts )( sani ra_assets )( sani ra_addr2acc )( sani ra_apps )( sani ra_boxes )( sani ra_onCompletion )( sani ra_strictPay )( sani ra_rawCall )( sani ra_simNetRecv )( sani ra_simTokensRecv )( sani ra_simReturnVal )
 
 instance Sanitize AS.Value where
   sani = id

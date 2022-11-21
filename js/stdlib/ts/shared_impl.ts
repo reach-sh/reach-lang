@@ -19,6 +19,7 @@ import {
   assert,
   formatAssertInfo,
   MaybeRep,
+  LinearMap,
 } from './shared_backend';
 import type { MapRefT } from './shared_backend'; // =>
 import { process } from './shim';
@@ -123,13 +124,13 @@ export type IBackendMaps<ConnectorTy extends AnyBackendTy> = {
   mapDataTy: ConnectorTy,
 };
 
-export type IViewLib = {
-  viewMapRef: any,
+export type IViewLib<ConnectorTy extends AnyBackendTy> = {
+  viewMapRef: (mapi:number, vt:ConnectorTy, v:any) => Promise<any>,
 };
 
 export type IBackend<ConnectorTy extends AnyBackendTy> = {
   _backendVersion: number,
-  _getViews: (stdlib:Object, viewlib:IViewLib) => IBackendViews<ConnectorTy>,
+  _getViews: (stdlib:Object, viewlib:IViewLib<ConnectorTy>) => IBackendViews<ConnectorTy>,
   _getMaps: (stdlib:Object) => IBackendMaps<ConnectorTy>,
   _Participants: {[n: string]: any},
   _APIs: {[n: string]: any | {[n: string]: any}},
@@ -176,7 +177,7 @@ export type ISendRecvArgs<RawAddress, Token, ConnectorTy extends AnyBackendTy, C
   soloSend: boolean,
   timeoutAt: TimeArg | undefined,
   lct: BigNumber,
-  sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Token, ContractInfo>>,
+  sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Token, ContractInfo, ConnectorTy>>,
 };
 
 export type IRecvArgs<ConnectorTy extends AnyBackendTy> = {
@@ -210,8 +211,8 @@ export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy exten
   recv: (args:IRecvArgs<ConnectorTy>) => Promise<IRecv<RawAddress>>,
   getState: (v:BigNumber, ctcs:Array<ConnectorTy>) => Promise<Array<any>>,
   getCurrentStep: () => Promise<BigNumber>,
-  apiMapRef: (i:number, ty:ConnectorTy) => MapRefT<any>,
-  simTokenAccepted: (sim_r:any, addr:any, tok:any) => Promise<boolean>,
+  apiMapRef: (i:number) => MapRefT<any, any, ConnectorTy>,
+  simTokenAccepted: (sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, addr:string, tok:Token) => Promise<boolean>,
 };
 
 export type ISetupArgs<ContractInfo, VerifyResult> = {
@@ -265,7 +266,7 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
 };
 
 export type ISetupView<ContractInfo, VerifyResult, ConnectorTy extends AnyBackendTy> = (args:ISetupViewArgs<ContractInfo, VerifyResult>) => {
-  viewLib: IViewLib,
+  viewLib: IViewLib<ConnectorTy>,
   getView1: ((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string|undefined, vi:IBackendViewInfo<ConnectorTy>, isSafe: boolean) => ViewVal)
 };
 
@@ -621,10 +622,19 @@ export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any,
   networkAccount: NetworkAccount,
 }
 
-export type ISimRes<Token, ContractInfo> = {
+export type ISimRes<Token, ContractInfo, ConnectorTy extends AnyBackendTy> = {
   txns: Array<ISimTxn<Token, ContractInfo>>,
-  mapRefs: Array<string>,
+  mapRefs: Array<ISimMapRef<any, ConnectorTy>>,
   isHalt : boolean,
+  maps: Record<number, LinearMap<any, any, ConnectorTy>>,
+};
+
+export type ISimMapRef<K, ConnectorTy> = {
+  kind: 'ref'|'set'|'del',
+  mapi: number,
+  kt: ConnectorTy,
+  k: K,
+  vt: ConnectorTy,
 };
 
 // XXX Add Address
@@ -633,6 +643,7 @@ export type ISimRemote<Token, ContractInfo> = {
   bills: BigNumber,
   toks: Array<Token>,
   accs: Array<string>,
+  boxes: Array<string>,
   apps: Array<ContractInfo>,
   fees: BigNumber,
 }

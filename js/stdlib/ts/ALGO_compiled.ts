@@ -15,6 +15,9 @@ import {
   bigNumberify,
   bigNumberToBigInt,
 } from './shared_user';
+import {
+  defineSimStuff,
+} from './shared_sim';
 import algosdk from 'algosdk';
 import buffer from 'buffer';
 import { ethers } from 'ethers';
@@ -400,8 +403,12 @@ export const emptyContractInfo = 0;
 
 const arith = makeArith(UInt_max);
 
-export const stdlib: Stdlib_Backend_Base<ALGO_Ty<any>> = {
+type ConnectorTy = ALGO_Ty<any>;
+type ContractInfo = Contract;
+
+export const stdlib: Stdlib_Backend_Base<Token, ContractInfo, ConnectorTy> = {
   ...shared_backend,
+  ...defineSimStuff<Token, ContractInfo, ConnectorTy>(),
   ...arith,
   ...typeDefs,
   addressEq,

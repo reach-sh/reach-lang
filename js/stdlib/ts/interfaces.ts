@@ -10,6 +10,8 @@ import {
   SetSigningMonitor,
   UIntTy,
   TransferOpts,
+  ISimRes,
+  ISimRemote,
 } from './shared_impl';
 
 export interface TypeDefs<Ty> {
@@ -54,23 +56,27 @@ export interface Stdlib_Backend_Shared_User<Ty> {
   uintToStringDyn256: (n1: num) => string,
 };
 
-export interface Stdlib_Backend_Shared<Ty> extends Stdlib_Backend_Shared_User<Ty> {
+export interface Stdlib_SimStuff<Token, ContractInfo, ConnectorTy extends AnyBackendTy> {
+  simMapDupe: <A>(sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, mapi: number, mapo: LinearMap<A>) => void,
+  simMapRef: <K, A>(sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, mapi: number, kt:ConnectorTy, k:K, vt:ConnectorTy) => Promise<MaybeRep<A>>
+  simMapSet: <K, A>(sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, mapi: number, kt:ConnectorTy, k:K, vt:ConnectorTy, v:A|undefined) => Promise<void>,
+  simTokenNew: <A>(sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, n:any, s:any, u:any, m:any, p:BigNumber, d:BigNumber|undefined, ctr:A) => A
+  simContractNew: <A>(sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, cns:any, remote:ISimRemote<Token, ContractInfo>, ctr:A) => A
+  simTokenBurn: (sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, tok:Token, amt:BigNumber) => void
+  simTokenDestroy: (sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, tok:Token) => void
+  simTokenAccepted_: (sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, addr:string, tok:Token) => void
+};
+
+export interface Stdlib_Backend_Shared<Ty extends AnyBackendTy> extends Stdlib_Backend_Shared_User<Ty> {
   checkedBigNumberify: (at: string, max: BigNumber, n: any) => BigNumber
   protect: (t: any, v: unknown, ai?: string) => unknown
   Array_asyncMap: <B>(as:any[][], f:(x:any[], i:number) => Promise<B>) => Promise<B[]>
   Array_asyncReduce: <B>(as:any[][], b: B, f:((xs:any[], y:B, i:number) => Promise<B>)) => Promise<B>
-  newMap: <A>(opts: MapOpts<A>) => LinearMap<A>
-  mapRef: <A>(m: LinearMap<A>, f: string) => Promise<MaybeRep<A>>
-  mapSet: <A>(m: LinearMap<A>, f: string, v: A) => Promise<void>
-  simMapRef: <A>(sim_r: unknown, mapi: number, f: string) => Promise<MaybeRep<A>>
-  simMapSet: <A>(sim_r: unknown, mapi: number, f: string, v: A) => Promise<void>,
-  simMapDupe: <A>(sim_r: unknown, mapi: number, mapo: LinearMap<A>) => void,
-  simTokenNew: any, // XXX
-  simTokenBurn: any, // XXX
-  simTokenDestroy: any, // XXX
+  newMap: <K, A>(opts: MapOpts<A>) => LinearMap<K, A>
+  mapRef: <K, A>(m: LinearMap<K, A, Ty>, kt:Ty, k:K, vt:Ty) => Promise<MaybeRep<A>>
+  mapSet: <K, A>(m: LinearMap<K, A, Ty>, kt:Ty, k:K, vt:Ty, v:A|undefined) => Promise<void>
   bytesConcat: (b1: string, b2: string) => string
   fromSome: <A>(mo:MaybeRep<A>, da:A) => A
-  simContractNew: any, // XXX
 };
 
 export interface Arith {
@@ -107,19 +113,19 @@ export interface Arith {
   cast: (from: UIntTy, to: UIntTy, x: num, truncate: boolean, chkOverflow: boolean) => BigNumber
 };
 
-export interface Stdlib_Backend_Base<Ty> extends Stdlib_Backend_Shared<Ty>, Arith, TypeDefs<Ty> {
+export interface Stdlib_Backend_Base<Token, ContractInfo, ConnectorTy extends AnyBackendTy> extends Stdlib_Backend_Shared<ConnectorTy>, Arith, TypeDefs<ConnectorTy>, Stdlib_SimStuff<Token, ContractInfo, ConnectorTy> {
   UInt_max: BigNumber
   ctcAddrEq: (ctc_x: unknown, addr_y: unknown) => boolean
   addressEq: (addr1: unknown, addr2: unknown) => boolean
   digestEq: (x: unknown, y: unknown) => boolean
   digest_xor: (x: string, y: string) => string
   tokenEq: (x: unknown, y: unknown) => boolean
-  digest: (ts: Ty[], vs: unknown[]) => string // TODO typing
+  digest: (ts: ConnectorTy[], vs: unknown[]) => string // TODO typing
   emptyContractInfo: (number | string),
 };
 
 // XXX
-export interface Stdlib_Backend<Ty> extends Stdlib_Backend_Base<Ty> {
+export interface Stdlib_Backend<Token, ContractInfo, ConnectorTy extends AnyBackendTy> extends Stdlib_Backend_Base<Token, ContractInfo, ConnectorTy> {
 };
 
 // XXX
@@ -207,7 +213,7 @@ export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, Contrac
   formatWithDecimals: (amt: unknown, decimals: number) => string
   unsafeGetMnemonic: (acc: Account) => string
   launchToken: (acc: Account, name: string, sym: string, opts?: LaunchTokenOpts) => any
-  reachStdlib: Stdlib_Backend<Ty>
+  reachStdlib: Stdlib_Backend<Token, ContractInfo, Ty>
   setMinMillisBetweenRequests: (n: number) => void
   setCustomHttpEventHandler: (h: (e: any) => Promise<void>) => void
   setSigningMonitor: SetSigningMonitor

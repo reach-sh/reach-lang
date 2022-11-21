@@ -112,9 +112,8 @@ instance FreeVars DLRemoteALGOSTR where
     RA_Tuple t -> freeVars t
 
 instance FreeVars DLRemoteALGO where
-  freeVars (DLRemoteALGO a b c d e f g h i j k) =
-    freeVars a <> freeVars b <> freeVars c <> freeVars d <> freeVars e <> freeVars f <>
-    freeVars g <> freeVars h <> freeVars i <> freeVars j <> freeVars k
+  freeVars (DLRemoteALGO {..}) =
+    freeVars ra_fees <> freeVars ra_accounts <> freeVars ra_assets <> freeVars ra_addr2acc <> freeVars ra_apps <> freeVars ra_boxes <> freeVars ra_onCompletion <> freeVars ra_strictPay <> freeVars ra_rawCall <> freeVars ra_simNetRecv <> freeVars ra_simTokensRecv <> freeVars ra_simReturnVal
 
 instance FreeVars DLTokenNew where
   freeVars (DLTokenNew a b c d e f) = freeVars [a, b, c, d, e] <> freeVars f

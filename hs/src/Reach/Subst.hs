@@ -91,9 +91,8 @@ instance Subst DLRemoteALGOSTR where
     RA_Tuple t -> RA_Tuple <$> subst t
 
 instance Subst DLRemoteALGO where
-  subst (DLRemoteALGO a b c d e f g h i j k) =
-    DLRemoteALGO <$> subst a <*> subst b <*> subst c <*> subst d <*> subst e <*> subst f <*>
-                 subst g <*> subst h <*> subst i <*> subst j <*> subst k
+  subst (DLRemoteALGO {..}) =
+    DLRemoteALGO <$> subst ra_fees <*> subst ra_accounts <*> subst ra_assets <*> subst ra_addr2acc <*> subst ra_apps <*> subst ra_boxes <*> subst ra_onCompletion <*> subst ra_strictPay <*> subst ra_rawCall <*> subst ra_simNetRecv <*> subst ra_simTokensRecv <*> subst ra_simReturnVal
 
 instance Subst AS.Value where
   subst = return

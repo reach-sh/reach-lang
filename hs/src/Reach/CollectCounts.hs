@@ -141,9 +141,8 @@ instance Countable DLRemoteALGOSTR where
     RA_Tuple t -> counts t
 
 instance Countable DLRemoteALGO where
-  counts (DLRemoteALGO a b c d e f g h i j k) =
-    counts a <> counts b <> counts c <> counts d <> counts e <> counts f <> counts g <> counts h <>
-    counts i <> counts j <> counts k
+  counts (DLRemoteALGO {..}) =
+    counts ra_fees <> counts ra_accounts <> counts ra_assets <> counts ra_addr2acc <> counts ra_apps <> counts ra_boxes <> counts ra_onCompletion <> counts ra_strictPay <> counts ra_rawCall <> counts ra_simNetRecv <> counts ra_simTokensRecv <> counts ra_simReturnVal
 
 instance Countable AS.Value where
   counts = const mempty
