@@ -129,16 +129,12 @@ instance Pretty EPart where
     pretty ep_interactEnv <> semi <> hardline <> pretty ep_tail
 
 data EPOpts = EPOpts
-  { epo_untrustworthyMaps :: Bool
-  , epo_counter :: Counter
+  { epo_counter :: Counter
   }
   deriving (Generic, Eq)
 
 instance HasCounter EPOpts where
   getCounter (EPOpts {..}) = epo_counter
-
-instance HasUntrustworthyMaps EPOpts where
-  getUntrustworthyMaps (EPOpts {..}) = epo_untrustworthyMaps
 
 type StateSrcMap = M.Map Int (SrcLoc, [SLCtxtFrame])
 

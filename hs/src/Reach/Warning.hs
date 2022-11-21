@@ -35,6 +35,7 @@ data Deprecation
   | D_ReachAppArgs
   | D_UntypedTimeArg
   | D_Replaced String String
+  | D_UntrustworthyMaps
   deriving (Eq)
 
 data Warning
@@ -81,6 +82,8 @@ instance Show Deprecation where
       "Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs."
     D_Replaced o n ->
       "`" <> o <> "` is now deprecated. Use `" <> n <> "`."
+    D_UntrustworthyMaps ->
+      "The `untrustworthyMaps` option is deprecated. All maps are now trustworthy."
 
 instance Show Warning where
   show = \case

@@ -33,16 +33,10 @@ This means they are sensitive to the particular compilation details of the parti
 We hope to work with the Algorand community to define a standard for views.
 Views expand the on-chain state to include the free variables of all values bound to a view.
 
-`{!rsh} Map`s on Algorand only support keys that are of type `{!rsh} Address`.
-
-Linear state is compiled into Application Local State.
-This means that participants must explicitly "opt-in" to storing this state on their account (which increases their minimum balance).
-The Reach standard library will do this automatically when connecting to Reach generated contracts, but other users must be specifically programmed to do this.
-This "opt-in" requirement means that DApps with linear state deployed on Algorand can deadlock and be held hostage:
-Suppose that Alice transfers 10 ALGO to a contract in step one, then in step two, the consensus must store a value associated with Bob, and then she can receive her 10 ALGO back, then the program terminates.
-On some networks, Alice can perform these two steps completely on her own and she is in complete control of her funds.
-However, on Algorand, running this program requires that Bob "opt-in" to storing values for the application.
-We hope that future versions of Algorand will allow other parties to pay the fees to "opt-in" to applications to prevent these kinds of deadlock attacks.
+Linear state is compiled into application box storage.
+Reach makes no attempt to ensure that when the application ends, all boxes are freed.
+You can do this yourself by making an assertion that the size of a map is empty at the end of the program.
+If you don't do this, then the minimum balance reservation set aside for boxes will not be returned.
 
 In Algorand, network time corresponds to round numbers.
 Each round is assigned a Unix timestamp, but when you look at the timestamp in code executing in round N+1, you read the timestamp assigned to round N.

@@ -92,16 +92,12 @@ instance Pretty CHandlers where
     render_obj m
 
 data CPOpts = CPOpts
-  { cpo_untrustworthyMaps :: Bool
-  , cpo_counter :: Counter
+  { cpo_counter :: Counter
   }
   deriving (Generic, Eq)
 
 instance HasCounter CPOpts where
   getCounter (CPOpts {..}) = cpo_counter
-
-instance HasUntrustworthyMaps CPOpts where
-  getUntrustworthyMaps (CPOpts {..}) = cpo_untrustworthyMaps
 
 data CPProg = CPProg
   { cpp_at :: SrcLoc
@@ -126,6 +122,3 @@ instance Pretty CPProg where
 
 instance HasCounter CPProg where
   getCounter = getCounter . cpp_opts
-
-instance HasUntrustworthyMaps CPProg where
-  getUntrustworthyMaps = getUntrustworthyMaps . cpp_opts

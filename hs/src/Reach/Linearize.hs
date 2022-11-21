@@ -665,7 +665,6 @@ df_init k = do
 
 defluid :: DKProg -> IO LLProg
 defluid (DKProg dkp_at (DLOpts {..}) dkp_parts dkp_init dkp_exports dkp_views dkp_apis dkp_aliases dkp_events dkp_tail) = do
-  let llo_untrustworthyMaps = dlo_untrustworthyMaps
   let llo_counter = dlo_counter
   let llo_droppedAsserts = dlo_droppedAsserts
   let opts' = LLOpts {..}

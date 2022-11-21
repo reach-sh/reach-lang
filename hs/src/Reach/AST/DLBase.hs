@@ -1523,9 +1523,6 @@ freshenVar :: HasCounter e => DLVar -> ReaderT e IO DLVar
 freshenVar (DLVar at s t _) =
   DLVar at s t <$> allocVarIdx
 
-class HasUntrustworthyMaps a where
-  getUntrustworthyMaps :: a -> Bool
-
 type InterfaceLikeMap a = M.Map (Maybe SLPart) (M.Map SLVar a)
 
 flattenInterfaceLikeMap_ :: forall a b . (SLPart -> a -> b) -> InterfaceLikeMap a -> M.Map SLPart b

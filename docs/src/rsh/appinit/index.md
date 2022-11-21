@@ -44,24 +44,6 @@ setOptions({});
 
 The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} setOptions(OBJ_EXPR);` where `{!rsh} OBJ_EXPR` is an object with the following keys and values:
 
-+ @{ref("rsh", "untrustworthyMaps")} `{!rsh} untrustworthyMaps`
-
-  `{!rsh} true` or `{!rsh} false` (default)
-
-  Determines whether mappings are treated as trustworthy.
-  A mapping is trustworthy if its values are guaranteed to be preserved across interactions.
-  When this is `{!rsh} true`, the verifier will enforce that your program does not rely on values being preserved.
-
-  See example below:
-  ```reach
-  load: /examples/map-simpl/index.rsh
-  md5: 2d6c1487d7b96d41016e067c9cd265ef
-  range: 4 - 6
-  ```
-
-  Reach cannot provide trustworthy mappings with some connectors; therefore it is dangerous to not set this to `{!rsh} true` on such connectors.
-  Reach will emit a warning during compilation if you do such a dangerous thing.
-
 + @{ref("rsh", "verifyArithmetic")} `{!rsh} verifyArithmetic`
 
   `{!rsh} true` or `{!rsh} false` (default)

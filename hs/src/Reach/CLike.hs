@@ -440,7 +440,7 @@ clike :: PLProg a CPProg -> IO (PLProg a CLProg)
 clike = plp_cpp_mod $ \CPProg {..} -> do
   let CPOpts {..} = cpp_opts
   let clp_at = cpp_at
-  let clp_opts = CLOpts cpo_untrustworthyMaps cpo_counter
+  let clp_opts = CLOpts cpo_counter
   eDefsR <- newIORef mempty
   eFunsR <- newIORef mempty
   eAPIR <- newIORef mempty
