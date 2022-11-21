@@ -484,7 +484,7 @@ instance AC CLExtFun where
   ac (CLExtFun {..}) = CLExtFun cef_rng cef_kind <$> ac cef_fun
 
 instance AC CLProg where
-  ac (CLProg {..}) = CLProg clp_at clp_opts clp_defs <$> ac clp_funs <*> ac clp_api <*> pure clp_maps
+  ac (CLProg {..}) = CLProg clp_at clp_opts clp_defs <$> ac clp_funs <*> ac clp_api
 
 add_counts' :: AC b => Bool -> b -> IO b
 add_counts' e_sim x = do

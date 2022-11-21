@@ -160,8 +160,8 @@ instance CollectsTypes DLExpr where
     DLE_CheckPay _ _ y z -> cts y <> cts z
     DLE_Wait _ a -> cts a
     DLE_PartSet _ _ a -> cts a
-    DLE_MapRef _ _ fa -> cts fa
-    DLE_MapSet _ _ fa na -> cts fa <> cts na
+    DLE_MapRef _ _ fa vt -> cts fa <> cts vt
+    DLE_MapSet _ _ fa vt na -> cts fa <> cts na <> cts vt
     DLE_Remote _ _ av rt dr ->
       cts av <> cts rt <> cts dr
     DLE_TokenNew _ tns -> cts tns

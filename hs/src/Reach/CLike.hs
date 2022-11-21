@@ -456,7 +456,6 @@ clike = plp_cpp_mod $ \CPProg {..} -> do
   clp_defs <- readIORef eDefsR
   clp_funs <- readIORef eFunsR
   clp_api <- readIORef eAPIR
-  let clp_maps = dli_maps cpp_init
   -- We created new references to some variables, so we need to correct the
   -- counts
   add_counts $ CLProg {..}

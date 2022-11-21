@@ -150,8 +150,8 @@ instance FreeVars DLExpr where
     DLE_CheckPay _ _ a b -> freeVars a <> freeVars b
     DLE_Wait _ a -> freeVars a
     DLE_PartSet _ _ a -> freeVars a
-    DLE_MapRef _ _ a -> freeVars a
-    DLE_MapSet _ _ a b -> freeVars a <> freeVars b
+    DLE_MapRef _ _ a _ -> freeVars a
+    DLE_MapSet _ _ a _ b -> freeVars a <> freeVars b
     DLE_Remote _ _ a _ dr -> freeVars a <> freeVars dr
     DLE_TokenNew _ a -> freeVars a
     DLE_TokenBurn _ a b -> freeVars [a, b]

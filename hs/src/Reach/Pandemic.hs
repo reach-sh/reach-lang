@@ -71,8 +71,8 @@ instance Pandemic DLExpr where
     DLE_CheckPay at cxt a mtok -> DLE_CheckPay at cxt <$> pan a <*> pan mtok
     DLE_Wait at a -> DLE_Wait at <$> pan a
     DLE_PartSet at slp a -> DLE_PartSet at slp <$> pan a
-    DLE_MapRef at mv a -> DLE_MapRef at mv <$> pan a
-    DLE_MapSet at mv a marg -> DLE_MapSet at mv <$> pan a <*> pan marg
+    DLE_MapRef at mv a vt -> DLE_MapRef at mv <$> pan a <*> pan vt
+    DLE_MapSet at mv a vt marg -> DLE_MapSet at mv <$> pan a <*> pan vt <*> pan marg
     DLE_Remote at cxt a ty dr -> DLE_Remote at cxt <$> pan a <*> pan ty <*> pan dr
     DLE_TokenNew at tns -> DLE_TokenNew at <$> pan tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> pan tok <*> pan amt

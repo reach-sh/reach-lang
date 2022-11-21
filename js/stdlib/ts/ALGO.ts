@@ -187,7 +187,7 @@ const defaultALGO_TOKEN_HEADER = 'X-Algo-API-Token';
 const defaultALGO_INDEXER_TOKEN_HEADER = 'X-Indexer-API-Token';
 
 const reachBackendVersion = 26;
-const reachAlgoBackendVersion = 12;
+const reachAlgoBackendVersion = 13;
 export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
   ABI: any,
@@ -197,8 +197,6 @@ export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   extraPages: number,
   stateSize: number,
   stateKeys: number,
-  mapDataSize: number,
-  mapDataKeys: number,
   unsupported: Array<string>,
   warnings: Array<string>,
 }}};

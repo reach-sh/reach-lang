@@ -6918,20 +6918,22 @@ mapNew dlmi_kt dlmi_ty = do
 mapDel :: DLMVar -> DLArg -> App ()
 mapDel mv mc = do
   at <- withAt id
-  ctxt_lift_eff $ DLE_MapSet at mv mc Nothing
+  DLMapInfo {..} <- mapLookup mv
+  ctxt_lift_eff $ DLE_MapSet at mv mc dlmi_ty Nothing
 
 mapSet :: DLMVar -> DLArg -> SLVal -> App ()
 mapSet mv mc nv = do
   at <- withAt id
   DLMapInfo {..} <- mapLookup mv
   na <- compileCheckType (Just dlmi_at) dlmi_ty nv
-  ctxt_lift_eff $ DLE_MapSet at mv mc $ Just na
+  ctxt_lift_eff $ DLE_MapSet at mv mc dlmi_ty $ Just na
 
 mapRef :: DLMVar -> SLVal -> App DLVar
 mapRef mv mcv = do
   at <- withAt id
   mi <- mapLookup mv
   mc <- compileCheckType (Just $ dlmi_at mi) (dlmi_kt mi) mcv
+  let vt = dlmi_ty mi
   let mt = dlmi_tym mi
   let mkvar = DLVar at Nothing mt
-  ctxt_lift_expr mkvar $ DLE_MapRef at mv mc
+  ctxt_lift_expr mkvar $ DLE_MapRef at mv mc vt

@@ -530,7 +530,7 @@ jsExpr = \case
         return $ jsApply "ctc.iam" [what']
       False ->
         jsArg what
-  DLE_MapRef _ mpv fa -> do
+  DLE_MapRef _ mpv fa _ -> do
     let ctc = jsMapVarCtc mpv
     fa' <- jsMapKey fa
     (f, args) <-
@@ -539,7 +539,7 @@ jsExpr = \case
         JM_Backend -> return $ ("await stdlib.mapRef", [jsMapVar mpv])
         JM_View -> return $ ("await viewlib.viewMapRef", [jsMapIdx mpv])
     return $ jsProtect_ "null" ctc $ jsApply f $ args <> [fa']
-  DLE_MapSet _ mpv fa mna -> do
+  DLE_MapSet _ mpv fa _ mna -> do
     fa' <- jsMapKey fa
     na' <- jsArg_m mna
     (ctxt_mode <$> ask) >>= \case

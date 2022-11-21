@@ -1209,14 +1209,14 @@ smt_e at_dv mdv de = do
           smtAssertCtxt (smtEq psv' (Atom $ smtAddress who))
         _ ->
           mempty
-    DLE_MapRef at mpv fa -> do
+    DLE_MapRef at mpv fa _ -> do
       (ma, mapDv) <- smtMapLookup mpv
       fa' <- smt_a at fa
       let se = smtApply "select" [ma, fa']
       let smte = Just . SMTSynth . flip SMTMapRef fa =<< mapDv
       pathAddBound at mdv smte se Context
       forM_ mdv $ smtMapReviewRecordRef at mpv fa'
-    DLE_MapSet at mpv fa mna ->
+    DLE_MapSet at mpv fa _ mna ->
       smtMapUpdate at mpv fa mna
     DLE_Remote at _ _ _ _ -> unbound at
     DLE_TokenNew at _ -> unbound at

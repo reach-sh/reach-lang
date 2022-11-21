@@ -186,8 +186,8 @@ instance Freshen DLExpr where
     DLE_CheckPay at x y z -> DLE_CheckPay at x <$> fu y <*> fu z
     DLE_Wait at x -> DLE_Wait at <$> fu x
     DLE_PartSet at x y -> DLE_PartSet at x <$> fu y
-    DLE_MapRef at mv fa -> DLE_MapRef at mv <$> fu fa
-    DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> fu fa <*> fu na
+    DLE_MapRef at mv fa vt -> DLE_MapRef at mv <$> fu fa <*> pure vt
+    DLE_MapSet at mv fa vt na -> DLE_MapSet at mv <$> fu fa <*> pure vt <*> fu na
     DLE_Remote at fs av rt dr -> DLE_Remote at fs <$> fu av <*> pure rt <*> fu dr
     DLE_TokenNew at tns -> DLE_TokenNew at <$> fu tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> fu tok <*> fu amt

@@ -458,8 +458,8 @@ instance DepthOf DLExpr where
     DLE_CheckPay _ _ y z -> max <$> depthOf y <*> depthOf z
     DLE_Wait _ x -> depthOf x
     DLE_PartSet _ _ x -> depthOf x
-    DLE_MapRef _ _ x -> add1 $ depthOf x
-    DLE_MapSet _ _ x y -> max <$> depthOf x <*> depthOf y
+    DLE_MapRef _ _ x _ -> add1 $ depthOf x
+    DLE_MapSet _ _ x _ y -> max <$> depthOf x <*> depthOf y
     DLE_Remote _ _ av _ dr ->
       add1 $ max <$> depthOf av <*> depthOf dr
     DLE_TokenNew _ tns -> add1 $ depthOf tns
@@ -821,16 +821,16 @@ solExpr sp = \case
           solApply "checkPayAmt" ["msg.sender", tok', amt']
   DLE_Wait {} -> return emptyDoc
   DLE_PartSet _ _ a -> spa $ solF a
-  DLE_MapRef _ mpv fa -> do
+  DLE_MapRef _ mpv fa _ -> do
     fa' <- mapRefArg fa
     return $ solApply (solMapRefInt mpv) [fa'] <> sp
-  DLE_MapSet _ mpv fa (Just na) -> do
+  DLE_MapSet _ mpv fa _ (Just na) -> do
     fa' <- mapRefArg fa
     vsep <$> solLargeArg' True (solArrayRef (solMapVar mpv) fa') nla
     where
       nla = mdaToMaybeLA na_t (Just na)
       na_t = argTypeOf na
-  DLE_MapSet _ mpv fa Nothing -> do
+  DLE_MapSet _ mpv fa _ Nothing -> do
     fa' <- mapRefArg fa
     return $ "delete" <+> solArrayRef (solMapVar mpv) fa' <> sp
   DLE_Remote {} -> impossible "remote"

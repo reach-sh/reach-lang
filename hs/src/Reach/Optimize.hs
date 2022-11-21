@@ -77,7 +77,6 @@ data Env = Env
   , eCounter :: Counter
   , eDroppedAsserts :: Counter
   , eConst :: S.Set DLVar
-  , eMaps :: DLMapInfos
   , eSimulate :: Bool
   , eSvs :: S.Set DLVar
   , eVarsSet ::IORef (M.Map DLVar Int)
@@ -97,11 +96,6 @@ updateVarSet dv update = do
 
 readVarSet :: DLVar -> App (Maybe Int)
 readVarSet dv = updateVarSet dv id
-
-getMapTy :: DLMVar -> App (Maybe DLType)
-getMapTy mpv = do
-  ms <- asks eMaps
-  return $ fmap dlmi_ty $ M.lookup mpv ms
 
 data ConstEnv = ConstEnv
   { eConstR :: IORef (M.Map DLVar Integer)
@@ -226,8 +220,8 @@ updateLookup up = do
           F_One _ -> f == eFocus
   updateLookupWhen writeHuh up
 
-mkEnv0 :: Counter -> Counter -> S.Set DLVar -> [SLPart] -> DLMapInfos -> Bool -> S.Set DLVar -> IO Env
-mkEnv0 eCounter eDroppedAsserts eConst eParts eMaps eSimulate eSvs = do
+mkEnv0 :: Counter -> Counter -> S.Set DLVar -> [SLPart] -> Bool -> S.Set DLVar -> IO Env
+mkEnv0 eCounter eDroppedAsserts eConst eParts eSimulate eSvs = do
   let eFocus = F_Ctor
   let eEnvs =
         M.fromList $
@@ -572,8 +566,8 @@ instance Optimize DLExpr where
     DLE_CheckPay at fs a m -> DLE_CheckPay at fs <$> opt a <*> opt m
     DLE_Wait at a -> DLE_Wait at <$> opt a
     DLE_PartSet at who a -> DLE_PartSet at who <$> opt a
-    DLE_MapRef at mv fa -> DLE_MapRef at mv <$> opt fa
-    DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> opt fa <*> opt na
+    DLE_MapRef at mv fa vt -> DLE_MapRef at mv <$> opt fa <*> pure vt
+    DLE_MapSet at mv fa vt na -> DLE_MapSet at mv <$> opt fa <*> pure vt <*> opt na
     DLE_Remote at fs av rt dr -> DLE_Remote at fs <$> opt av <*> pure rt <*> opt dr
     DLE_TokenNew at tns -> DLE_TokenNew at <$> opt tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> opt tok <*> opt amt
@@ -819,17 +813,13 @@ optLet at x e = do
     -- Optimize arithmetic even if it is impure (PV_Safe).
     -- It may trap as an effect, but we don't need to worry about it happening multiple times
     (Just dv, _, DLE_PrimOp {}) | allowedToRemove dv -> doit dv
-    (_, _, DLE_MapSet _ mv fa nva) -> do
-      let ref = DLE_MapRef sb mv fa
-      mmt <- getMapTy mv
+    (_, _, DLE_MapSet _ mv fa vt nva) -> do
+      let ref = DLE_MapRef sb mv fa vt
       let clear = M.filterWithKey $ \k _ ->
             case k of
-              DLE_MapRef _ mv_ _ -> mv /= mv_
+              DLE_MapRef _ mv_ _ _ -> mv /= mv_
               _ -> True
-      let upf =
-            case mmt of
-              Nothing -> id
-              Just mt -> M.insert ref $ Right $ mdaToMaybeLA mt nva
+      let upf = M.insert ref $ Right $ mdaToMaybeLA vt nva
       let up ce = ce {cePrev = (upf . clear) $ cePrev ce}
       updateLookup up
       meh
@@ -1088,8 +1078,7 @@ instance Optimize LLProg where
   opt (LLProg llp_at llp_opts llp_parts@SLParts{..} llp_init llp_exports llp_views llp_apis llp_aliases llp_events llp_step) = do
     let psl = M.keys sps_ies
     cs <- asks eConst
-    let mis = dli_maps llp_init
-    env0 <- liftIO $ mkEnv0 (getCounter llp_opts) (llo_droppedAsserts llp_opts) cs psl mis False mempty
+    env0 <- liftIO $ mkEnv0 (getCounter llp_opts) (llo_droppedAsserts llp_opts) cs psl False mempty
     local (const env0) $
       focus_ctor $
         LLProg llp_at llp_opts llp_parts <$> opt llp_init <*> opt llp_exports <*> pure llp_views
@@ -1211,7 +1200,7 @@ optimize_ c sim svs t = do
   cs <- readIORef eConstR
   let csvs = M.keysSet $ M.filter (\x -> x < 2) cs
   dac <- newCounter 0
-  env0 <- mkEnv0 c dac csvs [] mempty sim svs
+  env0 <- mkEnv0 c dac csvs [] sim svs
   flip runReaderT env0 $
     opt t
 
