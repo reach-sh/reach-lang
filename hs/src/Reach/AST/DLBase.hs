@@ -850,8 +850,8 @@ data DLExpr
   | DLE_CheckPay SrcLoc [SLCtxtFrame] DLArg (Maybe DLArg)
   | DLE_Wait SrcLoc DLTimeArg
   | DLE_PartSet SrcLoc SLPart DLArg
-  | DLE_MapRef SrcLoc DLMVar DLArg
-  | DLE_MapSet SrcLoc DLMVar DLArg (Maybe DLArg)
+  | DLE_MapRef SrcLoc DLMVar DLArg DLType
+  | DLE_MapSet SrcLoc DLMVar DLArg DLType (Maybe DLArg)
   | DLE_Remote SrcLoc [SLCtxtFrame] DLArg DLType DLRemote
   | DLE_TokenNew SrcLoc DLTokenNew
   | DLE_TokenBurn SrcLoc DLArg DLArg
@@ -985,14 +985,14 @@ instance PrettySubst DLExpr where
     DLE_PartSet _ who a -> do
       a' <- prettySubst a
       return $ render_sp who <> ".set" <> parens a'
-    DLE_MapRef _ mv i -> do
+    DLE_MapRef _ mv i _ -> do
       i' <- prettySubst i
       return $ pretty mv <> brackets i'
-    DLE_MapSet _ mv kv (Just nv) -> do
+    DLE_MapSet _ mv kv _ (Just nv) -> do
       kv' <- prettySubst kv
       nv' <- prettySubst nv
       return $ pretty mv <> "[" <> kv' <> "]" <+> "=" <+> nv'
-    DLE_MapSet _ mv i Nothing -> do
+    DLE_MapSet _ mv i _ Nothing -> do
       i' <- prettySubst i
       return $ "delete" <+> pretty mv <> brackets i'
     DLE_Remote _ _ av _ dr -> do

@@ -247,9 +247,9 @@ kgq_e ctxt mv = \case
     kgq_a_all ctxt amt
   DLE_PartSet _ _ arg ->
     kgq_a_all ctxt arg
-  DLE_MapRef _ mpv _ ->
+  DLE_MapRef _ mpv _ _ ->
     kgq_v_onlym ctxt mv $ S.singleton $ P_Map mpv
-  DLE_MapSet _ mpv _ mva ->
+  DLE_MapSet _ mpv _ _ mva ->
     knows ctxt (P_Map mpv) $ maybe mempty all_points mva
   DLE_Remote _ _ av _ dr -> do
     kgq_a_all ctxt av

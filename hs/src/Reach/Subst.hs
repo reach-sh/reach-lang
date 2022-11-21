@@ -126,8 +126,8 @@ instance Subst DLExpr where
     DLE_CheckPay at x y z -> DLE_CheckPay at x <$> subst y <*> subst z
     DLE_Wait at x -> DLE_Wait at <$> subst x
     DLE_PartSet at x y -> DLE_PartSet at x <$> subst y
-    DLE_MapRef at mv fa -> DLE_MapRef at mv <$> subst fa
-    DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> subst fa <*> subst na
+    DLE_MapRef at mv fa vt -> DLE_MapRef at mv <$> subst fa <*> pure vt
+    DLE_MapSet at mv fa vt na -> DLE_MapSet at mv <$> subst fa <*> pure vt <*> subst na
     DLE_Remote at fs av rt dr -> DLE_Remote at fs <$> subst av <*> pure rt <*> subst dr
     DLE_TokenNew at tns -> DLE_TokenNew at <$> subst tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> subst tok <*> subst amt

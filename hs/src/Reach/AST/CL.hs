@@ -169,7 +169,6 @@ data CLProg = CLProg
   , clp_defs :: CLDefs
   , clp_funs :: CLFuns
   , clp_api :: CLAPI
-  , clp_maps :: DLMapInfos
   }
   deriving (Eq)
 

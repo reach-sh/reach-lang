@@ -628,7 +628,7 @@ instance Interp DLExpr where
         ev <- vUInt <$> interp dlarg
         suspend $ PS_Suspend (Just at) (A_AdvanceSeconds ev)
     DLE_PartSet _at _slpart dlarg -> interp dlarg
-    DLE_MapRef _at dlmvar dlarg -> do
+    DLE_MapRef _at dlmvar dlarg _ -> do
       (g, _) <- getState
       let linstate = e_linstate g
       acc <- vAddress <$> interp dlarg
@@ -638,7 +638,7 @@ instance Interp DLExpr where
           case M.lookup acc m of
             Nothing -> return $ V_Data "None" V_Null
             Just m' -> return $ V_Data "Some" m'
-    DLE_MapSet _at dlmvar dlarg maybe_dlarg -> do
+    DLE_MapSet _at dlmvar dlarg _ maybe_dlarg -> do
       (e, _) <- getState
       let linst = e_linstate e
       acc <- vAddress <$> interp dlarg

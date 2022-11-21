@@ -261,12 +261,6 @@ appGlobalStateNumBytes = 1
 algoMaxStringSize :: Integer
 algoMaxStringSize = 4096
 
-algoMaxLocalSchemaEntries :: Integer
-algoMaxLocalSchemaEntries = 16
-
-algoMaxLocalSchemaEntries_usable :: Integer
-algoMaxLocalSchemaEntries_usable = algoMaxLocalSchemaEntries - appLocalStateNumBytes
-
 algoMaxGlobalSchemaEntries :: Integer
 algoMaxGlobalSchemaEntries = 64
 
@@ -298,6 +292,24 @@ algoMaxInnerTransactions = 16
 
 algoMaxAppTxnAccounts :: Integer
 algoMaxAppTxnAccounts = 4
+
+algoMaxAppBoxReferences :: Integer
+algoMaxAppBoxReferences = 8
+
+algoMaxAppKeyLen :: Integer
+algoMaxAppKeyLen = 64
+
+algoMaxBoxSize :: Integer
+algoMaxBoxSize = 32768
+
+reachMaxBoxSize :: Integer
+reachMaxBoxSize = 4096
+
+algoBoxFlatMinBalance :: Integer
+algoBoxFlatMinBalance = 2500
+
+algoBoxByteMinBalance :: Integer
+algoBoxByteMinBalance = 400
 
 algoMaxAppTxnForeignAssets :: Integer
 algoMaxAppTxnForeignAssets = 8
@@ -931,7 +943,7 @@ checkCost rlab notify disp ls ci ts = do
       reportCost pe ler am c
       return c
     let sums = foldr (+) 0 . M.elems . M.restrictKeys costM . S.fromList
-    let refs = sums [R_App, R_Asset, R_Account]
+    let refs = sums [R_App, R_Asset, R_Account, R_Box]
     void $ reportCost False (flip plural "transaction reference") algoMaxAppTotalTxnReferences refs
     do
       (over, cost, budget) <- budgetCFG
@@ -972,18 +984,10 @@ checkCost rlab notify disp ls ci ts = do
 
 type Lets = M.Map DLVar (App ())
 
-data Pre = Pre
-  { pMaps :: DLMapInfos
-  }
-
 data Env = Env
-  { ePre :: Pre
-  , eApiLs :: IORef [LabelRec]
+  { eApiLs :: IORef [LabelRec]
   , eProgLs :: IORef (Maybe [LabelRec])
   , eMaxApiRetSize :: IORef Integer
-  , eMapDataSize :: Integer
-  , eMapDataTy :: DLType
-  , eMapKeysl :: [Word8]
   , eFailuresR :: ErrorSetRef
   , eWarningsR :: ErrorSetRef
   , eCounter :: Counter
@@ -1028,7 +1032,9 @@ class Compile a where
   cp :: a -> App ()
 
 data LibFun
-  = LF_cMapLoad
+  = LF_mapRef
+  | LF_mapDel
+  | LF_mapSet
   | LF_checkTxn_net
   | LF_checkTxn_tok
   | LF_checkUInt256ResultLen
@@ -1054,6 +1060,95 @@ libCall lf impl = do
       Just (lab, _) -> return lab
   code "callsub" [ lab ]
 
+-- XXX maybe store w/ tag to simplify this
+cMapRef :: App ()
+cMapRef = libCall LF_mapRef $ do
+  -- [ tagSpot, nothing, key ]
+  op "box_get"
+  -- [ tagSpot, nothing, raw_data, exists ]
+  op "dup"
+  -- [ tagSpot, nothing, raw_data, exists, exists ]
+  cint 0
+  op "getbyte"
+  ctobs $ T_UInt UI_Word
+  -- [ tagSpot, nothing, raw_data, exists, exists_as_bytes ]
+  code "bury" [ "4" ]
+  -- [ tag, nothing, raw_data, exists ]
+  op "select"
+  -- [ tag, data ]
+  op "concat"
+  -- [ tagged-data ]
+  op "retsub"
+
+cMapDel :: App ()
+cMapDel = libCall LF_mapDel $ do
+  -- [ mbr, key ]
+  op "box_del"
+  -- [ mbr, existed ]
+  after <- freshLabel "boxDel"
+  code "bnz" [ after ]
+  -- [ mbr ]
+  incResource R_Account aDeployer
+  let mt_amt = aMapMbr
+  let mt_at = sb
+  let mt_mtok = Nothing
+  let mt_always = True
+  let mt_mrecv = Just $ Right $ cDeployer
+  let mt_mcclose = Nothing
+  let mt_next = False
+  let mt_submit = True
+  store_let vMapMbr True nop $
+    void $ makeTxn $ MakeTxn {..}
+  op "retsub"
+  label after
+  -- [ mbr ]
+  op "pop"
+  -- []
+  op "retsub"
+
+cMapSet :: App ()
+cMapSet = libCall LF_mapSet $ do
+  -- [ mbr, key, data ]
+  op "swap"
+  -- [ mbr, data, key ]
+  op "dup"
+  -- [ mbr, data, key, key ]
+  op "box_len"
+  -- [ mbr, data, key, len, exists ]
+  after <- freshLabel "boxSet"
+  code "bnz" [ after ]
+  -- [ mbr, data, key, len ]
+  code "dig" [ "3" ]
+  -- [ mbr, data, key, len, mbr ]
+  let ct_at = sb
+  let ct_mtok = Nothing
+  let ct_amt = aMapMbr
+  store_let vMapMbr True nop $
+    void $ checkTxn $ CheckTxn {..}
+  -- [ mbr, data, key, len ]
+  label after
+  -- [ mbr, data, key, len ]
+  op "pop"
+  op "swap"
+  -- [ mbr, key, data ]
+  op "box_put"
+  -- [ mbr ]
+  op "pop"
+  -- []
+  op "retsub"
+
+checkMapSize :: DLType -> App Integer
+checkMapSize t = do
+  s <- typeSizeOf t
+  unless (s <= reachMaxBoxSize) $ do
+    let msg = "This program uses a map where the data is " <> show s <> " bytes long."
+    case (s <= algoMaxBoxSize) of
+      True ->
+        bad $ LT.pack $ msg <> " But, the maximum size Reach supports is " <> show reachMaxBoxSize <> ", so this program cannot be compiled. Try to break up the map into smaller pieces. However, Algorand can support boxes up to " <> show algoMaxBoxSize <> "; contact us and we'll expand what Reach supports---we thought 4k would be enough for anyone!"
+      False ->
+        bad $ LT.pack $ msg <> " But, the maximum size is " <> show algoMaxBoxSize <> ", so this program cannot be compiled. Try to break up the map into smaller pieces."
+  return s
+
 separateResources :: App a -> App a
 separateResources = dupeResources . resetToks
 
@@ -1064,6 +1159,7 @@ data Resource
   = R_Asset
   | R_App
   | R_Account
+  | R_Box
   | R_Log
   | R_LogCalls
   | R_Budget
@@ -1082,7 +1178,9 @@ allResourcesM = M.fromList $ map (flip (,) ()) allResources
 useResource :: Resource -> App ()
 useResource = output . TResource
 
-type ResourceSet = S.Set DLArg
+type ResourceSet = S.Set ResourceArg
+
+type ResourceArg = (Int, DLArg)
 
 type ResourceSets = IORef (M.Map Resource ResourceSet)
 
@@ -1094,6 +1192,7 @@ rLabel ph = \case
   R_Txn -> "input " <> p "transaction"
   R_ITxn -> "inner " <> p "transaction"
   R_Asset -> p "asset"
+  R_Box -> "box" <> if ph then "es" else ""
   R_App -> "foreign " <> p "application"
   R_Account -> p "account"
   R_Budget -> p "unit" <> " of budget"
@@ -1109,6 +1208,7 @@ rPrecise = \case
   R_Txn -> True
   R_ITxn -> True
   R_App -> False
+  R_Box -> False
   R_Asset -> False
   R_Account -> False
   R_Budget -> True
@@ -1122,6 +1222,7 @@ maxOf = \case
   R_App -> algoMaxAppTxnForeignApps
   R_Asset -> algoMaxAppTxnForeignAssets
   R_Account -> algoMaxAppTxnAccounts
+  R_Box -> algoMaxAppBoxReferences
   R_Txn -> algoMaxTxGroupSize
   R_ITxn -> algoMaxInnerTransactions * algoMaxTxGroupSize
   R_Budget -> impossible "budget"
@@ -1144,7 +1245,7 @@ readResource r = do
   m <- liftIO $ readIORef rsr
   return $ fromMaybe mempty $ M.lookup r m
 
-freeResource :: Resource -> DLArg -> App ()
+freeResource :: Resource -> ResourceArg -> App ()
 freeResource r a = do
   vs <- readResource r
   let vs' = S.insert a vs
@@ -1152,7 +1253,10 @@ freeResource r a = do
   liftIO $ modifyIORef rsr $ M.insert r vs'
 
 incResource :: Resource -> DLArg -> App ()
-incResource r a = do
+incResource r a = incResource_ r (0, a)
+
+incResource_ :: Resource -> ResourceArg -> App ()
+incResource_ r a = do
   vs <- readResource r
   case S.member a vs of
     True -> return ()
@@ -1791,87 +1895,6 @@ cTupleSet _at cnew tt idx = do
   (t, start, _) <- computeExtract ts idx
   creplace start $ cnew >> ctobs t
 
-cMapLoad :: App ()
-cMapLoad = libCall LF_cMapLoad $ do
-  Env {..} <- ask
-  labReal <- freshLabel "mapLoadDo"
-  labDef <- freshLabel "mapLoadDef"
-  op "dup"
-  code "txn" ["ApplicationID"]
-  op "app_opted_in"
-  code "bnz" [labReal]
-  label labDef
-  op "pop"
-  padding eMapDataSize
-  op "retsub"
-  label labReal
-  let getOne mi = do
-        -- [ Address ]
-        cp $ keyVary mi
-        -- [ Address, Key ]
-        op "app_local_get"
-        -- [ MapData ]
-        return ()
-  case eMapKeysl of
-    -- Special case one key:
-    [0] -> getOne 0
-    _ -> do
-      -- [ Address ]
-      -- [ Address, MapData_0? ]
-      forM_ (zip eMapKeysl $ False : repeat True) $ \(mi, doConcat) -> do
-        -- [ Address, MapData_N? ]
-        case doConcat of
-          True -> code "dig" ["1"]
-          False -> op "dup"
-        -- [ Address, MapData_N?, Address ]
-        getOne mi
-        -- [ Address, MapData_N?, NewPiece ]
-        case doConcat of
-          True -> op "concat"
-          False -> nop
-        -- [ Address, MapData_N+1 ]
-        return ()
-      -- [ Address, MapData_k ]
-      op "swap"
-      op "pop"
-      -- [ MapData ]
-      return ()
-  op "retsub"
-
-cMapStore :: App () -> App ()
-cMapStore cnew = do
-  Env {..} <- ask
-  -- [ Address ]
-  case eMapKeysl of
-    -- Special case one key:
-    [0] -> do
-      -- [ Address ]
-      cp $ keyVary 0
-      -- [ Address, Key ]
-      cnew
-      -- [ Address, Key, Value ]
-      op "app_local_put"
-    _ -> do
-      cnew
-      forM_ eMapKeysl $ \mi -> do
-        -- [ Address, MapData' ]
-        code "dig" ["1"]
-        -- [ Address, MapData', Address ]
-        cp $ keyVary mi
-        -- [ Address, MapData', Address, Key ]
-        code "dig" ["2"]
-        -- [ Address, MapData', Address, Key, MapData' ]
-        cStateSlice eMapDataSize mi
-        -- [ Address, MapData', Address, Key, Value ]
-        op "app_local_put"
-        -- [ Address, MapData' ]
-        return ()
-      -- [ Address, MapData' ]
-      op "pop"
-      op "pop"
-      -- [ ]
-      return ()
-
 divup :: Integer -> Integer -> Integer
 divup x y = ceiling $ (fromIntegral x :: Double) / (fromIntegral y)
 
@@ -1949,6 +1972,28 @@ cGetBalance _at mmin = \case
     cp tok
     code "asset_holding_get" [ "AssetBalance" ]
     op "pop"
+
+cMapKey :: Int -> DLArg -> App (Integer, App ())
+cMapKey i a = do
+  let t = argTypeOf a
+  la <- typeSizeOf t
+  let isByte = i <= 255
+  let rawLen = 1 + la
+  let canBeRaw = isByte && rawLen <= algoMaxAppKeyLen
+  let ca = cp a >> ctobs t
+  let ctag = cp i >> (ctobs $ T_UInt UI_Word)
+  case canBeRaw of
+    True -> do
+      return $ (,) rawLen $ do
+        cbs $ BS.pack $ [ fromIntegral i ]
+        ca
+        op "concat"
+    False -> do
+      return $ (,) 32 $ do
+        ctag
+        ca
+        op "concat"
+        op "sha256"
 
 instance Compile DLExpr where
   cp = \case
@@ -2054,30 +2099,26 @@ instance Compile DLExpr where
       show_stack "Claim" mmsg at fs
     DLE_Wait {} -> nop
     DLE_PartSet _ _ a -> cp a
-    DLE_MapRef _ (DLMVar i) fa -> do
-      incResource R_Account fa
-      cp fa
-      cMapLoad
-      mdt <- getMapDataTy
-      cTupleRef mdt $ fromIntegral i
-    DLE_MapSet at mpv@(DLMVar i) fa mva -> do
-      incResource R_Account fa
-      Env {..} <- ask
-      let Pre {..} = ePre
-      mdt <- getMapDataTy
-      mt <- getMapTy mpv
-      case (length eMapKeysl) == 1 && (M.size pMaps) == 1 of
-        -- Special case one key and one map
-        True -> do
-          cp fa
-          cMapStore $ cp $ mdaToMaybeLA mt mva
-        _ -> do
-          cp fa
-          cMapStore $ do
-            cp fa
-            cMapLoad
-            let cnew = cp $ mdaToMaybeLA mt mva
-            cTupleSet at cnew mdt $ fromIntegral i
+    DLE_MapRef _ (DLMVar i) fa vt -> do
+      incResource_ R_Box (i, fa)
+      cbs ""
+      padding =<< typeSizeOf vt
+      (_, go) <- cMapKey i fa
+      go
+      void $ checkMapSize vt
+      cMapRef
+    DLE_MapSet _ (DLMVar i) fa vt mva -> do
+      incResource_ R_Box (i, fa)
+      (ks, go) <- cMapKey i fa
+      vts <- checkMapSize vt
+      cint $ algoBoxFlatMinBalance + algoBoxByteMinBalance * (ks + vts)
+      go
+      case mva of
+        Nothing -> cMapDel
+        Just a -> do
+          cp a
+          ctobs vt
+          cMapSet
     DLE_Remote at fs ro rng_ty (DLRemote rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo) -> do
       let DLRemoteALGO _fees r_accounts r_assets r_addr2acc r_apps r_oc r_strictPay r_rawCall _ _ _ = malgo
       warn_lab <- asks eWhich >>= \case
@@ -2743,6 +2784,13 @@ cContractAddr = code "global" ["CurrentApplicationAddress"]
 cDeployer :: App ()
 cDeployer = code "global" ["CreatorAddress"]
 
+aDeployer :: DLArg
+aDeployer = DLA_Var $ DLVar sb Nothing T_Address (-1)
+vMapMbr :: DLVar
+vMapMbr = DLVar sb Nothing (T_UInt UI_Word) (-2)
+aMapMbr :: DLArg
+aMapMbr = DLA_Var vMapMbr
+
 data GlobalVar
   = GV_txnCounter
   | GV_currentStep
@@ -2848,7 +2896,7 @@ callCompanion at cc = do
           True -> do
             cint_ at 0
             incResource R_App $ DLA_Literal $ DLL_Int at UI_Word 0
-            freeResource R_App $ cr_ro
+            freeResource R_App $ (0, cr_ro)
           False -> do
             cp cr_ro
             unless del $ do
@@ -2904,20 +2952,6 @@ callCompanion at cc = do
       whenJust mcr $ \_ -> do
         incResource R_App cr_ro
 
-getMapTy :: DLMVar -> App DLType
-getMapTy mpv = do
-  ms <- pMaps <$> asks ePre
-  return $
-    case M.lookup mpv ms of
-      Nothing -> impossible "getMapTy"
-      Just mi -> dlmi_ty mi
-
-mapDataTy :: DLMapInfos -> DLType
-mapDataTy m = T_Tuple $ map (dlmi_tym . snd) $ M.toAscList m
-
-getMapDataTy :: App DLType
-getMapDataTy = asks eMapDataTy
-
 cStateSlice :: Integer -> Word8 -> App ()
 cStateSlice size iw = do
   let i = fromIntegral iw
@@ -2949,15 +2983,12 @@ compileTEAL tealf = compileTEAL_ tealf >>= \case
       False -> failed
   Right stdout -> return stdout
 
-class HasPre a where
-  getPre :: a -> Pre
-
 -- CL Case
 instance CompileK CLStmt where
   cpk k = \case
     CLDL m -> cpk k m
     CLTxnBind _ from timev secsv -> do
-      freeResource R_Account $ DLA_Var from
+      freeResource R_Account $ (0, DLA_Var from)
       store_let from True (code "txn" ["Sender"]) $
         store_let timev True cRound $
           store_let secsv True (code "global" ["LatestTimestamp"]) $
@@ -3019,6 +3050,7 @@ instance CompileK CLStmt where
       gvStore GV_currentTime
       k
     CLTokenUntrack at tok -> do
+      incResource R_Account aDeployer
       let mt_at = at
       let mt_always = True
       let mt_mrecv = Nothing
@@ -3149,11 +3181,6 @@ instance Compile CLEX where
       bindFromArgs clf_dom $
         cp $ CLFX lab mwhich cef_fun
 
-instance HasPre CLProg where
-  getPre (CLProg {..}) = Pre {..}
-    where
-      pMaps = clp_maps
-
 instance Compile CLProg where
   cp (CLProg {..}) = do
     Env {..} <- ask
@@ -3217,18 +3244,6 @@ cp_shell x = do
     when shouldDup $ op "dup"
     cTupleRef keyState_ty i
     gvStore gv
-  unless (null eMapKeysl) $ do
-    -- NOTE We could allow an OptIn if we are not going to halt
-    code "txn" ["OnCompletion"]
-    output $ TConst "OptIn"
-    op "=="
-    code "bz" ["normal"]
-    output $ TCheckOnCompletion
-    code "txn" ["Sender"]
-    cMapStore $ padding eMapDataSize
-    code "b" ["checkSize"]
-    -- The NON-OptIn case:
-    label "normal"
   cp x
   label "updateStateHalt"
   code "txn" ["OnCompletion"]
@@ -3237,6 +3252,7 @@ cp_shell x = do
   output $ TCheckOnCompletion
   callCompanion sb $ CompanionDelete
   do
+    incResource R_Account aDeployer
     let mt_at = sb
     let mt_always = True
     let mt_mrecv = Nothing
@@ -3300,8 +3316,7 @@ cp_shell x = do
   stateKeys <- liftIO $ eGetStateKeys
   ctf "GlobalNumByteSlice" $ appGlobalStateNumBytes + fromIntegral stateKeys
   ctf "LocalNumUint" $ appLocalStateNumUInt
-  let mapDataKeys = length eMapKeysl
-  ctf "LocalNumByteSlice" $ appLocalStateNumBytes + fromIntegral mapDataKeys
+  ctf "LocalNumByteSlice" $ appLocalStateNumBytes
   forM_ keyState_gvs $ \gv -> do
     ctzero $ gvType gv
     gvStore gv
@@ -3309,7 +3324,7 @@ cp_shell x = do
   -- Library functions
   libDefns
 
-compile_algo :: (HasCounter a, Compile a, HasPre a) => Outputer -> a -> IO ConnectorInfo
+compile_algo :: (HasCounter a, Compile a) => Outputer -> a -> IO ConnectorInfo
 compile_algo disp x = do
   -- This is the final result
   eRes <- newIORef mempty
@@ -3355,14 +3370,6 @@ compile_algo disp x = do
   -- We start doing real work
   (gFailuresR, gbad) <- newErrorSetRef
   (gWarningsR, _gwarn) <- newErrorSetRef
-  let ePre = getPre x
-  let Pre {..} = ePre
-  -- XXX remove this once we have boxes
-  forM_ pMaps $ \DLMapInfo {..} -> do
-    unless (dlmi_kt == T_Address) $ do
-      gbad $ LT.pack $ "Cannot use '" <> show dlmi_kt <> "' as Map key. Only 'Address' keys are allowed."
-  let eMapDataTy = mapDataTy pMaps
-  eMapDataSize <- typeSizeOf__ gbad eMapDataTy
   let eSP = 255
   let eVars = mempty
   let eLets = mempty
@@ -3380,7 +3387,6 @@ compile_algo disp x = do
           M.insert (prefix <> "Keys") $
             AS.Number $ fromIntegral keys
         return $ keysl
-  eMapKeysl <- recordSizeAndKeys gbad "mapData" eMapDataSize algoMaxLocalSchemaEntries_usable
   eABI <- newIORef mempty
   eProgLs <- newIORef mempty
   eApiLs <- newIORef mempty
