@@ -6,6 +6,10 @@ import type { // =>
   Stdlib_Impl_Shared,
 } from './interfaces';
 import type { // =>
+  Token,
+  ContractInfo,
+} from './ETH_like_compiled'
+import type { // =>
   ethers,
   BigNumber,
 } from 'ethers';
@@ -31,9 +35,10 @@ export interface ETH_Ty<BV extends CBR_Val, NV> extends BackendTy<BV> {
 };
 
 export type AnyETH_Ty = ETH_Ty<any, any>;
+type ConnectorTy = AnyETH_Ty;
 
 export interface EthLikeCompiled extends Stdlib_Impl_Shared {
-  stdlib: Stdlib_Backend_Base<AnyETH_Ty>
+  stdlib: Stdlib_Backend_Base<Token, ContractInfo, ConnectorTy>
   typeDefs: TypeDefs<AnyETH_Ty>
 }
 

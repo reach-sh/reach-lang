@@ -350,50 +350,27 @@ jsMaybe f = \case
 jsArg_m :: AppT (Maybe DLArg)
 jsArg_m = jsMaybe jsArg
 
-shouldHashMapKey :: DLType -> Bool
-shouldHashMapKey = \case
-  T_Null -> False
-  T_Bool -> False
-  T_UInt {} -> False
-  T_Digest -> False
-  T_Address -> False
-  T_Contract -> False
-  T_Token -> False
-  T_Bytes {} -> True
-  T_BytesDyn -> True
-  T_StringDyn -> True
-  T_Array {} -> True
-  T_Data {} -> True
-  T_Tuple {} -> True
-  T_Object {} -> True
-  T_Struct {} -> True
-
-jsMapKey :: DLArg -> App Doc
-jsMapKey k =
-  case shouldHashMapKey $ argTypeOf k of
-    False -> jsArg k
-    True  -> jsDigest [k]
-
 jsRemote :: SrcLoc -> DLRemote -> App Doc
 jsRemote at (DLRemote _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv _nnZero) malgo) = do
-  let DLRemoteALGO r_fees r_accounts r_assets _r_addr2acc r_apps _r_oc r_strictPay _r_rawCall
-                   _r_simNetRecv _r_simTokRecv _r_simRetVal = malgo
-  fees' <- jsArg r_fees
-  let notStaticZero = if r_strictPay then const True else not . staticZero
+  let DLRemoteALGO {..} = malgo
+  fees' <- jsArg ra_fees
+  let notStaticZero = if ra_strictPay then const True else not . staticZero
   let pay_ks_nz = filter (notStaticZero . fst) pay_ks
   let l2n x = jsCon $ DLL_Int at UI_Word $ fromIntegral $ length $ x
   pays' <- l2n $ filter notStaticZero $ pay_net : map fst pay_ks_nz
-  let nRecvCount = if nRecv then [r_fees] else []
+  let nRecvCount = if nRecv then [ra_fees] else []
   bills' <- l2n $ nRecvCount <> nnRecv
-  toks' <- mapM jsArg $ nnRecv <> map snd pay_ks_nz <> r_assets
+  toks' <- mapM jsArg $ nnRecv <> map snd pay_ks_nz <> ra_assets
   let isAddress = (==) T_Address . argTypeOf
-  accs' <- mapM jsArg $ (filter isAddress as) <> r_accounts
-  apps' <- mapM jsArg r_apps
+  accs' <- mapM jsArg $ (filter isAddress as) <> ra_accounts
+  apps' <- mapM jsArg ra_apps
+  boxes' <- mapM jsArg ra_boxes
   return $ parens $ jsObject $ M.fromList $
     [ (("pays"::String), pays')
     , ("bills", bills')
     , ("toks", jsArray toks')
     , ("accs", jsArray accs')
+    , ("boxes", jsArray boxes')
     , ("apps", jsArray apps')
     , ("fees", fees')
     ]
@@ -530,23 +507,28 @@ jsExpr = \case
         return $ jsApply "ctc.iam" [what']
       False ->
         jsArg what
-  DLE_MapRef _ mpv fa _ -> do
+  DLE_MapRef _ mpv fa vt -> do
     let ctc = jsMapVarCtc mpv
-    fa' <- jsMapKey fa
+    kt' <- jsContract $ argTypeOf fa
+    fa' <- jsArg fa
+    vt' <- jsContract vt
     (f, args) <-
       (ctxt_mode <$> ask) >>= \case
         JM_Simulate -> return $ ("await stdlib.simMapRef", ["sim_r", jsMapIdx mpv])
         JM_Backend -> return $ ("await stdlib.mapRef", [jsMapVar mpv])
-        JM_View -> return $ ("await viewlib.viewMapRef", [jsMapIdx mpv])
-    return $ jsProtect_ "null" ctc $ jsApply f $ args <> [fa']
-  DLE_MapSet _ mpv fa _ mna -> do
-    fa' <- jsMapKey fa
+        JM_View -> do
+          return $ ("await viewlib.viewMapRef", [jsMapIdx mpv])
+    return $ jsProtect_ "null" ctc $ jsApply f $ args <> [kt', fa', vt']
+  DLE_MapSet _ mpv fa vt mna -> do
+    kt' <- jsContract $ argTypeOf fa
+    vt' <- jsContract vt
+    fa' <- jsArg fa
     na' <- jsArg_m mna
     (ctxt_mode <$> ask) >>= \case
       JM_Simulate ->
-        return $ jsApply "await stdlib.simMapSet" ["sim_r", jsMapIdx mpv, fa', na']
+        return $ jsApply "await stdlib.simMapSet" ["sim_r", jsMapIdx mpv, kt', fa', vt', na']
       JM_Backend ->
-        return $ jsApply "await stdlib.mapSet" [jsMapVar mpv, fa', na']
+        return $ jsApply "await stdlib.mapSet" [jsMapVar mpv, kt', fa', vt', na']
       JM_View -> impossible "view mapset"
   DLE_Remote at _fs ro rng_ty dr -> do
     (ctxt_mode <$> ask) >>= \case
@@ -559,13 +541,13 @@ jsExpr = \case
               [ ("obj", obj')
               , ("remote", dr')
               ]
-        let DLRemoteALGO { ralgo_simNetRecv, ralgo_simTokensRecv, ralgo_simReturnVal } = dr_ralgo dr
-        netRecv' <- jsArg ralgo_simNetRecv
-        tokensRecv' <- jsArg $ case ralgo_simTokensRecv of
+        let DLRemoteALGO { .. } = dr_ralgo dr
+        netRecv' <- jsArg ra_simNetRecv
+        tokensRecv' <- jsArg $ case ra_simTokensRecv of
           RA_Tuple t -> t
           _ -> impossible "expected RA_Tuple"
         returnVal' <-
-          case ralgo_simReturnVal of
+          case ra_simReturnVal of
             Just a -> jsArg a
             Nothing -> do
               c <- jsContract rng_ty
@@ -1230,7 +1212,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 26
+reachBackendVersion = 27
 
 jsEPProg :: ConnectorObject -> EPProg -> App Doc
 jsEPProg cr (EPProg {..}) = do

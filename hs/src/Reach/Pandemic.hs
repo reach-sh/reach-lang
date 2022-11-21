@@ -120,9 +120,8 @@ instance Pandemic DLRemoteALGOSTR where
     RA_Tuple t -> RA_Tuple <$> pan t
 
 instance Pandemic DLRemoteALGO where
-  pan (DLRemoteALGO a b c d e f g h i j k) =
-    DLRemoteALGO <$> pan a <*> pan b <*> pan c <*> pan d <*> pan e <*> pan f <*> pan g <*> pan h <*>
-                     pan i <*> pan j <*> pan k
+  pan (DLRemoteALGO {..}) =
+    DLRemoteALGO <$> pan ra_fees <*> pan ra_accounts <*> pan ra_assets <*> pan ra_addr2acc <*> pan ra_apps <*> pan ra_boxes <*> pan ra_onCompletion <*> pan ra_strictPay <*> pan ra_rawCall <*> pan ra_simNetRecv <*> pan ra_simTokensRecv <*> pan ra_simReturnVal
 
 instance Pandemic DLPayAmt where
   pan (DLPayAmt net ks) = do

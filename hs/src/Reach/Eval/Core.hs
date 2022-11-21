@@ -3782,28 +3782,33 @@ evalPrim p sargs =
             Nothing -> return $ False
             Just (SLV_Bool _ b) -> return b
             Just _ -> expect_ $ Err_Remote_ALGO_extra $ [ lab <> " with non-compile time value" ]
-      ralgo_fees <- metal "fees" $ \case
+      ra_fees <- metal "fees" $ \case
         Nothing -> return $ DLA_Literal $ DLL_Int at UI_Word 0
         Just v -> compileCheckType msdef (T_UInt UI_Word) v
-      ralgo_strictPay <- expectBool "strictPay"
-      ralgo_rawCall <- expectBool "rawCall"
-      ralgo_accounts <- metal "accounts" $ \case
+      ra_strictPay <- expectBool "strictPay"
+      ra_rawCall <- expectBool "rawCall"
+      ra_accounts <- metal "accounts" $ \case
         Nothing -> return $ mempty
         Just v -> do
           vs <- explodeTupleLike "REMOTE_FUN.ALGO.accounts" v
           mapM (compileCheckType msdef T_Address) vs
-      ralgo_assets <- metal "assets" $ \case
+      ra_assets <- metal "assets" $ \case
         Nothing -> return $ mempty
         Just v -> do
           vs <- explodeTupleLike "REMOTE_FUN.ALGO.assets" v
           mapM (compileCheckType msdef T_Token) vs
-      ralgo_apps <- metal "apps" $ \case
+      ra_apps <- metal "apps" $ \case
         Nothing -> return $ mempty
         Just v -> do
           vs <- explodeTupleLike "REMOTE_FUN.ALGO.apps" v
           mapM (compileCheckType msdef T_Contract) vs
-      ralgo_addr2acc <- expectBool "addressToAccount"
-      ralgo_onCompletion <- metal "onCompletion" $ \case
+      ra_boxes <- metal "boxes" $ \case
+        Nothing -> return $ mempty
+        Just v -> do
+          vs <- explodeTupleLike "REMOTE_FUN.ALGO.boxes" v
+          mapM (compileCheckType msdef (T_Bytes 64)) vs
+      ra_addr2acc <- expectBool "addressToAccount"
+      ra_onCompletion <- metal "onCompletion" $ \case
         Nothing -> return $ RA_NoOp
         Just (SLV_Bytes _ "NoOp") -> return $ RA_NoOp
         Just (SLV_Bytes _ "OptIn") -> return $ RA_OptIn
@@ -3814,12 +3819,12 @@ evalPrim p sargs =
         Just _ -> expect_ $ Err_Remote_ALGO_extra $ [ "illegal value for onCompletion" ]
       let locAtOf = locAt . srclocOf
       let compileUInt = compileCheckType msdef (T_UInt UI_Word)
-      ralgo_simNetRecv <- metal "simNetRecv" $ maybe (pure argLitZero) (\x -> locAtOf x $ compileUInt x)
-      ralgo_simTokensRecv <- metal "simTokensRecv" $ maybe (pure RA_Unset) $ \case
+      ra_simNetRecv <- metal "simNetRecv" $ maybe (pure argLitZero) (\x -> locAtOf x $ compileUInt x)
+      ra_simTokensRecv <- metal "simTokensRecv" $ maybe (pure RA_Unset) $ \case
         SLV_Tuple tupAt amts -> locAt tupAt $ RA_List tupAt <$> mapM compileUInt amts
         _ -> expect_ $ Err_Remote_ALGO_extra ["simTokensRecv must be a Tuple of UInts"]
       rngTy <- st2dte $ stf_rng stf
-      ralgo_simReturnVal <- metal "simReturnVal" $ \case
+      ra_simReturnVal <- metal "simReturnVal" $ \case
         Just x -> locAtOf x $ Just <$> compileCheckType msdef rngTy x
         Nothing -> return Nothing
       let malgo = Just $ DLRemoteALGO {..}
@@ -3856,13 +3861,13 @@ evalPrim p sargs =
       let nnToksNotBilled = allTokens \\ nntbRecv
       let withBill = DLWithBill nBilled nntbRecv nnToksNotBilled
       let DLRemoteALGO {..} = fromMaybe zDLRemoteALGO malgo
-      ralgo_simTokensRecv' <- fmap RA_Tuple . compileArgExpr_ =<< case ralgo_simTokensRecv of
+      ra_simTokensRecv' <- fmap RA_Tuple . compileArgExpr_ =<< case ra_simTokensRecv of
         -- If user didn't give simTokensRecv, generate default where the ctc receives zero of every token
         RA_Unset -> return $ DLAE_Tuple $ replicate nntbC $ DLAE_Arg $ DLA_Literal $ DLL_Int at UI_Word 0
         RA_List _ amts | length amts == nntbC -> return $ DLAE_Tuple $ map DLAE_Arg amts
         RA_List at' _ -> locAt at' $ expect_ $ Err_Remote_ALGO_extra ["Length of simTokensRecv must match the number of tokens billed"]
         RA_Tuple _ -> impossible "RA_Tuple"
-      let ralgo = DLRemoteALGO { ralgo_simTokensRecv = ralgo_simTokensRecv', .. }
+      let ralgo = DLRemoteALGO { ra_simTokensRecv = ra_simTokensRecv', .. }
       res' <-
         doInteractiveCall
           sargs
