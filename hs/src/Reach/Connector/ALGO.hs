@@ -1068,9 +1068,7 @@ cMapRef = libCall LF_mapRef $ do
   -- [ tagSpot, nothing, raw_data, exists ]
   op "dup"
   -- [ tagSpot, nothing, raw_data, exists, exists ]
-  cint 0
-  op "getbyte"
-  ctobs $ T_UInt UI_Word
+  ctobs $ T_Bool
   -- [ tagSpot, nothing, raw_data, exists, exists_as_bytes ]
   code "bury" [ "4" ]
   -- [ tag, nothing, raw_data, exists ]
