@@ -14,6 +14,18 @@ const minBid = stdlib.parseCurrency(2);
 const lenInBlocks = 10;
 const params = { nftId, minBid, lenInBlocks };
 
+const getTok = (x) => {
+  if(stdlib.isBigNumber(x)){
+    // the Token on Algorand is a UInt
+    const num = stdlib.bigNumberToNumber(x);
+    return num;
+  } else {
+    // the Token on ETH is an Address
+    const tokenAddress = stdlib.formatAddress(x);
+    return tokenAddress;
+  }
+};
+
 let done = false;
 const bidders = [];
 const startBidders = async () => {
@@ -27,13 +39,19 @@ const startBidders = async () => {
         await acc.tokenAccept(nftId);
         bidders.push([who, acc]);
         const ctc = acc.contract(backend, ctcCreator.getInfo());
+        const NFT = await ctc.v.nft();
+        const vNFT = getTok(NFT[1]);
+        const vMin = await ctc.v.min();
+        const vBid = await ctc.v.currentBid();
         const getBal = async () => stdlib.formatCurrency(await stdlib.balanceOf(acc));
-
+        console.log(`${who} sees the NFT up for sale is ${vNFT}.`);
+        console.log(`${who} sees the minimum bid is ${stdlib.formatCurrency(vMin[1])}.`);
+        console.log(`${who} sees the current bid is ${stdlib.formatCurrency(vBid[1])}.`);
         console.log(`${who} decides to bid ${stdlib.formatCurrency(bid)}.`);
         console.log(`${who} balance before is ${await getBal()}`);
         try {
             const [ lastBidder, lastBid ] = await ctc.apis.Bidder.bid(bid);
-            console.log(`${who} out bid ${lastBidder} who bid ${stdlib.formatCurrency(lastBid)}.`);
+            console.log(`${who} out bid ${stdlib.formatAddress(lastBidder)} who bid ${stdlib.formatCurrency(lastBid)}.`);
         } catch (e) {
             console.log(`${who} failed to bid, because the auction is over`);
         }
@@ -70,3 +88,4 @@ for ( const [who, acc] of bidders ) {
     console.log(`${who} has ${stdlib.formatCurrency(amt)} ${stdlib.standardUnit} and ${amtNFT} of the NFT`);
 }
 done = true;
+

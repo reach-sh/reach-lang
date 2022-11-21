@@ -14,6 +14,11 @@ export const main = Reach.App(() => {
     const Bidder = API('Bidder', {
         bid: Fun([UInt], Tuple(Address, UInt)),
     });
+    const V = View({
+      min: UInt,
+      nft: Token,
+      currentBid: UInt,
+    })
     init();
 
     Creator.only(() => {
@@ -25,12 +30,17 @@ export const main = Reach.App(() => {
     Creator.pay([[amt, nftId]]);
     Creator.interact.auctionReady();
     assert(balance(nftId) == amt, "balance of NFT is wrong");
+    V.min.set(minBid);
+    V.nft.set(nftId);
     const end = lastConsensusTime() + lenInBlocks;
     const [
         highestBidder,
         lastPrice,
         isFirstBid,
     ] = parallelReduce([Creator, minBid, true])
+        .define(() => {
+          V.currentBid.set(lastPrice);
+        })
         .invariant(balance(nftId) == amt)
         .invariant(balance() == (isFirstBid ? 0 : lastPrice))
         .while(lastConsensusTime() <= end)
@@ -57,3 +67,4 @@ export const main = Reach.App(() => {
     commit();
     exit();
 });
+
