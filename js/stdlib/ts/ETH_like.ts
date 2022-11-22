@@ -170,8 +170,8 @@ const {
   stdlib,
 } = ethLikeCompiled;
 const {
-  T_Address, T_Tuple,
-  T_UInt, T_Contract,
+  T_Address, T_Tuple, T_Null,
+  T_UInt, T_Contract, T_Data,
   addressEq,
   simTokenAccepted_,
   digest,
@@ -568,8 +568,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         debug(dhead, mf);
         const mfv = await ethersC[mf](k);
         debug(dhead, { mfv });
-        // XXX I think should be the maybe, not the original
-        const res = vt.unmunge(mfv);
+        const mvt = T_Data({
+          'None': T_Null,
+          'Some': vt,
+        });
+        const res = mvt.unmunge(mfv);
         debug(dhead, res);
         // @ts-ignore
         return res;
