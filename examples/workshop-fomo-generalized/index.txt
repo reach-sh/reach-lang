@@ -4,3 +4,7 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 27 theorems; No failures!
+WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
+ * Step 0 may use up to 5 accounts, but the limit is 4. Step 0 starts at ./index.rsh:36:12:dot.
+ * Step 2 may use up to 5 accounts, but the limit is 4. Step 2 starts at ./index.rsh:42:21:dot.
+ * Step 3 may use up to 5 accounts, but the limit is 4. Step 3 starts at ./index.rsh:58:19:dot.
