@@ -4,3 +4,11 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 10 theorems; No failures!
+warning[RW0000]: The `untrustworthyMaps` option is deprecated. All maps are now trustworthy.
+
+  ./pr138.rsh:9:33:property binding
+
+  9|   setOptions({ untrustworthyMaps: true });
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
+

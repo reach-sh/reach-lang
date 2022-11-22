@@ -12,3 +12,5 @@ warning[RW0000]: Using a bare value as a time argument is now deprecated. Please
 
 For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
+WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
+ * Step 5 may use up to 5 accounts, but the limit is 4. Step 5 starts at ./pr190b.rsh:357:21:dot.
