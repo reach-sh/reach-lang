@@ -982,7 +982,7 @@ jsMapDefns varsHuh = do
       return $
         vsep $
           ["const" <+> jsMapVarCtc mpv <+> "=" <+> ctc <> ";"]
-            <> (if varsHuh then ["const" <+> jsMapVar mpv <+> "=" <+> jsApplyKws "stdlib.newMap" (M.fromList $ [("idx", jsMapIdx mpv), ("ctc", "ctc"), ("ty", jsMapVarCtc mpv), ("isAPI", jsBool ia)]) <> ";"] else [])
+            <> (if varsHuh then ["const" <+> jsMapVar mpv <+> "=" <+> jsApplyKws "stdlib.newMap" (M.fromList $ [("idx", jsMapIdx mpv), ("ctc", "ctc"), ("isAPI", jsBool ia)]) <> ";"] else [])
 
 jsError :: Doc -> Doc
 jsError err = "new Error(" <> err <> ")"

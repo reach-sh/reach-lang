@@ -20,18 +20,22 @@ export const defineSimStuff = <Token, ContractInfo, ConnectorTy extends AnyBacke
   type SimRes = ISimRes<Token, ContractInfo, ConnectorTy>;
 
   const simMapDupe = <K, A>(sim_r:SimRes, mapi:number, mapo:LinearMap<K, A, ConnectorTy>): void => {
-    sim_r.maps[mapi] = copyMap(mapo.ref);
+    sim_r.maps[mapi] = copyMap(mapo);
   };
 
   const simMapRef = async <K, A>(sim_r:SimRes, mapi:number, kt:ConnectorTy, k:K, vt:ConnectorTy): Promise<MaybeRep<A>> => {
-    sim_r.mapRefs.push({ kind: 'ref', mapi, kt, k, vt });
-    return await mapRef(sim_r.maps[mapi], kt, k, vt);
+    const map = sim_r.maps[mapi];
+    const key = await map.getKey(kt, k, vt);
+    sim_r.mapRefs.push({ kind: 'ref', key });
+    return await mapRef(map, kt, k, vt);
   };
 
   const simMapSet = async <K, A>(sim_r:SimRes, mapi:number, kt:ConnectorTy, k:K, vt:ConnectorTy, v:A|undefined): Promise<void> => {
+    const map = sim_r.maps[mapi];
+    const key = await map.getKey(kt, k, vt);
     const kind = v ? 'set' : 'del';
-    sim_r.mapRefs.push({ kind, mapi, kt, k, vt });
-    return await mapSet(sim_r.maps[mapi], kt, k, vt, v);
+    sim_r.mapRefs.push({ kind, key });
+    return await mapSet(map, kt, k, vt, v);
   };
 
   const simTokenNew = <A>(sim_r:SimRes, n:any, s:any, u:any, m:any, p:BigNumber, d:BigNumber|undefined, ctr:A): A => {

@@ -8,6 +8,9 @@ import {
   apiStateMismatchError,
   debug,
   j2s,
+  MapRefT,
+  GetKeyT,
+  IContractCompiledMaps,
 } from './shared_impl';
 export {
   bigNumberToNumber,
@@ -206,54 +209,62 @@ export function Array_set <T>(arr: Array<T>, idx: number, elem: T): Array<T> {
   return arrp;
 }
 
-export type MapRefT<K, A, ConnectorTy extends AnyBackendTy> = (kt:ConnectorTy, k:K, vt:ConnectorTy) => Promise<MaybeRep<A>>;
-export interface MapOpts<K, A, ConnectorTy extends AnyBackendTy> {
-  ctc: {
-    apiMapRef: (i:number) => MapRefT<K, A, ConnectorTy>
-  },
-  kt: ConnectorTy,
-  vt: ConnectorTy,
+export interface MapOpts<ConnectorTy extends AnyBackendTy> {
+  ctc: IContractCompiledMaps<ConnectorTy>,
   isAPI: boolean,
   idx: number,
 };
 export interface LinearMap<K, A, ConnectorTy extends AnyBackendTy> {
-  ref: MapRefT<K, A>,
+  getKey: GetKeyT<K, ConnectorTy>,
+  ref: MapRefT<K, A, ConnectorTy>,
   set: (kt:ConnectorTy, k:K, vt:ConnectorTy, v:A|undefined) => Promise<void>,
 };
 
-const basicMap = <A>(): LinearMap<A> => {
+const basicMap = <K, A, ConnectorTy extends AnyBackendTy>(getKey:GetKeyT<K, ConnectorTy>): LinearMap<K, A, ConnectorTy> => {
   const m: {[key: string]: A|undefined} = {};
-  const basicSet = async (f:string, v:A|undefined): Promise<void> => {
+  const basicSet = async (kt:ConnectorTy, k:K, vt:ConnectorTy, v:A|undefined): Promise<void> => {
+    const f = await getKey(kt, k, vt);
     m[f] = v;
   };
-  const basicRef = async (f:string): Promise<MaybeRep<A>> => {
+  const basicRef = async (kt:ConnectorTy, k:K, vt:ConnectorTy): Promise<MaybeRep<A>> => {
+    const f = await getKey(kt, k, vt);
     return asMaybe<A>(m[f]);
   };
-  return { ref: basicRef, set: basicSet };
+  return { getKey, ref: basicRef, set: basicSet };
 };
-export const copyMap = <A>(or: MapRefT<A>): LinearMap<A> => {
-  const m: LinearMap<A> = basicMap();
+export const copyMap = <K, A, ConnectorTy extends AnyBackendTy>(orig:LinearMap<K, A, ConnectorTy>): LinearMap<K, A, ConnectorTy> => {
+  const { getKey, ref: origRef } = orig;
+  const m: LinearMap<K, A, ConnectorTy> = basicMap(getKey);
   const seen: {[key: string]: boolean} = {};
-  const copySet = async (f:string, v:A|undefined): Promise<void> => {
+  const copySet = async (kt:ConnectorTy, k:K, vt:ConnectorTy, v:A|undefined): Promise<void> => {
+    const f = await getKey(kt, k, vt);
     seen[f] = true;
-    await mapSet(m, f, v);
+    await mapSet(m, kt, k, vt, v);
   };
-  const copyRef = async (f:string): Promise<MaybeRep<A>> => {
+  const copyRef = async (kt:ConnectorTy, k:K, vt:ConnectorTy): Promise<MaybeRep<A>> => {
+    const f = await getKey(kt, k, vt);
     if ( ! seen[f] ) {
-      const mv = await or(f);
-      await copySet(f, mv[0] === 'Some' ? mv[1] : undefined);
+      const mv = await origRef(kt, k, vt);
+      await copySet(kt, k, vt, mv[0] === 'Some' ? mv[1] : undefined);
     }
-    return await mapRef(m, f);
+    return await mapRef(m, kt, k, vt);
   };
-  return { ref: copyRef, set: copySet };
+  return { getKey, ref: copyRef, set: copySet };
 };
 
 // dupe: () => {[key: string]: A},
-export const newMap = <K, A, ConnectorTy extends AnyBackendTy>(opts: MapOpts<A>): LinearMap<K, A, ConnectorTy> => {
+export const newMap = <K, A, ConnectorTy extends AnyBackendTy>(opts: MapOpts<ConnectorTy>): LinearMap<K, A, ConnectorTy> => {
+  const { makeGetKey, apiMapRef } = opts.ctc;
+  const getKey = makeGetKey(opts.idx);
   if ( opts.isAPI ) {
-    return copyMap(opts.ctc.apiMapRef(opts.idx, opts.ty));
+    const fake: LinearMap<K, A, ConnectorTy> = {
+      getKey,
+      ref: apiMapRef(opts.idx),
+      set: async (kt, k, vt, v) => { void kt; void k; void vt; void v; },
+    }
+    return copyMap(fake);
   } else {
-    return basicMap();
+    return basicMap(getKey);
   }
 };
 export const mapSet = async <K, A, Ty extends AnyBackendTy>(m: LinearMap<K, A, Ty>, kt:Ty, k:K, vt:Ty, v:A|undefined): Promise<void> => {
