@@ -794,9 +794,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         return cs;
       }
 
-      const makeGetKey = <K>(mapi:number) => async (kt:ConnectorTy, k:K, vt:ConnectorTy): Promise<string> => {
+      const makeGetKey = <K>(mapi:number) => async (kt:ConnectorTy, k:K, vt:ConnectorTy): Promise<[string, number]> => {
         void vt; void mapi;
-        return digest([kt], [k]);
+        return [ digest([kt], [k]), 0 ];
       };
 
       return { getContractInfo, getContractAddress, getContractCompanion, getBalance, getCurrentStep, sendrecv, recv, getState, apiMapRef, simTokenAccepted, makeGetKey };

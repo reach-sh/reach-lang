@@ -1482,20 +1482,27 @@ const getLocalState_ = async (addr: Address, ApplicationID: BigNumber): Promise<
   }
 };
 
-const makeGetKey = <K>(mapi:number) => async (kt:ConnectorTy, k:K, vt:ConnectorTy): Promise<string> => {
+const makeGetKey = <K>(mapi:number) => async (kt:ConnectorTy, k:K, vt:ConnectorTy): Promise<[string, number]> => {
   debug('makeGetKey', { mapi, kt, k, vt });
   // This mimics ALGO.hs/cMapKey
   const la = kt.netSize;
   const isByte = mapi <= 255;
   const rawLen = 1 + la;
   const canBeRaw = isByte && rawLen <= algoMaxAppKeyLen;
-  if (canBeRaw) {
+  debug('makeGetKey', { la, isByte, rawLen, canBeRaw });
+  const r = (canBeRaw ? (() => {
     const bs = ethers.utils.concat([new Uint8Array([mapi]), kt.toNet((k as unknown) as CBR_Val)]);
+    debug('makeGetKey', { bs });
     return buf_to_hex(arr_to_buf(bs));
-  } else {
+  }) : (() => {
     const mapit = T_UInt;
     return digest([mapit, kt], [mapi, k]);
-  }
+  }))();
+  debug('makeGetKey', { r });
+  const rlen = (r.length - 2) / 2;
+  const len = rlen + vt.netSize;
+  const mbr = 2500 + 400 * len;
+  return [ r, mbr ];
 };
 
 const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
@@ -1612,7 +1619,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
         const viewMapRef = async <K, A>(mapi:number, kt:ConnectorTy, k:K, vt:ConnectorTy): Promise<MaybeRep<A>> => {
           debug('viewMapRef', { mapi, kt, k, vt });
-          const f = await makeGetKey(mapi)(kt, k, vt);
+          const [f, mbr] = await makeGetKey(mapi)(kt, k, vt); void mbr;
           debug('viewMapRef', { f });
           // XXX
           return ['None', null];
@@ -1835,7 +1842,17 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             }
           };
           const recordBox = (smr:SimMapRef) => {
-            const { key } = smr;
+            const { key, kind, mbr } = smr;
+            if ( kind === 'del' ) {
+              howManyMoreFees++;
+            } else if ( kind === 'set' ) {
+              processSimTxn({
+                kind: 'to',
+                amt: bigNumberify(mbr),
+                tok: undefined,
+              });
+              howManyMoreFees++;
+            }
             const name = buf_to_arr(hex_to_buf(key));
             recordBox_({ appIndex, name });
           };
@@ -1843,7 +1860,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             const { app, name } = smr;
             recordBox_({ appIndex: bigNumberToNumber(app), name });
           };
-          mapRefs.forEach(recordBox);
 
           const foreignArr: Array<number> = [ ];
           const recordApp = (app:ContractInfo) => {
@@ -1852,6 +1868,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               foreignArr.push(appn);
             }
           };
+
           const assetsArr: number[] = [];
           const recordAsset = (tok:BigNumber|undefined) => {
             if ( tok ) {
@@ -1861,6 +1878,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               }
             }
           };
+
           let extraFees: number = 0;
           let howManyMoreFees: number = 0;
           const txnExtraTxns: Array<Transaction> = [];
@@ -1950,6 +1968,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             txn.fee = 0;
             txnExtraTxns.push(txn);
           };
+
+          mapRefs.forEach(recordBox);
           sim_r.txns.forEach(processSimTxn);
           if ( hasCompanion ) {
             if ( isCtor ) {

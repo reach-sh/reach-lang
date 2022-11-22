@@ -197,7 +197,7 @@ export type APIMap = ViewMap;
 export type EventMap = { [key: string]: any }
 
 export type MapRefT<K, A, ConnectorTy extends AnyBackendTy> = (kt:ConnectorTy, k:K, vt:ConnectorTy) => Promise<MaybeRep<A>>;
-export type GetKeyT<K, ConnectorTy extends AnyBackendTy> = (kt:ConnectorTy, k:K, vt:ConnectorTy) => Promise<string>;
+export type GetKeyT<K, ConnectorTy extends AnyBackendTy> = (kt:ConnectorTy, k:K, vt:ConnectorTy) => Promise<[string, number]>;
 export interface IContractCompiledMaps<ConnectorTy extends AnyBackendTy> {
   makeGetKey: <K>(mapi:number) => GetKeyT<K, ConnectorTy>,
   apiMapRef: <K, A>(i:number) => MapRefT<K, A, ConnectorTy>
@@ -637,6 +637,7 @@ export interface ISimRes<Token, ContractInfo, ConnectorTy extends AnyBackendTy> 
 export interface SimMapRef {
   kind: 'ref'|'set'|'del',
   key: string,
+  mbr: number,
 };
 
 export interface SimBoxRef {

@@ -223,11 +223,11 @@ export interface LinearMap<K, A, ConnectorTy extends AnyBackendTy> {
 const basicMap = <K, A, ConnectorTy extends AnyBackendTy>(getKey:GetKeyT<K, ConnectorTy>): LinearMap<K, A, ConnectorTy> => {
   const m: {[key: string]: A|undefined} = {};
   const basicSet = async (kt:ConnectorTy, k:K, vt:ConnectorTy, v:A|undefined): Promise<void> => {
-    const f = await getKey(kt, k, vt);
+    const [f, mbr] = await getKey(kt, k, vt); void mbr;
     m[f] = v;
   };
   const basicRef = async (kt:ConnectorTy, k:K, vt:ConnectorTy): Promise<MaybeRep<A>> => {
-    const f = await getKey(kt, k, vt);
+    const [f, mbr] = await getKey(kt, k, vt); void mbr;
     return asMaybe<A>(m[f]);
   };
   return { getKey, ref: basicRef, set: basicSet };
@@ -237,12 +237,12 @@ export const copyMap = <K, A, ConnectorTy extends AnyBackendTy>(orig:LinearMap<K
   const m: LinearMap<K, A, ConnectorTy> = basicMap(getKey);
   const seen: {[key: string]: boolean} = {};
   const copySet = async (kt:ConnectorTy, k:K, vt:ConnectorTy, v:A|undefined): Promise<void> => {
-    const f = await getKey(kt, k, vt);
+    const [f, mbr] = await getKey(kt, k, vt); void mbr;
     seen[f] = true;
     await mapSet(m, kt, k, vt, v);
   };
   const copyRef = async (kt:ConnectorTy, k:K, vt:ConnectorTy): Promise<MaybeRep<A>> => {
-    const f = await getKey(kt, k, vt);
+    const [f, mbr] = await getKey(kt, k, vt); void mbr;
     if ( ! seen[f] ) {
       const mv = await origRef(kt, k, vt);
       await copySet(kt, k, vt, mv[0] === 'Some' ? mv[1] : undefined);
