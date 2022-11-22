@@ -26,15 +26,17 @@ export const defineSimStuff = <Token, ContractInfo, ConnectorTy extends AnyBacke
   const simMapRef = async <K, A>(sim_r:SimRes, mapi:number, kt:ConnectorTy, k:K, vt:ConnectorTy): Promise<MaybeRep<A>> => {
     const map = sim_r.maps[mapi];
     const [key, mbr] = await map.getKey(kt, k, vt);
-    sim_r.mapRefs.push({ kind: 'ref', key, mbr });
+    const kind = 'ref';
+    sim_r.txns.push({kind: 'mapOp', smr: { kind, key, mbr } });
     return await mapRef(map, kt, k, vt);
   };
 
   const simMapSet = async <K, A>(sim_r:SimRes, mapi:number, kt:ConnectorTy, k:K, vt:ConnectorTy, v:A|undefined): Promise<void> => {
     const map = sim_r.maps[mapi];
     const [key, mbr] = await map.getKey(kt, k, vt);
-    const kind = v ? 'set' : 'del';
-    sim_r.mapRefs.push({ kind, key, mbr });
+    const ev = await mapRef(map, kt, k, vt);
+    const kind = v ? (ev[0] === 'Some' ? 'setOld' : 'setNew') : 'del';
+    sim_r.txns.push({kind: 'mapOp', smr: { kind, key, mbr } });
     return await mapSet(map, kt, k, vt, v);
   };
 

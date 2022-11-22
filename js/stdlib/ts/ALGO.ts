@@ -39,7 +39,7 @@ import {
   IAccount, IContract, IRecv,
   ISetupArgs, ISetupViewArgs, ISetupRes,
   // ISimRes,
-  ISimTxn, ISimRemote, SimMapRef, SimBoxRef,
+  ISimTxn, ISimRemote, SimBoxRef,
   stdContract, stdVerifyContract,
   stdABIFilter,
   stdAccount,
@@ -1798,7 +1798,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             tok: undefined,
           });
         }
-        const { isHalt, mapRefs } = sim_r;
+        const { isHalt } = sim_r;
         const appIndex = bigNumberToNumber(ApplicationID);
 
         while ( true ) {
@@ -1840,21 +1840,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             }) ) {
               boxesArr.push(brx);
             }
-          };
-          const recordBox = (smr:SimMapRef) => {
-            const { key, kind, mbr } = smr;
-            if ( kind === 'del' ) {
-              howManyMoreFees++;
-            } else if ( kind === 'set' ) {
-              processSimTxn({
-                kind: 'to',
-                amt: bigNumberify(mbr),
-                tok: undefined,
-              });
-              howManyMoreFees++;
-            }
-            const name = buf_to_arr(hex_to_buf(key));
-            recordBox_({ appIndex, name });
           };
           const recordBoxRemote = (smr:SimBoxRef) => {
             const { app, name } = smr;
@@ -1898,7 +1883,23 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           }
           const processSimTxn = (t: SimTxn) => {
             let txn;
-            if ( t.kind === 'contractNew' ) {
+            if ( t.kind === 'mapOp' ) {
+              const { smr } = t;
+              const { key, kind, mbr } = smr;
+              if ( kind === 'del' ) {
+                // We pay for the contract to pay us
+                howManyMoreFees++;
+              } else if ( kind === 'setNew' ) {
+                processSimTxn({
+                  kind: 'to',
+                  amt: bigNumberify(mbr),
+                  tok: undefined,
+                });
+              }
+              const name = buf_to_arr(hex_to_buf(key));
+              recordBox_({ appIndex, name });
+              return;
+            } else if ( t.kind === 'contractNew' ) {
               processSimTxn({
                 kind: 'to',
                 amt: minimumBalance_app_create(t.cns[connector]),
@@ -1969,7 +1970,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             txnExtraTxns.push(txn);
           };
 
-          mapRefs.forEach(recordBox);
           sim_r.txns.forEach(processSimTxn);
           if ( hasCompanion ) {
             if ( isCtor ) {
