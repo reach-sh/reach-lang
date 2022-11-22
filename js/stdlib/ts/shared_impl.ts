@@ -629,13 +629,12 @@ export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any,
 
 export interface ISimRes<Token, ContractInfo, ConnectorTy extends AnyBackendTy> {
   txns: Array<ISimTxn<Token, ContractInfo>>,
-  mapRefs: Array<SimMapRef>,
   isHalt : boolean,
   maps: Record<number, LinearMap<any, any, ConnectorTy>>,
 };
 
 export interface SimMapRef {
-  kind: 'ref'|'set'|'del',
+  kind: 'ref'|'setOld'|'setNew'|'del',
   key: string,
   mbr: number,
 };
@@ -656,6 +655,9 @@ export interface ISimRemote<Token, ContractInfo> {
   fees: BigNumber,
 }
 export type ISimTxn<Token, ContractInfo> = {
+  kind: 'mapOp',
+  smr: SimMapRef,
+} | {
   kind: 'to'|'init',
   amt: BigNumber,
   tok: Token|undefined,

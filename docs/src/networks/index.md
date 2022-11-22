@@ -36,7 +36,7 @@ Views expand the on-chain state to include the free variables of all values boun
 Linear state is compiled into application box storage.
 Reach makes no attempt to ensure that when the application ends, all boxes are freed.
 You can do this yourself by making an assertion that the size of a map is empty at the end of the program.
-If you don't do this, then the minimum balance reservation set aside for boxes will not be returned.
+If you don't do this, then the minimum balance reservation set aside for boxes will not be returned, so you won't be able to close the application.
 
 In Algorand, network time corresponds to round numbers.
 Each round is assigned a Unix timestamp, but when you look at the timestamp in code executing in round N+1, you read the timestamp assigned to round N.

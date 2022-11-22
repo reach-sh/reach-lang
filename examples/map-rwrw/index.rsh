@@ -30,5 +30,9 @@ export const main = Reach.App(() => {
   commit();
   A.interact.check(m[A], MUInt.Some(a+2));
 
+  A.publish();
+  delete m[A];
+  commit();
+
   exit();
 });
