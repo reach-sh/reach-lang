@@ -57,7 +57,7 @@ export interface Stdlib_Backend_Shared_User<Ty> {
 };
 
 export interface Stdlib_SimStuff<Token, ContractInfo, ConnectorTy extends AnyBackendTy> {
-  simMapDupe: <A>(sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, mapi: number, mapo: LinearMap<A>) => void,
+  simMapDupe: <K, A>(sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, mapi: number, mapo: LinearMap<K, A, ConnectorTy>) => void,
   simMapRef: <K, A>(sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, mapi: number, kt:ConnectorTy, k:K, vt:ConnectorTy) => Promise<MaybeRep<A>>
   simMapSet: <K, A>(sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, mapi: number, kt:ConnectorTy, k:K, vt:ConnectorTy, v:A|undefined) => Promise<void>,
   simTokenNew: <A>(sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, n:any, s:any, u:any, m:any, p:BigNumber, d:BigNumber|undefined, ctr:A) => A
@@ -72,7 +72,7 @@ export interface Stdlib_Backend_Shared<Ty extends AnyBackendTy> extends Stdlib_B
   protect: (t: any, v: unknown, ai?: string) => unknown
   Array_asyncMap: <B>(as:any[][], f:(x:any[], i:number) => Promise<B>) => Promise<B[]>
   Array_asyncReduce: <B>(as:any[][], b: B, f:((xs:any[], y:B, i:number) => Promise<B>)) => Promise<B>
-  newMap: <K, A>(opts: MapOpts<A>) => LinearMap<K, A>
+  newMap: <K, A>(opts: MapOpts<Ty>) => LinearMap<K, A, Ty>
   mapRef: <K, A>(m: LinearMap<K, A, Ty>, kt:Ty, k:K, vt:Ty) => Promise<MaybeRep<A>>
   mapSet: <K, A>(m: LinearMap<K, A, Ty>, kt:Ty, k:K, vt:Ty, v:A|undefined) => Promise<void>
   bytesConcat: (b1: string, b2: string) => string

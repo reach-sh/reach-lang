@@ -21,7 +21,6 @@ import {
   MaybeRep,
   LinearMap,
 } from './shared_backend';
-import type { MapRefT } from './shared_backend'; // =>
 import { process } from './shim';
 export {
   hexlify
@@ -125,7 +124,7 @@ export type IBackendMaps<ConnectorTy extends AnyBackendTy> = {
 };
 
 export type IViewLib<ConnectorTy extends AnyBackendTy> = {
-  viewMapRef: (mapi:number, vt:ConnectorTy, v:any) => Promise<any>,
+  viewMapRef: <K, A>(mapi:number, kt:ConnectorTy, k:K, vt:ConnectorTy) => Promise<MaybeRep<A>>,
 };
 
 export type IBackend<ConnectorTy extends AnyBackendTy> = {
@@ -197,7 +196,14 @@ export type ViewMap = {[key: string]: ViewVal | ViewFunMap};
 export type APIMap = ViewMap;
 export type EventMap = { [key: string]: any }
 
-export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
+export type MapRefT<K, A, ConnectorTy extends AnyBackendTy> = (kt:ConnectorTy, k:K, vt:ConnectorTy) => Promise<MaybeRep<A>>;
+export type GetKeyT<K, ConnectorTy extends AnyBackendTy> = (kt:ConnectorTy, k:K, vt:ConnectorTy) => Promise<string>;
+export interface IContractCompiledMaps<ConnectorTy extends AnyBackendTy> {
+  makeGetKey: <K>(mapi:number) => GetKeyT<K, ConnectorTy>,
+  apiMapRef: <K, A>(i:number) => MapRefT<K, A, ConnectorTy>
+};
+
+export interface IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> extends IContractCompiledMaps<ConnectorTy> {
   getContractCompanion: () => Promise<MaybeRep<ContractInfo>>,
   getContractInfo: () => Promise<ContractInfo>,
   getContractAddress: () => Promise<CBR_Address>,
@@ -211,7 +217,6 @@ export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy exten
   recv: (args:IRecvArgs<ConnectorTy>) => Promise<IRecv<RawAddress>>,
   getState: (v:BigNumber, ctcs:Array<ConnectorTy>) => Promise<Array<any>>,
   getCurrentStep: () => Promise<BigNumber>,
-  apiMapRef: (i:number) => MapRefT<any, any, ConnectorTy>,
   simTokenAccepted: (sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, addr:string, tok:Token) => Promise<boolean>,
 };
 
@@ -227,7 +232,7 @@ export type ISetupViewArgs<ContractInfo, VerifyResult> =
 export type ISetupEventArgs<ContractInfo, VerifyResult> =
   Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
 
-type SpecificKeys = ("getContractInfo"|"getContractAddress"|"getContractCompanion"|"getBalance"|"sendrecv"|"recv"|"getState"|"getCurrentStep"|"apiMapRef"|"simTokenAccepted");
+type SpecificKeys = ("getContractInfo"|"getContractAddress"|"getContractCompanion"|"getBalance"|"sendrecv"|"recv"|"getState"|"getCurrentStep"|"apiMapRef"|"makeGetKey"|"simTokenAccepted");
 
 export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, (SpecificKeys)>;
 
@@ -380,14 +385,14 @@ export const stdContract =
     const {
       getContractInfo, getContractAddress, getContractCompanion,
       getBalance, sendrecv, recv, getCurrentStep, getState, apiMapRef,
-      simTokenAccepted
+      simTokenAccepted, makeGetKey,
     } =
       _setup(setupArgs);
     return {
-      selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
       getContractInfo, getContractAddress, getContractCompanion,
-      getBalance, sendrecv, recv,
-      getCurrentStep, getState, apiMapRef, simTokenAccepted
+      getBalance, sendrecv, recv, getCurrentStep, getState, apiMapRef,
+      simTokenAccepted, makeGetKey,
+      selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
     };
   };
   const ctcC = { _initialize };
@@ -622,28 +627,30 @@ export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any,
   networkAccount: NetworkAccount,
 }
 
-export type ISimRes<Token, ContractInfo, ConnectorTy extends AnyBackendTy> = {
+export interface ISimRes<Token, ContractInfo, ConnectorTy extends AnyBackendTy> {
   txns: Array<ISimTxn<Token, ContractInfo>>,
-  mapRefs: Array<ISimMapRef<any, ConnectorTy>>,
+  mapRefs: Array<SimMapRef>,
   isHalt : boolean,
   maps: Record<number, LinearMap<any, any, ConnectorTy>>,
 };
 
-export type ISimMapRef<K, ConnectorTy> = {
+export interface SimMapRef {
   kind: 'ref'|'set'|'del',
-  mapi: number,
-  kt: ConnectorTy,
-  k: K,
-  vt: ConnectorTy,
+  key: string,
+};
+
+export interface SimBoxRef {
+  app: BigNumber,
+  name: Uint8Array,
 };
 
 // XXX Add Address
-export type ISimRemote<Token, ContractInfo> = {
+export interface ISimRemote<Token, ContractInfo> {
   pays: BigNumber,
   bills: BigNumber,
   toks: Array<Token>,
   accs: Array<string>,
-  boxes: Array<string>,
+  boxes: Array<SimBoxRef>,
   apps: Array<ContractInfo>,
   fees: BigNumber,
 }
