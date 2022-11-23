@@ -18,7 +18,8 @@ export const main = Reach.App(() => {
   const m = new Map(KEY_TYPE, VAL_TYPE);
 
   var i = 0;
-  invariant(true);
+  invariant(m.size() == 0);
+  invariant(balance() == 0);
   while (i < 5) {
     commit();
 
@@ -33,11 +34,13 @@ export const main = Reach.App(() => {
 
     A.interact.chk(m[l]);
 
+    commit();
+    A.publish();
+    delete m[k];
+
     i = i + 1;
     continue;
   }
 
-  transfer(balance()).to(A);
   commit();
-
 });

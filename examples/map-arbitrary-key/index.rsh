@@ -1,6 +1,6 @@
 'reach 0.1';
 
-const BS = Bytes(24);
+const BS = Bytes(66);
 const MO = Maybe(Object({ b: Bool }));
 
 export const main = Reach.App(() => {
@@ -42,5 +42,10 @@ export const main = Reach.App(() => {
 
   A.interact.chk(array(Maybe(UInt), [m1[xp], m2[bp], m3[mp]]));
 
+  A.publish();
+  delete m1[x];
+  delete m2[b];
+  delete m3[m];
+  commit();
 
 });
