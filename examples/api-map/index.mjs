@@ -38,10 +38,12 @@ const stdlib = loadStdlib(process.env);
   await ready.wait();
 
   await ctcB.a.P.put(10);
-  await ctcA.a.P.done();
   await ctcC.a.P.put(10);
   await ctcB.a.P.put(10);
   await ctcB.a.P.get(20);
   await ctcC.a.P.get(10);
+  await ctcC.a.P.del();
+  await ctcB.a.P.del();
+  await ctcA.a.P.done();
 
   await aP;

@@ -264,6 +264,10 @@ type AppStateSchema = {
   'num-uint': bigint,
   'num-byte-slice': bigint,
 };
+interface Box {
+  'name': Uint8Array
+  'value': Uint8Array
+}
 type AppInfo = {
   'id': bigint,
   'created-at-round': bigint,
@@ -1382,6 +1386,35 @@ const getAssetInfo = async (a:number): Promise<AssetInfo> => {
   return res.asset;
 };
 
+const getApplicationBoxM = async (idn:BigNumber, name:Uint8Array): Promise<OrExn<Uint8Array>> => {
+  const id = bigNumberToNumber(idn);
+  const dhead = 'getApplicationBox';
+  debug(dhead, { id, name });
+
+  // First, lookup application in algod
+  try {
+    await ensureNodeCanRead();
+    const client = await getAlgodClient();
+    const res = (await client.getApplicationBoxByName(id, name).do());
+    debug(dhead, 'node', res);
+    return { val: res.value };
+  } catch (e:any) {
+    debug(dhead, 'node err', e);
+  }
+
+  // If algod couldn't find it, lookup application in indexer
+  const indexer = await getIndexer();
+  const query = indexer.lookupApplicationBoxByIDandName(id, name) as unknown as ApiCall<Box>;
+  const queryRes = await doQueryM_(dhead, query);
+  debug(dhead, { queryRes });
+
+  if ('val' in queryRes) {
+    return { val: queryRes.val.value };
+  } else {
+    return queryRes;
+  }
+};
+
 const getApplicationInfoM = async (idn:BigNumber): Promise<OrExn<AppInfo>> => {
   const id = bigNumberToNumber(idn);
   const dhead = 'getApplicationInfo';
@@ -1621,8 +1654,12 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           debug('viewMapRef', { mapi, kt, k, vt });
           const [f, mbr] = await makeGetKey(mapi)(kt, k, vt); void mbr;
           debug('viewMapRef', { f });
-          // XXX
-          return ['None', null];
+          const vbsm = await getApplicationBoxM(ApplicationID, buf_to_arr(hex_to_buf(f)));
+          debug('viewMapRef', { vbsm });
+          if ( 'exn' in vbsm ) { return ['None', null]; }
+          const v = vt.fromNet(vbsm.val) as A;
+          debug('viewMapRef', { v });
+          return ['Some', v];
         };
 
         return (_theC = { ApplicationID, ctcAddr, Deployer, getAppState, getGlobalState, canIWin, isIsolatedNetwork, viewMapRef });
