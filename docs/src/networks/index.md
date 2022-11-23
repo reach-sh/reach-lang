@@ -34,8 +34,13 @@ We hope to work with the Algorand community to define a standard for views.
 Views expand the on-chain state to include the free variables of all values bound to a view.
 
 Linear state is compiled into application box storage.
+The names of boxes are either:
+- `${MapIndexByte}${KeyBytes}`, where `MapIndexByte` is the single-byte representation of which `{!rsh} Map` it is and `KeyBytes` is the ABI encoding of the key, if this is less than 64 bytes; or
+- `sha256(${MapIndexBytes}${KeyBytes})`, where `MapIndexBytes` is the multi-byte, otherwise.
+
 Reach makes no attempt to ensure that when the application ends, all boxes are freed.
 You can do this yourself by making an assertion that the size of a map is empty at the end of the program.
+(See the `api-map` example for how to do this effectively.)
 If you don't do this, then the minimum balance reservation set aside for boxes will not be returned, so you won't be able to close the application.
 
 In Algorand, network time corresponds to round numbers.
