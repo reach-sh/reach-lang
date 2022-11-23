@@ -3770,9 +3770,7 @@ evalPrim p sargs =
       metam <- mustBeObject =<< one_arg
       metam' <- mapM (ensure_public . sss_sls) metam
       let keys = M.keysSet metam'
-      let validKeys = S.fromList $ [ "fees", "accounts", "assets", "addressToAccount", "apps",
-                                     "onCompletion", "strictPay", "rawCall",
-                                     "simNetRecv", "simTokensRecv", "simReturnVal" ]
+      let validKeys = S.fromList $ [ "fees", "accounts", "assets", "addressToAccount", "apps", "boxes", "onCompletion", "strictPay", "rawCall", "simNetRecv", "simTokensRecv", "simReturnVal" ]
       unless (keys `S.isSubsetOf` validKeys) $ do
         expect_ $ Err_Remote_ALGO_extra $ S.toAscList $
           keys `S.difference` validKeys
@@ -3806,7 +3804,13 @@ evalPrim p sargs =
         Nothing -> return $ mempty
         Just v -> do
           vs <- explodeTupleLike "REMOTE_FUN.ALGO.boxes" v
-          mapM (compileCheckType msdef (T_Bytes 64)) vs
+          forM vs $ \tv -> do
+            (t, da) <- compileTypeOf tv
+            case t of
+              T_Tuple [ T_UInt UI_Word, T_Bytes n ] | n <= 64 -> do
+                return da
+              _ ->
+                expect_ $ Err_Remote_ALGO_extra $ [ "values in boxes array must be a UInt and a Bytes(n) where N <= 64" ]
       ra_addr2acc <- expectBool "addressToAccount"
       ra_onCompletion <- metal "onCompletion" $ \case
         Nothing -> return $ RA_NoOp

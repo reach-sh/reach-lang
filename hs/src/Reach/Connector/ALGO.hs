@@ -2227,8 +2227,6 @@ instance Compile DLExpr where
               makeTxn1 "Assets"
             forM_ ra_boxes $ \a -> do
               incResource_ R_Box (-1, a)
-              cp a
-              makeTxn1 "Boxes"
             forM_ ra_accounts $ \a -> do
               incResource R_Account a
               cp a
