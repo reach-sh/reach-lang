@@ -9,6 +9,9 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcNext("0.1.13-rc.0")}
 
++ 2022/11/23: Algorand-only: Contracts do not check their group size, so they can be combined with other transactions in their group.
+  They expect their paired transactions to be in the opposite order from before, however.
+
 + 2022/11/21: Added `boxes` field to `{!rsh} remote.ALGO`.
 
 + 2022/11/21: Algorand-only: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
