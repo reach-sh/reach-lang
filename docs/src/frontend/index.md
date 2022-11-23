@@ -1767,7 +1767,7 @@ Example:
 
 ```js
 load: /examples/map-tuple-key/index.mjs
-md5: cd5c8b278ef9f5ee40c13627cb23889e
+md5: 23726b81f3cd8f4d7fc2b94783bb7794
 range: 34 - 36
 ```
 
