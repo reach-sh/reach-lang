@@ -2540,11 +2540,14 @@ checkTxn_lib tok = do
     -- init: False: [ amt ]
     -- init:  True: [ amt, tok ]
     useResource R_Txn
+    code "txn" ["GroupIndex"]
     gvLoad GV_txnCounter
-    dupn $ 3 + (if tok then 1 else 0)
     cint 1
     op "+"
+    op "dup"
     gvStore GV_txnCounter
+    op "-"
+    dupn $ 2 + (if tok then 1 else 0)
     -- init <> [ id, id, id, id? ]
     get1 fReceiver
     cContractAddr
@@ -2566,7 +2569,7 @@ checkTxn :: CheckTxn -> App Bool
 checkTxn (CheckTxn {..}) =
   case staticZero ct_amt of
     True -> return False
-    False -> block_ "checkTxn" $ do
+    False -> do
       checkTxnUsage ct_at ct_mtok
       cp ct_amt
       case ct_mtok of
@@ -2902,9 +2905,9 @@ callCompanion at cc = do
             unless del $ do
               incResource R_App cr_ro
         makeTxn1 "ApplicationID"
-  comment $ texty cc
   case cc of
     CompanionGet -> do
+      comment $ texty cc
       let t = T_Contract
       let go = cp . mdaToMaybeLA t
       case mcr of
@@ -2920,6 +2923,7 @@ callCompanion at cc = do
           mpay 1
         Just _ -> do
           mpay 2
+          comment $ texty cc
           startCall True False
           cp cr_approval
           makeTxn1 "ApprovalProgram"
@@ -2935,6 +2939,7 @@ callCompanion at cc = do
       whenJust mcr $ \cim -> do
         let howManyCalls = fromMaybe 0 $ M.lookup l cim
         -- XXX bunch into groups of 16, slightly less cost
+        comment $ texty cc
         cfor howManyCalls $ const $ do
           startCall False False
           op "itxn_submit"
@@ -2942,6 +2947,7 @@ callCompanion at cc = do
         return ()
     CompanionDelete ->
       whenJust mcr $ \_ -> do
+        comment $ texty cc
         startCall False True
         output $ TConst $ "DeleteApplication"
         makeTxn1 "OnCompletion"
@@ -2950,6 +2956,7 @@ callCompanion at cc = do
         return ()
     CompanionDeletePre ->
       whenJust mcr $ \_ -> do
+        comment $ texty cc
         incResource R_App cr_ro
 
 cStateSlice :: Integer -> Word8 -> App ()
@@ -3277,7 +3284,7 @@ cp_shell x = do
   forM_ (tail keyState_gvs) $ const $ op "concat"
   op "app_global_put"
   gvLoad GV_wasMeth
-  code "bz" ["checkSize"]
+  code "bz" ["done"]
   label "apiReturn_noCheck"
   -- SHA-512/256("return")[0..4] = 0x151f7c75
   cp $ BS.pack [0x15, 0x1f, 0x7c, 0x75]
@@ -3285,18 +3292,6 @@ cp_shell x = do
   op "concat"
   maxApiRetSize <- liftIO $ readIORef eMaxApiRetSize
   clog_ $ 4 + maxApiRetSize
-  code "b" ["checkSize"]
-  label "checkSize"
-  gvLoad GV_txnCounter
-  op "dup"
-  -- The size is correct
-  cint 1
-  op "+"
-  code "global" ["GroupSize"]
-  asserteq
-  -- We're last
-  code "txn" ["GroupIndex"]
-  asserteq
   code "b" ["done"]
   defn_done
   label "apiReturn_check"

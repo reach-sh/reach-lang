@@ -1920,6 +1920,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             return;
           }
           const processSimTxn = (t: SimTxn) => {
+            debug('processSimTxn', t);
             let txn;
             if ( t.kind === 'mapOp' ) {
               const { smr } = t;
@@ -2005,7 +2006,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             }
             extraFees += txn.fee;
             txn.fee = 0;
-            txnExtraTxns.push(txn);
+            txnExtraTxns.unshift(txn);
           };
 
           sim_r.txns.forEach(processSimTxn);
@@ -2081,13 +2082,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             (m, i) => actual_tys[i].toNet(m));
           const sc = makeSignatureChecker(`_reachp_${funcNum}`, actual_tys, T_Null);
           safe_args.unshift(sc.ui8);
-          safe_args.forEach((x) => {
-            if (! ( x instanceof Uint8Array ) ) {
-              // The types say this is impossible now,
-              // but we'll leave it in for a while just in case...
-              throw Error(`expect safe program argument, got ${j2s(x)}`);
-            }
-          });
           debug(dhead, '--- PREPARE:', safe_args.map(ui8h));
 
           const whichAppl =
