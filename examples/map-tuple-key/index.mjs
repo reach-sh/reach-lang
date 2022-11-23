@@ -3,10 +3,6 @@ import * as backend from './build/index.main.mjs';
 
 const stdlib = await loadStdlib();
 
-if(stdlib.connector === 'ALGO') {
-  process.exit();
-}
-
 const bn = stdlib.bigNumberify;
 const pc = stdlib.parseCurrency;
 
