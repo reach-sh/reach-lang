@@ -639,10 +639,7 @@ export interface SimMapRef {
   mbr: number,
 };
 
-export interface SimBoxRef {
-  app: BigNumber,
-  name: Uint8Array,
-};
+export type SimBoxRef = [BigNumber, string];
 
 // XXX Add Address
 export interface ISimRemote<Token, ContractInfo> {

@@ -607,6 +607,7 @@ In addition, a remote function may be augmented with one of the following operat
   + `{!rsh} opts.accounts` records extra accounts.
     If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an invalid account reference.
   + `{!rsh} opts.boxes` records extra boxes.
+    The values must be tuples of length two where the first is the application index and the second is the box name (as a byte string less than 64 bytes).
     If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an invalid box reference.
   + `{!rsh} opts.assets` records extra assets.
     If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an invalid asset reference.

@@ -1879,7 +1879,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             }
           };
           const recordBoxRemote = (smr:SimBoxRef) => {
-            const { app, name } = smr;
+            const [ app, names ] = smr;
+            const name = T_Bytes(64).toNet(names);
             recordBox_({ appIndex: bigNumberToNumber(app), name });
           };
 
