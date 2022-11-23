@@ -686,7 +686,7 @@ range: 7 - 7
 While the following code contains both the `{!rsh} KEY_TYPE_EXPR` and `{!rsh} VAL_TYPE_EXPR`:
 ```reach
 load: /examples/map-arbitrary-key/index.rsh
-md5: defd89926eddaf8f3a24ec9d2d4c9839
+md5: c8ae3b7ca85b7ba19bd01f6db107e66f
 range: 24 - 24
 ```
 
