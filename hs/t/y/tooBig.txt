@@ -5,7 +5,7 @@ Verifying for generic connector
   Verifying when NO participants are honest
 Checked 243 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
- * The program is too long; its length is 8414, but the maximum possible length is 8192
+ * The program is too long; its length is 8447, but the maximum possible length is 8192
 WARNING: The Solidity compiler, run with optimization, fails on this program, but succeeds without optimization. This indicates a problem with Solidity that Reach is not working around; typically, because it is not possible to do so. You could report this error to Solidity (or Reach). If you do so, this is the message from Solidity:
 The bytecode exceeds the maximum limit; it is 49068, but the limit is 24576
 WARNING: The Solidity compiler, run with optimization, fails on this program, but succeeds without optimization. This indicates a problem with Solidity that Reach is not working around; typically, because it is not possible to do so. You could report this error to Solidity (or Reach). If you do so, this is the message from Solidity:
