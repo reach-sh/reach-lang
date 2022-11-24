@@ -508,6 +508,10 @@ instance Optimize DLExpr where
           return $ DLE_Arg at $ zero UI_Word
         (MUL_DIV _, [_, DLA_Literal (DLL_Int _ _ 0), _, _]) ->
           return $ DLE_Arg at $ zero UI_Word
+        (IF_THEN_ELSE, [x, (DLA_Literal (DLL_Bool False)), y]) | x == y ->
+          staticB False
+        (IF_THEN_ELSE, [x, y, (DLA_Literal (DLL_Bool True))]) | x == y ->
+          staticB True
         (IF_THEN_ELSE, [c, (DLA_Literal (DLL_Bool True)), (DLA_Literal (DLL_Bool False))]) ->
           return $ DLE_Arg at $ c
         (IF_THEN_ELSE, [(DLA_Literal (DLL_Bool c)), t, f]) ->

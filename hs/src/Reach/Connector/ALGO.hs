@@ -2380,6 +2380,7 @@ instance Compile DLExpr where
       cint 0
       op "getbyte"
     DLE_FromSome _ mo da -> do
+      -- XXX candidate for library function
       cp da
       cp mo
       salloc_ "fromSome object" $ \cstore cload -> do
@@ -2598,6 +2599,7 @@ itxnNextOrBegin isNext = do
 
 makeTxn :: MakeTxn -> App Bool
 makeTxn (MakeTxn {..}) =
+  -- XXX candidate for library fun
   case (mt_always || not (staticZero mt_amt)) of
     False -> return False
     True -> block_ "makeTxn" $ do
