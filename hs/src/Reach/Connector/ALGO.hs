@@ -1038,6 +1038,8 @@ data LibFun
   | LF_checkTxn_net
   | LF_checkTxn_tok
   | LF_checkUInt256ResultLen
+  | LF_mbrAdd
+  | LF_mbrSub
   deriving (Eq, Ord, Show)
 
 libDefns :: App ()
@@ -1059,6 +1061,20 @@ libCall lf impl = do
         return $ lab
       Just (lab, _) -> return lab
   code "callsub" [ lab ]
+
+mbrAdd :: App ()
+mbrAdd = libCall LF_mbrAdd $ do
+  gvLoad GV_mbrAdd
+  op "+"
+  gvStore GV_mbrAdd
+  op "retsub"
+
+mbrSub :: App ()
+mbrSub = libCall LF_mbrSub $ do
+  gvLoad GV_mbrSub
+  op "+"
+  gvStore GV_mbrSub
+  op "retsub"
 
 -- XXX maybe store w/ tag to simplify this
 cMapRef :: App ()
@@ -1086,17 +1102,7 @@ cMapDel = libCall LF_mapDel $ do
   after <- freshLabel "boxDel"
   code "bnz" [ after ]
   -- [ mbr ]
-  incResource R_Account aDeployer
-  let mt_amt = aMapMbr
-  let mt_at = sb
-  let mt_mtok = Nothing
-  let mt_always = True
-  let mt_mrecv = Just $ Right $ cDeployer
-  let mt_mcclose = Nothing
-  let mt_next = False
-  let mt_submit = True
-  store_let vMapMbr True nop $
-    void $ makeTxn $ MakeTxn {..}
+  mbrSub
   op "retsub"
   label after
   -- [ mbr ]
@@ -1118,11 +1124,7 @@ cMapSet = libCall LF_mapSet $ do
   -- [ mbr, data, key, len ]
   code "dig" [ "3" ]
   -- [ mbr, data, key, len, mbr ]
-  let ct_at = sb
-  let ct_mtok = Nothing
-  let ct_amt = aMapMbr
-  store_let vMapMbr True nop $
-    void $ checkTxn $ CheckTxn {..}
+  mbrAdd
   -- [ mbr, data, key, len ]
   label after
   -- [ mbr, data, key, len ]
@@ -2068,11 +2070,8 @@ instance Compile DLExpr where
         let mt_next = False
         let mt_submit = True
         let mt_mcclose = Nothing
-        let ct_at = mt_at
-        let ct_mtok = Nothing
-        let ct_amt = DLA_Literal $ minimumBalance_l
         addInitTok tok
-        void $ checkTxn $ CheckTxn {..}
+        cp minimumBalance_l >> mbrAdd
         void $ makeTxn $ MakeTxn {..}
     DLE_TokenAccepted _ addr tok -> do
       cp addr
@@ -2264,10 +2263,7 @@ instance Compile DLExpr where
             op "concat"
     DLE_TokenNew at (DLTokenNew {..}) -> do
       block_ "TokenNew" $ do
-        let ct_at = at
-        let ct_mtok = Nothing
-        let ct_amt = DLA_Literal $ minimumBalance_l
-        void $ checkTxn $ CheckTxn {..}
+        cp minimumBalance_l >> mbrAdd
         itxnNextOrBegin False
         let vTypeEnum = "acfg"
         output $ TConst vTypeEnum
@@ -2294,8 +2290,7 @@ instance Compile DLExpr where
       cp aida
       makeTxn1 "ConfigAsset"
       op "itxn_submit"
-      -- XXX We could give the minimum balance back to the creator
-      return ()
+      cp minimumBalance_l >> mbrSub
     DLE_TimeOrder {} -> impossible "timeorder"
     DLE_EmitLog at k vs -> do
       let internal = do
@@ -2386,7 +2381,7 @@ instance Compile DLExpr where
       op "select"
     DLE_ContractFromAddress _at _addr -> do
       cp $ mdaToMaybeLA T_Contract Nothing
-    DLE_ContractNew at cns dr -> do
+    DLE_ContractNew _at cns dr -> do
       block_ "ContractNew" $ do
         let DLContractNew {..} = cns M.! conName'
         let ALGOCodeOut {..} = either impossible id $ aesonParse dcn_code
@@ -2398,10 +2393,7 @@ instance Compile DLExpr where
         let ai_ExtraProgramPages =
               extraPages $ length aco_approval + length aco_clearState
         let appInfo = AppInfo {..}
-        let ct_at = at
-        let ct_mtok = Nothing
-        let ct_amt = DLA_Literal $ DLL_Int at UI_Word $ minimumBalance_app appInfo ApplTxn_Create
-        void $ checkTxn $ CheckTxn {..}
+        (cp $ minimumBalance_app appInfo ApplTxn_Create) >> mbrAdd
         itxnNextOrBegin False
         let vTypeEnum = "appl"
         output $ TConst vTypeEnum
@@ -2789,10 +2781,10 @@ cDeployer = code "global" ["CreatorAddress"]
 
 aDeployer :: DLArg
 aDeployer = DLA_Var $ DLVar sb Nothing T_Address (-1)
-vMapMbr :: DLVar
-vMapMbr = DLVar sb Nothing (T_UInt UI_Word) (-2)
-aMapMbr :: DLArg
-aMapMbr = DLA_Var vMapMbr
+vDMbr :: DLVar
+vDMbr = DLVar sb Nothing (T_UInt UI_Word) (-2)
+aDMbr :: DLArg
+aDMbr = DLA_Var vDMbr
 
 data GlobalVar
   = GV_txnCounter
@@ -2802,6 +2794,8 @@ data GlobalVar
   | GV_wasMeth
   | GV_apiRet
   | GV_companion
+  | GV_mbrAdd
+  | GV_mbrSub
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 gvSlot :: GlobalVar -> ScratchSlot
@@ -2825,6 +2819,8 @@ gvType = \case
   GV_svs -> T_Null
   GV_wasMeth -> T_Bool
   GV_apiRet -> T_Null
+  GV_mbrAdd -> T_UInt UI_Word
+  GV_mbrSub -> T_UInt UI_Word
 
 defn_fixed :: Label -> Bool -> App ()
 defn_fixed l b = do
@@ -2917,7 +2913,7 @@ callCompanion at cc = do
           sallocLet dv (gvLoad GV_companion) $
             go $ Just $ DLA_Var dv
     CompanionCreate -> do
-      let mpay pc = cp $ DLE_CheckPay at [] (DLA_Literal $ DLL_Int at UI_Word $ pc * algoMinimumBalance) Nothing
+      let mpay pc = (cp $ pc * algoMinimumBalance) >> mbrAdd
       case mcr of
         Nothing -> do
           mpay 1
@@ -3067,6 +3063,8 @@ instance CompileK CLStmt where
       let mt_amt = DLA_Literal $ DLL_Int at UI_Word 0
       let mt_mtok = Just tok
       void $ makeTxn $ MakeTxn {..}
+      -- NOTE We don't do this, because we know that it only happens on halt
+      -- cp minimumBalance_l >> mbrSub
       k
     CLMemorySet _ _ a -> do
       cp a
@@ -3239,8 +3237,6 @@ cp_shell x = do
   let keyState_ty :: DLType
       keyState_ty = T_Tuple $ map gvType keyState_gvs
   useResource R_Txn
-  cint 0
-  gvStore GV_txnCounter
   code "txn" ["ApplicationID"]
   code "bz" ["alloc"]
   cp keyState
@@ -3275,6 +3271,41 @@ cp_shell x = do
   output $ TConst $ "NoOp"
   asserteq
   output $ TCheckOnCompletion
+  label "updateMbr"
+  gvLoad GV_mbrAdd
+  gvLoad GV_mbrSub
+  op "dup2"
+  op ">="
+  code "bz" [ "updateMbr_neg" ]
+  label "updateMbr_pos_eq"
+  op "-"
+  op "dup"
+  code "bz" [ "updateMbr_eq" ]
+  do
+    let ct_at = sb
+    let ct_mtok = Nothing
+    let ct_amt = aDMbr
+    store_let vDMbr True nop $
+      void $ checkTxn $ CheckTxn {..}
+  code "b" [ "updateState" ]
+  label "updateMbr_eq"
+  op "pop"
+  code "b" [ "updateState" ]
+  label "updateMbr_neg"
+  op "swap"
+  op "-"
+  do
+    incResource R_Account aDeployer
+    let mt_amt = aDMbr
+    let mt_at = sb
+    let mt_mtok = Nothing
+    let mt_always = True
+    let mt_mrecv = Just $ Right $ cDeployer
+    let mt_mcclose = Nothing
+    let mt_next = False
+    let mt_submit = True
+    store_let vDMbr True nop $
+      void $ makeTxn $ MakeTxn {..}
   code "b" ["updateState"]
   label "updateState"
   cp keyState

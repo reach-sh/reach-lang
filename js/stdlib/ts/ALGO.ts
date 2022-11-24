@@ -1824,17 +1824,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         };
         const sim_r = await sim_p( fake_res );
         debug(dhead , '--- SIMULATE', sim_r);
-        if ( isCtor ) {
-          const amt =
-            hasCompanion ?
-              minimumBalance.mul(2) :
-              minimumBalance;
-          sim_r.txns.unshift({
-            kind: 'to',
-            amt: amt,
-            tok: undefined,
-          });
-        }
         const { isHalt } = sim_r;
         const appIndex = bigNumberToNumber(ApplicationID);
 
@@ -1904,6 +1893,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
           let extraFees: number = 0;
           let howManyMoreFees: number = 0;
+          let mbrDelta: BigNumber = bigNumberify(0);
           const txnExtraTxns: Array<Transaction> = [];
           let sim_i = 0;
           let whichApi : string|undefined;
@@ -1926,37 +1916,25 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               const { smr } = t;
               const { key, kind, mbr } = smr;
               if ( kind === 'del' ) {
-                // We pay for the contract to pay us
-                howManyMoreFees++;
+                mbrDelta = mbrDelta.sub(mbr);
               } else if ( kind === 'setNew' ) {
-                processSimTxn({
-                  kind: 'to',
-                  amt: bigNumberify(mbr),
-                  tok: undefined,
-                });
+                mbrDelta = mbrDelta.add(mbr);
               }
               const name = buf_to_arr(hex_to_buf(key));
               recordBox_({ appIndex, name });
               return;
             } else if ( t.kind === 'contractNew' ) {
-              processSimTxn({
-                kind: 'to',
-                amt: minimumBalance_app_create(t.cns[connector]),
-                tok: undefined,
-              });
+              mbrDelta = mbrDelta.add(minimumBalance_app_create(t.cns[connector]));
               processRemote(t.remote);
               return;
             } else if ( t.kind === 'tokenNew' ) {
-              processSimTxn({
-                kind: 'to',
-                amt: minimumBalance,
-                tok: undefined,
-              });
+              mbrDelta = mbrDelta.add(minimumBalance);
               howManyMoreFees++; return;
             } else if ( t.kind === 'tokenBurn' ) {
               // There's no burning on Algorand
               return;
             } else if ( t.kind === 'tokenDestroy' ) {
+              mbrDelta = mbrDelta.sub(minimumBalance);
               recordAsset(t.tok);
               howManyMoreFees++; return;
             } else if ( t.kind === 'tokenAccepted' ) {
@@ -1981,16 +1959,14 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
                 recordAccount(t.to);
                 howManyMoreFees++; return;
               } else if ( t.kind === 'init' ) {
-                processSimTxn({
-                  kind: 'to',
-                  amt: minimumBalance,
-                  tok: undefined,
-                });
+                mbrDelta = mbrDelta.add(minimumBalance);
                 recordAsset(tok);
+                // This fee is to send the opt-in
                 howManyMoreFees++; return;
               } else if ( t.kind === 'halt' ) {
                 if ( tok ) { recordAsset(tok); }
                 recordAccount_(Deployer);
+                // This fee is for the closeOut
                 howManyMoreFees++; return;
               } else if ( t.kind === 'to' ) {
                 from = thisAcc.addr;
@@ -2008,6 +1984,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             txn.fee = 0;
             txnExtraTxns.unshift(txn);
           };
+          if ( isCtor ) {
+            const pc = hasCompanion ? 2 : 1;
+            mbrDelta = mbrDelta.add(minimumBalance.mul(pc));
+          }
 
           sim_r.txns.forEach(processSimTxn);
           if ( hasCompanion ) {
@@ -2028,14 +2008,32 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             const companionCalls = readCI(ccPublish) + (whichApi ? readCI(ccApi) : 0);
             debug('companion', { whichApi, ccPublish, ccApi, companionCalls, companionInfo });
             if ( companionCalls > 0 ) {
+              // These fees are for the calls we'll make
               howManyMoreFees += companionCalls;
               addCompanion();
             }
             if ( isHalt ) {
               addCompanion();
+              // This fee is for the delete
               howManyMoreFees++;
             }
           }
+
+          if ( ! isHalt && ! mbrDelta.eq(0) ) {
+            if ( mbrDelta.lt(0) ) {
+              // The delta is negative, so we let the contract pay the deployer
+              recordAccount_(Deployer);
+              howManyMoreFees++;
+            } else {
+              // The delta is positive, so we need to pay the contract
+              processSimTxn({
+                kind: 'to',
+                amt: mbrDelta,
+                tok: undefined,
+              });
+            }
+          }
+
           debug(dhead, 'txnExtraTxns', txnExtraTxns);
           debug(dhead, {howManyMoreFees, extraFees});
           extraFees += MinTxnFee * howManyMoreFees;
