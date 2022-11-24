@@ -1112,7 +1112,7 @@ cMapDel = libCall LF_mapDel $ do
   op "box_del"
   -- [ mbr, existed ]
   after <- freshLabel "boxDel"
-  code "bnz" [ after ]
+  code "bz" [ after ]
   -- [ mbr ]
   mbrSub
   op "retsub"
