@@ -911,6 +911,9 @@ checkCost rlab notify disp ls ci ts = do
         mayOutput (disp False ("." <> lab <> "dot")) $
           flip LTIO.writeFile (T.render $ dotty gs)
   loud $ rlab <> " buildCFG"
+  ts' <- renderOut ts
+  mayOutput (disp False ".teal") $
+    flip TIO.writeFile ts'
   (gs, restrictCFG) <- buildCFG rlab ts
   rgs "" gs
   addMsg $ "Conservative analysis on Algorand found:"
@@ -1005,7 +1008,7 @@ data Env = Env
   , eInitToks :: IORef (S.Set DLArg)
   , eCompanion :: CompanionInfo
   , eCompanionRec :: CompanionRec
-  , eLibrary :: IORef (M.Map LibFun (Label, App ()))
+  , eLibrary :: IORef (M.Map LibFun (Label, IORef Bool, App ()))
   , eGetStateKeys :: IO Int
   , eABI :: IORef (M.Map String ABInfo)
   , eRes :: IORef (M.Map T.Text AS.Value)
@@ -1046,7 +1049,15 @@ libDefns :: App ()
 libDefns = do
   libr <- asks eLibrary
   lib <- liftIO $ readIORef libr
-  forM_ lib $ \(_, impl) -> impl
+  wroteSomeR <- liftIO $ newIORef False
+  forM_ lib $ \(_, wroteR, impl) -> do
+    wrote <- liftIO $ readIORef wroteR
+    unless wrote $ do
+      impl
+      liftIO $ writeIORef wroteR True
+      liftIO $ writeIORef wroteSomeR True
+  wroteSome <- liftIO $ readIORef wroteSomeR
+  when wroteSome $ libDefns
 
 libCall :: LibFun -> App () -> App ()
 libCall lf impl = do
@@ -1055,11 +1066,12 @@ libCall lf impl = do
   lab <-
     case M.lookup lf lib of
       Nothing -> do
+        wroteR <- liftIO $ newIORef False
         lab <- freshLabel $ show lf
         let impl' = label lab >> impl
-        liftIO $ modifyIORef libr $ M.insert lf (lab, impl')
+        liftIO $ modifyIORef libr $ M.insert lf (lab, wroteR, impl')
         return $ lab
-      Just (lab, _) -> return lab
+      Just (lab, _, _) -> return lab
   code "callsub" [ lab ]
 
 mbrAdd :: App ()
