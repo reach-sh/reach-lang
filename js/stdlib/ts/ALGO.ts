@@ -2019,6 +2019,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             }
           }
 
+          debug(dhead, { mbrDelta });
           if ( ! isHalt && ! mbrDelta.eq(0) ) {
             if ( mbrDelta.lt(0) ) {
               // The delta is negative, so we let the contract pay the deployer
