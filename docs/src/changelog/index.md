@@ -9,7 +9,9 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcNext("0.1.13-rc.0")}
 
-+ 2022/11/23: Algorand-only: Contracts do not check their group size, so they can be combined with other transactions in their group.
++ 2022/11/24: Algorand-only: Contracts now combine all minimum balance payments into a single `pay` transaction, rather than expecting many individual transactions.
+
++ 2022/11/23: Algorand-only: Contracts no longer check their group size, so they can be combined with other transactions in their group.
   They expect their paired transactions to be in the opposite order from before, however.
 
 + 2022/11/21: Added `boxes` field to `{!rsh} remote.ALGO`.
