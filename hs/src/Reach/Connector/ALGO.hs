@@ -81,14 +81,31 @@ type Notify = Bool -> NotifyF
 count :: (a -> Bool) -> [a] -> Int
 count f l = length $ filter f l
 
-type LPGraph1 a b = M.Map a b
+-- Our control-flow graphs have the following structure:
+--
+-- x ---det---> y
+--
+-- x is a block label
+-- y is a block label
+-- det are the details of the transition
+--
+-- These details are the LPEdge structure: they are the functions that are
+-- called (the [a]) and the resources used (the b)
+--
 type LPEdge a b = ([a], b)
-type LPChildren a b = LPGraph1 a (S.Set (LPEdge a b))
+--
+-- For each x and y, there may be different edges between them, that's why we
+-- have the LPChildren structure: it maps y to a set of details
+--
+type LPChildren a b = M.Map a (S.Set (LPEdge a b))
+--
+-- Then, we have a map from the x to each of the ys
+--
 type LPGraph a b = M.Map a (LPChildren a b)
 
 longestPathBetween :: forall b . LPGraph String b -> String -> String -> (b -> Integer) -> IO Integer
 longestPathBetween g f d getc = do
-  a2d <- fixedPoint $ \_ (i :: LPGraph1 String Integer) -> do
+  a2d <- fixedPoint $ \_ (i :: M.Map String Integer) -> do
     flip mapM g $ \(tom :: (LPChildren String b)) -> do
       let ext :: String -> LPEdge String b -> Integer
           ext to (cs, r) = getc r + chase to + sum (map chase cs)
@@ -117,38 +134,61 @@ longestPathBetween g f d getc = do
 
 budgetAnalyze :: LPGraph String ResourceCost -> String -> String -> (ResourceCost -> Resource -> Integer) -> IO (Bool, Integer, Integer)
 budgetAnalyze g s e getc = do
+  -- This function returns...
+  --   Bool    --- Are we over budget
+  --   Integer --- How much cost we spent
+  --   Integer --- How much budget we had
+  --
+  -- c in this function always stands for the cost
+  -- b always stands for the budget
   let from c b l = do
+        -- What is the budget spend from l to e?
         case l == e of
-          True -> return $ (False, c, b)
-          False -> froms l c b $ M.toAscList $ fromMaybe mempty $ M.lookup l g
-      froms l c b = \case
-        [] -> impossible $ "ba null: " <> show l
-        [x] -> from1 c b x
-        x : xs -> cbas (from1 c b x) (froms l c b xs)
+          True ->
+            -- If l is e, we just figured it out!
+            return $ (False, c, b)
+          False ->
+            -- We look where g can go...
+            froml ("has no node in the CFG" <> show (M.keys g)) from1 l c b $ M.toAscList $ fromMaybe mempty $ M.lookup l g
+      froml :: forall a . String -> (String -> Integer -> Integer -> a -> IO (Bool, Integer, Integer)) -> String -> Integer -> Integer -> [a] -> IO (Bool, Integer, Integer)
+      froml el f l c b = \case
+        -- We error if l can't go anywhere... because that's impossible...
+        -- there's an invariant that every label can get to BOT
+        --
+        -- If this error happens, basically it means that the CFG restriction
+        -- removed something it shouldn't
+        [] -> return $ impossible $ "budgetAnalyze null: " <> show l <> " " <> el
+        -- Otherwise, we view the next places in order and combine the analyses
+        [x] -> f l c b x
+        x : xs -> cbas (f l c b x) (froml el f l c b xs)
       cbas m1 m2 = do
-          m1 >>= \case
-            r@(True, _, _) -> return r
-            r1@(False, c1, b1) ->
-              m2 >>= \case
-                r@(True, _, _) -> return r
-                r2@(False, c2, b2) -> do
-                  case b1 > b2 of
-                    True -> return r1
-                    False ->
-                      case c1 > c2 of
-                        True -> return r1
-                        False -> return r2
-      from1 c b (l, es) = from1l c b l $ S.toAscList es
-      from1l c b l = \case
-        [] -> impossible "ba lnull"
-        [x] -> from1e c b l x
-        x : xs -> cbas (from1e c b l x) (from1l c b l xs)
-      from1e c b l (cs, r) = do
+        -- _C_om_B_ine the _A_nalyse_S_
+        --
+        -- We return whichever one errors first and if they both don't error,
+        -- then we return the one that has the bigger budget/cost
+        m1 >>= \case
+          r@(True, _, _) -> return r
+          r1@(False, c1, b1) ->
+            m2 >>= \case
+              r@(True, _, _) -> return r
+              r2@(False, c2, b2) -> do
+                case b1 > b2 of
+                  True -> return r1
+                  False ->
+                    case c1 > c2 of
+                      True -> return r1
+                      False -> return r2
+      from1 ol c b (l, es) =
+        -- We look through each of the edges
+        froml ("has no edges in " <> show ol <> "->" <> show l) from1e l c b $ S.toAscList es
+      from1e l c b (cs, r) = do
+        -- When we get to an edge, we look at the current budget
         let gr = getc r
         let c' = c + gr R_Cost
         let b' = b + gr R_Budget
         case c' > b' of
           True -> return (True, c', b')
+          -- If it is okay, then we go through its calls
           False -> fromcs c' b' l cs
       fromcs c b k = \case
         [] -> from c b k
@@ -159,34 +199,95 @@ budgetAnalyze g s e getc = do
               fromcs c' b' k xs
   from 0 0 s
 
-restrictGraph :: forall a b . (Ord a, Ord b) => LPGraph a b -> a -> IO (LPGraph a b)
+-- This function's job is to take the control-flow graph for the whole program
+-- and return just the part of it that is connected to the given node, `n`
+--
+-- The point is to get a piece of the graph so we can figure out how expensive
+-- individual API calls are
+restrictGraph :: forall a b . (Show a, Ord a, Ord b) => LPGraph a b -> a -> IO (LPGraph a b)
 restrictGraph g n = do
-  -- putStrLn $ "restrict " <> show n
-  (from, to) <- fixedPoint $ \_ ((from :: S.Set a), (to_ :: S.Set a)) -> do
-    let to = S.insert n to_
-    -- putStrLn $ "  FROM " <> show from
-    -- putStrLn $ "    TO " <> show to
-    -- putStrLn $ ""
-    let incl1 x cs = x == n || S.member x cs
-    let esls :: LPEdge a b -> S.Set a
-        esls = S.fromList . fst
-    let csls :: LPChildren a b -> S.Set a
-        csls cs = M.keysSet cs <> mconcatMap esls (S.toAscList $ mconcat $ M.elems cs)
-    let inclFrom (x, cs) =
-          case incl1 x from of
-            True -> S.insert x $ csls cs
+  -- The function has two parts...
+  loud $ "restrict " <> show n
+  -- First, we discover the set of nodes that we want to include
+  ns <- connectedWith g n
+  -- putStrLn $ "--> ns = " <> show ns
+  -- Second, we construct the subgraph that contains only those nodes
+  subgraph g ns
+
+connectedWith :: forall a b . (Show a, Ord a, Ord b) => LPGraph a b -> a -> IO (S.Set a)
+connectedWith g n = do
+  -- This function is going to find the set of nodes that come FROM the n and
+  -- those that go TO it
+  --
+  --    z
+  --    |
+  --    x   y
+  --     \ /
+  --      n
+  --     / \
+  --    a   b
+  --        |
+  --        c
+  --
+  -- {x, y, z}  goes   TO n
+  -- {a, b, c} comes FROM n
+  --
+  loud $ "connectedWith " <> show n
+  -- We do this by doing a fixed-point computation of these two sets
+  (from, to) <- fixedPoint $ \i ((from0 :: S.Set a), (to0 :: S.Set a)) -> do
+    loud $ show i
+    -- putStrLn $ "        #" <> show i
+    -- putStrLn $ "  FROM = " <> show from0
+    -- putStrLn $ "    TO = " <> show to0
+    -- We put n into the TO set and FROM sets
+    let to1 = S.insert n to0
+    let from1 = S.insert n from0
+    -- We go through the graph and decide what should be in the TO set
+    let to2 = mconcatMap inclTo $ M.toAscList g
+        inclTo :: (a, (LPChildren a b)) -> S.Set a
+        inclTo (z, cs) = realIncl
+          -- z gets included if it goes to x which is already in the TO set
+          where
+            realIncl = if shouldIncld then incl else mempty
+            shouldIncld = not $ S.null nextInToS
+            nextInToS = S.intersection (gcNodesAsSet cs) to1
+            incl = S.union me nextInToCallsS
+            me = S.singleton z
+            -- We include this node and anything that it calls in its path to
+            -- to n by looking to see if n is connected to a TO
+            nextInToCallsS = mconcat nextInToCallsL
+            nextInToCallsL = map gcEdgeCalls nextInToEdgeL
+            nextInToEdgeL = M.elems $ M.restrictKeys cs nextInToS
+    -- Now we do the FROM side
+    let from2 = mconcatMap inclFrom $ M.toAscList g
+        inclFrom :: (a, (LPChildren a b)) -> S.Set a
+        inclFrom (b, cs) =
+          -- c gets included if it is pointed to by something in FROM (ie b)
+          -- We do this by looking if b is in FROM then adding its dests
+          case S.member b from1 of
+            True -> gcDestsAsSet cs
             False -> mempty
-    let inclTo (x, cs) =
-          case S.null $ S.intersection (csls cs) to of
-            False -> S.singleton x
-            True -> mempty
-    let from' = mconcatMap inclFrom $ M.toAscList g
-    let to' = mconcatMap inclTo $ M.toAscList g
-    return (from', to')
-  let cs = S.union from to
-  let isConnected = flip S.member cs
-  let onlyConnected x _ = isConnected x
-  let removeDisconnected = M.filterWithKey onlyConnected
+    return (from2, to2)
+  return $ S.insert n $ S.union from to
+
+gcDestsAsSet :: forall a b . (Ord a, Ord b) => LPChildren a b -> S.Set a
+gcDestsAsSet cs = gcNodesAsSet cs <> gcCallsAsSet cs
+
+gcNodesAsSet :: forall a b . LPChildren a b -> S.Set a
+gcNodesAsSet = M.keysSet
+
+gcCallsAsSet :: forall a b . (Ord a, Ord b) => LPChildren a b -> S.Set a
+gcCallsAsSet = gcEdgeCalls . mconcat . M.elems
+
+gcEdgeCalls :: forall a b . (Ord a) => (S.Set (LPEdge a b)) -> S.Set a
+gcEdgeCalls = mconcatMap (S.fromList . fst) . S.toList
+
+subgraph :: forall a b . (Ord a) => LPGraph a b -> S.Set a -> IO (LPGraph a b)
+subgraph g ns = do
+  -- This removes everything from g that is not in ns
+  let inSet = flip S.member ns
+  let removeDisconnected = M.filterWithKey $ \k _v -> inSet k
+  -- We first filter all of the nodes, then all of their edges
   return $ M.map removeDisconnected $ removeDisconnected g
 
 ensureAllPaths :: (Show a, Ord a) => String -> LPGraph a b -> a -> a -> (b -> Integer) -> IO (Maybe [a])
@@ -869,15 +970,17 @@ buildCFG rlab ts = do
   let getc rs c = fromMaybe 0 $ M.lookup rs c
   let lBots = l2s lBot
   let restrict mustLab = do
+        -- putStrLn $ "restrict and analyze " <> show mustLab
         g' <- restrictGraph g $ l2s mustLab
         let analyzeCFG = longestPathBetween g' lTop lBots . getc
         let budgetCFG = budgetAnalyze g' lTop lBots (flip getc)
         return $ (gs g', analyzeCFG, budgetCFG)
   loud $ rlab <> " OnCompletion"
-  ensureAllPaths (rlab <> ".OnC") g lTop lBots (getc R_CheckedCompletion) >>= \case
-    Nothing -> return ()
-    Just p ->
-      impossible $ "found a path where OnCompletion was not checked: " <> show p
+  do
+    ensureAllPaths (rlab <> ".OnC") g lTop lBots (getc R_CheckedCompletion) >>= \case
+      Nothing -> return ()
+      Just p ->
+        impossible $ "found a path where OnCompletion was not checked: " <> show p
   return (gs g, restrict)
 
 data LabelRec = LabelRec
@@ -1043,6 +1146,7 @@ data LibFun
   | LF_checkUInt256ResultLen
   | LF_mbrAdd
   | LF_mbrSub
+  | LF_wasntMeth
   deriving (Eq, Ord, Show)
 
 libDefns :: App ()
@@ -1073,6 +1177,44 @@ libCall lf impl = do
         return $ lab
       Just (lab, _, _) -> return lab
   code "callsub" [ lab ]
+
+-- Cost Analysis...
+--
+-- Inlined:
+--   int 1
+--   store 4
+--   ... n times
+--
+--   Cost : 2n
+--   Space: 4n
+--
+-- Unlined:
+--   callsub LF_wasntMeth
+--   ... n times
+--   wasntMeth:
+--   int 1
+--   store 4
+--   retsub
+--
+--   Cost : 4n
+--   Space: 2n + 5
+--
+-- Unlined is always worse for cost
+-- But, it is better for space when n > 2
+--
+--   n= 1 ---  4 vs 7
+--   n= 2 ---  8 vs 9
+--   n= 3 --- 12 vs 11
+--   n=10 --- 40 vs 25
+--
+-- Also, this is "wasntMeth" rather than "wasMeth", because we expect that the
+-- number of publishes is less than the number of API calls (because each
+-- publish has many publishes in it)
+cWasntMeth :: App ()
+cWasntMeth = libCall LF_wasntMeth $ do
+  cp True
+  gvStore GV_wasntMeth
+  op "retsub"
 
 mbrAdd :: App ()
 mbrAdd = libCall LF_mbrAdd $ do
@@ -2805,7 +2947,7 @@ data GlobalVar
   | GV_currentStep
   | GV_currentTime
   | GV_svs
-  | GV_wasMeth
+  | GV_wasntMeth
   | GV_apiRet
   | GV_companion
   | GV_mbrAdd
@@ -2831,7 +2973,7 @@ gvType = \case
   GV_currentTime -> T_UInt UI_Word
   GV_companion -> T_Contract
   GV_svs -> T_Null
-  GV_wasMeth -> T_Bool
+  GV_wasntMeth -> T_Bool
   GV_apiRet -> T_Null
   GV_mbrAdd -> T_UInt UI_Word
   GV_mbrSub -> T_UInt UI_Word
@@ -3189,14 +3331,15 @@ instance Compile CLEX where
     let mwhich = case cef_kind of
                    CE_Publish n -> Just n
                    _ -> Nothing
-    let isMeth = cp True >> gvStore GV_wasMeth
     block_ lab $ do
       label lab
       case cef_kind of
-        CE_Publish 0 -> callCompanion at $ CompanionCreate
-        CE_Publish _ -> return ()
-        CE_View {} -> isMeth
-        CE_API {} -> isMeth
+        CE_Publish n -> do
+          cWasntMeth
+          when (n == 0) $
+            callCompanion at CompanionCreate
+        CE_View {} -> nop
+        CE_API {} -> nop
       bindFromArgs clf_dom $
         cp $ CLFX lab mwhich cef_fun
 
@@ -3328,8 +3471,8 @@ cp_shell x = do
     ctobs $ gvType gv
   forM_ (tail keyState_gvs) $ const $ op "concat"
   op "app_global_put"
-  gvLoad GV_wasMeth
-  code "bz" ["done"]
+  gvLoad GV_wasntMeth
+  code "bnz" ["done"]
   label "apiReturn_noCheck"
   -- SHA-512/256("return")[0..4] = 0x151f7c75
   cp $ BS.pack [0x15, 0x1f, 0x7c, 0x75]
@@ -3360,6 +3503,7 @@ cp_shell x = do
   forM_ keyState_gvs $ \gv -> do
     ctzero $ gvType gv
     gvStore gv
+  cWasntMeth
   code "b" ["updateStateNoOp"]
   -- Library functions
   libDefns
