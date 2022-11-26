@@ -38,11 +38,15 @@ gIns (Graph m) x y = Graph $ M.alter mf x m
     mf = f . fromMaybe mempty
     f = Just . S.insert y
 
+-- XXX put Graph last
+-- XXX re-enable bidirectional, so it is easy to find list of variables
 gIns2 :: Graph -> DLVar -> DLVar -> Graph
 gIns2 = gIns
 -- XXX Maybe it doesn't matter
 --gIns2 g x y = gIns (gIns g x y) y x
 
+-- XXX add a list of "special" variables that we know are already
+-- "register-like", like the FROM, STATE, etc
 data IGg = IGg
   { igInter :: Graph
   , igMove :: Graph
@@ -166,6 +170,8 @@ instance IG DLVarLet where
   ig ls (DLVarLet mvc v) = do
     case mvc of
       Nothing -> return ()
+      -- XXX should I treat things that are read once specially? Maybe put them
+      -- in a special set
       Just _ -> intf v ls
     return $ rm v ls
 
@@ -183,6 +189,7 @@ instance (Countable a) => IG (CInterval a) where
 instance IG DLExpr where
   ig = viaCount
 
+-- XXX find uses of v2lv and change to really be that in the IR
 instance IG DLStmt where
   ig ls = \case
     DL_Nop _ -> return ls
