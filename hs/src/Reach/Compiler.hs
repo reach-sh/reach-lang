@@ -30,6 +30,7 @@ import Reach.EPP
 import Reach.EraseLogic
 import Reach.Eval
 import Reach.FloatAPI
+import Reach.InterferenceGraph
 import Reach.Linearize
 import Reach.OutputUtil
 import Reach.Parser (gatherDeps_top)
@@ -340,6 +341,7 @@ mkCompileProg (CompilerConfig {..}) appDescr outputFile dl = do
       -- smaller
       p <- showp "pl" =<< bigopt (showp, "pl") p
       p <- showp "cl" =<< clike p
+      p <- showp "clig" =<< plp_cpp_mod clig p
       -- Next, we generate the backend code for each one of the connectors
       -- the user asked for. This return "connector info" structures that
       -- basically have the bytecode in them, plus stuff the runtime needs.
