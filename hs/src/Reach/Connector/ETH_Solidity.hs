@@ -33,6 +33,7 @@ import Reach.Connector
 import Reach.Connector.ETH_solc
 import Reach.Counter
 import Reach.EmbeddedFiles
+import Reach.InterferenceGraph
 import Reach.OutputUtil
 import Reach.Texty
 import Reach.UnsafeUtil
@@ -1722,6 +1723,9 @@ instance SolStmts CLProg where
     funs <- solSM IntX clp_funs
     apis <- solSM ExtX clp_api
     return $ defs <> mem <> funs <> apis
+
+instance (SolStmts a) => SolStmts (IGd a) where
+  solS (IGd x _) = solS x
 
 solProg :: (HasCounter a, SolStmts a) => a -> IO (ConnectorObject, Doc)
 solProg p = do

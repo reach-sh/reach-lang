@@ -1243,6 +1243,9 @@ instance Pretty DLLetVar where
     DLV_Eff -> "eff"
     DLV_Let lc x -> pretty x <> pretty lc
 
+v2lv :: DLVar -> DLLetVar
+v2lv = DLV_Let DVC_Many
+
 lv2mdv :: DLLetVar -> Maybe DLVar
 lv2mdv = \case
   DLV_Eff -> Nothing

@@ -28,6 +28,7 @@ import Generics.Deriving hiding (conName)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.CL
+import Reach.InterferenceGraph
 import Reach.Texty
 import Reach.Util
 import Reach.OutputUtil
@@ -44,7 +45,7 @@ data ConGenConfig = ConGenConfig
 data Connector = Connector
   { conName :: ConnectorName
   , conCons :: DLConstant -> DLLiteral
-  , conGen :: ConGenConfig -> CLProg -> IO ConnectorInfo
+  , conGen :: ConGenConfig -> IGd CLProg -> IO ConnectorInfo
   , conReserved :: SLVar -> Bool
   , conCompileCode :: Value -> IO (Either String Value)
   , conContractNewOpts :: Maybe Value -> Either String Value

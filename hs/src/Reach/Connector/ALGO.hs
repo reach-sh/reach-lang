@@ -38,6 +38,7 @@ import Reach.Connector
 import Reach.Counter
 import Reach.Dotty
 import Reach.FixedPoint
+import Reach.InterferenceGraph
 import Reach.OutputUtil
 import qualified Reach.Texty as T
 import Reach.Texty (pretty)
@@ -3380,6 +3381,9 @@ instance Compile CLProg where
             _ -> Nothing
     let pubLs = mapMaybe pub_go $ M.elems sig_api
     liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs
+
+instance (Compile a) => Compile (IGd a) where
+  cp (IGd x _) = cp x
 
 -- General Shell
 cp_shell :: (Compile a) => a -> App ()
