@@ -32,18 +32,14 @@ instance Pretty Graph where
       go (f, ts) = map (go' f) $ S.toAscList ts
       go' f t = (show f, show t, mempty)
 
-gIns :: Graph -> DLVar -> DLVar -> Graph
-gIns (Graph m) x y = Graph $ M.alter mf x m
+gIns :: DLVar -> DLVar -> Graph -> Graph
+gIns x y (Graph m) = Graph $ M.alter mf x m
   where
     mf = f . fromMaybe mempty
     f = Just . S.insert y
 
--- XXX put Graph last
--- XXX re-enable bidirectional, so it is easy to find list of variables
-gIns2 :: Graph -> DLVar -> DLVar -> Graph
-gIns2 = gIns
--- XXX Maybe it doesn't matter
---gIns2 g x y = gIns (gIns g x y) y x
+gIns2 :: DLVar -> DLVar -> Graph -> Graph
+gIns2 x y g = gIns y x $ gIns x y g
 
 -- XXX add a list of "special" variables that we know are already
 -- "register-like", like the FROM, STATE, etc
@@ -96,10 +92,10 @@ modIG f = do
   liftIO $ modifyIORef eIG f
 
 inter2 :: DLVar -> DLVar -> App ()
-inter2 x y = modIG $ \g -> g { igInter = gIns2 (igInter g) x y }
+inter2 x y = modIG $ \g -> g { igInter = gIns2 x y (igInter g) }
 
 move2 :: DLVar -> DLVar -> App ()
-move2 x y = modIG $ \g -> g { igMove = gIns2 (igMove g) x y }
+move2 x y = modIG $ \g -> g { igMove = gIns2 x y (igMove g) }
 
 type App = ReaderT Env IO
 
