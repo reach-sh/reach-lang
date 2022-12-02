@@ -82,6 +82,7 @@ clig x = do
 
 -- Analysis
 
+-- XXX add a map for what vars a mentioned-once variable uses
 data Env = Env
   { eIG :: IORef IGg
   }
@@ -167,7 +168,7 @@ instance IG DLVarLet where
     case mvc of
       Nothing -> return ()
       -- XXX should I treat things that are read once specially? Maybe put them
-      -- in a special set
+      -- in a special set... put them in the env and then look up later
       Just _ -> intf v ls
     return $ rm v ls
 
