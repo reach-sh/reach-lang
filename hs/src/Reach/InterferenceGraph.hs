@@ -46,8 +46,6 @@ gIns2 x y g =
     True -> g
     False -> gIns y x $ gIns x y g
 
--- XXX add a list of "special" variables that we know are already
--- "register-like", like the FROM, STATE, etc
 data IGg = IGg
   { igInter :: Graph
   , igMove :: Graph
@@ -85,6 +83,7 @@ clig :: (GetFunVars a, IG a) => a -> IO (IGd a)
 clig x = do
   eIG <- newIORef mempty
   let eFunVars = getFunVars x
+  let eSpecials = mempty
   flip runReaderT (Env {..}) $ void $ ig (return mempty) x
   y <- readIORef eIG
   return $ IGd x y
@@ -95,6 +94,7 @@ clig x = do
 data Env = Env
   { eIG :: IORef IGg
   , eFunVars :: FunVars
+  , eSpecials :: DLVarS
   }
 
 modIG :: (IGg -> IGg) -> App ()
@@ -118,6 +118,9 @@ lookupFunVars f = do
 type App = ReaderT Env IO
 
 type FunVars = M.Map CLVar [DLVarLet]
+
+class AddSpecial a where
+  addSpecial :: a -> App m -> App m
 
 class Intf a where
   intf :: DLVar -> a -> App ()
@@ -189,12 +192,14 @@ instance IG DLVar where
 
 instance IG DLVarLet where
   ig lsm (DLVarLet mvc v) = do
+    Env {..} <- ask
     ls <- lsm
+    let ls' = S.difference ls eSpecials
     case mvc of
       Nothing -> return ()
       -- XXX should I treat things that are read once specially? Maybe put them
       -- in a special set... put them in the env and then look up later
-      Just _ -> intf v ls
+      Just _ -> intf v ls'
     return $ rm v ls
 
 instance IG DLLetVar where
@@ -247,10 +252,15 @@ instance IG DLTail where
 instance IG DLBlock where
   ig ls (DLBlock _ _ t a) = ig ls (IGseq t a)
 
+instance AddSpecial DLLetVar where
+  addSpecial = \case
+    DLV_Eff -> id
+    DLV_Let _ v -> local (\e -> e { eSpecials = S.insert v $ eSpecials e })
+
 instance IG CLStmt where
   ig ls = \case
     CLDL m -> ig ls m
-    CLBindSpecial _ lv _s -> ig ls lv
+    CLBindSpecial _ lv _s -> addSpecial lv $ ig ls lv
     CLTimeCheck _ x -> ig ls x
     CLEmitPublish _ _ vs -> ig ls (Seq vs)
     CLStateBind _ _ vs _ -> ig ls (Seq vs)
