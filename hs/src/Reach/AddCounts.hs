@@ -423,18 +423,17 @@ instance AC LLProg where
 instance AC CLStmt where
   ac = \case
     CLDL m -> CLDL <$> ac m
-    CLTxnBind at x y z ->
-      -- XXX could convert to ac_vdef
-      return $ CLTxnBind at x y z
+    CLBindSpecial at lv sp -> do
+      lv' <- ac_vdef True lv
+      case lv' of
+        DLV_Eff -> skip at
+        _ -> return $ CLBindSpecial at lv' sp
     CLTimeCheck at x -> do
       ac_visit x
       return $ CLTimeCheck at x
     CLEmitPublish at w vs -> do
       ac_visit vs
       return $ CLEmitPublish at w vs
-    CLStateRead at x -> do
-      -- XXX ac_vdef
-      return $ CLStateRead at x
     CLStateBind at safe vs s -> do
       vs' <- ac_vls vs
       return $ CLStateBind at safe vs' s
@@ -452,6 +451,8 @@ instance AC CLStmt where
     CLMemorySet at v a -> do
       ac_visit a
       return $ CLMemorySet at v a
+    where
+      skip at = return $ CLDL $ DL_Nop at
 
 instance AC CLTail where
   ac = \case

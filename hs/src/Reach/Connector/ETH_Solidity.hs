@@ -1525,13 +1525,18 @@ createMem defs = do
 instance SolStmts CLStmt where
   solS = \case
     CLDL m -> solS m
-    CLTxnBind _ from timev secsv -> do
-      extendVarMap $ M.fromList
-        [ (timev, solBlockTime)
-        , (secsv, solBlockSecs)
-        , (from, "payable(msg.sender)")
-        ]
-      return []
+    CLBindSpecial _ lv sp ->
+      case lv of
+        DLV_Eff -> return []
+        DLV_Let _ v -> do
+          let rhs =
+                case sp of
+                  CLS_TxnFrom -> "payable(msg.sender)"
+                  CLS_TxnTime -> solBlockTime
+                  CLS_TxnSecs -> solBlockSecs
+                  CLS_StorageState -> "current_step"
+          extendVarMap $ M.singleton v rhs
+          return []
     CLEmitPublish _at which vars -> do
       let msg_ty = T_Tuple $ map varType vars
       -- XXX This should be in CLike, but how can we force the inclusion of
@@ -1550,10 +1555,6 @@ instance SolStmts CLStmt where
       teq <- solEq actual' given'
       solRequireS ("time check at " <> show at) $
         solBinOp "||" (parens zeq) (parens teq)
-    CLStateRead _ v -> do
-      extendVarMap $ M.fromList
-        [ (v, "current_step") ]
-      return []
     CLStateBind at isSafe svs_vl prev -> do
       s' <-
         case isSafe of

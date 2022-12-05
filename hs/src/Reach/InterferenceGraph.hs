@@ -246,10 +246,9 @@ instance IG DLBlock where
 instance IG CLStmt where
   ig ls = \case
     CLDL m -> ig ls m
-    CLTxnBind _ x y z -> ig ls (Seq $ map v2lv $ [x, y, z])
+    CLBindSpecial _ lv _s -> ig ls lv
     CLTimeCheck _ x -> ig ls x
     CLEmitPublish _ _ vs -> ig ls (Seq vs)
-    CLStateRead _ v -> ig ls (v2lv v)
     CLStateBind _ _ vs _ -> ig ls (Seq vs)
     CLIntervalCheck _ x y z -> ig ls (IGseq (Seq [x, y]) z)
     CLStateSet _ _ vs -> do

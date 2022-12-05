@@ -3162,12 +3162,19 @@ compileTEAL tealf = compileTEAL_ tealf >>= \case
 instance CompileK CLStmt where
   cpk k = \case
     CLDL m -> cpk k m
-    CLTxnBind _ from timev secsv -> do
-      freeResource R_Account $ (0, DLA_Var from)
-      store_let from True (code "txn" ["Sender"]) $
-        store_let timev True cRound $
-          store_let secsv True (code "global" ["LatestTimestamp"]) $
-            k
+    CLBindSpecial _ lv sp ->
+      case lv of
+        DLV_Eff -> k
+        DLV_Let _ v -> do
+          c <-
+            case sp of
+              CLS_TxnFrom -> do
+                freeResource R_Account $ (0, DLA_Var v)
+                return $ code "txn" ["Sender"]
+              CLS_TxnTime -> return cRound
+              CLS_TxnSecs -> return $ code "global" ["LatestTimestamp"]
+              CLS_StorageState -> return $ gvLoad GV_currentStep
+          store_let v True c k
     CLTimeCheck _ given -> do
       cp given
       op "dup"
@@ -3181,8 +3188,6 @@ instance CompileK CLStmt where
       k
     CLEmitPublish _ which vars -> do
       clogEvent ("_reach_e" <> show which) vars >> k
-    CLStateRead _ v -> do
-      store_let v True (gvLoad GV_currentStep) k
     CLStateBind at isSafe svs_vl prev -> do
       unless isSafe $ do
         cp prev
