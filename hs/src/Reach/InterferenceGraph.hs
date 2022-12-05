@@ -84,17 +84,18 @@ clig x = do
   eIG <- newIORef mempty
   let eFunVars = getFunVars x
   let eSpecials = mempty
+  let eOnces = mempty
   flip runReaderT (Env {..}) $ void $ ig (return mempty) x
   y <- readIORef eIG
   return $ IGd x y
 
 -- Analysis
 
--- XXX add a map for what vars a mentioned-once variable uses
 data Env = Env
   { eIG :: IORef IGg
   , eFunVars :: FunVars
   , eSpecials :: DLVarS
+  , eOnces :: M.Map DLVar DLVarS
   }
 
 modIG :: (IGg -> IGg) -> App ()
@@ -170,10 +171,17 @@ rm = S.delete
 class IG a where
   ig :: App DLVarS -> a -> App DLVarS
 
+class IGdef a where
+  igDef :: App DLVarS -> DLVarS -> a -> App DLVarS
+
 viaCount :: Countable a => App DLVarS -> a -> App DLVarS
 viaCount lsm x = do
   ls <- lsm
-  return $ S.union ls $ countsS x
+  let xsS = countsS x
+  eOnces' <- flip M.restrictKeys xsS <$> asks eOnces
+  let xtra = mconcat $ M.elems eOnces'
+  let xsS' = S.union xtra $ S.difference xsS $ M.keysSet eOnces'
+  return $ S.union ls xsS'
 
 data IGseq a b = IGseq a b
 instance (IG a, IG b) => IG (IGseq a b) where
@@ -190,22 +198,37 @@ newtype Seq a = Seq a
 instance IG DLVar where
   ig = viaCount
 
-instance IG DLVarLet where
-  ig lsm (DLVarLet mvc v) = do
-    Env {..} <- ask
-    ls <- lsm
-    let ls' = S.difference ls eSpecials
-    case mvc of
-      Nothing -> return ()
-      -- XXX should I treat things that are read once specially? Maybe put them
-      -- in a special set... put them in the env and then look up later
-      Just _ -> intf v ls'
-    return $ rm v ls
+instance IGdef DLVarLet where
+  igDef lsm vs (DLVarLet mvc v) =
+    igDef lsm vs $
+      case mvc of
+        Nothing -> DLV_Eff
+        Just vc -> DLV_Let vc v
+
+instance IGdef DLLetVar where
+  igDef lsm vs = \case
+    DLV_Eff -> S.union vs <$> lsm
+    DLV_Let vc v -> do
+      Env {..} <- ask
+      let ignored = S.union (M.keysSet eOnces) eSpecials
+      let vs' = S.difference vs ignored
+      ls <-
+        case vc of
+          DVC_Once ->
+            local (\e -> e { eOnces = M.insert v vs' eOnces }) lsm
+          DVC_Many ->
+            lsm
+      intf v $ S.difference ls ignored
+      return $ rm v ls
+
+viaDef :: (IGdef a) => App DLVarS -> a -> App DLVarS
+viaDef ls x = igDef ls mempty x
 
 instance IG DLLetVar where
-  ig ls = \case
-    DLV_Eff -> ls
-    DLV_Let vc v -> ig ls (DLVarLet (Just vc) v)
+  ig = viaDef
+
+instance IG DLVarLet where
+  ig = viaDef
 
 instance IG DLArg where
   ig = viaCount
@@ -213,15 +236,12 @@ instance IG DLArg where
 instance (Countable a) => IG (CInterval a) where
   ig = viaCount
 
-instance IG DLExpr where
-  ig = viaCount
-
 instance IG DLStmt where
   ig ls = \case
     DL_Nop _ -> ls
     DL_Let _ x e -> do
       move x e
-      ig ls (IGseq x e)
+      igDef ls (countsS e) x
     DL_ArrayMap _ ans xs as i f -> do
       move ans f
       ig ls (IGseq ans (IGseq (Seq xs) (IGseq (Seq $ i : as) f)))
