@@ -405,7 +405,7 @@ algoMaxBoxSize :: Integer
 algoMaxBoxSize = 32768
 
 reachMaxBoxSize :: Integer
-reachMaxBoxSize = 4096
+reachMaxBoxSize = 1024
 
 algoBoxFlatMinBalance :: Integer
 algoBoxFlatMinBalance = 2500
