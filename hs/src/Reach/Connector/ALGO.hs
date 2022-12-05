@@ -3403,7 +3403,10 @@ instance Compile CLProg where
     liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs
 
 instance (Compile a) => Compile (IGd a) where
-  cp (IGd x _) = cp x
+  cp (IGd x g) = do
+    y <- liftIO $ color g id
+    liftIO $ putStrLn $ show y
+    cp x
 
 -- General Shell
 cp_shell :: (Compile a) => a -> App ()
