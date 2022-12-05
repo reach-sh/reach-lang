@@ -248,7 +248,7 @@ instance (CLikeF a) => CLike (FIX a) where
     -- XXX when the state is a data, this would be a real switch
     -- XXX optimize case where there's one step?
     stept <- clf_ (FEnv {..}) $ bltM fi_steps
-    let intt = CL_Com (CLStateRead fi_at f_statev) stept
+    let intt = CL_Com (CLBindSpecial fi_at (v2lv f_statev) CLS_StorageState) stept
     let ns = v : fi_as
     let k = (if fi_isApi then CE_API else CE_View) $ bunpack v
     funw (nameApi v) ns fi_at domvls fi_isView rng k (Just f_rng) intt
@@ -409,7 +409,9 @@ instance CLike CHX where
           if isCtor then id else CL_Com (CLStateBind ch_at False ch_svs ch_last)
     let intt =
           -- XXX add extensions to DLE so these can be read directly
-            CL_Com (CLTxnBind ch_at ch_from ch_timev ch_secsv)
+            CL_Com (CLBindSpecial ch_at (v2lv ch_from) CLS_TxnFrom)
+          $ CL_Com (CLBindSpecial ch_at (v2lv ch_timev) CLS_TxnTime)
+          $ CL_Com (CLBindSpecial ch_at (v2lv ch_secsv) CLS_TxnSecs)
           $ mStateBind
           $ addArgs
           -- XXX include this in the program itself?

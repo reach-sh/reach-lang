@@ -25,12 +25,25 @@ instance Pretty CLSym where
 instance Show CLSym where
   show = show . pretty
 
+data CLSpecial
+  = CLS_TxnFrom
+  | CLS_TxnTime
+  | CLS_TxnSecs
+  | CLS_StorageState
+  deriving (Eq)
+
+instance Pretty CLSpecial where
+  pretty = \case
+    CLS_TxnFrom -> "txn.from"
+    CLS_TxnTime -> "txn.time"
+    CLS_TxnSecs -> "txn.secs"
+    CLS_StorageState -> "storage.state"
+
 data CLStmt
   = CLDL DLStmt
-  | CLTxnBind SrcLoc DLVar DLVar DLVar
+  | CLBindSpecial SrcLoc DLLetVar CLSpecial
   | CLTimeCheck SrcLoc DLVar
   | CLEmitPublish SrcLoc Int [DLVar]
-  | CLStateRead SrcLoc DLVar
   | CLStateBind SrcLoc Bool [DLVarLet] Int
   | CLIntervalCheck SrcLoc DLVar DLVar (CInterval DLTimeArg)
   | CLStateSet SrcLoc Int [(DLVar, DLArg)]
@@ -41,16 +54,9 @@ data CLStmt
 instance Pretty CLStmt where
   pretty = \case
     CLDL s -> pretty s
-    CLTxnBind _ from timev secsv -> lhs <+> ":=" <+> "txn.metadata"
-      where
-        lhs = render_obj $ M.fromList
-          [ ("from" :: String, from)
-          , ("time", timev)
-          , ("secs", secsv)
-          ]
+    CLBindSpecial _ lv s -> pretty lv <+> ":=" <+> pretty s
     CLEmitPublish _ which vars -> "emitPublish" <> parens (render_das [pretty which, pretty vars])
     CLTimeCheck _ given -> "checkTime" <> parens (render_das [given])
-    CLStateRead _ v -> pretty v <+> ":=" <+> "state"
     CLStateBind _ isSafe svs prev -> pretty svs <+> ":=" <+> "state" <> pretty prev <+> pretty isSafe
     CLIntervalCheck _ timev secsv int -> "checkInterval" <> parens (render_das [pretty timev, pretty secsv, pretty int])
     CLStateSet _ which svs -> "state" <> pretty which <+> "<-" <+> pretty svs
