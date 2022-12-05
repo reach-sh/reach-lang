@@ -2,7 +2,9 @@ module Reach.InterferenceGraph
   ( clig
   , IGg (..)
   , IGd (..)
-  , color
+  , igVars
+  , colorEasy
+  , colorHard
   ) where
 
 import Control.Monad
@@ -38,6 +40,9 @@ instance Pretty Graph where
       go (f, ts) = map (go' f) $ S.toAscList ts
       go' f t = (show f, show t, mempty)
 
+gVars :: Graph -> DLVarS
+gVars (Graph m) = M.keysSet m
+
 gRef :: Graph -> DLVar -> DLVarS
 gRef (Graph m) x = fromMaybe mempty $ M.lookup x m
 
@@ -57,6 +62,9 @@ data IGg = IGg
   { igInter :: Graph
   , igMove :: Graph
   }
+
+igVars :: IGg -> DLVarS
+igVars (IGg {..}) = gVars igInter
 
 instance Semigroup IGg where
   (IGg xi xm) <> (IGg yi ym) = IGg (xi <> yi) (xm <> ym)
@@ -349,14 +357,22 @@ instance GetFunVars CLProg where
       go (CLIntFun {..}) = go' cif_fun
       go' (CLFun {..}) = clf_dom
 
--- Color
+-- Coloring
+colorEasy :: IGg -> DLVarS -> Int -> IO (M.Map DLVar Int)
+colorEasy i s maxColor = do
+  let act = S.size s
+  case act <= maxColor of
+    True ->
+      return $ M.fromList $ zip (S.toAscList s) [0..]
+    False -> do
+      colorSat i s $ take maxColor [0..]
 
-color :: IGg -> (DLVarS -> DLVarS) -> IO (M.Map DLVar Int)
-color (IGg {..}) sel = do
+colorHard :: IGg -> DLVarS -> IO (M.Map DLVar Int)
+colorHard i s = colorSat i s [0..]
+
+colorSat :: IGg -> DLVarS -> [Int] -> IO (M.Map DLVar Int)
+colorSat (IGg {..}) s all_cs = do
   asnr <- newIORef mempty
-  let s = sel $ M.keysSet igInter_m
-        where
-          Graph igInter_m = igInter
   w <- newIORef $ S.toAscList s
   let consult_asn cv =
         (maybeToList . M.lookup cv) <$> readIORef asnr
@@ -377,14 +393,14 @@ color (IGg {..}) sel = do
             writeIORef w $ cw \\ [v]
             f v sv
   let tryToAssign v sv = \case
-        [] -> error $ "no color opts"
+        [] -> impossible $ "colorSat: no color opts"
         c0 : cols ->
           case S.member c0 sv of
             True -> tryToAssign v sv cols
             False -> modifyIORef asnr $ M.insert v c0
   let color_loop = extractMaxSat $ \v sv -> do
         vs_move_ns_cs <- S.toList <$> neighbors_colors igMove v
-        tryToAssign v sv $ vs_move_ns_cs ++ [0..]
+        tryToAssign v sv $ vs_move_ns_cs <> all_cs
         color_loop
   color_loop
   readIORef asnr
