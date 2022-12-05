@@ -117,16 +117,21 @@ instance Unroll DLStmt where
     DL_Set at v a -> return $ DL_Set at v a
     DL_LocalIf at mans c t f -> DL_LocalIf at mans c <$> ul t <*> ul f
     DL_LocalSwitch at ov csm -> DL_LocalSwitch at ov <$> ul csm
-    DL_ArrayMap at ans xs as i fb -> do
+    DL_ArrayMap at ans_lv xs as i fb -> do
       (_, xs') <- unzip <$> mapM (ul_explode at) xs
-      r' <- zipWithM (\xa iv -> fu_ fb $ (zip as xa) <> [(i, (DLA_Literal $ DLL_Int at UI_Word iv))]) (transpose xs') [0..]
-      let r_ty = arrType $ varType ans
-      return $ DL_Let at (DLV_Let DVC_Many ans) (DLE_LArg at $ DLLA_Array r_ty r')
-    DL_ArrayReduce at ans xs z b as i fb -> do
+      r' <- zipWithM (\xa iv -> fu_ fb $ (zip (map vl2v as) xa) <> [(vl2v i, (DLA_Literal $ DLL_Int at UI_Word iv))]) (transpose xs') [0..]
+      case ans_lv of
+        DLV_Let vc ans -> do
+          let r_ty = arrType $ varType ans
+          return $ DL_Let at (DLV_Let vc ans) (DLE_LArg at $ DLLA_Array r_ty r')
+        DLV_Eff -> do
+          let go = DL_Let at DLV_Eff . DLE_Arg at
+          return $ DL_LocalDo at Nothing $ dtList at $ map go r'
+    DL_ArrayReduce at ans_lv xs z b as i fb -> do
       (_, xs') <- unzip <$> mapM (ul_explode at) xs
       let xs'i = zip (transpose xs') $ map (DLA_Literal . DLL_Int at UI_Word) [0..]
-      r' <- foldlM (\za (xa, ia) -> fu_ fb ([(b, za)] <> (zip as xa) <> [(i, ia)])) z xs'i
-      return $ DL_Let at (DLV_Let DVC_Many ans) (DLE_Arg at r')
+      r' <- foldlM (\za (xa, ia) -> fu_ fb ([(vl2v b, za)] <> (zip (map vl2v as) xa) <> [(vl2v i, ia)])) z xs'i
+      return $ DL_Let at ans_lv (DLE_Arg at r')
     DL_MapReduce at mri ans x z b a fb ->
       DL_MapReduce at mri ans x z b a <$> ul fb
     DL_Only at p l -> DL_Only at p <$> ul l

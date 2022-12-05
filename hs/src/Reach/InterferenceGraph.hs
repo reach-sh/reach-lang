@@ -120,6 +120,9 @@ instance MoveVar DLLetVar where
     DLV_Eff -> Nothing
     DLV_Let _ v -> mVar v
 
+instance MoveVar DLVarLet where
+  mVar (DLVarLet _ v) = mVar v
+
 instance MoveVar DLArg where
   mVar = \case
     DLA_Var v -> return v
@@ -186,7 +189,6 @@ instance (Countable a) => IG (CInterval a) where
 instance IG DLExpr where
   ig = viaCount
 
--- XXX find uses of v2lv and change to really be that in the IR
 instance IG DLStmt where
   ig ls = \case
     DL_Nop _ -> return ls
@@ -195,12 +197,12 @@ instance IG DLStmt where
       ig ls (IGseq x e)
     DL_ArrayMap _ ans xs as i f -> do
       move ans f
-      ig ls (IGseq (v2lv ans) (IGseq (Seq xs) (IGseq (Seq $ map v2lv $ i : as) f)))
+      ig ls (IGseq ans (IGseq (Seq xs) (IGseq (Seq $ i : as) f)))
     DL_ArrayReduce _ ans xs z b as i f -> do
       move b z
       move ans f
       move b f
-      ig ls (IGseq (v2lv ans) (IGseq (Seq $ z : xs) (IGseq (Seq $ map v2lv $ b : i : as) f)))
+      ig ls (IGseq ans (IGseq (Seq $ z : xs) (IGseq (Seq $ b : i : as) f)))
     DL_Var _ v -> ig ls (v2vl v)
     DL_Set _ v a -> do
       move v a
@@ -213,7 +215,7 @@ instance IG DLStmt where
       move b z
       move ans f
       move b f
-      ig ls (IGseq (v2lv ans) (IGseq z (IGseq (Seq $ map v2lv [b, a]) f)))
+      ig ls (IGseq ans (IGseq z (IGseq (Seq $ [b, a]) f)))
 
 instance IG DLTail where
   ig ls = \case

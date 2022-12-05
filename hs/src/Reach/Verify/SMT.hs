@@ -1329,14 +1329,19 @@ smt_m = \case
     with_t (smt_l t) <> with_f (smt_l f)
   DL_LocalSwitch at ov csm ->
     smtSwitch SM_Local at ov csm smt_l
-  DL_MapReduce at mri ans x z b a f -> do
-    pathAddUnbound at (Just ans) $ Just $ SMTModel O_ReduceVar
-    (ctxt_inv_mode <$> ask) >>= \case
-      B_Assume _ -> do
-        smtMapRecordReduce x $ SMR_Reduce mri ans z b a f
-      B_Prove _ ->
-        smtMapReviewRecordReduce at mri ans x z b a f
-      _ -> impossible $ "Map.reduce outside invariant"
+  DL_MapReduce at mri ans_lv x z b' a' f -> do
+    case ans_lv of
+      DLV_Eff -> return ()
+      DLV_Let _ ans -> do
+        let b = vl2v b'
+        let a = vl2v a'
+        pathAddUnbound at (Just ans) $ Just $ SMTModel O_ReduceVar
+        (ctxt_inv_mode <$> ask) >>= \case
+          B_Assume _ -> do
+            smtMapRecordReduce x $ SMR_Reduce mri ans z b a f
+          B_Prove _ ->
+            smtMapReviewRecordReduce at mri ans x z b a f
+          _ -> impossible $ "Map.reduce outside invariant"
   DL_Only _at (Left who) loc -> smt_lm who loc
   DL_Only {} -> impossible $ "right only before EPP"
   DL_LocalDo _ _ t -> smt_l t

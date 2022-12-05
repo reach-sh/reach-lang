@@ -3116,7 +3116,7 @@ evalPrim p sargs =
               let t = T_Array f_ty size
               (ans_dv, ans_dsv) <- make_dlvar at t
               let f_bl = DLSBlock at [] f_lifts f_da
-              saveLift $ DLS_ArrayMap at ans_dv x_da a_dv i_dv f_bl
+              saveLift $ DLS_ArrayMap at (v2lv ans_dv) x_da (map v2vl a_dv) (v2vl i_dv) f_bl
               return $ (f_lvl, ans_dsv)
     SLPrim_array_reduce withIndex ->
       case args of
@@ -3166,7 +3166,7 @@ evalPrim p sargs =
             False -> do
               (ans_dv, ans_dsv) <- make_dlvar at z_ty
               let f_bl = DLSBlock at [] f_lifts f_da
-              saveLift $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv i_dv f_bl
+              saveLift $ DLS_ArrayReduce at (v2lv ans_dv) x_da z_da (v2vl b_dv) (map v2vl a_dv) (v2vl i_dv) f_bl
               return $ (lvl, ans_dsv)
     SLPrim_array_set ->
       case map snd sargs of
@@ -3678,7 +3678,7 @@ evalPrim p sargs =
       (ans_dv, ans_dsv) <- make_dlvar at z_ty
       let f_bl = DLSBlock at [] f_lifts f_da
       mri <- ctxt_alloc
-      saveLift $ DLS_MapReduce at mri ans_dv mv z_da b_dv ma_dv f_bl
+      saveLift $ DLS_MapReduce at mri (v2lv ans_dv) mv z_da (v2vl b_dv) (v2vl ma_dv) f_bl
       return $ (lvl, ans_dsv)
     SLPrim_Refine -> do
       at <- withAt id

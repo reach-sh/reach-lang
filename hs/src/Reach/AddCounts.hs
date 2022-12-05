@@ -111,21 +111,23 @@ instance AC DLStmt where
           ac_visit $ de
           return $ DL_Let at x' de
     DL_ArrayMap at ans xs as i f -> do
-      count <- ac_getCount ans
-      case (count, isPure f) of
-        (Nothing, True) -> skip at
+      ans' <- ac_vdef False ans
+      let p = isPure f
+      case (p, ans') of
+        (True, DLV_Eff) -> skip at
         _ -> do
           f' <- ac f
           ac_visit $ xs
-          return $ DL_ArrayMap at ans xs as i f'
+          return $ DL_ArrayMap at ans' xs as i f'
     DL_ArrayReduce at ans xs z b as i f -> do
-      count <- ac_getCount ans
-      case (count, isPure f) of
-        (Nothing, True) -> skip at
+      ans' <- ac_vdef False ans
+      let p = isPure f
+      case (p, ans') of
+        (True, DLV_Eff) -> skip at
         _ -> do
           f' <- ac f
           ac_visit $ xs <> [z]
-          return $ DL_ArrayReduce at ans xs z b as i f'
+          return $ DL_ArrayReduce at ans' xs z b as i f'
     DL_Var at dv ->
       ac_getCount dv >>= \case
         Nothing -> skip at

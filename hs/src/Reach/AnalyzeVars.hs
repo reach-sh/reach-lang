@@ -175,6 +175,11 @@ instance BoundVars DLLetVar where
     DLV_Eff -> mempty
     DLV_Let _ v -> boundVars v
 
+instance FreeVars DLVarLet where
+  freeVars (DLVarLet _ v) = freeVars v
+instance BoundVars DLVarLet where
+  boundVars (DLVarLet _ v) = boundVars v
+
 instance FreeVars v => FreeVars [v] where
   freeVars = mconcat . map freeVars
 instance BoundVars v => BoundVars [v] where
@@ -221,12 +226,12 @@ instance BoundVars DLStmt where
   boundVars = readMMap bvMap $ \case
     DL_Nop {} -> mempty
     DL_Let _ lv _ -> boundVars lv
-    DL_ArrayMap _ ans _ as i f -> boundVars (as <> [ans, i]) <> boundVars f
-    DL_ArrayReduce _ ans _ _ b as i f -> boundVars (as <> [ans, b, i]) <> boundVars f
+    DL_ArrayMap _ ans _ as i f -> boundVars (i : as) <> boundVars f <> boundVars ans
+    DL_ArrayReduce _ ans _ _ b as i f -> boundVars (b : i : as) <> boundVars f <> boundVars ans
     DL_Var _ v -> boundVars v
     DL_Set {} -> mempty
     DL_LocalIf _ _ _ t f -> boundVars [t, f]
     DL_LocalSwitch _ _ csm -> boundVars csm
     DL_Only _ _ t -> boundVars t
-    DL_MapReduce _ _ ans _ _ a b f -> boundVars [ans, a, b] <> boundVars f
+    DL_MapReduce _ _ ans _ _ a b f -> boundVars [a, b] <> boundVars f <> boundVars ans
     DL_LocalDo _ _ t -> boundVars t
