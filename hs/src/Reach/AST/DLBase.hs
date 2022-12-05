@@ -1267,6 +1267,13 @@ varLetType :: DLVarLet -> DLType
 varLetType = varType . varLetVar
 v2vl :: DLVar -> DLVarLet
 v2vl = DLVarLet (Just DVC_Many)
+vl2v :: DLVarLet -> DLVar
+vl2v (DLVarLet _ v) = v
+vl2mdv :: DLVarLet -> Maybe DLVar
+vl2mdv (DLVarLet mvc v) =
+  case mvc of
+    Nothing -> Nothing
+    Just _ -> Just v
 
 vl2lv :: DLVarLet -> DLLetVar
 vl2lv (DLVarLet mvc v) =
@@ -1291,15 +1298,15 @@ instance Pretty a => Pretty (DLInvariant a) where
 data DLStmt
   = DL_Nop SrcLoc
   | DL_Let SrcLoc DLLetVar DLExpr
-  | DL_ArrayMap SrcLoc DLVar [DLArg] [DLVar] DLVar DLBlock
-  | DL_ArrayReduce SrcLoc DLVar [DLArg] DLArg DLVar [DLVar] DLVar DLBlock
+  | DL_ArrayMap SrcLoc DLLetVar [DLArg] [DLVarLet] DLVarLet DLBlock
+  | DL_ArrayReduce SrcLoc DLLetVar [DLArg] DLArg DLVarLet [DLVarLet] DLVarLet DLBlock
   | DL_Var SrcLoc DLVar
   | DL_Set SrcLoc DLVar DLArg
   | DL_LocalDo SrcLoc (Maybe DLVar) DLTail
   | DL_LocalIf SrcLoc (Maybe DLVar) DLArg DLTail DLTail
   | DL_LocalSwitch SrcLoc DLVar (SwitchCases DLTail)
   | DL_Only SrcLoc (Either SLPart Bool) DLTail
-  | DL_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DLBlock
+  | DL_MapReduce SrcLoc Int DLLetVar DLMVar DLArg DLVarLet DLVarLet DLBlock
   deriving (Eq)
 
 instance SrcLocOf DLStmt where

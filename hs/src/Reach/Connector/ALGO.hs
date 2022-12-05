@@ -2846,7 +2846,7 @@ instance CompileK DLStmt where
       when recordNew $
         addNewTok $ DLA_Var dv
       sallocVarLet (DLVarLet (Just vc) dv) sm (cp de) km
-    DL_ArrayMap at ansv as xs iv (DLBlock _ _ body ra) -> do
+    DL_ArrayMap at (DLV_Let _ ansv) as xs (DLVarLet _ iv) (DLBlock _ _ body ra) -> do
       anssz <- typeSizeOf $ argTypeOf $ DLA_Var ansv
       let xlen = arraysLength as
       let rt = argTypeOf ra
@@ -2856,32 +2856,36 @@ instance CompileK DLStmt where
         store_ans
         cfor xlen $ \load_idx -> do
           load_ans
-          let finalK = cpk (cp ra >> ctobs rt) body
-          let bodyF (x, a) k = do
-               doArrayRef at a True $ Right load_idx
-               sallocLet x (return ()) $
-                 store_let iv True load_idx $
-                 k
-          foldr bodyF finalK $ zip xs as
+          arrayBody at ra body iv load_idx xs as
+          ctobs rt
           op "concat"
           store_ans
         store_let ansv True load_ans km
-    DL_ArrayReduce at ansv as za av xs iv (DLBlock _ _ body ra) -> do
+    DL_ArrayMap at DLV_Eff as xs (DLVarLet _ iv) (DLBlock _ _ body ra) -> do
+      let xlen = arraysLength as
+      cfor xlen $ \load_idx -> do
+        arrayBody at ra body iv load_idx xs as
+      km
+    DL_ArrayReduce at (DLV_Let _ ansv) as za (DLVarLet _ av) xs (DLVarLet _ iv) (DLBlock _ _ body ra) -> do
       let xlen = arraysLength as
       salloc_ (textyv ansv) $ \store_ans load_ans -> do
         cp za
         store_ans
         store_let av True load_ans $ do
           cfor xlen $ \load_idx -> do
-            let finalK = cpk (cp ra) body
-            let bodyF (x, a) k = do
-                 doArrayRef at a True $ Right load_idx
-                 sallocLet x (return ()) $
-                   store_let iv True load_idx $
-                   k
-            foldr bodyF finalK $ zip xs as
+            arrayBody at ra body iv load_idx xs as
             store_ans
-          store_let ansv True load_ans km
+        store_let ansv True load_ans km
+    DL_ArrayReduce at DLV_Eff as za (DLVarLet _ av) xs (DLVarLet _ iv) (DLBlock _ _ body ra) -> do
+      let xlen = arraysLength as
+      salloc_ (textyv av) $ \store_a load_a -> do
+        cp za
+        store_a
+        cfor xlen $ \load_idx -> do
+          store_let av True load_a $
+            arrayBody at ra body iv load_idx xs as
+          store_a
+      km
     DL_Var _ dv ->
       salloc $ \loc -> do
         store_var dv loc $
@@ -2913,6 +2917,17 @@ instance CompileK DLStmt where
     DL_Only {} ->
       impossible $ "only in CP"
     DL_LocalDo _ _ t -> cpk km t
+    where
+      arrayBody at ra body iv load_idx xs as = do
+        let finalK = cpk (cp ra) body
+        let finalK' = store_let iv True load_idx finalK
+        let bodyF (DLVarLet mxc x, a) k =
+              case mxc of
+                Nothing -> k
+                Just _ -> do
+                 doArrayRef at a True $ Right load_idx
+                 sallocLet x (return ()) k
+        foldr bodyF finalK' $ zip xs as
 
 instance CompileK DLTail where
   cpk km = \case

@@ -380,14 +380,16 @@ be_m = \case
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
   DL_ArrayMap at ans xs as i f -> do
-    fg_defn $ [ans] <> as <> [i]
+    fg_defn $ ans
+    fg_defn $ i : as
     fg_use xs
     be_bl f
       >>= retb
         (\f' ->
            return $ DL_ArrayMap at ans xs as i f')
   DL_ArrayReduce at ans xs z b as i f -> do
-    fg_defn $ [ans] <> as <> [b, i]
+    fg_defn $ ans
+    fg_defn $ b : i : as
     fg_use $ xs <> [z]
     be_bl f
       >>= retb
@@ -423,7 +425,8 @@ be_m = \case
             f' (v, vu, k'p) = (,,) v vu <$> (f k'p)
     return $ (,) (mkt fst) (mkt snd)
   DL_MapReduce at mri ans x z b a f -> do
-    fg_defn $ [ans, b, a]
+    fg_defn $ ans
+    fg_defn $ [b, a]
     fg_use $ z
     be_bl f
       >>= retb

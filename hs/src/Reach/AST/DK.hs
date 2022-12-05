@@ -12,15 +12,15 @@ import Reach.Texty
 
 data DKCommon
   = DKC_Let SrcLoc DLLetVar DLExpr
-  | DKC_ArrayMap SrcLoc DLVar [DLArg] [DLVar] DLVar DKBlock
-  | DKC_ArrayReduce SrcLoc DLVar [DLArg] DLArg DLVar [DLVar] DLVar DKBlock
+  | DKC_ArrayMap SrcLoc DLLetVar [DLArg] [DLVarLet] DLVarLet DKBlock
+  | DKC_ArrayReduce SrcLoc DLLetVar [DLArg] DLArg DLVarLet [DLVarLet] DLVarLet DKBlock
   | DKC_Var SrcLoc DLVar
   | DKC_Set SrcLoc DLVar DLArg
   | DKC_LocalDo SrcLoc (Maybe DLVar) DKTail
   | DKC_LocalIf SrcLoc (Maybe DLVar) DLArg DKTail DKTail
   | DKC_LocalSwitch SrcLoc DLVar (SwitchCases DKTail)
   | DKC_Only SrcLoc SLPart DKTail
-  | DKC_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DKBlock
+  | DKC_MapReduce SrcLoc Int DLLetVar DLMVar DLArg DLVarLet DLVarLet DKBlock
   | DKC_FluidSet SrcLoc FluidVar DLArg
   | DKC_FluidRef SrcLoc DLVar FluidVar
   | DKC_setApiDetails SrcLoc SLPart [DLType] (Maybe String)

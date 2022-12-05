@@ -331,19 +331,30 @@ data DLVal
 instance ToJSON DLVal
 instance FromJSON DLVal
 
-addToStore :: DLVar -> DLVal -> App ()
-addToStore x v = do
-  (_, l) <- getState
-  let locals = l_locals l
-  let aid = l_curr_actor_id l
-  case M.lookup aid locals of
-    Nothing -> do
-      void $ suspend $ PS_Error Nothing "addToStore: no local store"
-      return ()
-    Just lst -> do
-      let st = l_store lst
-      let lst' = lst {l_store = M.insert x v st}
-      setLocal $ l {l_locals = M.insert aid lst' locals}
+class AddToStore a where
+  addToStore :: a -> DLVal -> App ()
+
+instance AddToStore DLVar where
+  addToStore x v = do
+    (_, l) <- getState
+    let locals = l_locals l
+    let aid = l_curr_actor_id l
+    case M.lookup aid locals of
+      Nothing -> do
+        void $ suspend $ PS_Error Nothing "addToStore: no local store"
+        return ()
+      Just lst -> do
+        let st = l_store lst
+        let lst' = lst {l_store = M.insert x v st}
+        setLocal $ l {l_locals = M.insert aid lst' locals}
+
+instance AddToStore DLLetVar where
+  addToStore = \case
+    DLV_Eff -> const $ return ()
+    DLV_Let _ v -> addToStore v
+
+instance AddToStore DLVarLet where
+  addToStore (DLVarLet _ v) = addToStore v
 
 fixMessageInRecord :: PhaseId -> ActorId -> Store -> DLPayAmt -> Bool -> App ()
 fixMessageInRecord phId actId m_store m_pay m_api = do
@@ -713,14 +724,10 @@ instance Interp DLExpr where
 instance Interp DLStmt where
   interp = \case
     DL_Nop _at -> return V_Null
-    DL_Let _at let_var expr -> case let_var of
-      DLV_Eff -> do
-        void $ interp expr
-        return V_Null
-      DLV_Let _ var -> do
-        ev <- interp expr
-        addToStore var ev
-        return V_Null
+    DL_Let _at let_var expr -> do
+      ev <- interp expr
+      addToStore let_var ev
+      return V_Null
     DL_ArrayMap _at ans xs as i f -> do
       arrs' <- mapM vArray <$> mapM interp xs
       let f' avs iv = do

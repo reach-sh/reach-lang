@@ -1230,40 +1230,52 @@ instance SolStmts DLStmt where
     DL_LocalIf _ _ ca t f -> solIf ca t f
     DL_LocalSwitch at ov csm -> solSwitch at ov csm
     DL_Only {} -> impossible $ "only in CT"
-    DL_ArrayMap _ ans xs as i (DLBlock _ _ f r) -> do
-      addMemVars $ [ans] <> as
+    DL_ArrayMap _ ans_lv xs as i (DLBlock _ _ f r) -> do
+      addMemVars $ map vl2v as
       let sz = arraysLength xs
-      ans' <- solF ans
       xs' <- mapM solF xs
-      as' <- mapM solF as
-      i' <- addVar' i
+      as' <- mapM solF $ map vl2v as
+      i' <- addVar' $ vl2v i
+      recv_ans <-
+        case ans_lv of
+          DLV_Let _ ans -> do
+            addMemVars [ans]
+            ans' <- solF ans
+            return $ \r' ->
+              [ (solArrayRef ans' i') <+> "=" <+> r' <> semi ]
+          _ ->
+            return $ const []
       f' <- solS f
       r' <- solF r
       return $
         [ "for" <+> parens ("uint256 " <> i' <> " = 0" <> semi <+> i' <> " <" <+> (pretty sz) <> semi <+> i' <> "++")
             <> solBraces
               (zipWith (\a x -> a <+> "=" <+> (solArrayRef x i') <> semi) as' xs'
-               <> f' <> [ (solArrayRef ans' i') <+> "=" <+> r' <> semi ])
+               <> f' <> recv_ans r')
         ]
-    DL_ArrayReduce _ ans xs z b as i (DLBlock _ _ f r) -> do
-      addMemVars $ [ans, b] <> as
+    DL_ArrayReduce _ ans_lv xs z b as i (DLBlock _ _ f r) -> do
+      addMemVars $ [vl2v b] <> (map vl2v as)
       let sz = arraysLength xs
-      ans' <- solF ans
       xs' <- mapM solF xs
       z' <- solF z
-      as' <- mapM solF as
-      b' <- solF b
-      i' <- addVar' i
+      as' <- mapM solF $ map vl2v as
+      b' <- solF $ vl2v b
+      i' <- addVar' $ vl2v i
       f' <- solS f
       r' <- solF r
-      return $
-        [ b' <+> "=" <+> z' <> semi
-        , "for" <+> parens ("uint256 " <> i' <> " = 0" <> semi <+> i' <> " <" <+> (pretty sz) <> semi <+> i' <> "++")
-            <> solBraces
-              (zipWith (\a x -> a <+> "=" <+> (solArrayRef x i') <> semi) as' xs'
-               <> f' <> [ b' <+> "=" <+> r' <> semi ])
-        , ans' <+> "=" <+> b' <> semi
-        ]
+      let start =
+            [ b' <+> "=" <+> z' <> semi
+            , "for" <+> parens ("uint256 " <> i' <> " = 0" <> semi <+> i' <> " <" <+> (pretty sz) <> semi <+> i' <> "++")
+                <> solBraces
+                  (zipWith (\a x -> a <+> "=" <+> (solArrayRef x i') <> semi) as' xs'
+                   <> f' <> [ b' <+> "=" <+> r' <> semi ])
+            ]
+      case ans_lv of
+        DLV_Eff -> return start
+        DLV_Let _ ans -> do
+          addMemVars [ans]
+          ans' <- solF ans
+          return $ start <> [ ans' <+> "=" <+> b' <> semi ]
     DL_MapReduce {} ->
       impossible $ "cannot inspect maps at runtime"
     DL_LocalDo _ _ t -> solS t

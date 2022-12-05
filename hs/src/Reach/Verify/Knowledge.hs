@@ -281,15 +281,15 @@ kgq_m ctxt = \case
   DL_Nop _ -> mempty
   DL_Let _ lv de -> kgq_e ctxt (lv2mdv lv) de
   DL_ArrayMap _ ans xs as i (DLBlock _ _ f r) ->
-    zipWithM (kgq_a_only ctxt) as xs
-      >> kgq_a_all ctxt (DLA_Var i)
-      >> kgq_a_only ctxt ans r
+    zipWithM (kgq_a_only ctxt) (map vl2v as) xs
+      >> kgq_a_all ctxt (DLA_Var $ vl2v i)
+      >> kgq_a_onlym ctxt (lv2mdv ans) r
       >> kgq_l ctxt f
   DL_ArrayReduce _ ans xs z b as i (DLBlock _ _ f r) ->
-    kgq_a_only ctxt b z
-      >> zipWithM (kgq_a_only ctxt) as xs
-      >> kgq_a_all ctxt (DLA_Var i)
-      >> kgq_a_only ctxt ans r
+    kgq_a_onlym ctxt (vl2mdv b) z
+      >> zipWithM (kgq_a_only ctxt) (map vl2v as) xs
+      >> kgq_a_all ctxt (DLA_Var $ vl2v i)
+      >> kgq_a_onlym ctxt (lv2mdv ans) r
       >> kgq_l ctxt f
   DL_Var {} -> mempty
   DL_Set _ dv da -> kgq_a_only ctxt dv da
@@ -306,10 +306,10 @@ kgq_m ctxt = \case
   DL_Only _at (Left who) loc ->
     kgq_l (ctxt_restrict ctxt who) loc
   DL_Only {} -> impossible $ "right only before EPP"
-  DL_MapReduce _ _ ans x z b a (DLBlock _ _ f r) ->
-    kgq_a_only ctxt b z
+  DL_MapReduce _ _ ans x z b (DLVarLet _ a) (DLBlock _ _ f r) ->
+    kgq_a_onlym ctxt (vl2mdv b) z
       >> knows ctxt (P_Var a) (S.singleton (P_Map x))
-      >> kgq_a_only ctxt ans r
+      >> kgq_a_onlym ctxt (lv2mdv ans) r
       >> kgq_l ctxt f
   DL_LocalDo _ _ t -> kgq_l ctxt t
 

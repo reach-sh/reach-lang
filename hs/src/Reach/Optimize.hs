@@ -359,6 +359,10 @@ instance Optimize DLVar where
   opt = opt_v2v
   gcs _ = return ()
 
+instance Optimize DLVarLet where
+  opt (DLVarLet mvc v) = DLVarLet mvc <$> opt v
+  gcs (DLVarLet _ v) = gcs v
+
 instance Optimize Bool where
   opt = return
   gcs _ = return ()

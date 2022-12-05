@@ -101,6 +101,9 @@ instance Pandemic DLLetVar where
     DLV_Eff -> return DLV_Eff
     DLV_Let vc v -> DLV_Let vc <$> pan v
 
+instance Pandemic DLVarLet where
+  pan (DLVarLet mvc v) = DLVarLet mvc <$> pan v
+
 instance Pandemic DLSBlock where
   pan (DLSBlock at cxt sts a) = DLSBlock at cxt <$> pan sts <*> pan a
 
