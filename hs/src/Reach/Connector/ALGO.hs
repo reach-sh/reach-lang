@@ -3404,7 +3404,8 @@ instance Compile CLProg where
 
 instance (Compile a) => Compile (IGd a) where
   cp (IGd x g) = do
-    y <- liftIO $ color g id
+    let vs = igVars g
+    y <- liftIO $ colorHard g vs
     liftIO $ putStrLn $ show y
     cp x
 
