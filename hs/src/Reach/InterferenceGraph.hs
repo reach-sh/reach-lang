@@ -2,14 +2,18 @@ module Reach.InterferenceGraph
   ( clig
   , IGg (..)
   , IGd (..)
+  , color
   ) where
 
 import Control.Monad
+import Control.Monad.Extra
 import Control.Monad.Reader
 import Data.Foldable
 import Data.IORef
+import Data.List ((\\))
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Ord
 import qualified Data.Set as S
 import Reach.AST.DLBase
 import Reach.AST.CL
@@ -33,6 +37,9 @@ instance Pretty Graph where
     where
       go (f, ts) = map (go' f) $ S.toAscList ts
       go' f t = (show f, show t, mempty)
+
+gRef :: Graph -> DLVar -> DLVarS
+gRef (Graph m) x = fromMaybe mempty $ M.lookup x m
 
 gIns :: DLVar -> DLVar -> Graph -> Graph
 gIns x y (Graph m) = Graph $ M.alter mf x m
@@ -212,14 +219,14 @@ instance IGdef DLLetVar where
       Env {..} <- ask
       let ignored = S.union (M.keysSet eOnces) eSpecials
       let vs' = S.difference vs ignored
-      ls <-
-        case vc of
-          DVC_Once ->
-            local (\e -> e { eOnces = M.insert v vs' eOnces }) lsm
-          DVC_Many ->
-            lsm
-      intf v $ S.difference ls ignored
-      return $ rm v ls
+      case vc of
+        DVC_Once -> do
+          ls <- local (\e -> e { eOnces = M.insert v vs' eOnces }) lsm
+          return $ rm v ls
+        DVC_Many -> do
+          ls <- lsm
+          intf v $ S.difference ls ignored
+          return $ rm v ls
 
 viaDef :: (IGdef a) => App DLVarS -> a -> App DLVarS
 viaDef ls x = igDef ls mempty x
@@ -341,3 +348,43 @@ instance GetFunVars CLProg where
     where
       go (CLIntFun {..}) = go' cif_fun
       go' (CLFun {..}) = clf_dom
+
+-- Color
+
+color :: IGg -> (DLVarS -> DLVarS) -> IO (M.Map DLVar Int)
+color (IGg {..}) sel = do
+  asnr <- newIORef mempty
+  let s = sel $ M.keysSet igInter_m
+        where
+          Graph igInter_m = igInter
+  w <- newIORef $ S.toAscList s
+  let consult_asn cv =
+        (maybeToList . M.lookup cv) <$> readIORef asnr
+  let neighbors_colors :: Graph -> DLVar -> IO (S.Set Int)
+      neighbors_colors g v = do
+        let ns = S.toList $ S.intersection s $ gRef g v
+        ns_cs <- mconcatMapM consult_asn ns
+        return $ S.fromList ns_cs
+  let compute_sat :: DLVar -> IO (DLVar, S.Set Int)
+      compute_sat v = (,) v <$> neighbors_colors igInter v
+  let cmp_sizes = comparing (S.size . snd)
+  let extractMaxSat f = do
+        readIORef w >>= \case
+          [] -> return ()
+          cw -> do
+            cw_ws <- mapM compute_sat cw
+            let (v, sv) = maximumBy cmp_sizes cw_ws
+            writeIORef w $ cw \\ [v]
+            f v sv
+  let tryToAssign v sv = \case
+        [] -> error $ "no color opts"
+        c0 : cols ->
+          case S.member c0 sv of
+            True -> tryToAssign v sv cols
+            False -> modifyIORef asnr $ M.insert v c0
+  let color_loop = extractMaxSat $ \v sv -> do
+        vs_move_ns_cs <- S.toList <$> neighbors_colors igMove v
+        tryToAssign v sv $ vs_move_ns_cs ++ [0..]
+        color_loop
+  color_loop
+  readIORef asnr
