@@ -15,6 +15,7 @@ import Reach.AST.CL
 import Reach.CollectCounts
 import Reach.Dotty
 import Reach.Texty
+import Reach.Util
 
 -- Types and interface
 type DLVarS = S.Set DLVar
@@ -39,7 +40,10 @@ gIns x y (Graph m) = Graph $ M.alter mf x m
     f = Just . S.insert y
 
 gIns2 :: DLVar -> DLVar -> Graph -> Graph
-gIns2 x y g = gIns y x $ gIns x y g
+gIns2 x y g =
+  case x == y of
+    True -> g
+    False -> gIns y x $ gIns x y g
 
 -- XXX add a list of "special" variables that we know are already
 -- "register-like", like the FROM, STATE, etc
@@ -73,9 +77,13 @@ instance (Pretty a) => Pretty (IGd a) where
     <> "// Intereference Graph" <> hardline
     <> pretty y
 
-clig :: (IG a) => a -> IO (IGd a)
+class GetFunVars a where
+  getFunVars :: a -> FunVars
+
+clig :: (GetFunVars a, IG a) => a -> IO (IGd a)
 clig x = do
   eIG <- newIORef mempty
+  let eFunVars = getFunVars x
   flip runReaderT (Env {..}) $ void $ ig mempty x
   y <- readIORef eIG
   return $ IGd x y
@@ -85,6 +93,7 @@ clig x = do
 -- XXX add a map for what vars a mentioned-once variable uses
 data Env = Env
   { eIG :: IORef IGg
+  , eFunVars :: FunVars
   }
 
 modIG :: (IGg -> IGg) -> App ()
@@ -98,7 +107,16 @@ inter2 x y = modIG $ \g -> g { igInter = gIns2 x y (igInter g) }
 move2 :: DLVar -> DLVar -> App ()
 move2 x y = modIG $ \g -> g { igMove = gIns2 x y (igMove g) }
 
+lookupFunVars :: CLVar -> App [DLVarLet]
+lookupFunVars f = do
+  m <- asks eFunVars
+  case M.lookup f m of
+    Just x -> return x
+    Nothing -> impossible $ "lookupFunVars: not in map " <> show f
+
 type App = ReaderT Env IO
+
+type FunVars = M.Map CLVar [DLVarLet]
 
 class Intf a where
   intf :: DLVar -> a -> App ()
@@ -121,7 +139,7 @@ instance MoveVar DLLetVar where
     DLV_Let _ v -> mVar v
 
 instance MoveVar DLVarLet where
-  mVar (DLVarLet _ v) = mVar v
+  mVar = mVar . vl2lv
 
 instance MoveVar DLArg where
   mVar = \case
@@ -250,8 +268,9 @@ instance IG CLTail where
     CL_Com m t -> ig ls (IGseq m t)
     CL_If _ a t f -> igIf ls a t f
     CL_Switch _ v csm -> igSwitch ls v csm
-    CL_Jump _ _f as _ _ ->
-      -- XXX look up f's args and move as into them
+    CL_Jump _ f as _ _ -> do
+      vs <- lookupFunVars f
+      zipWithM_ move vs as
       ig ls (Seq as)
     CL_Halt {} -> return ls
 
@@ -279,4 +298,10 @@ instance (IG a, Traversable t) => IG (Par (t a)) where
   ig ls (Par m) = foldr S.union mempty <$> mapM (ig ls) m
 
 instance IG CLProg where
-  ig ls (CLProg {..}) = ig ls (IGseq (Par clp_funs) (Par clp_funs))
+  ig ls (CLProg {..}) = ig ls (IGseq (Par clp_funs) (Par clp_api))
+
+instance GetFunVars CLProg where
+  getFunVars (CLProg {..}) = M.map go clp_funs
+    where
+      go (CLIntFun {..}) = go' cif_fun
+      go' (CLFun {..}) = clf_dom
