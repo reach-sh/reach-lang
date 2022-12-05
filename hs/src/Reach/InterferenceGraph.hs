@@ -6,6 +6,7 @@ module Reach.InterferenceGraph
 
 import Control.Monad
 import Control.Monad.Reader
+import Data.Foldable
 import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -84,7 +85,7 @@ clig :: (GetFunVars a, IG a) => a -> IO (IGd a)
 clig x = do
   eIG <- newIORef mempty
   let eFunVars = getFunVars x
-  flip runReaderT (Env {..}) $ void $ ig mempty x
+  flip runReaderT (Env {..}) $ void $ ig (return mempty) x
   y <- readIORef eIG
   return $ IGd x y
 
@@ -164,14 +165,16 @@ rm :: DLVar -> DLVarS -> DLVarS
 rm = S.delete
 
 class IG a where
-  ig :: DLVarS -> a -> App DLVarS
+  ig :: App DLVarS -> a -> App DLVarS
 
-viaCount :: Countable a => DLVarS -> a -> App DLVarS
-viaCount ls x = return $ S.union ls $ countsS x
+viaCount :: Countable a => App DLVarS -> a -> App DLVarS
+viaCount lsm x = do
+  ls <- lsm
+  return $ S.union ls $ countsS x
 
 data IGseq a b = IGseq a b
 instance (IG a, IG b) => IG (IGseq a b) where
-  ig ls (IGseq x y) = ig ls y >>= flip ig x
+  ig ls (IGseq x y) = ig (ig ls y) x
 data IGpar a b = IGpar a b
 instance (IG a, IG b) => IG (IGpar a b) where
   ig ls (IGpar x y) = do
@@ -185,7 +188,8 @@ instance IG DLVar where
   ig = viaCount
 
 instance IG DLVarLet where
-  ig ls (DLVarLet mvc v) = do
+  ig lsm (DLVarLet mvc v) = do
+    ls <- lsm
     case mvc of
       Nothing -> return ()
       -- XXX should I treat things that are read once specially? Maybe put them
@@ -195,7 +199,7 @@ instance IG DLVarLet where
 
 instance IG DLLetVar where
   ig ls = \case
-    DLV_Eff -> return ls
+    DLV_Eff -> ls
     DLV_Let vc v -> ig ls (DLVarLet (Just vc) v)
 
 instance IG DLArg where
@@ -209,7 +213,7 @@ instance IG DLExpr where
 
 instance IG DLStmt where
   ig ls = \case
-    DL_Nop _ -> return ls
+    DL_Nop _ -> ls
     DL_Let _ x e -> do
       move x e
       ig ls (IGseq x e)
@@ -237,7 +241,7 @@ instance IG DLStmt where
 
 instance IG DLTail where
   ig ls = \case
-    DT_Return _ -> return ls
+    DT_Return _ -> ls
     DT_Com m t -> ig ls (IGseq m t)
 
 instance IG DLBlock where
@@ -271,18 +275,16 @@ instance IG CLTail where
       vs <- lookupFunVars f
       zipWithM_ move vs as
       ig ls (Seq as)
-    CL_Halt {} -> return ls
+    CL_Halt {} -> ls
 
-igSwitch :: (IG a) => DLVarS -> DLVar -> SwitchCases a -> App DLVarS
+igSwitch :: (IG a) => App DLVarS -> DLVar -> SwitchCases a -> App DLVarS
 igSwitch ls v csm = ig ls (IGseq v (Par csm))
 
-igIf :: (IG a, IG b) => DLVarS -> a -> b -> b -> App DLVarS
+igIf :: (IG a, IG b) => App DLVarS -> a -> b -> b -> App DLVarS
 igIf ls a t f = ig ls (IGseq a (Par [t, f]))
 
 instance IG CLFun where
-  ig ls (CLFun {..}) = do
-    ts <- ig ls clf_tail
-    ig (ls <> ts) (Seq clf_dom)
+  ig ls (CLFun {..}) = ig ls (IGseq (Seq clf_dom) clf_tail)
 
 instance IG CLExtFun where
   ig ls (CLExtFun {..}) = ig ls cef_fun
@@ -290,8 +292,13 @@ instance IG CLExtFun where
 instance IG CLIntFun where
   ig ls (CLIntFun {..}) = ig ls cif_fun
 
+igList :: (IG a) => App DLVarS -> [a] -> App DLVarS
+igList ls = \case
+  [] -> ls
+  x : xs -> ig ls (IGseq x (Seq xs))
+
 instance (IG a, Foldable t) => IG (Seq (t a)) where
-  ig ls (Seq m) = foldM ig ls m
+  ig ls (Seq m) = igList ls $ toList m
 
 instance (IG a, Traversable t) => IG (Par (t a)) where
   ig ls (Par m) = foldr S.union mempty <$> mapM (ig ls) m
