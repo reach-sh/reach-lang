@@ -30,7 +30,7 @@ import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Reach.AST.Base
 import Reach.AST.DL
-import Reach.AST.DLBase
+import Reach.AST.DLBase hiding (typeOf)
 import Reach.AST.SL
 import Reach.Connector
 import Reach.Counter
@@ -903,10 +903,10 @@ applyType ct v = \case
               let vv = SLV_DLVar dv'
               SLRes case_lifts _ _ <- captureRes $ rec vt vv
               let sa'' = sa' <> mkAnnot case_lifts
-              let casem'' = M.insert vn (dv', True, case_lifts) casem'
+              let casem'' = M.insert vn (SwitchCase (v2vl dv') case_lifts) casem'
               return (sa'', casem'')
         (sa', casem') <- foldM cmb (mempty, mempty) $ M.toList stm
-        saveLift $ DLS_Switch at dv sa' casem'
+        saveLift $ DLS_Switch at dv sa' $ SwitchCases casem'
       _ -> meh
   ST_Struct stfs -> zipWithM_ rec (map snd stfs) =<< tups
   ST_Fun {} -> meh
@@ -6665,7 +6665,7 @@ evalStmt = \case
               SLV_DLVar dv -> return dv
               _ -> impossible "select_all: not dlvar or interact field"
             let casemm = M.mapWithKey select_one casesm
-            let cmb :: (Maybe SLState, StmtAnnot, Maybe SLStmtRets, SwitchCases DLStmts) -> (SLVar, App (DLVar, SrcLoc, App SLStmtRes)) -> App (Maybe SLState, StmtAnnot, Maybe SLStmtRets, SwitchCases DLStmts)
+            let cmb :: (Maybe SLState, StmtAnnot, Maybe SLStmtRets, SwitchCasesM DLStmts) -> (SLVar, App (DLVar, SrcLoc, App SLStmtRes)) -> App (Maybe SLState, StmtAnnot, Maybe SLStmtRets, SwitchCasesM DLStmts)
                 cmb (mst', sa', mrets', casemm') (vn, casem) = do
                   (dv', at_c, casem') <- casem
                   locAt at_c $ do
@@ -6682,14 +6682,14 @@ evalStmt = \case
                           rets'' <- brCombineRets rets' case_rets'
                           return $ (Just st'', rets'')
                         _ -> impossible $ "switch"
-                    let casemm'' = M.insert vn (dv', True, case_lifts) casemm'
+                    let casemm'' = M.insert vn (SwitchCase (v2vl dv') case_lifts) casemm'
                     return $ (mst'', sa'', Just rets'', casemm'')
             (mst', sa', mrets', casemm') <-
               foldM cmb (Nothing, mempty, Nothing, mempty) $ M.toList casemm
             let rets' = maybe mempty id mrets'
             maybe (return ()) setSt mst'
             saveLift =<< checkCond om
-              =<< withAt (\at -> DLS_Switch at dv sa' casemm')
+              =<< withAt (\at -> DLS_Switch at dv sa' (SwitchCases casemm'))
             return $ SLStmtRes sco rets'
       fr <-
         case de_val of

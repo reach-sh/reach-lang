@@ -643,11 +643,11 @@ jsExpr = \case
         return $ jsApply "stdlib.simContractNew" ["sim_r", jsObject cns', dr', "getSimTokCtr()"]
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
-jsEmitSwitch iter _at ov csm = do
+jsEmitSwitch iter _at ov (SwitchCases csm) = do
   ov' <- jsVar ov
-  let cm1 (vn, (ov2, _, body)) = do
-        body' <- iter body
-        ov2' <- jsVar ov2
+  let cm1 (vn, (SwitchCase {..})) = do
+        body' <- iter sc_k
+        ov2' <- jsVar $ varLetVar sc_vl
         let set' = "const" <+> ov2' <+> "=" <+> ov' <> "[1]" <> semi
         let set_and_body' = vsep [set', body', "break;"]
         return $ "case" <+> jsString vn <> ":" <+> jsBraces set_and_body'

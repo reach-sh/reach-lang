@@ -41,7 +41,7 @@ instance Pretty LLConsensus where
   pretty = \case
     LLC_Com x k -> prettyCom x k
     LLC_If _at ca t f -> prettyIfp ca t f
-    LLC_Switch _at ov csm -> prettySwitch ov csm
+    LLC_Switch _at ov csm -> pretty $ SwitchCasesUse ov csm
     LLC_FromConsensus _at _ret_at _fs k ->
       prettyCommit <> hardline <> pretty k
     LLC_While _at asn inv cond body k ->

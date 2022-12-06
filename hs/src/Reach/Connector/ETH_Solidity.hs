@@ -894,18 +894,18 @@ arraySize a =
     _ -> impossible "arraySize"
 
 solSwitch :: SolStmts k => SrcLoc -> DLVar -> SwitchCases k -> App [Doc]
-solSwitch _at ov csm = do
+solSwitch _at ov (SwitchCases csm) = do
   ovp <- solF ov
   t <- solType $ argTypeOf (DLA_Var ov)
-  let cm1 (vn, (ov', vu, body)) = do
+  let cm1 (vn, SwitchCase {..}) = do
         c <- solEq (ovp <> ".which") (solVariant t vn)
         set' <-
-          case vu of
-            True -> do
+          case sc_vl of
+            DLVarLet (Just _) ov' -> do
               addMemVar ov'
               return $ [solSet (solMemVar ov') (ovp <> "._" <> pretty vn)]
-            False -> return $ []
-        body' <- solS body
+            _ -> return $ []
+        body' <- solS sc_k
         let set_and_body' = set' <> body'
         return (c, set_and_body')
   solIfs_ <$> (mapM cm1 $ M.toAscList csm)

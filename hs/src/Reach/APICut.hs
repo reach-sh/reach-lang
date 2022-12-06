@@ -21,7 +21,6 @@ import Reach.Counter
 import Reach.Freshen
 import Reach.Texty
 import Reach.Util
-import Data.Tuple.Extra
 
 -- What is going on in this file?
 --
@@ -124,18 +123,15 @@ instance Contains ETail where
     ET_Com ds et -> has q ds || has q et
     ET_Stop _ -> False
     ET_If _ _ et et' -> has q et || has q et'
-    ET_Switch _ _ m -> any (has q . thd3) m
+    ET_Switch _ _ (SwitchCases m) -> any (has q . sc_k) m
     ET_FromConsensus _ _ _ et -> has q et
     ET_ToConsensus _ _ _ _ _ _ _ _ _ _ _ (Just (_, et')) et -> has q et || has q et'
     ET_ToConsensus _ _ _ _ _ _ _ _ _ _ _ _ et -> has q et
     ET_While _ _ _ et et' -> has q et || has q et'
     ET_Continue _ _ -> False
 
-third :: (a, b, c) -> c
-third (_, _, z) = z
-
 csml :: SwitchCases a -> [a]
-csml = map (third . snd) . M.toAscList
+csml (SwitchCases m) = map (sc_k . snd) $ M.toAscList m
 
 instance Contains a => Contains (SwitchCases a) where
   has q = getAny . mconcat . map (Any . has q) . csml
@@ -193,20 +189,20 @@ seek = \case
       (Just tt, _) -> go tt stop
       (_, Just ff) -> go stop ff
       _ -> return $ Nothing
-  ET_Switch at x m -> do
+  ET_Switch at x (SwitchCases m) -> do
     found <- liftIO $ newIORef Nothing
     let stop = ET_Stop at
-    let f (y, z, k) = do
+    let f (SwitchCase y k) = do
           seek k >>= \case
-            Nothing -> return (y, z, stop)
+            Nothing -> return $ SwitchCase y stop
             Just k' -> do
               liftIO $ writeIORef found (Just k')
-              return (y, z, k')
+              return $ SwitchCase y k'
     m' <- mapM f m
     (liftIO $ readIORef found) >>= \case
       Nothing -> return Nothing
       Just t' | isCut t' -> return $ Just t'
-      Just _ -> return $ Just $ ET_Switch at x m'
+      Just _ -> return $ Just $ ET_Switch at x $ SwitchCases m'
   ET_FromConsensus x y z k ->
     seek k >>= \case
       Nothing -> return $ Nothing
@@ -243,7 +239,9 @@ clipAtFrom = \case
   ET_Com c k -> ET_Com c (r k)
   ET_Stop at -> ET_Stop at
   ET_If at c t f -> ET_If at c (r t) (r f)
-  ET_Switch at x m -> ET_Switch at x (M.map (\(y, z, k) -> (y, z, r k)) m)
+  ET_Switch at x (SwitchCases m) -> ET_Switch at x $ SwitchCases $ M.map go m
+    where
+      go (SwitchCase {..}) = SwitchCase sc_vl $ r sc_k
   ET_FromConsensus at x y _ -> ET_FromConsensus at x y (ET_Stop at)
   ET_ToConsensus {} -> impossible "to consensus at start of while body"
   ET_While at asn cb b k -> ET_While at asn cb (r b) (r k)
@@ -284,13 +282,13 @@ slurp = \case
       (Just tt, _, True) -> go tt stop
       (_, Just ff, True) -> go stop ff
       _ -> return $ Nothing
-  ET_Switch at x m -> do
+  ET_Switch at x (SwitchCases m) -> do
     found <- liftIO $ newIORef False
     alwaysSeeOutR <- liftIO $ newIORef Nothing
     let stop = ET_Stop at
     who <- asks eWho
-    let isRace = any (has (is_setApiDetails who) . thd3) m
-    let f (y, z, k) = do
+    let isRace = any (has (is_setApiDetails who) . sc_k) m
+    let f (SwitchCase y k) = do
           (so, k') <- locSeenOut $ slurp k
           -- We don't expect to see `interact.out` called on
           -- every `case` when we're switching on who won a `race`.
@@ -301,17 +299,17 @@ slurp = \case
             liftIO $ modifyIORef alwaysSeeOutR $
               maybe (return so) $ return . (&&) so
           case k' of
-            Nothing -> return (y, z, stop)
+            Nothing -> return (SwitchCase y stop)
             Just et -> do
               liftIO $ writeIORef found True
-              return (y, z, et)
+              return (SwitchCase y et)
     m' <- mapM f m
     alwaysSeeOut <- liftIO $ readIORef alwaysSeeOutR
     isFound <- liftIO $ readIORef found
     case (isFound, alwaysSeeOut) of
       (True, Just True) -> do
         liftIO . flip writeIORef True =<< asks eSeenOutR
-        return $ Just $ ET_Switch at x m'
+        return $ Just $ ET_Switch at x $ SwitchCases m'
       _ -> return Nothing
   ET_FromConsensus at x y k -> do
     seekNoMore k

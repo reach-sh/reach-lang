@@ -141,8 +141,7 @@ instance Pretty DLSStmt where
       DLS_ArrayReduce _ ans x z b a i f -> prettyReduce ans x z b a i f
       DLS_If _ _ ca sa ts fs ->
         prettyIf (pretty ca <+> braces (pretty sa)) (render_dls ts) (render_dls fs)
-      DLS_Switch _ ov sa csm ->
-        prettySwitch (pretty ov <+> braces (pretty sa)) csm
+      DLS_Switch _ ov _ csm -> pretty $ SwitchCasesUse ov csm
       DLS_Return _ ret rv ->
         "throw" <> parens (pretty rv) <> ".to" <> parens (viaShow ret) <> semi
       DLS_Prompt _ ret sa bodys ->

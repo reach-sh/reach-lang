@@ -20,7 +20,10 @@ instance CollectSvs CHandler where
     C_Handler {..} -> collectSvs ch_body
 
 instance (CollectSvs a) => CollectSvs (SwitchCases a) where
-  collectSvs m = S.unions $ map (\ (_, (_, _, t)) -> collectSvs t) $ M.toList m
+  collectSvs (SwitchCases m) = S.unions $ map collectSvs $ M.elems m
+
+instance CollectSvs a => CollectSvs (SwitchCase a) where
+  collectSvs (SwitchCase {..}) = collectSvs sc_k
 
 instance CollectSvs FromInfo where
   collectSvs = \case

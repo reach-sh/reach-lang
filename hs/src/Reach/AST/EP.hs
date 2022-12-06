@@ -61,7 +61,7 @@ instance Pretty ETail where
       ET_Com c k -> pretty c <> hardline <> pretty k
       ET_Stop _ -> emptyDoc
       ET_If _ ca t f -> prettyIfp ca t f
-      ET_Switch _ ov csm -> prettySwitch ov csm
+      ET_Switch _ ov csm -> pretty $ SwitchCasesUse ov csm
       ET_FromConsensus _ which msvs k ->
         "fromConsensus" <+> whichp <+> pretty msvs <+> semi
           <> hardline

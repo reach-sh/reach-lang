@@ -87,7 +87,7 @@ instance Pretty CLTail where
   pretty = \case
     CL_Com e k -> pretty e <> hardline <> pretty k
     CL_If _ ca tt ft -> prettyIfp ca tt ft
-    CL_Switch _ ov csm -> prettySwitch ov csm
+    CL_Switch _ ov csm -> pretty $ SwitchCasesUse ov csm
     CL_Jump _ which args _isApi mmret -> "jump" <+> pretty which <> parens (render_das args) <+> pretty mmret
     CL_Halt _ m -> "halt" <> parens (pretty m)
 

@@ -185,10 +185,15 @@ instance FreeVars v => FreeVars [v] where
 instance BoundVars v => BoundVars [v] where
   boundVars = mconcat . map boundVars
 
-instance {-# OVERLAPS #-} FreeVars k => FreeVars (SwitchCases k) where
-  freeVars m = mconcat $ map (\(v, _, k) -> S.difference (freeVars k) (boundVars v)) $ M.elems m
-instance {-# OVERLAPS #-} BoundVars k => BoundVars (SwitchCases k) where
-  boundVars m = mconcat $ map (\(v, _, k) -> (boundVars k) <> (boundVars v)) $ M.elems m
+instance FreeVars k => FreeVars (SwitchCase k) where
+  freeVars (SwitchCase {..}) = freeVars sc_k
+instance BoundVars k => BoundVars (SwitchCase k) where
+  boundVars (SwitchCase {..}) = boundVars sc_vl <> boundVars sc_k
+
+instance FreeVars k => FreeVars (SwitchCases k) where
+  freeVars (SwitchCases m) = mconcat $ map freeVars $ M.elems m
+instance BoundVars k => BoundVars (SwitchCases k) where
+  boundVars (SwitchCases m) = mconcat $ map boundVars $ M.elems m
 
 bindsFor :: (FreeVars a, BoundVars a, FreeVars b) => a -> b -> S.Set DLVar
 bindsFor o i = S.difference (freeVars i) (boundVars o) <> freeVars o

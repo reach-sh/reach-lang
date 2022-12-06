@@ -413,16 +413,16 @@ be_m = \case
       f'p
       (\t' f' ->
          return $ DL_LocalIf at mans c t' f')
-  DL_LocalSwitch at ov csm -> do
+  DL_LocalSwitch at ov (SwitchCases csm) -> do
     fg_use $ ov
-    let go (v, vu, k) = do
-          when vu $ fg_defn $ v
-          k'p <- be_t k
-          return $ (,,) v vu k'p
+    let go (SwitchCase {..}) = do
+          fg_defn sc_vl
+          k'p <- be_t sc_k
+          return $ SwitchCase sc_vl k'p
     csm' <- mapM go csm
-    let mkt f = (DL_LocalSwitch at ov <$> mapM f' csm')
+    let mkt f = (DL_LocalSwitch at ov <$> SwitchCases <$> mapM f' csm')
           where
-            f' (v, vu, k'p) = (,,) v vu <$> (f k'p)
+            f' (SwitchCase {..}) = SwitchCase sc_vl <$> f sc_k
     return $ (,) (mkt fst) (mkt snd)
   DL_MapReduce at mri ans x z b a f -> do
     fg_defn $ ans
@@ -556,15 +556,15 @@ be_c = \case
     fg_use $ c
     let go mk t' f' = mk at c <$> t' <*> f'
     return $ (,) (go CT_If t'c f'c) (go ET_If t'l f'l)
-  LLC_Switch at ov csm -> do
+  LLC_Switch at ov (SwitchCases csm) -> do
     fg_use $ ov
-    let go (v, vu, k) = do
-          when vu $ fg_defn v
-          (k'c, k'l) <- be_c k
-          let wrap k' = (,,) v vu <$> k'
+    let go (SwitchCase {..}) = do
+          fg_defn sc_vl
+          (k'c, k'l) <- be_c sc_k
+          let wrap k' = SwitchCase sc_vl <$> k'
           return (wrap k'c, wrap k'l)
     csm' <- mapM go csm
-    return $ (,) (CT_Switch at ov <$> mapM fst csm') (ET_Switch at ov <$> mapM snd csm')
+    return $ (,) (CT_Switch at ov <$> SwitchCases <$> mapM fst csm') (ET_Switch at ov <$> SwitchCases <$> mapM snd csm')
   LLC_FromConsensus at1 _at2 fs s -> do
     this <- newSavePoint "fromConsensus"
     views <- asks be_views

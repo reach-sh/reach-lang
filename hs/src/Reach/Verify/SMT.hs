@@ -1281,14 +1281,16 @@ data SwitchMode
   | SM_Consensus
 
 smtSwitch :: SwitchMode -> SrcLoc -> DLVar -> SwitchCases a -> (a -> App ()) -> App ()
-smtSwitch sm at ov csm iter = do
+smtSwitch sm at ov (SwitchCases csm) iter = do
   let ova = DLA_Var ov
   let ovt = argTypeOf ova
   let ovtm = case ovt of
         T_Data m -> m
         _ -> impossible "switch"
   ovp <- smt_a at ova
-  let cm1 (vn, (ov', _, l)) = do
+  let cm1 (vn, (SwitchCase {..})) = do
+        let ov' = varLetVar sc_vl
+        let l = sc_k
         let smte = SMTModel $ O_SwitchCase $ DLA_Var ov
         ov'p <- smt_la at $ DLLA_Data ovtm vn $ DLA_Var ov'
         let eqc = smtEq ovp ov'p

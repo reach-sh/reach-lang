@@ -2531,7 +2531,7 @@ instance Compile DLExpr where
       cp mo
       salloc_ "fromSome object" $ \cstore cload -> do
         cstore
-        cextractDataOf cload da
+        cextractDataOf cload $ typeOf da
         cload
         cint 0
         op "getbyte"
@@ -2782,9 +2782,8 @@ makeTxn (MakeTxn {..}) =
       when mt_submit $ op "itxn_submit"
       return True
 
-cextractDataOf :: App () -> DLArg -> App ()
-cextractDataOf cd va = do
-  let vt = argTypeOf va
+cextractDataOf :: App () -> DLType -> App ()
+cextractDataOf cd vt = do
   sz <- typeSizeOf vt
   case sz == 0 of
     True -> padding 0
@@ -2809,26 +2808,15 @@ cswatchTail w es ce = do
   forM_ els $ \(e, l) -> label l >> ce e
 
 doSwitch :: String -> (a -> App ()) -> DLVar -> SwitchCases a -> App ()
-doSwitch lab ck dv csm = do
-  let go cload = do
-        cload
-        cint 0
-        op "getbyte"
-        cswatchTail "switch" (M.toAscList csm) $ \(vn, (vv, vu, k)) -> do
-          l <- freshLabel $ lab <> "_" <> vn
-          block l $
-            case vu of
-              False -> ck k
-              True -> do
-                flip (sallocLet vv) (ck k) $ do
-                  cextractDataOf cload (DLA_Var vv)
-  letSmall dv >>= \case
-    True -> go (cp dv)
-    False -> do
-      salloc_ (textyv dv <> " for switch") $ \cstore cload -> do
-        cp dv
-        cstore
-        go cload
+doSwitch lab ck dv (SwitchCases csm) = do
+  cp dv
+  cint 0
+  op "getbyte"
+  cswatchTail "switch" (M.toAscList csm) $ \(vn, SwitchCase {..}) -> do
+    l <- freshLabel $ lab <> "_" <> vn
+    block l $
+      sallocVarLet sc_vl False (cextractDataOf (cp dv) (typeOf sc_vl)) $
+        ck sc_k
 
 instance CompileK DLStmt where
   cpk km = \case

@@ -353,7 +353,10 @@ tr_ :: (CLikeTr a b) => TEnv -> a -> App b
 tr_ e x = liftIO $ flip runReaderT e $ tr x
 
 instance (CLikeTr a b) => CLikeTr (SwitchCases a) (SwitchCases b) where
-  tr = mapM $ \(x, y, z) -> (,,) x y <$> tr z
+  tr (SwitchCases m) = SwitchCases <$> mapM tr m
+
+instance CLikeTr a b => CLikeTr (SwitchCase a) (SwitchCase b) where
+  tr (SwitchCase {..}) = SwitchCase sc_vl <$> tr sc_k
 
 instance CLikeTr CTail CLTail where
   tr = \case

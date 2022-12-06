@@ -112,17 +112,17 @@ dk1 k s =
           DKBM_Con -> return $ (con, k)
           DKBM_Do -> return $ (loc, mt)
       mk <$> dk_ k' t <*> dk_ k' f
-    DLS_Switch at v _ csm -> do
-      let con = DK_Switch at v
-      let loc csm' = DK_Com (DKC_LocalSwitch at v csm') k
+    DLS_Switch at v _ (SwitchCases csm) -> do
+      let con = DK_Switch at v . SwitchCases
+      let loc csm' = DK_Com (DKC_LocalSwitch at v (SwitchCases csm')) k
       let mt = DK_Stop at
       (mk, k') <-
         getDKBM s >>= \case
           DKBM_Con -> return $ (con, k)
           DKBM_Do -> return $ (loc, mt)
-      let cm1 (dv', b, l) = (,,) dv' b <$> dk_ k' l
+      let cm1 (SwitchCase dv' l) = SwitchCase dv' <$> dk_ k' l
       csm' <- mapM cm1 csm
-      case all ((== k) . thd3) csm' of
+      case all ((== k) . sc_k) csm' of
         True -> return k
         False -> return $ mk csm'
     DLS_Return at ret da ->
@@ -241,9 +241,10 @@ instance CanLift DLExpr where
   canLift = isLocal
 
 instance CanLift a => CanLift (SwitchCases a) where
-  canLift = getAll . mconcatMap (All . go) . M.toList
-    where
-      go (_, (_, _, k)) = canLift k
+  canLift (SwitchCases m) = getAll $ mconcatMap (All . canLift) $ M.elems m
+
+instance CanLift a => CanLift (SwitchCase a) where
+  canLift (SwitchCase {..}) = canLift sc_k
 
 instance CanLift DKTail where
   canLift = \case
@@ -307,7 +308,10 @@ instance LiftCon z => LiftCon (DLRecv z) where
   lc r = (\z' -> r {dr_k = z'}) <$> lc (dr_k r)
 
 instance LiftCon a => LiftCon (SwitchCases a) where
-  lc = mapM (\(a, b, c) -> (,,) a b <$> lc c)
+  lc (SwitchCases m) = SwitchCases <$> mapM lc m
+
+instance LiftCon a => LiftCon (SwitchCase a) where
+  lc (SwitchCase {..}) = SwitchCase sc_vl <$> lc sc_k
 
 instance LiftCon DKBlock where
   lc (DKBlock at sf b a) =
@@ -535,9 +539,7 @@ df_com mkk back = \case
         DKC_Set a b c -> return $ DL_Set a b c
         DKC_LocalDo a mans x -> DL_LocalDo a mans <$> df_t x
         DKC_LocalIf a mans b x y -> DL_LocalIf a mans b <$> df_t x <*> df_t y
-        DKC_LocalSwitch a b x -> DL_LocalSwitch a b <$> mapM go x
-          where
-            go (c, vu, y) = (,,) c vu <$> df_t y
+        DKC_LocalSwitch a b x -> DL_LocalSwitch a b <$> df_csm df_t x
         DKC_MapReduce a mri b c d e f x -> DL_MapReduce a mri b c d e f <$> df_bl x
         DKC_Only a b c -> DL_Only a (Left b) <$> df_t c
         _ -> impossible "df_com"
@@ -559,14 +561,16 @@ df_t = \case
   DK_Stop at -> return $ DT_Return at
   x -> df_com (mkCom DT_Com) df_t x
 
+df_csm :: (a -> DFApp b) -> SwitchCases a -> DFApp (SwitchCases b)
+df_csm f (SwitchCases m) = SwitchCases <$> mapM go m
+  where
+    go (SwitchCase {..}) = SwitchCase sc_vl <$> f sc_k
+
 df_con :: DKTail -> DFApp LLConsensus
 df_con = \case
   DK_If a _ c t f ->
     LLC_If a c <$> df_con t <*> df_con f
-  DK_Switch a v csm ->
-    LLC_Switch a v <$> mapM cm1 csm
-    where
-      cm1 (dv', b, c) = (\x -> (dv', b, x)) <$> df_con c
+  DK_Switch a v csm -> LLC_Switch a v <$> df_csm df_con csm
   DK_While at asn invs cond body k -> do
     fvs <- eFVs <$> ask
     let go fv = do

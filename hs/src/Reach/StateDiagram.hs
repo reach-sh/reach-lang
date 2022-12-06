@@ -29,9 +29,7 @@ geT :: String -> String -> CTail -> DotGraph
 geT trans from = \case
   CT_Com _ t -> rec t
   CT_If _ _ t f -> rec t <> rec f
-  CT_Switch _ _ csm -> concatMap go $ M.toAscList csm
-    where
-      go (_, (_, _, t)) = rec t
+  CT_Switch _ _ (SwitchCases csm) -> concatMap (rec . sc_k) $ M.elems csm
   CT_From _ i fi -> fi' <> add it
     where
       it = statel i

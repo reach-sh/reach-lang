@@ -31,9 +31,10 @@ instance {-# OVERLAPS #-} (Subst a, Subst b, Subst c) => Subst (a, b, c) where
   subst (x, y, z) = (,,) <$> subst x <*> subst y <*> subst z
 
 instance {-# OVERLAPS #-} Subst a => Subst (SwitchCases a) where
-  subst csm = mapM go csm
-    where
-      go (a, b, c) = (,,) a b <$> subst c
+  subst (SwitchCases csm) = SwitchCases <$> mapM subst csm
+
+instance {-# OVERLAPS #-} Subst a => Subst (SwitchCase a) where
+  subst (SwitchCase {..}) = SwitchCase sc_vl <$> subst sc_k
 
 instance Subst Bool where
   subst = return

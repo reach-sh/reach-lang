@@ -132,6 +132,15 @@ instance Sanitize DLExpr where
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m
 
+instance {-# OVERLAPS #-} Sanitize a => Sanitize (SwitchCases a) where
+  sani (SwitchCases m) = SwitchCases $ sani m
+
+instance {-# OVERLAPS #-} Sanitize a => Sanitize (SwitchCase a) where
+  sani (SwitchCase {..}) = SwitchCase (sani sc_vl) (sani sc_k)
+
+instance Sanitize DLVarLet where
+  sani (DLVarLet mvc v) = DLVarLet mvc (sani v)
+
 instance Sanitize DLStmt where
   sani = \case
     DL_Nop _ -> DL_Nop sb
