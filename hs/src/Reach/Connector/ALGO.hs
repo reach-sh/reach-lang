@@ -1104,7 +1104,7 @@ data Env = Env
   , eOutputR :: IORef TEALs
   , eHP :: ScratchSlot
   , eSP :: ScratchSlot
-  , eVars :: M.Map DLVar ScratchSlot
+  , eVars :: M.Map DLVar (App ())
   , eLets :: Lets
   , eLetSmalls :: M.Map DLVar Bool
   , eResources :: ResourceSets
@@ -1541,13 +1541,13 @@ lookup_let dv = do
     Just m -> m
     Nothing -> bad $ LT.pack $ show eWhich <> "lookup_let " <> show (pretty dv) <> " not in " <> (List.intercalate ", " $ map (show . pretty) $ M.keys eLets)
 
-store_var :: DLVar -> ScratchSlot -> App a -> App a
+store_var :: DLVar -> App () -> App a -> App a
 store_var dv ss m = do
   Env {..} <- ask
   local (\e -> e {eVars = M.insert dv ss eVars}) $
     m
 
-lookup_var :: DLVar -> App ScratchSlot
+lookup_var :: DLVar -> App (App ())
 lookup_var dv = do
   Env {..} <- ask
   case M.lookup dv eVars of
@@ -1568,9 +1568,12 @@ salloc_ lab fm =
   salloc $ \loc -> do
     fm (output $ TStore loc lab) (output $ TLoad loc lab)
 
+sallocVar :: DLVar -> (App () -> App () -> App a) -> App a
+sallocVar dv = salloc_ (textyv dv)
+
 sallocLet :: DLVar -> App () -> App a -> App a
 sallocLet dv cgen km = do
-  salloc_ (textyv dv) $ \cstore cload -> do
+  sallocVar dv $ \cstore cload -> do
     cgen
     cstore
     store_let dv True cload km
@@ -1927,15 +1930,15 @@ computeExtract ts idx = do
     Nothing -> impossible "bad idx"
     Just x -> return x
 
-cfor :: Integer -> (App () -> App ()) -> App ()
-cfor 0 _ = return ()
-cfor 1 body = body (cint 0)
-cfor maxi body = do
+cfor :: DLVar -> Integer -> (App () -> App ()) -> App ()
+cfor _ 0 _ = return ()
+cfor _ 1 body = body (cint 0)
+cfor iv maxi body = do
   when (maxi < 2) $ impossible "cfor maxi=0"
   top_lab <- freshLabel "forTop"
   end_lab <- freshLabel "forEnd"
   block_ top_lab $ do
-    salloc_ (top_lab <> "Idx") $ \store_idx load_idx -> do
+    sallocVar iv $ \store_idx load_idx -> do
       cint 0
       store_idx
       label top_lab
@@ -2851,10 +2854,10 @@ instance CompileK DLStmt where
       let xlen = arraysLength as
       let rt = argTypeOf ra
       check_concat_len anssz
-      salloc_ (textyv ansv) $ \store_ans load_ans -> do
+      sallocVar ansv $ \store_ans load_ans -> do
         cbs ""
         store_ans
-        cfor xlen $ \load_idx -> do
+        cfor iv xlen $ \load_idx -> do
           load_ans
           arrayBody at ra body iv load_idx xs as
           ctobs rt
@@ -2863,38 +2866,38 @@ instance CompileK DLStmt where
         store_let ansv True load_ans km
     DL_ArrayMap at DLV_Eff as xs (DLVarLet _ iv) (DLBlock _ _ body ra) -> do
       let xlen = arraysLength as
-      cfor xlen $ \load_idx -> do
+      cfor iv xlen $ \load_idx -> do
         arrayBody at ra body iv load_idx xs as
       km
     DL_ArrayReduce at (DLV_Let _ ansv) as za (DLVarLet _ av) xs (DLVarLet _ iv) (DLBlock _ _ body ra) -> do
       let xlen = arraysLength as
-      salloc_ (textyv ansv) $ \store_ans load_ans -> do
+      sallocVar ansv $ \store_ans load_ans -> do
         cp za
         store_ans
         store_let av True load_ans $ do
-          cfor xlen $ \load_idx -> do
+          cfor iv xlen $ \load_idx -> do
             arrayBody at ra body iv load_idx xs as
             store_ans
         store_let ansv True load_ans km
     DL_ArrayReduce at DLV_Eff as za (DLVarLet _ av) xs (DLVarLet _ iv) (DLBlock _ _ body ra) -> do
       let xlen = arraysLength as
-      salloc_ (textyv av) $ \store_a load_a -> do
+      sallocVar av $ \store_a load_a -> do
         cp za
         store_a
-        cfor xlen $ \load_idx -> do
+        cfor iv xlen $ \load_idx -> do
           store_let av True load_a $
             arrayBody at ra body iv load_idx xs as
           store_a
       km
     DL_Var _ dv ->
-      salloc $ \loc -> do
-        store_var dv loc $
-          store_let dv True (output $ TLoad loc (textyv dv)) $
+      sallocVar dv $ \cstore cload -> do
+        store_var dv cstore $
+          store_let dv True cload $
             km
     DL_Set _ dv da -> do
-      loc <- lookup_var dv
+      cstore <- lookup_var dv
       cp da
-      output $ TStore loc (textyv dv)
+      cstore
       km
     DL_LocalIf _ _ a tp fp -> do
       cp a
@@ -3105,10 +3108,10 @@ callCompanion at cc = do
     CompanionLabel mk l -> do
       when mk $ label l
       whenJust mcr $ \cim -> do
-        let howManyCalls = fromMaybe 0 $ M.lookup l cim
+        let howManyCalls = fromIntegral $ fromMaybe 0 $ M.lookup l cim
         -- XXX bunch into groups of 16, slightly less cost
         comment $ texty cc
-        cfor howManyCalls $ const $ do
+        replicateM_ howManyCalls $ do
           startCall False False
           op "itxn_submit"
           credit cr_call
