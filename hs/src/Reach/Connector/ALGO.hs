@@ -1150,6 +1150,7 @@ data LibFun
   | LF_wasntMeth
   | LF_fromSome
   | LF_getTag
+  | LF_genSym Int
   deriving (Eq, Ord, Show)
 
 libDefns :: App ()
@@ -1180,6 +1181,26 @@ libCall lf impl = do
         return $ lab
       Just (lab, _, _) -> return lab
   code "callsub" [ lab ]
+
+delay :: App () -> App (App ())
+delay m = do
+  nr <- liftIO $ newIORef mempty
+  local (\e -> e { eOutputR = nr }) m
+  nrs <- liftIO $ readIORef nr
+  return $ mapM_ output nrs
+
+libCallGenSym :: App () -> App ()
+libCallGenSym body = do
+  lf <- LF_genSym <$> allocVarIdx
+  fun <- delay body
+  libCall lf fun
+
+mkLocalVar :: Integer -> (App (), App ())
+mkLocalVar i = (cstore, cload)
+  where
+    ni = i
+    cstore = code "frame_bury" [ texty ni ]
+    cload = code "frame_dig" [ texty ni ]
 
 cGetTag :: App ()
 cGetTag = libCall LF_getTag $ do
@@ -1524,7 +1545,8 @@ warn = badlike eWarningsR
 freshLabel :: String -> App LT.Text
 freshLabel d = do
   i <- (liftIO . incCounter) =<< (eLabel <$> ask)
-  return $ "l" <> LT.pack (show i) <> "_" <> LT.pack d
+  let tr c = if isAlphaNum c then c else '_'
+  return $ "l" <> LT.pack (show i) <> "_" <> LT.pack (map tr d)
 
 store_let :: DLVar -> Bool -> App () -> App a -> App a
 store_let dv small cgen m = do
@@ -1547,7 +1569,7 @@ lookup_let dv = do
   Env {..} <- ask
   case M.lookup dv eLets of
     Just m -> m
-    Nothing -> bad $ LT.pack $ show eWhich <> "lookup_let " <> show (pretty dv) <> " not in " <> (List.intercalate ", " $ map (show . pretty) $ M.keys eLets)
+    Nothing -> bad $ LT.pack $ show eWhich <> " lookup_let " <> show (pretty dv) <> " not in " <> (List.intercalate ", " $ map (show . pretty) $ M.keys eLets)
 
 store_var :: DLVar -> App () -> App a -> App a
 store_var dv ss m = do
@@ -2282,7 +2304,8 @@ instance Compile DLExpr where
           cp a
           ctobs vt
           cMapSet
-    DLE_Remote at fs ro rng_ty (DLRemote rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo) -> do
+    DLE_Remote at fs ro rng_ty (DLRemote rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo) -> libCallGenSym $ do
+      code "proto" [ "0", "0" ]
       let DLRemoteALGO {..} = malgo
       warn_lab <- asks eWhich >>= \case
         Just which -> return $ "Step " <> show which
@@ -2299,134 +2322,134 @@ instance Compile DLExpr where
               void $ liftIO $ incCounter remoteTxns
             return b
       -- Figure out what we're calling
-      salloc_ "remote address" $ \storeAddr loadAddr -> do
-        cContractToAddr ro
-        storeAddr
-        salloc_ "minb" $ \storeMinB loadMinB -> do
-          cContractAddr
-          op "min_balance"
-          storeMinB
-          -- XXX We are caching the minimum balance because if we are deleting an
-          -- application we made, then our minimum balance will decrease. The
-          -- alternative is to track how much exactly it will go down by.
-          let mmin = Just loadMinB
-          salloc_ "pre balances" $ \storeBals loadBals -> do
-            let mtoksBill = Nothing : map Just nnRecv
-            let mtoksiAll = zip [0..] mtoksBill
-            let (mtoksiBill, mtoksiZero) = splitAt (length mtoksBill) mtoksiAll
-            let paid = M.fromList $ (Nothing, pay_net) : (map (\(x, y) -> (Just y, x)) pay_ks)
-            let balsT = T_Tuple $ map (const $ T_UInt UI_Word) mtoksiAll
-            let gb_pre _ mtok = do
-                  cGetBalance at mmin mtok
-                  case M.lookup mtok paid of
-                    Nothing -> return ()
-                    Just amt -> do
-                      cp amt
-                      op "-"
-            cconcatbs $ map (\(i, mtok) -> (T_UInt UI_Word, gb_pre i mtok)) mtoksiAll
-            storeBals
-            -- Start the call
-            let mt_at = at
-            let mt_mcclose = Nothing
-            let mt_mrecv = Just $ Right loadAddr
-            let mt_always = ra_strictPay
-            hadNet <- (do
-              let mt_amt = pay_net
-              let mt_mtok = Nothing
-              let mt_next = False
-              let mt_submit = False
-              mayIncTxn $ makeTxn $ MakeTxn {..})
-            let foldMy a l f = foldM f a l
-            hadSome <- foldMy hadNet pay_ks $ \mt_next (mt_amt, tok) -> do
-              let mt_mtok = Just tok
-              let mt_submit = False
-              x <- mayIncTxn $ makeTxn $ MakeTxn {..}
-              return $ mt_next || x
-            itxnNextOrBegin hadSome
-            output $ TConst "appl"
-            makeTxn1 "TypeEnum"
-            cp ro
-            incResource R_App ro
-            makeTxn1 "ApplicationID"
-            unless ra_rawCall $ do
-              cp $ sigStrToBytes sig
-              makeTxn1 "ApplicationArgs"
-            accountsR <- liftIO $ newCounter 1
-            let processArg a = do
-                  cp a
-                  let t = argTypeOf a
-                  ctobs t
-                  case t of
-                    -- XXX This is bad and will not work in most cases
-                    T_Address -> do
-                      incResource R_Account a
-                      let m = makeTxn1 "Accounts"
-                      case ra_addr2acc of
-                        False -> do
-                          op "dup"
-                          m
-                        True -> do
-                          i <- liftIO $ incCounter accountsR
-                          m
-                          cp i
-                          ctobs $ T_UInt UI_Word
-                    _ -> return ()
-            let processArg' a = do
-                  processArg a
-                  makeTxn1 "ApplicationArgs"
-            let processArgTuple tas = do
-                  cconcatbs_ (const $ return ()) $
-                    map (\a -> (argTypeOf a, processArg a)) tas
-                  makeTxn1 "ApplicationArgs"
-            case splitArgs as of
-              (_, Nothing) -> do
-                forM_ as processArg'
-              (as14, Just asMore) -> do
-                forM_ as14 processArg'
-                processArgTuple asMore
-            -- XXX If we can "inherit" resources, then this needs to be removed and
-            -- we need to check that nnZeros actually stay 0
-            forM_ (ra_assets <> map snd pay_ks <> nnRecv) $ \a -> do
-              incResource R_Asset a
-              cp a
-              makeTxn1 "Assets"
-            forM_ ra_boxes $ \a -> do
-              incResource_ R_Box (-1, a)
-            forM_ ra_accounts $ \a -> do
-              incResource R_Account a
-              cp a
-              makeTxn1 "Accounts"
-            forM_ ra_apps $ \a -> do
-              incResource R_App a
-              cp a
-              makeTxn1 "Applications"
-            let oc f = do
-                  output $ TConst f
-                  makeTxn1 "OnCompletion"
-            case ra_onCompletion of
-              RA_NoOp -> return ()
-              RA_OptIn -> oc "OptIn"
-              RA_CloseOut -> oc "CloseOut"
-              RA_ClearState -> oc "ClearState"
-              RA_UpdateApplication -> oc "UpdateApplication"
-              RA_DeleteApplication -> oc "DeleteApplication"
-            op "itxn_submit"
-            show_stack ("Remote: " <> sig) Nothing at fs
-            appl_idx <- liftIO $ readCounter remoteTxns
-            let gb_post idx mtok = do
-                  cGetBalance at mmin mtok
-                  loadBals
-                  cTupleRef balsT idx
-                  op "-"
-            cconcatbs $ map (\(i, mtok) -> (T_UInt UI_Word, gb_post i mtok)) mtoksiBill
-            forM_ mtoksiZero $ \(idx, mtok) -> do
-              cGetBalance at mmin mtok
-              loadBals
-              cTupleRef balsT idx
-              asserteq
-            code "gitxn" [ texty appl_idx, "LastLog" ]
-            output $ TExtract 4 0 -- (0 = to the end)
-            op "concat"
+      cContractToAddr ro
+      let (_, loadAddr) = mkLocalVar 0
+      cContractAddr
+      op "min_balance"
+      let (_, loadMinB) = mkLocalVar 1
+      cbs ""
+      let (storeBals, loadBals) = mkLocalVar 2
+      -- XXX We are caching the minimum balance because if we are deleting an
+      -- application we made, then our minimum balance will decrease. The
+      -- alternative is to track how much exactly it will go down by.
+      let mmin = Just loadMinB
+      let mtoksBill = Nothing : map Just nnRecv
+      let mtoksiAll = zip [0..] mtoksBill
+      let (mtoksiBill, mtoksiZero) = splitAt (length mtoksBill) mtoksiAll
+      let paid = M.fromList $ (Nothing, pay_net) : (map (\(x, y) -> (Just y, x)) pay_ks)
+      let balsT = T_Tuple $ map (const $ T_UInt UI_Word) mtoksiAll
+      let gb_pre _ mtok = do
+            cGetBalance at mmin mtok
+            case M.lookup mtok paid of
+              Nothing -> return ()
+              Just amt -> do
+                cp amt
+                op "-"
+      cconcatbs $ map (\(i, mtok) -> (T_UInt UI_Word, gb_pre i mtok)) mtoksiAll
+      storeBals
+      -- Start the call
+      let mt_at = at
+      let mt_mcclose = Nothing
+      let mt_mrecv = Just $ Right $ loadAddr
+      let mt_always = ra_strictPay
+      hadNet <- (do
+        let mt_amt = pay_net
+        let mt_mtok = Nothing
+        let mt_next = False
+        let mt_submit = False
+        mayIncTxn $ makeTxn $ MakeTxn {..})
+      let foldMy a l f = foldM f a l
+      hadSome <- foldMy hadNet pay_ks $ \mt_next (mt_amt, tok) -> do
+        let mt_mtok = Just tok
+        let mt_submit = False
+        x <- mayIncTxn $ makeTxn $ MakeTxn {..}
+        return $ mt_next || x
+      itxnNextOrBegin hadSome
+      output $ TConst "appl"
+      makeTxn1 "TypeEnum"
+      cp ro
+      incResource R_App ro
+      makeTxn1 "ApplicationID"
+      unless ra_rawCall $ do
+        cp $ sigStrToBytes sig
+        makeTxn1 "ApplicationArgs"
+      accountsR <- liftIO $ newCounter 1
+      let processArg a = do
+            cp a
+            let t = argTypeOf a
+            ctobs t
+            case t of
+              -- XXX This is bad and will not work in most cases
+              T_Address -> do
+                incResource R_Account a
+                let m = makeTxn1 "Accounts"
+                case ra_addr2acc of
+                  False -> do
+                    op "dup"
+                    m
+                  True -> do
+                    i <- liftIO $ incCounter accountsR
+                    m
+                    cp i
+                    ctobs $ T_UInt UI_Word
+              _ -> return ()
+      let processArg' a = do
+            processArg a
+            makeTxn1 "ApplicationArgs"
+      let processArgTuple tas = do
+            cconcatbs_ (const $ return ()) $
+              map (\a -> (argTypeOf a, processArg a)) tas
+            makeTxn1 "ApplicationArgs"
+      case splitArgs as of
+        (_, Nothing) -> do
+          forM_ as processArg'
+        (as14, Just asMore) -> do
+          forM_ as14 processArg'
+          processArgTuple asMore
+      -- XXX If we can "inherit" resources, then this needs to be removed and
+      -- we need to check that nnZeros actually stay 0
+      forM_ (ra_assets <> map snd pay_ks <> nnRecv) $ \a -> do
+        incResource R_Asset a
+        cp a
+        makeTxn1 "Assets"
+      forM_ ra_boxes $ \a -> do
+        incResource_ R_Box (-1, a)
+      forM_ ra_accounts $ \a -> do
+        incResource R_Account a
+        cp a
+        makeTxn1 "Accounts"
+      forM_ ra_apps $ \a -> do
+        incResource R_App a
+        cp a
+        makeTxn1 "Applications"
+      let oc f = do
+            output $ TConst f
+            makeTxn1 "OnCompletion"
+      case ra_onCompletion of
+        RA_NoOp -> return ()
+        RA_OptIn -> oc "OptIn"
+        RA_CloseOut -> oc "CloseOut"
+        RA_ClearState -> oc "ClearState"
+        RA_UpdateApplication -> oc "UpdateApplication"
+        RA_DeleteApplication -> oc "DeleteApplication"
+      op "itxn_submit"
+      show_stack ("Remote: " <> sig) Nothing at fs
+      appl_idx <- liftIO $ readCounter remoteTxns
+      let gb_post idx mtok = do
+            cGetBalance at mmin mtok
+            loadBals
+            cTupleRef balsT idx
+            op "-"
+      cconcatbs $ map (\(i, mtok) -> (T_UInt UI_Word, gb_post i mtok)) mtoksiBill
+      forM_ mtoksiZero $ \(idx, mtok) -> do
+        cGetBalance at mmin mtok
+        loadBals
+        cTupleRef balsT idx
+        asserteq
+      code "gitxn" [ texty appl_idx, "LastLog" ]
+      output $ TExtract 4 0 -- (0 = to the end)
+      op "concat"
+      op "retsub"
     DLE_TokenNew at (DLTokenNew {..}) -> do
       block_ "TokenNew" $ do
         cp minimumBalance_l >> mbrAdd
