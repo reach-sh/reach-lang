@@ -1148,6 +1148,8 @@ data LibFun
   | LF_mbrAdd
   | LF_mbrSub
   | LF_wasntMeth
+  | LF_fromSome
+  | LF_getTag
   deriving (Eq, Ord, Show)
 
 libDefns :: App ()
@@ -1178,6 +1180,12 @@ libCall lf impl = do
         return $ lab
       Just (lab, _, _) -> return lab
   code "callsub" [ lab ]
+
+cGetTag :: App ()
+cGetTag = libCall LF_getTag $ do
+  cint 0
+  op "getbyte"
+  op "retsub"
 
 -- Cost Analysis...
 --
@@ -2523,21 +2531,23 @@ instance Compile DLExpr where
       label after_lab
     DLE_DataTag _ d -> do
       cp d
-      cint 0
-      op "getbyte"
+      cGetTag
     DLE_FromSome _ mo da -> do
-      -- XXX candidate for library function
       cp da
       cp mo
-      salloc_ "fromSome object" $ \cstore cload -> do
-        cstore
-        cextractDataOf cload $ typeOf da
-        cload
-        cint 0
-        op "getbyte"
-      -- [ Default, Object, Tag ]
-      -- [ False, True, Cond ]
-      op "select"
+      libCall LF_fromSome $ do
+        -- [ Default, Object ]
+        op "dup"
+        -- [ Default, Object, Object ]
+        output $ TExtract 1 0 -- (0 = to the end)
+        -- [ Default, Object, Value ]
+        op "swap"
+        -- [ Default, Value, Object ]
+        cGetTag
+        -- [ Default, Object,  Tag ]
+        -- [   False,   True, Cond ]
+        op "select"
+        op "retsub"
     DLE_ContractFromAddress _at _addr -> do
       cp $ mdaToMaybeLA T_Contract Nothing
     DLE_ContractNew _at cns dr -> do
@@ -2782,16 +2792,6 @@ makeTxn (MakeTxn {..}) =
       when mt_submit $ op "itxn_submit"
       return True
 
-cextractDataOf :: App () -> DLType -> App ()
-cextractDataOf cd vt = do
-  sz <- typeSizeOf vt
-  case sz == 0 of
-    True -> padding 0
-    False -> do
-      cd
-      cextract 1 sz
-      cfrombs vt
-
 cmatch :: (Compile a) => App () -> [(BS.ByteString, a)] -> App ()
 cmatch ca es = do
   code "pushbytess" $ map (base64d . fst) es
@@ -2810,13 +2810,22 @@ cswatchTail w es ce = do
 doSwitch :: String -> (a -> App ()) -> DLVar -> SwitchCases a -> App ()
 doSwitch lab ck dv (SwitchCases csm) = do
   cp dv
-  cint 0
-  op "getbyte"
+  cGetTag
   cswatchTail "switch" (M.toAscList csm) $ \(vn, SwitchCase {..}) -> do
     l <- freshLabel $ lab <> "_" <> vn
     block l $
       sallocVarLet sc_vl False (cextractDataOf (cp dv) (typeOf sc_vl)) $
         ck sc_k
+
+cextractDataOf :: App () -> DLType -> App ()
+cextractDataOf cd vt = do
+  sz <- typeSizeOf vt
+  case sz == 0 of
+    True -> padding 0
+    False -> do
+      cd
+      cextract 1 sz
+      cfrombs vt
 
 instance CompileK DLStmt where
   cpk km = \case
