@@ -113,6 +113,125 @@ data Env = Env
   , eOnces :: M.Map DLVar DLVarS
   }
 
+class AddSpecial a where
+  addSpecial :: a -> App m -> App m
+
+class Intf a where
+  intf :: DLVar -> a -> App ()
+
+class MoveVar a where
+  mVar :: a -> Maybe DLVar
+
+class IG a where
+  ig :: App DLVarS -> a -> App DLVarS
+
+class IGdef a where
+  igDef :: App DLVarS -> DLVarS -> a -> App DLVarS
+
+-- How does all this work?
+--
+-- The purpose of this file is to compute an interference graph of the
+-- variables in the program. The main way to do this is to compute the "live
+-- set" (`ls`) of what variables are live at any given point in the program. A
+-- variable is live if it is used.
+--
+--    .                 | Live-Before | Live-After
+--    let x = 5         |  { }        | { x }
+--    let y = x + 1     |  { x }      | { x, y }
+--    let z = x + y     |  { x, y }   | { x, z }
+--    let u = x + z     |  { x, z }   | { x }
+--    return x          |  { x }      | {}
+--
+-- ig k c = ls
+--   iff
+--     k  = computation returning Live-After
+--     c  = the code
+--     ls = computation returning Live-Before
+--
+-- Once we have live sets, we can make a note that particular variables
+-- interfere with others. Basically, variables interfere with the variables
+-- live after their definition...
+--
+-- u - x - z
+--      \ /
+--       y
+--
+-- This graph will be stored in `eIG.igInter` and ultimately returned
+--
+-- We also compute a "move graph" (`eIG.igMove`) that stores when one variable
+-- is moved into the same spot as another. If we had `let v = u`, then `v - u`
+-- would be in the move graph. The move graph is used to bias graph coloring
+-- into making variables share the same spot (because we assume that the
+-- connector can optimize away the move.)
+--
+--      (The point of `eFunVars` is to record the parameters to functions that
+--      we can jump to so that we can insert moves from the actual arguments to
+--      parameters.)
+--
+-- But, there are some subtleties about Reach that make it un-wise to do this
+-- "by the book"...
+--   1. We know that unused variables (like u) will be removed
+--   2. We know that variables will be flagged with their use count, and some
+--      are used once.
+--   3. We know that some variables are "free" in the connector, like the
+--      message sender.
+--
+-- We deal with 1 by ignoring them, unlike a normal analysis that might try
+-- hard to find unused.
+--
+-- We deal with 3 by recording them in `eSpecials` and never including them in
+-- the interference graph, ever.
+--
+-- We deal with 2 by storing an extra map, `eOnces`, where the keys are
+-- variables used only once and the value are the multi-use variables that they
+-- reference (because referencing the once variable implies you will reference
+-- that variable). This is because we know that the underlying connector can
+-- save the RHS of the `let` and insert it directly at the only use of the
+-- variable. Thus, they don't need registers, so they won't get them.
+--
+-- In the example above,
+--   - y and z are used once
+--   - u is never used
+--
+-- So it will actually be like:
+--
+--    .                 | Live-Before | Live-After | eOnces
+--    let x = 5         |  { }        | { x }      | mt
+--    let y = x + 1     |  { x }      | { x }      | " [ y -> {x} ]
+--    let z = x + y     |  { x }      | { x }      | " [ z -> {x, y} ]
+--    let u = x + z     |  { x }      | { x }      | "
+--    return x          |  { x }      | {}         | "
+--
+-- And so the interference graph will be
+--
+--    x
+--
+-- `ig` is in continuation passing style to make it possible to record `eOnces`
+-- in the `local` state. But, the computation has to actually go from the
+-- bottom, because we are concerned about Live-After
+--
+-- --
+--
+-- We do a few cute class-y things to make the code easier to write
+--
+-- - `MoveVar/mVar x` is used to abstract over extracting what variable (in
+--   `x`) is being moved. It is useful as a type class so we don't have to
+--   plumb around and annotate the types
+--
+-- - `Intf/intf x y` is used to make a single variable (`x`) interfere with
+--   everything in `y`
+--
+-- - `AddSpecial/addSpecial v k` is used to record that `v` is special inside
+--   of `k`
+--
+-- - `IG` has these special values `IGseq`, `IGpar`, `Par`, and `Seq` that are
+--   used to abstract whether the binding in a program is sequential or
+--   parallel. This is to ensure that the Live-After values flow correctly,
+--   while ensuring that `eOnces` gets to look from the top-down.
+--
+--   This is almost general enough to be an abstraction of all analyses in the
+--   Reach compiler, but it mainly fails at doing an `fmap`.
+--
 modIG :: (IGg -> IGg) -> App ()
 modIG f = do
   Env {..} <- ask
@@ -135,20 +254,11 @@ type App = ReaderT Env IO
 
 type FunVars = M.Map CLVar [DLVarLet]
 
-class AddSpecial a where
-  addSpecial :: a -> App m -> App m
-
-class Intf a where
-  intf :: DLVar -> a -> App ()
-
 instance Intf DLVar where
   intf = inter2
 
 instance (Intf a) => Intf (S.Set a) where
   intf v = mapM_ (intf v)
-
-class MoveVar a where
-  mVar :: a -> Maybe DLVar
 
 instance MoveVar DLVar where
   mVar = return
@@ -182,12 +292,6 @@ move x y =
 
 rm :: DLVar -> DLVarS -> DLVarS
 rm = S.delete
-
-class IG a where
-  ig :: App DLVarS -> a -> App DLVarS
-
-class IGdef a where
-  igDef :: App DLVarS -> DLVarS -> a -> App DLVarS
 
 viaCount :: Countable a => App DLVarS -> a -> App DLVarS
 viaCount lsm x = do
@@ -358,49 +462,54 @@ instance GetFunVars CLProg where
       go' (CLFun {..}) = clf_dom
 
 -- Coloring
-colorEasy :: IGg -> DLVarS -> Int -> IO (M.Map DLVar Int)
+type Coloring = M.Map DLVar Int
+type ColoringR = Either String Coloring
+
+colorEasy :: IGg -> DLVarS -> Int -> IO ColoringR
 colorEasy i s maxColor = do
   let act = S.size s
   case act <= maxColor of
     True ->
-      return $ M.fromList $ zip (S.toAscList s) [0..]
+      return $ Right $ M.fromList $ zip (S.toAscList s) [0..]
     False -> do
       colorSat i s $ take maxColor [0..]
 
-colorHard :: IGg -> DLVarS -> IO (M.Map DLVar Int)
+colorHard :: IGg -> DLVarS -> IO ColoringR
 colorHard i s = colorSat i s [0..]
 
-colorSat :: IGg -> DLVarS -> [Int] -> IO (M.Map DLVar Int)
+type SatS = S.Set Int
+colorSat :: IGg -> DLVarS -> [Int] -> IO ColoringR
 colorSat (IGg {..}) s all_cs = do
   asnr <- newIORef mempty
   w <- newIORef $ S.toAscList s
   let consult_asn cv =
         (maybeToList . M.lookup cv) <$> readIORef asnr
-  let neighbors_colors :: Graph -> DLVar -> IO (S.Set Int)
+  let neighbors_colors :: Graph -> DLVar -> IO SatS
       neighbors_colors g v = do
         let ns = S.toList $ S.intersection s $ gRef g v
         ns_cs <- mconcatMapM consult_asn ns
         return $ S.fromList ns_cs
-  let compute_sat :: DLVar -> IO (DLVar, S.Set Int)
+  let compute_sat :: DLVar -> IO (DLVar, SatS)
       compute_sat v = (,) v <$> neighbors_colors igInter v
   let cmp_sizes = comparing (S.size . snd)
-  let extractMaxSat f = do
+  let extractMaxSat :: IO a -> (IO a -> DLVar -> SatS -> IO a) -> IO a
+      extractMaxSat sk f = do
         readIORef w >>= \case
-          [] -> return ()
+          [] -> sk
           cw -> do
             cw_ws <- mapM compute_sat cw
             let (v, sv) = maximumBy cmp_sizes cw_ws
             writeIORef w $ cw \\ [v]
-            f v sv
-  let tryToAssign v sv = \case
-        [] -> impossible $ "colorSat: no color opts"
+            f sk v sv
+  let tryToAssign :: IO (Either String a) -> DLVar -> SatS -> [Int] -> IO (Either String a)
+      tryToAssign sk v sv = \case
+        [] -> return $ Left $ "colorSat: no color opts for " <> show v
         c0 : cols ->
           case S.member c0 sv of
-            True -> tryToAssign v sv cols
-            False -> modifyIORef asnr $ M.insert v c0
-  let color_loop = extractMaxSat $ \v sv -> do
+            True -> tryToAssign sk v sv cols
+            False -> modifyIORef asnr (M.insert v c0) >> sk
+  let color_loop sk = extractMaxSat sk $ \sk' v sv -> do
         vs_move_ns_cs <- S.toList <$> neighbors_colors igMove v
-        tryToAssign v sv $ vs_move_ns_cs <> all_cs
-        color_loop
-  color_loop
-  readIORef asnr
+        tryToAssign (color_loop sk') v sv $
+          vs_move_ns_cs <> all_cs
+  color_loop $ (Right <$> readIORef asnr)
