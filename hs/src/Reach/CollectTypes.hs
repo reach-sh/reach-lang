@@ -236,6 +236,12 @@ instance CollectsTypes LLStep where
 instance CollectsTypes a => CollectsTypes (DLinExportBlock a) where
   cts (DLinExportBlock _ vs r) = cts vs <> cts r
 
+instance CollectsTypes a => CollectsTypes (SwitchCases a) where
+  cts (SwitchCases m) = cts m
+
+instance CollectsTypes a => CollectsTypes (SwitchCase a) where
+  cts (SwitchCase {..}) = cts sc_vl <> cts sc_k
+
 instance CollectsTypes Int where
   cts _ = mempty
 

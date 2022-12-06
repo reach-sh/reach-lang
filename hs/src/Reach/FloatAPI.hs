@@ -40,7 +40,10 @@ class FloatAPI a where
   fa :: AppT a
 
 instance FloatAPI (SwitchCases LLConsensus) where
-  fa = mapM $ \(cv, b, k) -> (,,) cv b <$> cffa k
+  fa (SwitchCases m) = SwitchCases <$> mapM fa m
+
+instance FloatAPI (SwitchCase LLConsensus) where
+  fa (SwitchCase {..}) = SwitchCase sc_vl <$> cffa sc_k
 
 instance FloatAPI LLConsensus where
   fa = \case

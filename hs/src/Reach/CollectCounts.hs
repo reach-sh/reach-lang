@@ -91,8 +91,8 @@ instance Countable v => Countable [v] where
 instance Countable v => Countable (M.Map k v) where
   counts m = counts $ M.elems m
 
-instance {-# OVERLAPS #-} Countable k => Countable (SwitchCases k) where
-  counts m = mconcat $ map (\(v, _, k) -> count_rms [v] $ counts k) $ M.elems m
+instance Countable k => Countable (SwitchCase k) where
+  counts (SwitchCase {..}) = count_rms [vl2v sc_vl] $ counts sc_k
 
 instance Countable DLVar where
   counts dv = Counts $ M.singleton dv DVC_Once
@@ -248,6 +248,9 @@ instance CountableK a => CountableK [a] where
   countsk kcs = \case
     [] -> kcs
     x : xs -> countsk (countsk kcs x) xs
+
+instance Countable k => Countable (SwitchCases k) where
+  counts (SwitchCases m) = counts m
 
 instance CountableK DLStmt where
   countsk kcs = \case

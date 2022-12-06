@@ -143,10 +143,7 @@ instance AC DLStmt where
       t' <- ac t
       ac_visit $ c
       return $ DL_LocalIf at mans c t' f'
-    DL_LocalSwitch at ov csm -> do
-      csm' <- ac csm
-      ac_visit $ ov
-      return $ DL_LocalSwitch at ov csm'
+    DL_LocalSwitch at ov csm -> doSwitch DL_LocalSwitch at ov csm
     DL_Only at who b -> do
       b' <- ac b
       return $ DL_Only at who b'
@@ -173,14 +170,21 @@ instance AC DLBlock where
     t' <- ac t
     return $ DLBlock at fs t' a
 
-instance {-# OVERLAPS #-} AC a => AC (SwitchCases a) where
-  ac = mapM $ \(v, _, k) -> do
-    k' <- ac k
-    vu' <-
-      ac_vdef True (DLV_Let DVC_Many v) >>= \case
-        DLV_Eff -> return False
-        _ -> return True
-    return $ (v, vu', k')
+instance {-# OVERLAPS #-} AC a => AC (SwitchCaseUse a) where
+  ac (SwitchCaseUse ov vn (SwitchCase {..})) = do
+    k' <- ac sc_k
+    vl' <- ac_vl sc_vl
+    case vl' of
+      -- If we use it, then we must get the data from ov
+      DLVarLet (Just _) _ -> ac_visit ov
+      _ -> return ()
+    return $ SwitchCaseUse ov vn (SwitchCase vl' k')
+
+doSwitch :: AC k => (SrcLoc -> DLVar -> SwitchCases k -> a) -> SrcLoc -> DLVar -> SwitchCases k -> App a
+doSwitch mk at v csm = do
+  csm' <- unSwitchUses <$> ac (switchUses v csm)
+  ac_visit v
+  return $ mk at v csm'
 
 instance AC ETail where
   ac = \case
@@ -194,10 +198,7 @@ instance AC ETail where
       t' <- ac t
       ac_visit $ c
       return $ ET_If at c t' f'
-    ET_Switch at v csm -> do
-      csm' <- ac csm
-      ac_visit v
-      return $ ET_Switch at v csm'
+    ET_Switch at v csm -> doSwitch ET_Switch at v csm
     ET_FromConsensus at vi fi k -> do
       k' <- ac k
       ac_visit fi
@@ -268,10 +269,7 @@ instance AC CTail where
       t' <- ac t
       ac_visit $ c
       return $ CT_If at c t' f'
-    CT_Switch at v csm -> do
-      csm' <- ac csm
-      ac_visit $ v
-      return $ CT_Switch at v csm'
+    CT_Switch at v csm -> doSwitch CT_Switch at v csm
     CT_From at w fi -> do
       ac_visit $ fi
       return $ CT_From at w fi
@@ -355,25 +353,26 @@ instance AC LLConsensus where
           ( LLC_Com
               (DL_Var at_v1 dv_v1)
               ( LLC_Com
-                  (DL_LocalSwitch at_s1 dv_s1 csm_s1)
+                  (DL_LocalSwitch at_s1 dv_s1 (SwitchCases csm_s1))
                   ( LLC_Com
                       (DL_Var at_v2 dv_v2)
                       ( LLC_Com
-                          (DL_LocalSwitch at_s2 dv_s2 csm_s2)
+                          (DL_LocalSwitch at_s2 dv_s2 (SwitchCases csm_s2))
                           k
                         )
                     )
                 )
             ) | False && dv_s1 == dv_s2 -> do
-              let combine :: SLVar -> (DLVar, Bool, DLTail) -> (DLVar, Bool, DLTail)
-                  combine vn (vv1, vb1, vk1) = (vv1, vb', vk')
+              let combine :: SLVar -> SwitchCase DLTail -> SwitchCase DLTail
+                  combine vn (SwitchCase vl1 vk1) = (SwitchCase vl' vk')
                     where
-                      (vv2, vb2, vk2) = csm_s2 M.! vn
-                      vb' = vb1 || vb2
-                      vk2' = DT_Com (DL_Let at_s2 (DLV_Let DVC_Many vv2) (DLE_Arg at_s2 $ DLA_Var vv1)) vk2
+                      vl' = DLVarLet (Just DVC_Many) vv1
+                      vv1 = varLetVar vl1
+                      SwitchCase vl2 vk2 = csm_s2 M.! vn
+                      vk2' = DT_Com (DL_Let at_s2 (vl2lv vl2) (DLE_Arg at_s2 $ DLA_Var $ vv1)) vk2
                       vk' = dtReplace DT_Com vk2' vk1
               let csm_s12 = M.mapWithKey combine csm_s1
-              return $ LLC_Com (DL_Var at_v1 dv_v1) $ LLC_Com (DL_Var at_v2 dv_v2) $ LLC_Com (DL_LocalSwitch at_s1 dv_s1 csm_s12) k
+              return $ LLC_Com (DL_Var at_v1 dv_v1) $ LLC_Com (DL_Var at_v2 dv_v2) $ LLC_Com (DL_LocalSwitch at_s1 dv_s1 (SwitchCases csm_s12)) k
           _ ->
             return c'
       return $ mkCom LLC_Com m' c''
@@ -382,10 +381,7 @@ instance AC LLConsensus where
       t' <- ac t
       ac_visit c
       return $ LLC_If at c t' f'
-    LLC_Switch at c csm -> do
-      csm' <- ac csm
-      ac_visit c
-      return $ LLC_Switch at c csm'
+    LLC_Switch at c csm -> doSwitch LLC_Switch at c csm
     LLC_FromConsensus at1 at2 fs s ->
       LLC_FromConsensus at1 at2 fs <$> ac s
     LLC_While {..} -> do
@@ -465,10 +461,7 @@ instance AC CLTail where
       t' <- ac t
       ac_visit $ c
       return $ CL_If at c t' f'
-    CL_Switch at v csm -> do
-      csm' <- ac csm
-      ac_visit $ v
-      return $ CL_Switch at v csm'
+    CL_Switch at v csm -> doSwitch CL_Switch at v csm
     CL_Jump at f vs isApi mmret -> do
       ac_visit $ vs
       return $ CL_Jump at f vs isApi mmret

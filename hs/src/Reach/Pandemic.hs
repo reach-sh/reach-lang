@@ -179,6 +179,12 @@ instance Pandemic a => Pandemic (DLRecv a) where
 instance Pandemic a => Pandemic (DLInvariant a) where
   pan (DLInvariant inv lab) = DLInvariant <$> pan inv <*> pure lab
 
+instance Pandemic a => Pandemic (SwitchCase a) where
+  pan (SwitchCase {..}) = SwitchCase <$> pan sc_vl <*> pan sc_k
+
+instance Pandemic a => Pandemic (SwitchCases a) where
+  pan (SwitchCases m) = SwitchCases <$> pan m
+
 instance Pandemic DLSStmt where
   pan = \case
     DLS_Let at v e -> do

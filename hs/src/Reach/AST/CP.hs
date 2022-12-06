@@ -30,7 +30,7 @@ instance Pretty CTail where
   pretty = \case
     CT_Com e k -> pretty e <> hardline <> pretty k
     CT_If _ ca tt ft -> prettyIfp ca tt ft
-    CT_Switch _ ov csm -> prettySwitch ov csm
+    CT_Switch _ ov csm -> pretty $ SwitchCasesUse ov csm
     CT_From _ which fi -> pform "from" $ pretty which <> "," <+> pretty fi
     CT_Jump _ which vars assignment -> pform "jump!" args
       where

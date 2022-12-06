@@ -728,25 +728,25 @@ optIf mkDo mkIf c t f =
               return $ mkIf c' t' f'
 
 gcsSwitch :: Optimize k => ConstT (SwitchCases k)
-gcsSwitch = mapM_ (\(_, _, n) -> gcs n)
+gcsSwitch (SwitchCases m) = mapM_ (gcs . sc_k) m
 
 optSwitch :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (DLStmt -> k -> k) -> (SrcLoc -> DLVar -> SwitchCases k -> r) -> SrcLoc -> DLVar -> SwitchCases k -> App r
-optSwitch mkDo mkLet mkSwitch at ov csm = do
+optSwitch mkDo mkLet mkSwitch at ov (SwitchCases csm) = do
   ov' <- opt ov
   optKnownVariant ov' >>= \case
     Just (var, var_val) -> do
-      let (var_var, _, var_k) = (M.!) csm var
-      let var_k' = mkLet (DL_Let at (DLV_Let DVC_Many var_var) (DLE_Arg at var_val)) var_k
+      let SwitchCase var_vl var_k = (M.!) csm var
+      let var_k' = mkLet (DL_Let at (vl2lv var_vl) (DLE_Arg at var_val)) var_k
       newScope $ mkDo <$> opt var_k'
     Nothing -> do
       let tm = dataTypeMap $ varType ov
       let rkv dv k va = recordKnownLargeArg dv $ DLLA_Data tm k va
-      let cm1 k (v_v, vnu, n) = (,,) v_v vnu <$> (newScope $ rkv ov' k (DLA_Var v_v) >> opt n)
+      let cm1 k (SwitchCase {..}) = SwitchCase sc_vl <$> (newScope $ rkv ov' k (DLA_Var $ varLetVar sc_vl) >> opt sc_k)
       csm' <- mapWithKeyM cm1 csm
-      let csm'kl = map (\(_k, (_v_v, _vnu, n)) -> n) $ M.toAscList csm'
+      let csm'kl = map sc_k $ M.elems csm'
       case allTheSame csm'kl of
         Right s -> return $ mkDo s
-        Left _ -> return $ mkSwitch at ov' csm'
+        Left _ -> return $ mkSwitch at ov' $ SwitchCases csm'
 
 optWhile :: Optimize a => (DLAssignment -> DLBlock -> a -> a -> a) -> DLAssignment -> DLBlock -> a -> a -> App a
 optWhile mk asn cond body k = do
@@ -917,7 +917,7 @@ preFuse :: DLStmt -> App FuseEnv
 preFuse s = do
   oldEnv <- liftIO . readIORef =<< asks eFusionCases
   case s of
-    DL_LocalSwitch _ dv _ -> updateFusion dv mempty
+    DL_LocalSwitch _ dv _ -> updateFusion dv $ SwitchCases mempty
     DL_Let {} -> cantFuse
     -- XXX We could fuse if the `DL_Var` we encounter is set within a switch.
     -- The env would need to track the vars a switch needs to set to fuse.
@@ -930,21 +930,21 @@ preFuse s = do
   where cantFuse = liftIO . flip writeIORef mempty =<< asks eFusionCases
 
 fuseSwitch :: (DLStmt -> a -> a) -> SrcLoc -> DLVar -> SwitchCases DLTail -> a -> App a
-fuseSwitch mk at dv scs k =
+fuseSwitch mk at dv (SwitchCases scs) k =
   readFusionCases dv >>= \case
     Just cases -> ret $ M.mapWithKey (fuse cases) scs
     Nothing -> ret scs
   where
-    ret cases = return $ mk (DL_LocalSwitch at dv cases) k
-    fuse cases c (v1, b1, t1) =
+    ret cases = return $ mk (DL_LocalSwitch at dv $ SwitchCases cases) k
+    fuse (SwitchCases cases) c sc@(SwitchCase lv1 k1) =
       case M.lookup c cases of
-        Just (v2, _, t2) -> do
+        Just (SwitchCase lv2 k2) -> do
           -- The branch we're inling binds `v2`.
           -- The branch we're inling *into* binds `v1`.
           -- Set v2 to v1
-          let t2' = DT_Com (DL_Let at (DLV_Let DVC_Many v2) $ DLE_Arg at $ DLA_Var v1) t2
-          (v1, b1, dtReplace DT_Com t2' t1)
-        Nothing -> (v1, b1, t1)
+          let k2' = DT_Com (DL_Let at (vl2lv lv2) $ DLE_Arg at $ DLA_Var $ varLetVar lv1) k2
+          SwitchCase lv1 $ dtReplace DT_Com k2' k1
+        Nothing -> sc
 
 fuseStmt :: IsCom a => FuseEnv -> (DLStmt -> a -> a) -> a -> App a
 fuseStmt fuseEnv mk t =

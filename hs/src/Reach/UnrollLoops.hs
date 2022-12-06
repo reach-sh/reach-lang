@@ -109,6 +109,9 @@ instance Unroll DLExpr where
 instance Unroll B.ByteString where
   ul = return
 
+instance Unroll k => Unroll (SwitchCases k) where
+  ul (SwitchCases m) = SwitchCases <$> ul m
+
 instance Unroll DLStmt where
   ul = \case
     DL_Nop at -> return $ DL_Nop at
@@ -179,8 +182,8 @@ instance Unroll k => Unroll (a, k) where
 instance Unroll a => Unroll (M.Map k a) where
   ul = mapM ul
 
-instance {-# OVERLAPS #-} Unroll a => Unroll (SwitchCases a) where
-  ul = mapM (\(v, vnu, k) -> (,,) v vnu <$> ul k)
+instance Unroll k => Unroll (SwitchCase k) where
+  ul (SwitchCase {..}) = SwitchCase sc_vl <$> ul sc_k
 
 instance Unroll a => Unroll (Maybe a) where
   ul = mapM ul

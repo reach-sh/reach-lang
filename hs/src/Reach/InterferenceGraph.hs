@@ -426,8 +426,15 @@ instance IG CLTail where
       ig ls (Seq as)
     CL_Halt {} -> ls
 
+instance IG a => IG (SwitchCaseUse a) where
+  ig ls (SwitchCaseUse ov _vn (SwitchCase {..})) =
+    ig ls (IGseq ov (IGseq sc_vl sc_k))
+
+instance IG a => IG (SwitchCasesUse a) where
+  ig ls (SwitchCasesUse v csm) = ig ls (IGseq v (Par $ switchUses v csm))
+
 igSwitch :: (IG a) => App DLVarS -> DLVar -> SwitchCases a -> App DLVarS
-igSwitch ls v csm = ig ls (IGseq v (Par csm))
+igSwitch ls v csm = ig ls (SwitchCasesUse v csm)
 
 igIf :: (IG a, IG b) => App DLVarS -> a -> b -> b -> App DLVarS
 igIf ls a t f = ig ls (IGseq a (Par [t, f]))

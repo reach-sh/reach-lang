@@ -487,26 +487,29 @@ conCons' = \case
   DLC_UInt_max  -> V_UInt $ 2 ^ (64 :: Integer) - 1
   DLC_Token_zero -> V_Token 0
 
+instance Interp DLVar where
+  interp dlvar = do
+    (_, l) <- getState
+    let locals = l_locals l
+    let aid = l_curr_actor_id l
+    case M.lookup aid locals of
+      Nothing -> suspend $ PS_Error Nothing $ "No local store found for actor ID: " <> show aid
+      Just lst -> do
+        let st = l_store lst
+        case M.lookup dlvar st of
+          Nothing -> do
+            suspend $ PS_Error Nothing $
+              "Missing local variable definition for: "
+                <> show dlvar
+                <> "\n in store: "
+                <> show st
+                <> "\n for actor: "
+                <> show (l_who lst)
+          Just a -> return a
+
 instance Interp DLArg where
   interp = \case
-    DLA_Var dlvar -> do
-      (_, l) <- getState
-      let locals = l_locals l
-      let aid = l_curr_actor_id l
-      case M.lookup aid locals of
-        Nothing -> suspend $ PS_Error Nothing $ "No local store found for actor ID: " <> show aid
-        Just lst -> do
-          let st = l_store lst
-          case M.lookup dlvar st of
-            Nothing -> do
-              suspend $ PS_Error Nothing $
-                "Missing local variable definition for: "
-                  <> show dlvar
-                  <> "\n in store: "
-                  <> show st
-                  <> "\n for actor: "
-                  <> show (l_who lst)
-            Just a -> return a
+    DLA_Var v -> interp v
     DLA_Constant dlconst -> return $ conCons' dlconst
     DLA_Literal dllit -> interp dllit
     DLA_Interact _slpart str _dltype -> do
@@ -760,11 +763,7 @@ instance Interp DLStmt where
         V_Bool True -> interp tail1
         V_Bool False -> interp tail2
         _ -> impossible "DL_LocalIf: statement interpreter"
-    DL_LocalSwitch _at var cases -> do
-      (k, v) <- vData <$> interp (DLA_Var var)
-      let (switch_binding, _, dltail) = saferMaybe "DL_LocalSwitch" $ M.lookup k cases
-      addToStore switch_binding v
-      interp dltail
+    DL_LocalSwitch _at v csm -> interp $ SwitchCasesUse v csm
     DL_Only _at either_part dltail -> do
       case either_part of
         Left slpart -> do
@@ -813,6 +812,13 @@ instance Interp DLBlock where
       void $ interp dltail
       interp dlarg
 
+instance Interp k => Interp (SwitchCasesUse k) where
+  interp (SwitchCasesUse vv (SwitchCases csm)) = do
+    (k, v) <- vData <$> interp vv
+    let SwitchCase {..} = saferMaybe "Switch" $ M.lookup k csm
+    addToStore sc_vl v
+    interp sc_k
+
 instance Interp LLConsensus where
   interp = \case
     LLC_Com stmt cons -> do
@@ -824,11 +830,7 @@ instance Interp LLConsensus where
         V_Bool True -> interp cons1
         V_Bool False -> interp cons2
         _ -> impossible "consensus interpreter"
-    LLC_Switch _at var switch_cases -> do
-      (k, v) <- vData <$> interp (DLA_Var var)
-      let (switch_binding, _, cons) = saferMaybe "LLC_Switch" $ M.lookup k switch_cases
-      addToStore switch_binding v
-      interp cons
+    LLC_Switch _at v csm -> interp $ SwitchCasesUse v csm
     LLC_FromConsensus _at1 _at2 _fs step -> do
       incrNWtime 1
       incrNWsecs 1

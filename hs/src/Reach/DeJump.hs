@@ -48,7 +48,10 @@ instance (Subst b, DeJump a) => DeJump (M.Map k (b, a)) where
   dj = mapM (\(x, y) -> (,) <$> djs x <*> dj y)
 
 instance (DeJump a) => DeJump (SwitchCases a) where
-  dj = mapM (\(v, vnu, k) -> (,,) v vnu <$> dj k)
+  dj (SwitchCases m) = SwitchCases <$> mapM dj m
+
+instance DeJump a => DeJump (SwitchCase a) where
+  dj (SwitchCase {..}) = SwitchCase sc_vl <$> dj sc_k
 
 instance DeJump CTail where
   dj = \case
