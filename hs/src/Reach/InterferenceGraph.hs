@@ -465,6 +465,13 @@ instance GetFunVars CLProg where
 type Coloring = M.Map DLVar Int
 type ColoringR = Either String Coloring
 
+-- This function makes the observation that if the number of variables is less
+-- than the number of registers, there's no need to do any work... each
+-- variable can get its own register. On Algorand, there are hundreds of
+-- registers, so this is plausible.
+--
+-- We don't actually use this typically, because we want to exploit the move
+-- graph system to get more compressable code.
 colorEasy :: IGg -> DLVarS -> Int -> IO ColoringR
 colorEasy i s maxColor = do
   let act = S.size s
