@@ -1104,6 +1104,7 @@ data Env = Env
   , eOutputR :: IORef TEALs
   , eHP :: ScratchSlot
   , eSP :: ScratchSlot
+  , eColoring :: Coloring
   , eVars :: M.Map DLVar (App ())
   , eLets :: Lets
   , eLetSmalls :: M.Map DLVar Bool
@@ -2923,12 +2924,8 @@ instance CompileK DLStmt where
       arrayBody at ra body iv load_idx xs as = do
         let finalK = cpk (cp ra) body
         let finalK' = store_let iv True load_idx finalK
-        let bodyF (DLVarLet mxc x, a) k =
-              case mxc of
-                Nothing -> k
-                Just _ -> do
-                 doArrayRef at a True $ Right load_idx
-                 sallocLet x (return ()) k
+        let bodyF (vl, a) =
+              sallocVarLet vl False (doArrayRef at a True $ Right load_idx)
         foldr bodyF finalK' $ zip xs as
 
 instance CompileK DLTail where
@@ -3090,7 +3087,7 @@ callCompanion at cc = do
         Nothing -> go Nothing
         Just _ -> do
           dv <- allocVar at t
-          sallocLet dv (gvLoad GV_companion) $
+          store_let dv True (gvLoad GV_companion) $
             go $ Just $ DLA_Var dv
     CompanionCreate -> do
       let mpay pc = (cp $ pc * algoMinimumBalance) >> mbrAdd
@@ -3413,9 +3410,16 @@ instance Compile CLProg where
 instance (Compile a) => Compile (IGd a) where
   cp (IGd x g) = do
     let vs = igVars g
-    y <- liftIO $ colorHard g vs
-    liftIO $ putStrLn $ show y
-    cp x
+    let maxSlot = 255
+    let maxUsedSlot = fromEnum (maxBound :: GlobalVar)
+    let maxAvailSlot = maxSlot - maxUsedSlot
+    y <- liftIO $ colorHardLim g vs maxAvailSlot
+    case y of
+      Left m -> impossible $ "Could not allocate variables to registers using scratch space; we could hack the planet and get more registers by using frame variables: " <> m
+      Right (_mc, c) -> do
+        let c' = M.map ((+) maxUsedSlot) c
+        local (\e -> e { eColoring = c' }) $
+          cp x
 
 -- General Shell
 cp_shell :: (Compile a) => a -> App ()
@@ -3591,6 +3595,7 @@ compile_algo disp x = do
   (gFailuresR, gbad) <- newErrorSetRef
   (gWarningsR, _gwarn) <- newErrorSetRef
   let eSP = 255
+  let eColoring = mempty
   let eVars = mempty
   let eLets = mempty
   let eLetSmalls = mempty
