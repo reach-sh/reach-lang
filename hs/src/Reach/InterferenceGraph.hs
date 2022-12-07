@@ -48,11 +48,17 @@ gVars (Graph m) = M.keysSet m
 gRef :: Graph -> DLVar -> DLVarS
 gRef (Graph m) x = fromMaybe mempty $ M.lookup x m
 
-gIns :: DLVar -> DLVar -> Graph -> Graph
-gIns x y (Graph m) = Graph $ M.alter mf x m
+gMod :: DLVar -> (DLVarS -> DLVarS) -> Graph -> Graph
+gMod x xm (Graph m) = Graph $ M.alter mf x m
   where
     mf = f . fromMaybe mempty
-    f = Just . S.insert y
+    f = Just . xm
+
+gIns :: DLVar -> DLVar -> Graph -> Graph
+gIns x y g = gMod x (S.insert y) g
+
+gAdd :: DLVar -> Graph -> Graph
+gAdd x g = gMod x id g
 
 gIns2 :: DLVar -> DLVar -> Graph -> Graph
 gIns2 x y g =
@@ -239,6 +245,9 @@ modIG f = do
   Env {..} <- ask
   liftIO $ modifyIORef eIG f
 
+addv :: DLVar -> App ()
+addv x = modIG $ \g -> g { igInter = gAdd x (igInter g) }
+
 inter2 :: DLVar -> DLVar -> App ()
 inter2 x y = modIG $ \g -> g { igInter = gIns2 x y (igInter g) }
 
@@ -327,19 +336,21 @@ instance IGdef DLVarLet where
         Just vc -> DLV_Let vc v
 
 instance IGdef DLLetVar where
-  igDef lsm vs = \case
-    DLV_Eff -> S.union vs <$> lsm
+  igDef lsm uses = \case
+    DLV_Eff -> S.union uses <$> lsm
     DLV_Let vc v -> do
       Env {..} <- ask
       let ignored = S.union (M.keysSet eOnces) eSpecials
-      let vs' = S.difference vs ignored
       case vc of
         DVC_Once -> do
-          ls <- local (\e -> e { eOnces = M.insert v vs' eOnces }) lsm
+          let uses' = S.difference uses ignored
+          ls <- local (\e -> e { eOnces = M.insert v uses' eOnces }) lsm
           return $ rm v ls
         DVC_Many -> do
           ls <- lsm
-          intf v $ S.difference ls ignored
+          addv v
+          liftIO $ putStrLn $ show v <> " " <> show ls <> " " <> show ignored <> " " <> show uses
+          intf v $ S.difference (ls <> uses) ignored
           return $ rm v ls
 
 viaDef :: (IGdef a) => App DLVarS -> a -> App DLVarS
@@ -398,13 +409,18 @@ instance AddSpecial DLLetVar where
     DLV_Eff -> id
     DLV_Let _ v -> local (\e -> e { eSpecials = S.insert v $ eSpecials e })
 
+washVars :: [DLVarLet] -> [DLVarLet]
+washVars = map (v2vl . varLetVar)
+
 instance IG CLStmt where
   ig ls = \case
     CLDL m -> ig ls m
     CLBindSpecial _ lv _s -> addSpecial lv $ ig ls lv
     CLTimeCheck _ x -> ig ls x
     CLEmitPublish _ _ vs -> ig ls (Seq vs)
-    CLStateBind _ _ vs _ -> ig ls (Seq vs)
+    CLStateBind _ _ vs _ ->
+      -- We wash the vs so state variables are guaranteed to get registers
+      ig ls (Seq $ washVars vs)
     CLIntervalCheck _ x y z -> ig ls (IGseq (Seq [x, y]) z)
     CLStateSet _ _ vs -> do
       mapM_ (uncurry move) vs
@@ -448,7 +464,13 @@ instance IG CLExtFun where
   ig ls (CLExtFun {..}) = ig ls cef_fun
 
 instance IG CLIntFun where
-  ig ls (CLIntFun {..}) = ig ls cif_fun
+  ig ls (CLIntFun {..}) = ig ls $ manyifyDom cif_fun
+
+manyifyDom :: CLFun -> CLFun
+manyifyDom (CLFun {..}) =
+  -- We wash the variables to ensure that internal functions get registers (so
+  -- their arguments can be moved into them)
+  CLFun clf_at (washVars clf_dom) clf_view clf_tail
 
 igList :: (IG a) => App DLVarS -> [a] -> App DLVarS
 igList ls = \case

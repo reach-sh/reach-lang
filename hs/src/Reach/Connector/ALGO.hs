@@ -1544,12 +1544,19 @@ letSmall dv = do
   Env {..} <- ask
   return $ fromMaybe False (M.lookup dv eLetSmalls)
 
+fakeVar :: DLVar -> App ()
+fakeVar v = do
+  cbs ""
+  cfrombs $ typeOf v
+
 lookup_let :: DLVar -> App ()
 lookup_let dv = do
   Env {..} <- ask
   case M.lookup dv eLets of
     Just m -> m
-    Nothing -> bad $ LT.pack $ show eWhich <> " lookup_let " <> show (pretty dv) <> " not in " <> (List.intercalate ", " $ map (show . pretty) $ M.keys eLets)
+    Nothing -> do
+      bad $ LT.pack $ show eWhich <> " lookup_let " <> show (pretty dv) <> " not in " <> (List.intercalate ", " $ map (show . pretty) $ M.keys eLets)
+      fakeVar dv
 
 store_var :: DLVar -> App () -> App a -> App a
 store_var dv ss m = do
@@ -1564,22 +1571,27 @@ lookup_var dv = do
     Just x -> return $ x
     Nothing -> impossible $ "lookup_var " <> show dv
 
-salloc :: (ScratchSlot -> App a) -> App a
-salloc fm = do
-  Env {..} <- ask
-  let eSP' = eSP - 1
-  when (eSP' == eHP) $ do
-    bad "Too many scratch slots"
-  local (\e -> e {eSP = eSP'}) $
-    fm eSP
-
-salloc_ :: LT.Text -> (App () -> App () -> App a) -> App a
-salloc_ lab fm =
-  salloc $ \loc -> do
-    fm (output $ TStore loc lab) (output $ TLoad loc lab)
-
 sallocVar :: DLVar -> (App () -> App () -> App a) -> App a
-sallocVar dv = salloc_ (textyv dv)
+sallocVar dv fm = do
+  let lab = textyv dv
+  mloc <- M.lookup dv <$> asks eColoring
+  let fakeStore = op "pop"
+  let fakeLoad = fakeVar dv
+  let fake = fm fakeStore fakeLoad
+  case mloc of
+    Nothing -> do
+      bad $ LT.pack $ "no coloring for " <> show dv
+      fake
+    Just loc' -> do
+      case loc' <= 255 of
+        False -> do
+          bad $ LT.pack $ "illegal coloring for " <> show dv <> " " <> show loc'
+          fake
+        True -> do
+          let loc = fromIntegral loc'
+          let store = output $ TStore loc lab
+          let load = output $ TLoad loc lab
+          fm store load
 
 sallocLet :: DLVar -> App () -> App a -> App a
 sallocLet dv cgen km = do
@@ -2833,9 +2845,7 @@ cextractDataOf cd vt = do
 instance CompileK DLStmt where
   cpk km = \case
     DL_Nop _ -> km
-    DL_Let _ DLV_Eff de ->
-      -- XXX this could leave something on the stack
-      cp de >> km
+    DL_Let _ DLV_Eff de -> cp de >> km
     DL_Let _ (DLV_Let vc dv) de -> do
       sm <- exprSmall de
       recordNew <-

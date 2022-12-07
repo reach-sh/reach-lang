@@ -74,16 +74,17 @@ fune n d = env_insert_ eAPIR s d
     CLExtFun {..} = d
 
 funw :: CLVar -> [CLVar] -> SrcLoc -> [DLVarLet] -> Bool -> DLType -> CLExtKind -> Maybe CLVar -> CLTail -> App ()
-funw ni ns at clf_dom clf_view cef_rng cef_kind mret intt = do
+funw ni ns at int_dom clf_view cef_rng cef_kind mret intt = do
   let clf_at = at
   let cif_mwhich = case cef_kind of
                      CE_Publish n -> Just n
                      _ -> Nothing
-  let cif_fun = CLFun { clf_tail = intt, ..}
+  let cif_fun = CLFun { clf_tail = intt, clf_dom = int_dom, ..}
   let di = CLIntFun {..}
-  let domvs = map varLetVar clf_dom
-  let extt = CL_Jump at ni domvs False (Just mret)
-  let cef_fun = CLFun { clf_tail = extt, ..}
+  ext_dom_vs <- mapM freshenVar $ map varLetVar int_dom
+  let extt = CL_Jump at ni ext_dom_vs False (Just mret)
+  let ext_dom = map (DLVarLet (Just DVC_Once)) ext_dom_vs
+  let cef_fun = CLFun { clf_tail = extt, clf_dom = ext_dom, ..}
   let de = CLExtFun {..}
   funi ni di
   -- XXX optimize when one ns?
