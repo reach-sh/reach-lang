@@ -1107,7 +1107,6 @@ data Env = Env
   , eColoring :: Coloring
   , eVars :: M.Map DLVar (App ())
   , eLets :: Lets
-  , eLetSmalls :: M.Map DLVar Bool
   , eResources :: ResourceSets
   , eNewToks :: IORef (S.Set DLArg)
   , eInitToks :: IORef (S.Set DLArg)
@@ -1528,21 +1527,15 @@ freshLabel d = do
   let tr c = if isAlphaNum c then c else '_'
   return $ "l" <> LT.pack (show i) <> "_" <> LT.pack (map tr d)
 
-store_let :: DLVar -> Bool -> App () -> App a -> App a
-store_let dv small cgen m = do
+store_let :: DLVar -> App () -> App a -> App a
+store_let dv cgen m = do
   Env {..} <- ask
   local
     (\e ->
        e
          { eLets = M.insert dv cgen eLets
-         , eLetSmalls = M.insert dv small eLetSmalls
          })
     $ m
-
-letSmall :: DLVar -> App Bool
-letSmall dv = do
-  Env {..} <- ask
-  return $ fromMaybe False (M.lookup dv eLetSmalls)
 
 fakeVar :: DLVar -> App ()
 fakeVar v = do
@@ -1598,18 +1591,15 @@ sallocLet dv cgen km = do
   sallocVar dv $ \cstore cload -> do
     cgen
     cstore
-    store_let dv True cload km
+    store_let dv cload km
 
-sallocVarLet :: DLVarLet -> Bool -> App () -> App a -> App a
-sallocVarLet (DLVarLet mvc dv) sm cgen km = do
-  let once = store_let dv sm cgen km
+sallocVarLet :: DLVarLet -> App () -> App a -> App a
+sallocVarLet (DLVarLet mvc dv) cgen km = do
+  let once = store_let dv cgen km
   case mvc of
     Nothing -> km
     Just DVC_Once -> once
-    Just DVC_Many ->
-      case sm of
-        True -> once
-        False -> sallocLet dv cgen km
+    Just DVC_Many -> sallocLet dv cgen km
 
 ctobs :: DLType -> App ()
 ctobs = \case
@@ -1703,18 +1693,6 @@ instance Compile DLArg where
     DLA_Constant c -> cp $ conCons' c
     DLA_Literal c -> cp c
     DLA_Interact {} -> impossible "consensus interact"
-
-argSmall :: DLArg -> App Bool
-argSmall = \case
-  DLA_Var v -> letSmall v
-  DLA_Constant {} -> return True
-  DLA_Literal {} -> return True
-  DLA_Interact {} -> impossible "consensus interact"
-
-exprSmall :: DLExpr -> App Bool
-exprSmall = \case
-  DLE_Arg _ a -> argSmall a
-  _ -> return False
 
 czpad :: Integer -> App ()
 czpad 0 = return ()
@@ -1917,28 +1895,6 @@ creplace s cnew = do
       output $ TReplace2 (fromIntegral s)
     False -> do
       cp s
-      cnew
-      op "replace3"
-
-cArraySet :: SrcLoc -> DLType -> Maybe (App ()) -> Either Integer (App ()) -> App () -> App ()
-cArraySet _at t mcbig eidx cnew = do
-  --- []
-  case mcbig of
-    Nothing -> return ()
-    Just cbig -> cbig
-  --- [ big ]
-  tsz <- typeSizeOf t
-  case eidx of
-    -- Static index
-    Left ii -> do
-      --- [ big ]
-      creplace (ii * tsz) cnew
-    Right cidx -> do
-      --- [ big ]
-      cidx
-      cp tsz
-      op "*"
-      --- [ big, start ]
       cnew
       op "replace3"
 
@@ -2186,7 +2142,7 @@ instance Compile DLExpr where
       expect_thrown at err
     DLE_PrimOp _ p args -> cprim p args
     DLE_ArrayRef at aa ia -> doArrayRef at aa True (Left ia)
-    DLE_ArraySet at aa ia va -> do
+    DLE_ArraySet _ aa ia va -> do
       let (t, _) = argArrTypeLen aa
       case t of
         T_Bool -> do
@@ -2196,18 +2152,22 @@ instance Compile DLExpr where
           op "setbyte"
         _ -> do
           let cnew = cp va >> ctobs t
-          mcbig <-
-            argSmall aa >>= \case
-              False -> do
-                cp aa
-                return $ Nothing
-              True -> do
-                return $ Just $ cp aa
-          let eidx =
-                case ia of
-                  DLA_Literal (DLL_Int _ UI_Word ii) -> Left ii
-                  _ -> Right $ cp ia
-          cArraySet at t mcbig eidx cnew
+          cp aa
+          --- [ big ]
+          tsz <- typeSizeOf t
+          case ia of
+            -- Static index
+            DLA_Literal (DLL_Int _ UI_Word ii) -> do
+              --- [ big ]
+              creplace (ii * tsz) cnew
+            _ -> do
+              --- [ big ]
+              cp ia
+              cp tsz
+              op "*"
+              --- [ big, start ]
+              cnew
+              op "replace3"
     DLE_ArrayConcat _ x y -> do
       let (xt, xlen) = argArrTypeLen x
       let (_, ylen) = argArrTypeLen y
@@ -2493,7 +2453,7 @@ instance Compile DLExpr where
           -- We know that CLMemorySet will consume it and doesn't do stack
           -- manipulation, so we say that to compile it, you do a nop op, thus
           -- it will be consumed.
-          store_let v True nop $
+          store_let v nop $
             cpk nop $ CLMemorySet at "api" (DLA_Var v)
         L_Event ml en -> do
           let name = maybe en (\l -> bunpack l <> "_" <> en) ml
@@ -2829,7 +2789,7 @@ doSwitch lab ck dv (SwitchCases csm) = do
   cswatchTail "switch" (M.toAscList csm) $ \(vn, SwitchCase {..}) -> do
     l <- freshLabel $ lab <> "_" <> vn
     block l $
-      sallocVarLet sc_vl False (cextractDataOf (cp dv) (typeOf sc_vl)) $
+      sallocVarLet sc_vl (cextractDataOf (cp dv) (typeOf sc_vl)) $
         ck sc_k
 
 cextractDataOf :: App () -> DLType -> App ()
@@ -2847,7 +2807,6 @@ instance CompileK DLStmt where
     DL_Nop _ -> km
     DL_Let _ DLV_Eff de -> cp de >> km
     DL_Let _ (DLV_Let vc dv) de -> do
-      sm <- exprSmall de
       recordNew <-
         case de of
           DLE_TokenNew {} -> do
@@ -2858,7 +2817,7 @@ instance CompileK DLStmt where
             return False
       when recordNew $
         addNewTok $ DLA_Var dv
-      sallocVarLet (DLVarLet (Just vc) dv) sm (cp de) km
+      sallocVarLet (DLVarLet (Just vc) dv) (cp de) km
     DL_ArrayMap at (DLV_Let _ ansv) as xs (DLVarLet _ iv) (DLBlock _ _ body ra) -> do
       anssz <- typeSizeOf $ argTypeOf $ DLA_Var ansv
       let xlen = arraysLength as
@@ -2873,7 +2832,7 @@ instance CompileK DLStmt where
           ctobs rt
           op "concat"
           store_ans
-        store_let ansv True load_ans km
+        store_let ansv load_ans km
     DL_ArrayMap at DLV_Eff as xs (DLVarLet _ iv) (DLBlock _ _ body ra) -> do
       let xlen = arraysLength as
       cfor iv xlen $ \load_idx -> do
@@ -2884,25 +2843,25 @@ instance CompileK DLStmt where
       sallocVar ansv $ \store_ans load_ans -> do
         cp za
         store_ans
-        store_let av True load_ans $ do
+        store_let av load_ans $ do
           cfor iv xlen $ \load_idx -> do
             arrayBody at ra body iv load_idx xs as
             store_ans
-        store_let ansv True load_ans km
+        store_let ansv load_ans km
     DL_ArrayReduce at DLV_Eff as za (DLVarLet _ av) xs (DLVarLet _ iv) (DLBlock _ _ body ra) -> do
       let xlen = arraysLength as
       sallocVar av $ \store_a load_a -> do
         cp za
         store_a
         cfor iv xlen $ \load_idx -> do
-          store_let av True load_a $
+          store_let av load_a $
             arrayBody at ra body iv load_idx xs as
           store_a
       km
     DL_Var _ dv ->
       sallocVar dv $ \cstore cload -> do
         store_var dv cstore $
-          store_let dv True cload $
+          store_let dv cload $
             km
     DL_Set _ dv da -> do
       cstore <- lookup_var dv
@@ -2933,9 +2892,9 @@ instance CompileK DLStmt where
     where
       arrayBody at ra body iv load_idx xs as = do
         let finalK = cpk (cp ra) body
-        let finalK' = store_let iv True load_idx finalK
+        let finalK' = store_let iv load_idx finalK
         let bodyF (vl, a) =
-              sallocVarLet vl False (doArrayRef at a True $ Right load_idx)
+              sallocVarLet vl (doArrayRef at a True $ Right load_idx)
         foldr bodyF finalK' $ zip xs as
 
 instance CompileK DLTail where
@@ -3054,12 +3013,12 @@ bindFromGV gv ensure at vls m = do
         dupn $ howManyDups - 1
       let go = \case
             [] -> m
-            (dv, i) : more -> sallocVarLet dv False cgen $ go more
+            (dv, i) : more -> sallocVarLet dv cgen $ go more
               where
                 which_av = if shouldDup dv then av_dup else av
                 cgen = cp $ DLE_TupleRef at (DLA_Var which_av) i
-      store_let av True (gvLoad gv) $
-        store_let av_dup True (return ()) $
+      store_let av (gvLoad gv) $
+        store_let av_dup (return ()) $
           go $ zip vls [0 ..]
 
 data CompanionCall
@@ -3097,7 +3056,7 @@ callCompanion at cc = do
         Nothing -> go Nothing
         Just _ -> do
           dv <- allocVar at t
-          store_let dv True (gvLoad GV_companion) $
+          store_let dv (gvLoad GV_companion) $
             go $ Just $ DLA_Var dv
     CompanionCreate -> do
       let mpay pc = (cp $ pc * algoMinimumBalance) >> mbrAdd
@@ -3189,7 +3148,7 @@ instance CompileK CLStmt where
               CLS_TxnTime -> return cRound
               CLS_TxnSecs -> return $ code "global" ["LatestTimestamp"]
               CLS_StorageState -> return $ gvLoad GV_currentStep
-          store_let v True c k
+          store_let v c k
     CLTimeCheck _ given -> do
       cp given
       op "dup"
@@ -3346,14 +3305,14 @@ checkArgSize lab at msg = do
 
 bindFromArgs :: [DLVarLet] -> App a -> App a
 bindFromArgs vs m = do
-  let goSingle (v, i) = sallocVarLet v False (code "txna" ["ApplicationArgs", texty i] >> cfrombs (varLetType v))
+  let goSingle (v, i) = sallocVarLet v (code "txna" ["ApplicationArgs", texty i] >> cfrombs (varLetType v))
   let goSingles singles k = foldl' (flip goSingle) k (zip singles [(1 :: Integer) ..])
   case splitArgs vs of
     (vs', Nothing) -> do
       goSingles vs' m
     (vs14, Just vsMore) -> do
       let tupleTy = T_Tuple $ map varLetType vsMore
-      let goTuple (v, i) = sallocVarLet v False
+      let goTuple (v, i) = sallocVarLet v
             (code "txna" ["ApplicationArgs", texty (15 :: Integer)]
              >> cTupleRef tupleTy i)
       goSingles vs14 (foldl' (flip goTuple) m (zip vsMore [(0 :: Integer) ..]))
@@ -3492,7 +3451,7 @@ cp_shell x = do
     let ct_at = sb
     let ct_mtok = Nothing
     let ct_amt = aDMbr
-    store_let vDMbr True nop $
+    store_let vDMbr nop $
       void $ checkTxn $ CheckTxn {..}
   code "b" [ "updateState" ]
   label "updateMbr_eq"
@@ -3511,7 +3470,7 @@ cp_shell x = do
     let mt_mcclose = Nothing
     let mt_next = False
     let mt_submit = True
-    store_let vDMbr True nop $
+    store_let vDMbr nop $
       void $ makeTxn $ MakeTxn {..}
   code "b" ["updateState"]
   label "updateState"
@@ -3608,7 +3567,6 @@ compile_algo disp x = do
   let eColoring = mempty
   let eVars = mempty
   let eLets = mempty
-  let eLetSmalls = mempty
   let eWhich = Nothing
   let recordSize prefix size = do
         modifyIORef eRes $
@@ -3654,7 +3612,7 @@ compile_algo disp x = do
               l <- recordSizeAndKeys lbad "state" stateSize algoMaxGlobalSchemaEntries_usable
               return $ length l
         flip runReaderT (Env {..}) $
-          store_let cr_rv True (gvLoad GV_companion) $
+          store_let cr_rv (gvLoad GV_companion) $
             m
         void $ eGetStateKeys
         ts <- readIORef eOutputR
