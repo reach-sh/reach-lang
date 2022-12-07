@@ -1150,7 +1150,6 @@ data LibFun
   | LF_wasntMeth
   | LF_fromSome
   | LF_getTag
-  | LF_genSym Int
   deriving (Eq, Ord, Show)
 
 libDefns :: App ()
@@ -1181,26 +1180,6 @@ libCall lf impl = do
         return $ lab
       Just (lab, _, _) -> return lab
   code "callsub" [ lab ]
-
-delay :: App () -> App (App ())
-delay m = do
-  nr <- liftIO $ newIORef mempty
-  local (\e -> e { eOutputR = nr }) m
-  nrs <- liftIO $ readIORef nr
-  return $ mapM_ output nrs
-
-libCallGenSym :: App () -> App ()
-libCallGenSym body = do
-  lf <- LF_genSym <$> allocVarIdx
-  fun <- delay body
-  libCall lf fun
-
-mkLocalVar :: Integer -> (App (), App ())
-mkLocalVar i = (cstore, cload)
-  where
-    ni = i
-    cstore = code "frame_bury" [ texty ni ]
-    cload = code "frame_dig" [ texty ni ]
 
 cGetTag :: App ()
 cGetTag = libCall LF_getTag $ do
@@ -2304,8 +2283,7 @@ instance Compile DLExpr where
           cp a
           ctobs vt
           cMapSet
-    DLE_Remote at fs ro rng_ty (DLRemote rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo) -> libCallGenSym $ do
-      code "proto" [ "0", "0" ]
+    DLE_Remote at fs ro rng_ty (DLRemote rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo) -> do
       let DLRemoteALGO {..} = malgo
       warn_lab <- asks eWhich >>= \case
         Just which -> return $ "Step " <> show which
@@ -2323,16 +2301,15 @@ instance Compile DLExpr where
             return b
       -- Figure out what we're calling
       cContractToAddr ro
-      let (_, loadAddr) = mkLocalVar 0
+      gvStore GV_remoteCallee
       cContractAddr
       op "min_balance"
-      let (_, loadMinB) = mkLocalVar 1
+      gvStore GV_remoteMinB
       cbs ""
-      let (storeBals, loadBals) = mkLocalVar 2
       -- XXX We are caching the minimum balance because if we are deleting an
       -- application we made, then our minimum balance will decrease. The
       -- alternative is to track how much exactly it will go down by.
-      let mmin = Just loadMinB
+      let mmin = Just $ gvLoad GV_remoteMinB
       let mtoksBill = Nothing : map Just nnRecv
       let mtoksiAll = zip [0..] mtoksBill
       let (mtoksiBill, mtoksiZero) = splitAt (length mtoksBill) mtoksiAll
@@ -2346,11 +2323,11 @@ instance Compile DLExpr where
                 cp amt
                 op "-"
       cconcatbs $ map (\(i, mtok) -> (T_UInt UI_Word, gb_pre i mtok)) mtoksiAll
-      storeBals
+      gvStore GV_remoteBals
       -- Start the call
       let mt_at = at
       let mt_mcclose = Nothing
-      let mt_mrecv = Just $ Right $ loadAddr
+      let mt_mrecv = Just $ Right $ gvLoad GV_remoteCallee
       let mt_always = ra_strictPay
       hadNet <- (do
         let mt_amt = pay_net
@@ -2437,19 +2414,18 @@ instance Compile DLExpr where
       appl_idx <- liftIO $ readCounter remoteTxns
       let gb_post idx mtok = do
             cGetBalance at mmin mtok
-            loadBals
+            gvLoad GV_remoteBals
             cTupleRef balsT idx
             op "-"
       cconcatbs $ map (\(i, mtok) -> (T_UInt UI_Word, gb_post i mtok)) mtoksiBill
       forM_ mtoksiZero $ \(idx, mtok) -> do
         cGetBalance at mmin mtok
-        loadBals
+        gvLoad GV_remoteBals
         cTupleRef balsT idx
         asserteq
       code "gitxn" [ texty appl_idx, "LastLog" ]
       output $ TExtract 4 0 -- (0 = to the end)
       op "concat"
-      op "retsub"
     DLE_TokenNew at (DLTokenNew {..}) -> do
       block_ "TokenNew" $ do
         cp minimumBalance_l >> mbrAdd
@@ -2991,6 +2967,9 @@ data GlobalVar
   | GV_companion
   | GV_mbrAdd
   | GV_mbrSub
+  | GV_remoteCallee
+  | GV_remoteMinB
+  | GV_remoteBals
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 gvSlot :: GlobalVar -> ScratchSlot
@@ -3016,6 +2995,9 @@ gvType = \case
   GV_apiRet -> T_Null
   GV_mbrAdd -> T_UInt UI_Word
   GV_mbrSub -> T_UInt UI_Word
+  GV_remoteCallee -> T_Address
+  GV_remoteMinB -> T_Tuple []
+  GV_remoteBals -> T_Tuple []
 
 defn_fixed :: Label -> Bool -> App ()
 defn_fixed l b = do
