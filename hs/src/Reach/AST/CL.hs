@@ -2,6 +2,7 @@
 
 module Reach.AST.CL where
 
+import Control.Monad.Reader
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import Reach.AST.Base
@@ -169,12 +170,15 @@ data CLOpts = CLOpts
 instance HasCounter CLOpts where
   getCounter (CLOpts {..}) = clo_counter
 
+type CLState = M.Map Int [DLVar]
+
 data CLProg = CLProg
   { clp_at :: SrcLoc
   , clp_opts :: CLOpts
   , clp_defs :: CLDefs
   , clp_funs :: CLFuns
   , clp_api :: CLAPI
+  , clp_state :: CLState
   }
   deriving (Eq)
 
@@ -183,9 +187,30 @@ instance Pretty CLProg where
     <> "// Definitions:" <> hardline
     <> render_obj clp_defs <> hardline
     <> "// Functions:" <> hardline
-    <> render_obj clp_funs
+    <> render_obj clp_funs <> hardline
     <> "// API:" <> hardline
-    <> render_obj clp_api
+    <> render_obj clp_api <> hardline
+    <> "// State:" <> hardline
+    <> render_obj clp_state <> hardline
 
 instance HasCounter CLProg where
   getCounter = getCounter . clp_opts
+
+-- HasFunVars
+type FunVars = M.Map CLVar [DLVarLet]
+
+class HasFunVars a where
+  getFunVars :: a -> FunVars
+
+instance HasFunVars CLProg where
+  getFunVars (CLProg {..}) = M.map go clp_funs
+    where
+      go (CLIntFun {..}) = go' cif_fun
+      go' (CLFun {..}) = clf_dom
+
+askFunVars :: (HasFunVars e, Monad m) => CLVar -> ReaderT e m [DLVarLet]
+askFunVars f = do
+  m <- asks getFunVars
+  case M.lookup f m of
+    Just x -> return x
+    Nothing -> impossible $ "lookupFunVars: not in map " <> show f

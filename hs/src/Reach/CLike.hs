@@ -25,6 +25,7 @@ data Env = Env
   { eDefsR :: IORef CLDefs
   , eFunsR :: IORef CLFuns
   , eAPIR :: IORef CLAPI
+  , eStateR :: IORef CLState
   , eCounter :: Counter
   }
 
@@ -47,6 +48,18 @@ nameApi :: CLVar -> CLVar
 nameApi = nameBase "a"
 nameReturn :: CLVar -> CLVar
 nameReturn = nameBase "r"
+
+recordState :: Int -> [DLVar] -> TApp ()
+recordState which svs = do
+  sr <- asks tStateR
+  liftIO $ modifyIORef sr $ \m ->
+    case M.lookup which m of
+      Just svs' ->
+        case svs == svs' of
+          True -> m
+          False -> impossible $ "recordState: mismatch " <> show which <> " " <> show svs <> " vs " <> show svs'
+      Nothing ->
+        M.insert which svs m
 
 env_insert :: (Show k, Ord k) => k -> v -> M.Map k v -> M.Map k v
 env_insert k v m =
@@ -342,6 +355,7 @@ type TApp = ReaderT TEnv IO
 
 data TEnv = TEnv
   { tCounter :: Counter
+  , tStateR :: IORef CLState
   }
 
 instance HasCounter TEnv where
@@ -370,6 +384,7 @@ instance CLikeTr CTail CLTail where
         FI_Continue svs -> do
           -- XXX change to StoreSet
           -- XXX expose saving of time
+          recordState which $ map fst svs
           return $ CL_Com (CLStateSet at which svs) (ht HM_Impure)
         FI_Halt toks -> do
           let ht' = ht HM_Forever
@@ -403,7 +418,8 @@ instance CLike CHX where
     let clf_dom = [ v2vl act_var ]
     let act_arg = DLA_Var act_var
     tCounter <- asks getCounter
-    let addArg (v, i) = CL_Com $ CLDL $ DL_Let ch_at (DLV_Let DVC_Many v) (DLE_TupleRef ch_at act_arg i)
+    tStateR <- asks eStateR
+    let addArg (v, i) = CL_Com $ CLDL $ DL_Let ch_at (v2lv v) (DLE_TupleRef ch_at act_arg i)
     let addArgs = flip (foldr addArg) $ zip msg_vars [0..]
     body' <- tr_ (TEnv {..}) ch_body
     let isCtor = which == 0
@@ -432,6 +448,7 @@ instance CLike CHX where
     let n = nameLoop which
     let clf_dom = cl_svs <> cl_vars
     tCounter <- asks getCounter
+    tStateR <- asks eStateR
     clf_tail <- tr_ (TEnv {..}) cl_body
     let clf_view = False
     let cif_mwhich = Nothing
@@ -450,6 +467,7 @@ clike = plp_cpp_mod $ \CPProg {..} -> do
   eDefsR <- newIORef mempty
   eFunsR <- newIORef mempty
   eAPIR <- newIORef mempty
+  eStateR <- newIORef mempty
   let eCounter = getCounter clp_opts
   flip runReaderT (Env {..}) $ do
     -- XXX creation time
@@ -462,6 +480,7 @@ clike = plp_cpp_mod $ \CPProg {..} -> do
   clp_defs <- readIORef eDefsR
   clp_funs <- readIORef eFunsR
   clp_api <- readIORef eAPIR
+  clp_state <- readIORef eStateR
   -- We created new references to some variables, so we need to correct the
   -- counts
   add_counts $ CLProg {..}
