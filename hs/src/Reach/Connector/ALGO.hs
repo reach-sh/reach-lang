@@ -2299,6 +2299,9 @@ instance Compile DLExpr where
             when b $
               void $ liftIO $ incCounter remoteTxns
             return b
+      -- XXX It would be nice to remove the use of GV_remote* by looking at the
+      -- stack
+      --
       -- Figure out what we're calling
       cContractToAddr ro
       gvStore GV_remoteCallee
