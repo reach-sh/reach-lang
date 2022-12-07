@@ -2,9 +2,11 @@ module Reach.InterferenceGraph
   ( clig
   , IGg (..)
   , IGd (..)
+  , Coloring
   , igVars
   , colorEasy
-  , colorHard
+  , colorHardLim
+  , colorHardNoLim
   ) where
 
 import Control.Monad
@@ -470,7 +472,7 @@ instance GetFunVars CLProg where
 
 -- Coloring
 type Coloring = M.Map DLVar Int
-type ColoringR = Either String Coloring
+type ColoringR = Either String (Int, Coloring)
 
 -- This function makes the observation that if the number of variables is less
 -- than the number of registers, there's no need to do any work... each
@@ -484,20 +486,24 @@ colorEasy i s maxColor = do
   let act = S.size s
   case act <= maxColor of
     True ->
-      return $ Right $ M.fromList $ zip (S.toAscList s) [0..]
+      return $ Right $ (,) act $ M.fromList $ zip (S.toAscList s) [0..]
     False -> do
-      colorSat i s $ take maxColor [0..]
+      colorHardLim i s maxColor
 
-colorHard :: IGg -> DLVarS -> IO ColoringR
-colorHard i s = colorSat i s [0..]
+colorHardLim :: IGg -> DLVarS -> Int -> IO ColoringR
+colorHardLim i s maxColor =
+  colorSat i s $ take maxColor [0..]
+
+colorHardNoLim :: IGg -> DLVarS -> IO ColoringR
+colorHardNoLim i s = colorSat i s [0..]
 
 type SatS = S.Set Int
 colorSat :: IGg -> DLVarS -> [Int] -> IO ColoringR
 colorSat (IGg {..}) s all_cs = do
+  maxc <- newIORef 0
   asnr <- newIORef mempty
   w <- newIORef $ S.toAscList s
-  let consult_asn cv =
-        (maybeToList . M.lookup cv) <$> readIORef asnr
+  let consult_asn cv = (maybeToList . M.lookup cv) <$> readIORef asnr
   let neighbors_colors :: Graph -> DLVar -> IO SatS
       neighbors_colors g v = do
         let ns = S.toList $ S.intersection s $ gRef g v
@@ -521,9 +527,12 @@ colorSat (IGg {..}) s all_cs = do
         c0 : cols ->
           case S.member c0 sv of
             True -> tryToAssign sk v sv cols
-            False -> modifyIORef asnr (M.insert v c0) >> sk
+            False -> do
+              modifyIORef maxc $ max c0
+              modifyIORef asnr $ M.insert v c0
+              sk
   let color_loop sk = extractMaxSat sk $ \sk' v sv -> do
         vs_move_ns_cs <- S.toList <$> neighbors_colors igMove v
         tryToAssign (color_loop sk') v sv $
           vs_move_ns_cs <> all_cs
-  color_loop $ (Right <$> readIORef asnr)
+  color_loop $ (Right <$> ((,) <$> readIORef maxc <*> readIORef asnr))
