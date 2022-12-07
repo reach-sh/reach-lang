@@ -1102,9 +1102,7 @@ data Env = Env
   , eWhich :: Maybe Int
   , eLabel :: Counter
   , eOutputR :: IORef TEALs
-  , eHP :: ScratchSlot
-  , eSP :: ScratchSlot
-  , eColoring :: Coloring
+  , eColoring :: M.Map DLVar ScratchSlot
   , eVars :: M.Map DLVar (App ())
   , eLets :: Lets
   , eResources :: ResourceSets
@@ -1116,7 +1114,11 @@ data Env = Env
   , eGetStateKeys :: IO Int
   , eABI :: IORef (M.Map String ABInfo)
   , eRes :: IORef (M.Map T.Text AS.Value)
+  , eFunVars :: FunVars
   }
+
+instance HasFunVars Env where
+  getFunVars = eFunVars
 
 data ABInfo = ABInfo
   { abiPure :: Bool
@@ -1564,27 +1566,55 @@ lookup_var dv = do
     Just x -> return $ x
     Nothing -> impossible $ "lookup_var " <> show dv
 
+lookupVarColoring :: DLVar -> App (Maybe ScratchSlot)
+lookupVarColoring dv = maybeLoc dv >>= \case
+  Nothing -> do
+    bad $ LT.pack $ "no coloring for " <> show dv
+    return Nothing
+  Just l -> return $ Just l
+
+class MaybeLoc a where
+  maybeLoc :: a -> App (Maybe ScratchSlot)
+
+instance MaybeLoc DLVar where
+  maybeLoc y = M.lookup y <$> asks eColoring
+
+instance MaybeLoc DLArg where
+  maybeLoc = \case
+    DLA_Var v -> maybeLoc v
+    _ -> return $ Nothing
+
+cmove :: (Show a, MaybeLoc a, Compile a) => DLVar -> a -> App ()
+cmove x y = do
+  lookupVarColoring x >>= \case
+    Nothing -> bad $ LT.pack $ "could not move " <> show y <> " into " <> show x
+    Just xl -> do
+      myl <- maybeLoc y
+      case myl of
+        Just yl | xl == yl -> return ()
+        _ -> do
+          cp y
+          output $ TStore xl $ texty x
+
 sallocVar :: DLVar -> (App () -> App () -> App a) -> App a
 sallocVar dv fm = do
   let lab = textyv dv
-  mloc <- M.lookup dv <$> asks eColoring
   let fakeStore = op "pop"
   let fakeLoad = fakeVar dv
   let fake = fm fakeStore fakeLoad
+  mloc <- lookupVarColoring dv
   case mloc of
     Nothing -> do
-      bad $ LT.pack $ "no coloring for " <> show dv
       fake
-    Just loc' -> do
-      case loc' <= 255 of
-        False -> do
-          bad $ LT.pack $ "illegal coloring for " <> show dv <> " " <> show loc'
-          fake
-        True -> do
-          let loc = fromIntegral loc'
-          let store = output $ TStore loc lab
-          let load = output $ TLoad loc lab
-          fm store load
+    Just loc -> do
+      let store = output $ TStore loc lab
+      let load = output $ TLoad loc lab
+      fm store load
+
+sallocLetNoStore :: DLVar -> App a -> App a
+sallocLetNoStore dv km = do
+  sallocVar dv $ \_ cload -> do
+    store_let dv cload km
 
 sallocLet :: DLVar -> App () -> App a -> App a
 sallocLet dv cgen km = do
@@ -1592,6 +1622,14 @@ sallocLet dv cgen km = do
     cgen
     cstore
     store_let dv cload km
+
+sallocLetMay :: DLVar -> App () -> App a -> App a
+sallocLetMay dv cgen km =
+  maybeLoc dv >>= \case
+    Nothing ->
+      store_let dv cgen km
+    Just _ ->
+      sallocLet dv cgen km
 
 sallocVarLet :: DLVarLet -> App () -> App a -> App a
 sallocVarLet (DLVarLet mvc dv) cgen km = do
@@ -3140,15 +3178,14 @@ instance CompileK CLStmt where
       case lv of
         DLV_Eff -> k
         DLV_Let _ v -> do
-          c <-
-            case sp of
-              CLS_TxnFrom -> do
-                freeResource R_Account $ (0, DLA_Var v)
-                return $ code "txn" ["Sender"]
-              CLS_TxnTime -> return cRound
-              CLS_TxnSecs -> return $ code "global" ["LatestTimestamp"]
-              CLS_StorageState -> return $ gvLoad GV_currentStep
-          store_let v c k
+          let c = case sp of
+                CLS_TxnFrom -> do
+                  freeResource R_Account $ (0, DLA_Var v)
+                  code "txn" ["Sender"]
+                CLS_TxnTime -> cRound
+                CLS_TxnSecs -> code "global" ["LatestTimestamp"]
+                CLS_StorageState -> gvLoad GV_currentStep
+          sallocLetMay v c k
     CLTimeCheck _ given -> do
       cp given
       op "dup"
@@ -3197,6 +3234,7 @@ instance CompileK CLStmt where
             (_, _) -> checkFrom x >> checkFrom y
       k
     CLStateSet at which svs -> do
+      mapM_ (uncurry cmove) svs
       cSvsSave at $ map snd svs
       cp which
       gvStore GV_currentStep
@@ -3236,9 +3274,17 @@ instance Compile CLTail where
     CL_Switch _ dv csm ->
       doSwitch "Switch" nct dv csm
     CL_Jump _at f args isApi _mmret -> do
+      vs <- map varLetVar <$> askFunVars f
       case isApi of
-        True -> cp $ DLLA_Tuple $ map DLA_Var args
-        False -> mapM_ cp args
+        True ->
+          case vs of
+            [v] -> do
+              cp $ DLLA_Tuple $ map DLA_Var args
+              lookupVarColoring v >>= \case
+                Nothing -> op "pop"
+                Just vl -> output $ TStore vl $ texty v
+            _ -> impossible $ "ALGO: CL_Jump w/ isAPI and more than 1 vs"
+        False -> zipWithM_ cmove vs args
       code "b" [ LT.pack $ bunpack f]
     CL_Halt at ht ->
       case ht of
@@ -3280,18 +3326,12 @@ instance Compile CLIX where
   cp (CLIX n (CLIntFun {..})) = do
     let CLFun {..} = cif_fun
     let lab = LT.pack $ bunpack n
-    block_ lab $ do
-      label lab
-      bindFromStack clf_dom $
+    block lab $
+      bindFromMove (map varLetVar clf_dom) $
         cp $ CLFX lab cif_mwhich cif_fun
 
-bindFromStack :: [DLVarLet] -> App a -> App a
-bindFromStack vsl m = do
-  -- STACK: [ ...vs ] TOP on right
-  let go m' v = sallocLet v (return ()) m'
-  -- The 'l' is important here because it means we're nesting the computation
-  -- from the left, so the bindings match the (reverse) push order
-  foldl' go m $ map varLetVar vsl
+bindFromMove :: [DLVar] -> App a -> App a
+bindFromMove vs m = foldr sallocLetNoStore m vs
 
 checkArgSize :: String -> SrcLoc -> [DLVarLet] -> App ()
 checkArgSize lab at msg = do
@@ -3386,7 +3426,11 @@ instance (Compile a) => Compile (IGd a) where
     case y of
       Left m -> impossible $ "Could not allocate variables to registers using scratch space; we could hack the planet and get more registers by using frame variables: " <> m
       Right (_mc, c) -> do
-        let c' = M.map ((+) maxUsedSlot) c
+        c' <- forWithKeyM c $ \v l -> do
+          let l' = l + maxUsedSlot
+          unless (l' <= 255) $ do
+            bad $ LT.pack $ "illegal coloring for " <> show v <> " " <> show l
+          return $ fromIntegral l'
         local (\e -> e { eColoring = c' }) $
           cp x
 
@@ -3517,7 +3561,7 @@ cp_shell x = do
   -- Library functions
   libDefns
 
-compile_algo :: (HasCounter a, Compile a) => Outputer -> a -> IO ConnectorInfo
+compile_algo :: (HasFunVars a, HasCounter a, Compile a) => Outputer -> a -> IO ConnectorInfo
 compile_algo disp x = do
   -- This is the final result
   eRes <- newIORef mempty
@@ -3563,7 +3607,6 @@ compile_algo disp x = do
   -- We start doing real work
   (gFailuresR, gbad) <- newErrorSetRef
   (gWarningsR, _gwarn) <- newErrorSetRef
-  let eSP = 255
   let eColoring = mempty
   let eVars = mempty
   let eLets = mempty
@@ -3584,13 +3627,9 @@ compile_algo disp x = do
   eProgLs <- newIORef mempty
   eApiLs <- newIORef mempty
   eMaxApiRetSize <- newIORef 0
+  let eFunVars = getFunVars x
   let run :: CompanionInfo -> App () -> IO (TEALs, Notify, IO ())
       run eCompanion m = do
-        let eHP_ = fromIntegral $ fromEnum (maxBound :: GlobalVar)
-        let eHP =
-              case eCompanion of
-                Nothing -> eHP_ - 1
-                Just _ -> eHP_
         eCounter <- dupeCounter $ getCounter x
         eStateSizeR <- newIORef 0
         eLabel <- newCounter 0

@@ -17,14 +17,15 @@ import Data.IORef
 import Data.List ((\\))
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Monoid
 import Data.Ord
 import qualified Data.Set as S
 import Reach.AST.DLBase
 import Reach.AST.CL
 import Reach.CollectCounts
 import Reach.Dotty
+import Reach.FixedPoint
 import Reach.Texty
-import Reach.Util
 
 -- Types and interface
 type DLVarS = S.Set DLVar
@@ -89,6 +90,9 @@ instance Pretty IGg where
 
 data IGd a = IGd a IGg
 
+instance (HasFunVars a) => HasFunVars (IGd a) where
+  getFunVars (IGd x _) = getFunVars x
+
 instance (HasCounter a) => HasCounter (IGd a) where
   getCounter (IGd x _) = getCounter x
 
@@ -99,13 +103,17 @@ instance (Pretty a) => Pretty (IGd a) where
     <> "// Intereference Graph" <> hardline
     <> pretty y
 
-class GetFunVars a where
-  getFunVars :: a -> FunVars
+class HasState a where
+  getState :: a -> CLState
 
-clig :: (GetFunVars a, IG a) => a -> IO (IGd a)
+instance HasState CLProg where
+  getState = clp_state
+
+clig :: (HasState a, HasFunVars a, IG a) => a -> IO (IGd a)
 clig x = do
   eIG <- newIORef mempty
   let eFunVars = getFunVars x
+  let eState = getState x
   let eSpecials = mempty
   let eOnces = mempty
   flip runReaderT (Env {..}) $ void $ ig (return mempty) x
@@ -117,12 +125,16 @@ clig x = do
 data Env = Env
   { eIG :: IORef IGg
   , eFunVars :: FunVars
+  , eState :: CLState
   , eSpecials :: DLVarS
   , eOnces :: M.Map DLVar DLVarS
   }
 
+instance HasFunVars Env where
+  getFunVars = eFunVars
+
 class AddSpecial a where
-  addSpecial :: a -> App m -> App m
+  addSpecial :: a -> App DLVarS -> App DLVarS
 
 class Intf a where
   intf :: DLVar -> a -> App ()
@@ -254,16 +266,7 @@ inter2 x y = modIG $ \g -> g { igInter = gIns2 x y (igInter g) }
 move2 :: DLVar -> DLVar -> App ()
 move2 x y = modIG $ \g -> g { igMove = gIns2 x y (igMove g) }
 
-lookupFunVars :: CLVar -> App [DLVarLet]
-lookupFunVars f = do
-  m <- asks eFunVars
-  case M.lookup f m of
-    Just x -> return x
-    Nothing -> impossible $ "lookupFunVars: not in map " <> show f
-
 type App = ReaderT Env IO
-
-type FunVars = M.Map CLVar [DLVarLet]
 
 instance Intf DLVar where
   intf = inter2
@@ -305,13 +308,15 @@ rm :: DLVar -> DLVarS -> DLVarS
 rm = S.delete
 
 viaCount :: Countable a => App DLVarS -> a -> App DLVarS
-viaCount lsm x = do
-  ls <- lsm
-  let xsS = countsS x
-  eOnces' <- flip M.restrictKeys xsS <$> asks eOnces
-  let xtra = mconcat $ M.elems eOnces'
-  let xsS' = S.union xtra $ S.difference xsS $ M.keysSet eOnces'
-  return $ S.union ls xsS'
+viaCount lsm x = S.union (countsS x) <$> lsm
+
+closeOnces :: DLVarS -> App DLVarS
+closeOnces xs = do
+  o <- asks eOnces
+  xs' <- liftIO $ fixedPoint_ xs $ \_ xs0 -> do
+    let xtra = mconcat $ M.elems $ M.restrictKeys o xs0
+    return $ xs0 <> xtra
+  return $ S.difference xs' $ M.keysSet o
 
 data IGseq a b = IGseq a b
 instance (IG a, IG b) => IG (IGseq a b) where
@@ -338,20 +343,32 @@ instance IGdef DLVarLet where
 instance IGdef DLLetVar where
   igDef lsm uses = \case
     DLV_Eff -> S.union uses <$> lsm
-    DLV_Let vc v -> do
+    DLV_Let vc v -> rm v <$> do
       Env {..} <- ask
-      let ignored = S.union (M.keysSet eOnces) eSpecials
+      uses' <- closeOnces uses
+      let ignored = eSpecials
+      let dbg_ :: [(String, DLVarS)] -> App ()
+          dbg_ l = liftIO $ do
+            putStrLn $ "igDef " <> show v
+            forM_ l $ \(x, s) -> do
+              putStrLn $ "  " <> x <> ": " <> show s
+      let dbg :: [(String, DLVarS)] -> App ()
+          dbg = dbg_ . (<>) [("ignored", ignored), ("uses", uses), ("uses'", uses)]
       case vc of
-        DVC_Once -> do
-          let uses' = S.difference uses ignored
-          ls <- local (\e -> e { eOnces = M.insert v uses' eOnces }) lsm
-          return $ rm v ls
+        DVC_Once -> local (\e -> e { eOnces = M.insert v uses' eOnces }) $ do
+          ls <- lsm
+          ls' <- closeOnces ls
+          dbg [("ls", ls), ("ls'", ls')]
+          return ls'
         DVC_Many -> do
           ls <- lsm
-          addv v
-          liftIO $ putStrLn $ show v <> " " <> show ls <> " " <> show ignored <> " " <> show uses
-          intf v $ S.difference (ls <> uses) ignored
-          return $ rm v ls
+          ls' <- closeOnces ls
+          unless (S.member v ignored) $ do
+            addv v
+            let int = S.difference (ls' <> uses') ignored
+            intf v int
+            dbg [("ls", ls), ("ls'", ls'), ("int", int)]
+          return ls'
 
 viaDef :: (IGdef a) => App DLVarS -> a -> App DLVarS
 viaDef ls x = igDef ls mempty x
@@ -407,15 +424,36 @@ instance IG DLBlock where
 instance AddSpecial DLLetVar where
   addSpecial = \case
     DLV_Eff -> id
-    DLV_Let _ v -> local (\e -> e { eSpecials = S.insert v $ eSpecials e })
+    DLV_Let _ v -> \m ->
+      S.delete v <$> local (\e -> e { eSpecials = S.insert v $ eSpecials e }) m
 
 washVars :: [DLVarLet] -> [DLVarLet]
 washVars = map (v2vl . varLetVar)
 
+class IsInState a where
+  isInState_ :: DLVar -> a -> Bool
+
+instance IsInState DLVar where
+  isInState_ = (==)
+
+instance IsInState Env where
+  isInState_ v = isInState_ v . eState
+
+instance (Foldable f, IsInState a) => IsInState (f a) where
+  isInState_ v = getAny . foldMap (Any . isInState_ v)
+
+isInState :: (MoveVar a, IsInState b) => a -> b -> Bool
+isInState x y =
+  case mVar x of
+    Nothing -> False
+    Just v -> isInState_ v y
+
 instance IG CLStmt where
   ig ls = \case
     CLDL m -> ig ls m
-    CLBindSpecial _ lv _s -> addSpecial lv $ ig ls lv
+    CLBindSpecial _ lv _s -> asks (isInState lv) >>= \case
+      True -> ig ls lv
+      False -> addSpecial lv $ ls
     CLTimeCheck _ x -> ig ls x
     CLEmitPublish _ _ vs -> ig ls (Seq vs)
     CLStateBind _ _ vs _ ->
@@ -439,9 +477,9 @@ instance IG CLTail where
     CL_If _ a t f -> igIf ls a t f
     CL_Switch _ v csm -> igSwitch ls v csm
     CL_Jump _ f as _ _ -> do
-      vs <- lookupFunVars f
+      vs <- askFunVars f
       zipWithM_ move vs as
-      ig ls (Seq as)
+      ig ls (Seq $ map varLetVar vs <> as)
     CL_Halt {} -> ls
 
 instance IG a => IG (SwitchCaseUse a) where
@@ -485,12 +523,6 @@ instance (IG a, Traversable t) => IG (Par (t a)) where
 
 instance IG CLProg where
   ig ls (CLProg {..}) = ig ls (IGseq (Par clp_funs) (Par clp_api))
-
-instance GetFunVars CLProg where
-  getFunVars (CLProg {..}) = M.map go clp_funs
-    where
-      go (CLIntFun {..}) = go' cif_fun
-      go' (CLFun {..}) = clf_dom
 
 -- Coloring
 type Coloring = M.Map DLVar Int

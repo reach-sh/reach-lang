@@ -463,7 +463,7 @@ instance AC CLTail where
       return $ CL_If at c t' f'
     CL_Switch at v csm -> doSwitch CL_Switch at v csm
     CL_Jump at f vs isApi mmret -> do
-      ac_visit $ vs
+      ac_visit vs
       return $ CL_Jump at f vs isApi mmret
     CL_Halt at hm -> return $ CL_Halt at hm
 
@@ -480,7 +480,7 @@ instance AC CLExtFun where
   ac (CLExtFun {..}) = CLExtFun cef_rng cef_kind <$> ac cef_fun
 
 instance AC CLProg where
-  ac (CLProg {..}) = CLProg clp_at clp_opts clp_defs <$> ac clp_funs <*> ac clp_api
+  ac (CLProg {..}) = CLProg clp_at clp_opts clp_defs <$> ac clp_funs <*> ac clp_api <*> pure clp_state
 
 add_counts' :: AC b => Bool -> b -> IO b
 add_counts' e_sim x = do
