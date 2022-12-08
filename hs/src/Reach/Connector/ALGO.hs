@@ -79,9 +79,6 @@ type Notify = Bool -> NotifyF
 
 -- General tools that could be elsewhere
 
-count :: (a -> Bool) -> [a] -> Int
-count f l = length $ filter f l
-
 -- Our control-flow graphs have the following structure:
 --
 -- x ---det---> y
@@ -2080,51 +2077,53 @@ computeStateSizeAndKeys badx prefix size limit = do
   let keysl = take (fromIntegral keys) [0 ..]
   return (keys, keysl)
 
-cSvsLoad :: Integer -> App ()
-cSvsLoad size = do
-  (_, keysl) <- computeStateSizeAndKeys bad "svs" size algoMaxGlobalSchemaEntries_usable
-  unless (null keysl) $ do
-    -- [ SvsData_0? ]
-    forM_ (zip keysl $ False : repeat True) $ \(mi, doConcat) -> do
-      -- [ SvsData_N? ]
-      cp $ keyVary mi
-      -- [ SvsData_N?, Key ]
-      op "app_global_get"
-      -- [ SvsData_N?, NewPiece ]
-      case doConcat of
-        True -> op "concat"
-        False -> nop
-      -- [ SvsData_N+1 ]
-      return ()
-    -- [ SvsData_k ]
-    gvStore GV_svs
+cSvsGet :: [Word8] -> App ()
+cSvsGet keysl = do
+  -- [ SvsData_0? ]
+  forM_ (zip keysl $ False : repeat True) $ \(mi, doConcat) -> do
+    -- [ SvsData_N? ]
+    cp $ keyVary mi
+    -- [ SvsData_N?, Key ]
+    op "app_global_get"
+    -- [ SvsData_N?, NewPiece ]
+    case doConcat of
+      True -> op "concat"
+      False -> nop
+    -- [ SvsData_N+1 ]
+    return ()
+  -- [ SvsData_k ]
+  return ()
 
-cSvsSave :: SrcLoc -> [DLArg] -> App ()
-cSvsSave _at svs = do
-  let la = DLLA_Tuple svs
-  let lat = largeArgTypeOf la
-  size <- typeSizeOf lat
-  cp la
-  ctobs lat
-  (_, keysl) <- computeStateSizeAndKeys bad "svs" size algoMaxGlobalSchemaEntries_usable
-  ssr <- asks eStateSizeR
-  liftIO $ modifyIORef ssr $ max size
+labelLast :: [a] -> [(a, Bool)]
+labelLast l = reverse $
+  case reverse l of
+    x : xs -> (x, True) : map (flip (,) False) xs
+    _ -> []
+
+cSvsPut :: Integer -> [Word8] -> App ()
+cSvsPut size keysl = do
   -- [ SvsData ]
-  forM_ keysl $ \vi -> do
+  forM_ (labelLast $ keysl) $ \(vi, isLast) -> do
     -- [ SvsData ]
     cp $ keyVary vi
     -- [ SvsData, Key ]
-    code "dig" ["1"]
-    -- [ SvsData, Key, SvsData ]
-    cStateSlice size vi
-    -- [ SvsData, Key, ViewData' ]
-    op "app_global_put"
-    -- [ SvsData ]
-    return ()
-  -- [ SvsData ]
-  op "pop"
-  -- [ ]
-  return ()
+    case isLast of
+      False -> do
+        code "dig" ["1"]
+        -- [ SvsData, Key, SvsData ]
+        cStateSlice size vi
+        -- [ SvsData, Key, ViewData' ]
+        op "app_global_put"
+        -- [ SvsData ]
+        return ()
+      True -> do
+        op "swap"
+        -- [ Key, SvsData ]
+        cStateSlice size vi
+        -- [ Key, ViewData' ]
+        op "app_global_put"
+        -- [ ]
+        return ()
 
 cGetBalance :: SrcLoc -> Maybe (App ()) -> Maybe DLArg -> App ()
 cGetBalance _at mmin = \case
@@ -3021,44 +3020,6 @@ cRound = code "global" ["Round"]
 apiLabel :: SLPart -> Label
 apiLabel w = "api_" <> (LT.pack $ bunpack w)
 
-bindFromSvs :: SrcLoc -> [DLVarLet] -> App a -> App a
-bindFromSvs at svs m = do
-  sz <- typeSizeOf $ T_Tuple $ map varLetType svs
-  let ensure = cSvsLoad $ sz
-  bindFromGV GV_svs ensure at svs m
-
-bindFromGV :: GlobalVar -> App () -> SrcLoc -> [DLVarLet] -> App a -> App a
-bindFromGV gv ensure at vls m = do
-  let notNothing = \case
-        DLVarLet (Just _) _ -> True
-        _ -> False
-  case any notNothing vls of
-    False -> m
-    True -> do
-      av <- allocVar at $ T_Tuple $ map varLetType vls
-      av_dup <- allocVar at $ T_Tuple $ map varLetType vls
-      ensure
-      -- This relies on knowing what sallocVarLet will do
-      let shouldDup (DLVarLet mvc _) =
-            case mvc of
-              Nothing -> False
-              Just DVC_Once -> False
-              Just DVC_Many -> True
-      let howManyDups = count shouldDup vls
-      when (howManyDups > 0) $ do
-        gvLoad gv
-        -- we just did the load, that's one
-        dupn $ howManyDups - 1
-      let go = \case
-            [] -> m
-            (dv, i) : more -> sallocVarLet dv cgen $ go more
-              where
-                which_av = if shouldDup dv then av_dup else av
-                cgen = cp $ DLE_TupleRef at (DLA_Var which_av) i
-      store_let av (gvLoad gv) $
-        store_let av_dup (return ()) $
-          go $ zip vls [0 ..]
-
 data CompanionCall
   = CompanionCreate
   | CompanionLabel Bool Label
@@ -3199,12 +3160,13 @@ instance CompileK CLStmt where
       k
     CLEmitPublish _ which vars -> do
       clogEvent ("_reach_e" <> show which) vars >> k
-    CLStateBind at isSafe svs_vl prev -> do
+    CLStateBind _at isSafe _svs_vl prev -> do
       unless isSafe $ do
         cp prev
         gvLoad GV_currentStep
         asserteq
-      bindFromSvs at svs_vl k
+      -- We rely on the state to already be decoded and loaded
+      k
     CLIntervalCheck _ timev secsv (CBetween ifrom ito) -> do
       let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
           checkTime1 cmp clhs rhsa = do
@@ -3233,9 +3195,8 @@ instance CompileK CLStmt where
             (Right xx, Right yy) -> checkBoth secsv xx yy
             (_, _) -> checkFrom x >> checkFrom y
       k
-    CLStateSet at which svs -> do
+    CLStateSet _at which svs -> do
       mapM_ (uncurry cmove) svs
-      cSvsSave at $ map snd svs
       cp which
       gvStore GV_currentStep
       cRound
@@ -3416,26 +3377,26 @@ instance Compile CLProg where
     let pubLs = mapMaybe pub_go $ M.elems sig_api
     liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs
 
-instance (Compile a) => Compile (IGd a) where
-  cp (IGd x g) = do
-    let vs = igVars g
-    let maxSlot = 255
-    let maxUsedSlot = fromEnum (maxBound :: GlobalVar)
-    let maxAvailSlot = maxSlot - maxUsedSlot
-    y <- liftIO $ colorHardLim g vs maxAvailSlot
-    case y of
-      Left m -> impossible $ "Could not allocate variables to registers using scratch space; we could hack the planet and get more registers by using frame variables: " <> m
-      Right (_mc, c) -> do
-        c' <- forWithKeyM c $ \v l -> do
-          let l' = l + maxUsedSlot
-          unless (l' <= 255) $ do
-            bad $ LT.pack $ "illegal coloring for " <> show v <> " " <> show l
-          return $ fromIntegral l'
-        local (\e -> e { eColoring = c' }) $
-          cp x
+cp_shellColor :: (Compile a, HasStateMap a) => IGd a -> App ()
+cp_shellColor (IGd x g) = do
+  let vs = igVars g
+  let maxSlot = 255
+  let maxUsedSlot = fromEnum (maxBound :: GlobalVar)
+  let maxAvailSlot = maxSlot - maxUsedSlot
+  y <- liftIO $ colorHardLim g vs maxAvailSlot
+  case y of
+    Left m -> impossible $ "Could not allocate variables to registers using scratch space; we could hack the planet and get more registers by using frame variables: " <> m
+    Right (_mc, c) -> do
+      c' <- forWithKeyM c $ \v l -> do
+        let l' = l + maxUsedSlot
+        unless (l' <= 255) $ do
+          bad $ LT.pack $ "illegal coloring for " <> show v <> " " <> show l
+        return $ fromIntegral l'
+      local (\e -> e { eColoring = c' }) $
+        cp_shell x
 
 -- General Shell
-cp_shell :: (Compile a) => a -> App ()
+cp_shell :: (Compile a, HasStateMap a) => a -> App ()
 cp_shell x = do
   Env {..} <- ask
   let mGV_companion =
@@ -3449,15 +3410,37 @@ cp_shell x = do
   useResource R_Txn
   code "txn" ["ApplicationID"]
   code "bz" ["alloc"]
+  -- Load the global state
   cp keyState
   op "app_global_get"
-  let nats = [0 ..]
-  let shouldDups = reverse $ zipWith (\_ i -> i /= 0) keyState_gvs nats
-  forM_ (zip (zip keyState_gvs shouldDups) nats) $ \((gv, shouldDup), i) -> do
-    when shouldDup $ op "dup"
+  forM_ (labelLast $ zip keyState_gvs [0..]) $ \((gv, i), isLast) -> do
+    unless isLast $ op "dup"
     cTupleRef keyState_ty i
     gvStore gv
-  cp x
+  -- Load the saved state
+  let stMap = getStateMap x
+  let stAllVars = mconcat $ map S.fromList $ M.elems stMap
+  let stBindAll k = foldr sallocLetNoStore k stAllVars
+  let stEachType = map (T_Tuple . map typeOf) $ [] : M.elems stMap
+  stMaxSize <- maximum <$> mapM typeSizeOf stEachType
+  liftIO $ writeIORef eStateSizeR $ stMaxSize
+  (_, stKeysl) <- computeStateSizeAndKeys bad "svs" stMaxSize algoMaxGlobalSchemaEntries_usable
+  cSvsGet stKeysl
+  gvLoad GV_currentStep
+  postDecode <- freshLabel "postStateDecode"
+  cswatchTail "switch" (M.toAscList stMap) $ \(i, vs) -> do
+    block_ ("decode st" <> texty i) $ do
+      let t = T_Tuple $ map typeOf vs
+      forM_ (labelLast $ zip vs [0..]) $ \((v, vi), isLast) -> do
+        unless isLast $ op "dup"
+        cTupleRef t vi
+        lookupVarColoring v >>= \case
+          Just loc -> output $ TStore loc $ texty v
+          Nothing -> op "pop"
+      code "b" [ postDecode ]
+  label postDecode
+  stBindAll $ cp x
+  -- Continuations
   label "updateStateHalt"
   code "txn" ["OnCompletion"]
   output $ TConst $ "DeleteApplication"
@@ -3518,11 +3501,20 @@ cp_shell x = do
       void $ makeTxn $ MakeTxn {..}
   code "b" ["updateState"]
   label "updateState"
+  -- Encode saved state
+  gvLoad GV_currentStep
+  postEncode <- freshLabel "postStateEncode"
+  stBindAll $ cswatchTail "switch" (M.toAscList stMap) $ \(i, vs) -> do
+    block_ ("encode st" <> texty i) $ do
+      cp $ DLLA_Tuple $ map DLA_Var vs
+      stActSize <- typeSizeOf $ T_Tuple $ map typeOf vs
+      czpad $ stMaxSize - stActSize
+      code "b" [ postEncode ]
+  label postEncode
+  cSvsPut stMaxSize stKeysl
+  -- Put global state
   cp keyState
-  forM_ keyState_gvs $ \gv -> do
-    gvLoad gv
-    ctobs $ gvType gv
-  forM_ (tail keyState_gvs) $ const $ op "concat"
+  cconcatbs $ flip map keyState_gvs $ \gv -> (gvType gv, gvLoad gv)
   op "app_global_put"
   gvLoad GV_wasntMeth
   code "bnz" ["done"]
@@ -3561,7 +3553,7 @@ cp_shell x = do
   -- Library functions
   libDefns
 
-compile_algo :: (HasFunVars a, HasCounter a, Compile a) => Outputer -> a -> IO ConnectorInfo
+compile_algo :: (HasFunVars a, HasStateMap a, HasCounter a, Compile a) => Outputer -> IGd a -> IO ConnectorInfo
 compile_algo disp x = do
   -- This is the final result
   eRes <- newIORef mempty
@@ -3664,7 +3656,7 @@ compile_algo disp x = do
           let r' = r + 1
           let rlab = "ALGO." <> show r
           loud $ rlab <> " run"
-          (ts, notify, finalize) <- run ci $ cp_shell x
+          (ts, notify, finalize) <- run ci $ cp_shellColor x
           loud $ rlab <> " optimize"
           let !ts' = optimize $ DL.toList ts
           progLs <- readIORef eProgLs
