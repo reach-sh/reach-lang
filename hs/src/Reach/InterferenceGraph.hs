@@ -90,6 +90,9 @@ instance Pretty IGg where
 
 data IGd a = IGd a IGg
 
+instance (HasStateMap a) => HasStateMap (IGd a) where
+  getStateMap (IGd x _) = getStateMap x
+
 instance (HasFunVars a) => HasFunVars (IGd a) where
   getFunVars (IGd x _) = getFunVars x
 
@@ -103,17 +106,11 @@ instance (Pretty a) => Pretty (IGd a) where
     <> "// Intereference Graph" <> hardline
     <> pretty y
 
-class HasState a where
-  getState :: a -> CLState
-
-instance HasState CLProg where
-  getState = clp_state
-
-clig :: (HasState a, HasFunVars a, IG a) => a -> IO (IGd a)
+clig :: (HasStateMap a, HasFunVars a, IG a) => a -> IO (IGd a)
 clig x = do
   eIG <- newIORef mempty
   let eFunVars = getFunVars x
-  let eState = getState x
+  let eState = getStateMap x
   let eSpecials = mempty
   let eOnces = mempty
   flip runReaderT (Env {..}) $ void $ ig (return mempty) x

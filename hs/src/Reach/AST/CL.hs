@@ -196,6 +196,13 @@ instance Pretty CLProg where
 instance HasCounter CLProg where
   getCounter = getCounter . clp_opts
 
+-- HasStateMap
+class HasStateMap a where
+  getStateMap :: a -> CLState
+
+instance HasStateMap CLProg where
+  getStateMap = clp_state
+
 -- HasFunVars
 type FunVars = M.Map CLVar [DLVarLet]
 
