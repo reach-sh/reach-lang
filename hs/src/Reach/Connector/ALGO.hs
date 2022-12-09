@@ -3460,6 +3460,21 @@ cp_shell x = do
     void $ makeTxn $ MakeTxn {..}
   code "b" ["updateState"]
   label "updateStateNoOp"
+  -- Encode saved state
+  gvLoad GV_currentStep
+  stBindAll $ cswatchTail "switch" (M.toAscList stMap) $ \(i, vs) -> do
+    block_ ("encode st" <> texty i) $ do
+      cp $ DLLA_Tuple $ map DLA_Var vs
+      stActSize <- typeSizeOf $ T_Tuple $ map typeOf vs
+      czpad $ stMaxSize - stActSize
+      code "b" ["updateStateNoOpNoEncode"]
+  label "updateStateNoOpNoEncode"
+  cSvsPut stMaxSize stKeysl
+  -- Put global state
+  cp keyState
+  cconcatbs $ flip map keyState_gvs $ \gv -> (gvType gv, gvLoad gv)
+  op "app_global_put"
+  -- Checking the OC
   code "txn" ["OnCompletion"]
   output $ TConst $ "NoOp"
   asserteq
@@ -3501,21 +3516,6 @@ cp_shell x = do
       void $ makeTxn $ MakeTxn {..}
   code "b" ["updateState"]
   label "updateState"
-  -- Encode saved state
-  gvLoad GV_currentStep
-  postEncode <- freshLabel "postStateEncode"
-  stBindAll $ cswatchTail "switch" (M.toAscList stMap) $ \(i, vs) -> do
-    block_ ("encode st" <> texty i) $ do
-      cp $ DLLA_Tuple $ map DLA_Var vs
-      stActSize <- typeSizeOf $ T_Tuple $ map typeOf vs
-      czpad $ stMaxSize - stActSize
-      code "b" [ postEncode ]
-  label postEncode
-  cSvsPut stMaxSize stKeysl
-  -- Put global state
-  cp keyState
-  cconcatbs $ flip map keyState_gvs $ \gv -> (gvType gv, gvLoad gv)
-  op "app_global_put"
   gvLoad GV_wasntMeth
   code "bnz" ["done"]
   label "apiReturn_noCheck"
@@ -3549,7 +3549,8 @@ cp_shell x = do
     ctzero $ gvType gv
     gvStore gv
   cWasntMeth
-  code "b" ["updateStateNoOp"]
+  padding stMaxSize
+  code "b" ["updateStateNoOpNoEncode"]
   -- Library functions
   libDefns
 
@@ -3563,7 +3564,8 @@ compile_algo disp x = do
         t <- renderOut ts'
         tf <- mustOutput disp (T.pack lab <> ".teal") $ flip TIO.writeFile t
         bc <- compileTEAL tf
-        Verify.run lab bc [gvSlot GV_svs, gvSlot GV_apiRet]
+        unless unsafeDisableVerify $
+          Verify.run lab bc [gvSlot GV_svs, gvSlot GV_apiRet]
         return bc
   let addProg lab ts' = do
         tbs <- compileProg lab ts'

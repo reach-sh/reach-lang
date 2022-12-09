@@ -13,6 +13,7 @@ module Reach.UnsafeUtil
   , unsafeNub
   , unsafeLoud
   , unsafeDebug
+  , unsafeDisableVerify
   , loud
   )
 where
@@ -75,3 +76,7 @@ unsafeNub = nub
 unsafeDebug :: Bool
 unsafeDebug = unsafePerformIO $ cte_REACH_DEBUG <$> getCompilerEnv
 {-# NOINLINE unsafeDebug #-}
+
+unsafeDisableVerify :: Bool
+unsafeDisableVerify = unsafePerformIO $ cte_REACH_ACCURSED_UNUTTERABLE_DISABLE_VERIFICATION_AND_LOSE_ALL_YOUR_MONEY_AND_YOUR_USERS_MONEY <$> getCompilerEnv
+{-# NOINLINE unsafeDisableVerify #-}

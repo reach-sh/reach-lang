@@ -349,8 +349,10 @@ instance IGdef DLLetVar where
             putStrLn $ "igDef " <> show v
             forM_ l $ \(x, s) -> do
               putStrLn $ "  " <> x <> ": " <> show s
-      let dbg :: [(String, DLVarS)] -> App ()
-          dbg = dbg_ . (<>) [("ignored", ignored), ("uses", uses), ("uses'", uses)]
+      let dbg__ :: [(String, DLVarS)] -> App ()
+          dbg__ = dbg_ . (<>) [("ignored", ignored), ("uses", uses), ("uses'", uses)]
+      let loud = False
+      let dbg = if loud then dbg__ else const (return ())
       case vc of
         DVC_Once -> local (\e -> e { eOnces = M.insert v uses' eOnces }) $ do
           ls <- lsm
