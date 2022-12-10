@@ -24,6 +24,7 @@ import Data.List.Extra (enumerate, mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Set as S
+import Data.String
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Data.Text.Lazy as LT
@@ -35,6 +36,7 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.CL
 import Reach.Connector
+import Reach.Connector.ALGO_SourceMap
 import Reach.Counter
 import Reach.Dotty
 import Reach.FixedPoint
@@ -3108,14 +3110,19 @@ cStateSlice size iw = do
   let e = min size $ k * (i + 1)
   cextract s (e - s)
 
-compileTEAL_ :: String -> IO (Either BS.ByteString BS.ByteString)
+compileTEAL_ :: String -> IO (Either BS.ByteString CodeAndMap)
 compileTEAL_ tealf = do
-  (ec, stdout, stderr) <- readProcessWithExitCode "goal" ["clerk", "compile", tealf, "-o", "-"] mempty
+  let bcf = tealf <> ".tok"
+  (ec, _stdout, stderr) <- readProcessWithExitCode "goal" ["clerk", "compile", "-m", tealf, "-o", bcf] mempty
   case ec of
     ExitFailure _ -> return $ Left stderr
-    ExitSuccess -> return $ Right stdout
+    ExitSuccess -> do
+      bc <- BS.readFile bcf
+      readSourceMapFile (bcf <> ".map") >>= \case
+        Left m -> return $ Left m
+        Right sm -> return $ Right (bc, sm)
 
-compileTEAL :: String -> IO BS.ByteString
+compileTEAL :: String -> IO CodeAndMap
 compileTEAL tealf = compileTEAL_ tealf >>= \case
   Left stderr -> do
     let failed = impossible $ "The TEAL compiler failed with the message:\n" <> show stderr
@@ -3127,9 +3134,9 @@ compileTEAL tealf = compileTEAL_ tealf >>= \case
         let mlen :: Maybe Int = readMaybe $ bunpack sz_bs
         case mlen of
           Nothing -> failed
-          Just sz -> return $ BS.replicate sz 0
+          Just sz -> return $ (BS.replicate sz 0, mempty)
       False -> failed
-  Right stdout -> return stdout
+  Right x -> return x
 
 -- CL Case
 instance CompileK CLStmt where
@@ -3559,7 +3566,7 @@ compile_algo disp x = do
   -- This is the final result
   eRes <- newIORef mempty
   totalLenR <- newIORef (0 :: Integer)
-  let compileProg :: String -> [TEAL] -> IO BS.ByteString
+  let compileProg :: String -> [TEAL] -> IO CodeAndMap
       compileProg lab ts' = do
         t <- renderOut ts'
         tf <- mustOutput disp (T.pack lab <> ".teal") $ flip TIO.writeFile t
@@ -3568,10 +3575,12 @@ compile_algo disp x = do
           Verify.run lab bc [gvSlot GV_svs, gvSlot GV_apiRet]
         return bc
   let addProg lab ts' = do
-        tbs <- compileProg lab ts'
+        (tbs, sm) <- compileProg lab ts'
         modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
         let tc = LT.toStrict $ encodeBase64 tbs
         modifyIORef eRes $ M.insert (T.pack lab) $ AS.String tc
+        modifyIORef eRes $ M.insert (T.pack $ lab <> "Map") $
+          AS.object $ map (\(k, v) -> (fromString (show k), AS.String (T.pack $ show v))) $ M.toAscList sm
         return tbs
   -- Clear state is never allowed
   cr_clearstate <- addProg "appClear" []
@@ -3585,7 +3594,7 @@ compile_algo disp x = do
         let cr_ctor = fromIntegral $ length ts
         let cr_call = cr_ctor
         let cr_del = cr_call
-        cr_approval <- compileProg "appCompanion" ts
+        (cr_approval, _) <- compileProg "appCompanion" ts
         return $ \cr_rv -> do
           let cr_ro = DLA_Var cr_rv
           return $ CompanionRec {..}
@@ -3798,7 +3807,7 @@ instance AS.FromJSON ALGOCodeOpts where
 
 ccTEAL :: String -> CCApp BS.ByteString
 ccTEAL tealf = liftIO (compileTEAL_ tealf) >>= \case
-  Right x -> return x
+  Right (x, _) -> return x
   Left x -> throwE $ B.unpack x
 
 ccTok :: BS.ByteString -> String
