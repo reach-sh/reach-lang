@@ -1114,7 +1114,11 @@ data Env = Env
   , eABI :: IORef (M.Map String ABInfo)
   , eRes :: IORef (M.Map T.Text AS.Value)
   , eFunVars :: FunVars
+  , eStateMap :: CLState
   }
+
+instance HasStateMap Env where
+  getStateMap = eStateMap
 
 instance HasFunVars Env where
   getFunVars = eFunVars
@@ -1151,6 +1155,8 @@ data LibFun
   | LF_wasntMeth
   | LF_fromSome
   | LF_getTag
+  | LF_svsLoad Int
+  | LF_svsDump Int
   deriving (Eq, Ord, Show)
 
 libDefns :: App ()
@@ -2096,6 +2102,24 @@ cSvsGet keysl = do
   -- [ SvsData_k ]
   return ()
 
+getStateVars :: Int -> App [DLVar]
+getStateVars which =
+  (M.lookup which <$> asks getStateMap) >>= \case
+    Nothing -> impossible $ "No state map for " <> show which
+    Just vs -> return vs
+
+cSvsLoad :: Int -> App ()
+cSvsLoad which = libCall (LF_svsLoad which) $ do
+  vs <- getStateVars which
+  let t = T_Tuple $ map typeOf vs
+  forM_ (labelLast $ zip vs [0..]) $ \((v, vi), isLast) -> do
+    unless isLast $ op "dup"
+    cTupleRef t vi
+    lookupVarColoring v >>= \case
+      Just loc -> output $ TStore loc $ texty v
+      Nothing -> op "pop"
+  op "retsub"
+
 labelLast :: [a] -> [(a, Bool)]
 labelLast l = reverse $
   case reverse l of
@@ -2126,6 +2150,21 @@ cSvsPut size keysl = do
         op "app_global_put"
         -- [ ]
         return ()
+
+stBindAll :: App a -> App a
+stBindAll k = do
+  stMap <- asks getStateMap
+  let stAllVars = mconcat $ map S.fromList $ M.elems stMap
+  foldr sallocLetNoStore k stAllVars
+
+cSvsDump :: Int -> App ()
+cSvsDump which = libCall (LF_svsDump which) $ do
+  vs <- getStateVars which
+  stBindAll $ cp $ DLLA_Tuple $ map DLA_Var vs
+  stActSize <- typeSizeOf $ T_Tuple $ map typeOf vs
+  stMaxSize <- (liftIO . readIORef) =<< asks eStateSizeR
+  czpad $ stMaxSize - stActSize
+  op "retsub"
 
 cGetBalance :: SrcLoc -> Maybe (App ()) -> Maybe DLArg -> App ()
 cGetBalance _at mmin = \case
@@ -2969,7 +3008,6 @@ data GlobalVar
   = GV_txnCounter
   | GV_currentStep
   | GV_currentTime
-  | GV_svs
   | GV_wasntMeth
   | GV_apiRet
   | GV_companion
@@ -2998,7 +3036,6 @@ gvType = \case
   GV_currentStep -> T_UInt UI_Word
   GV_currentTime -> T_UInt UI_Word
   GV_companion -> T_Contract
-  GV_svs -> T_Null
   GV_wasntMeth -> T_Bool
   GV_apiRet -> T_Null
   GV_mbrAdd -> T_UInt UI_Word
@@ -3172,7 +3209,8 @@ instance CompileK CLStmt where
         cp prev
         gvLoad GV_currentStep
         asserteq
-      -- We rely on the state to already be decoded and loaded
+      cSvsLoad prev
+      -- XXX statically assert prev's vars are svs_vl
       k
     CLIntervalCheck _ timev secsv (CBetween ifrom ito) -> do
       let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
@@ -3204,6 +3242,7 @@ instance CompileK CLStmt where
       k
     CLStateSet _at which svs -> do
       mapM_ (uncurry cmove) svs
+      cSvsDump which
       cp which
       gvStore GV_currentStep
       cRound
@@ -3384,7 +3423,7 @@ instance Compile CLProg where
     let pubLs = mapMaybe pub_go $ M.elems sig_api
     liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs
 
-cp_shellColor :: (Compile a, HasStateMap a) => IGd a -> App ()
+cp_shellColor :: (Compile a) => IGd a -> App ()
 cp_shellColor (IGd x g) = do
   let vs = igVars g
   let maxSlot = 255
@@ -3403,7 +3442,7 @@ cp_shellColor (IGd x g) = do
         cp_shell x
 
 -- General Shell
-cp_shell :: (Compile a, HasStateMap a) => a -> App ()
+cp_shell :: (Compile a) => a -> App ()
 cp_shell x = do
   Env {..} <- ask
   let mGV_companion =
@@ -3425,27 +3464,12 @@ cp_shell x = do
     cTupleRef keyState_ty i
     gvStore gv
   -- Load the saved state
-  let stMap = getStateMap x
-  let stAllVars = mconcat $ map S.fromList $ M.elems stMap
-  let stBindAll k = foldr sallocLetNoStore k stAllVars
+  stMap <- asks getStateMap
   let stEachType = map (T_Tuple . map typeOf) $ [] : M.elems stMap
   stMaxSize <- maximum <$> mapM typeSizeOf stEachType
   liftIO $ writeIORef eStateSizeR $ stMaxSize
   (_, stKeysl) <- computeStateSizeAndKeys bad "svs" stMaxSize algoMaxGlobalSchemaEntries_usable
   cSvsGet stKeysl
-  gvLoad GV_currentStep
-  postDecode <- freshLabel "postStateDecode"
-  cswatchTail "switch" (M.toAscList stMap) $ \(i, vs) -> do
-    block_ ("decode st" <> texty i) $ do
-      let t = T_Tuple $ map typeOf vs
-      forM_ (labelLast $ zip vs [0..]) $ \((v, vi), isLast) -> do
-        unless isLast $ op "dup"
-        cTupleRef t vi
-        lookupVarColoring v >>= \case
-          Just loc -> output $ TStore loc $ texty v
-          Nothing -> op "pop"
-      code "b" [ postDecode ]
-  label postDecode
   stBindAll $ cp x
   -- Continuations
   label "updateStateHalt"
@@ -3467,15 +3491,6 @@ cp_shell x = do
     void $ makeTxn $ MakeTxn {..}
   code "b" ["updateState"]
   label "updateStateNoOp"
-  -- Encode saved state
-  gvLoad GV_currentStep
-  stBindAll $ cswatchTail "switch" (M.toAscList stMap) $ \(i, vs) -> do
-    block_ ("encode st" <> texty i) $ do
-      cp $ DLLA_Tuple $ map DLA_Var vs
-      stActSize <- typeSizeOf $ T_Tuple $ map typeOf vs
-      czpad $ stMaxSize - stActSize
-      code "b" ["updateStateNoOpNoEncode"]
-  label "updateStateNoOpNoEncode"
   cSvsPut stMaxSize stKeysl
   -- Put global state
   cp keyState
@@ -3557,7 +3572,7 @@ cp_shell x = do
     gvStore gv
   cWasntMeth
   padding stMaxSize
-  code "b" ["updateStateNoOpNoEncode"]
+  code "b" ["updateStateNoOp"]
   -- Library functions
   libDefns
 
@@ -3572,7 +3587,7 @@ compile_algo disp x = do
         tf <- mustOutput disp (T.pack lab <> ".teal") $ flip TIO.writeFile t
         bc <- compileTEAL tf
         unless unsafeDisableVerify $
-          Verify.run lab bc [gvSlot GV_svs, gvSlot GV_apiRet]
+          Verify.run lab bc [gvSlot GV_apiRet]
         return bc
   let addProg lab ts' = do
         (tbs, sm) <- compileProg lab ts'
@@ -3630,6 +3645,7 @@ compile_algo disp x = do
   eProgLs <- newIORef mempty
   eApiLs <- newIORef mempty
   eMaxApiRetSize <- newIORef 0
+  let eStateMap = getStateMap x
   let eFunVars = getFunVars x
   let run :: CompanionInfo -> App () -> IO (TEALs, Notify, IO ())
       run eCompanion m = do
