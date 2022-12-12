@@ -349,6 +349,7 @@ instance IGdef DLLetVar where
             putStrLn $ "igDef " <> lab <> ": " <> show v
             forM_ l $ \(x, s) -> do
               putStrLn $ "  " <> x <> ": " <> show s
+            putStrLn ""
       let dbg__ :: String -> [(String, DLVarS)] -> App ()
           dbg__ lab = dbg_ lab . (<>) [("ignored", ignored), ("uses", uses), ("uses'", uses)]
       let loud = False
@@ -362,12 +363,13 @@ instance IGdef DLLetVar where
         DVC_Many -> do
           ls <- lsm
           ls' <- closeOnces ls
+          let ls'' = ls' <> uses'
           unless (S.member v ignored) $ do
             addv v
-            let int = S.difference (ls' <> uses') ignored
+            let int = S.difference ls'' ignored
             intf v int
-            dbg "many" [("ls", ls), ("ls'", ls'), ("int", int)]
-          return ls'
+            dbg "many" [("ls", ls), ("ls'", ls'), ("ls''", ls''), ("int", int)]
+          return ls''
 
 viaDef :: (IGdef a) => App DLVarS -> a -> App DLVarS
 viaDef ls x = igDef ls mempty x
