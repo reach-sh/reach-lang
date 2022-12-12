@@ -246,6 +246,17 @@ condBlock c =
         dt = dtList at (vs <> [c'])
         k' = dtReplace CT_Com k (dtList at ms'')
 
+instance AC FromInfo where
+  ac fi = do
+    case fi of
+      FI_Halt toks -> do
+        ac_visit toks
+      FI_Continue svs -> do
+        ac_visit $ map fst svs
+        ac_visit $ map fst svs
+        ac_visit $ map snd svs
+    return fi
+
 instance AC CTail where
   ac = \case
     CT_Com m k -> do
@@ -271,10 +282,10 @@ instance AC CTail where
       return $ CT_If at c t' f'
     CT_Switch at v csm -> doSwitch CT_Switch at v csm
     CT_From at w fi -> do
-      ac_visit $ fi
-      ac_visit $ fi
-      return $ CT_From at w fi
+      fi' <- ac fi
+      return $ CT_From at w fi'
     CT_Jump at which svs asn -> do
+      -- We visit twice to make sure svs are counted as not-once
       ac_visit $ svs
       ac_visit $ svs
       ac_visit $ asn
