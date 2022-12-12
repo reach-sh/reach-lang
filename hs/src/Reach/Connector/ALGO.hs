@@ -1590,16 +1590,16 @@ instance MaybeLoc DLArg where
     _ -> return $ Nothing
 
 cmove :: (Show a, MaybeLoc a, Compile a) => DLVar -> a -> App ()
-cmove x y = do
-  lookupVarColoring x >>= \case
-    Nothing -> bad $ LT.pack $ "could not move " <> show y <> " into " <> show x
-    Just xl -> do
-      myl <- maybeLoc y
-      case myl of
-        Just yl | xl == yl -> return ()
+cmove dst src = do
+  lookupVarColoring dst >>= \case
+    Nothing -> bad $ LT.pack $ "could not move " <> show src <> " into " <> show dst
+    Just dstl -> do
+      msrcl <- maybeLoc src
+      case msrcl of
+        Just srcl | dstl == srcl -> return ()
         _ -> do
-          cp y
-          output $ TStore xl $ texty x
+          cp src
+          output $ TStore dstl $ texty dst
 
 sallocVar :: DLVar -> (App () -> App () -> App a) -> App a
 sallocVar dv fm = do
@@ -3587,7 +3587,7 @@ compile_algo disp x = do
         tf <- mustOutput disp (T.pack lab <> ".teal") $ flip TIO.writeFile t
         bc <- compileTEAL tf
         unless unsafeDisableVerify $
-          Verify.run lab bc [gvSlot GV_apiRet]
+          Verify.run lab bc [gvSlot GV_wasntMeth] [gvSlot GV_apiRet]
         return bc
   let addProg lab ts' = do
         (tbs, sm) <- compileProg lab ts'
