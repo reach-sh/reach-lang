@@ -394,12 +394,12 @@ instance IG DLStmt where
       igDef ls (countsS e) x
     DL_ArrayMap _ ans xs as i f -> do
       move ans f
-      ig ls (IGseq ans (IGseq (Par $ i : as) (IGseq (Seq xs) f)))
+      ig ls (IGseq ans (IGseq (Par $ i : as) (IGseq (varLetVar i) (IGseq (Seq xs) f))))
     DL_ArrayReduce _ ans xs z b as i f -> do
       move b z
       move ans f
       move b f
-      ig ls (IGseq ans (IGseq z (IGseq (Par $ b : i : as) (IGseq (Seq xs) f))))
+      ig ls (IGseq ans (IGseq z (IGseq (Par $ b : i : as) (IGseq (varLetVar i) (IGseq (varLetVar b) (IGseq (Seq xs) f))))))
     DL_Var _ v -> ig ls (v2vl v)
     DL_Set _ v a -> do
       move v a
