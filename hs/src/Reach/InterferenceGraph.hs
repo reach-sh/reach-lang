@@ -344,20 +344,20 @@ instance IGdef DLLetVar where
       Env {..} <- ask
       uses' <- closeOnces uses
       let ignored = eSpecials
-      let dbg_ :: [(String, DLVarS)] -> App ()
-          dbg_ l = liftIO $ do
-            putStrLn $ "igDef " <> show v
+      let dbg_ :: String -> [(String, DLVarS)] -> App ()
+          dbg_ lab l = liftIO $ do
+            putStrLn $ "igDef " <> lab <> ": " <> show v
             forM_ l $ \(x, s) -> do
               putStrLn $ "  " <> x <> ": " <> show s
-      let dbg__ :: [(String, DLVarS)] -> App ()
-          dbg__ = dbg_ . (<>) [("ignored", ignored), ("uses", uses), ("uses'", uses)]
+      let dbg__ :: String -> [(String, DLVarS)] -> App ()
+          dbg__ lab = dbg_ lab . (<>) [("ignored", ignored), ("uses", uses), ("uses'", uses)]
       let loud = False
-      let dbg = if loud then dbg__ else const (return ())
+      let dbg = if loud then dbg__ else const $ const $ return ()
       case vc of
         DVC_Once -> local (\e -> e { eOnces = M.insert v uses' eOnces }) $ do
           ls <- lsm
           ls' <- closeOnces ls
-          dbg [("ls", ls), ("ls'", ls')]
+          dbg "once" [("ls", ls), ("ls'", ls')]
           return ls'
         DVC_Many -> do
           ls <- lsm
@@ -366,7 +366,7 @@ instance IGdef DLLetVar where
             addv v
             let int = S.difference (ls' <> uses') ignored
             intf v int
-            dbg [("ls", ls), ("ls'", ls'), ("int", int)]
+            dbg "many" [("ls", ls), ("ls'", ls'), ("int", int)]
           return ls'
 
 viaDef :: (IGdef a) => App DLVarS -> a -> App DLVarS
@@ -483,7 +483,7 @@ instance IG CLTail where
 
 instance IG a => IG (SwitchCaseUse a) where
   ig ls (SwitchCaseUse ov _vn (SwitchCase {..})) =
-    ig ls (IGseq ov (IGseq sc_vl sc_k))
+    ig ls (IGseq sc_vl (IGseq ov sc_k))
 
 instance IG a => IG (SwitchCasesUse a) where
   ig ls (SwitchCasesUse v csm) = ig ls (IGseq v (Par $ switchUses v csm))

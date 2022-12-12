@@ -1315,7 +1315,7 @@ unSwitchCaseUse (SwitchCaseUse _ vn sc) = (vn, sc)
 
 instance Pretty a => Pretty (SwitchCaseUse a) where
   pretty (SwitchCaseUse ov vn (SwitchCase {..})) =
-    "case" <+> pretty vn <+> "as" <+> pretty sc_vl <> parens (pretty ov) <> ":" <+> render_nest (pretty sc_k)
+    "case" <+> pretty vn <+> "as" <+> pretty sc_vl <+> "from" <+> pretty ov <> ":" <+> render_nest (pretty sc_k)
 
 switchUses :: DLVar -> SwitchCases a -> [SwitchCaseUse a]
 switchUses v (SwitchCases csm) =

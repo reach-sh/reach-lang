@@ -272,8 +272,10 @@ instance AC CTail where
     CT_Switch at v csm -> doSwitch CT_Switch at v csm
     CT_From at w fi -> do
       ac_visit $ fi
+      ac_visit $ fi
       return $ CT_From at w fi
     CT_Jump at which svs asn -> do
+      ac_visit $ svs
       ac_visit $ svs
       ac_visit $ asn
       return $ CT_Jump at which svs asn
@@ -439,6 +441,7 @@ instance AC CLStmt where
       ac_visit int
       return $ CLIntervalCheck at x y int
     CLStateSet at w vs -> do
+      ac_visit $ map snd vs
       ac_visit $ map snd vs
       return $ CLStateSet at w vs
     CLTokenUntrack at a -> do

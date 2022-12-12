@@ -1154,7 +1154,6 @@ data LibFun
   | LF_mbrSub
   | LF_wasntMeth
   | LF_fromSome
-  | LF_getTag
   | LF_svsLoad Int
   | LF_svsDump Int
   deriving (Eq, Ord, Show)
@@ -1189,10 +1188,9 @@ libCall lf impl = do
   code "callsub" [ lab ]
 
 cGetTag :: App ()
-cGetTag = libCall LF_getTag $ do
+cGetTag = do
   cint 0
   op "getbyte"
-  op "retsub"
 
 -- Cost Analysis...
 --
