@@ -1638,7 +1638,7 @@ sallocLetMay dv cgen km =
 
 sallocVarLet :: DLVarLet -> App () -> App a -> App a
 sallocVarLet (DLVarLet mvc dv) cgen km = do
-  let once = store_let dv cgen km
+  let once = sallocLetMay dv cgen km
   case mvc of
     Nothing -> km
     Just DVC_Once -> once
@@ -3587,7 +3587,7 @@ compile_algo disp x = do
         tf <- mustOutput disp (T.pack lab <> ".teal") $ flip TIO.writeFile t
         bc <- compileTEAL tf
         unless unsafeDisableVerify $
-          Verify.run lab bc [gvSlot GV_wasntMeth] [gvSlot GV_apiRet]
+          Verify.run lab bc [gvSlot GV_txnCounter, gvSlot GV_mbrAdd, gvSlot GV_mbrSub, gvSlot GV_wasntMeth] [gvSlot GV_apiRet]
         return bc
   let addProg lab ts' = do
         (tbs, sm) <- compileProg lab ts'
