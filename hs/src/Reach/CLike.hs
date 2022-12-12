@@ -29,6 +29,9 @@ data Env = Env
   , eCounter :: Counter
   }
 
+instance HasStateR Env where
+  getStateR = eStateR
+
 instance HasCounter Env where
   getCounter = eCounter
 
@@ -49,9 +52,12 @@ nameApi = nameBase "a"
 nameReturn :: CLVar -> CLVar
 nameReturn = nameBase "r"
 
-recordState :: Int -> [DLVar] -> TApp ()
+class HasStateR a where
+  getStateR :: a -> IORef CLState
+
+recordState :: (HasStateR e) => Int -> [DLVar] -> ReaderT e IO ()
 recordState which svs = do
-  sr <- asks tStateR
+  sr <- asks getStateR
   liftIO $ modifyIORef sr $ \m ->
     case M.lookup which m of
       Just svs' ->
@@ -152,6 +158,7 @@ instance CLikeF CLViewY where
     dom <- asks f_dom
     let bind (dvl, avl) = CL_Com $ CLDL $ DL_Let at (vl2lv avl) $ DLE_Arg at $ DLA_Var $ varLetVar dvl
     let t1 = foldr bind t0 $ zip dom fargs
+    recordState prev $ map varLetVar cvy_svs
     let t2 = CL_Com (CLStateBind at True cvy_svs prev) t1
     return $ t2
 
@@ -184,6 +191,7 @@ type FApp = ReaderT FEnv IO
 
 data FEnv = FEnv
   { fCounter :: Counter
+  , fStateR :: IORef CLState
   , f_at :: SrcLoc
   , f_dom :: [DLVarLet]
   , f_rng :: CLVar
@@ -191,6 +199,9 @@ data FEnv = FEnv
   , f_staten :: Maybe Int
   , f_noCheck :: Bool
   }
+
+instance HasStateR FEnv where
+  getStateR = fStateR
 
 instance HasCounter FEnv where
   getCounter = fCounter
@@ -257,6 +268,7 @@ instance (CLikeF a) => CLike (FIX a) where
     let f_dom = domvls
     f_statev <- allocVar fi_at $ T_UInt UI_Word
     fCounter <- asks getCounter
+    fStateR <- asks getStateR
     let f_staten = Nothing
     let f_noCheck = fi_noCheck
     -- XXX when the state is a data, this would be a real switch
@@ -358,6 +370,9 @@ data TEnv = TEnv
   , tStateR :: IORef CLState
   }
 
+instance HasStateR TEnv where
+  getStateR = tStateR
+
 instance HasCounter TEnv where
   getCounter = tCounter
 
@@ -423,6 +438,7 @@ instance CLike CHX where
     let addArgs = flip (foldr addArg) $ zip msg_vars [0..]
     body' <- tr_ (TEnv {..}) ch_body
     let isCtor = which == 0
+    recordState ch_last $ map varLetVar ch_svs
     let mStateBind =
           -- XXX change to StoreRead and something to decompose a Data instance
           -- and fail if the tag doesn't match
