@@ -430,9 +430,6 @@ instance AddSpecial DLLetVar where
     DLV_Let _ v -> \m ->
       S.delete v <$> local (\e -> e { eSpecials = S.insert v $ eSpecials e }) m
 
-washVars :: [DLVarLet] -> [DLVarLet]
-washVars = map (v2vl . varLetVar)
-
 class IsInState a where
   isInState_ :: DLVar -> a -> Bool
 
@@ -460,8 +457,7 @@ instance IG CLStmt where
     CLTimeCheck _ x -> ig ls x
     CLEmitPublish _ _ vs -> ig ls (Seq vs)
     CLStateBind _ _ vs _ ->
-      -- We wash the vs so state variables are guaranteed to get registers
-      ig ls (Seq $ washVars vs)
+      ig ls (Seq vs)
     CLIntervalCheck _ x y z -> ig ls (IGseq (Seq [x, y]) z)
     CLStateSet _ _ vs -> do
       mapM_ (uncurry move) vs
@@ -509,9 +505,7 @@ instance IG CLIntFun where
 
 manyifyDom :: CLFun -> CLFun
 manyifyDom (CLFun {..}) =
-  -- We wash the variables to ensure that internal functions get registers (so
-  -- their arguments can be moved into them)
-  CLFun clf_at (washVars clf_dom) clf_view clf_tail
+  CLFun clf_at clf_dom clf_view clf_tail
 
 igList :: (IG a) => App DLVarS -> [a] -> App DLVarS
 igList ls = \case
