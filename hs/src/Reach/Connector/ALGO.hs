@@ -653,10 +653,12 @@ renderOut tscl' = do
 optimize :: [TEAL] -> [TEAL]
 optimize ts0 = tsN
   where
-    ts1 = opt_b ts0
+    ts1 = opt_peep ts0
     ts2 = opt_bs ts1
     tsN = ts2
 
+-- Optimize the definition of BYTES: We don't do this in the peep-hole optimize
+-- because we want them to be removed if possible
 opt_bs :: [TEAL] -> [TEAL]
 opt_bs = \case
   [] -> []
@@ -672,8 +674,9 @@ opt_bs = \case
           False -> x : opt_bs l
   x : l -> x : opt_bs l
 
-opt_b :: [TEAL] -> [TEAL]
-opt_b = foldr (\a b -> opt_b1 $ a : b) mempty
+-- Peep-hole optimizer
+opt_peep :: [TEAL] -> [TEAL]
+opt_peep = foldr (\a b -> opt_peep1 $ a : b) mempty
 
 data TType
   = TT_UInt
@@ -725,18 +728,18 @@ opArity = fmap f . opType
   where
     f (x, y) = (length x, length y)
 
-opt_b1 :: [TEAL] -> [TEAL]
-opt_b1 = \case
+opt_peep1 :: [TEAL] -> [TEAL]
+opt_peep1 = \case
   [] -> []
   [(TCode "return" [])] -> []
   -- This relies on knowing what "done" is
   (TCode "assert" []) : (TCode "b" ["done"]) : x -> (TCode "return" []) : x
   x@(TBytes _) : y@(TBytes _) : (TCode "swap" []) : l ->
-    opt_b1 $ y : x : l
+    opt_peep1 $ y : x : l
   (TBytes "") : (TCode "concat" []) : l -> l
-  (TBytes "") : b@(TLoad {}) : (TCode "concat" []) : l -> opt_b1 $ b : l
+  (TBytes "") : b@(TLoad {}) : (TCode "concat" []) : l -> opt_peep1 $ b : l
   (TBytes x) : (TBytes y) : (TCode "concat" []) : l ->
-    opt_b1 $ (TBytes $ x <> y) : l
+    opt_peep1 $ (TBytes $ x <> y) : l
   -- XXX generalize this optimization and make it so we don't do it to things
   -- with effects
   -- If x doesn't consume anything and we pop it, just pop it
@@ -770,7 +773,7 @@ opt_b1 = \case
       (TCode "dup" []) : a : l
   a@(TSubstring s0w _) : b@(TInt xn) : c@(TCode "getbyte" []) : l ->
     case xn < 256 && s0xnp1 < 256 of
-      True -> opt_b1 $ (TSubstring (fromIntegral s0xn) (fromIntegral s0xnp1)) : (TCode "btoi" []) : l
+      True -> opt_peep1 $ (TSubstring (fromIntegral s0xn) (fromIntegral s0xnp1)) : (TCode "btoi" []) : l
       False -> a : b : c : l
     where
       s0xn :: Integer
@@ -779,7 +782,7 @@ opt_b1 = \case
       s0xnp1 = s0xn + 1
   a@(TSubstring s0w _) : b@(TSubstring s1w e1w) : l ->
     case s2n < 256 && e2n < 256 of
-      True -> opt_b1 $ (TSubstring (fromIntegral s2n) (fromIntegral e2n)) : l
+      True -> opt_peep1 $ (TSubstring (fromIntegral s2n) (fromIntegral e2n)) : l
       False -> a : b : l
     where
       s0n = fromIntegral s0w
@@ -788,17 +791,17 @@ opt_b1 = \case
       e2n :: Integer
       e2n = s0n + (fromIntegral e1w)
   (TInt x) : (Titob _) : l ->
-    opt_b1 $ (TBytes $ itob 8 x) : l
+    opt_peep1 $ (TBytes $ itob 8 x) : l
   (TBytes xbs) : (TCode "btoi" []) : l ->
-    opt_b1 $ (TInt $ btoi xbs) : l
+    opt_peep1 $ (TInt $ btoi xbs) : l
   (TBytes xbs) : (TCode "sha256" []) : l ->
-    opt_b1 $ (TBytes $ sha256bs xbs) : l
+    opt_peep1 $ (TBytes $ sha256bs xbs) : l
   (TBytes xbs) : (TCode "sha512_256" []) : l ->
-    opt_b1 $ (TBytes $ sha512_256bs xbs) : l
+    opt_peep1 $ (TBytes $ sha512_256bs xbs) : l
   (TBytes xbs) : (TSubstring s e) : l ->
-    opt_b1 $ (TBytes $ bsSubstring xbs (fromIntegral s) (fromIntegral e)) : l
+    opt_peep1 $ (TBytes $ bsSubstring xbs (fromIntegral s) (fromIntegral e)) : l
   (TBytes xbs) : (TExtract s len) : l | len /= 0 ->
-    opt_b1 $ (TBytes $ bsSubstring xbs (fromIntegral s) (fromIntegral $ s + len)) : l
+    opt_peep1 $ (TBytes $ bsSubstring xbs (fromIntegral s) (fromIntegral $ s + len)) : l
   x : l -> x : l
 
 sha256bs :: BS.ByteString -> BS.ByteString
@@ -1142,6 +1145,9 @@ class CompileK a where
 
 class Compile a where
   cp :: a -> App ()
+
+class CompileLabel a where
+  cpl :: a -> App (Label, App ())
 
 data LibFun
   = LF_mapRef
@@ -2845,28 +2851,33 @@ makeTxn (MakeTxn {..}) =
       when mt_submit $ op "itxn_submit"
       return True
 
-cmatch :: (Compile a) => App () -> [(BS.ByteString, a)] -> App ()
+cmatch :: (CompileLabel a) => App () -> [(BS.ByteString, a)] -> App ()
 cmatch ca es = do
   code "pushbytess" $ map (base64d . fst) es
   ca
-  cswatchTail "match" (map snd es) cp
+  cswatchTail "match" (map snd es)
 
-cswatchTail :: TealOp -> [a] -> (a -> App ()) -> App ()
-cswatchTail w es ce = do
+cswatchTail :: (CompileLabel a) => TealOp -> [a] -> App ()
+cswatchTail w es = do
   els <- forM es $ \e -> do
-    l <- freshLabel "swatch"
-    return (e, l)
-  code w $ map snd els
+    (l, ce) <- cpl e
+    return (l, ce)
+  code w $ map fst els
   op "err"
-  forM_ els $ \(e, l) -> label l >> ce e
+  forM_ els $ \(l, ce) -> label l >> ce
 
-doSwitch :: String -> (a -> App ()) -> DLVar -> SwitchCases a -> App ()
-doSwitch lab ck dv (SwitchCases csm) = do
+doSwitch :: (a -> App ()) -> DLVar -> SwitchCases a -> App ()
+doSwitch ck dv csm = do
   cp dv
   cGetTag
-  cswatchTail "switch" (M.toAscList csm) $ \(vn, SwitchCase {..}) -> do
-    l <- freshLabel $ lab <> "_" <> vn
-    block l $
+  cswatchTail "switch" (map (SwitchX ck) $ switchUses dv csm)
+
+data SwitchX a = SwitchX (a -> App ()) (SwitchCaseUse a)
+
+instance CompileLabel (SwitchX a) where
+  cpl (SwitchX ck (SwitchCaseUse dv vn (SwitchCase {..}))) = do
+    l <- freshLabel vn
+    return $ (,) l $ do
       sallocVarLet sc_vl (cextractDataOf (cp dv) (typeOf sc_vl)) $
         ck sc_k
 
@@ -2959,7 +2970,7 @@ instance CompileK DLStmt where
       km
     DL_LocalSwitch _ dv csm -> do
       end_lab <- freshLabel $ "LocalSwitchK"
-      doSwitch "LocalSwitch" (cpk (code "b" [end_lab])) dv csm
+      doSwitch (cpk (code "b" [end_lab])) dv csm
       label end_lab
       km
     DL_MapReduce {} ->
@@ -3279,7 +3290,7 @@ instance Compile CLTail where
       label false_lab
       nct ft
     CL_Switch _ dv csm ->
-      doSwitch "Switch" nct dv csm
+      doSwitch nct dv csm
     CL_Jump _at f args isApi _mmret -> do
       vs <- map varLetVar <$> askFunVars f
       case isApi of
@@ -3364,8 +3375,8 @@ bindFromArgs vs m = do
              >> cTupleRef tupleTy i)
       goSingles vs14 (foldl' (flip goTuple) m (zip vsMore [(0 :: Integer) ..]))
 
-instance Compile CLEX where
-  cp (CLEX sig (CLExtFun {..})) = do
+instance CompileLabel CLEX where
+  cpl (CLEX sig (CLExtFun {..})) = do
     let CLFun {..} = cef_fun
     let at = clf_at
     let lab = sigToLab sig cef_kind
@@ -3373,8 +3384,7 @@ instance Compile CLEX where
     let mwhich = case cef_kind of
                    CE_Publish n -> Just n
                    _ -> Nothing
-    block_ lab $ do
-      label lab
+    return $ (,) lab $ do
       case cef_kind of
         CE_Publish n -> do
           cWasntMeth
