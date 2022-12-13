@@ -790,6 +790,7 @@ opt_peep1 = \case
       s2n = s0n + (fromIntegral s1w)
       e2n :: Integer
       e2n = s0n + (fromIntegral e1w)
+  (TLoad x _xlab) : (TStore y _ylab) : l | x == y -> opt_peep1 $ l
   (TInt x) : (Titob _) : l ->
     opt_peep1 $ (TBytes $ itob 8 x) : l
   (TBytes xbs) : (TCode "btoi" []) : l ->
@@ -2305,8 +2306,8 @@ instance Compile DLExpr where
       op "swap"
       op "pop"
     DLE_CheckPay ct_at fs ct_amt ct_mtok -> do
-      void $ checkTxn $ CheckTxn {..}
-      show_stack "CheckPay" Nothing ct_at fs
+      did <- checkTxn $ CheckTxn {..}
+      when did $ show_stack "CheckPay" Nothing ct_at fs
     DLE_Claim at fs t a mmsg -> do
       let check = cp a >> assert
       case t of
