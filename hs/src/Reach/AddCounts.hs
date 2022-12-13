@@ -253,7 +253,6 @@ instance AC FromInfo where
         ac_visit toks
       FI_Continue svs -> do
         ac_visit $ map fst svs
-        ac_visit $ map fst svs
         ac_visit $ map snd svs
     return fi
 
@@ -285,8 +284,6 @@ instance AC CTail where
       fi' <- ac fi
       return $ CT_From at w fi'
     CT_Jump at which svs asn -> do
-      -- We visit twice to make sure svs are counted as not-once
-      ac_visit $ svs
       ac_visit $ svs
       ac_visit $ asn
       return $ CT_Jump at which svs asn
@@ -452,7 +449,6 @@ instance AC CLStmt where
       ac_visit int
       return $ CLIntervalCheck at x y int
     CLStateSet at w vs -> do
-      ac_visit $ map snd vs
       ac_visit $ map snd vs
       return $ CLStateSet at w vs
     CLTokenUntrack at a -> do
