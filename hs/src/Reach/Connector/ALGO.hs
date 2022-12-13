@@ -1179,6 +1179,7 @@ data LibFun
   | LF_svsLoad Int
   | LF_svsDump Int
   | LF_companionCall
+  | LF_timeCheck
   deriving (Eq, Ord, Show)
 
 libDefns :: App ()
@@ -3223,14 +3224,16 @@ instance CompileK CLStmt where
           sallocLetMay v c k
     CLTimeCheck _ given -> do
       cp given
-      op "dup"
-      cint 0
-      op "=="
-      op "swap"
-      gvLoad GV_currentTime
-      op "=="
-      op "||"
-      assert
+      libCall LF_timeCheck $ do
+        op "dup"
+        cint 0
+        op "=="
+        op "swap"
+        gvLoad GV_currentTime
+        op "=="
+        op "||"
+        assert
+        op "retsub"
       k
     CLEmitPublish _ which vars -> do
       clogEvent ("_reach_e" <> show which) vars >> k
@@ -3275,8 +3278,6 @@ instance CompileK CLStmt where
       cSvsDump which
       cp which
       cRound
-      gvStore GV_currentTime
-      gvStore GV_currentStep
       k
     CLTokenUntrack at tok -> do
       incResource R_Account aDeployer
@@ -3520,6 +3521,8 @@ cp_shell x = do
     void $ makeTxn $ MakeTxn {..}
   code "b" ["updateState"]
   label "updateStateNoOp"
+  gvStore GV_currentTime
+  gvStore GV_currentStep
   cSvsPut stMaxSize stKeysl
   -- Put global state
   cp keyState
@@ -3598,11 +3601,13 @@ cp_shell x = do
   ctf "GlobalNumByteSlice" $ appGlobalStateNumBytes + fromIntegral stateKeys
   ctf "LocalNumUint" $ appLocalStateNumUInt
   ctf "LocalNumByteSlice" $ appLocalStateNumBytes
-  forM_ keyState_gvs $ \gv -> do
+  forM_ mGV_companion $ \gv -> do
     ctzero $ gvType gv
     gvStore gv
   cWasntMeth
   padding stMaxSize
+  cint 0
+  cint 0
   code "b" ["updateStateNoOp"]
   -- Library functions
   libDefns
