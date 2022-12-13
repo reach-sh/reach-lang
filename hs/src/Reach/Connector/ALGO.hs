@@ -1155,6 +1155,7 @@ data LibFun
   | LF_mapSet
   | LF_checkTxn Bool
   | LF_makeTxn Bool Bool Bool Bool
+  | LF_makeTxnK Bool Bool
   | LF_checkUInt256ResultLen
   | LF_mbrAdd
   | LF_mbrSub
@@ -1178,20 +1179,28 @@ libDefns = do
   wroteSome <- liftIO $ readIORef wroteSomeR
   when wroteSome $ libDefns
 
-libCall :: LibFun -> App () -> App ()
-libCall lf impl = do
+libImpl :: LibFun -> App () -> App Label
+libImpl lf impl = do
   libr <- asks eLibrary
   lib <- liftIO $ readIORef libr
-  lab <-
-    case M.lookup lf lib of
-      Nothing -> do
-        wroteR <- liftIO $ newIORef False
-        lab <- freshLabel $ show lf
-        let impl' = label lab >> impl
-        liftIO $ modifyIORef libr $ M.insert lf (lab, wroteR, impl')
-        return $ lab
-      Just (lab, _, _) -> return lab
+  case M.lookup lf lib of
+    Nothing -> do
+      wroteR <- liftIO $ newIORef False
+      lab <- freshLabel $ show lf
+      let impl' = label lab >> impl
+      liftIO $ modifyIORef libr $ M.insert lf (lab, wroteR, impl')
+      return $ lab
+    Just (lab, _, _) -> return lab
+
+libCall :: LibFun -> App () -> App ()
+libCall lf impl = do
+  lab <- libImpl lf impl
   code "callsub" [ lab ]
+
+libJump :: LibFun -> App () -> App ()
+libJump lf impl = do
+  lab <- libImpl lf impl
+  code "b" [ lab ]
 
 cGetTag :: App ()
 cGetTag = do
@@ -2785,9 +2794,17 @@ checkTxn (CheckTxn {..}) =
           checkTxn_lib True
       return True
 
+itxnNextOrBegin_ :: Bool -> App ()
+itxnNextOrBegin_ isNext = do
+  op (if isNext then "itxn_next" else "itxn_begin")
+
 itxnNextOrBegin :: Bool -> App ()
 itxnNextOrBegin isNext = do
-  op (if isNext then "itxn_next" else "itxn_begin")
+  itxnNextOrBegin_ isNext
+  makeTxn1Fee
+
+makeTxn1Fee :: App ()
+makeTxn1Fee = do
   -- We do this because by default it will inspect the remaining fee and only
   -- set it to zero if there is a surplus, which means that sometimes it means
   -- 0 and sometimes it means "take money from the escrow", which is dangerous,
@@ -2820,19 +2837,21 @@ makeTxn (MakeTxn {..}) =
 makeTxn_lib :: Bool -> Bool -> Bool -> Bool -> App ()
 makeTxn_lib isNext isClose isTokTxn isSubmit = libCall (LF_makeTxn isNext isClose isTokTxn isSubmit) $ do
   let (vTypeEnum, fReceiver, fAmount, fCloseTo) = if isTokTxn then tokFields else ntokFields
-  itxnNextOrBegin isNext
-  output $ TConst vTypeEnum
-  makeTxn1 "TypeEnum"
+  itxnNextOrBegin_ isNext
   when isClose $ do
     cfrombs T_Address
     makeTxn1 fCloseTo
-  cfrombs T_Address
-  makeTxn1 fReceiver
-  when isTokTxn $ do
-    makeTxn1 "XferAsset"
-  makeTxn1 fAmount
-  when isSubmit $ op "itxn_submit"
-  op "retsub"
+  libJump (LF_makeTxnK isTokTxn isSubmit) $ do
+    makeTxn1Fee
+    output $ TConst vTypeEnum
+    makeTxn1 "TypeEnum"
+    cfrombs T_Address
+    makeTxn1 fReceiver
+    when isTokTxn $ do
+      makeTxn1 "XferAsset"
+    makeTxn1 fAmount
+    when isSubmit $ op "itxn_submit"
+    op "retsub"
 
 cmatch :: (CompileLabel a) => App () -> [(BS.ByteString, a)] -> App ()
 cmatch ca es = do
