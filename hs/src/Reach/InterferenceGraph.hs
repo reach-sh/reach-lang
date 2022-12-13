@@ -354,13 +354,15 @@ instance IGdef DLLetVar where
           dbg__ lab = dbg_ lab . (<>) [("ignored", ignored), ("uses", uses), ("uses'", uses)]
       let loud = False
       let dbg = if loud then dbg__ else const $ const $ return ()
-      case vc of
-        DVC_Once -> local (\e -> e { eOnces = M.insert v uses' eOnces }) $ do
-          ls <- lsm
-          ls' <- closeOnces ls
-          dbg "once" [("ls", ls), ("ls'", ls')]
-          return ls'
-        DVC_Many -> do
+      st <- asks $ isInState v
+      case (vc, st) of
+        (DVC_Once, False) ->
+          local (\e -> e { eOnces = M.insert v uses' eOnces }) $ do
+            ls <- lsm
+            ls' <- closeOnces ls
+            dbg "once" [("ls", ls), ("ls'", ls')]
+            return ls'
+        _ -> do
           ls <- lsm
           ls' <- closeOnces ls
           let ls'' = ls' <> uses'
