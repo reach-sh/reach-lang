@@ -296,7 +296,7 @@ ensureAllPaths rlab g s e getc = checkFrom 0 mempty s
     checkFrom t p l = do
       loud $ rlab <> " " <> show l
       when (elem l p) $ do
-        impossible "loop"
+        impossible $ "loop: " <> show l
       case l == e of
         True ->
           case t == 1 of
@@ -557,7 +557,7 @@ textyt :: Show a => a -> DLType -> LT.Text
 textyt x ty = texty x <> " :: " <> texty ty
 
 textyv :: DLVar -> LT.Text
-textyv v = textyt v (varType v)
+textyv v = texty v --t v (varType v)
 
 type ScratchSlot = Word8
 
@@ -1480,17 +1480,8 @@ label = output . TLabel
 comment :: LT.Text -> App ()
 comment = output . TComment INo
 
-block_ :: LT.Text -> App a -> App a
-block_ lab m = do
-  output $ TComment IUp $ ""
-  output $ TComment INo $ "{ " <> lab
-  x <- m
-  output $ TComment INo $ lab <> " }"
-  output $ TComment IDo $ ""
-  return x
-
 block :: Label -> App a -> App a
-block lab m = block_ lab $ label lab >> m
+block lab m = label lab >> m
 
 dupn :: Int -> App ()
 dupn = \case
@@ -1962,23 +1953,22 @@ cfor iv maxi body = do
   when (maxi < 2) $ impossible "cfor maxi=0"
   top_lab <- freshLabel "forTop"
   end_lab <- freshLabel "forEnd"
-  block_ top_lab $ do
-    sallocVar iv $ \store_idx load_idx -> do
-      cint 0
-      store_idx
-      label top_lab
-      output $ TFor_top maxi
-      body load_idx
-      load_idx
-      cint 1
-      op "+"
-      op "dup"
-      store_idx
-      cp maxi
-      op "<"
-      output $ TFor_bnz top_lab maxi end_lab
-    label end_lab
-    return ()
+  sallocVar iv $ \store_idx load_idx -> do
+    cint 0
+    store_idx
+    label top_lab
+    output $ TFor_top maxi
+    body load_idx
+    load_idx
+    cint 1
+    op "+"
+    op "dup"
+    store_idx
+    cp maxi
+    op "<"
+    output $ TFor_bnz top_lab maxi end_lab
+  label end_lab
+  return ()
 
 doArrayRef :: SrcLoc -> DLArg -> Bool -> Either DLArg (App ()) -> App ()
 doArrayRef at aa frombs ie = do
@@ -2286,17 +2276,16 @@ instance Compile DLExpr where
       let mt_submit = True
       void $ makeTxn $ MakeTxn {..}
     DLE_TokenInit mt_at tok -> do
-      block_ "TokenInit" $ do
-        let mt_always = True
-        let mt_mtok = Just tok
-        let mt_amt = DLA_Literal $ DLL_Int sb UI_Word 0
-        let mt_mrecv = Nothing
-        let mt_next = False
-        let mt_submit = True
-        let mt_mcclose = Nothing
-        addInitTok tok
-        cp minimumBalance_l >> mbrAdd
-        void $ makeTxn $ MakeTxn {..}
+      let mt_always = True
+      let mt_mtok = Just tok
+      let mt_amt = DLA_Literal $ DLL_Int sb UI_Word 0
+      let mt_mrecv = Nothing
+      let mt_next = False
+      let mt_submit = True
+      let mt_mcclose = Nothing
+      addInitTok tok
+      cp minimumBalance_l >> mbrAdd
+      void $ makeTxn $ MakeTxn {..}
     DLE_TokenAccepted _ addr tok -> do
       cp addr
       cp tok
@@ -2487,21 +2476,20 @@ instance Compile DLExpr where
       output $ TExtract 4 0 -- (0 = to the end)
       op "concat"
     DLE_TokenNew at (DLTokenNew {..}) -> do
-      block_ "TokenNew" $ do
-        cp minimumBalance_l >> mbrAdd
-        itxnNextOrBegin False
-        let vTypeEnum = "acfg"
-        output $ TConst vTypeEnum
-        makeTxn1 "TypeEnum"
-        cp dtn_supply >> makeTxn1 "ConfigAssetTotal"
-        maybe (cint_ at 6) cp dtn_decimals >> makeTxn1 "ConfigAssetDecimals"
-        cp dtn_sym >> makeTxn1 "ConfigAssetUnitName"
-        cp dtn_name >> makeTxn1 "ConfigAssetName"
-        cp dtn_url >> makeTxn1 "ConfigAssetURL"
-        cp dtn_metadata >> makeTxn1 "ConfigAssetMetadataHash"
-        cContractAddr >> makeTxn1 "ConfigAssetManager"
-        op "itxn_submit"
-        code "itxn" ["CreatedAssetID"]
+      cp minimumBalance_l >> mbrAdd
+      itxnNextOrBegin False
+      let vTypeEnum = "acfg"
+      output $ TConst vTypeEnum
+      makeTxn1 "TypeEnum"
+      cp dtn_supply >> makeTxn1 "ConfigAssetTotal"
+      maybe (cint_ at 6) cp dtn_decimals >> makeTxn1 "ConfigAssetDecimals"
+      cp dtn_sym >> makeTxn1 "ConfigAssetUnitName"
+      cp dtn_name >> makeTxn1 "ConfigAssetName"
+      cp dtn_url >> makeTxn1 "ConfigAssetURL"
+      cp dtn_metadata >> makeTxn1 "ConfigAssetMetadataHash"
+      cContractAddr >> makeTxn1 "ConfigAssetManager"
+      op "itxn_submit"
+      code "itxn" ["CreatedAssetID"]
     DLE_TokenBurn {} ->
       -- Burning does nothing on Algorand, because we already own it and we're
       -- the creator, and that's the rule for being able to destroy
@@ -2610,45 +2598,44 @@ instance Compile DLExpr where
     DLE_ContractFromAddress _at _addr -> do
       cp $ mdaToMaybeLA T_Contract Nothing
     DLE_ContractNew _at cns dr -> do
-      block_ "ContractNew" $ do
-        let DLContractNew {..} = cns M.! conName'
-        let ALGOCodeOut {..} = either impossible id $ aesonParse dcn_code
-        let ALGOCodeOpts {..} = either impossible id $ aesonParse dcn_opts
-        let ai_GlobalNumUint = aco_globalUints
-        let ai_GlobalNumByteSlice = aco_globalBytes
-        let ai_LocalNumUint = aco_localUints
-        let ai_LocalNumByteSlice = aco_localBytes
-        let ai_ExtraProgramPages =
-              extraPages $ length aco_approval + length aco_clearState
-        let appInfo = AppInfo {..}
-        (cp $ minimumBalance_app appInfo ApplTxn_Create) >> mbrAdd
-        itxnNextOrBegin False
-        let vTypeEnum = "appl"
-        output $ TConst vTypeEnum
-        makeTxn1 "TypeEnum"
-        let cbss f bs = do
-              let (before, after) = B.splitAt (fromIntegral algoMaxStringSize) bs
-              cp before
-              makeTxn1 f
-              unless (B.null after) $
-                cbss f after
-        cbss "ApprovalProgramPages" $ B.pack aco_approval
-        cbss "ClearStateProgramPages" $ B.pack aco_clearState
-        let unz f n = unless (n == 0) $ cp n >> makeTxn1 f
-        unz "GlobalNumUint" $ ai_GlobalNumUint
-        unz "GlobalNumByteSlice" $ ai_GlobalNumByteSlice
-        unz "LocalNumUint" $ ai_LocalNumUint
-        unz "LocalNumByteSlice" $ ai_LocalNumByteSlice
-        unz "ExtraProgramPages" $ ai_ExtraProgramPages
-        -- XXX support all of the DLRemote options
-        let DLRemote _ _ as _ _ = dr
-        forM_ as $ \a -> do
-          cp a
-          let t = argTypeOf a
-          ctobs t
-          makeTxn1 "ApplicationArgs"
-        op "itxn_submit"
-        code "itxn" ["CreatedApplicationID"]
+      let DLContractNew {..} = cns M.! conName'
+      let ALGOCodeOut {..} = either impossible id $ aesonParse dcn_code
+      let ALGOCodeOpts {..} = either impossible id $ aesonParse dcn_opts
+      let ai_GlobalNumUint = aco_globalUints
+      let ai_GlobalNumByteSlice = aco_globalBytes
+      let ai_LocalNumUint = aco_localUints
+      let ai_LocalNumByteSlice = aco_localBytes
+      let ai_ExtraProgramPages =
+            extraPages $ length aco_approval + length aco_clearState
+      let appInfo = AppInfo {..}
+      (cp $ minimumBalance_app appInfo ApplTxn_Create) >> mbrAdd
+      itxnNextOrBegin False
+      let vTypeEnum = "appl"
+      output $ TConst vTypeEnum
+      makeTxn1 "TypeEnum"
+      let cbss f bs = do
+            let (before, after) = B.splitAt (fromIntegral algoMaxStringSize) bs
+            cp before
+            makeTxn1 f
+            unless (B.null after) $
+              cbss f after
+      cbss "ApprovalProgramPages" $ B.pack aco_approval
+      cbss "ClearStateProgramPages" $ B.pack aco_clearState
+      let unz f n = unless (n == 0) $ cp n >> makeTxn1 f
+      unz "GlobalNumUint" $ ai_GlobalNumUint
+      unz "GlobalNumByteSlice" $ ai_GlobalNumByteSlice
+      unz "LocalNumUint" $ ai_LocalNumUint
+      unz "LocalNumByteSlice" $ ai_LocalNumByteSlice
+      unz "ExtraProgramPages" $ ai_ExtraProgramPages
+      -- XXX support all of the DLRemote options
+      let DLRemote _ _ as _ _ = dr
+      forM_ as $ \a -> do
+        cp a
+        let t = argTypeOf a
+        ctobs t
+        makeTxn1 "ApplicationArgs"
+      op "itxn_submit"
+      code "itxn" ["CreatedApplicationID"]
     where
       -- On ALGO, objects are represented identically to tuples of their fields in ascending order.
       -- Consequently, we can pretend objects are tuples and use tuple functions as a shortcut.
@@ -2817,7 +2804,7 @@ makeTxn (MakeTxn {..}) =
   -- XXX candidate for library fun
   case (mt_always || not (staticZero mt_amt)) of
     False -> return False
-    True -> block_ "makeTxn" $ do
+    True -> do
       let ((vTypeEnum, fReceiver, fAmount, fCloseTo), extra) =
             case mt_mtok of
               Nothing ->
