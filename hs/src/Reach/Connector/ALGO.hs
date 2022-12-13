@@ -1163,6 +1163,7 @@ data LibFun
   | LF_fromSome
   | LF_svsLoad Int
   | LF_svsDump Int
+  | LF_companionCall
   deriving (Eq, Ord, Show)
 
 libDefns :: App ()
@@ -3133,9 +3134,10 @@ callCompanion at cc = do
         let howManyCalls = fromIntegral $ fromMaybe 0 $ M.lookup l cim
         -- XXX bunch into groups of 16, slightly less cost
         comment $ texty cc
-        replicateM_ howManyCalls $ do
+        replicateM_ howManyCalls $ libCall LF_companionCall $ do
           startCall False False
           op "itxn_submit"
+        replicateM_ howManyCalls $ do
           credit cr_call
         return ()
     CompanionDelete ->
