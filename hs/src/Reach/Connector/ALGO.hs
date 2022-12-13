@@ -16,9 +16,10 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Internal as BI
 import Data.Char
 import qualified Data.DList as DL
+import Data.Foldable
 import Data.Function
 import Data.IORef
-import Data.List (intercalate, foldl')
+import Data.List (intercalate)
 import qualified Data.List as List
 import Data.List.Extra (enumerate, mconcatMap)
 import qualified Data.Map.Strict as M
@@ -571,6 +572,7 @@ data IndentDir
   = INo
   | IUp
   | IDo
+  deriving (Show)
 
 data TEAL
   = TCode TealOp [TealArg]
@@ -591,6 +593,7 @@ data TEAL
   | TResource Resource
   | TCostCredit Integer
   | TCheckOnCompletion
+  deriving (Show)
 
 type TEALt = [LT.Text]
 
@@ -650,12 +653,79 @@ renderOut tscl' = do
   let t = LT.toStrict lt
   return t
 
-optimize :: [TEAL] -> [TEAL]
-optimize ts0 = tsN
-  where
-    ts1 = opt_peep ts0
-    ts2 = opt_bs ts1
-    tsN = ts2
+optimize :: TEALs -> IO [TEAL]
+optimize ts00 = do
+  ts05 <- opt_cfg ts00
+  let ts10 = opt_peep ts05
+  let ts20 = opt_bs ts10
+  let tsN = ts20
+  return tsN
+
+-- Optimize the order of basic blocks to decrease the number of jumps, by
+-- inlining blocks that are used once
+type Blocks = M.Map Label BasicBlock
+data BasicBlock = BasicBlock
+  { bb_ts :: TEALs
+  , bb_ec :: Maybe Label
+  }
+
+instance Show BasicBlock where
+  show _ = "bb"
+
+type CFGAcc = Maybe (Label, BasicBlock)
+
+opt_cfg :: TEALs -> IO [TEAL]
+opt_cfg ts0 = do
+  bmr <- newIORef (mempty :: Blocks)
+  let bb0 lab ts = Just (lab, (BasicBlock ts mempty))
+  let save :: CFGAcc -> IO ()
+      save = \case
+        Nothing -> return ()
+        Just (lab, bb) -> modifyIORef bmr $ M.insert lab bb
+  let go :: CFGAcc -> TEAL -> IO CFGAcc
+      go acc = \case
+        t@(TLabel lab') ->
+          case acc of
+            Nothing -> do
+              save acc
+              return $ bb0 lab' (DL.singleton t)
+            _ -> impossible $ "cfg: label without b " <> show lab'
+        t ->
+          case acc of
+            Nothing -> impossible $ "cfg: non-label without block: " <> show t
+            Just (lab, BasicBlock {..}) ->
+              case t of
+                TCode "b" [ lab' ] -> do
+                  save $ Just (lab, BasicBlock bb_ts (Just lab'))
+                  return $ Nothing
+                _ -> do
+                  let ts' = DL.snoc bb_ts t
+                  let bb' = BasicBlock ts' Nothing
+                  let acc' = Just $ (lab, bb')
+                  let next = save acc' >> return Nothing
+                  case t of
+                    TCode "err" [] -> next
+                    TCode "return" [] -> next
+                    TCode "retsub" [] -> next
+                    _ -> return acc'
+  let lTOP = "TOP"
+  save =<< foldlM go (bb0 lTOP mempty) ts0
+  let grab :: Label -> IO TEALs
+      grab lab = do
+        bm <- readIORef bmr
+        case M.lookup lab bm of
+          Nothing -> (<>) (DL.singleton $ TCode "b" [lab]) <$> grabm Nothing
+          Just (BasicBlock {..}) -> do
+            modifyIORef bmr $ M.delete lab
+            (<>) bb_ts <$> grabm bb_ec
+      grabm :: Maybe Label -> IO TEALs
+      grabm = \case
+        Just lab -> grab lab
+        Nothing ->
+          (M.lookupMin <$> readIORef bmr) >>= \case
+            Just (lab, _) -> grab lab
+            Nothing -> return mempty
+  DL.toList <$> grab lTOP
 
 -- Optimize the definition of BYTES: We don't do this in the peep-hole optimize
 -- because we want them to be removed if possible
@@ -911,6 +981,11 @@ buildCFG rlab ts = do
       recCost 1
       jump lBot
       switch ""
+    TCode "err" [] -> do
+      -- recCost 1 -- Doesn't cost anything, because we know the txn fails
+      recResource R_CheckedCompletion 1
+      jump lBot
+      switch ""
     TLog len -> do
       recResource R_Log len
       recResource R_LogCalls 1
@@ -998,7 +1073,7 @@ buildCFG rlab ts = do
     ensureAllPaths (rlab <> ".OnC") g lTop lBots (getc R_CheckedCompletion) >>= \case
       Nothing -> return ()
       Just p ->
-        impossible $ "found a path where OnCompletion was not checked: " <> show p
+        impossible $ "found a path where OnCompletion was not checked: " <> show (reverse p)
   return (gs g, restrict)
 
 data LabelRec = LabelRec
@@ -1023,6 +1098,12 @@ data CompanionRec = CompanionRec
   , cr_del :: Integer
   }
 
+showTeal :: T.Text -> Outputer -> [TEAL] -> IO ()
+showTeal lab disp ts = do
+  ts' <- renderOut ts
+  mayOutput (disp False $ ".teal" <> lab) $
+    flip TIO.writeFile ts'
+
 checkCost :: String -> Notify -> Outputer -> [LabelRec] -> CompanionInfo -> [TEAL] -> IO (Either String CompanionInfo)
 checkCost rlab notify disp ls ci ts = do
   msgR <- newIORef mempty
@@ -1032,9 +1113,6 @@ checkCost rlab notify disp ls ci ts = do
         mayOutput (disp False ("." <> lab <> "dot")) $
           flip LTIO.writeFile (T.render $ dotty gs)
   loud $ rlab <> " buildCFG"
-  ts' <- renderOut ts
-  mayOutput (disp False ".teal") $
-    flip TIO.writeFile ts'
   (gs, restrictCFG) <- buildCFG rlab ts
   rgs "" gs
   addMsg $ "Conservative analysis on Algorand found:"
@@ -1325,6 +1403,7 @@ cMapSet = libCall LF_mapSet $ do
   code "dig" [ "3" ]
   -- [ mbr, data, key, len, mbr ]
   mbrAdd
+  code "b" [after]
   -- [ mbr, data, key, len ]
   label after
   -- [ mbr, data, key, len ]
@@ -1982,6 +2061,7 @@ cfor iv maxi body = do
   sallocVar iv $ \store_idx load_idx -> do
     cint 0
     store_idx
+    code "b" [top_lab]
     label top_lab
     output $ TFor_top maxi
     body load_idx
@@ -1993,6 +2073,7 @@ cfor iv maxi body = do
     cp maxi
     op "<"
     output $ TFor_bnz top_lab maxi end_lab
+    code "b" [end_lab]
   label end_lab
   return ()
 
@@ -2882,7 +2963,7 @@ cswatchTail w es = do
     (l, ce) <- cpl e
     return (l, ce)
   code w $ map fst els
-  op "err"
+  code "b" ["errl"]
   forM_ els $ \(l, ce) -> label l >> ce
 
 doSwitch :: (a -> App ()) -> DLVar -> SwitchCases a -> App ()
@@ -3074,15 +3155,6 @@ gvType = \case
   GV_remoteMinB -> T_Tuple []
   GV_remoteBals -> T_Tuple []
 
-defn_fixed :: Label -> Bool -> App ()
-defn_fixed l b = do
-  label l
-  cp b
-  op "return"
-
-defn_done :: App ()
-defn_done = defn_fixed "done" True
-
 cRound :: App ()
 cRound = code "global" ["Round"]
 
@@ -3145,7 +3217,9 @@ callCompanion at cc = do
           gvStore GV_companion
           return ()
     CompanionLabel mk l -> do
-      when mk $ label l
+      when mk $ do
+        code "b" [l]
+        label l
       whenJust mcr $ \cim -> do
         let howManyCalls = fromIntegral $ fromMaybe 0 $ M.lookup l cim
         -- XXX bunch into groups of 16, slightly less cost
@@ -3153,6 +3227,7 @@ callCompanion at cc = do
         replicateM_ howManyCalls $ libCall LF_companionCall $ do
           startCall False False
           op "itxn_submit"
+          op "retsub"
         replicateM_ howManyCalls $ do
           credit cr_call
         return ()
@@ -3431,6 +3506,7 @@ instance Compile CLProg where
     liftIO $ writeIORef eMaxApiRetSize maxApiRetSize
     liftIO $ writeIORef eApiLs $ []
     -- This is where the actual code starts
+    code "b" ["preamble"]
     -- We branch on the method
     label "preamble"
     let getMeth = code "txna" ["ApplicationArgs", "0"]
@@ -3533,12 +3609,14 @@ cp_shell x = do
   output $ TConst $ "NoOp"
   asserteq
   output $ TCheckOnCompletion
+  code "b" ["updateMbr"]
   label "updateMbr"
   gvLoad GV_mbrAdd
   gvLoad GV_mbrSub
   op "dup2"
   op ">="
   code "bz" [ "updateMbr_neg" ]
+  code "b" ["updateMbr_pos_eq"]
   label "updateMbr_pos_eq"
   op "-"
   op "dup"
@@ -3574,6 +3652,7 @@ cp_shell x = do
   label "updateState"
   gvLoad GV_wasntMeth
   code "bnz" ["done"]
+  code "b" [ "apiReturn_noCheck" ]
   label "apiReturn_noCheck"
   -- SHA-512/256("return")[0..4] = 0x151f7c75
   cp $ BS.pack [0x15, 0x1f, 0x7c, 0x75]
@@ -3582,7 +3661,11 @@ cp_shell x = do
   maxApiRetSize <- liftIO $ readIORef eMaxApiRetSize
   clog_ $ 4 + maxApiRetSize
   code "b" ["done"]
-  defn_done
+  label "errl"
+  op "err"
+  label "done"
+  cp True
+  op "return"
   label "apiReturn_check"
   code "txn" ["OnCompletion"]
   -- XXX A remote Reach API could have an `OnCompletion` of `DeleteApplication` due to `updateStateHalt`.
@@ -3721,13 +3804,15 @@ compile_algo disp x = do
           loud $ rlab <> " run"
           (ts, notify, finalize) <- run ci $ cp_shellColor x
           loud $ rlab <> " optimize"
-          let !ts' = optimize $ DL.toList ts
+          let disp' = wrapOutput (T.pack lab) disp
+          showTeal ".raw" disp' $ DL.toList ts
+          !ts' <- optimize ts
           progLs <- readIORef eProgLs
           apiLs <- readIORef eApiLs
           let mls = if inclAll then progLs else Just apiLs
           let ls = fromMaybe (impossible "prog labels") mls
           loud $ rlab <> " check"
-          let disp' = wrapOutput (T.pack lab) disp
+          showTeal "" disp' ts'
           checkCost rlab notify disp' ls ci ts' >>= \case
             Right ci' -> rec r' inclAll ci'
             Left msg ->
