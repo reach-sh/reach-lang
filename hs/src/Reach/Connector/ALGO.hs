@@ -2084,6 +2084,7 @@ computeStateSizeAndKeys badx prefix size limit = do
   return (keys, keysl)
 
 cSvsGet :: [Word8] -> App ()
+cSvsGet [] = cbs ""
 cSvsGet keysl = do
   -- [ SvsData_0? ]
   forM_ (zip keysl $ False : repeat True) $ \(mi, doConcat) -> do
@@ -2125,6 +2126,7 @@ labelLast l = reverse $
     _ -> []
 
 cSvsPut :: Integer -> [Word8] -> App ()
+cSvsPut _ [] = op "pop"
 cSvsPut size keysl = do
   -- [ SvsData ]
   forM_ (labelLast $ keysl) $ \(vi, isLast) -> do
@@ -3242,9 +3244,9 @@ instance CompileK CLStmt where
       mapM_ (uncurry cmove) svs
       cSvsDump which
       cp which
-      gvStore GV_currentStep
       cRound
       gvStore GV_currentTime
+      gvStore GV_currentStep
       k
     CLTokenUntrack at tok -> do
       incResource R_Account aDeployer
