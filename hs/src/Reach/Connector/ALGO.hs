@@ -19,7 +19,7 @@ import qualified Data.DList as DL
 import Data.Foldable
 import Data.Function
 import Data.IORef
-import Data.List (intercalate)
+import Data.List (intercalate, sortOn)
 import qualified Data.List as List
 import Data.List.Extra (enumerate, mconcatMap)
 import qualified Data.Map.Strict as M
@@ -662,10 +662,15 @@ optimize ts00 = do
   return tsN
 
 -- Optimize the order of basic blocks to decrease the number of jumps, by
--- inlining blocks that are used once
+-- putting destinations immediately after the jump. This also means that blocks
+-- that are only jumped to once are effectively inlined.
+--
+-- NOTE: Extend this to optimize away callsub-once
 type Blocks = M.Map Label BasicBlock
+type CallCounts = M.Map Label Int
 data BasicBlock = BasicBlock
   { bb_ts :: TEALs
+  , bb_mayInline :: Bool
   , bb_ec :: Maybe Label
   }
 
@@ -677,7 +682,8 @@ type CFGAcc = Maybe (Label, BasicBlock)
 opt_cfg :: TEALs -> IO [TEAL]
 opt_cfg ts0 = do
   bmr <- newIORef (mempty :: Blocks)
-  let bb0 lab ts = Just (lab, (BasicBlock ts mempty))
+  ccr <- newIORef (mempty :: CallCounts)
+  let bb0 lab ts = Just (lab, (BasicBlock ts True mempty))
   let save :: CFGAcc -> IO ()
       save = \case
         Nothing -> return ()
@@ -696,36 +702,64 @@ opt_cfg ts0 = do
             Just (lab, BasicBlock {..}) ->
               case t of
                 TCode "b" [ lab' ] -> do
-                  save $ Just (lab, BasicBlock bb_ts (Just lab'))
+                  save $ Just (lab, BasicBlock bb_ts False (Just lab'))
                   return $ Nothing
                 _ -> do
                   let ts' = DL.snoc bb_ts t
-                  let bb' = BasicBlock ts' Nothing
+                  let bb' = BasicBlock ts' bb_mayInline Nothing
                   let acc' = Just $ (lab, bb')
                   let next = save acc' >> return Nothing
+                  let this = return acc'
                   case t of
                     TCode "err" [] -> next
                     TCode "return" [] -> next
                     TCode "retsub" [] -> next
-                    _ -> return acc'
+                    TCode "callsub" [l] -> do
+                      modifyIORef ccr $ M.alter (Just . (+) 1 . fromMaybe 0) l
+                      this
+                    _ -> this
   let lTOP = "TOP"
   save =<< foldlM go (bb0 lTOP mempty) ts0
-  let grab :: Label -> IO TEALs
+  q <- do
+    bm <- readIORef bmr
+    cc <- readIORef ccr
+    let ccs = reverse $ map fst $ sortOn snd $ M.toAscList cc
+    return $ lTOP : (M.keys $ M.withoutKeys bm (M.keysSet cc)) <> ccs
+  ansr <- newIORef mempty
+  let add1 t = modifyIORef ansr $ flip DL.snoc t
+  let tryInline :: Bool -> TEAL -> IO ()
+      tryInline rmRetSub = \case
+        TCode "retsub" [] | rmRetSub -> return ()
+        t@(TCode "callsub" [l]) -> do
+          ((,) <$> (M.lookup l <$> readIORef ccr) <*> (M.lookup l <$> readIORef bmr)) >>= \case
+            (Just 1, Just (BasicBlock l_bs True Nothing)) -> do
+              snarf True l l_bs
+            _ -> add1 t
+        t -> add1 t
+      snarf :: Bool -> Label -> TEALs -> IO ()
+      snarf rmRetSub lab ts = do
+        modifyIORef bmr $ M.delete lab
+        mapM_ (tryInline rmRetSub) ts
+  let grab :: Label -> IO ()
       grab lab = do
-        bm <- readIORef bmr
-        case M.lookup lab bm of
-          Nothing -> (<>) (DL.singleton $ TCode "b" [lab]) <$> grabm Nothing
+        (M.lookup lab <$> readIORef bmr) >>= \case
+          Nothing -> add1 $ TCode "b" [lab]
           Just (BasicBlock {..}) -> do
-            modifyIORef bmr $ M.delete lab
-            (<>) bb_ts <$> grabm bb_ec
-      grabm :: Maybe Label -> IO TEALs
+            snarf False lab bb_ts
+            grabm bb_ec
+      grabm :: Maybe Label -> IO ()
       grabm = \case
         Just lab -> grab lab
-        Nothing ->
-          (M.lookupMin <$> readIORef bmr) >>= \case
-            Just (lab, _) -> grab lab
-            Nothing -> return mempty
-  DL.toList <$> grab lTOP
+        Nothing -> return ()
+      grabq :: [Label] -> IO ()
+      grabq = \case
+        [] -> return ()
+        l : q' -> do
+          (M.member l <$> readIORef bmr) >>= \case
+            True -> grab l >> grabq q'
+            False -> grabq q'
+  grabq q
+  DL.toList <$> readIORef ansr
 
 -- Optimize the definition of BYTES: We don't do this in the peep-hole optimize
 -- because we want them to be removed if possible
