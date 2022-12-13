@@ -791,6 +791,20 @@ opt_peep1 = \case
       e2n :: Integer
       e2n = s0n + (fromIntegral e1w)
   (TLoad x _xlab) : (TStore y _ylab) : l | x == y -> opt_peep1 $ l
+  (TInt 0) : (TCode "==" []) : (TCode "bz" [lab]) : l ->
+    -- We are jumping TO lab if what is on the stack is NOT 0
+    --
+    -- int 1
+    -- int 0
+    -- ==     => bool false  =>
+    -- bz lab    bz lab         b lab
+    --
+    -- int 0
+    -- int 0
+    -- ==     => bool true  =>
+    -- bz lab    bz lab         nop
+    --
+    opt_peep1 $ (TCode "bnz" [lab]) : l
   (TInt x) : (Titob _) : l ->
     opt_peep1 $ (TBytes $ itob 8 x) : l
   (TBytes xbs) : (TCode "btoi" []) : l ->
