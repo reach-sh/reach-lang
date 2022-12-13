@@ -1153,8 +1153,8 @@ data LibFun
   = LF_mapRef
   | LF_mapDel
   | LF_mapSet
-  | LF_checkTxn_net
-  | LF_checkTxn_tok
+  | LF_checkTxn Bool
+  | LF_makeTxn Bool Bool Bool Bool
   | LF_checkUInt256ResultLen
   | LF_mbrAdd
   | LF_mbrSub
@@ -2738,39 +2738,37 @@ tokFields :: (LT.Text, LT.Text, LT.Text, LT.Text)
 tokFields = ("axfer", "AssetReceiver", "AssetAmount", "AssetCloseTo")
 
 checkTxn_lib :: Bool -> App ()
-checkTxn_lib tok = do
-  let lf = if tok then LF_checkTxn_tok else LF_checkTxn_net
-  libCall lf $ do
-    let get1 f = code "gtxns" [f]
-    let (vTypeEnum, fReceiver, fAmount, _fCloseTo) =
-          if tok then tokFields else ntokFields
-    -- init: False: [ amt ]
-    -- init:  True: [ amt, tok ]
-    useResource R_Txn
-    code "txn" ["GroupIndex"]
-    gvLoad GV_txnCounter
-    cint 1
-    op "+"
-    op "dup"
-    gvStore GV_txnCounter
-    op "-"
-    dupn $ 2 + (if tok then 1 else 0)
-    -- init <> [ id, id, id, id? ]
-    get1 fReceiver
-    cContractAddr
-    cfrombs T_Address
+checkTxn_lib tok = libCall (LF_checkTxn tok) $ do
+  let get1 f = code "gtxns" [f]
+  let (vTypeEnum, fReceiver, fAmount, _fCloseTo) =
+        if tok then tokFields else ntokFields
+  -- init: False: [ amt ]
+  -- init:  True: [ amt, tok ]
+  useResource R_Txn
+  code "txn" ["GroupIndex"]
+  gvLoad GV_txnCounter
+  cint 1
+  op "+"
+  op "dup"
+  gvStore GV_txnCounter
+  op "-"
+  dupn $ 2 + (if tok then 1 else 0)
+  -- init <> [ id, id, id, id? ]
+  get1 fReceiver
+  cContractAddr
+  cfrombs T_Address
+  asserteq
+  get1 "TypeEnum"
+  output $ TConst vTypeEnum
+  asserteq
+  -- init <> [ id, id? ]
+  when tok $ do
+    get1 "XferAsset"
+    code "uncover" [ "2" ]
     asserteq
-    get1 "TypeEnum"
-    output $ TConst vTypeEnum
-    asserteq
-    -- init <> [ id, id? ]
-    when tok $ do
-      get1 "XferAsset"
-      code "uncover" [ "2" ]
-      asserteq
-    get1 fAmount
-    asserteq
-    op "retsub"
+  get1 fAmount
+  asserteq
+  op "retsub"
 
 checkTxn :: CheckTxn -> App Bool
 checkTxn (CheckTxn {..}) =
@@ -2801,42 +2799,40 @@ itxnNextOrBegin isNext = do
 
 makeTxn :: MakeTxn -> App Bool
 makeTxn (MakeTxn {..}) =
-  -- XXX candidate for library fun
   case (mt_always || not (staticZero mt_amt)) of
     False -> return False
     True -> do
-      let ((vTypeEnum, fReceiver, fAmount, fCloseTo), extra) =
-            case mt_mtok of
-              Nothing ->
-                (ntokFields, return ())
-              Just tok ->
-                (tokFields, textra)
-                where
-                  textra = do
-                    incResource R_Asset tok
-                    cp tok
-                    makeTxn1 "XferAsset"
       makeTxnUsage mt_at mt_mtok
-      itxnNextOrBegin mt_next
       cp mt_amt
-      makeTxn1 fAmount
-      output $ TConst vTypeEnum
-      makeTxn1 "TypeEnum"
-      whenJust mt_mcclose $ \cclose -> do
-        cclose
-        cfrombs T_Address
-        makeTxn1 fCloseTo
+      whenJust mt_mtok $ \tok -> do
+        incResource R_Asset tok
+        cp tok
       case mt_mrecv of
         Nothing -> cContractAddr
         Just (Left a) -> do
           incResource R_Account a
           cp a
         Just (Right cr) -> cr
-      cfrombs T_Address
-      makeTxn1 fReceiver
-      extra
-      when mt_submit $ op "itxn_submit"
+      whenJust mt_mcclose $ \cclose -> cclose
+      makeTxn_lib mt_next (isJust mt_mcclose) (isJust mt_mtok) mt_submit
       return True
+
+makeTxn_lib :: Bool -> Bool -> Bool -> Bool -> App ()
+makeTxn_lib isNext isClose isTokTxn isSubmit = libCall (LF_makeTxn isNext isClose isTokTxn isSubmit) $ do
+  let (vTypeEnum, fReceiver, fAmount, fCloseTo) = if isTokTxn then tokFields else ntokFields
+  itxnNextOrBegin isNext
+  output $ TConst vTypeEnum
+  makeTxn1 "TypeEnum"
+  when isClose $ do
+    cfrombs T_Address
+    makeTxn1 fCloseTo
+  cfrombs T_Address
+  makeTxn1 fReceiver
+  when isTokTxn $ do
+    makeTxn1 "XferAsset"
+  makeTxn1 fAmount
+  when isSubmit $ op "itxn_submit"
+  op "retsub"
 
 cmatch :: (CompileLabel a) => App () -> [(BS.ByteString, a)] -> App ()
 cmatch ca es = do
@@ -3509,10 +3505,11 @@ cp_shell x = do
   op "dup"
   code "bz" [ "updateMbr_eq" ]
   do
+    gvStore GV_mbrAdd
     let ct_at = sb
     let ct_mtok = Nothing
     let ct_amt = aDMbr
-    store_let vDMbr nop $
+    store_let vDMbr (gvLoad GV_mbrAdd) $
       void $ checkTxn $ CheckTxn {..}
   code "b" [ "updateState" ]
   label "updateMbr_eq"
@@ -3522,6 +3519,7 @@ cp_shell x = do
   op "swap"
   op "-"
   do
+    gvStore GV_mbrAdd
     incResource R_Account aDeployer
     let mt_amt = aDMbr
     let mt_at = sb
@@ -3531,7 +3529,7 @@ cp_shell x = do
     let mt_mcclose = Nothing
     let mt_next = False
     let mt_submit = True
-    store_let vDMbr nop $
+    store_let vDMbr (gvLoad GV_mbrAdd) $
       void $ makeTxn $ MakeTxn {..}
   code "b" ["updateState"]
   label "updateState"
