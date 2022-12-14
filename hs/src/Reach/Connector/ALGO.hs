@@ -3424,6 +3424,9 @@ instance Compile CLTail where
       vs <- map varLetVar <$> askFunVars f
       case isApi of
         True ->
+          -- XXX maybe don't treat APIs specially in ALGO... requires changing
+          -- the ABI of Reach's message handers to not have time in tuple
+          -- rather than separate arg
           case vs of
             [v] -> do
               cp $ DLLA_Tuple $ map DLA_Var args

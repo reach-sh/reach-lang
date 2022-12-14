@@ -475,7 +475,9 @@ instance IG CLTail where
     CL_Com m t -> ig ls (IGseq m t)
     CL_If _ a t f -> igIf ls a t f
     CL_Switch _ v csm -> igSwitch ls v csm
-    CL_Jump _ f as _ _ -> do
+    CL_Jump _ _f as True _ -> do
+      ig ls (Seq as)
+    CL_Jump _ f as False _ -> do
       vs <- askFunVars f
       zipWithM_ move vs as
       ig ls (Seq $ map varLetVar vs <> as)
@@ -519,7 +521,7 @@ instance (IG a, Traversable t) => IG (Par (t a)) where
   ig ls (Par m) = foldr S.union mempty <$> mapM (ig ls) m
 
 instance IG CLProg where
-  ig ls (CLProg {..}) = ig ls (IGseq (Par clp_funs) (Par clp_api))
+  ig ls (CLProg {..}) = ig ls (IGpar (Par clp_funs) (Par clp_api))
 
 -- Coloring
 type Coloring = M.Map DLVar Int
