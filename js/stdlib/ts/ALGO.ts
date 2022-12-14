@@ -2015,11 +2015,13 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               addCompanion();
               // This fee is for the delete
               howManyMoreFees++;
+              mbrDelta = mbrDelta.sub(minimumBalance);
             }
           }
 
           debug(dhead, { mbrDelta });
-          if ( ! isHalt && ! mbrDelta.eq(0) ) {
+          // If the delta is 0, there's no reason to update the MBR
+          if ( ! mbrDelta.eq(0) ) {
             if ( mbrDelta.lt(0) ) {
               // The delta is negative, so we let the contract pay the deployer
               recordAccount_(Deployer);

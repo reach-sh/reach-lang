@@ -1296,6 +1296,7 @@ data LibFun
   | LF_svsDump Int
   | LF_companionCall
   | LF_timeCheck
+  | LF_updateMbr
   deriving (Eq, Ord, Show)
 
 libDefns :: App ()
@@ -1334,6 +1335,47 @@ libJump :: LibFun -> App () -> App ()
 libJump lf impl = do
   lab <- libImpl lf impl
   code "b" [ lab ]
+
+cUpdateMbr :: App ()
+cUpdateMbr = libCall LF_updateMbr $ do
+  gvLoad GV_mbrAdd
+  gvLoad GV_mbrSub
+  op "dup2"
+  op ">="
+  code "bz" [ "updateMbr_neg" ]
+  code "b" ["updateMbr_pos_eq"]
+  label "updateMbr_pos_eq"
+  op "-"
+  op "dup"
+  code "bz" [ "updateMbr_eq" ]
+  do
+    gvStore GV_mbrAdd
+    let ct_at = sb
+    let ct_mtok = Nothing
+    let ct_amt = aDMbr
+    store_let vDMbr (gvLoad GV_mbrAdd) $
+      void $ checkTxn $ CheckTxn {..}
+  op "retsub"
+  label "updateMbr_eq"
+  op "pop"
+  op "retsub"
+  label "updateMbr_neg"
+  op "swap"
+  op "-"
+  do
+    gvStore GV_mbrAdd
+    incResource R_Account aDeployer
+    let mt_amt = aDMbr
+    let mt_at = sb
+    let mt_mtok = Nothing
+    let mt_always = True
+    let mt_mrecv = Just $ Right $ cDeployer
+    let mt_mcclose = Nothing
+    let mt_next = False
+    let mt_submit = True
+    store_let vDMbr (gvLoad GV_mbrAdd) $
+      void $ makeTxn $ MakeTxn {..}
+  op "retsub"
 
 cGetTag :: App ()
 cGetTag = do
@@ -2190,13 +2232,13 @@ instance Compile B.ByteString where
 cbs :: B.ByteString -> App ()
 cbs = cp
 
-cTupleRef :: DLType -> Integer -> App ()
-cTupleRef tt idx = do
+cTupleRef_ :: Bool -> DLType -> Integer -> App ()
+cTupleRef_ optOne tt idx = do
   -- [ Tuple ]
   let ts = tupleTypes tt
   (t, start, sz) <- computeExtract ts idx
   case (ts, idx) of
-    ([_], 0) ->
+    ([_], 0) | optOne ->
       return ()
     _ -> do
       cextract start sz
@@ -2204,6 +2246,9 @@ cTupleRef tt idx = do
   cfrombs t
   -- [ Value ]
   return ()
+
+cTupleRef :: DLType -> Integer -> App ()
+cTupleRef = cTupleRef_ True
 
 cTupleSet :: SrcLoc -> App () -> DLType -> Integer -> App ()
 cTupleSet _at cnew tt idx = do
@@ -2253,7 +2298,7 @@ cSvsLoad which = libCall (LF_svsLoad which) $ do
   let t = T_Tuple $ map typeOf vs
   forM_ (labelLast $ zip vs [0..]) $ \((v, vi), isLast) -> do
     unless isLast $ op "dup"
-    cTupleRef t vi
+    cTupleRef_ False t vi
     lookupVarColoring "svsLoad" v >>= \case
       Just loc -> output $ TStore loc $ texty v
       Nothing -> op "pop"
@@ -3219,14 +3264,13 @@ callCompanion at cc = do
         makeTxn1 "TypeEnum"
         case ctor of
           True -> do
-            cint_ at 0
             incResource R_App $ DLA_Literal $ DLL_Int at UI_Word 0
             freeResource R_App $ (0, cr_ro)
           False -> do
             cp cr_ro
             unless del $ do
               incResource R_App cr_ro
-        makeTxn1 "ApplicationID"
+            makeTxn1 "ApplicationID"
   case cc of
     CompanionGet -> do
       comment $ texty cc
@@ -3279,6 +3323,7 @@ callCompanion at cc = do
         makeTxn1 "OnCompletion"
         op "itxn_submit"
         credit cr_del
+        cp algoMinimumBalance >> mbrSub
         return ()
     CompanionDeletePre ->
       whenJust mcr $ \_ -> do
@@ -3627,6 +3672,13 @@ cp_shell x = do
   asserteq
   output $ TCheckOnCompletion
   callCompanion sb $ CompanionDelete
+  -- XXX technically this is not necessary, because we're about to return
+  -- everything anyways and Algorand actually only checks the MBR for things
+  -- that exist afterwards, but NOT doing this makes it so that the amounts are
+  -- less than we think they're going to be on remote calls. We could get
+  -- around that by adjusting `cGetBalance` and pretending that they are given
+  -- when we're about to be deleted
+  cUpdateMbr
   do
     incResource R_Account aDeployer
     let mt_at = sb
@@ -3652,45 +3704,7 @@ cp_shell x = do
   output $ TConst $ "NoOp"
   asserteq
   output $ TCheckOnCompletion
-  code "b" ["updateMbr"]
-  label "updateMbr"
-  gvLoad GV_mbrAdd
-  gvLoad GV_mbrSub
-  op "dup2"
-  op ">="
-  code "bz" [ "updateMbr_neg" ]
-  code "b" ["updateMbr_pos_eq"]
-  label "updateMbr_pos_eq"
-  op "-"
-  op "dup"
-  code "bz" [ "updateMbr_eq" ]
-  do
-    gvStore GV_mbrAdd
-    let ct_at = sb
-    let ct_mtok = Nothing
-    let ct_amt = aDMbr
-    store_let vDMbr (gvLoad GV_mbrAdd) $
-      void $ checkTxn $ CheckTxn {..}
-  code "b" [ "updateState" ]
-  label "updateMbr_eq"
-  op "pop"
-  code "b" [ "updateState" ]
-  label "updateMbr_neg"
-  op "swap"
-  op "-"
-  do
-    gvStore GV_mbrAdd
-    incResource R_Account aDeployer
-    let mt_amt = aDMbr
-    let mt_at = sb
-    let mt_mtok = Nothing
-    let mt_always = True
-    let mt_mrecv = Just $ Right $ cDeployer
-    let mt_mcclose = Nothing
-    let mt_next = False
-    let mt_submit = True
-    store_let vDMbr (gvLoad GV_mbrAdd) $
-      void $ makeTxn $ MakeTxn {..}
+  cUpdateMbr
   code "b" ["updateState"]
   label "updateState"
   gvLoad GV_wasntMeth
