@@ -2567,19 +2567,19 @@ instance Compile DLExpr where
       let mt_mcclose = Nothing
       let mt_mrecv = Just $ Right $ gvLoad GV_remoteCallee
       let mt_always = ra_strictPay
-      hadNet <- (do
-        let mt_amt = pay_net
-        let mt_mtok = Nothing
-        let mt_next = False
-        let mt_submit = False
-        mayIncTxn $ makeTxn $ MakeTxn {..})
       let foldMy a l f = foldM f a l
-      hadSome <- foldMy hadNet pay_ks $ \mt_next (mt_amt, tok) -> do
+      hadSome <- foldMy False pay_ks $ \mt_next (mt_amt, tok) -> do
         let mt_mtok = Just tok
         let mt_submit = False
         x <- mayIncTxn $ makeTxn $ MakeTxn {..}
         return $ mt_next || x
-      itxnNextOrBegin hadSome
+      hadNet <- (do
+        let mt_amt = pay_net
+        let mt_mtok = Nothing
+        let mt_next = hadSome
+        let mt_submit = False
+        mayIncTxn $ makeTxn $ MakeTxn {..})
+      itxnNextOrBegin hadNet
       output $ TConst "appl"
       makeTxn1 "TypeEnum"
       cp ro
