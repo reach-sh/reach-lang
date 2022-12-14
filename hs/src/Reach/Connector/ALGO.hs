@@ -3583,7 +3583,7 @@ cp_shellColor (IGd x g) = do
     Left m -> impossible $ "Could not allocate variables to registers using scratch space; we could hack the planet and get more registers by using frame variables: " <> m
     Right (_mc, c) -> do
       c' <- forWithKeyM c $ \v l -> do
-        let l' = l + maxUsedSlot
+        let l' = l + maxUsedSlot + 1
         unless (l' <= 255) $ do
           bad $ LT.pack $ "illegal coloring for " <> show v <> " " <> show l
         return $ fromIntegral l'
