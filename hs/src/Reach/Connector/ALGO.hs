@@ -2724,7 +2724,9 @@ instance Compile DLExpr where
       cp d
       cGetTag
     DLE_FromSome _ mo da -> do
+      let t = typeOf da
       cp da
+      ctobs t
       cp mo
       libCall LF_fromSome $ do
         -- [ Default, Object ]
@@ -2739,6 +2741,7 @@ instance Compile DLExpr where
         -- [   False,   True, Cond ]
         op "select"
         op "retsub"
+      cfrombs t
     DLE_ContractFromAddress _at _addr -> do
       cp $ mdaToMaybeLA T_Contract Nothing
     DLE_ContractNew _at cns dr -> do
