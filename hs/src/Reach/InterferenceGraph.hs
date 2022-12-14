@@ -507,7 +507,10 @@ instance IG CLIntFun where
 
 manyifyDom :: CLFun -> CLFun
 manyifyDom (CLFun {..}) =
-  CLFun clf_at clf_dom clf_view clf_tail
+  CLFun clf_at (washVars clf_dom) clf_view clf_tail
+
+washVars :: [DLVarLet] -> [DLVarLet]
+washVars = map (v2vl . varLetVar)
 
 igList :: (IG a) => App DLVarS -> [a] -> App DLVarS
 igList ls = \case
