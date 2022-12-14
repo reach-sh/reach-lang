@@ -122,7 +122,7 @@ bytesTypeLen = \case
   T_Bytes l -> l
   _ -> impossible "no bytes"
 
-objstrTypes :: DLType -> [(SLVar, DLType)]
+objstrTypes :: HasCallStack => DLType -> [(SLVar, DLType)]
 objstrTypes = \case
   T_Object m -> M.toAscList m
   T_Struct ts -> ts
