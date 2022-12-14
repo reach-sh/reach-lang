@@ -706,14 +706,18 @@ opt_cfg ts0 = do
                   return $ Nothing
                 _ -> do
                   let ts' = DL.snoc bb_ts t
-                  let bb' = BasicBlock ts' bb_mayInline Nothing
-                  let acc' = Just $ (lab, bb')
+                  let bb' mi = BasicBlock ts' mi Nothing
+                  let mk_acc' mi = Just $ (lab, bb' mi)
+                  let acc' = mk_acc' bb_mayInline
                   let next = save acc' >> return Nothing
                   let this = return acc'
+                  let cant_inline = return $ mk_acc' False
                   case t of
                     TCode "err" [] -> next
                     TCode "return" [] -> next
                     TCode "retsub" [] -> next
+                    TCode "bnz" _ -> cant_inline
+                    TCode "bz" _ -> cant_inline
                     TCode "callsub" [l] -> do
                       modifyIORef ccr $ M.alter (Just . (+) 1 . fromMaybe 0) l
                       this
@@ -1411,15 +1415,13 @@ cMapDel = libCall LF_mapDel $ do
   -- [ mbr, key ]
   op "box_del"
   -- [ mbr, existed ]
-  after <- freshLabel "boxDel"
-  code "bz" [ after ]
-  -- [ mbr ]
+  cint 0
+  -- [ mbr, existed, zero ]
+  code "cover" ["2"]
+  -- [ zero, mbr, existed ]
+  op "select"
+  -- [ mbr if existed (ow zero) ]
   mbrSub
-  op "retsub"
-  label after
-  -- [ mbr ]
-  op "pop"
-  -- []
   op "retsub"
 
 cMapSet :: App ()
