@@ -1,2 +1,3 @@
 *.yul
 *.solc.json
+*.tok.map
