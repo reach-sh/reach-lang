@@ -9,6 +9,9 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcNext("0.1.13-rc.0")}
 
++ 2022/12/14: The Algorand connector has been drastically improved and produces code that can be as much as 25% smaller.
+  This is important because Algorand contracts are limited to 8KB.
+
 + 2022/12/05: Upgraded to Algorand node v3.12.2-stable, and indexer 2.15.0.
 
 + 2022/11/24: Algorand-only: Contracts now combine all minimum balance payments into a single `pay` transaction, rather than expecting many individual transactions.
