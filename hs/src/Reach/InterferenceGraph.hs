@@ -331,9 +331,13 @@ instance IG DLVar where
   ig = viaCount
 
 instance IGdef DLVarLet where
-  igDef lsm vs (DLVarLet mvc v) =
+  igDef lsm vs (DLVarLet mvc v) = do
+    st <- asks $ isInState v
+    let mvc' = case st of
+          True -> Just DVC_Many
+          False -> mvc
     igDef lsm vs $
-      case mvc of
+      case mvc' of
         Nothing -> DLV_Eff
         Just vc -> DLV_Let vc v
 
