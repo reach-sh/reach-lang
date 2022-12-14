@@ -2696,7 +2696,7 @@ instance Compile DLExpr where
           -- [ bal, rsh_bal ]
           op "-"
           -- [ extra ]
-          return ()
+          code "b" [ after_lab ]
         Just _ -> do
           cb_lab <- freshLabel $ "getUntrackedFunds" <> "_z"
           -- [ bal, rsh_bal ]
@@ -2718,7 +2718,7 @@ instance Compile DLExpr where
           -- [  ]
           cint 0
           -- [ extra ]
-          return ()
+          code "b" [ after_lab ]
       label after_lab
     DLE_DataTag _ d -> do
       cp d
