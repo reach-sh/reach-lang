@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import * as backend from './build/index.main.mjs';
 import { loadStdlib } from '@reach-sh/stdlib';
-import { ALGO_MyAlgoConnect as MyAlgoConnect } from '@reach-sh/stdlib';
+import MyAlgoConnect from '@randlabs/myalgo-connect';
 const stdlib = loadStdlib(process.env);
 const providerEnv = undefined; // 'TestNet'
 stdlib.setWalletFallback(reach.walletFallback({

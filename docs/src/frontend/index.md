@@ -118,10 +118,19 @@ Calling this function will lift the restriction that
 # {#ref-frontends-js-provider} Provider Selection
 
 The first thing you should do in a frontend is decide if you need to specify a provider.
+This process works differently in the browser than in console (or "automated") contexts.
 
----
+## {#ref-frontends-wallets} Providers in Browsers via Wallets
 
-If you are building a browser-based DApp, then you may need to set up a fallback for users that do not have a wallet.
+By default, in browsers, Reach will automatically attach to a standards-conforming wallet, which is a connector-specific concept:
+- On Ethereum, MetaMask is used as the standard.
+- On Algorand, [ARC-0011](https://github.com/algorandfoundation/ARCs/blob/main/ARCs/arc-0011.md) is used as the standard.
+
+However, in your user does not have a standards-conforming wallet, then you can set up a fallback for them.
+
+:::note
+As of late 2022, almost no Algorand users have ARC-0011 wallets, so you should almost certainly use this function!
+:::
 
 @{ref("js", "stdlib.setWalletFallback")}
 ```js
@@ -130,9 +139,7 @@ stdlib.setWalletFallback(make: () => wallet): void
 
 When you call this function, if no browser wallet is available, then `{!js} make` will be called to construct one and it will be installed as if there were always a browser wallet.
 
-The value that `{!js} make` should return differs between connectors:
-- On Ethereum, it must match the interface of MetaMask.
-- On Algorand, it must match the [ARC-0011](https://github.com/algorandfoundation/ARCs/blob/main/ARCs/arc-0011.md) standard.
+The value that `{!js} make` should conform to the connector-specific standard (mentioned above).
 
 ---
 
@@ -201,10 +208,10 @@ But, other fallbacks can be synthesized by providing special arguments in `opts`
 
 ---
 
-If the key `MyAlgoConnect` is provided, and bound to the `ALGO_MyAlgoConnect` export of `@reach-sh/stdlib`, then [MyAlgo](https://wallet.myalgo.com/home) will be used for signing.
+If the key `MyAlgoConnect` is provided, and bound to the default export of `@randlabs/myalgo-connect`, then [MyAlgo](https://wallet.myalgo.com/home) will be used for signing.
 For example, this sets the wallet fallback to be MyAlgo used with Algorand TestNet:
 ```js
-import { ALGO_MyAlgoConnect as MyAlgoConnect } from '@reach-sh/stdlib';
+import MyAlgoConnect from '@randlabs/myalgo-connect';
 stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', MyAlgoConnect }));
 ```
@@ -219,12 +226,14 @@ stdlib.setWalletFallback(reach.walletFallback({
 
 ---
 
-If the key `WalletConnect` is provided, and bound to the `ALGO_WalletConnect` export of `@reach-sh/stdlib`, then [WalletConnect](https://walletconnect.com/) is used to connect to the [PeraWallet](https://perawallet.app/) for signing.
+If the key `WalletConnect` is provided, and bound to the result of calling the `ALGO_MakeWalletConnect` export of `@reach-sh/stdlib` on the default exports of `@walletconnect/client` and `algorand-walletconnect-qrcode-modal`, then [WalletConnect](https://walletconnect.com/) is used to connect to the [PeraWallet](https://perawallet.app/) for signing.
 For example, this sets the wallet fallback to be WalletConnect and the Algorand TestNet:
 ```js
-import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
+import WalletConnect from "@walletconnect/client";
+import QRCodeModal from "algorand-walletconnect-qrcode-modal";
+import { ALGO_MakeWalletConnect as MakeWalletConnect } from '@reach-sh/stdlib';
 stdlib.setWalletFallback(stdlib.walletFallback({
-  providerEnv: 'TestNet', WalletConnect }));
+  providerEnv: 'TestNet', WalletConnect: MakeWalletConnect(WalletConnect, QRCodeModal) }));
 ```
 
 Alternatively, you can call the `ALGO_MakePeraConnect` export of `@reach-sh/stdlib`, with `PeraWalletConnect` from `@perawallet/connect`, then PeraConnect is used to connect to the [PeraWallet](https://perawallet.app/) for signing.
@@ -248,7 +257,7 @@ Because these are fallbacks, you need to decide for your users which wallet they
 Please refer to the [`algo-wallet-demo`](https://github.com/reach-sh/reach-lang/tree/master/examples/algo-wallet-demo) example to see a full walkthrough of using wallet fallbacks and all their options.
 :::
 
----
+## {#ref-frontends-providers-raw} Providers not using Wallets
 
 If you are not building a browser-based DApp, you may want to set the network provider by using a standard name or using environment variables:
 
@@ -402,6 +411,10 @@ The `{!js} algodClient` and `{!js} indexer` values are as specified by the [Algo
 The `{!js} algod_bc` and `{!js} indexer_bc` are objects that represent HTTP connections to those values.
 The `{!js} signAndPostTxns` function obeys [ARC-0008](https://github.com/reach-sh/ARCs/blob/reach-wallet/ARCs/arc-0008.md).
 
+:::note
+Technically, this function can be used (and IS used) to attach wallets to Reach, but for practical purposes, you don't need to know this.
+:::
+
 ---
 @{ref("js", "getProvider")}
 ```js
@@ -485,7 +498,7 @@ Example:
 
 ```js
 load: /examples/rsvp/index.js
-md5: ac7d3caae5994352ef4cf445515730ab
+md5: 4628bdec158b0fd8665780f0cee5c2ff
 range: 28-28
 ```
 

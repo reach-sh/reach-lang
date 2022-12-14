@@ -5,7 +5,6 @@ import algosdk from 'algosdk';
 import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
-import type MyAlgoConnect from '@randlabs/myalgo-connect';
 import type {
   Transaction,
   EncodedTransaction,
@@ -1012,7 +1011,7 @@ const walletFallback_MyAlgoWallet = (MyAlgoConnect: unknown, opts: object) => ()
   // https://github.com/randlabs/myalgo-connect/issues/27
   if (!window.Buffer) window.Buffer = Buffer;
   // @ts-ignore
-  const mac: MyAlgoConnect = new MyAlgoConnect();
+  const mac: any = new MyAlgoConnect();
   // MyAlgoConnect uses a global popup object for managing, so we need to
   // guarantee there is only one in flight at a time.
   const lock = new Lock();

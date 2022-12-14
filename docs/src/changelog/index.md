@@ -9,6 +9,12 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcNext("0.1.13-rc.0")}
 
++ 2022/12/14: Upgraded to PeraConnect 1.0.7 in React runner.
+
++ 2022/12/14: **Backwards Incompatible**: All Algorand wallets are now "bring-your-own", where the Reach standard library doesn't bundle the code, but expects to be given a reference to the corresponding library.
+  Please refer to @{seclink("ref-frontends-wallets")} for more details.
+  The React runner `{!cmd} reach react` still includes them, however.
+
 + 2022/12/14: The Algorand connector has been drastically improved and produces code that can be as much as 25% smaller.
   This is important because Algorand contracts are limited to 8KB.
 

@@ -32,8 +32,6 @@ module.exports = {
       net: false,
       './rpc_server': false,
       './ask': false,
-      // Explicitly replacing stub with real impl
-      './Stub_MAC': '@randlabs/myalgo-connect',
     },
   },
   // More browser stuff

@@ -4,8 +4,10 @@ import './index.css';
 import { loadStdlib } from '@reach-sh/stdlib';
 
 // We are going to use all of the different Wallets in this program...
-import { ALGO_MyAlgoConnect as MyAlgoConnect } from '@reach-sh/stdlib';
-import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
+import MyAlgoConnect from '@randlabs/myalgo-connect';
+import WalletConnect from "@walletconnect/client";
+import QRCodeModal from "algorand-walletconnect-qrcode-modal";
+import { ALGO_MakeWalletConnect as MakeWalletConnect } from '@reach-sh/stdlib';
 import { ALGO_MakePeraConnect as MakePeraConnect } from '@reach-sh/stdlib';
 import { ALGO_MakeAlgoSignerConnect as MakeAlgoSignerConnect } from '@reach-sh/stdlib';
 import { PeraWalletConnect } from "@perawallet/connect";
@@ -89,7 +91,7 @@ class App extends React.Component {
     stdlib = loadStdlib(process.env);
     stdlib.setWalletFallback(reach.walletFallback({
       // ...we use a different fallback here:
-      providerEnv, WalletConnect }));
+      providerEnv, WalletConnect: MakeWalletConnect(WalletConnect, QRCodeModal) }));
     this.appendMsg('Using WalletConnect');
   }
   // This works the same, except...

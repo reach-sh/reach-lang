@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
-    "@perawallet/connect": "^0.2.3",
+    "@perawallet/connect": "^1.0.7",
     "algosdk": "^1.23.2",
     "@randlabs/myalgo-connect": "^1.4.1",
     "@walletconnect/client": "^1.8.0",
