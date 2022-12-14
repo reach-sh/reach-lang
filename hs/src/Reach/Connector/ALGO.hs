@@ -1705,10 +1705,10 @@ lookup_var dv = do
     Just x -> return $ x
     Nothing -> impossible $ "lookup_var " <> show dv
 
-lookupVarColoring :: DLVar -> App (Maybe ScratchSlot)
-lookupVarColoring dv = maybeLoc dv >>= \case
+lookupVarColoring :: String -> DLVar -> App (Maybe ScratchSlot)
+lookupVarColoring lab dv = maybeLoc dv >>= \case
   Nothing -> do
-    bad $ LT.pack $ "no coloring for " <> show dv
+    bad $ LT.pack $ "no coloring for " <> show dv <> " for " <> lab
     return Nothing
   Just l -> return $ Just l
 
@@ -1725,8 +1725,9 @@ instance MaybeLoc DLArg where
 
 cmove :: (Show a, MaybeLoc a, Compile a) => DLVar -> a -> App ()
 cmove dst src = do
-  lookupVarColoring dst >>= \case
-    Nothing -> bad $ LT.pack $ "could not move " <> show src <> " into " <> show dst
+  lookupVarColoring ("cmove from " <> show src) dst >>= \case
+    Nothing ->
+      bad $ LT.pack $ "could not move " <> show src <> " into " <> show dst
     Just dstl -> do
       msrcl <- maybeLoc src
       case msrcl of
@@ -1735,13 +1736,13 @@ cmove dst src = do
           cp src
           output $ TStore dstl $ texty dst
 
-sallocVar :: DLVar -> (App () -> App () -> App a) -> App a
-sallocVar dv fm = do
+sallocVar :: String -> DLVar -> (App () -> App () -> App a) -> App a
+sallocVar vlab dv fm = do
   let lab = textyv dv
   let fakeStore = op "pop"
   let fakeLoad = fakeVar dv
   let fake = fm fakeStore fakeLoad
-  mloc <- lookupVarColoring dv
+  mloc <- lookupVarColoring ("sallocVar: " <> vlab) dv
   case mloc of
     Nothing -> do
       fake
@@ -1750,14 +1751,14 @@ sallocVar dv fm = do
       let load = output $ TLoad loc lab
       fm store load
 
-sallocLetNoStore :: DLVar -> App a -> App a
-sallocLetNoStore dv km = do
-  sallocVar dv $ \_ cload -> do
+sallocLetNoStore :: String -> DLVar -> App a -> App a
+sallocLetNoStore lab dv km = do
+  sallocVar ("LetNoStore: " <> lab) dv $ \_ cload -> do
     store_let dv cload km
 
 sallocLet :: DLVar -> App () -> App a -> App a
 sallocLet dv cgen km = do
-  sallocVar dv $ \cstore cload -> do
+  sallocVar "Let" dv $ \cstore cload -> do
     cgen
     cstore
     store_let dv cload km
@@ -2092,7 +2093,7 @@ cfor iv maxi body = do
   when (maxi < 2) $ impossible "cfor maxi=0"
   top_lab <- freshLabel "forTop"
   end_lab <- freshLabel "forEnd"
-  sallocVar iv $ \store_idx load_idx -> do
+  sallocVar "cfor" iv $ \store_idx load_idx -> do
     cint 0
     store_idx
     code "b" [top_lab]
@@ -2251,7 +2252,7 @@ cSvsLoad which = libCall (LF_svsLoad which) $ do
   forM_ (labelLast $ zip vs [0..]) $ \((v, vi), isLast) -> do
     unless isLast $ op "dup"
     cTupleRef t vi
-    lookupVarColoring v >>= \case
+    lookupVarColoring "svsLoad" v >>= \case
       Just loc -> output $ TStore loc $ texty v
       Nothing -> op "pop"
   op "retsub"
@@ -2292,7 +2293,7 @@ stBindAll :: App a -> App a
 stBindAll k = do
   stMap <- asks getStateMap
   let stAllVars = mconcat $ map S.fromList $ M.elems stMap
-  foldr sallocLetNoStore k stAllVars
+  foldr (sallocLetNoStore "stBindAll") k stAllVars
 
 cSvsDump :: Int -> App ()
 cSvsDump which = libCall (LF_svsDump which) $ do
@@ -3046,7 +3047,7 @@ instance CompileK DLStmt where
       let xlen = arraysLength as
       let rt = argTypeOf ra
       check_concat_len anssz
-      sallocVar ansv $ \store_ans load_ans -> do
+      sallocVar "ArrayMap" ansv $ \store_ans load_ans -> do
         cbs ""
         store_ans
         cfor iv xlen $ \load_idx -> do
@@ -3063,7 +3064,7 @@ instance CompileK DLStmt where
       km
     DL_ArrayReduce at (DLV_Let _ ansv) as za (DLVarLet _ av) xs (DLVarLet _ iv) (DLBlock _ _ body ra) -> do
       let xlen = arraysLength as
-      sallocVar ansv $ \store_ans load_ans -> do
+      sallocVar "ArrayReduce" ansv $ \store_ans load_ans -> do
         cp za
         store_ans
         store_let av load_ans $ do
@@ -3073,7 +3074,7 @@ instance CompileK DLStmt where
         store_let ansv load_ans km
     DL_ArrayReduce at DLV_Eff as za (DLVarLet _ av) xs (DLVarLet _ iv) (DLBlock _ _ body ra) -> do
       let xlen = arraysLength as
-      sallocVar av $ \store_a load_a -> do
+      sallocVar "ArrayReduce Eff" av $ \store_a load_a -> do
         cp za
         store_a
         cfor iv xlen $ \load_idx -> do
@@ -3082,7 +3083,7 @@ instance CompileK DLStmt where
           store_a
       km
     DL_Var _ dv ->
-      sallocVar dv $ \cstore cload -> do
+      sallocVar "Var" dv $ \cstore cload -> do
         store_var dv cstore $
           store_let dv cload $
             km
@@ -3430,7 +3431,7 @@ instance Compile CLTail where
           case vs of
             [v] -> do
               cp $ DLLA_Tuple $ map DLA_Var args
-              lookupVarColoring v >>= \case
+              lookupVarColoring "jump api" v >>= \case
                 Nothing -> op "pop"
                 Just vl -> output $ TStore vl $ texty v
             _ -> impossible $ "ALGO: CL_Jump w/ isAPI and more than 1 vs"
@@ -3481,7 +3482,7 @@ instance Compile CLIX where
         cp $ CLFX lab cif_mwhich cif_fun
 
 bindFromMove :: [DLVar] -> App a -> App a
-bindFromMove vs m = foldr sallocLetNoStore m vs
+bindFromMove vs m = foldr (sallocLetNoStore "bindFromMove") m vs
 
 checkArgSize :: String -> SrcLoc -> [DLVarLet] -> App ()
 checkArgSize lab at msg = do
