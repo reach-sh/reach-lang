@@ -1921,16 +1921,17 @@ reach.setWalletFallback(reach.walletFallback({}));
 
 Instead, if you would like to allow your users to use [MyAlgo](https://wallet.myalgo.com/home), then you can add the following:
 ```js
-import { ALGO_MyAlgoConnect as MyAlgoConnect } from '@reach-sh/stdlib';
+import MyAlgoConnect from '@randlabs/myalgo-connect';
 reach.setWalletFallback(reach.walletFallback({
   providerEnv: 'TestNet', MyAlgoConnect }));
 ```
 
-Or, you could have your users use [WalletConnect](https://walletconnect.com/) to connect to the [Algorand Wallet](https://algorandwallet.com/), by adding the following:
+Or, you could have your users use [PeraWallet](https://perawallet.app/), by adding the following:
 ```js
-import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
-reach.setWalletFallback(reach.walletFallback({
-  providerEnv: 'TestNet', WalletConnect }));
+import { ALGO_MakePeraConnect as MakePeraConnect } from '@reach-sh/stdlib';
+import { PeraWalletConnect } from "@perawallet/connect";
+stdlib.setWalletFallback(stdlib.walletFallback({
+  providerEnv: 'TestNet', WalletConnect: MakePeraConnect(PeraWalletConnect) }));
 ```
 
 (Of course, you may want to replace `'TestNet'` in either of these samples with a different network name, like `'MainNet'`.)

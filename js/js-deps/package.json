@@ -25,9 +25,6 @@
   },
   "dependencies": {
     "algosdk": "^1.23.2",
-    "@randlabs/myalgo-connect": "^1.4.1",
-    "@walletconnect/client": "^1.8.0",
-    "algorand-walletconnect-qrcode-modal": "^1.8.0",
     "ethers": "^5.7.2",
     "hi-base32": "^0.5.1",
     "await-timeout": "^0.6.0",

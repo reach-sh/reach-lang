@@ -1,8 +1,7 @@
-import WalletConnect from "@walletconnect/client";
-import QRCodeModal from "algorand-walletconnect-qrcode-modal";
 import { Signal } from "./shared_impl";
 
-export default class ALGO_WalletConnect {
+export default function ALGO_MakeWalletConnect( WalletConnect:any, QRCodeModal: any) {
+  return class WalletConnect_ {
   wc: any;
   connected: Signal;
 
@@ -70,4 +69,5 @@ export default class ALGO_WalletConnect {
       throw e;
     }
   }
+  };
 }

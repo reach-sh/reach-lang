@@ -1027,6 +1027,10 @@
     "title": "Utilities",
     "path": "/frontend/#ref-frontends-js-utils"
   },
+  "ref-frontends-providers-raw": {
+    "title": "Providers not using Wallets",
+    "path": "/frontend/#ref-frontends-providers-raw"
+  },
   "ref-frontends-rpc-cs": {
     "title": "C#",
     "path": "/rpc/cs/#ref-frontends-rpc-cs"
@@ -1042,6 +1046,10 @@
   "ref-frontends-rpc-py": {
     "title": "Python",
     "path": "/rpc/py/#ref-frontends-rpc-py"
+  },
+  "ref-frontends-wallets": {
+    "title": "Providers in Browsers via Wallets",
+    "path": "/frontend/#ref-frontends-wallets"
   },
   "ref-install": {
     "title": "Installation",
