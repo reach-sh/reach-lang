@@ -1,0 +1,19 @@
+warning[RW0000]: The `untrustworthyMaps` option is deprecated. All maps are now trustworthy.
+
+  ./gh1532.rsh:11:35:property binding
+
+  11|     setOptions({ untrustworthyMaps: true });
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
+
+reachc: error[RE0076]: Expected object, got something else: Data({"None": Null, "Some": Object({"cumProceeds": UInt, "price": UInt, "qty": UInt, "sold": UInt, "status": Bytes(5)})})
+
+  ./gh1532.rsh:119:43:application
+
+  119|                 const swapDet = Object.set(swapDetails[this], 'status', 'initd');
+
+Trace:
+  in [unknown function] from (./gh1532.rsh:114:13:function exp) at (./gh1532.rsh:114:13:application)
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0076
+

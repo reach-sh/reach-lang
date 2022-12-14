@@ -3322,6 +3322,9 @@ evalPrim p sargs =
       at <- withAt id
       (obj_v, field_v, val_v) <- three_args
       (obj_t, obj_a) <- compileTypeOf obj_v
+      case obj_t of
+        T_Object _ -> return ()
+        _ -> expect_t obj_v $ Err_Expected "object"
       (val_t, val_a) <- compileTypeOf val_v
       fieldName <- mustBeBytes field_v
       let fieldName' = bunpack fieldName
