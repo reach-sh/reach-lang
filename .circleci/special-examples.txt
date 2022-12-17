@@ -5,6 +5,7 @@ ERC721 ETH
 ERC721TokenReceiver ETH
 rps-8-interact ALGO
 rpc-mint-basic ALGO
+algoBlock ALGO
 ttt all
 workshop-fomo-generalized all
 rsvp-5-cede all

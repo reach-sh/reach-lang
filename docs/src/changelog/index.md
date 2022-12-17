@@ -9,6 +9,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcNext("0.1.13-rc.0")}
 
++ 2022/12/15: Added `{!rsh} ALGO.blockSeed`, `{!rsh} ALGO.blockSecs`, and `{!js} stdlib.setAdjustTxnParams`.
+
 + 2022/12/14: Upgraded to PeraConnect 1.0.7 in React runner.
 
 + 2022/12/14: **Backwards Incompatible**: All Algorand wallets are now "bring-your-own", where the Reach standard library doesn't bundle the code, but expects to be given a reference to the corresponding library.

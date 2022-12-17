@@ -184,7 +184,7 @@ instance Countable DLExpr where
     DLE_TokenBurn _ tok amt -> counts [tok, amt]
     DLE_TokenDestroy _ tok -> counts tok
     DLE_TimeOrder _ _ a b -> counts a <> counts b
-    DLE_EmitLog _ _ a -> counts a
+    DLE_EmitLog _ _ a -> counts a <> counts a --- Count twice because ALGO internal duplicates v
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ mt tb -> counts mt <> counts tb
     DLE_DataTag _ d -> counts d

@@ -1434,6 +1434,12 @@ evalAsEnvM sv@(lvl, obj) = case obj of
         , ("track", delayCall SLPrim_Token_track)
         , ("accepted", delayCall SLPrim_Token_accepted)
         ]
+  SLV_Connector "ALGO" ->
+    return $ Just $
+      M.fromList $
+        [ ("blockSeed", retV $ public $ SLV_Prim $ SLPrim_ALGOBlockField ABF_Seed)
+        , ("blockSecs", retV $ public $ SLV_Prim $ SLPrim_ALGOBlockField ABF_Timestamp)
+        ]
   SLV_Type ST_Token ->
     return $ Just $
       M.fromList $
@@ -4000,6 +4006,15 @@ evalPrim p sargs =
     SLPrim_getContract -> getContractInfo GET_CONTRACT
     SLPrim_getAddress -> getContractInfo GET_ADDRESS
     SLPrim_getCompanion -> getContractInfo GET_COMPANION
+    SLPrim_ALGOBlockField bf -> do
+      ensure_mode SLM_ConsensusStep "ALGO.Block"
+      nv <- one_arg
+      na <- compileCheckType msdef (T_UInt UI_Word) nv
+      at <- withAt id
+      let mdv = DLVar at Nothing $ maybeT $ abfType bf
+      dv <- ctxt_lift_expr mdv $ DLE_PrimOp at (ALGO_BLOCK bf) [na]
+      dv' <- doInternalLog_ Nothing dv
+      return $ (lvl, SLV_DLVar dv')
     SLPrim_EmitLog -> do
       (x, y) <- two_args
       ma <- mustBeBytes y

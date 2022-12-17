@@ -1367,6 +1367,25 @@ Sets the maximum width of the query windows used to query the network for event 
 The value `{!js} true` indicates that no window size should be used, and queries may span arbitrarily large window sizes.
 While each connector has a default value that works for most common cases, tweaking this setting may be useful when dealing with layer two networks or custom endpoints that are more restrictive than normal nodes on the network.
 
+---
+@{ref("js", "stdlib.setAdjustTxnParams")}
+```js
+load: /examples/algoBlock/index.mjs
+md5: a6608b32ad31db4ee3cd7e72c941f733
+range: 7-23
+```
+
+This function, which is available only on the Algorand connector, allows you to adjust the transaction parameters that Reach uses when it creates and signs transactions.
+
+It accepts a function that takes three arguments:
+1. `who`: a `{!js} T_Address` value of the sender;
+1. `sra`: an unstable and undocumented object that may help you identify the transaction being created;
+1. `params`: the base Algorand transaction parameters.
+
+It must return a new Algorand transaction parameter object.
+
+This is mostly useful for using `{!rsh} ALGO.blockSeed`, so you can adjust the transaction validity, like in the example above.
+
 # {#ref-frontends-js-utils} Utilities
 
 The standard library provides a number of utilities functions for interacting with JavaScript representations of Reach values.
