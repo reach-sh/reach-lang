@@ -681,6 +681,21 @@ data PrimVM -- Primitive Verification Mode
   | PV_None
   deriving (Eq, Generic, Ord, Show)
 
+data ALGOBlockField
+  = ABF_Seed
+  | ABF_Timestamp
+  deriving (Eq, Ord, Show)
+
+instance Pretty ALGOBlockField where
+  pretty = \case
+    ABF_Seed -> "Seed"
+    ABF_Timestamp -> "Secs"
+
+abfType :: ALGOBlockField -> DLType
+abfType = \case
+  ABF_Seed -> T_Bytes 32
+  ABF_Timestamp -> T_UInt UI_Word
+
 data PrimOp
   = ADD UIntTy PrimVM
   | SUB UIntTy PrimVM
@@ -715,6 +730,7 @@ data PrimOp
   | GET_CONTRACT
   | GET_ADDRESS
   | GET_COMPANION
+  | ALGO_BLOCK ALGOBlockField
   deriving (Eq, Generic, Ord, Show)
 
 instance Pretty PrimVM where
@@ -755,9 +771,10 @@ instance Pretty PrimOp where
     STRINGDYN_CONCAT -> "StringDyn.concat"
     UINT_TO_STRINGDYN t -> "UInt" <> uitp t <> ".toStringDyn"
     CTC_ADDR_EQ -> "Contract.addressEq"
-    GET_CONTRACT -> "getContract()"
-    GET_ADDRESS -> "getAddress()"
-    GET_COMPANION -> "getCompanion()"
+    GET_CONTRACT -> "getContract"
+    GET_ADDRESS -> "getAddress"
+    GET_COMPANION -> "getCompanion"
+    ALGO_BLOCK bf -> "ALGO.block" <> pretty bf
     where
       uitp = \case
         UI_256 -> "b"

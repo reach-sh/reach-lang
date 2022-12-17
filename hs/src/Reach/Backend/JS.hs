@@ -338,6 +338,7 @@ jsPrimApply = \case
     return $ "await" <+> jsApply "ctc.getContractAddress" []
   GET_COMPANION -> const $ do
     return $ "await" <+> jsApply "ctc.getContractCompanion" [ ]
+  ALGO_BLOCK _ -> const $ return "undefined"
   where
     r f = return . f
     jsApply_ui t f = jsApply $ f <> (if (t == UI_256) then "256" else "")

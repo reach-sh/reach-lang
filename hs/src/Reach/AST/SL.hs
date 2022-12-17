@@ -293,6 +293,7 @@ instance IsDynamic SLPrimitive where
     SLPrim_remotef {} -> True
     SLPrim_viewis {} -> True
     SLPrim_event_is {} -> True
+    SLPrim_ALGOBlockField {} -> False
 
 instance IsDynamic SLForm where
   isDynamic = \case
@@ -998,6 +999,7 @@ data SLPrimitive
   | SLPrim_toStringDyn
   | SLPrim_Bytes_fromHex
   | SLPrim_Contract_fromAddress
+  | SLPrim_ALGOBlockField ALGOBlockField
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

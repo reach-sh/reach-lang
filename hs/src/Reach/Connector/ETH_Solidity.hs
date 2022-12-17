@@ -603,6 +603,7 @@ solPrimApply = \case
   GET_CONTRACT -> constr "payable(address(this))"
   GET_ADDRESS -> constr "payable(address(this))"
   GET_COMPANION -> impossible "GET_COMPANION"
+  ALGO_BLOCK _ -> impossible "ALGO_BLOCK"
   where
     app f args = return $ solApply f args
     constr = const . return
@@ -1082,6 +1083,9 @@ instance SolStmts DLStmt where
     DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ GET_COMPANION []) -> do
       addMemVar dv
       solLargeArg False dv $ mdaToMaybeLA T_Contract Nothing
+    DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ (ALGO_BLOCK bf) _) -> do
+      addMemVar dv
+      solLargeArg False dv $ mdaToMaybeLA (abfType bf) Nothing
     DL_Let _ (DLV_Eff) (DLE_GetUntrackedFunds {}) ->
       return $ mempty
     DL_Let _ (DLV_Let _ dv) (DLE_GetUntrackedFunds at mtok tb) -> do

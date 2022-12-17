@@ -795,3 +795,17 @@ Others, such as token payments, cannot work at all, because given that the contr
 
 On some connectors, like `{!rsh} ALGO`, it is necessary to delete child contracts before the parent exits.
 Reach does not yet enforce this property during verification, so if you fail to obey it, then your program will not be able to finish.
+
+### Algorand-specific block data access
+
+@{ref("rsh", "ALGO.blockSeed")}@{ref("rsh", "ALGO.blockSecs")}
+```reach
+ALGO.blockSeed(n)
+ALGO.blockSecs(n)
+```
+
+These functions return (respectively) the seed and the timestamp of the given block.
+The return data types are `{!rsh} Maybe(Bytes(32))` and `{!rsh} Maybe(UInt)`.
+
+These functions always return `{!rsh} Maybe.None`, unless called on Algorand on a block between "`txn.LastValid-1002` and `txn.FirstValid` (exclusive)", in which case they return `{!rsh} Maybe.Some`.
+Because of this constraint on the transaction validity time, it is not really possible to use these functions correctly without using `{!js} stdlib.setAdjustTxnParams`.

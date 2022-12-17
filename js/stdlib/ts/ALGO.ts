@@ -361,6 +361,8 @@ type AlgodTxn = {
   'pool-error': string,
 };
 
+type AdjustTxnParams = (who: CBR_Address, sr:SendRecvArgs, ps:TxnParams) => Promise<TxnParams>;
+
 interface ALGOHacks {
   signSendAndConfirm: any,
   toWTxn: any,
@@ -369,6 +371,7 @@ interface ALGOHacks {
   MinTxnFee: any,
   makeTransferTxn: any,
   setFaucet: any,
+  setAdjustTxnParams: (atp:AdjustTxnParams) => void,
 };
 interface ALGOStdlib extends Stdlib_User<Provider, ProviderEnv, ProviderName, Token, ContractInfo, Address, NetworkAccount, Ty, Backend, Contract, Account>, ALGOHacks {
 };
@@ -641,6 +644,14 @@ const getTxnParams = async (label: string): Promise<TxnParams> => {
     debug(dhead, `...but firstRound is 0, so let's wait and try again.`);
     await stdWait();
   }
+};
+
+let adjustTxnParams: AdjustTxnParams = async (who:CBR_Address, srargs:SendRecvArgs, ps:TxnParams) => {
+  void who; void srargs;
+  return ps;
+};
+const setAdjustTxnParams = (atp:AdjustTxnParams) => {
+  adjustTxnParams = atp;
 };
 
 const sign_and_send_sync = async (
@@ -1827,7 +1838,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const appIndex = bigNumberToNumber(ApplicationID);
 
         while ( true ) {
-          const params = await getTxnParams(dhead);
+          const params = await adjustTxnParams(pks, srargs, await getTxnParams(dhead));
           // We add one, because the firstRound field is actually the current
           // round, which we couldn't possibly be in, because it already
           // happened.
@@ -2872,6 +2883,7 @@ const launchToken = async (accCreator: Account, name: string, sym: string, opts:
     parseCurrency, minimumBalance, formatCurrency,
     reachStdlib, algosdk,
     connector, standardUnit, atomicUnit,
-    tokensAccepted
+    tokensAccepted,
+    setAdjustTxnParams,
   });
 };

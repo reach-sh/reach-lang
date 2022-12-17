@@ -1297,6 +1297,8 @@ data LibFun
   | LF_companionCall
   | LF_timeCheck
   | LF_updateMbr
+  | LF_blockRead ALGOBlockField
+  | LF_blockCheck
   deriving (Eq, Ord, Show)
 
 libDefns :: App ()
@@ -1922,6 +1924,82 @@ czpad xtra = do
   padding xtra
   op "concat"
 
+abfField :: ALGOBlockField -> LT.Text
+abfField = \case
+  ABF_Seed -> "BlkSeed"
+  ABF_Timestamp -> "BlkTimestamp"
+
+cAlgoBlock :: ALGOBlockField -> [DLArg] -> App ()
+cAlgoBlock which = \case
+  [n] -> do
+    cp n
+    libCall (LF_blockRead which) $ do
+      op "dup"
+      libCall LF_blockCheck $ do
+        -- [ n ]
+        op "dup"
+        -- [ n, n ]
+        code "txn" [ "LastValid" ]
+        cint 1002
+        op "dup2"
+        -- [ n, n, lv, 1002, lv, 1002 ]
+        op "<"
+        -- [ n, n, lv, 1002, would-underflow ]
+        lNoOverflow <- freshLabel "NoOverflow"
+        lFirstAvail <- freshLabel "FirstAvail"
+        lBad <- freshLabel "Bad"
+        code "bz" [ lNoOverflow ]
+        -- [ n, n, lv, 1002 ]
+        code "popn" ["2"]
+        cint 1
+        code "b" [ lFirstAvail ]
+        label lNoOverflow
+        -- [ n, n, lv, 1002 ]
+        op "-"
+        code "b" [ lFirstAvail ]
+        label lFirstAvail
+        -- [ n, n, firstAvail ]
+        op "swap"
+        -- [ n, firstAvail, n ]
+        op ">"
+        -- [ n, bad ]
+        code "bnz" [ lBad ]
+        code "txn" [ "FirstValid" ]
+        -- [ n, fv ]
+        op "dup"
+        -- [ n, fv, fv ]
+        code "bz" [ lBad ]
+        -- [ n, fv ]
+        cint 1
+        op "-"
+        -- [ n, lastAvail ]
+        op ">"
+        code "bnz" [ lBad ]
+        cp True
+        op "retsub"
+        label lBad
+        cp False
+        op "retsub"
+      -- [ n, okay ]
+      lOkay <- freshLabel "Okay"
+      code "bnz" [ lOkay ]
+      let bfT = abfType which
+      let f a = do
+            cp $ mdaToMaybeLA bfT a
+            op "retsub"
+      -- [ n ]
+      op "pop"
+      -- []
+      f Nothing
+      label lOkay
+      -- [ n ]
+      code "block" [ abfField which ]
+      -- [ fv ]
+      fv <- allocVar sb bfT
+      store_let fv (op "swap") $
+        f $ Just $ DLA_Var fv
+  _ -> impossible "cAlgoBlock"
+
 cprim :: PrimOp -> [DLArg] -> App ()
 cprim = \case
   SELF_ADDRESS {} -> impossible "self address"
@@ -2031,10 +2109,6 @@ cprim = \case
       cp aa
       op "=="
     _ -> impossible "ctcAddrEq args"
-  GET_CONTRACT -> const $ do
-    code "txn" ["ApplicationID"]
-  GET_ADDRESS -> const $ cContractAddr
-  GET_COMPANION -> const $ callCompanion sb CompanionGet
   STRINGDYN_CONCAT -> call "concat" -- assumes two-args/type safe
   UINT_TO_STRINGDYN ui -> \case
     [i] -> do
@@ -2044,6 +2118,11 @@ cprim = \case
         UI_Word -> output $ Titob False
       bad "Uses UInt.toStringDyn"
     _ -> impossible "UInt.toStringDyn"
+  GET_CONTRACT -> const $ do
+    code "txn" ["ApplicationID"]
+  GET_ADDRESS -> const $ cContractAddr
+  GET_COMPANION -> const $ callCompanion sb CompanionGet
+  ALGO_BLOCK bf -> cAlgoBlock bf
   where
     call o = \args -> do
       forM_ args cp

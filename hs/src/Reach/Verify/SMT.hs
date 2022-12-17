@@ -368,6 +368,7 @@ smtPrimOp at p dargs =
     GET_CONTRACT -> impossible "GET_CONTRACT"
     GET_ADDRESS -> impossible "GET_ADDRESS"
     GET_COMPANION -> impossible "GET_COMPANION"
+    ALGO_BLOCK _ -> impossible "ALGO_BLOCK"
   where
     app n = return . smtApply n
     bvapp n_bv n_i = app $ if use_bitvectors then n_bv else n_i
@@ -1116,6 +1117,7 @@ smt_e at_dv mdv de = do
         GET_CONTRACT -> unbound at
         GET_ADDRESS -> unbound at
         GET_COMPANION -> unbound at
+        ALGO_BLOCK _ -> unbound at
         _ -> do
           let f = case cp of
                 SELF_ADDRESS {} -> \se -> pathAddBound at mdv (Just $ SMTProgram de) se Witness
