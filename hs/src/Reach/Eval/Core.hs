@@ -3795,7 +3795,7 @@ evalPrim p sargs =
       metam <- mustBeObject =<< one_arg
       metam' <- mapM (ensure_public . sss_sls) metam
       let keys = M.keysSet metam'
-      let validKeys = S.fromList $ [ "fees", "accounts", "assets", "addressToAccount", "apps", "boxes", "onCompletion", "strictPay", "rawCall", "simNetRecv", "simTokensRecv", "simReturnVal" ]
+      let validKeys = S.fromList $ [ "fees", "accounts", "assets", "addressToAccount", "apps", "boxes", "onCompletion", "strictPay", "rawCall", "simNetRecv", "simTokensRecv", "simReturnVal", "txnOrderForward" ]
       unless (keys `S.isSubsetOf` validKeys) $ do
         expect_ $ Err_Remote_ALGO_extra $ S.toAscList $
           keys `S.difference` validKeys
@@ -3810,6 +3810,7 @@ evalPrim p sargs =
         Just v -> compileCheckType msdef (T_UInt UI_Word) v
       ra_strictPay <- expectBool "strictPay"
       ra_rawCall <- expectBool "rawCall"
+      ra_txnOrderForward <- expectBool "txnOrderForward"
       ra_accounts <- metal "accounts" $ \case
         Nothing -> return $ mempty
         Just v -> do

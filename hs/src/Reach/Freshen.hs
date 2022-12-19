@@ -152,7 +152,7 @@ instance Freshen DLRemoteALGOSTR where
 
 instance Freshen DLRemoteALGO where
   fu (DLRemoteALGO {..}) =
-    DLRemoteALGO <$> fu ra_fees <*> fu ra_accounts <*> fu ra_assets <*> fu ra_addr2acc <*> fu ra_apps <*> fu ra_boxes <*> fu ra_onCompletion <*> fu ra_strictPay <*> fu ra_rawCall <*> fu ra_simNetRecv <*> fu ra_simTokensRecv <*> fu ra_simReturnVal
+    DLRemoteALGO <$> fu ra_fees <*> fu ra_accounts <*> fu ra_assets <*> fu ra_addr2acc <*> fu ra_apps <*> fu ra_boxes <*> fu ra_onCompletion <*> fu ra_strictPay <*> fu ra_rawCall <*> fu ra_simNetRecv <*> fu ra_simTokensRecv <*> fu ra_simReturnVal <*> fu ra_txnOrderForward
 
 instance Freshen AS.Value where
   fu = return

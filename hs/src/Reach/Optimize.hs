@@ -422,7 +422,7 @@ instance Optimize DLRemoteALGOSTR where
 
 instance Optimize DLRemoteALGO where
   opt (DLRemoteALGO {..}) =
-    DLRemoteALGO <$> opt ra_fees <*> opt ra_accounts <*> opt ra_assets <*> opt ra_addr2acc <*> opt ra_apps <*> opt ra_boxes <*> opt ra_onCompletion <*> opt ra_strictPay <*> opt ra_rawCall <*> opt ra_simNetRecv <*> opt ra_simTokensRecv <*> opt ra_simReturnVal
+    DLRemoteALGO <$> opt ra_fees <*> opt ra_accounts <*> opt ra_assets <*> opt ra_addr2acc <*> opt ra_apps <*> opt ra_boxes <*> opt ra_onCompletion <*> opt ra_strictPay <*> opt ra_rawCall <*> opt ra_simNetRecv <*> opt ra_simTokensRecv <*> opt ra_simReturnVal <*> opt ra_txnOrderForward
   gcs _ = return ()
 
 instance Optimize AS.Value where

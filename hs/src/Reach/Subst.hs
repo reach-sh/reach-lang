@@ -93,7 +93,7 @@ instance Subst DLRemoteALGOSTR where
 
 instance Subst DLRemoteALGO where
   subst (DLRemoteALGO {..}) =
-    DLRemoteALGO <$> subst ra_fees <*> subst ra_accounts <*> subst ra_assets <*> subst ra_addr2acc <*> subst ra_apps <*> subst ra_boxes <*> subst ra_onCompletion <*> subst ra_strictPay <*> subst ra_rawCall <*> subst ra_simNetRecv <*> subst ra_simTokensRecv <*> subst ra_simReturnVal
+    DLRemoteALGO <$> subst ra_fees <*> subst ra_accounts <*> subst ra_assets <*> subst ra_addr2acc <*> subst ra_apps <*> subst ra_boxes <*> subst ra_onCompletion <*> subst ra_strictPay <*> subst ra_rawCall <*> subst ra_simNetRecv <*> subst ra_simTokensRecv <*> subst ra_simReturnVal <*> subst ra_txnOrderForward
 
 instance Subst AS.Value where
   subst = return

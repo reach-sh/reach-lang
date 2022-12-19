@@ -632,6 +632,8 @@ In addition, a remote function may be augmented with one of the following operat
   + `{!rsh} opts.simReturnVal` is a field whose type must match the returned type of the remote function (default depends on return type).
     The field represents the return value of the remote function, for the purposes of transaction simulation.
     This is useful when using `{!rsh} enforce` on the return value of the remote function.
+  + `{!rsh} opts.txnOrderForward` is a boolean (default `{!rsh} false`) that when `{!rsh} true` has the payment transactions in the forward order (net and then assets in order) rather than the reverse order (assets in reverse order and then net).
+    The default is suited for calling Reach servers.
 
 If the remote contract is not expected to return non-network tokens then a pair is returned, where the amount of network tokens received is the first element, and the original result is the second element.
 
