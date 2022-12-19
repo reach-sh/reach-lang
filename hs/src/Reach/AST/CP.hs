@@ -93,11 +93,15 @@ instance Pretty CHandlers where
 
 data CPOpts = CPOpts
   { cpo_counter :: Counter
+  , cpo_aem :: ALGOExitMode
   }
   deriving (Generic, Eq)
 
 instance HasCounter CPOpts where
-  getCounter (CPOpts {..}) = cpo_counter
+  getCounter = cpo_counter
+
+instance HasALGOExitMode CPOpts where
+  getALGOExitMode = cpo_aem
 
 data CPProg = CPProg
   { cpp_at :: SrcLoc

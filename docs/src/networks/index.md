@@ -36,12 +36,10 @@ Views expand the on-chain state to include the free variables of all values boun
 Linear state is compiled into application box storage.
 The names of boxes are either:
 - `${MapIndexByte}${KeyBytes}`, where `MapIndexByte` is the single-byte representation of which `{!rsh} Map` it is and `KeyBytes` is the ABI encoding of the key, if this is less than 64 bytes; or
-- `sha256(${MapIndexBytes}${KeyBytes})`, where `MapIndexBytes` is the multi-byte, otherwise.
+- `sha256(${MapIndexBytes}${KeyBytes})`, where `MapIndexBytes` is the multi-byte representation of the `{!rsh} Map` it is, otherwise.
 
 Reach makes no attempt to ensure that when the application ends, all boxes are freed.
-You can do this yourself by making an assertion that the size of a map is empty at the end of the program.
-(See the `api-map` example for how to do this effectively.)
-If you don't do this, then the minimum balance reservation set aside for boxes will not be returned, so you won't be able to close the application.
+You should read about the `{!rsh} ALGOExitMode` option for `{!rsh} setOptions` for more information about the issues this poses.
 
 In Algorand, network time corresponds to round numbers.
 Each round is assigned a Unix timestamp, but when you look at the timestamp in code executing in round N+1, you read the timestamp assigned to round N.

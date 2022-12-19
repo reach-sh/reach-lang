@@ -345,6 +345,7 @@ app_default_opts idxr dar cns =
     , dlo_counter = idxr
     , dlo_bals = 1
     , dlo_droppedAsserts = dar
+    , dlo_aem = defaultALGOExitMode
     }
 
 app_options :: M.Map SLVar (SrcLoc -> DLOpts -> SLVal -> App (Either String DLOpts))
@@ -355,12 +356,27 @@ app_options =
     , ("verifyPerConnector", bland $ opt_bool (\opts b -> opts {dlo_verifyPerConnector = b}))
     , ("autoTrackPublishedTokens", bland $ opt_bool (\opts b -> opts {dlo_autoTrackPublishedTokens = b}))
     , ("connectors", bland $ opt_connectors)
+    , ("ALGOExitMode", bland $ opt_read $ \opts v -> opts { dlo_aem = v })
     ]
   where
     bland f _at opts v = return $ f opts v
     opt_deprecated msg at opts _v = do
       liftIO $ emitWarning (Just at) $ W_Deprecated msg
       return $ Right opts
+    opt_read :: forall a . (Show a, Read a, Enum a) => (DLOpts -> a -> DLOpts) -> DLOpts -> SLVal -> Either String DLOpts
+    opt_read f opts v =
+      case v of
+        SLV_Bytes _ bs -> g $ bunpack bs
+        SLV_BytesDyn _ bs -> g $ bunpack bs
+        SLV_String _ bs -> g $ T.unpack bs
+        _ -> Left $ "expected bytes or string"
+      where
+        g bs =
+          case readMay bs of
+            Just x -> Right $ f opts x
+            Nothing -> Left $ "invalid option; valid are: " <> show vs
+        vs :: [a]
+        vs = enumFrom (toEnum 0)
     opt_bool f opts v =
       case v of
         SLV_Bool _ b -> Right $ f opts b

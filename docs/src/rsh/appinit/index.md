@@ -107,6 +107,17 @@ The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} se
   range: 4 - 11
   ```
 
++ @{ref("rsh", "ALGOExitMode")} `{!rsh} ALGOExitMode`
+
+  Determines the way that applications on Algorand interpret `{!rsh} exit`, as follows:
+  * (default) `{!rsh} 'DeleteAndCloseOutAll_SoundASAs_UnsoundElse'`: The application will expect the final transaction to be tagged with the `DeleteApplication` `OnCompletion` flag and will issue `CloseOut` transactions for all of the ASAs the application holds and then a `CloseOut` transaction for the application's account.
+    This is unsound, because Reach does not automatically include `{!rsh} assert`s that ensure that (a) all child applications are deleted and (b) all boxes are freed.
+    If either of those constraints are not satisfied, then the attempt to close out will fail and the transaction will be reverted, so you should include these assertions yourself to ensure it is sound.
+    (See the `api-map` example for how to do this effectively.)
+    A future version of Reach will offer more modes that are guaranteed to be sound.
+  * `{!rsh} 'DeleteAndCloseOutASAs'`: The application will expect the final transaction to be tagged with the `DeleteApplication` `OnCompletion` flag and will issue `CloseOut` transactions for all of the ASAs the application holds and a `Pay` transaction for the non-minimum balance portion of the application's account.
+    This will always succeed, but it means that some ALGOs will be locked away forever.
+
 ## {#ref-programs-appinit-exprs} Expressions
 
 Any expressions valid for a [computation](##ref-programs-appinit-exprs) are valid for application initialization.

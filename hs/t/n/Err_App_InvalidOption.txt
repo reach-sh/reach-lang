@@ -1,4 +1,4 @@
-reachc: error[RE0013]: verifyAruthmetic is not a valid app option. Did you mean: ["verifyArithmetic","verifyPerConnector","untrustworthyMaps","connectors","autoTrackPublishedTokens"]
+reachc: error[RE0013]: verifyAruthmetic is not a valid app option. Did you mean: ["verifyArithmetic","verifyPerConnector","untrustworthyMaps","ALGOExitMode","connectors"]
 
   ./Err_App_InvalidOption.rsh:4:21:property binding
 

@@ -1249,6 +1249,8 @@ data Env = Env
   , eRes :: IORef (M.Map T.Text AS.Value)
   , eFunVars :: FunVars
   , eStateMap :: CLState
+  , eDoesMapSetR :: IORef Bool
+  , eDoesContractNewR :: IORef Bool
   }
 
 instance HasStateMap Env where
@@ -2586,6 +2588,7 @@ instance Compile DLExpr where
       void $ checkMapSize vt
       cMapRef
     DLE_MapSet _ (DLMVar i) fa vt mva -> do
+      (liftIO . flip writeIORef True) =<< asks eDoesMapSetR
       incResource_ R_Box (i, fa)
       (ks, go) <- cMapKey i fa
       vts <- checkMapSize vt
@@ -2869,6 +2872,7 @@ instance Compile DLExpr where
     DLE_ContractFromAddress _at _addr -> do
       cp $ mdaToMaybeLA T_Contract Nothing
     DLE_ContractNew _at cns dr -> do
+      (liftIO . flip writeIORef True) =<< asks eDoesContractNewR
       let DLContractNew {..} = cns M.! conName'
       let ALGOCodeOut {..} = either impossible id $ aesonParse dcn_code
       let ALGOCodeOpts {..} = either impossible id $ aesonParse dcn_opts
@@ -3696,7 +3700,7 @@ instance Compile CLProg where
     let pubLs = mapMaybe pub_go $ M.elems sig_api
     liftIO $ writeIORef eProgLs $ Just $ pubLs <> apiLs
 
-cp_shellColor :: (Compile a) => IGd a -> App ()
+cp_shellColor :: (HasALGOExitMode a, Compile a) => IGd a -> App ()
 cp_shellColor (IGd x g) = do
   let vs = igVars g
   let maxSlot = 255
@@ -3715,7 +3719,7 @@ cp_shellColor (IGd x g) = do
         cp_shell x
 
 -- General Shell
-cp_shell :: (Compile a) => a -> App ()
+cp_shell :: (HasALGOExitMode a, Compile a) => a -> App ()
 cp_shell x = do
   Env {..} <- ask
   let mGV_companion =
@@ -3766,9 +3770,24 @@ cp_shell x = do
     let mt_mtok = Nothing
     let mt_submit = True
     let mt_next = False
-    let mt_mcclose = Just $ cDeployer
-    let mt_amt = DLA_Literal $ DLL_Int sb UI_Word 0
-    void $ makeTxn $ MakeTxn {..}
+    case getALGOExitMode x of
+      DeleteAndCloseOutAll_SoundASAs_UnsoundElse -> do
+        let f = liftIO . readIORef
+        doesMapSet <- f eDoesMapSetR
+        doesContractNew <- f eDoesContractNewR
+        let unsoundRisk = doesMapSet || doesContractNew
+        when unsoundRisk $ do
+          warn $ "This program uses 'ALGOExitMode: DeleteAndCloseOutAll_SoundASAs_UnsoundElse' (the default) _and_ " <> (if doesMapSet then "creates Map entries and " else "") <> (if doesContractNew then "creates a child contract and " else "") <> "Reach cannot guarantee that these closed at application exit, but we are generating a close out anyways. If those resources are not freed, then this close out will fail and the final transaction will always be rejected."
+        let mt_mcclose = Just $ cDeployer
+        let mt_amt = argLitZero
+        void $ makeTxn $ MakeTxn {..}
+      DeleteAndCloseOutASAs -> do
+        let mt_mcclose = Nothing
+        cp $ DLE_GetUntrackedFunds sb Nothing argLitZero
+        gvStore GV_mbrAdd
+        let mt_amt = aDMbr
+        store_let vDMbr (gvLoad GV_mbrAdd) $ do
+          void $ makeTxn $ MakeTxn {..}
   code "b" ["updateState"]
   label "updateStateNoOp"
   gvStore GV_currentTime
@@ -3831,7 +3850,7 @@ cp_shell x = do
   -- Library functions
   libDefns
 
-compile_algo :: (HasFunVars a, HasStateMap a, HasCounter a, Compile a) => Outputer -> IGd a -> IO ConnectorInfo
+compile_algo :: (HasFunVars a, HasStateMap a, HasCounter a, HasALGOExitMode a, Compile a) => Outputer -> IGd a -> IO ConnectorInfo
 compile_algo disp x = do
   -- This is the final result
   eRes <- newIORef mempty
@@ -3907,6 +3926,8 @@ compile_algo disp x = do
         eCounter <- dupeCounter $ getCounter x
         eStateSizeR <- newIORef 0
         eLabel <- newCounter 0
+        eDoesMapSetR <- newIORef False
+        eDoesContractNewR <- newIORef False
         eOutputR <- newIORef mempty
         eNewToks <- newIORef mempty
         eInitToks <- newIORef mempty
