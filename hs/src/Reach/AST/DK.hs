@@ -20,7 +20,7 @@ data DKCommon
   | DKC_LocalIf SrcLoc (Maybe DLVar) DLArg DKTail DKTail
   | DKC_LocalSwitch SrcLoc DLVar (SwitchCases DKTail)
   | DKC_Only SrcLoc SLPart DKTail
-  | DKC_MapReduce SrcLoc Int DLLetVar DLMVar DLArg DLVarLet DLVarLet DKBlock
+  | DKC_MapReduce SrcLoc Int DLLetVar DLMVar DLArg DLVarLet DLVarLet DLVarLet DKBlock
   | DKC_FluidSet SrcLoc FluidVar DLArg
   | DKC_FluidRef SrcLoc DLVar FluidVar
   | DKC_setApiDetails SrcLoc SLPart [DLType] (Maybe String)
@@ -38,7 +38,7 @@ instance Pretty DKCommon where
     DKC_LocalDo _at ans k -> "do" <> parens (pretty ans) <+> render_nest (pretty k) <> semi
     DKC_LocalIf _at ans ca t f -> "local" <> parens (pretty ans) <+> prettyIfp ca t f
     DKC_LocalSwitch _at ov csm -> pretty $ SwitchCasesUse ov csm
-    DKC_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a () f
+    DKC_MapReduce _ _mri ans x z b k a f -> prettyReduce ans x z b a k f
     DKC_FluidSet at fv a -> pretty (DLS_FluidSet at fv a)
     DKC_FluidRef at dv fv -> pretty (DLS_FluidRef at dv fv)
     DKC_Only _at who t -> prettyOnly who t

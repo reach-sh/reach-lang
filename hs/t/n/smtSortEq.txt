@@ -11,18 +11,18 @@ Verification failed:
 
   const UInt.max = 2;
 
-  const x/136 = <loop variable>;
+  const x/140 = <loop variable>;
   //    ^ could = 2
   //      from: ./smtSortEq.rsh:9:27:while
-  const v166 = <map reduction>;
+  const v171 = <map reduction>;
   //    ^ could = 3
   //      from: reach standard library:147:18:application
 
   // Theorem Formalization
 
-  const v173 = v166 == x/136;
+  const v179 = v171 == x/140;
   //    ^ would be false
-  assert(v173);
+  assert(v179);
 
   Verifying when NO participants are honest
 Checked 24 theorems; 2 failures (and 1 omitted repeats) :'(

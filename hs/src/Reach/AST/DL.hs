@@ -111,7 +111,7 @@ data DLSStmt
   | DLS_Continue SrcLoc DLAssignment
   | DLS_FluidSet SrcLoc FluidVar DLArg
   | DLS_FluidRef SrcLoc DLVar FluidVar
-  | DLS_MapReduce SrcLoc Int DLLetVar DLMVar DLArg DLVarLet DLVarLet DLSBlock
+  | DLS_MapReduce SrcLoc Int DLLetVar DLMVar DLArg DLVarLet DLVarLet DLVarLet DLSBlock
   | DLS_Throw SrcLoc DLArg Bool
   | DLS_Try SrcLoc DLStmts DLVar DLStmts
   | DLS_ViewIs SrcLoc (Maybe SLPart) SLVar (Maybe DLSExportBlock)
@@ -164,7 +164,7 @@ instance Pretty DLSStmt where
         "fluid" <+> pretty fv <+> ":=" <+> pretty da
       DLS_FluidRef _ dv fv ->
         pretty dv <+> "<-" <+> "fluid" <+> pretty fv
-      DLS_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a () f
+      DLS_MapReduce _ _mri ans x z b k a f -> prettyReduce ans x z b a k f
       DLS_Throw _ dv local -> if local then "local" else "nonlocal" <+> "throw" <+> pretty dv
       DLS_Try _ e hv hs -> "try" <+> ns e <+> "catch" <+> parens (pretty hv) <+> ns hs
       DLS_ViewIs _ v k a -> prettyViewIs v k a
@@ -194,7 +194,7 @@ instance SrcLocOf DLSStmt where
     DLS_Continue a _ -> a
     DLS_FluidSet a _ _ -> a
     DLS_FluidRef a _ _ -> a
-    DLS_MapReduce a _ _ _ _ _ _ _ -> a
+    DLS_MapReduce a _ _ _ _ _ _ _ _ -> a
     DLS_Throw a _ _ -> a
     DLS_Try a _ _ _ -> a
     DLS_ViewIs a _ _ _ -> a

@@ -236,13 +236,14 @@ instance Freshen DLStmt where
       i' <- fu_v i
       fb' <- fu fb
       return $ DL_ArrayReduce at ans' x' z' b' a' i' fb'
-    DL_MapReduce at mri ans x z b a fb -> do
+    DL_MapReduce at mri ans x z b k a fb -> do
       ans' <- fu_v ans
       z' <- fu z
       b' <- fu_v b
+      k' <- fu_v k
       a' <- fu_v a
       fb' <- fu fb
-      return $ DL_MapReduce at mri ans' x z' b' a' fb'
+      return $ DL_MapReduce at mri ans' x z' b' k' a' fb'
     DL_LocalDo at mans t -> DL_LocalDo at <$> fu mans <*> fu t
 
 instance Freshen DLPayAmt where

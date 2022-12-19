@@ -1377,7 +1377,7 @@ data DLStmt
   | DL_LocalIf SrcLoc (Maybe DLVar) DLArg DLTail DLTail
   | DL_LocalSwitch SrcLoc DLVar (SwitchCases DLTail)
   | DL_Only SrcLoc (Either SLPart Bool) DLTail
-  | DL_MapReduce SrcLoc Int DLLetVar DLMVar DLArg DLVarLet DLVarLet DLBlock
+  | DL_MapReduce SrcLoc Int DLLetVar DLMVar DLArg DLVarLet DLVarLet DLVarLet DLBlock
   deriving (Eq)
 
 instance SrcLocOf DLStmt where
@@ -1392,7 +1392,7 @@ instance SrcLocOf DLStmt where
     DL_LocalIf a _ _ _ _ -> a
     DL_LocalSwitch a _ _ -> a
     DL_Only a _ _ -> a
-    DL_MapReduce a _ _ _ _ _ _ _ -> a
+    DL_MapReduce a _ _ _ _ _ _ _ _ -> a
 
 instance Pretty DLStmt where
   pretty = \case
@@ -1407,7 +1407,7 @@ instance Pretty DLStmt where
     DL_LocalIf _at ans ca t f -> "local" <> parens (pretty ans) <+> prettyIfp ca t f
     DL_LocalSwitch _at ov csm -> "local" <+> pretty (SwitchCasesUse ov csm)
     DL_Only _at who b -> prettyOnly who b
-    DL_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a () f
+    DL_MapReduce _ _mri ans x z b k a f -> prettyReduce ans x z b a k f
 
 instance IsPure DLStmt where
   isPure = \case
@@ -1421,7 +1421,7 @@ instance IsPure DLStmt where
     DL_LocalIf _ _ _ t f -> isPure t && isPure f
     DL_LocalSwitch _ _ csm -> isPure csm
     DL_Only _ _ b -> isPure b
-    DL_MapReduce _ _ _ _ _ _ _ f -> isPure f
+    DL_MapReduce _ _ _ _ _ _ _ _ f -> isPure f
 
 mkCom :: (DLStmt -> k -> k) -> DLStmt -> k -> k
 mkCom mk m k =

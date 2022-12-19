@@ -224,7 +224,7 @@ instance FreeVars DLStmt where
     DL_LocalIf _ _ c t f -> freeVars c <> freeVars [t, f]
     DL_LocalSwitch _ v csm -> freeVars v <> freeVars csm
     DL_Only _ _ t -> freeVars t
-    DL_MapReduce _ _ _ _ z a b f -> freeVars z <> bindsFor [a, b] f
+    DL_MapReduce _ _ _ _ z a k b f -> freeVars z <> bindsFor [a, k, b] f
     DL_LocalDo _ _ t -> freeVars t
 
 instance BoundVars DLStmt where
@@ -238,5 +238,5 @@ instance BoundVars DLStmt where
     DL_LocalIf _ _ _ t f -> boundVars [t, f]
     DL_LocalSwitch _ _ csm -> boundVars csm
     DL_Only _ _ t -> boundVars t
-    DL_MapReduce _ _ ans _ _ a b f -> boundVars [a, b] <> boundVars f <> boundVars ans
+    DL_MapReduce _ _ ans _ _ a k b f -> boundVars [a, k, b] <> boundVars f <> boundVars ans
     DL_LocalDo _ _ t -> boundVars t

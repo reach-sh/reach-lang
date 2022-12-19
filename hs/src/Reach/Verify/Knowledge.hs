@@ -335,8 +335,9 @@ kgq_m ctxt = \case
   DL_Only _at (Left who) loc ->
     kgq_l (ctxt_restrict ctxt who) loc
   DL_Only {} -> impossible $ "right only before EPP"
-  DL_MapReduce _ _ ans x z b (DLVarLet _ a) (DLBlock _ _ f r) ->
+  DL_MapReduce _ _ ans x z b (DLVarLet _ k) (DLVarLet _ a) (DLBlock _ _ f r) ->
     kgq_a_onlym ctxt (vl2mdv b) z
+      >> knows ctxt (P_Var k) (S.singleton (P_Map x))
       >> knows ctxt (P_Var a) (S.singleton (P_Map x))
       >> kgq_a_onlym ctxt (lv2mdv ans) r
       >> kgq_l ctxt f

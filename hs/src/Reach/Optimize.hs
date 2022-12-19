@@ -854,8 +854,8 @@ instance Optimize DLStmt where
     DL_ArrayReduce at ans xs z b as i f -> do
       s' <- DL_ArrayReduce at ans <$> opt xs <*> opt z <*> (opt b) <*> (pure as) <*> pure i <*> newScope (opt f)
       maybeUnroll s' xs $ return s'
-    DL_MapReduce at mri ans x z b a f -> do
-      DL_MapReduce at mri ans x <$> opt z <*> (pure b) <*> (pure a) <*> newScope (opt f)
+    DL_MapReduce at mri ans x z b k a f -> do
+      DL_MapReduce at mri ans x <$> opt z <*> pure b <*> pure k <*> pure a <*> newScope (opt f)
     DL_Only at ep l -> do
       let w = case ep of
             Left p -> focus_one p
@@ -892,7 +892,7 @@ instance Optimize DLStmt where
     DL_LocalSwitch _ _ csm -> gcsSwitch csm
     DL_ArrayMap _ _ _ _ _ f -> gcs f
     DL_ArrayReduce _ _ _ _ _ _ _ f -> gcs f
-    DL_MapReduce _ _ _ _ _ _ _ f -> gcs f
+    DL_MapReduce _ _ _ _ _ _ _ _ f -> gcs f
     DL_Only _ _ l -> gcs l
     DL_LocalDo _ _ t -> gcs t
 

@@ -135,8 +135,8 @@ instance Unroll DLStmt where
       let xs'i = zip (transpose xs') $ map (DLA_Literal . DLL_Int at UI_Word) [0..]
       r' <- foldlM (\za (xa, ia) -> fu_ fb ([(vl2v b, za)] <> (zip (map vl2v as) xa) <> [(vl2v i, ia)])) z xs'i
       return $ DL_Let at ans_lv (DLE_Arg at r')
-    DL_MapReduce at mri ans x z b a fb ->
-      DL_MapReduce at mri ans x z b a <$> ul fb
+    DL_MapReduce at mri ans x z b k a fb ->
+      DL_MapReduce at mri ans x z b k a <$> ul fb
     DL_Only at p l -> DL_Only at p <$> ul l
     DL_LocalDo at mans t -> DL_LocalDo at mans <$> ul t
 

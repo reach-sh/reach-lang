@@ -156,8 +156,8 @@ instance Subst DLStmt where
     DL_LocalIf at mans c t f -> DL_LocalIf at <$> subst mans <*> subst c <*> subst t <*> subst f
     DL_LocalSwitch at v csm -> DL_LocalSwitch at <$> subst v <*> subst csm
     DL_Only at who b -> DL_Only at who <$> subst b
-    DL_MapReduce at mri x a b u v bl ->
-      DL_MapReduce at mri x a <$> subst b <*> pure u <*> pure v <*> subst bl
+    DL_MapReduce at mri x a b u k v bl ->
+      DL_MapReduce at mri x a <$> subst b <*> pure u <*> pure k <*> pure v <*> subst bl
     DL_LocalDo at mans t -> DL_LocalDo at <$> subst mans <*> subst t
 
 instance Subst DLTail where

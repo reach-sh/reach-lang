@@ -202,13 +202,11 @@ instance Pandemic DLSStmt where
     DLS_Only at sl sts -> DLS_Only at sl <$> pan sts
     DLS_ToConsensus at s r m -> DLS_ToConsensus at <$> pan s <*> pan r <*> pan m
     DLS_FromConsensus at cxt sts -> DLS_FromConsensus at cxt <$> pan sts
-    DLS_While at agn bl1 bl2 sts -> do
-      DLS_While at <$> pan agn <*> pan bl1 <*> pan bl2 <*> pan sts
+    DLS_While at agn bl1 bl2 sts -> DLS_While at <$> pan agn <*> pan bl1 <*> pan bl2 <*> pan sts
     DLS_Continue at agn -> DLS_Continue at <$> pan agn
     DLS_FluidSet at flv a -> DLS_FluidSet at flv <$> pan a
     DLS_FluidRef at v flv -> DLS_FluidRef at <$> pan v <*> pure flv
-    DLS_MapReduce at i v1 mv a v2 v3 bl -> do
-      DLS_MapReduce at i <$> pan v1 <*> pure mv <*> pan a <*> pan v2 <*> pan v3 <*> pan bl
+    DLS_MapReduce at i v1 mv a v2 v3 v4 bl -> DLS_MapReduce at i <$> pan v1 <*> pure mv <*> pan a <*> pan v2 <*> pan v3 <*> pan v4 <*> pan bl
     DLS_Throw at a b -> DLS_Throw at <$> pan a <*> pure b
     DLS_Try at sts1 v sts2 -> DLS_Try at <$> pan sts1 <*> pan v <*> pan sts2
     DLS_ViewIs at sl1 sl2 expo -> return $ DLS_ViewIs at sl1 sl2 expo

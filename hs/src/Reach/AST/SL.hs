@@ -245,7 +245,7 @@ instance IsDynamic SLPrimitive where
     SLPrim_race -> False
     SLPrim_Map -> False
     SLPrim_Map_new -> False
-    SLPrim_Map_reduce -> False
+    SLPrim_Map_reduce _ -> False
     SLPrim_Participant -> False
     SLPrim_ParticipantClass -> False
     SLPrim_View -> False
@@ -952,7 +952,7 @@ data SLPrimitive
   | SLPrim_race
   | SLPrim_Map
   | SLPrim_Map_new
-  | SLPrim_Map_reduce
+  | SLPrim_Map_reduce Bool
   | SLPrim_Participant
   | SLPrim_ParticipantClass
   | SLPrim_View

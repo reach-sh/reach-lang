@@ -1567,13 +1567,17 @@ evalAsEnvM sv@(lvl, obj) = case obj of
     return $ Just $
       M.fromList $
         [ ("new", retV $ public $ SLV_Prim $ SLPrim_Map_new)
-        , ("reduce", retV $ public $ SLV_Prim $ SLPrim_Map_reduce)
+        , ("reduce", retV $ public $ SLV_Prim $ SLPrim_Map_reduce False)
+        , ("reduceWithKey", retV $ public $ SLV_Prim $ SLPrim_Map_reduce True)
         ]
           <> foldableValueEnv
   SLV_Map _ ->
     return $ Just $
       M.fromList $
-        [("reduce", delayCall SLPrim_Map_reduce)] <> foldableObjectEnv
+        [ ("reduce", delayCall $ SLPrim_Map_reduce False)
+        , ("reduceWithKey", delayCall $ SLPrim_Map_reduce True)
+        ]
+        <> foldableObjectEnv
   SLV_Prim SLPrim_Bytes ->
     return $ Just $
       M.fromList $
@@ -3678,7 +3682,7 @@ evalPrim p sargs =
       t' <- st2dte t
       mv <- mapNew kt' t'
       retV $ public $ SLV_Map mv
-    SLPrim_Map_reduce -> do
+    SLPrim_Map_reduce withKey -> do
       at <- withAt id
       uni <- readUniverse
       (m, z, f_) <- three_args
@@ -3687,15 +3691,16 @@ evalPrim p sargs =
           SLV_Map mv -> return $ mv
           _ -> expect_t m $ Err_Expected_Map
       mi <- mapLookup mv
-      let x_tym = dlmi_tym mi
-      let f = jsClo at uni "reduceWrapper" ("(b, ma) => ma.match({None: (() => b), Some: (a => f(b, a))})") (M.fromList [("f", f_)])
-      ensure_while_invariant "Map.reduce"
+      let f_' = if withKey then f_ else jsClo at uni "keyWrapper" ("(b, k, a) => f(b, a)") (M.fromList [("f", f_)])
+      let f = jsClo at uni "reduceWrapper" ("(b, k, ma) => ma.match({None: (() => b), Some: (a => f(b, k, a))})") (M.fromList [("f", f_')])
+      ensure_while_invariant $ "Map.reduce" <> (if withKey then "WithKey" else "")
       (z_ty, z_da) <- compileTypeOf z
       (b_dv, b_dsv) <- make_dlvar at z_ty
-      (ma_dv, ma_dsv) <- make_dlvar at x_tym
+      (k_dv, k_dsv) <- make_dlvar at $ dlmi_kt mi
+      (ma_dv, ma_dsv) <- make_dlvar at $ dlmi_tym mi
       SLRes f_lifts _ f_da <-
         captureRes $ do
-          (f_lvl, f_v) <- evalApplyVals' f [(lvl, b_dsv), (lvl, ma_dsv)]
+          (f_lvl, f_v) <- evalApplyVals' f [(lvl, b_dsv), (lvl, k_dsv), (lvl, ma_dsv)]
           ensure_level lvl f_lvl
           (f_ty, f_da) <- compileTypeOf f_v
           typeEq z_ty f_ty (Just $ srclocOf z) (Just $ srclocOf f_v)
@@ -3703,7 +3708,7 @@ evalPrim p sargs =
       (ans_dv, ans_dsv) <- make_dlvar at z_ty
       let f_bl = DLSBlock at [] f_lifts f_da
       mri <- ctxt_alloc
-      saveLift $ DLS_MapReduce at mri (v2lv ans_dv) mv z_da (v2vl b_dv) (v2vl ma_dv) f_bl
+      saveLift $ DLS_MapReduce at mri (v2lv ans_dv) mv z_da (v2vl b_dv) (v2vl k_dv) (v2vl ma_dv) f_bl
       return $ (lvl, ans_dsv)
     SLPrim_Refine -> do
       at <- withAt id

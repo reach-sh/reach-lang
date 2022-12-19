@@ -154,8 +154,8 @@ instance Sanitize DLStmt where
     DL_LocalIf _ mans a b c -> DL_LocalIf sb (sani mans) (sani a) (sani b) (sani c)
     DL_LocalSwitch _ a b -> DL_LocalSwitch sb a (sani b)
     DL_Only _ a b -> DL_Only sb a (sani b)
-    DL_MapReduce _ mri a b c d e f ->
-      DL_MapReduce sb mri a b (sani c) d e (sani f)
+    DL_MapReduce _ mri a b c d k e f ->
+      DL_MapReduce sb mri a b (sani c) d k e (sani f)
     DL_LocalDo _ mans t -> DL_LocalDo sb (sani mans) (sani t)
 
 instance Sanitize DLTail where

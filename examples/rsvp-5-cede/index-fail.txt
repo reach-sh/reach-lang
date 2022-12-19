@@ -12,18 +12,18 @@ Verification failed:
 
   const UInt.max = 2;
 
-  const howMany/737 = <loop variable>;
+  const howMany/739 = <loop variable>;
   //    ^ could = 1
   //      from: ./index-fail.rsh:34:19:while
-  const v1105 = <map reduction>;
+  const v1121 = <map reduction>;
   //    ^ could = 1
   //      from: reach standard library:170:21:application
 
   // Theorem Formalization
 
-  const v1112 = v1105 == (howMany/737 - 1);
+  const v1129 = v1121 == (howMany/739 - 1);
   //    ^ would be false
-  assert(v1112);
+  assert(v1129);
 
   Verifying when NO participants are honest
 Verification failed:
@@ -36,18 +36,18 @@ Verification failed:
 
   const UInt.max = 1;
 
-  const howMany/737 = <loop variable>;
+  const howMany/739 = <loop variable>;
   //    ^ could = 1
   //      from: ./index-fail.rsh:34:19:while
-  const v1191 = <map reduction>;
+  const v1213 = <map reduction>;
   //    ^ could = 1
   //      from: reach standard library:170:21:application
 
   // Theorem Formalization
 
-  const v1198 = v1191 == (howMany/737 - 1);
+  const v1221 = v1213 == (howMany/739 - 1);
   //    ^ would be false
-  assert(v1198);
+  assert(v1221);
 
 Verification failed:
   when NO participants are honest
@@ -59,18 +59,18 @@ Verification failed:
 
   const UInt.max = 1;
 
-  const howMany/737 = <loop variable>;
+  const howMany/739 = <loop variable>;
   //    ^ could = 1
   //      from: ./index-fail.rsh:34:19:while
-  const v1266 = <map reduction>;
+  const v1294 = <map reduction>;
   //    ^ could = 1
   //      from: reach standard library:170:21:application
 
   // Theorem Formalization
 
-  const v1273 = v1266 == (howMany/737 - 1);
+  const v1302 = v1294 == (howMany/739 - 1);
   //    ^ would be false
-  assert(v1273);
+  assert(v1302);
 
 Checked 48 theorems; 3 failures :'(
 

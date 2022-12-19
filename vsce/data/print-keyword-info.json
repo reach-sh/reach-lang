@@ -263,6 +263,9 @@
   "Map.reduce": {
     "CompletionItemKind": "Function"
   },
+  "Map.reduceWithKey": {
+    "CompletionItemKind": "Function"
+  },
   "Map.size": {
     "CompletionItemKind": "Function"
   },
