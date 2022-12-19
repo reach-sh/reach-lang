@@ -72,11 +72,15 @@ instance Pretty LLStep where
 data LLOpts = LLOpts
   { llo_counter :: Counter
   , llo_droppedAsserts :: Counter
+  , llo_aem :: ALGOExitMode
   }
   deriving (Generic, Eq)
 
 instance HasCounter LLOpts where
-  getCounter (LLOpts {..}) = llo_counter
+  getCounter = llo_counter
+
+instance HasALGOExitMode LLOpts where
+  getALGOExitMode = llo_aem
 
 data LLProg = LLProg
   { llp_at :: SrcLoc

@@ -164,11 +164,15 @@ type CLAPI = M.Map CLSym CLExtFun
 
 data CLOpts = CLOpts
   { clo_counter :: Counter
+  , clo_aem :: ALGOExitMode
   }
   deriving (Eq)
 
 instance HasCounter CLOpts where
   getCounter (CLOpts {..}) = clo_counter
+
+instance HasALGOExitMode CLOpts where
+  getALGOExitMode = clo_aem
 
 type CLState = M.Map Int [DLVar]
 
@@ -195,6 +199,9 @@ instance Pretty CLProg where
 
 instance HasCounter CLProg where
   getCounter = getCounter . clp_opts
+
+instance HasALGOExitMode CLProg where
+  getALGOExitMode = getALGOExitMode . clp_opts
 
 -- HasStateMap
 class HasStateMap a where

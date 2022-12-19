@@ -477,9 +477,10 @@ instance CLike CHandlers where
 
 clike :: PLProg a CPProg -> IO (PLProg a CLProg)
 clike = plp_cpp_mod $ \CPProg {..} -> do
-  let CPOpts {..} = cpp_opts
   let clp_at = cpp_at
-  let clp_opts = CLOpts cpo_counter
+  let clo_counter = getCounter cpp_opts
+  let clo_aem = getALGOExitMode cpp_opts
+  let clp_opts = CLOpts {..}
   eDefsR <- newIORef mempty
   eFunsR <- newIORef mempty
   eAPIR <- newIORef mempty

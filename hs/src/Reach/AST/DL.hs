@@ -278,8 +278,12 @@ data DLOpts = DLOpts
   , dlo_counter :: Counter
   , dlo_bals :: Int
   , dlo_droppedAsserts :: Counter
+  , dlo_aem :: ALGOExitMode
   }
   deriving (Eq, Generic)
+
+instance HasALGOExitMode DLOpts where
+  getALGOExitMode = dlo_aem
 
 instance Pretty DLOpts where
   pretty = \case

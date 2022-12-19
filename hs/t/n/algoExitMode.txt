@@ -1,0 +1,8 @@
+reachc: error[RE0014]: Invalid value for app option, ALGOExitMode: invalid option; valid are: [DeleteAndCloseOutAll_SoundASAs_UnsoundElse,DeleteAndCloseOutASAs]
+
+  ./algoExitMode.rsh:4:28:property binding
+
+  4|   setOptions({ ALGOExitMode: 'Bad' });
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0014
+

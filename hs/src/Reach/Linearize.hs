@@ -671,6 +671,7 @@ defluid :: DKProg -> IO LLProg
 defluid (DKProg dkp_at (DLOpts {..}) dkp_parts dkp_init dkp_exports dkp_views dkp_apis dkp_aliases dkp_events dkp_tail) = do
   let llo_counter = dlo_counter
   let llo_droppedAsserts = dlo_droppedAsserts
+  let llo_aem = dlo_aem
   let opts' = LLOpts {..}
   let eCounter_df = getCounter opts'
   let eFVMm = mempty

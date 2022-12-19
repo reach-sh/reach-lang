@@ -740,9 +740,8 @@ mk_eb (DLinExportBlock at vs (DLBlock bat sf ll a)) = do
 
 epp :: LLProg -> IO (PLProg EPProg CPProg)
 epp (LLProg {..}) = do
-  let LLOpts {..} = llp_opts
   -- Step 1: Analyze the program to compute basic blocks
-  let be_counter = llo_counter
+  let be_counter = getCounter llp_opts
   be_savec <- newCounter 1
   be_handlerc <- newCounter 0
   be_handlers <- newIORef mempty
@@ -795,7 +794,8 @@ epp (LLProg {..}) = do
   let cpp_apis = api_info
   let cpp_events = llp_events
   cpp_handlers <- CHandlers <$> mapM mkh hs
-  let cpo_counter = llo_counter
+  let cpo_counter = getCounter llp_opts
+  let cpo_aem = getALGOExitMode llp_opts
   let cpp_opts = CPOpts {..}
   let plp_cpp = CPProg {..}
   stateToSrcMap <- readIORef be_stateToSrcMap
@@ -822,7 +822,7 @@ epp (LLProg {..}) = do
         let ee_flow = flow
         ep_tail <- flip runReaderT (EEnv {..}) $ mkep_
         return $ EPart {..}
-  let epo_counter = llo_counter
+  let epo_counter = getCounter llp_opts
   let epp_opts = EPOpts {..}
   let epp_init = llp_init
   let epp_exports = dex'

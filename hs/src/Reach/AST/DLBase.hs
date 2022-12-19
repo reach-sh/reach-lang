@@ -1704,3 +1704,14 @@ instance Pretty a => Pretty (CInterval a) where
   pretty (CBetween f t) = pform "between" $ go f <+> go t
     where
       go = brackets . pretty
+
+data ALGOExitMode
+  = DeleteAndCloseOutAll_SoundASAs_UnsoundElse
+  | DeleteAndCloseOutASAs
+  deriving (Eq, Ord, Show, Read, Enum)
+
+defaultALGOExitMode :: ALGOExitMode
+defaultALGOExitMode = DeleteAndCloseOutAll_SoundASAs_UnsoundElse
+
+class HasALGOExitMode a where
+  getALGOExitMode :: a -> ALGOExitMode
