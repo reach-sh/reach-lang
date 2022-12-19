@@ -12,5 +12,7 @@ export const main = Reach.App(() => {
   m[B] = 2;
   commit();
   A.publish();
+  delete m[A];
+  delete m[B];
   commit();
 });
