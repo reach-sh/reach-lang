@@ -2026,7 +2026,7 @@ Example:
 
 ```reach
 load: /examples/nft-auction-api/index.rsh
-md5: aba879d62803fb298b7ce92187d6a489
+md5: ae17b7d75b615cbac282ca0d776c6735
 range: 48 - 52
 ```
 
