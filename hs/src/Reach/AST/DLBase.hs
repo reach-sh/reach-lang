@@ -808,6 +808,7 @@ data DLRemoteALGO = DLRemoteALGO
   , ra_simNetRecv :: DLArg
   , ra_simTokensRecv :: DLRemoteALGOSTR
   , ra_simReturnVal :: Maybe DLArg
+  , ra_txnOrderForward :: Bool
   }
   deriving (Eq, Ord)
 
@@ -826,6 +827,7 @@ zDLRemoteALGO = DLRemoteALGO {..}
     ra_simNetRecv = argLitZero
     ra_simTokensRecv = RA_Unset
     ra_simReturnVal = Nothing
+    ra_txnOrderForward = False
 
 instance PrettySubst DLRemoteALGO where
   prettySubst (DLRemoteALGO {..}) = do

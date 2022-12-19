@@ -9,6 +9,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcNext("0.1.13-rc.0")}
 
++ 2022/12/19: Added `txnOrderForward` to `{!rsh} remote.ALGO`.
+
 + 2022/12/19: Added `{!rsh} ALGOExitMode` to `{!rsh} setOptions`.
 
 + 2022/12/15: Added `{!rsh} ALGO.blockSeed`, `{!rsh} ALGO.blockSecs`, and `{!js} stdlib.setAdjustTxnParams`.

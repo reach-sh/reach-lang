@@ -5,7 +5,13 @@ const stdlib = loadStdlib();
 if (stdlib.connector !== 'ALGO') { process.exit(0); }
 const [accA] = await stdlib.newTestAccounts(1, stdlib.parseCurrency(100));
 
-await accA.contract(m2).p.A({});
+test.one('works', async () => {
+  await accA.contract(m2).p.A({});
+});
 
-await test.chkErr('closeOut', 'outstanding box', () => accA.contract(m1).p.A({}));
+test.one('doesnt work', async () => {
+  await test.chkErr('closeOut', 'outstanding box', () =>
+    accA.contract(m1).p.A({}));
+});
 
+await test.run({ noVarOutput: true });

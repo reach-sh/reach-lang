@@ -124,7 +124,7 @@ instance Pandemic DLRemoteALGOSTR where
 
 instance Pandemic DLRemoteALGO where
   pan (DLRemoteALGO {..}) =
-    DLRemoteALGO <$> pan ra_fees <*> pan ra_accounts <*> pan ra_assets <*> pan ra_addr2acc <*> pan ra_apps <*> pan ra_boxes <*> pan ra_onCompletion <*> pan ra_strictPay <*> pan ra_rawCall <*> pan ra_simNetRecv <*> pan ra_simTokensRecv <*> pan ra_simReturnVal
+    DLRemoteALGO <$> pan ra_fees <*> pan ra_accounts <*> pan ra_assets <*> pan ra_addr2acc <*> pan ra_apps <*> pan ra_boxes <*> pan ra_onCompletion <*> pan ra_strictPay <*> pan ra_rawCall <*> pan ra_simNetRecv <*> pan ra_simTokensRecv <*> pan ra_simReturnVal <*> pan ra_txnOrderForward
 
 instance Pandemic DLPayAmt where
   pan (DLPayAmt net ks) = do
