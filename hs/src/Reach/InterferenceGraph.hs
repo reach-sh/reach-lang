@@ -414,11 +414,11 @@ instance IG DLStmt where
     DL_LocalIf _ _ a t f -> igIf ls a t f
     DL_LocalSwitch _ v csm -> igSwitch ls v csm
     DL_Only _ _ t -> ig ls t
-    DL_MapReduce _ _ ans _x z b a f -> do
+    DL_MapReduce _ _ ans _x z b k a f -> do
       move b z
       move ans f
       move b f
-      ig ls (IGseq ans (IGseq z (IGseq (Seq $ [b, a]) f)))
+      ig ls (IGseq ans (IGseq z (IGseq (Seq $ [b, k, a]) f)))
 
 instance IG DLTail where
   ig ls = \case

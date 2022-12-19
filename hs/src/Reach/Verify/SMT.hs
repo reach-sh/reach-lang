@@ -161,14 +161,15 @@ data SMTMapRecordReduce = SMR_Reduce
   , smr_ans :: DLVar
   , smr_z :: DLArg
   , smr_b :: DLVar
+  , smr_k :: DLVar
   , smr_a :: DLVar
   , smr_f :: DLBlock
   }
 
 instance Pretty SMTMapRecordReduce where
   pretty = \case
-    SMR_Reduce _mri ans z b a f ->
-      prettyReduce ans ("map" :: String) z b a () f
+    SMR_Reduce _mri ans z b k a f ->
+      prettyReduce ans ("map" :: String) z b a k f
 
 data SMTMapRecordUpdate
   = SMR_Update SExpr SExpr SExpr SMTMapRecordUpdate
@@ -937,18 +938,21 @@ smt_freshen x vs = do
   c <- ctxt_idx <$> ask
   liftIO $ freshen_ c x vs
 
-smtMapReduceApply :: SrcLoc -> DLVar -> DLVar -> DLBlock -> App (SExpr, SExpr, App SExpr)
-smtMapReduceApply at b a f = do
-  (f', b_f, a_f) <-
-    smt_freshen f [b, a] >>= \case
-      (f', [b_f, a_f]) -> return (f', b_f, a_f)
+smtMapReduceApply :: SrcLoc -> DLVar -> DLVar -> DLVar -> DLBlock -> App (SExpr, SExpr, SExpr, App SExpr)
+smtMapReduceApply at b k a f = do
+  (f', b_f, k_f, a_f) <-
+    smt_freshen f [b, k, a] >>= \case
+      (f', [b_f, k_f, a_f]) -> return (f', b_f, k_f, a_f)
       _ -> impossible "smt_freshen bad"
-  b' <- smt_v at b_f
-  pathAddUnbound at (Just b_f) $ Just $ SMTModel O_ReduceVar
-  a' <- smt_v at a_f
-  pathAddUnbound at (Just a_f) $ Just $ SMTModel O_ReduceVar
+  let go x_f = do
+        x' <- smt_v at x_f
+        pathAddUnbound at (Just x_f) $ Just $ SMTModel O_ReduceVar
+        return x'
+  b' <- go b_f
+  k' <- go k_f
+  a' <- go a_f
   let call_f' = smt_block f'
-  return $ (b', a', call_f')
+  return $ (b', k', a', call_f')
 
 smtMapReviewRecordRef :: SrcLoc -> DLMVar -> SExpr -> DLVar -> App ()
 smtMapReviewRecordRef at x fse res = do
@@ -969,15 +973,15 @@ smtMapReviewRecordRef at x fse res = do
   rs <- smtMapReviewRecord x sm_rs
   res' <- smt_v at res
   add_us_constraints $
-    forM_ rs $ \(SMR_Reduce _ ans _ b a f) -> do
+    forM_ rs $ \(SMR_Reduce _ ans _ b k a f) -> do
       ans' <- smt_v at ans
-      (_, a', f') <- smtMapReduceApply at b a f
+      (_, _k', a', f') <- smtMapReduceApply at b k a f
       smtAssertCtxt $ smtEq a' res'
       fres' <- f'
       smtAssertCtxt $ smtEq ans' fres'
 
-smtMapReviewRecordReduce :: SrcLoc -> Int -> DLVar -> DLMVar -> DLArg -> DLVar -> DLVar -> DLBlock -> App ()
-smtMapReviewRecordReduce at mri ans x z b a f = do
+smtMapReviewRecordReduce :: SrcLoc -> Int -> DLVar -> DLMVar -> DLArg -> DLVar -> DLVar -> DLVar -> DLBlock -> App ()
+smtMapReviewRecordReduce at mri ans x z b k a f = do
   z' <- smt_a at z
   (me_rs, other_rs) <- List.partition ((==) mri . smr_mri) <$> smtMapReviewRecord x sm_rs
   let go_fresh ans_x (SMR_Reduce {..}) = do
@@ -1001,15 +1005,16 @@ smtMapReviewRecordReduce at mri ans x z b a f = do
         -- same, because the elements are definitely the same and the final
         -- value is the same as the accumulators
         let varTypeEq v0 v1 = ((==) (varType v0) (varType v1))
-        when ((varTypeEq b smr_b) && (varTypeEq a smr_a)) $ do
-          (b_x, a_x, mkf_x) <- smtMapReduceApply at b a f
-          (b_y, a_y, mkf_y) <- smtMapReduceApply at smr_b smr_a smr_f
+        when ((varTypeEq b smr_b) && (varTypeEq k smr_k) && (varTypeEq a smr_a)) $ do
+          (b_x, k_x, a_x, mkf_x) <- smtMapReduceApply at b k a f
+          (b_y, k_y, a_y, mkf_y) <- smtMapReduceApply at smr_b smr_k smr_a smr_f
           f_x <- mkf_x
           f_y <- mkf_y
           let z_x = z'
           z_y <- smt_a at smr_z
           ans_y <- smt_v at smr_ans
           smtAssert $ smtEq b_x b_y
+          smtAssert $ smtEq k_x k_y
           smtAssert $ smtEq a_x a_y
           smtAssert $ smtImplies (smtAnd (smtEq z_x z_y) (smtEq f_x f_y)) (smtEq ans_x ans_y)
   let go = \case
@@ -1033,14 +1038,16 @@ smtMapReviewRecordReduce at mri ans x z b a f = do
           -- of the reduction function back to the last known value, which is
           -- either z in the beginning or the last value
           z'0 <- go prev
-          (b'0, a'0, f'0) <- smtMapReduceApply at b a f
+          (b'0, k'0, a'0, f'0) <- smtMapReduceApply at b k a f
+          smtAssertCtxt $ smtEq k'0 fa'
           smtAssertCtxt $ smtEq a'0 $ smtApply "select" [ma, fa']
           fres'0 <- f'0
           smtAssertCtxt $ smtEq fres'0 z'0
           -- n f( Z0, m[fa] ) = z'
           -- u f( Z0, na' ) = z''
-          (b'1, a'1, f'1) <- smtMapReduceApply at b a f
+          (b'1, k'1, a'1, f'1) <- smtMapReduceApply at b k a f
           smtAssertCtxt $ smtEq b'1 b'0
+          smtAssertCtxt $ smtEq k'1 fa'
           smtAssertCtxt $ smtEq a'1 na'
           f'1
   z'' <- go =<< smtMapReviewRecord x sm_us
@@ -1333,18 +1340,19 @@ smt_m = \case
     with_t (smt_l t) <> with_f (smt_l f)
   DL_LocalSwitch at ov csm ->
     smtSwitch SM_Local at ov csm smt_l
-  DL_MapReduce at mri ans_lv x z b' a' f -> do
+  DL_MapReduce at mri ans_lv x z b' k' a' f -> do
     case ans_lv of
       DLV_Eff -> return ()
       DLV_Let _ ans -> do
         let b = vl2v b'
+        let k = vl2v k'
         let a = vl2v a'
         pathAddUnbound at (Just ans) $ Just $ SMTModel O_ReduceVar
         (ctxt_inv_mode <$> ask) >>= \case
           B_Assume _ -> do
-            smtMapRecordReduce x $ SMR_Reduce mri ans z b a f
+            smtMapRecordReduce x $ SMR_Reduce mri ans z b k a f
           B_Prove _ ->
-            smtMapReviewRecordReduce at mri ans x z b a f
+            smtMapReviewRecordReduce at mri ans x z b k a f
           _ -> impossible $ "Map.reduce outside invariant"
   DL_Only _at (Left who) loc -> smt_lm who loc
   DL_Only {} -> impossible $ "right only before EPP"

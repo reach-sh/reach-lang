@@ -424,14 +424,14 @@ be_m = \case
           where
             f' (SwitchCase {..}) = SwitchCase sc_vl <$> f sc_k
     return $ (,) (mkt fst) (mkt snd)
-  DL_MapReduce at mri ans x z b a f -> do
+  DL_MapReduce at mri ans x z b k a f -> do
     fg_defn $ ans
-    fg_defn $ [b, a]
+    fg_defn $ [b, k, a]
     fg_use $ z
     be_bl f
       >>= retb
         (\f' ->
-           return $ DL_MapReduce at mri ans x z b a f')
+           return $ DL_MapReduce at mri ans x z b k a f')
   DL_Only at (Left who) l -> do
     ic <- be_inConsensus <$> ask
     l'l <- ee_t l

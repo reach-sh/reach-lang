@@ -147,11 +147,11 @@ instance AC DLStmt where
     DL_Only at who b -> do
       b' <- ac b
       return $ DL_Only at who b'
-    DL_MapReduce at mri ans x z b a f -> do
+    DL_MapReduce at mri ans x z b k a f -> do
       -- XXX remove if ans not used
       f' <- ac f
       ac_visit $ z
-      return $ DL_MapReduce at mri ans x z b a f'
+      return $ DL_MapReduce at mri ans x z b k a f'
     DL_LocalDo at mans t -> DL_LocalDo at mans <$> ac t
     where
       skip at = return $ DL_Nop at

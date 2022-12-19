@@ -11,21 +11,21 @@ Verification failed:
 
   const UInt.max = 2;
 
-  const sum/186 = <loop variable>;
+  const sum/188 = <loop variable>;
   //    ^ could = 1
   //      from: ./pr-671006p.rsh:31:37:while
-  const netBalance/190 = <loop variable>;
+  const netBalance/192 = <loop variable>;
   //    ^ could = 1
   //      from: ./pr-671006p.rsh:31:37:while
-  const v239 = <map reduction>;
+  const v241 = <map reduction>;
   //    ^ could = 0
   //      from: reach standard library:147:18:application
 
   // Theorem Formalization
 
-  const v247 = ((netBalance/190 == sum/186) ? (sum/186 == v239) : false);
+  const v250 = ((netBalance/192 == sum/188) ? (sum/188 == v241) : false);
   //    ^ would be false
-  assert(v247);
+  assert(v250);
 
   Verifying when NO participants are honest
 Checked 30 theorems; 2 failures (and 1 omitted repeats) :'(

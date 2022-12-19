@@ -174,8 +174,8 @@ dk1 k s =
     DLS_Continue at asn -> return $ DK_Continue at asn
     DLS_FluidSet at fv a -> com $ DKC_FluidSet at fv a
     DLS_FluidRef at v fv -> com $ DKC_FluidRef at v fv
-    DLS_MapReduce at mri ans x z b a f ->
-      com' $ DKC_MapReduce at mri ans x z b a <$> dk_block at f
+    DLS_MapReduce at mri ans x z b mk a f ->
+      com' $ DKC_MapReduce at mri ans x z b mk a <$> dk_block at f
     DLS_Only at who ss ->
       com' $ DKC_Only at who <$> dk_top at ss
     DLS_Throw at da _ -> do
@@ -266,7 +266,7 @@ instance CanLift DKCommon where
     DKC_LocalDo _ _ t -> canLift t
     DKC_LocalIf _ _ _ t f -> canLift t && canLift f
     DKC_LocalSwitch _ _ csm -> canLift csm
-    DKC_MapReduce _ _ _ _ _ _ _ f -> canLift f
+    DKC_MapReduce _ _ _ _ _ _ _ _ f -> canLift f
     DKC_FluidSet {} -> True
     DKC_FluidRef {} -> True
     DKC_Only {} -> False --- XXX maybe okay
@@ -540,7 +540,7 @@ df_com mkk back = \case
         DKC_LocalDo a mans x -> DL_LocalDo a mans <$> df_t x
         DKC_LocalIf a mans b x y -> DL_LocalIf a mans b <$> df_t x <*> df_t y
         DKC_LocalSwitch a b x -> DL_LocalSwitch a b <$> df_csm df_t x
-        DKC_MapReduce a mri b c d e f x -> DL_MapReduce a mri b c d e f <$> df_bl x
+        DKC_MapReduce a mri b c d e f g x -> DL_MapReduce a mri b c d e f g <$> df_bl x
         DKC_Only a b c -> DL_Only a (Left b) <$> df_t c
         _ -> impossible "df_com"
     mkk m' <$> back k

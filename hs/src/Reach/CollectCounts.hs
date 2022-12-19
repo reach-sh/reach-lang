@@ -269,9 +269,9 @@ instance CountableK DLStmt where
     DL_LocalIf _ _ c t f -> counts c <> counts [t, f] <> kcs
     DL_LocalSwitch _ v csm -> counts v <> counts csm <> kcs
     DL_Only _ _ t -> countsk kcs t
-    DL_MapReduce _ _ ans _ z b a f ->
+    DL_MapReduce _ _ ans _ z b k a f ->
       counts z
-      <> countsk (counts f) [b, a]
+      <> countsk (counts f) [b, k, a]
       <> countsk kcs ans
     DL_LocalDo _ _ t -> countsk kcs t
 

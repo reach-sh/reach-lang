@@ -115,6 +115,7 @@ data Global = Global
   }
   deriving (Generic)
 
+instance ToJSONKey DLVal
 instance ToJSON Global
 
 data LocalInfo = LocalInfo
@@ -308,7 +309,7 @@ instance FromJSON Action
 
 type Account = Integer
 
-type LinearState = M.Map DLMVar (M.Map Account DLVal)
+type LinearState = M.Map DLMVar (M.Map DLVal DLVal)
 
 data DLVal
   = V_Null
@@ -645,7 +646,7 @@ instance Interp DLExpr where
     DLE_MapRef _at dlmvar dlarg _ -> do
       (g, _) <- getState
       let linstate = e_linstate g
-      acc <- vAddress <$> interp dlarg
+      acc <- interp dlarg
       case M.lookup dlmvar linstate of
         Nothing -> return $ V_Data "None" V_Null
         Just m -> do
@@ -655,7 +656,7 @@ instance Interp DLExpr where
     DLE_MapSet _at dlmvar dlarg _ maybe_dlarg -> do
       (e, _) <- getState
       let linst = e_linstate e
-      acc <- vAddress <$> interp dlarg
+      acc <- interp dlarg
       f <- case maybe_dlarg of
         Nothing -> return M.delete
         Just a -> do
@@ -785,18 +786,19 @@ instance Interp DLStmt where
                         Just _ -> interp dltail
             True -> interp dltail
         _ -> impossible "DL_Only: unexpected error (Right)"
-    DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
-      accu <- interp arg
+    DL_MapReduce _at _mri ans mv za blv klv alv fb -> do
+      acc <- interp za
       (g, _) <- getState
       let linst = e_linstate g
-      let f =
-            (\a x b y -> do
-               addToStore a x
-               addToStore b y
-               interp block)
-      let m = saferMaybe "DL_MapReduce" $ M.lookup dlmvar linst
-      res <- foldM (\x y -> f var2 x var3 y) accu $ m
-      addToStore var1 res
+      let f :: DLVal -> DLVal -> DLVal -> App DLVal
+          f k v acc' = do
+           addToStore blv acc'
+           addToStore klv k
+           addToStore alv v
+           interp fb
+      let m = saferMaybe "DL_MapReduce" $ M.lookup mv linst
+      res <- foldrWithKeyM f acc m
+      addToStore ans res
       return V_Null
 
 instance Interp DLTail where

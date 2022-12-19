@@ -1307,11 +1307,25 @@ Map.reduce(map, z, f)
 map.reduce(z, f)
 ```
 
- `{!rsh} Map.reduce(map, z, f)` returns the [left fold](https://en.wikipedia.org/wiki/Fold_(higher-order_function)) of the function `{!rsh} f` over the given mapping with the initial value `{!rsh} z`.
-For example, `{!rsh} m.reduce(0, add)` sums the elements of the mapping.
+ `{!rsh} Map.reduce(map, z, f)` returns the [left fold](https://en.wikipedia.org/wiki/Fold_(higher-order_function)) of the function `{!rsh} f` over the values of the given mapping with the initial value `{!rsh} z`.
 This may be abbreviated as `{!rsh} map.reduce(z, f)`.
+For example, `{!rsh} m.reduce(0, (acc, v) => acc + v)` sums the elements of the mapping.
 
 The function `{!rsh} f` must satisfy the property, for all `{!rsh} z`, `{!rsh} a`, `{!rsh} b`, `{!rsh} f(f(z, b), a) == f(f(z, a), b)`, because the order of evaluation is unpredictable.
+
+#### `Map.reduceWithKey` && `.reduceWithKey`
+
+@{ref("rsh", "Map.reduceWithKey")}
+```reach
+Map.reduceWithKey(map, z, f)
+map.reduceWithKey(z, f)
+```
+
+ `{!rsh} Map.reduceWithKey(map, z, f)` returns the [left fold](https://en.wikipedia.org/wiki/Fold_(higher-order_function)) of the function `{!rsh} f` over the keys and values of the given mapping with the initial value `{!rsh} z`.
+This may be abbreviated as `{!rsh} map.reduceWithKey(z, f)`.
+For example, `{!rsh} m.reduce(0, (acc, k, v) => acc + k + v)` sums the keys and values of the mapping.
+
+The function `{!rsh} f` must satisfy the property, for all `z`, `k1`, `a`, `k2`, `b`, `{!rsh} f(f(z, k2, b), k1, a) == f(f(z, k1, a), k2, b)`, because the order of evaluation is unpredictable.
 
 ### {#ref-programs-objects} Objects
 
