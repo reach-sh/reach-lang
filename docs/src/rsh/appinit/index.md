@@ -188,7 +188,7 @@ Each function must occur in the entire program and may only appear once in each 
 
 ```
 load: /examples/dominant-assurance/index.rsh
-md5: d327454b582bdfa6f03d71de5ce2dd97
+md5: 4905da78b4a84e0e79914f97613dc4b6
 range: 24-27
 ```
 
@@ -271,7 +271,7 @@ range: 10 - 13
 While the `{!rsh} Events` in following example has an `{!rsh} eventName`:
 ```reach
 load: /examples/dominant-assurance/index.rsh
-md5: d327454b582bdfa6f03d71de5ce2dd97
+md5: 4905da78b4a84e0e79914f97613dc4b6
 range: 34 - 35
 ```
 
