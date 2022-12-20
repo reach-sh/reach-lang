@@ -2654,7 +2654,8 @@ instance Compile DLExpr where
                   let mt_amt = pay_net
                   let mt_mtok = Nothing
                   let mt_submit = False
-                  mayIncTxn $ makeTxn $ MakeTxn {..}
+                  x <- mayIncTxn $ makeTxn $ MakeTxn {..}
+                  return $ mt_next || x
             case (ra_txnOrderForward, isBefore) of
               (True, True) -> go
               (False, False) -> go
