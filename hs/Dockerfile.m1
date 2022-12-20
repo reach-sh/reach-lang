@@ -10,7 +10,7 @@ RUN make ROOT=.docker-root sol/stdlib.json
 
 FROM reachsh/devnet-algo:latest AS algo
 
-FROM $UBUNTU_IMAGE as build
+FROM $UBUNTU_IMAGE as build-base
 
 RUN set -e
 RUN apt-get update \
@@ -26,6 +26,8 @@ RUN apt-get update \
     xz-utils \
     z3 \
     zlib1g-dev
+
+FROM build-base as build-hs
 
 WORKDIR /tmp
 
@@ -74,6 +76,8 @@ RUN set -o pipefail ; stack build 2>&1 | tee build-log.txt
 RUN stack build --copy-bins
 # RUN mv "$(stack path --local-install-root)/bin" /build/bin/
 
+FROM build-base as build-z3
+
 RUN apt-get update && apt-get install -y \
   python3-distutils \
   clang
@@ -95,15 +99,15 @@ WORKDIR /tmp_z3/z3/build
 RUN make
 RUN make install
 
+FROM build-hs as build
+
 WORKDIR /
 COPY --from=solc /usr/local/bin/solc /usr/bin/solc
 RUN chmod +x /usr/bin/solc
 COPY --from=solc /sol/stdlib.json /stdlib_sol.json
 RUN cp /root/.local/bin/reachc /usr/bin/reachc && chmod +x /usr/bin/reachc
-
-# this particular goal binary needs musl
-RUN apt-get update && apt-get install -y musl
 COPY --from=algo /bin/goal /usr/bin/goal
+COPY --from=build-z3 /usr/bin/z3 /usr/bin/z3
 
 # mostly copied from Dockerfile.reachc
 WORKDIR /app
