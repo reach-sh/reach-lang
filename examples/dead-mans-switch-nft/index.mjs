@@ -21,6 +21,7 @@ const runOwner = async (ctc, name, nextHeir) => {
   if (nextHeir) {
     await stdlib.wait(switchTime * 2);
     await ctc.apis.Owner.setNextHeir(nextHeir);
+    await stdlib.wait(1);
   }
 
   console.log(`${name} is now the owner`);

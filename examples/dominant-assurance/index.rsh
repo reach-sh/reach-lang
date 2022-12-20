@@ -16,6 +16,7 @@ const InvestmentStructureT = Object({
 });
 
 export const main = Reach.App(() => {
+  setOptions({ ALGOExitMode: 'DeleteAndCloseOutASAs' });
   const P = Participant('Product', {
     investmentStructure: InvestmentStructureT,
     ready: Fun([], Null),
