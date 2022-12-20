@@ -32,6 +32,7 @@ export interface ETH_Ty<BV extends CBR_Val, NV> extends BackendTy<BV> {
   unmunge: (nv: NV) => BV,
   /** @description describes the shape of the munged value */
   paramType: string,
+  isBaseType: boolean,
 };
 
 export type AnyETH_Ty = ETH_Ty<any, any>;

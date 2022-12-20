@@ -30,4 +30,5 @@ export const T_Address: ETH_Ty<CBR_Address, string> = {
   unmunge: (nv: string): CBR_Address => T_Address.canonicalize(nv),
   paramType: 'address',
   toString: () => 'address',
+  isBaseType: true,
 }
