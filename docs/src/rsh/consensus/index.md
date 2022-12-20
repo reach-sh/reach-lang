@@ -681,7 +681,7 @@ If `{!rsh} KEY_TYPE_EXPR` is not specified, it will default to `{!rsh} Address`.
 For example the code below contains only the `{!rsh} VAL_TYPE_EXPR`:
 ```reach
 load: /examples/splice1/index.rsh
-md5: 944291e790336dbb2b87784588d60eeb
+md5: 579fe539571f08bb14f260b064aa914a
 range: 7 - 7
 ```
 
