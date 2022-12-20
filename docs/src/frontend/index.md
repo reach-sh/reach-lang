@@ -469,7 +469,7 @@ Example:
 
 ```js
 load: /examples/signingMonitor/index.mjs
-md5: ba025829c65235bef3ceddc4a5f0c150
+md5: ece025d27cb8cf50d1d49b3f95ef6251
 range: 5-7
 ```
 
