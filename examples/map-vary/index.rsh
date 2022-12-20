@@ -2,7 +2,6 @@
 
 const MUInt = Maybe(UInt);
 export const main = Reach.App(() => {
-  setOptions({ ALGOExitMode: 'DeleteAndCloseOutASAs' });
   const common = {
     get: Fun([], UInt),
     check: Fun([MUInt, MUInt], Null),
@@ -40,6 +39,11 @@ export const main = Reach.App(() => {
   } else {
     A.interact.check(m[A], MUInt.Some(a));
   }
+  commit();
+
+  A.publish();
+  delete m[A];
+  delete m[B];
   commit();
 
   exit();

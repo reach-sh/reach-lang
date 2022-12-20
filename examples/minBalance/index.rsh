@@ -5,7 +5,6 @@ export const main = Reach.App(() => {
     mid: Fun([], Null),
   });
   const B = Participant('B', {});
-  setOptions({untrustworthyMaps: true});
   init();
   A.publish();
   const m = new Map(UInt);
@@ -19,6 +18,10 @@ export const main = Reach.App(() => {
   A.publish();
   m[A] = 4;
   m[B] = 5;
+  commit();
+  A.publish();
+  delete m[A];
+  delete m[B];
   commit();
   exit();
 });
