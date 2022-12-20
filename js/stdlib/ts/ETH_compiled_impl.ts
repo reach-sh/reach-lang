@@ -10,9 +10,9 @@ function addressUnwrapper(x: any): string {
     } else {
       return x;
     }
-  } else if (x.networkAccount && x.networkAccount.address) {
+  } else if (x?.networkAccount && x?.networkAccount?.address) {
     return (x.networkAccount.address);
-  } else if (x.address) {
+  } else if (x?.address) {
     return x.address;
   } else {
     throw Error(`Failed to unwrap address ${x}`);
