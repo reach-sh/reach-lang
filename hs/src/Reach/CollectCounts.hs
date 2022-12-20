@@ -206,6 +206,9 @@ instance Countable DLPayAmt where
 instance Countable DLSend where
   counts (DLSend {..}) = counts ds_msg <> counts ds_pay <> counts ds_when
 
+instance Countable SvsPut where
+  counts (SvsPut {..}) = counts svsp_val
+
 instance Countable FromInfo where
   counts = \case
     FI_Continue svs -> counts svs
@@ -225,7 +228,7 @@ class CountableK a where
 
 instance CountableK FromInfo where
   countsk kcs = \case
-    FI_Continue svs -> count_rms (map fst svs) kcs
+    FI_Continue svs -> count_rms (map svsp_svs svs) kcs
     FI_Halt toks -> counts toks <> kcs
 
 instance CountableK DLTail where

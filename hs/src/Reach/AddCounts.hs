@@ -1,4 +1,4 @@
-module Reach.AddCounts (add_counts, add_counts_sim, AC (..), ac_vdef, ac_visit, ac_vls) where
+module Reach.AddCounts (add_counts, add_counts_sim, AC (..), ac_vdef, ac_visit) where
 
 import Control.Monad.Reader
 import Data.IORef
@@ -53,13 +53,10 @@ ac_vdef okToDupe (DLV_Let _ v) = do
       let lc' = if okToDupe then lc else DVC_Many
       return $ DLV_Let lc' v
 
-ac_vl :: AppT DLVarLet
-ac_vl (DLVarLet _ v) = do
-  mvc <- ac_getCount v
-  return $ DLVarLet mvc v
-
-ac_vls :: AppT [DLVarLet]
-ac_vls = mapM ac_vl
+instance AC DLVarLet where
+  ac (DLVarLet _ v) = do
+    mvc <- ac_getCount v
+    return $ DLVarLet mvc v
 
 instance (AC a, Traversable t) => AC (t a) where
   ac = mapM ac
@@ -173,7 +170,7 @@ instance AC DLBlock where
 instance {-# OVERLAPS #-} AC a => AC (SwitchCaseUse a) where
   ac (SwitchCaseUse ov vn (SwitchCase {..})) = do
     k' <- ac sc_k
-    vl' <- ac_vl sc_vl
+    vl' <- ac sc_vl
     case vl' of
       -- If we use it, then we must get the data from ov
       DLVarLet (Just _) _ -> ac_visit ov
@@ -246,14 +243,23 @@ condBlock c =
         dt = dtList at (vs <> [c'])
         k' = dtReplace CT_Com k (dtList at ms'')
 
+instance AC SvsPut where
+  ac (SvsPut s v) = do
+    v' <- ac v
+    s' <- ac s
+    return $ SvsPut s' v'
+
+instance AC SvsGet where
+  ac (SvsGet s v) = do
+    v' <- ac v
+    s' <- ac s
+    return $ SvsGet s' v'
+
 instance AC FromInfo where
   ac fi = do
     case fi of
-      FI_Halt toks -> do
-        ac_visit toks
-      FI_Continue svs -> do
-        ac_visit $ map fst svs
-        ac_visit $ map snd svs
+      FI_Halt toks -> ac_visit toks
+      FI_Continue svs -> ac_visit svs
     return fi
 
 instance AC CTail where
@@ -292,21 +298,21 @@ instance AC CHandler where
   ac = \case
     C_Loop {..} -> fresh $ do
       body' <- ac cl_body
-      svs' <- ac_vls cl_svs
-      vars' <- ac_vls cl_vars
+      svs' <- ac cl_svs
+      vars' <- ac cl_vars
       return $ C_Loop cl_at svs' vars' body'
     C_Handler {..} -> fresh $ do
       body' <- ac ch_body
       ac_visit ch_int
       ac_visit ch_from
-      svs' <- ac_vls ch_svs
-      msg' <- ac_vls ch_msg
+      svs' <- ac ch_svs
+      msg' <- ac ch_msg
       return $ C_Handler ch_at ch_int ch_from ch_last svs' msg' ch_timev ch_secsv body'
 
 instance {-# OVERLAPS #-} AC a => AC (DLinExportBlock a) where
   ac (DLinExportBlock at vs a) = do
     a' <- ac a
-    vs' <- mapM ac_vls vs
+    vs' <- mapM ac vs
     return $ DLinExportBlock at vs' a'
 
 instance AC EPart where
@@ -441,7 +447,7 @@ instance AC CLStmt where
       ac_visit vs
       return $ CLEmitPublish at w vs
     CLStateBind at safe vs s -> do
-      vs' <- ac_vls vs
+      vs' <- ac vs
       return $ CLStateBind at safe vs' s
     CLIntervalCheck at x y int -> do
       ac_visit x
@@ -449,7 +455,7 @@ instance AC CLStmt where
       ac_visit int
       return $ CLIntervalCheck at x y int
     CLStateSet at w vs -> do
-      ac_visit $ map snd vs
+      ac_visit vs
       return $ CLStateSet at w vs
     CLTokenUntrack at a -> do
       ac_visit a
@@ -480,7 +486,7 @@ instance AC CLTail where
 instance AC CLFun where
   ac (CLFun {..}) = fresh $ do
     t' <- ac clf_tail
-    dom' <- ac_vls clf_dom
+    dom' <- ac clf_dom
     return $ CLFun clf_at dom' clf_view t'
 
 instance AC CLIntFun where

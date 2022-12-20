@@ -47,7 +47,7 @@ data CLStmt
   | CLEmitPublish SrcLoc Int [DLVar]
   | CLStateBind SrcLoc Bool [DLVarLet] Int
   | CLIntervalCheck SrcLoc DLVar DLVar (CInterval DLTimeArg)
-  | CLStateSet SrcLoc Int [(DLVar, DLArg)]
+  | CLStateSet SrcLoc Int [SvsPut]
   | CLTokenUntrack SrcLoc DLArg
   | CLMemorySet SrcLoc CLVar DLArg
   deriving (Eq)
@@ -80,7 +80,7 @@ data CLTail
   = CL_Com CLStmt CLTail
   | CL_If SrcLoc DLArg CLTail CLTail
   | CL_Switch SrcLoc DLVar (SwitchCases CLTail)
-  | CL_Jump SrcLoc CLVar [DLVar] Bool (Maybe (Maybe CLVar))
+  | CL_Jump SrcLoc CLVar [DLArg] Bool (Maybe (Maybe CLVar))
   | CL_Halt SrcLoc HaltMode
   deriving (Eq)
 

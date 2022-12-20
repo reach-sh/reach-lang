@@ -168,8 +168,17 @@ instance Subst DLTail where
 instance Subst DLBlock where
   subst (DLBlock at fs t a) = DLBlock at fs <$> subst t <*> subst a
 
+instance {-# OVERLAPS #-} (Subst a) => Subst (DLinExportBlock a) where
+  subst (DLinExportBlock at mdom x) = DLinExportBlock at mdom <$> subst x
+
 instance Subst DLAssignment where
   subst (DLAssignment m) = DLAssignment <$> subst m
+
+instance Subst SvsPut where
+  subst (SvsPut {..}) = SvsPut svsp_svs <$> subst svsp_val
+
+instance Subst SvsGet where
+  subst = return
 
 instance Subst FromInfo where
   subst = \case

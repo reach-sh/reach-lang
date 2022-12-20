@@ -807,7 +807,7 @@ jsETail = \case
               case msvs of
                 FI_Halt _ -> return []
                 FI_Continue svs -> do
-                  let vs = map fst svs
+                  let vs = map svsp_svs svs
                   vs' <- mapM jsVar vs
                   ctcs <- jsArray <$> (mapM jsContract $ map varType vs)
                   w' <- jsCon $ DLL_Int sb UI_Word $ fromIntegral which

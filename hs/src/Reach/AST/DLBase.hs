@@ -1688,8 +1688,26 @@ adjustApiName who which qualify = prefix <> who <> suffix
 
 -- NOTE switch to Maybe DLAssignment and make sure we have a consistent order,
 -- like with M.toAscList
+data SvsPut = SvsPut
+  { svsp_svs :: DLVar
+  , svsp_val :: DLArg
+  }
+  deriving (Eq)
+
+instance Pretty SvsPut where
+  pretty (SvsPut {..}) = pretty svsp_svs <+> "<-" <+> pretty svsp_val
+
+data SvsGet = SvsGet
+  { svsg_svs :: DLVar
+  , svsg_var :: DLVarLet
+  }
+  deriving (Eq)
+
+instance Pretty SvsGet where
+  pretty (SvsGet {..}) = pretty svsg_var <+> ":=" <+> pretty svsg_svs
+
 data FromInfo
-  = FI_Continue [(DLVar, DLArg)]
+  = FI_Continue [SvsPut]
   | FI_Halt [DLArg]
   deriving (Eq)
 

@@ -1587,9 +1587,9 @@ instance SolStmts CLStmt where
     CLStateSet _at which svs -> do
       let asnv = "nsvs"
       let vs = svs
-      let go (v, a) = solSet (asnv <> "." <> solRawVar v) <$> solF a
+      let go (SvsPut v a) = solSet (asnv <> "." <> solRawVar v) <$> solF a
       vs' <- mapM go vs
-      vs_ty' <- solAsnType $ map fst vs
+      vs_ty' <- solAsnType $ map svsp_svs vs
       return $
         [solDecl asnv (mayMemSol vs_ty') <> semi]
         <> vs'
@@ -1606,10 +1606,10 @@ instance SolStmts CLStmt where
       a' <- solF a
       return $ [ solSet v' a' ]
 
-vsToInternalArg :: [DLVar] -> DLType
-vsToInternalArg = T_Tuple . map varType
-makeInternalArg :: [DLVar] -> Doc -> [DLArg] -> App Docs
-makeInternalArg _ ia args = solLargeArg' False ia $ DLLA_Tuple args
+vsToInternalArg :: [DLArg] -> DLType
+vsToInternalArg = T_Tuple . map typeOf
+makeInternalArg :: Doc -> [DLArg] -> App Docs
+makeInternalArg ia args = solLargeArg' False ia $ DLLA_Tuple args
 bindInternalArg :: [DLVar] -> Doc -> App ()
 bindInternalArg vs ia = extendVarMap $ M.fromList $ zipWith go vs ([0 ..] :: [Int])
   where
@@ -1632,7 +1632,7 @@ instance SolStmts CLTail where
           args_ty' <- solType args_ty
           am' <- withArgLoc args_ty
           let defn = [ solDecl (am' <+> "_ja") args_ty' <> semi ]
-          asn <- makeInternalArg args "_ja" $ map DLA_Var args
+          asn <- makeInternalArg "_ja" args
           return $ defn <> asn <> [ solApply f' [ "_ja", memVar ] <> semi ]
       case mmret of
         Nothing -> do
@@ -1697,7 +1697,7 @@ instance SolStmts IntX where
         return $ varType v
       vs -> do
         bindInternalArg vs "_a"
-        return $ vsToInternalArg vs
+        return $ vsToInternalArg $ map DLA_Var vs
     argTyl <- solType_withArgLoc argTy
     let fx_args = [ solDecl "_a" argTyl, memVarDecl ]
     solS $ FunX {..}

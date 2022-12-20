@@ -594,7 +594,7 @@ be_c = \case
     let mkfrom_info do_read = do
           svs <- do_read this
           return $ case more of
-            True -> FI_Continue $ asnLike svs
+            True -> FI_Continue $ map (\v -> SvsPut v (DLA_Var v)) svs
             False -> FI_Halt toks
     fg_saves this
     let cm = CT_From at1 this <$> mkfrom_info ce_readSave

@@ -27,7 +27,7 @@ instance CollectSvs a => CollectSvs (SwitchCase a) where
 
 instance CollectSvs FromInfo where
   collectSvs = \case
-    FI_Continue xs -> S.fromList $ map fst xs
+    FI_Continue xs -> S.fromList $ map svsp_svs xs
     FI_Halt _      -> mempty
 
 instance CollectSvs CTail where
