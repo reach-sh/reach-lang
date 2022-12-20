@@ -21,12 +21,12 @@ await Promise.all([
   }),
   ctcB.p.B({}),
 ]);
-const stepsInProgram = 3;
+const stepsInProgram = 4;
 
 console.log(reqs);
 const actual = reqs.length;
 const expected = {
-  'ALGO': (stepsInProgram + 1 /*alloc*/ + 2 /*optin*/ + 3 /*newTestAccount*/ + 1 /*launchToken*/),
+  'ALGO': (stepsInProgram + 1 /*alloc*/ + 3 /*newTestAccount*/ + 1 /*launchToken*/),
   'CFX': stepsInProgram,
   'ETH': stepsInProgram + 3 /*newTestAccount?*/,
 }[stdlib.connector];
