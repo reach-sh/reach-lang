@@ -8,10 +8,9 @@ ADD docs/gen ./docs/gen
 RUN (cd docs/gen && make installed)
 
 COPY VERSION .
+ADD rpc-client/py ./rpc-client/py
 ADD hs/t ./hs/t
 ADD examples ./examples
-ADD /hs/t ./hs/t
-ADD rpc-client/py ./rpc-client/py
 ADD docs/src ./docs/src
 RUN (cd docs/gen && make)
 

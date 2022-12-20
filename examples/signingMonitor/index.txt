@@ -3,7 +3,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 7 theorems; No failures!
+Checked 9 theorems; No failures!
 warning[RW0000]: The `untrustworthyMaps` option is deprecated. All maps are now trustworthy.
 
   ./index.rsh:8:32:property binding
