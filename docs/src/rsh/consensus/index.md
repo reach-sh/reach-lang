@@ -733,7 +733,7 @@ While the example below shows the usage of  `{!rsh} s.remove(ADDRESS)`
 
 ```reach
 load: /examples/dominant-assurance/index.rsh
-md5: d327454b582bdfa6f03d71de5ce2dd97
+md5: 4905da78b4a84e0e79914f97613dc4b6
 range: 144 - 144
 ```
 
@@ -743,7 +743,7 @@ The following example shows the usage of `{!rsh} s.member(ADDRESS)`
 
 ```reach
 load: /examples/dominant-assurance/index.rsh
-md5: d327454b582bdfa6f03d71de5ce2dd97
+md5: 4905da78b4a84e0e79914f97613dc4b6
 range: 99 - 99
 ```
 
