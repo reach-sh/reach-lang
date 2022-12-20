@@ -927,8 +927,12 @@ export const objectMap = <A,B>(object: {[key:string]: A}, mapFn: ((k:string, a:A
   }, {});
 
 export const mkAddressEq = (T_Address: {canonicalize: (addr:any) => any}
-) => (x:any, y:any): boolean =>
-  bytesEq(T_Address.canonicalize(x), T_Address.canonicalize(y));
+) => (x:any, y:any): boolean => {
+  const cx = T_Address.canonicalize(x);
+  const cy = T_Address.canonicalize(y);
+  debug('mkAddressEq', { x, y, cx, cy });
+  return bytesEq(cx, cy);
+};
 
 export const ensureConnectorAvailable = (bin:any, conn: string, jsVer: number, connVer: number) => {
   checkVersion(bin._backendVersion, jsVer, `JavaScript backend`);

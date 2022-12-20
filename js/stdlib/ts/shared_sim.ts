@@ -35,7 +35,7 @@ export const defineSimStuff = <Token, ContractInfo, ConnectorTy extends AnyBacke
     const map = sim_r.maps[mapi];
     const [key, mbr] = await map.getKey(kt, k, vt);
     const ev = await mapRef(map, kt, k, vt);
-    const kind = v ? (ev[0] === 'Some' ? 'setOld' : 'setNew') : 'del';
+    const kind = (v !== undefined) ? (ev[0] === 'Some' ? 'setOld' : 'setNew') : 'del';
     sim_r.txns.push({kind: 'mapOp', smr: { kind, key, mbr } });
     return await mapSet(map, kt, k, vt, v);
   };
