@@ -566,7 +566,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const ethersC = await getC();
         const mf = `_reachm_${i}Ref`;
         debug(dhead, mf);
-        const mfv = await ethersC[mf](k);
+        const kp = kt.isBaseType ? k : digest([kt], [k]);
+        const mfv = await ethersC[mf](kp);
         debug(dhead, { mfv });
         const mvt = T_Data({
           'None': T_Null,
