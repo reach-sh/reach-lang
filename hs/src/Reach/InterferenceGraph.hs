@@ -488,7 +488,7 @@ instance IG CLTail where
     CL_Jump _ f as False _ -> do
       vs <- askFunVars f
       zipWithM_ move vs as
-      ig ls (IGseq (Seq vs) (Seq as))
+      ig ls (Seq $ map (DLA_Var . varLetVar) vs <> as)
     CL_Halt {} -> ls
 
 instance IG a => IG (SwitchCaseUse a) where
