@@ -2,6 +2,7 @@
 'use strict';
 
 export const main = Reach.App(() => {
+  setOptions({ ALGOExitMode: 'DeleteAndCloseOutASAs' });
   const D = Participant('Admin', {
     price: UInt,
     deadline: UInt,
