@@ -33,13 +33,10 @@ getLoop w = do
 djs :: Subst a => AppT a
 djs x = flip subst_ x . e_rho <$> ask
 
-djs_asnLike :: AppT [(DLVar, DLArg)]
-djs_asnLike = mapM $ \(v, a) -> (,) v <$> djs a
-
 djs_fi :: AppT FromInfo
 djs_fi = \case
   FI_Halt toks -> FI_Halt <$> mapM djs toks
-  FI_Continue svs -> FI_Continue <$> djs_asnLike svs
+  FI_Continue svs -> FI_Continue <$> djs svs
 
 class DeJump a where
   dj :: AppT a

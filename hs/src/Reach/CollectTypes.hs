@@ -257,6 +257,12 @@ instance CollectsTypes DLLetVar where
   cts (DLV_Eff) = mempty
   cts (DLV_Let _ x) = cts x
 
+instance CollectsTypes SvsPut where
+  cts (SvsPut {..}) = cts svsp_svs <> cts svsp_val
+
+instance CollectsTypes SvsGet where
+  cts (SvsGet {..}) = cts svsg_svs <> cts svsg_var
+
 instance CollectsTypes FromInfo where
   cts = \case
     FI_Continue svs -> cts svs

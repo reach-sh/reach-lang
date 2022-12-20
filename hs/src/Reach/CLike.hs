@@ -101,7 +101,7 @@ funw ni ns at int_dom clf_view cef_rng cef_kind mret intt = do
   let cif_fun = CLFun { clf_tail = intt, clf_dom = int_dom, ..}
   let di = CLIntFun {..}
   ext_dom_vs <- mapM freshenVar $ map varLetVar int_dom
-  let extt = CL_Jump at ni ext_dom_vs False (Just mret)
+  let extt = CL_Jump at ni (map DLA_Var ext_dom_vs) False (Just mret)
   let ext_dom = map (DLVarLet (Just DVC_Once)) ext_dom_vs
   let cef_fun = CLFun { clf_tail = extt, clf_dom = ext_dom, ..}
   let de = CLExtFun {..}
@@ -143,13 +143,14 @@ instance CLike DLEvents where
   cl = cl . CILMap DLEI
 
 data CLViewY = CLViewY
-  { cvy_svs :: [DLVarLet]
+  { cvy_svs :: [DLVar]
   , cvy_body :: DLExportBlock
   }
 
 instance CLikeF CLViewY where
   clf (CLViewY {..}) = do
     prev <- fromMaybe (impossible "clf cvy") <$> asks f_staten
+    let svs_vls = map v2vl cvy_svs
     let (DLinExportBlock _ mfargs (DLBlock at _ t r)) = cvy_body
     rng <- asks f_rng
     let k = CL_Com (CLMemorySet at rng r) $ CL_Halt at HM_Pure
@@ -158,8 +159,8 @@ instance CLikeF CLViewY where
     dom <- asks f_dom
     let bind (dvl, avl) = CL_Com $ CLDL $ DL_Let at (vl2lv avl) $ DLE_Arg at $ DLA_Var $ varLetVar dvl
     let t1 = foldr bind t0 $ zip dom fargs
-    recordState prev $ map varLetVar cvy_svs
-    let t2 = CL_Com (CLStateBind at True cvy_svs prev) t1
+    recordState prev cvy_svs
+    let t2 = CL_Com (CLStateBind at True svs_vls prev) t1
     return $ t2
 
 type CLViewX = FunInfo CLViewY
@@ -169,7 +170,7 @@ type CLViewsX = M.Map SLPart CLViewX
 viewReorg :: DLViewsX -> CLViewsX
 viewReorg (DLViewsX vs vis) = vx
   where
-    igo (ViewInfo svs vsi) = (map v2vl svs, flattenInterfaceLikeMap vsi)
+    igo (ViewInfo svs vsi) = (svs, flattenInterfaceLikeMap vsi)
     vism = M.map igo vis
     vx = M.mapWithKey go $ flattenInterfaceLikeMap_ (,) vs
     go k (p, (DLView {..})) = FunInfo {..}
@@ -298,7 +299,7 @@ instance CLikeF ApiInfoY where
     return
       $ CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once timev) $ DLE_Arg at $ DLA_Literal $ DLL_Int at UI_Word $ 0))
       $ flip (foldr go) lets
-      $ CL_Jump at (nameMethi aiy_which) [timev, argv] True Nothing
+      $ CL_Jump at (nameMethi aiy_which) (map DLA_Var [timev, argv]) True Nothing
 
 type ApiInfoX = FunInfo ApiInfoY
 type ApiInfosX = M.Map SLPart ApiInfoX
@@ -399,27 +400,20 @@ instance CLikeTr CTail CLTail where
         FI_Continue svs -> do
           -- XXX change to StoreSet
           -- XXX expose saving of time
-          recordState which $ map fst svs
+          recordState which $ map svsp_svs svs
           return $ CL_Com (CLStateSet at which svs) (ht HM_Impure)
         FI_Halt toks -> do
           let ht' = ht HM_Forever
           -- XXX move this into language
           return $ foldr (CL_Com . CLTokenUntrack at) ht' toks
     CT_Jump at which svs (DLAssignment asnm) -> do
-      let asnl = M.toAscList asnm
-      asn' <- forM asnl $ \(v, a) -> do
-        v' <- freshenVar v
-        return (v', a)
-      let asnvs' = map fst asn'
-      let args = svs <> asnvs'
+      let asn_as = map snd $ M.toAscList asnm
+      let args = map DLA_Var svs <> asn_as
       -- XXX move this concept backwards so that CT_Jump is just a sequence of
       -- variables
       -- XXX make it so that all CLike Internal calls pass things through
       -- memory
-      let kt = CL_Jump at (nameLoop which) args False Nothing
-      let go (v', a) = CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once v') (DLE_Arg at a)))
-      let t = foldr go kt asn'
-      return t
+      return $ CL_Jump at (nameLoop which) args False Nothing
 
 newtype CHX = CHX (Int, CHandler)
 

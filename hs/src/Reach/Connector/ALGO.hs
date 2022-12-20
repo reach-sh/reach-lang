@@ -1771,18 +1771,40 @@ instance MaybeLoc DLArg where
     DLA_Var v -> maybeLoc v
     _ -> return $ Nothing
 
-cmove :: (Show a, MaybeLoc a, Compile a) => DLVar -> a -> App ()
-cmove dst src = do
+data CMove
+  = CM_Bad
+  | CM_Nop
+  | CM_Move (App ()) (App ())
+
+cmove_ :: (Show a, MaybeLoc a, Compile a) => DLVar -> a -> App CMove
+cmove_ dst src = do
   lookupVarColoring ("cmove from " <> show src) dst >>= \case
-    Nothing ->
+    Nothing -> do
       bad $ LT.pack $ "could not move " <> show src <> " into " <> show dst
+      return $ CM_Bad
     Just dstl -> do
       msrcl <- maybeLoc src
       case msrcl of
-        Just srcl | dstl == srcl -> return ()
-        _ -> do
-          cp src
-          output $ TStore dstl $ texty dst
+        Just srcl | dstl == srcl -> return $ CM_Nop
+        _ -> return $ CM_Move (cp src) $ output $ TStore dstl $ texty dst
+
+cmove :: (Show a, MaybeLoc a, Compile a) => DLVar -> a -> App ()
+cmove dst src = cmove_ dst src >>= \case
+  CM_Bad -> return ()
+  CM_Nop -> return ()
+  CM_Move csrc cstore -> do
+    csrc
+    cstore
+
+cmoveMany :: (Show a, MaybeLoc a, Compile a) => [(DLVar, a)] -> App ()
+cmoveMany dss = do
+  dss' <- mapM (uncurry cmove_) dss
+  forM_ dss' $ \case
+    CM_Move csrc _ -> csrc
+    _ -> return ()
+  forM_ (reverse dss') $ \case
+    CM_Move _ cstore -> cstore
+    _ -> return ()
 
 sallocVar :: String -> DLVar -> (App () -> App () -> App a) -> App a
 sallocVar vlab dv fm = do
@@ -3525,7 +3547,7 @@ instance CompileK CLStmt where
             (_, _) -> checkFrom x >> checkFrom y
       k
     CLStateSet _at which svs -> do
-      mapM_ (uncurry cmove) svs
+      mapM_ (\SvsPut {..} -> cmove svsp_svs svsp_val) svs
       cSvsDump which
       cp which
       cRound
@@ -3571,12 +3593,12 @@ instance Compile CLTail where
           -- rather than separate arg
           case vs of
             [v] -> do
-              cp $ DLLA_Tuple $ map DLA_Var args
+              cp $ DLLA_Tuple args
               lookupVarColoring "jump api" v >>= \case
                 Nothing -> op "pop"
                 Just vl -> output $ TStore vl $ texty v
             _ -> impossible $ "ALGO: CL_Jump w/ isAPI and more than 1 vs"
-        False -> zipWithM_ cmove vs args
+        False -> cmoveMany $ zip vs args
       code "b" [ LT.pack $ bunpack f]
     CL_Halt at ht ->
       case ht of

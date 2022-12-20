@@ -203,6 +203,9 @@ instance Sanitize LLStep where
     LLS_Stop _ -> LLS_Stop sb
     LLS_ToConsensus _ lct send recv mtime -> LLS_ToConsensus sb (sani lct) (sani send) (sani recv) (sani mtime)
 
+instance Sanitize SvsPut where
+  sani (SvsPut {..}) = SvsPut (sani svsp_svs) (sani svsp_val)
+
 instance Sanitize FromInfo where
   sani = \case
     FI_Continue svs -> FI_Continue $ sani svs

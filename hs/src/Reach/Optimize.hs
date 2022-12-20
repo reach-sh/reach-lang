@@ -1099,12 +1099,13 @@ instance Extract DLLetVar where
     DLV_Eff -> Nothing
     DLV_Let _ v -> Just v
 
-opt_svs :: AppT [(DLVar, DLArg)]
-opt_svs = mapM $ \(v, a) -> (\x -> (v, x)) <$> opt a
+instance Optimize SvsPut where
+  opt (SvsPut {..}) = SvsPut svsp_svs <$> opt svsp_val
+  gcs _ = return ()
 
 instance Optimize FromInfo where
   opt = \case
-    FI_Continue svs -> FI_Continue <$> opt_svs svs
+    FI_Continue svs -> FI_Continue <$> opt svs
     FI_Halt toks -> FI_Halt <$> opt toks
   gcs _ = return ()
 

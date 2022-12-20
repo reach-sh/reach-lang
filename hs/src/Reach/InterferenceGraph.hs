@@ -452,6 +452,10 @@ isInState x y =
     Nothing -> False
     Just v -> isInState_ v y
 
+instance IG SvsGet where
+  ig ls (SvsGet {..}) = do
+    ig ls (IGseq svsg_var svsg_svs)
+
 instance IG CLStmt where
   ig ls = \case
     CLDL m -> ig ls m
@@ -464,8 +468,8 @@ instance IG CLStmt where
       ig ls (Seq vs)
     CLIntervalCheck _ x y z -> ig ls (IGseq (Seq [x, y]) z)
     CLStateSet _ _ vs -> do
-      mapM_ (uncurry move) vs
-      ig ls (Seq $ map snd vs)
+      mapM_ (\SvsPut{..} -> move svsp_svs svsp_val) vs
+      ig ls (Seq $ map svsp_val vs)
     CLTokenUntrack _ a -> ig ls a
     CLMemorySet _ _v a -> do
       -- XXX move v a
@@ -484,7 +488,7 @@ instance IG CLTail where
     CL_Jump _ f as False _ -> do
       vs <- askFunVars f
       zipWithM_ move vs as
-      ig ls (Seq $ map varLetVar vs <> as)
+      ig ls (IGseq (Seq vs) (Seq as))
     CL_Halt {} -> ls
 
 instance IG a => IG (SwitchCaseUse a) where

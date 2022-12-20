@@ -303,9 +303,12 @@ instance Freshen LLStep where
     LLS_ToConsensus at lct send recv mtime ->
       LLS_ToConsensus at <$> fu lct <*> fu send <*> fu recv <*> (newScope $ fu mtime)
 
+instance Freshen SvsPut where
+  fu (SvsPut {..}) = SvsPut svsp_svs <$> fu svsp_val
+
 instance Freshen FromInfo where
   fu = \case
-    FI_Continue vs -> FI_Continue <$> (forM vs $ \(v, a) -> (,) v <$> fu a)
+    FI_Continue vs -> FI_Continue <$> mapM fu vs
     FI_Halt toks -> FI_Halt <$> mapM fu toks
 
 instance Freshen ([DLArg], DLPayAmt, DLArg, [DLVar], Bool) where
