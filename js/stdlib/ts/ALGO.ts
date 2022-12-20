@@ -1410,6 +1410,10 @@ const getApplicationBoxM = async (idn:BigNumber, name:Uint8Array): Promise<OrExn
     return { val: res.value };
   } catch (e:any) {
     debug(dhead, 'node err', e);
+    if ( e?.response?.body?.message === 'box not found' ) {
+      debug(dhead, 'node not found, returning');
+      return { exn: e };
+    }
   }
 
   // If algod couldn't find it, lookup application in indexer

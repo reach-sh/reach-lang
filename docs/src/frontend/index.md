@@ -536,7 +536,7 @@ Example:
 
 ```js
 load: /examples/minBalance/index.mjs
-md5: 3c4457da0579671f1455423d0b44016b
+md5: 9067c7f9d752275e700f99272b4f65e5
 range: 15-15
 ```
 
@@ -591,7 +591,7 @@ Example:
 
 ```js
 load: /examples/minBalance/index.mjs
-md5: 3c4457da0579671f1455423d0b44016b
+md5: 9067c7f9d752275e700f99272b4f65e5
 range: 16 - 16
 ```
 

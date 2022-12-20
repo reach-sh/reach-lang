@@ -58,6 +58,7 @@ export const main = Reach.App(() => {
   commit();
 
   A.publish();
+  delete intM[B];
   commit();
 
   failCheck(10, A);
