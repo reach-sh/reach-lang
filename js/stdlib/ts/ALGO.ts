@@ -2679,9 +2679,18 @@ const newAccountFromSecret = (sk: SecretKeyInput): Promise<Account> =>
   newAccountFromMnemonic(algosdk.secretKeyToMnemonic(protectSecretKey(sk, 32)));
 
 const getNetworkTime = async (): Promise<BigNumber> => {
-  const indexer = await getIndexer();
-  const hc = await indexer.makeHealthCheck().do();
-  return bigNumberify(hc['round']);
+  const client = await getAlgodClient();
+  try {
+    const st = await client.status().do();
+    debug(`getNetworkTime node`, st);
+    return bigNumberify(st['last-round']);
+  } catch (e:any) {
+    debug(`getNetworkTime`, `node failed`, e);
+    const indexer = await getIndexer();
+    const hc = await indexer.makeHealthCheck().do();
+    debug(`getNetworkTime indexer`, hc);
+    return bigNumberify(hc['round']);
+  }
 };
 const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
   const now = bigNumberToNumber(now_bn);
