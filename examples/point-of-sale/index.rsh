@@ -1,6 +1,7 @@
 'reach 0.1';
 
 export const main = Reach.App(() => {
+  setOptions({ ALGOExitMode: 'DeleteAndCloseOutASAs' });
   const A = Participant('Admin', {
     params: Object({
       min: UInt,
