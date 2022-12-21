@@ -22,7 +22,7 @@ const numOfPlayers = 2;
       ...stdlib.hasRandom,
       getParams: (() => ({
         ticketPrice: stdlib.parseCurrency(5),
-        deadline: numOfPlayers * 75 })),
+        deadline: numOfPlayers * (stdlib.connector === 'ALGO' ? 5 : 75) })),
       showOpen: (() =>
         console.log(`Sponsor saw ticket sales open`)),
       showReturning: ((howMany) =>
