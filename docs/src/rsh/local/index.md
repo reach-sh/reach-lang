@@ -133,12 +133,12 @@ For example, in the code below, a `{!rsh} didPublish` call is made on line 62 in
 
 ```reach
 load: /examples/raffle/index.rsh
-md5: b6632a71c54afc8e1da08f2d6c0dbad3
+md5: 86dfc59fc496f3be68da7f97ff4abfac
 range: 35-35
 ```
 
 ```reach
 load: /examples/raffle/index.rsh
-md5: b6632a71c54afc8e1da08f2d6c0dbad3
+md5: 86dfc59fc496f3be68da7f97ff4abfac
 range: 62-62
 ```
