@@ -505,13 +505,13 @@ igIf :: (IG a, IG b) => App DLVarS -> a -> b -> b -> App DLVarS
 igIf ls a t f = ig ls (IGseq a (Par [t, f]))
 
 instance IG CLFun where
-  ig ls (CLFun {..}) = ig ls (IGseq (Seq clf_dom) clf_tail)
+  ig ls (CLFun {..}) = ig ls (IGseq (Seq clf_dom) (IGseq (Seq (map varLetVar clf_dom)) clf_tail))
 
 instance IG CLExtFun where
   ig ls (CLExtFun {..}) = ig ls cef_fun
 
 instance IG CLIntFun where
-  ig ls (CLIntFun {..}) = ig ls $ manyifyDom cif_fun
+  ig ls (CLIntFun {..}) = ig ls (manyifyDom cif_fun)
 
 manyifyDom :: CLFun -> CLFun
 manyifyDom (CLFun {..}) =
