@@ -15,14 +15,10 @@ const lenInBlocks = 10;
 const params = { nftId, minBid, lenInBlocks };
 
 const getTok = (x) => {
-  if(stdlib.isBigNumber(x)){
-    // the Token on Algorand is a UInt
-    const num = stdlib.bigNumberToNumber(x);
-    return num;
+  if (stdlib.connector === 'ALGO') {
+    return stdlib.bigNumberToNumber(x);
   } else {
-    // the Token on ETH is an Address
-    const tokenAddress = stdlib.formatAddress(x);
-    return tokenAddress;
+    return stdlib.formatAddress(x);
   }
 };
 
@@ -39,8 +35,7 @@ const startBidders = async () => {
         await acc.tokenAccept(nftId);
         bidders.push([who, acc]);
         const ctc = acc.contract(backend, ctcCreator.getInfo());
-        const NFT = await ctc.v.nft();
-        const vNFT = getTok(NFT[1]);
+        const vNFT = getTok(await ctc.unsafeViews.nft());
         const vMin = await ctc.v.min();
         const vBid = await ctc.v.currentBid();
         const getBal = async () => stdlib.formatCurrency(await stdlib.balanceOf(acc));
