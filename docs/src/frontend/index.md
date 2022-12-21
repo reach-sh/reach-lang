@@ -810,7 +810,7 @@ Example:
 
 ```js
 load: examples/raffle/index.mjs
-md5: 69477201beedc87b2616001290ae29cf
+md5: 6116688a82a5e00bc9bad44a100bebf4
 range: 10-10
 ```
 
