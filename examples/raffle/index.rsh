@@ -8,7 +8,7 @@ const Common = {
 };
 
 export const main = Reach.App(() => {
-  setOptions({ untrustworthyMaps: true });
+  setOptions({ ALGOExitMode: 'DeleteAndCloseOutASAs' });
   const Sponsor = Participant('Sponsor',
       { ...Common,
         getParams: Fun([], Object({ ticketPrice: UInt,
