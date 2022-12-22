@@ -32,10 +32,8 @@ wait $HS
 JS=$!
 (cd scripts/devnet-eth && go) &
 ETH=$!
-(cd scripts/devnet-cfx && go) &
-CFX=$!
 
-wait $HS $JS $ALGO $ETH $CFX
+wait $HS $JS $ALGO $ETH
 
 if [ "$MODE" = "build-push" ]; then
   set +x
