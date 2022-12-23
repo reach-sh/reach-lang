@@ -43,14 +43,52 @@ export type CBR_Val =
 // UV = UserVal
 // BV = BackendVal
 export interface BackendTy<T extends CBR_Val> {
+  repr: BackendTyRep,
   name: string,
   canonicalize: (uv: unknown) => T,
   defaultValue: T,
   toString: () => string,
 };
 
+export type BackendTyRep = {
+  kind: 'Null',
+} | {
+  kind: 'Bool',
+} | {
+  kind: 'UInt',
+  max: BigNumber,
+} | {
+  kind: 'Bytes',
+  len: number|BigNumber,
+} | {
+  kind: 'BytesDyn',
+} | {
+  kind: 'StringDyn',
+} | {
+  kind: 'Digest',
+} | {
+  kind: 'Address'
+} | {
+  kind: 'Array',
+  ctc: BackendTy<CBR_Val>,
+  size: number,
+} | {
+  kind: 'Tuple',
+  ctcs: Array<BackendTy<CBR_Val>>,
+} | {
+  kind: 'Struct',
+  ctcs: Array<[string, BackendTy<CBR_Val>]>,
+} | {
+  kind: 'Object',
+  co: {[key: string]: BackendTy<CBR_Val>},
+} | {
+  kind: 'Data',
+  co: {[key: string]: BackendTy<CBR_Val>},
+};
+
 export const BV_Null: CBR_Null = null;
 export const BT_Null: BackendTy<CBR_Null> = {
+  repr: { kind: 'Null' },
   name: 'Null',
   defaultValue: BV_Null,
   canonicalize: (val: unknown): CBR_Null => {
@@ -63,6 +101,7 @@ export const BT_Null: BackendTy<CBR_Null> = {
 };
 
 export const BT_Bool: BackendTy<CBR_Bool> = {
+  repr: { kind: 'Bool' },
   name: 'Bool',
   defaultValue: false,
   canonicalize: (val: unknown): CBR_Bool => {
@@ -77,6 +116,7 @@ export const BV_Bool = (val: boolean): CBR_Bool => {
 };
 
 export const BT_UInt = (max: BigNumber): BackendTy<CBR_UInt> => ({
+  repr: { kind: 'UInt', max },
   name: 'UInt',
   defaultValue: ethers.BigNumber.from(0),
   canonicalize: (uv: unknown): CBR_UInt => {
@@ -127,6 +167,7 @@ export const unk_to_buf = (val: unknown): [BLabel, Buffer] => {
   }
 };
 export const BT_Bytes = (len: number|BigNumber): BackendTy<CBR_Bytes> => ({
+  repr: { kind: 'Bytes', len },
   name: `Bytes(${len})`,
   defaultValue: buf_to_str(zpad(bigNumberToNumber(len), str_to_buf(''))),
   canonicalize: (val: unknown): CBR_Bytes => {
@@ -148,6 +189,7 @@ export const BT_Bytes = (len: number|BigNumber): BackendTy<CBR_Bytes> => ({
 });
 
 export const BT_BytesDyn: BackendTy<CBR_Bytes> = ({
+  repr: { kind: 'BytesDyn' },
   name: `BytesDyn`,
   defaultValue: '',
   canonicalize: (val: unknown): CBR_Bytes => {
@@ -162,6 +204,7 @@ export const BT_BytesDyn: BackendTy<CBR_Bytes> = ({
 });
 
 export const BT_StringDyn: BackendTy<CBR_Bytes> = ({
+  repr: { kind: 'StringDyn' },
   name: `StringDyn`,
   defaultValue: '',
   canonicalize: (val: unknown): CBR_Bytes => {
@@ -175,6 +218,7 @@ export const BT_StringDyn: BackendTy<CBR_Bytes> = ({
 // TODO: check digest length, or something similar?
 // That's probably best left to connector-specific code.
 export const BT_Digest: BackendTy<CBR_Digest> = {
+  repr: { kind: 'Digest' },
   name: 'Digest',
   defaultValue: ''.padEnd(32, '\0'), // XXX hack
   canonicalize: (val: unknown): CBR_Digest => {
@@ -190,6 +234,7 @@ export const BV_Digest = (val: string): CBR_Digest => {
 }
 
 export const BT_Address: BackendTy<CBR_Address> = ({
+  repr: { kind: 'Address' },
   name: 'Address',
   defaultValue: ''.padEnd(32, '\0'), // XXX hack
   canonicalize: (val: unknown): CBR_Address => {
@@ -211,6 +256,7 @@ export const BV_Address = (val: string): CBR_Address => {
 export const BT_Array = (ctc: BackendTy<CBR_Val> , size: number): BackendTy<CBR_Array> => {
   // TODO: check ctc, sz for sanity
   return {
+    repr: { kind: 'Array', ctc, size },
     name: `Array(${ctc.name}, ${size})`,
     defaultValue: Array(size).fill(ctc.defaultValue),
     canonicalize: (args: any): CBR_Array => {
@@ -237,6 +283,7 @@ export const BV_Array = (ctc: BackendTy<CBR_Val>, size: number) => (val: unknown
 export const BT_Tuple = (ctcs: Array<BackendTy<CBR_Val>>): BackendTy<CBR_Tuple> => {
   // TODO: check ctcs for sanity
   return {
+    repr: { kind: 'Tuple', ctcs },
     name: `Tuple(${ctcs.map((ctc) => ` ${ctc.name} `)})`,
     defaultValue: ctcs.map(ctc => ctc.defaultValue),
     canonicalize: (args: any): CBR_Tuple => {
@@ -259,6 +306,7 @@ export const BV_Tuple = (ctcs: Array<BackendTy<CBR_Val>>) => (val: unknown[]) =>
 
 export const BT_Struct = (ctcs: Array<[string, BackendTy<CBR_Val>]>): BackendTy<CBR_Struct> => {
   return {
+    repr: { kind: 'Struct', ctcs },
     name: `Struct([${ctcs.map(([k, ctc]) => ` [${k}, ${ctc.name}] `)}])`,
     defaultValue: (() => {
       const obj: {[key: string]: CBR_Val} = {};
@@ -288,6 +336,7 @@ export const BT_Object = (co: {
 }): BackendTy<CBR_Object> => {
   // TODO: check co for sanity
   return {
+    repr: { kind: 'Object', co },
     name: `Object(${Object.keys(co).map((k) => ` ${k}: ${co[k].name} `)})`,
     defaultValue: (() => {
       const obj: {[key: string]: CBR_Val} = {};
@@ -327,6 +376,7 @@ export const BT_Data = (co: {
   // TODO: check co for sanity
   const {ascLabels} = labelMaps(co);
   return {
+    repr: { kind: 'Data', co },
     name: `Data(${Object.keys(co).map((k) => ` ${k}: ${co[k].name} `)})`,
     defaultValue: ((): CBR_Data => {
       const label = ascLabels[0];

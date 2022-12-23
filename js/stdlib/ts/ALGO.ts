@@ -209,8 +209,8 @@ type RecvArgs = IRecvArgs<AnyALGO_Ty>;
 type Recv = IRecv<Address>
 export type Contract = IContract<ContractInfo, Address, Token, AnyALGO_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
-type SimRemote = ISimRemote<Token, ContractInfo>
-type SimTxn = ISimTxn<Token, ContractInfo>
+type SimRemote = ISimRemote<Token, ContractInfo, AnyALGO_Ty>
+type SimTxn = ISimTxn<Token, ContractInfo, AnyALGO_Ty>
 
 type VerifyResult = {
   ApplicationID: BigNumber,
@@ -1881,10 +1881,27 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               boxesArr.push(brx);
             }
           };
-          const recordBoxRemote = (smr:SimBoxRef) => {
-            const [ app, names ] = smr;
-            const name = T_Bytes(64).toNet(names);
-            recordBox_({ appIndex: bigNumberToNumber(app), name });
+          const recordBoxRemote = async (smr:SimBoxRef<AnyALGO_Ty>) => {
+            const [ reft, refv ] = smr;
+            const refr = reft.repr;
+            if ( refr.kind !== 'Tuple' ) { throw "bad box remote: not tuple"; }
+            const ctcs = refr.ctcs;
+            if ( ctcs.length === 2 ) {
+              const [ app, names ] = refv;
+              const name = T_Bytes(64).toNet(names);
+              recordBox_({ appIndex: bigNumberToNumber(app), name });
+            } else if ( ctcs.length === 3 ) {
+              const [ appt, mapit, mapt ] = ctcs;
+              void appt; void mapit;
+              const kt = mapt as AnyALGO_Ty;
+              const [ app, mapi, k ] = refv;
+              const vt = kt;
+              const [ names, _mbr ] = await (makeGetKey(mapi)(kt, k, vt));
+              const name = buf_to_arr(hex_to_buf(names));
+              recordBox_({ appIndex: bigNumberToNumber(app), name });
+            } else {
+              throw "bad box remote: not tuple of 2 or 3";
+            }
           };
 
           const foreignArr: Array<number> = [ ];
@@ -1911,11 +1928,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           const txnExtraTxns: Array<Transaction> = [];
           let sim_i = 0;
           let whichApi : string|undefined;
-          const processRemote = (dr: SimRemote) => {
+          const processRemote = async (dr: SimRemote) => {
             dr.toks.map(recordAsset);
             dr.accs.map(recordAccount);
             dr.apps.map(recordApp);
-            dr.boxes.map(recordBoxRemote);
+            await Promise.all(dr.boxes.map(recordBoxRemote));
             howManyMoreFees +=
               1
               + bigNumberToNumber(dr.pays)
@@ -1923,7 +1940,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               + bigNumberToNumber(dr.fees);
             return;
           }
-          const processSimTxn = (t: SimTxn) => {
+          const processSimTxn = async (t: SimTxn) => {
             debug('processSimTxn', t);
             let txn;
             if ( t.kind === 'mapOp' ) {
@@ -1939,7 +1956,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               return;
             } else if ( t.kind === 'contractNew' ) {
               mbrDelta = mbrDelta.add(minimumBalance_app_create(t.cns[connector]));
-              processRemote(t.remote);
+              await processRemote(t.remote);
               return;
             } else if ( t.kind === 'tokenNew' ) {
               mbrDelta = mbrDelta.add(minimumBalance);
@@ -1957,7 +1974,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               return;
             } else if ( t.kind === 'remote' ) {
               recordApp(t.obj);
-              processRemote(t.remote);
+              await processRemote(t.remote);
               return;
             }  else if ( t.kind === 'api' ) {
               whichApi = t.who;
@@ -2003,7 +2020,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             mbrDelta = mbrDelta.add(minimumBalance.mul(pc));
           }
 
-          sim_r.txns.forEach(processSimTxn);
+          await Promise.all(sim_r.txns.map(processSimTxn));
           if ( hasCompanion ) {
             if ( isCtor ) {
               howManyMoreFees++;
@@ -2043,7 +2060,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               howManyMoreFees++;
             } else {
               // The delta is positive, so we need to pay the contract
-              processSimTxn({
+              await processSimTxn({
                 kind: 'to',
                 amt: mbrDelta,
                 tok: undefined,

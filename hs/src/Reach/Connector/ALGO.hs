@@ -2741,6 +2741,14 @@ instance Compile DLExpr where
         makeTxn1 "Assets"
       forM_ ra_boxes $ \a -> do
         incResource_ R_Box (-1, a)
+        case typeOf a of
+          T_Tuple [ _, bnt ] -> do
+            sz <- typeSizeOf bnt
+            when (sz > 64) $ do
+              bad $ LT.pack $ "Contains a reference to a box with a name larger than the limit: got " <> show sz <> ", expected <= 64."
+          T_Tuple [ _, _, _ ] ->
+            return ()
+          _ -> impossible $ "bad boxes value"
       forM_ ra_accounts $ \a -> do
         incResource R_Account a
         cp a
