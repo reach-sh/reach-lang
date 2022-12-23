@@ -365,7 +365,10 @@ jsRemote at (DLRemote _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv 
   let isAddress = (==) T_Address . argTypeOf
   accs' <- mapM jsArg $ (filter isAddress as) <> ra_accounts
   apps' <- mapM jsArg ra_apps
-  boxes' <- mapM jsArg ra_boxes
+  boxes' <- forM ra_boxes $ \a -> do
+    t' <- jsContract $ typeOf a
+    a' <- jsArg a
+    return $ jsArray [ t', a' ]
   return $ parens $ jsObject $ M.fromList $
     [ (("pays"::String), pays')
     , ("bills", bills')

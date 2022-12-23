@@ -3837,11 +3837,17 @@ evalPrim p sargs =
           vs <- explodeTupleLike "REMOTE_FUN.ALGO.boxes" v
           forM vs $ \tv -> do
             (t, da) <- compileTypeOf tv
+            let isContractRef = \case
+                  T_Contract -> True
+                  T_UInt UI_Word -> True
+                  _ -> False
             case t of
-              T_Tuple [ T_UInt UI_Word, T_Bytes n ] | n <= 64 -> do
+              T_Tuple [ ct, T_UInt UI_Word, _ ] | isContractRef ct -> do
+                return da
+              T_Tuple [ ct, _ ] | isContractRef ct -> do
                 return da
               _ ->
-                expect_ $ Err_Remote_ALGO_extra $ [ "values in boxes array must be a UInt and a Bytes(n) where N <= 64" ]
+                expect_ $ Err_Remote_ALGO_extra $ [ "values in boxes array must be either (a) a pair of a Contract (or UInt) and a value which takes less than 64 bytes of space; or (b) a triple of a Contract (or UInt), a UInt, and a value. Got: " <> show t ]
       ra_addr2acc <- expectBool "addressToAccount"
       ra_onCompletion <- metal "onCompletion" $ \case
         Nothing -> return $ RA_NoOp

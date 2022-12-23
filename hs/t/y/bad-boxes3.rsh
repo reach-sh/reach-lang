@@ -10,7 +10,7 @@ export const main = Reach.App(() => {
   A.publish(r);
   const ro = remote(r, { f: Fun([], UInt) });
   const _ = ro.f.ALGO({
-    boxes: [ [2, "test"], [r, "5412214"], [r, 4, [7, "foo"]] ],
+    boxes: [ [r, "a123456789b123456789c123456789d123456789e123456789f123456789g123456789"] ],
   })();
   commit();
   exit();

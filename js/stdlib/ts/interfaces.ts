@@ -61,7 +61,7 @@ export interface Stdlib_SimStuff<Token, ContractInfo, ConnectorTy extends AnyBac
   simMapRef: <K, A>(sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, mapi: number, kt:ConnectorTy, k:K, vt:ConnectorTy) => Promise<MaybeRep<A>>
   simMapSet: <K, A>(sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, mapi: number, kt:ConnectorTy, k:K, vt:ConnectorTy, v:A|undefined) => Promise<void>,
   simTokenNew: <A>(sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, n:any, s:any, u:any, m:any, p:BigNumber, d:BigNumber|undefined, ctr:A) => A
-  simContractNew: <A>(sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, cns:any, remote:ISimRemote<Token, ContractInfo>, ctr:A) => A
+  simContractNew: <A>(sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, cns:any, remote:ISimRemote<Token, ContractInfo, ConnectorTy>, ctr:A) => A
   simTokenBurn: (sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, tok:Token, amt:BigNumber) => void
   simTokenDestroy: (sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, tok:Token) => void
   simTokenAccepted_: (sim_r:ISimRes<Token, ContractInfo, ConnectorTy>, addr:string, tok:Token) => void

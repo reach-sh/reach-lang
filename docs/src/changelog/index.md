@@ -7,7 +7,11 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verRC("0.1.13")}
 
-@{rcNext("0.1.13-rc.0")}
+@{rcNext("0.1.13-rc.1")}
+
++ 2022/12/23: Add more options to the `boxes` field of `{!rsh} remote.ALGO`.
+
+@{rcHead("0.1.13-rc.0")}
 
 + 2022/12/19: Added `{!rsh} Map.reduceWithKey`.
 

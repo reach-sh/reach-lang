@@ -46,7 +46,7 @@ export const defineSimStuff = <Token, ContractInfo, ConnectorTy extends AnyBacke
     return ctr;
   };
 
-  const simContractNew = <A>(sim_r:SimRes, cns:any, remote:ISimRemote<Token, ContractInfo>, ctr:A): A => {
+  const simContractNew = <A>(sim_r:SimRes, cns:any, remote:ISimRemote<Token, ContractInfo, ConnectorTy>, ctr:A): A => {
     sim_r.txns.push({kind: 'contractNew', cns, remote });
     // XXX This is a hack... it is assumed that `ctr` is unique across tokens in a simulation block
     return ctr;

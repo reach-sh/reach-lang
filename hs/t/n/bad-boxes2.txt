@@ -1,0 +1,8 @@
+reachc: error[RE0132]: REMOTE_FUN.ALGO received illegal fields: values in boxes array must be either (a) a pair of a Contract (or UInt) and a value which takes less than 64 bytes of space; or (b) a triple of a Contract (or UInt), a UInt, and a value. Got: Tuple(Bytes(3), Bytes(3))
+
+  ./bad-boxes2.rsh:12:22:application
+
+  12|   const _ = ro.f.ALGO({
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0132
+
