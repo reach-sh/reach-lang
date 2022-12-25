@@ -140,6 +140,7 @@ EXPOSE 3001
 FROM $UBUNTU_IMAGE as reach-cli
 
 RUN apt-get update && apt-get install -y \
+  ca-certificates \
   libnuma1 \
   && rm -rf /var/lib/apt/lists/*
 COPY --from=build /root/.local/bin/reach /usr/bin/reach
