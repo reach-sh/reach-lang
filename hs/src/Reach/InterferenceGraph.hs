@@ -493,7 +493,7 @@ instance IG CLTail where
 
 instance IG a => IG (SwitchCaseUse a) where
   ig ls (SwitchCaseUse ov _vn (SwitchCase {..})) =
-    ig ls (IGseq sc_vl (IGseq ov sc_k))
+    igDef (ig ls sc_k) (countsS ov) sc_vl
 
 instance IG a => IG (SwitchCasesUse a) where
   ig ls (SwitchCasesUse v csm) = ig ls (IGseq v (Par $ switchUses v csm))
