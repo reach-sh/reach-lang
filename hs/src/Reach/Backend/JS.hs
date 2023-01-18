@@ -326,6 +326,7 @@ jsPrimApply = \case
   BYTES_ZPAD xtra -> \args -> return $ jsApply "stdlib.bytesConcat" (args <> [jsBytes $ bytesZero xtra])
   STRINGDYN_CONCAT -> r $ jsApply "stdlib.stringDynConcat"
   UINT_TO_STRINGDYN t -> r $ jsApply_ui t "stdlib.uintToStringDyn"
+  BYTES_CONCAT -> r $ jsApply "stdlib.bytesConcat"
   BTOI_LAST8 _ -> r $ jsApply "stdlib.btoiLast8"
   CTC_ADDR_EQ -> r $ jsApply "stdlib.ctcAddrEq"
   GET_CONTRACT -> const $ do

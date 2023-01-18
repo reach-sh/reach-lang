@@ -52,21 +52,40 @@ instance FromJSON CompiledSolRec where
         csrCode <- ctc .: "bin"
         return $ CompiledSolRec {..}
 
-newtype SolOutputCmd = SolOutputCmd CompiledSolRecs
+newtype SolOutputErrMsg = SolOutputErrMsg T.Text
+
+instance FromJSON SolOutputErrMsg where
+  parseJSON = withObject "SolOutputErrMsg" $ \o -> do
+    x <- o .: "formattedMessage"
+    return $ SolOutputErrMsg x
+
+data SolOutputCmd
+  = SolOutputCmd CompiledSolRecs
+  | SolOutputErr [SolOutputErrMsg]
 
 instance FromJSON SolOutputCmd where
   parseJSON = withObject "SolOutputCmd" $ \o -> do
-    x <- o .: "contracts"
-    return $ SolOutputCmd x
+    xm <- o .:? "contracts"
+    case xm of
+      Just x -> return $ SolOutputCmd x
+      Nothing -> do
+        y <- o .: "errors"
+        return $ SolOutputErr y
 
-data SolOutputFull = SolOutputFull
-  { sofContracts :: M.Map T.Text CompiledSolRecs
-  }
+data SolOutputFull
+  = SolOutputFull
+    { sofContracts :: M.Map T.Text CompiledSolRecs
+    }
+  | SolOutputFail [SolOutputErrMsg]
 
 instance FromJSON SolOutputFull where
   parseJSON = withObject "SolOutputFull" $ \o -> do
-    sofContracts <- o .: "contracts"
-    return $ SolOutputFull {..}
+    xm <- o .:? "contracts"
+    case xm of
+      Just sofContracts -> return $ SolOutputFull {..}
+      Nothing -> do
+        y <- o .: "errors"
+        return $ SolOutputFail y
 
 theKey :: T.Text
 theKey = "theReachKey"
@@ -79,16 +98,21 @@ compile_sol_parse isCmdLine stdout =
     True ->
       case eitherDecodeStrict stdout of
         Left m -> bad m
+        Right (SolOutputErr es) -> baddies es
         Right (SolOutputCmd (CompiledSolRecs xs)) -> Right xs
     False ->
       case eitherDecodeStrict stdout of
         Left m -> bad m
+        Right (SolOutputFail es) -> baddies es
         Right (SolOutputFull cs) ->
           case M.lookup theKey cs of
             Nothing -> Left $ "The compilation key was missing"
             Just (CompiledSolRecs xs) -> Right xs
   where
     bad m = Left $ "It produced invalid JSON output, which failed to decode with the message:\n" <> m
+    baddies es = Left $ "It failed to compile with the message:\n" <> concatMap f es
+      where
+        f (SolOutputErrMsg t) = T.unpack t
 
 compile_sol_extract :: Bool -> String -> String -> BS.ByteString -> E CompiledSolRec
 compile_sol_extract isCmdLine solf cn stdout = do

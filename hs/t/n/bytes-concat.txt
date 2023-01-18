@@ -1,0 +1,8 @@
+reachc: error[RE0076]: Expected bytes, got something else: UInt
+
+  ./bytes-concat.rsh:14:22:application
+
+  14|   const z1 = x.concat(17);
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0076
+

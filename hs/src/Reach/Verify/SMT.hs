@@ -345,6 +345,7 @@ smtPrimOp at p dargs =
       xtra' <- smt_la at $ bytesZeroLit xtra
       return $ smtApply "bytesAppend" (args <> [xtra'])
     STRINGDYN_CONCAT -> app "StringDyn_Concat"
+    BYTES_CONCAT -> app "bytesAppend"
     UINT_TO_STRINGDYN _ -> app "UInt_toStringDyn"
     MUL_DIV _ -> smtMulDiv
     SELF_ADDRESS pn isClass _ ->

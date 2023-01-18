@@ -1,0 +1,14 @@
+Compiling `main`...
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 9 theorems; No failures!
+reachc: error[RETH0001]: The ETH connector does not support static bytes concatenation.
+
+  ./bytes-concat2.rsh:17:22:application
+
+  17|   const z1 = x.concat(y);
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RETH0001
+
