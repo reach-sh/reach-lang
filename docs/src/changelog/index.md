@@ -9,6 +9,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{rcNext("0.1.13-rc.1")}
 
++ 2023/01/18: Added `{!rsh} Bytes.concat` to ALGO connector.
+
 + 2022/12/23: Add more options to the `boxes` field of `{!rsh} remote.ALGO`.
 
 @{rcHead("0.1.13-rc.0")}

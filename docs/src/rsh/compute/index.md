@@ -814,6 +814,18 @@ Bytes.fromHex('0x01ffc9a7');
 The value of `BYTES` must be known at compile time.
 `n` is determined by the length of `BYTES`.
 
+### Bytes Concatenation
+
+@{ref("rsh", "Bytes.concat")}
+```reach
+Bytes.concat(x, y);
+x.concat(y);
+```
+
+Concatenates two static length `{!rsh} Bytes` values into a static length Bytes value.
+For example, if `x` is 5 bytes and `y` is 6 bytes, then the result is 11 bytes, with the `x` bytes first and the `y` bytes second.
+(`{!rsh} "ABCDE".concat("012345")` is `{!rsh} "ABCDE012345".)
+
 ### String Concatenation
 
 @{ref("rsh", "StringDyn.concat")}
