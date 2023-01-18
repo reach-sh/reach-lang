@@ -65,18 +65,22 @@ contractId = "ReachContract"
 
 data EthError
   = Err_SolTooManyArgs String String Int
+  | Err_SolUnsupported String
   deriving (Eq, ErrorMessageForJson, ErrorSuggestions, Generic)
 
 instance HasErrorCode EthError where
   errPrefix = const "RETH"
   errIndex = \case
     Err_SolTooManyArgs {} -> 0
+    Err_SolUnsupported {} -> 1
 
 instance Show EthError where
   show = \case
     Err_SolTooManyArgs viewsOrApis name num ->
       "The ETH connector supports " <> viewsOrApis <> " that have up to " <>
       show apiMaxArgs <> " arguments, but " <> name <> " uses " <> show num <> "."
+    Err_SolUnsupported m ->
+      "The ETH connector does not support " <> m <> "."
 
 --- Solidity helpers
 
@@ -145,7 +149,7 @@ solBinOp :: String -> Doc -> Doc -> Doc
 solBinOp o l r = l <+> pretty o <+> r
 
 solEq :: Doc -> Doc -> App Doc
-solEq x y = solPrimApply (PEQ UI_Word) [x, y]
+solEq x y = solPrimApply sb (PEQ UI_Word) [x, y]
 
 solSet :: Doc -> Doc -> Doc
 solSet x y = solBinOp "=" x y <> semi
@@ -559,8 +563,8 @@ instance SolFrag DLArg where
     DLA_Literal c -> solF c
     DLA_Interact {} -> impossible "consensus interact"
 
-solPrimApply :: PrimOp -> [Doc] -> App Doc
-solPrimApply = \case
+solPrimApply :: SrcLoc -> PrimOp -> [Doc] -> App Doc
+solPrimApply at = \case
   SELF_ADDRESS {} -> impossible "self address"
   ADD _ pv -> safeOp pv "unsafeAdd" "safeAdd"
   SUB _ pv -> safeOp pv "unsafeSub" "safeSub"
@@ -596,6 +600,7 @@ solPrimApply = \case
   ADDRESS_EQ -> binOp "=="
   TOKEN_EQ -> binOp "=="
   BYTES_ZPAD {} -> impossible "bytes concat"
+  BYTES_CONCAT {} -> expect_throw Nothing at $ Err_SolUnsupported "static bytes concatenation"
   BTOI_LAST8 {} -> impossible "btoiLast8"
   STRINGDYN_CONCAT -> app "string.concat"
   UINT_TO_STRINGDYN _ -> app "uintToStringDyn"
@@ -745,9 +750,9 @@ solExpr sp = \case
     expect_thrown at err
   DLE_VerifyMuldiv at _ _ _ err ->
     expect_thrown at err
-  DLE_PrimOp _ p args -> do
+  DLE_PrimOp at p args -> do
     args' <- mapM solF args
-    spa $ solPrimApply p args'
+    spa $ solPrimApply at p args'
   DLE_ArrayRef _ ae ie ->
     spa $ (solArrayRef <$> solF ae <*> solF ie)
   DLE_ArraySet _ ae ie ve -> do
@@ -929,7 +934,7 @@ doConcat dv x y = do
   let copy src (off :: Integer) = do
         let sz = arraySize src
         src' <- solF src
-        add <- solPrimApply (ADD UI_Word PV_Veri) ["i", solNum off]
+        add <- solPrimApply sb (ADD UI_Word PV_Veri) ["i", solNum off]
         let ref = solArrayRef src' "i"
         return $ "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++") <> solBraces [solArrayRef dv' add <+> "=" <+> ref <> semi]
   x' <- copy x 0
@@ -989,7 +994,7 @@ instance SolStmts DLStmt where
                -- Get balances of non-network tokens before call
                let s1 = solSet tv_before $ getBalance tokArg
                -- Get balances of non-network tokens after call
-               tokRecv <- solPrimApply (SUB UI_Word PV_Safe) [getBalance tokArg, tv_before]
+               tokRecv <- solPrimApply at (SUB UI_Word PV_Safe) [getBalance tokArg, tv_before]
                let s2 = solSet ((solMemVar dv <> ".elem1") <> ".elem" <> pretty i) tokRecv
                return (s1, s2))
             (zip nonNetTokRecv [0 ..])
@@ -1003,10 +1008,10 @@ instance SolStmts DLStmt where
                tv_before <- allocMemVar at $ T_UInt UI_Word
                tokArg <- solF tok
                paid <- maybe (return "0") solF $ M.lookup tok nonNetToksPayAmt
-               sub <- solPrimApply (SUB UI_Word PV_Veri) [getBalance tokArg, paid]
+               sub <- solPrimApply at (SUB UI_Word PV_Veri) [getBalance tokArg, paid]
                let s1 = solSet tv_before sub
                tv_after <- allocMemVar at $ T_UInt UI_Word
-               tokRecv <- solPrimApply (SUB UI_Word PV_Veri) [getBalance tokArg, tv_before]
+               tokRecv <- solPrimApply at (SUB UI_Word PV_Veri) [getBalance tokArg, tv_before]
                let s2 = [ solSet tv_after tokRecv ]
                s3 <- solRequireS "remote did not transfer unexpected non-network tokens" =<< solEq tv_after "0"
                return (s1, s2 <> s3))
@@ -1014,7 +1019,7 @@ instance SolStmts DLStmt where
       let call' = ".call{value:" <+> netTokPaid <> "}"
       let meBalance = "address(this).balance"
       addMemVar dv
-      sub' <- solPrimApply (SUB UI_Word PV_Veri) [meBalance, v_before]
+      sub' <- solPrimApply at (SUB UI_Word PV_Veri) [meBalance, v_before]
       let sub'l = [solSet (solMemVar dv <> ".elem0") sub']
       -- Non-network tokens received from remote call
       let billOffset :: Int -> Doc
@@ -1025,7 +1030,7 @@ instance SolStmts DLStmt where
               _ -> [ solSet (solMemVar dv <> ".elem" <> billOffset 1) $ solApply "abi.decode" [v_return, parens rng_ty'_] ]
       let e_data_e = solApply "abi.encodeWithSelector" eargs
       e_data <- allocRawVar
-      e_before <- solPrimApply (SUB UI_Word PV_Veri) [meBalance, netTokPaid]
+      e_before <- solPrimApply at (SUB UI_Word PV_Veri) [meBalance, netTokPaid]
       err_msg <- solRequireMsg $ show (at, fs, ("remote " <> f <> " failed"))
       -- XXX we could assert that the balances of all our tokens is the same as
       -- it was before
@@ -1095,10 +1100,10 @@ instance SolStmts DLStmt where
       bal <- case mtok of
         Nothing -> return "address(this).balance"
         Just tok -> getBalance <$> solF tok
-      sub <- solPrimApply (SUB UI_Word PV_Veri) [actBalV, tb']
+      sub <- solPrimApply at (SUB UI_Word PV_Veri) [actBalV, tb']
       zero <- solF $ DLA_Literal $ DLL_Int at UI_Word 0
-      cnd <- solPrimApply (PLT UI_Word) [actBalV, tb']
-      ite <- solPrimApply IF_THEN_ELSE [cnd, zero, sub]
+      cnd <- solPrimApply at (PLT UI_Word) [actBalV, tb']
+      ite <- solPrimApply at IF_THEN_ELSE [cnd, zero, sub]
       return $ [ solBraces $
         [ solSet ("uint256" <+> actBalV) bal
         , solSet (solMemVar dv) ite
@@ -1151,13 +1156,65 @@ instance SolStmts DLStmt where
       let goBig i _ = case i of
             _
               -- When x is Bytes(<= 32), assign all of x to the first element of dv
-              | i == 0 && 1 == xHowMany -> dv' <> ".elem0" <+> "=" <> x' <> semi
+              | i == 0 && 1 == xHowMany -> dv' <> ".elem0" <+> "=" <+> x' <> semi
               -- When x is Bytes(> 32) and we have yet to assign all of x to dv
-              | xIsStruct && i <= xHowMany -> dv' <> ei <+> "=" <> x' <> ei <> semi
+              | xIsStruct && i <= xHowMany -> dv' <> ei <+> "=" <+> x' <> ei <> semi
               -- Nothing left to take from x, no more assignments, rest of bytes will be null
               | otherwise -> ""
             where ei = ".elem" <> pretty i
       return $ solBytesSplit sz goSmall goBig
+    -- DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ BYTES_CONCAT [x, y]) -> do
+    --   addMemVar dv
+    --   dv' <- solF dv
+    --   x' <- solF x
+    --   y' <- solF y
+    --   let help w w' startB = (sz, startB, endB, ref)
+    --         where
+    --           endB = startB + sz
+    --           sz = arraySize w
+    --           (howMany, lastLen) = solBytesInfo sz
+    --           isStruct = howMany > 1
+    --           ref :: String -> Integer -> Integer -> Doc
+    --           ref lab s e =
+    --             case () of
+    --               -- not a struct, whole len
+    --               _ | not isStruct && len == lastLen ->
+    --                 w'
+    --               -- not a struct, part of len
+    --               _ | not isStruct ->
+    --                 parens ((parens $ w' <+> ">>" <+> pretty s') <+> "&" <+> mask)
+    --                 where
+    --                   mask = "0x" <> pretty (concat $ replicate (fromInteger len) ("ff"::String))
+    --               _ -> impossible $ "bc ref " <> show dbg
+    --             where
+    --               dbg = (startB, endB, howMany, lastLen, lab, s, e, len, s', e', sC, eC)
+    --               s' = s - startB
+    --               e' = e - startB
+    --               len = e - s
+    --               sC = s' `div` byteChunkSize
+    --               eC = e' `div` byteChunkSize
+    --   let ( xSz, xStartB, xEndB, xRef) = help x x' 0
+    --   let (_ySz, yStartB, yEndB, yRef) = help y y' xSz
+    --   let combineShift lhs lhsSz rhs = parens $ parens (rhs <+> "<<" <+> pretty lhsSz) <+> "|" <+> lhs
+    --   let goSmall _ = dv' <+> "=" <+> combineShift x' (arraySize x) y' <> semi
+    --   let goBig i len = dv' <> ".elem" <> pretty i <+> "=" <+> rhs <> semi
+    --         where
+    --           startB = byteChunkSize * i
+    --           endB = startB + len
+    --           rhs =
+    --             case () of
+    --               -- Entirely in x
+    --               _ | xStartB <= startB && endB <= xEndB ->
+    --                 xRef "ex" startB endB
+    --               -- Starts in x, ends in y
+    --               _ | startB <= xEndB && endB > xEndB ->
+    --                 combineShift (xRef "sx" startB xEndB) (xEndB - startB) (yRef "sy" xEndB endB)
+    --               -- Entirely in y
+    --               _ | yStartB <= startB && endB <= yEndB ->
+    --                 yRef "ey" startB endB
+    --               _ -> impossible $ "bytes concat goBig " <> show (xStartB, xEndB, yStartB, yEndB, startB, endB)
+    --   let sz = arraySize $ DLA_Var dv
+    --   return $ solBytesSplit sz goSmall goBig
     DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ BYTES_XOR [x, y]) -> do
       addMemVar dv
       dv' <- solF dv
@@ -1578,7 +1635,7 @@ instance SolStmts CLStmt where
                   Right x -> (secsv, x)
             v' <- solF v
             a' <- solF a
-            t <- solPrimApply op [v', a']
+            t <- solPrimApply at op [v', a']
             solRequireS ("timeout check at " <> show at) t
       let checkTime op = \case
             Nothing -> return []

@@ -726,6 +726,7 @@ data PrimOp
   | DIGEST_XOR
   | BYTES_XOR
   | BTOI_LAST8 Bool
+  | BYTES_CONCAT
   | CTC_ADDR_EQ
   | GET_CONTRACT
   | GET_ADDRESS
@@ -767,6 +768,7 @@ instance Pretty PrimOp where
     MUL_DIV _ -> "muldiv"
     DIGEST_XOR -> "digest_xor"
     BYTES_XOR -> "bytes_xor"
+    BYTES_CONCAT -> "bytes_concat"
     BTOI_LAST8 isDigest -> "btoiLast8(" <> bool "Bytes" "Digest" isDigest <> ")"
     STRINGDYN_CONCAT -> "StringDyn.concat"
     UINT_TO_STRINGDYN t -> "UInt" <> uitp t <> ".toStringDyn"

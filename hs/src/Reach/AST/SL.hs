@@ -847,6 +847,7 @@ data SPrimOp
   | S_DIGEST_XOR
   | S_BYTES_XOR
   | S_BTOI_LAST8 Bool
+  | S_BYTES_CONCAT
   | S_CTC_ADDR_EQ
   deriving (Eq, Generic, Ord, Show)
 
@@ -878,6 +879,7 @@ sprimToPrim dom rng useVerifyArith = \case
   S_DIGEST_XOR -> DIGEST_XOR
   S_BYTES_XOR -> BYTES_XOR
   S_BTOI_LAST8 b -> BTOI_LAST8 b
+  S_BYTES_CONCAT -> BYTES_CONCAT
   S_CTC_ADDR_EQ -> CTC_ADDR_EQ
   S_STRINGDYN_CONCAT -> STRINGDYN_CONCAT
   S_UINT_TO_STRINGDYN _dom -> UINT_TO_STRINGDYN dom

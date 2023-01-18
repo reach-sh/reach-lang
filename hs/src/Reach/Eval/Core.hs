@@ -1498,10 +1498,21 @@ evalAsEnvM sv@(lvl, obj) = case obj of
       M.fromList
         [ ("match", delayCall SLPrim_data_match)
         ]
+  SLV_Bytes {} ->
+    return $ Just $
+      M.fromList
+        [ ("concat", delayCall $ SLPrim_op S_BYTES_CONCAT)
+        ]
+  SLV_DLVar (DLVar _ _ (T_Bytes _) _) ->
+    return $ Just $
+      M.fromList
+        [ ("concat", delayCall $ SLPrim_op S_BYTES_CONCAT)
+        ]
   SLV_Type (ST_Bytes len) -> do
     return $ Just $
       M.fromList
-        [ ("pad", retV $ public $ SLV_Prim $ SLPrim_padTo len)]
+        [ ("pad", retV $ public $ SLV_Prim $ SLPrim_padTo len)
+        ]
   SLV_Prim SLPrim_Participant ->
     return $ Just $
       M.fromList
@@ -1581,7 +1592,8 @@ evalAsEnvM sv@(lvl, obj) = case obj of
   SLV_Prim SLPrim_Bytes ->
     return $ Just $
       M.fromList $
-        [ ("fromHex", retV $ public $ SLV_Prim $ SLPrim_Bytes_fromHex)]
+        [ ("fromHex", retV $ public $ SLV_Prim $ SLPrim_Bytes_fromHex)
+        , ("concat", retV $ public $ SLV_Prim $ SLPrim_op S_BYTES_CONCAT) ]
   SLV_Prim (SLPrim_remotef rat aa ma stf mpay mbill malgo Nothing) ->
     return $ Just $
       M.fromList $
@@ -2290,6 +2302,16 @@ evalPrimOp sp sargs = do
           let from = if to == UI_Word then UI_256 else UI_Word
           let dom = T_UInt from
           make_var [dom] (T_UInt to) args
+    S_BYTES_CONCAT ->
+      case args of
+        [SLV_Bytes _ lhs, SLV_Bytes _ rhs] -> do
+          static $ SLV_Bytes at $ lhs <> rhs
+        [lhs, rhs] -> do
+          (lhs_l, lhs_ae) <- typeOfBytes lhs
+          (rhs_l, rhs_ae) <- typeOfBytes rhs
+          let rng = T_Bytes $ lhs_l + rhs_l
+          make_var_ rng [lhs_ae, rhs_ae]
+        _ -> expect_ $ Err_Apply_ArgCount at 2 (length args)
     S_BYTES_ZPAD xtra ->
       case args of
         [SLV_Bytes _ lhs] -> do

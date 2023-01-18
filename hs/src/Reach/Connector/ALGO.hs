@@ -2074,6 +2074,7 @@ cprim = \case
   BIOR t -> bcallz t "|"
   BXOR t -> bcallz t "^"
   DIGEST_XOR -> call "b^"
+  BYTES_CONCAT -> call "concat"
   BYTES_XOR -> call "b^"
   DIGEST_EQ -> call "=="
   ADDRESS_EQ -> call "=="
