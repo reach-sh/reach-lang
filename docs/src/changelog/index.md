@@ -7,7 +7,9 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verRC("0.1.13")}
 
-@{rcNext("0.1.13-rc.1")}
+@{rcNext("0.1.13-rc.2")}
+
+@{rcHead("0.1.13-rc.1")}
 
 + 2023/01/18: Added `{!rsh} Bytes.concat` to ALGO connector.
 
