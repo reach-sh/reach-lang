@@ -252,7 +252,7 @@ $ curl https://docs.reach.sh/reach -o reach ; chmod +x reach
 
 Reach is successfully downloaded if the following command returns a version number:
 
-```
+``` cmd
 $ ./reach version
 ```
 
