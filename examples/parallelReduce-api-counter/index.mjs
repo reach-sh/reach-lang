@@ -10,7 +10,7 @@ const ctcA = accA.contract(backend);
 
 const startUp = async () => {
   const flag = "startup incomplete";
-  try{
+  try {
     await ctcA.p.Admin({
       max: 4,
       launched: (c) => {
@@ -18,7 +18,7 @@ const startUp = async () => {
       },
     });
   } catch (e) {
-    if(e !== flag) throw e;
+    if (e !== flag) throw e;
   };
 };
 
