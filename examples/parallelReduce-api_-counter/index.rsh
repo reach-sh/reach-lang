@@ -15,13 +15,13 @@ export const main = Reach.App(() => {
   A.publish(max);
   A.interact.launched(getContract());
 
-  const [count] = parallelReduce([0])
+  const count = parallelReduce(0)
     .invariant(balance() == 0, "network token balance wrong")
     .while(count < max)
     .api_(B.countUp, () => {
-      return[0, (ret) => {
+      return [0, (ret) => {
         ret(count);
-        return [count + 1];
+        return count + 1;
       }];
     })
   commit();
