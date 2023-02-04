@@ -126,7 +126,7 @@ You'll always have this at the top of every program.
 + Line 3 defines the main export from the program.
 When you compile, this is what the compiler will look at.
 + Lines 4 through 9 specify the two participants to this application, _Alice_ and _Bob_.
-+ Line 10 marks the deployment of the the Reach program, which allows the program to start doing things.
++ Line 10 marks the deployment of the Reach program, which allows the program to start doing things.
 
 Before we go too much further, let's create a similar shell for our JavaScript frontend code.
 Open a new file named `index.mjs` and fill it with this:
