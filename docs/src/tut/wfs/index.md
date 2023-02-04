@@ -856,7 +856,7 @@ GUI stands for "graphical user interface" and uses buttons, pop-ups, or other gr
 This section gives a taste of using a GUI to have the `buyer` peek into the deployed contract before attaching to view the price.
 Allowing a `buyer` to view the contract before attaching is a better user experience, and better user experiences generally lead to more users.
 
-Review the the `index.mjs` version of `confirmPurchase` from the `buyerInteract` object:
+Review the `index.mjs` version of `confirmPurchase` from the `buyerInteract` object:
 
 ``` js
 load: /examples/wisdom-9-interaction/index.mjs
