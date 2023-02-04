@@ -417,7 +417,7 @@ __Note__: The `consensus` `Actor` is initialized automatically by the Simulator,
 
 __Note__:  `Actor` is the `Participant` superclass. In the Reach Simulator, only the `consensus` object is an `Actor` but not a `Participant`.
 
-__Note__:  When simulating with the the `ImperativeScenario`, the `Participant` `init` function still returns a reference to the new `Scenario`, but since we're tracking it by reference this value can be ignored.
+__Note__:  When simulating with the `ImperativeScenario`, the `Participant` `init` function still returns a reference to the new `Scenario`, but since we're tracking it by reference this value can be ignored.
 
 ```javascript
   [s, b] = await s.who(bob).init(10);
