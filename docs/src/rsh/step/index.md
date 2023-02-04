@@ -568,7 +568,7 @@ const [ DOMAIN, RET_FUN ] =
 ```
 
 where:
-+ `DOMAIN` is the the domain of the API member function.
++ `DOMAIN` is the domain of the API member function.
 + `RET_FUN` is a function that returns a value to the API call. This function must be called.
 + `API_EXPR` is an expression that evaluates to an API member function.
 + `API_CHECK_EXPR` is a function parameterized over the domain of the API function.
