@@ -1,4 +1,4 @@
-# parallelReduce Guide
+# {#guide-parallelReduce} parallelReduce Guide
 The purpose of this guide is to bring together all of the information we have about the parallelReduce and to provide additional clarity on how it works and why we use it.
 
 ## Description
