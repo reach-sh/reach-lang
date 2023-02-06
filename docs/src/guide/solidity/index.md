@@ -52,7 +52,7 @@ This part of a Reach program is particular to each participant and explicitly na
 This means that Reach developers do not need to manually keep the middleware and smart contract in sync or update either as the protocol design changes: the Reach compiler does all of that for them.
 4. **Frontend** --- Reach programs do not embed the frontend, like they embed the protocol design, smart contract, and middleware.
 Reach developers design and build user interfaces just like they do in Solidity-style development, except that they tend to have an easier time, because the automatically-generated middleware layer thoroughly insulates them from the low-level details of the consensus network.
-Reach developers can easily build their interface with JavaScript using the Reach standard library; soon, they will be able to use the language of their choice using the Reach RPC server.
+Reach developers can easily build their interface with JavaScript using the Reach standard library.
 5. **Testing** --- Reach facilitates testing in two ways.
 First, the Reach language embeds a high-quality property-based testing system via the `{!rsh} assert` and `{!rsh} forall` primitives, which can be used in a basic way to write simple test cases.
 Second, the Reach deployment tool, `reach run`, allows for the easy construction and running of automated test suites for the workflows of a DApp.
