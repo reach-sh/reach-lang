@@ -803,6 +803,10 @@
     "title": "Sharing and discovering shared Reach packages",
     "path": "/guide/packages/#guide-packages"
   },
+  "guide-parallelReduce": {
+    "title": "parallelReduce Guide",
+    "path": "/guide/parallelReduce/#guide-parallelReduce"
+  },
   "guide-race": {
     "title": "Racing non-determinism in decentralized applications",
     "path": "/guide/race/#guide-race"

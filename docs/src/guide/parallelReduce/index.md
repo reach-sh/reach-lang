@@ -51,13 +51,13 @@ The API member function has a consensus reduction specification function that ta
 You can name this function anything you like, traditionally `ret` or `k` is used to denote return or continuation, respectively.
 ```
 load: /examples/rsvp-6-vevt/index.rsh
-md5:ed7d96413f2f23224d5ea6081ae4cc78
+md5: ed7d96413f2f23224d5ea6081ae4cc78
 range: 52-62
 ```
 `ret` must be called inside the API member function to provide the return value to the API caller. Below on line 17 is the function signature for the API member function `register`. It takes no arguments and returns `{!rsh} null`.
 ```
 load: /examples/rsvp-6-vevt/index.rsh
-md5:ed7d96413f2f23224d5ea6081ae4cc78
+md5: ed7d96413f2f23224d5ea6081ae4cc78
 range: 16-18
 ```
 And here again is the implementation of the `register` function, this time pointing to the inputs and outputs.  
@@ -65,7 +65,7 @@ And here again is the implementation of the `register` function, this time point
 Remember, it takes no arguments and returns `{!rsh} null`.
 ```
 load: /examples/rsvp-6-vevt/index.rsh
-md5:ed7d96413f2f23224d5ea6081ae4cc78
+md5: ed7d96413f2f23224d5ea6081ae4cc78
 range: 52-62
 ```
 - Line 52 specifies the API and which function we are referencing (Guest.register). The empty parenthesis denotes that it takes no parameters.
@@ -167,7 +167,7 @@ range: 29-36
 In the [rsvp-6-vevt](https://github.com/reach-sh/reach-lang/blob/master/examples/rsvp-6-vevt/index.rsh) example, we ask the user to pay `reservation`.
 ```
 load: /examples/rsvp-6-vevt/index.rsh
-md5:
+md5: ed7d96413f2f23224d5ea6081ae4cc78
 range: 52-62
 ```
 - Line 55 starts the outer return and asks the user to pay `reservation` before executing the consesus step.
