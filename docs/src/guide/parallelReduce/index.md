@@ -101,7 +101,7 @@ range: 21-26
 - Line 23 invokes our ret function and returns the value of `count` to the caller.
 - Line 24 updates the loop variable `count` increasing it by one.
 
-Any checks performed before the return statement will be applied in the local step, during payment and the consensus step of the API call. You should use `.api_` when this check is the same for these steps.
+Any checks performed before the `{!rsh} return` statement will be applied in the local step, during payment and the consensus step of the API call. You should use `{!rsh} .api_` when this check is the same for these steps.
 
 #### .api
 
