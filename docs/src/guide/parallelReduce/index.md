@@ -226,7 +226,7 @@ md5: 2d9202924ee606ab47726038fbde05a3
 range: 28-33
 ```
 - Line 28 starts our `{!rsh} parallelReduce`.
-- Line 29 is new. `.paySpec([tok])` tells our `{!rsh} parallelReduce` that it can also accept payment in this non-network token.
+- Line 29 is new. `{!rsh} .paySpec([tok])` tells our `{!rsh} parallelReduce` that it can also accept payment in this non-network token.
 
 :::note
 This is structured as an array, so you can just list out the other tokens seperated by a comma.
