@@ -213,7 +213,7 @@ Token IDs and the amounts to be paid need to be specified in `{!rsh} Tuples`.
 
 The first argument is the default network token and is synthesized for you, just specify the quantity -- if you leave the quantity out it will be synthesized to zero for you.
 
-This means `A.pay([[supply, tok]])` is equal to `A.pay([0, [supply, tok]])`. Where zero specifies the number of network tokens. 
+This means `{!rsh} A.pay([[supply, tok]])` is equal to `{!rsh} A.pay([0, [supply, tok]])`. Where zero specifies the number of network tokens. 
 
 This syntax will come up again.
 
