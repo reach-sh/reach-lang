@@ -124,7 +124,7 @@ You could have an `{!rsh} assume` expression that evaluates in the users local s
 
 Read through both of these functions again, this time comparing syntax for the same operation in each function.
 
-You see that `.api_` is an abstraction of `.api` with more compact syntax and `.api` allows you to specify different verification checks at different steps of the function.
+You see that `{!rsh} .api_` is an abstraction of `{!rsh} .api` with more compact syntax and `{!rsh} .api` allows you to specify different verification checks at different steps of the function.
 
 Now that we are comfortable with the syntax -- let's look at accessing some values.
 
