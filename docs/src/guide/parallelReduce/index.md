@@ -231,7 +231,7 @@ range: 28-33
 :::note
 This is structured as an array, so you can just list out the other tokens seperated by a comma.
 
-`.paySpec([tok1, tok2])`
+`{!rsh} .paySpec([tok1, tok2])`
 
 Just be sure they have been `publish`ed and you have Reach `assume(tok1 != tok2)` for each token.
 :::
