@@ -13,7 +13,7 @@ If some thing or many things can be done by many different people, you use a `{!
 
 A `{!rsh} fork` is a race between API members where we are unsure who exactly is performing the next consensus operation, this is why they are common with API members – which offer functionality to many different participants. 
 
-Fork ends in the execution of a switch structure, executing the appropriate case (if Bob1 wins do this, if Bob2 wins do that). Read more about `{!rsh} fork`, including the underlying code that makes up the fork keyword.
+`{!rsh} fork` ends in the execution of a `{!rsh} switch` structure, executing the appropriate case (if `Bob1` wins do this, if `Bob2` wins do that). Read more about `{!rsh} fork`, including the underlying code that makes up the `{!rsh} fork` keyword.
 
 :::note
 Learn more about `{!rsh} race` in the [race guide](##guide-race).
