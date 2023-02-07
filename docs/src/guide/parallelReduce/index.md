@@ -9,7 +9,7 @@ Generally speaking it is an abbreviation of a `{!rsh} while` loop pattern.
 The variables you set are repeatedly updated uniquely by each one of your participants until the loop condition no longer holds.
 Values are updated via `{!rsh} return` statements, while `{!rsh} continue` is implicit.
 
-If some thing or many things can be done by many different people, you use a parallelReduce to handle the fork and cases.
+If some thing or many things can be done by many different people, you use a `{!rsh} parallelReduce` to handle the `{!rsh} fork` and cases.
 
 A fork is a race between API members where we are unsure who exactly is performing the next consensus operation, this is why they are common with API members – which offer functionality to many different participants. 
 
