@@ -2,7 +2,7 @@
 The purpose of this guide is to bring together all of the information we have about the parallelReduce and to provide additional clarity on how it works and why we use it.
 
 ## Description
-There are layers of abstraction to the parallelReduce structure that we should understand first.  
+There are layers of abstraction to the `{!rsh} parallelReduce` structure that we should understand first.  
 
 Generally speaking it is an abbreviation of a `{!rsh} while` loop pattern. 
 
