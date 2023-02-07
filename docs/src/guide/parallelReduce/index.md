@@ -20,7 +20,7 @@ Learn more about `{!rsh} race` in the [race guide](##guide-race).
 
 Read through the [guide about when to use what kind of consensus transfer](##guide-ctransfers).
 
-After you understand that you can examine the structure of `{!rsh} parallelReduce` components and their definitions in the [docs](`{!rsh} parallelReduce`).
+After you understand that you can examine the structure of `{!rsh} parallelReduce` components and their definitions.
 
 Let's start by looking at the most simple `{!rsh} parallelReduce` that we could implement.
 ```
@@ -68,7 +68,7 @@ load: /examples/rsvp-6-vevt/index.rsh
 md5: ed7d96413f2f23224d5ea6081ae4cc78
 range: 52-62
 ```
-- Line 52 specifies the API and which function we are referencing (Guest.register). The empty parenthesis denotes that it takes no parameters.
+- Line 52 specifies the API and which function we are referencing `Guest.register`. The empty parenthesis denotes that it takes no parameters.
 - Line 59 invokes our `ret` function and returns a `{!rsh} null` value to the caller.
 
 ::::testQ
@@ -143,12 +143,12 @@ range: 44-51
 - Line 45 initializes values for those variables inside our `{!rsh} parallelReduce`.
 - Line 46 starts the `{!rsh} .define` block.
 - Line 47 is where we set the `{!rsh} View` related to our value. In this case, `howMany` users have registered.
-- Lines 49-50 are for our [loop invariant](##guide-loop-invs).
+- Lines 49-50 are for our [loop invariants](##guide-loop-invs).
 - Line 51 is our loop condition.
 
 The `{!rsh} parallelReduce` is going to leave our DApp in a state where API members can call our function and update the values, but also allow `howMany` to be accesible in the frontend with a call to the `{!rsh} View`.
 
-More information on accessing `{!rsh} Views` [from the frontend](`{!js} ctc.views`).
+More information on accessing `{!rsh} Views` from the frontend can be found at `{!js} ctc.views`.
 
 Now, what if we want the user to pay some amount to access this function?
 
@@ -180,8 +180,8 @@ Any token that is not the native token of a protocol is considered a non-network
 
 The gas or txn fees, are paid in network tokens. 
 
-Examples of non-network tokens include all Contract Tokens  on ETH(ERC20, ERC721, etc..) and all ASA Tokens on Algorand based networks.
-{@secref("nntoks")}
+Examples of non-network tokens include all Contract Tokens  on ETH (ERC20, ERC721, etc..) and all ASA Tokens on Algorand based networks.
+@{seclink("guide-nntoks")}
 
 First, we need to teach the Smart Contract about our non-network Token. This means providing it from the frontend (usually the Admin does this) -- and `{!rsh} publish`ing this token ID.
 
