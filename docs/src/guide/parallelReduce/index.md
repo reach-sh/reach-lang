@@ -11,7 +11,7 @@ Values are updated via `{!rsh} return` statements, while `{!rsh} continue` is im
 
 If some thing or many things can be done by many different people, you use a `{!rsh} parallelReduce` to handle the `{!rsh} fork` and cases.
 
-A `{!rsh} fork` is a race between API members where we are unsure who exactly is performing the next consensus operation, this is why they are common with API members – which offer functionality to many different participants. 
+A `{!rsh} fork` is a `{!rsh} race` between API members where we are unsure who exactly is performing the next consensus operation, this is why they are common with API members – which offer functionality to many different participants. 
 
 `{!rsh} fork` ends in the execution of a `{!rsh} switch` structure, executing the appropriate case (if `Bob1` wins do this, if `Bob2` wins do that). Read more about `{!rsh} fork`, including the underlying code that makes up the `{!rsh} fork` keyword.
 
@@ -36,12 +36,12 @@ md5: 5a60138c737baf125f0cdccec40fec3e
 range: 18-26
 ```
 - Line 18 declares one loop variable `count` and initializes it to zero, starting the `{!rsh} parallelReduce`.
-- Line 19 sets the invariant, this contract will accept no tokens.
+- Line 19 sets the `{!rsh} invariant`, this contract will accept no tokens.
 - Line 20 is a standard `{!rsh} while` loop condition, it runs until the condition breaks.
 - Line 21 is the definition of our API member function `countUp`
 `API.functionName` and takes zero arguments.
-- Line 22 starts the outer return and zero is in the pay expression. This function takes no payment from the user. You can specify any number to be paid by the user here. You can also omit the zero and Reach will synthesize this to zero. `ret` is the return function to return the function signature value to the caller. Here we have said that the return value is a UInt on line 8. More information on this below.
-- Line 23 invokes that return function and returns the `count`.
+- Line 22 starts the outer `{!rsh} return` and zero is in the pay expression. This function takes no payment from the user. You can specify any number to be paid by the user here. You can also omit the zero and Reach will synthesize this to zero. `ret` is the `{!rsh} return` function to return the function signature value to the caller. Here we have said that the `{!rsh} return` value is a `{!rsh} UInt` on line 8. More information on this below.
+- Line 23 invokes that `{!rsh} return` function and returns the `count`.
 - Line 24 updates the `count` loop variable to `newCount`.
 
 ### API Inputs and Returns
@@ -55,7 +55,7 @@ load: /examples/rsvp-6-vevt/index.rsh
 md5: ed7d96413f2f23224d5ea6081ae4cc78
 range: 52-62
 ```
-`ret` must be called inside the API member function to provide the return value to the API caller. Below on line 17 is the function signature for the API member function `register`. It takes no arguments and returns `{!rsh} null`.
+`ret` must be called inside the API member function to provide the `{!rsh} return` value to the API caller. Below on line 17 is the function signature for the API member function `register`. It takes no arguments and returns `{!rsh} null`.
 ```
 load: /examples/rsvp-6-vevt/index.rsh
 md5: ed7d96413f2f23224d5ea6081ae4cc78
@@ -80,42 +80,42 @@ You should get a type mismatch error, because the return does not match the func
 :::
 ::::
 
-Now that we understand our loop, how to update values, and how to structure function inputs and outputs -- let's look at the difference in syntax between `.api` and `.api_`.
+Now that we understand our loop, how to update values, and how to structure function inputs and outputs -- let's look at the difference in syntax between `{!rsh} .api` and `{!rsh} .api_`.
 
 ### .api_ vs .api Syntax
 
 #### .api_
 
-We will demonstrate our `countUp` function with both `.api` and `.api_`. 
+We will demonstrate our `countUp` function with both `{!rsh} .api` and `{!rsh} .api_`. 
 
 In the following examples these two functions have the same funtionality, to increase the count by one each time a user calls our function.
 
-First, the `.api_` that you have seen already.
+First, the `{!rsh} .api_` that you have seen already.
 ```
 load: /examples/parallelReduce-api_-counter/index.rsh
 md5: 5a60138c737baf125f0cdccec40fec3e
 range: 21-26
 ```
 - Line 21 denotes the start of our API member function `B.countUp`. The empty parenthesis means it takes no arguments.
-- Line 22 starts the outer return. Zero denotes the amount to be paid and we declare our `ret` function.
-- Line 23 invokes our ret function and returns the value of `count` to the caller.
+- Line 22 starts the outer `{!rsh} return`. Zero denotes the amount to be paid and we declare our `ret` function.
+- Line 23 invokes our `ret` function and returns the value of `count` to the caller.
 - Line 24 updates the loop variable `count` increasing it by one.
 
 Any checks performed before the `{!rsh} return` statement will be applied in the local step, during payment and the consensus step of the API call. You should use `{!rsh} .api_` when this check is the same for these steps.
 
 #### .api
 
-Now notice the difference in syntax for `.api`. Remember, this function does the same thing as the one above.
+Now notice the difference in syntax for `{!rsh} .api`. Remember, this function does the same thing as the one above.
 ```
 load: /examples/parallelReduce-api-counter/index.rsh
 md5: 0fee750111780031c4fb176b431e862e
 range: 21-27
 ```
-- Line 21 denoteds the start of our API member function `B.countUp`.
-- Line 22 is for the `ASSUME_EXPR`. The empty parenthesis means it takes no arguments. These will be evaluated in a local step, so you may use it to add things you `{!rsh} assume` about the values given by the api caller.
+- Line 21 denotes the start of our API member function `B.countUp`.
+- Line 22 is for the `ASSUME_EXPR`. The empty parenthesis means it takes no arguments. These will be evaluated in a local step, so you may use it to add things you `{!rsh} assume` about the values given by the API caller.
 - Line 23 is the pay expression, it is set to zero, matching our previous function.
-- Line 24 declares our return function `ret`.
-- Line 25 invokes that return, sending `count` back to the caller.
+- Line 24 declares our `{!rsh} return` function `ret`.
+- Line 25 invokes that `{!rsh} return`, sending `count` back to the caller.
 - Line 26 updates our loop variable `count`.
 
 A key difference now is the ability to specify different verification checks for the different Reach modes your function will go through.
@@ -163,7 +163,7 @@ load: /examples/ticket-sales/index.rsh
 md5: c425745032273893d106fe3de005f15e
 range: 29-36
 ```
-- Line 31 is the outer return and will prompt the user to pay `cost` at their wallet interface to execute the consensus code.
+- Line 31 is the outer `{!rsh} return` and will prompt the user to pay `cost` at their wallet interface to execute the consensus code.
 
 In the [rsvp-6-vevt](https://github.com/reach-sh/reach-lang/blob/master/examples/rsvp-6-vevt/index.rsh) example, we ask the user to pay `reservation`.
 ```
@@ -171,7 +171,7 @@ load: /examples/rsvp-6-vevt/index.rsh
 md5: ed7d96413f2f23224d5ea6081ae4cc78
 range: 52-62
 ```
-- Line 55 starts the outer return and asks the user to pay `reservation` before executing the consesus step.
+- Line 55 starts the outer `{!rsh} return` and asks the user to pay `reservation` before executing the consesus step.
 
 All of our examples have so far demonstrated using network tokens. But what if you need the user to pay the contract in a non-network token?
 
@@ -184,7 +184,7 @@ The gas or txn fees, are paid in network tokens.
 Examples of non-network tokens include all Contract Tokens  on ETH (ERC20, ERC721, etc..) and all ASA Tokens on Algorand based networks.
 @{seclink("guide-nntoks")}
 
-First, we need to teach the Smart Contract about our non-network Token. This means providing it from the frontend (usually the Admin does this) -- and `{!rsh} publish`ing this token ID.
+First, we need to teach the Smart Contract about our non-network `{!rsh} Token`. This means providing it from the frontend (usually the Admin does this) -- and `{!rsh} publish`ing this token ID.
 
 :::note
 On ETH the token ID is an Address.
@@ -202,14 +202,14 @@ range: 19-24
 - Line 22 `{!rsh} publish`es these values to the blockchain.
 
 :::note
-We cannot attach the `A.pay([[supply, tok]])` to the first `{!rsh} publish` of the DApp. This is because the Smart Contract doesn't yet know of our token. We first need to complete a `{!rsh} publish` of the token ID.
+We cannot attach the `{!rsh} A.pay([[supply, tok]])` to the first `{!rsh} publish` of the DApp. This is because the Smart Contract doesn't yet know of our token. We first need to complete a `{!rsh} publish` of the token ID.
 
 Reach supports network tokens by default, which is why this constraint does not exist when paying network tokens.
 :::
 
 You may have noticed the syntactic Tuple in the `{!rsh} .pay`. 
 
-Token IDs and the amounts to be paid need to be specified in `{!rsh} Tuples`. 
+`{!rsh} Token` IDs and the amounts to be paid need to be specified in `{!rsh} Tuples`. 
 
 The first argument is the default network token and is synthesized for you, just specify the quantity -- if you leave the quantity out it will be synthesized to zero for you.
 
@@ -233,7 +233,7 @@ This is structured as an array, so you can just list out the other tokens sepera
 
 `{!rsh} .paySpec([tok1, tok2])`
 
-Just be sure they have been `publish`ed and you have Reach `assume(tok1 != tok2)` for each token.
+Just be sure they have been `{!rsh} publish`ed and you have Reach `{!rsh} assume(tok1 != tok2)` for each token.
 :::
 
 ```
@@ -243,7 +243,7 @@ range: 34-45
 ```
 - Line 34 specifies the `API_EXPR` and takes an input `purchasePrice` from the caller.
 - Lines 35-37 perform various verification checks.
-- Line 38 starts our outer return. This is where we need to specify the `PAY_EXPR`, but it also needs to account for our non-network token syntax. `[purchasePrice, [0, tok]]` has the user pay the `purchasePrice` in network tokens and zero of our non-network token.
+- Line 38 starts our outer `{!rsh} return`. This is where we need to specify the `PAY_EXPR`, but it also needs to account for our non-network token syntax. `[purchasePrice, [0, tok]]` has the user pay the `purchasePrice` in network tokens and zero of our non-network token.
 
 Now let's accept our non-network token from the user in the event of a refund.
 ```
@@ -251,7 +251,7 @@ load: /examples/point-of-sale/index.rsh
 md5: 2d9202924ee606ab47726038fbde05a3
 range: 46-55
 ```
-- Line 48 is our outer return. Notice the same syntax as the `purchase` function, but with different amounts. Now one `tok` is coming into the contract upon approval of the transaction.
+- Line 48 is our outer `{!rsh} return`. Notice the same syntax as the `purchase` function, but with different amounts. Now one `tok` is coming into the contract upon approval of the transaction.
 
 Hopefully this guide has helped you better understand the `{!rsh} parallelReduce`.
 
