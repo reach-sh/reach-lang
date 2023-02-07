@@ -6,7 +6,8 @@ There are layers of abstraction to the `{!rsh} parallelReduce` structure that we
 
 Generally speaking it is an abbreviation of a `{!rsh} while` loop pattern. 
 
-The variables you set are repeatedly updated uniquely by each one of your participants until the loop condition no longer holds. Values are updated via return statements, continue is implicit.
+The variables you set are repeatedly updated uniquely by each one of your participants until the loop condition no longer holds.
+Values are updated via `{!rsh} return` statements, while `{!rsh} continue` is implicit.
 
 If some thing or many things can be done by many different people, you use a parallelReduce to handle the fork and cases.
 
