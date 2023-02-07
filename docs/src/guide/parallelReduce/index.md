@@ -4,7 +4,7 @@ The purpose of this guide is to bring together all of the information we have ab
 ## Description
 There are layers of abstraction to the parallelReduce structure that we should understand first.  
 
-Generally speaking it is an abbreviation of a while loop pattern. 
+Generally speaking it is an abbreviation of a `{!rsh} while` loop pattern. 
 
 The variables you set are repeatedly updated uniquely by each one of your participants until the loop condition no longer holds. Values are updated via return statements, continue is implicit.
 
