@@ -1371,6 +1371,10 @@
     "title": "Search",
     "path": "/search/#search"
   },
+  "ticket-sales": {
+    "title": "Ticket Sales",
+    "path": "/tut/ticket-sales/#ticket-sales"
+  },
   "trouble": {
     "title": "Troubleshooting",
     "path": "/trouble/#trouble"
