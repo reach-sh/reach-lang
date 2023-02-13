@@ -33,7 +33,7 @@ As with any Reach DApp, it is best to first think about who the users are in our
 There will be one Deployer (the Admin) providing the parameters of the sale, including the non-network tokens (or tickets).
 ```
 load: /examples/ticket-sales/index.rsh
-md5: c425745032273893d106fe3de005f15e
+md5: 61303f7ea78ef9c44f41cb0a4e6e48a7
 range: 1-11
 ```
 - Line 4 declares a single `{!rsh} Participant` to bind as the `Admin`.
@@ -44,7 +44,7 @@ range: 1-11
 We then need a dynamic amount of users whose functionality will be repeated.
 ```
 load: /examples/ticket-sales/index.rsh
-md5: c425745032273893d106fe3de005f15e
+md5: 61303f7ea78ef9c44f41cb0a4e6e48a7
 range: 12-15
 ```
 - Line 12 defines a dynamic amount of users, all with shared abilities.
@@ -57,7 +57,7 @@ Now the Admin can actually provide the values for the parameters we've declared.
 [Read more about Modes of a Reach App](https://github.com/reach-sh/reach-lang/discussions/1171).
 ```
 load: /examples/ticket-sales/index.rsh
-md5: c425745032273893d106fe3de005f15e
+md5: 61303f7ea78ef9c44f41cb0a4e6e48a7
 range: 17-21
 ```
 - Line 17 starts the Local Step.
@@ -82,7 +82,7 @@ The general flow for paying non-network tokens:
 That means our next step is to `{!rsh} pay` the tokens into the contract.
 ```
 load: /examples/ticket-sales/index.rsh
-md5: c425745032273893d106fe3de005f15e
+md5: 61303f7ea78ef9c44f41cb0a4e6e48a7
 range: 22-23
 ```
 - Line 22 pays the `supply` of `tok` from `A` into the contract account. This must be a syntactic tuple where the general structure is `{!rsh} A.pay([networkTokenAmount, [amount, non-networkTokens]]);`.
@@ -132,7 +132,7 @@ Read all about it in our @{seclink("guide-parallelReduce")}.
 In this case, we want the loop to allow the function to be callable until the contract is out of tokens. This is an important piece of information for our design.
 ```
 load: /examples/ticket-sales/index.rsh
-md5: c425745032273893d106fe3de005f15e
+md5: 61303f7ea78ef9c44f41cb0a4e6e48a7
 range: 25-28
 ```
 - Line 25 declares a new `{!rsh} parallelReduce` and sets it up to track a single value `ticketsSold`, which is initialized to zero.
@@ -155,7 +155,7 @@ Understanding this relationship is key to building Reach DApps.
 Now we can actually define our API function.
 ```
 load: /examples/ticket-sales/index.rsh
-md5: c425745032273893d106fe3de005f15e
+md5: 61303f7ea78ef9c44f41cb0a4e6e48a7
 range: 29-36
 ```
 - Line 29 defines an API macro `{!rsh} .api_` from the `B` API with the name `buyTicket`. It takes no parameters.
@@ -175,7 +175,7 @@ That is all for our API member function `buyTicket`.
 After this loop terminates, the next step is to transfer the network token balance to the ticket seller.
 ```
 load: /examples/ticket-sales/index.rsh
-md5: c425745032273893d106fe3de005f15e
+md5: 61303f7ea78ef9c44f41cb0a4e6e48a7
 range: 37-39
 ```
 - Line 37 transfers the exact known balance back to the seller. It is bad practice to use `{!rsh} transfer(balance()).to(A)` here. Instead, use a formula that evaluates to the known balance.
