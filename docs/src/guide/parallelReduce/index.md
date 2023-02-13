@@ -160,7 +160,7 @@ For network tokens, we can just change the zero from our counter program to some
 In the following example from [ticket-sales](https://github.com/reach-sh/reach-lang/blob/master/examples/ticket-sales/index.rsh), the seller first sets some `cost` for the ticket and we include this for the `PAY_EXPR`.
 ```
 load: /examples/ticket-sales/index.rsh
-md5: c425745032273893d106fe3de005f15e
+md5: 61303f7ea78ef9c44f41cb0a4e6e48a7
 range: 29-36
 ```
 - Line 31 is the outer `{!rsh} return` and will prompt the user to pay `cost` at their wallet interface to execute the consensus code.
