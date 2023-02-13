@@ -156,7 +156,7 @@ Now we can actually define our API function.
 ```
 load: /examples/ticket-sales/index.rsh
 md5: 61303f7ea78ef9c44f41cb0a4e6e48a7
-range: 29-36
+range: 29-35
 ```
 - Line 29 defines an API macro `{!rsh} .api_` from the `B` API with the name `buyTicket`. It takes no parameters.
 - Line 30 starts the outer `{!rsh} return`. Here we sepecify a `PAY_EXPR` of `cost` and declare our `{!rsh} return` function `ret`.
@@ -176,10 +176,10 @@ After this loop terminates, the next step is to transfer the network token balan
 ```
 load: /examples/ticket-sales/index.rsh
 md5: 61303f7ea78ef9c44f41cb0a4e6e48a7
-range: 37-39
+range: 36-39
 ```
-- Line 37 transfers the exact known balance back to the seller. It is bad practice to use `{!rsh} transfer(balance()).to(A)` here. Instead, use a formula that evaluates to the known balance.
-- Line 38-39 has us `{!rsh} commit` and `{!rsh} exit` the DApp.
+- Line 36 transfers the exact known balance back to the seller. It is bad practice to use `{!rsh} transfer(balance()).to(A)` here. Instead, use a formula that evaluates to the known balance.
+- Line 37-38 has us `{!rsh} commit` and `{!rsh} exit` the DApp.
 
 We are almost done. The final step is to test our API function by making some calls in the frontend `mjs` file.
 
