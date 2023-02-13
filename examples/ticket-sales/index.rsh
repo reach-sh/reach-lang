@@ -27,7 +27,6 @@ export const main = Reach.App(() => {
     .invariant(balance(tok) == supply - ticketsSold)
     .while(ticketsSold < supply)
     .api_(B.buyTicket, () => {
-      check(ticketsSold != supply, "sorry, out of tickets");
       return[cost, (ret) => {
         transfer(1, tok).to(this);
         ret(null);
