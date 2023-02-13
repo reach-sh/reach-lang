@@ -30,7 +30,7 @@ At that time it will close the sale functions and transfer the total network tok
 
 As with any Reach DApp, it is best to first think about who the users are in our application.
 
-There will be one Deployer(Admin) providing the parameters of the sale, including the non-network tokens(or tickets).
+There will be one Deployer (the Admin) providing the parameters of the sale, including the non-network tokens (or tickets).
 ```
 load: /examples/ticket-sales/index.rsh
 md5: c425745032273893d106fe3de005f15e
@@ -52,9 +52,9 @@ range: 12-15
 
 Now we've defined our users and the functions they will be allowed, we call `{!rsh} init()` to start stepping through the states of our program.
 
-The first step here is for the Admin to provide the parameters we've declared. This happens in an Local Step. 
+Now the Admin can actually provide the values for the parameters we've declared. This happens in an Local Step. 
 
-[Refresher on Modes of a Reach DApp](https://github.com/reach-sh/reach-lang/discussions/1171)
+[Read more about Modes of a Reach App](https://github.com/reach-sh/reach-lang/discussions/1171).
 ```
 load: /examples/ticket-sales/index.rsh
 md5: c425745032273893d106fe3de005f15e
@@ -100,12 +100,14 @@ range: 1-9
 - Line 3 sets a constant for the standard library and hides warning messages.
 - Line 4 sets a constant for the `MAX` number of tickets. Changing this number does so across the entire program.
 - Line 7 launches a new token with a `MAX` supply. Alternatively, you could replace `tickets.id` with a known testnet token id string.
-- Line 9 welcomes you to the ticket sales revolution. Just make sure you [print enough pamphlets.](https://youtu.be/Kb1ztV93dsE)
+- Line 9 welcomes you to the ticket sales revolution. Just make sure you [print enough pamphlets](https://youtu.be/Kb1ztV93dsE).
 
 :::note
 `REACH_NO_WARN: 'Y'`
 
 It is *very* important for you as a programmer to understand the warning messages Reach is giving you before you silence them. Many times, these warnings are indicative of critical DApp design flaws.
+
+If you remove this from this particular program, Reach will warn you that you are using `stdlib.newTestAccount` and this cannot be used outside of devnet environments. When you move to TestNet, you'll need to get the users account via `stdlib.getDefaultAccount()`.
 :::
 
 Now we'll fast forward to the end of our test suite and add the functionality for our `Admin`.
@@ -157,14 +159,13 @@ md5: c425745032273893d106fe3de005f15e
 range: 29-36
 ```
 - Line 29 defines an API macro `{!rsh} .api_` from the `B` API with the name `buyTicket`. It takes no parameters.
-- Line 30 is an extra verification check. Removing this from the program *will not* introduce compiler errors, but is good for defensive programming. (note to Jay: the only purpose this check serves is to negate split second API calls from being made before the loop exits properly. Is this even possible, or should we just remove this?)
-- Line 31 starts the outer `{!rsh} return`. Here we sepecify a `PAY_EXPR` of `cost` and declare our `{!rsh} return` function `ret`.
-- Line 32 sends one non-network token (ticket) to the API caller.
-- Line 33 returns `{!rsh} null` to the caller.
-- Line 34 is our inner `{!rsh} return`, where we increment `{!rsh} parallelReduce` LHS value `ticketsSold`.
+- Line 30 starts the outer `{!rsh} return`. Here we sepecify a `PAY_EXPR` of `cost` and declare our `{!rsh} return` function `ret`.
+- Line 31 sends one non-network token (ticket) to the API caller.
+- Line 32 returns `{!rsh} null` to the caller.
+- Line 33 is our inner `{!rsh} return`, where we increment `{!rsh} parallelReduce` LHS value `ticketsSold`.
 
 :::note
-On incrementing, Reach *does not* support incrementing with `i++`. 
+On incrementing, Reach *does not* support incrementing with `i++`, because this is a mutation of `i` and Reach insists that we always return new, updated values.
 
 Use `i + 1` instead.
 :::
