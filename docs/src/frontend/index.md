@@ -1169,11 +1169,12 @@ An EventStream supports the following operations for a given `{!rsh} Event`:
 @{ref("js", "EventStream")}
 ```js
 EventStream<T> : {
-  next    : () => Promise<Event<T>>,
-  seek    : (t: Time) => void,
-  seekNow : () => Promise<void>,
-  lastTime: () => Promise<Time>,
-  monitor : ((Event<T>) => void) => Promise<void>,
+  next         : () => Promise<Event<T>>,
+  nextUpToTime : (t: Time) => Promise<undefined | Event<T>>,
+  seek         : (t: Time) => void,
+  seekNow      : () => Promise<void>,
+  lastTime     : () => Promise<Time>,
+  monitor      : ((Event<T>) => void) => Promise<void>,
 }
 ```
 
@@ -1188,6 +1189,9 @@ An `{!js} Event` is instantiated with it's corresponding type declared in Reach.
 
  `{!js} next` will wait for the next `{!rsh} Event` to occur, returning the time the event occurred
 and the arguments to the event.
+
+ `{!js} nextUpToTime` is the same as `{!js} next`, except it will only return events up to the given time `t` (inclusive).
+ If time `t` has passed and no more events within the time frame are available, it will stop waiting and return `undefined`.
 
  `{!js} seek` will set the internal time of the EventStream to the given argument.
 The EventStream will use this time as the minimum bound when searching for `{!rsh} Event`s.
