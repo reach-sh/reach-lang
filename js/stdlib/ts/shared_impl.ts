@@ -280,6 +280,7 @@ export type ISetupEvent<ContractInfo, VerifyResult> =
       createEventStream : (event: string, tys: any[]) => {
                             lastTime: () => Promise<Time>,
                             next: () => Promise<any>,
+                            nextUpToTime: () => Promise<any>,
                             seek: (t: Time) => void,
                             seekNow: () => Promise<void>,
                             monitor: (onEvent: (x:any) => void) => Promise<void>
@@ -1138,12 +1139,18 @@ export const makeEventStream = <EQInitArgs, RawTxn, ProcTxn, Log>(args:IMESArgs<
     time = t;
     logs = [];
   };
-  const next = async () => {
+  const nextUpToTime = async (maxTime?: Time) => {
     await sync();
-    let dhead = "EventStream::next";
+    let dhead = "EventStream::nextUpToTime";
     let parsedLog = undefined;
     while ( parsedLog === undefined ) {
       while ( logs.length === 0 ) {
+        const timeout = maxTime ? (async (t: BigNumber) => t > maxTime) : neverTrue;
+        const r = await eq.peq(dhead, timeout);
+        if ( r.timeout || await timeout(getTxnTime(r.txn))) {
+          debug(dhead, "timeout", {maxTime, r})
+          return undefined;
+        }
         const txn = await eq.deq(dhead);
         debug(dhead, { txn });
         const cr = getTxnTime(txn);
@@ -1161,12 +1168,15 @@ export const makeEventStream = <EQInitArgs, RawTxn, ProcTxn, Log>(args:IMESArgs<
     debug(dhead, 'ret');
     return { when: time, what: parsedLog };
   };
+  const next = async () => {
+    return await nextUpToTime(undefined);
+  }
   const seekNow = async () => seek(await getNetworkTime());
   const lastTime = async () => time;
   const monitor = async (onEvent: (x: any) => void) => {
     while (true) { onEvent(await next()); }
   };
-  return { lastTime, seek, seekNow, monitor, next };
+  return { lastTime, seek, seekNow, monitor, next, nextUpToTime };
 };
 
 export function getQueryLowerBound(): BigNumber {
