@@ -11,6 +11,17 @@
     "*.mjs",
     "*.d.ts"
   ],
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./types/index.d.ts"
+    },
+    "./browser": {
+      "import": "./dist/browser/reachsdk.min.js",
+      "types": "./dist/browser/index.d.ts"
+    }
+  },
   "devDependencies": {
     "@types/await-timeout": "^0.3.1",
     "@types/express": "^4.17.1",
