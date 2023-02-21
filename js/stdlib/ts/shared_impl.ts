@@ -1145,7 +1145,7 @@ export const makeEventStream = <EQInitArgs, RawTxn, ProcTxn, Log>(args:IMESArgs<
     let parsedLog = undefined;
     while ( parsedLog === undefined ) {
       while ( logs.length === 0 ) {
-        const timeout = maxTime ? (async (t: BigNumber) => t > maxTime) : neverTrue;
+        const timeout = maxTime ? (async (t: BigNumber) => t.gt(maxTime)) : neverTrue;
         const r = await eq.peq(dhead, timeout);
         if ( r.timeout || await timeout(getTxnTime(r.txn))) {
           debug(dhead, "timeout", {maxTime, r})
