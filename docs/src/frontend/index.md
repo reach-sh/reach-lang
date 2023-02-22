@@ -32,6 +32,13 @@ $ npm install @reach-sh/stdlib
 
 You only need to install the package directly if you are running your frontend without `reach` or using a tool like [webpack](https://webpack.js.org/) for deployment.
 
+If you want to install the standard library for a browser application or library and you are using a bundler **without** _Node polyfills_ (e.g. [Webpack 5](https://webpack.js.org/), [Vite](https://vitejs.dev/)), you can import the library by writing:
+
+```js
+import { loadStdlib } from '@reach-sh/stdlib/browser';
+const stdlib = loadStdlib();
+```
+
 # {#ref-frontends-js-types} Types
 
 Whenever you are interacting with the Reach standard library, you need to remember the JavaScript representation of each of the Reach types:
