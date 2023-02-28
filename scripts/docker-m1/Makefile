@@ -1,7 +1,7 @@
 ROOT=../..
 
 include $(ROOT)/VERSION
-versions.txt: Makefile versions-regen.sh $(ROOT)/version
+versions.txt: Makefile versions-regen.sh $(ROOT)/VERSION
 	MAJOR=$(MAJOR) MINOR=$(MINOR) VERSION=$(VERSION) RC_VERSION=$(RC_VERSION) ./versions-regen.sh
 
 # Only do this _after_ doing the regular non-m1 release
