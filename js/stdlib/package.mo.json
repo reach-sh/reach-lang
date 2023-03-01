@@ -13,13 +13,12 @@
   ],
   "exports": {
     ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
-      "types": "./types/index.d.ts"
+      "types": "./types/index.d.ts",
+      "default": "./dist/cjs/index.js"
     },
     "./browser": {
-      "import": "./dist/browser/reachsdk.min.js",
-      "types": "./dist/browser/index.d.ts"
+      "types": "./dist/browser/index.d.ts",
+      "default": "./dist/browser/reachsdk.min.js"
     }
   },
   "devDependencies": {
