@@ -7,9 +7,13 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 @{verRC("0.1.13")}
 
-@{rcNext("0.1.13-rc.3")}
+@{rcNext("0.1.13-rc.4")}
+
+@{rcHead("0.1.13-rc.3")}
 
 @{rcHead("0.1.13-rc.2")}
+
+*WARNING: This release was broken and the JavaScript standard library couldn't be imported. Don't use it!*
 
 + 2023/02/17: Added `{!js} nextUpToTime` method for event stream objects.
 
