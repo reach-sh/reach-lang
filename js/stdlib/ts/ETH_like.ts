@@ -261,7 +261,7 @@ const newEventQueue = (): EventQueue => {
     } catch (e) {
       const es = `${e}`;
       debug(dhead, `err`, e, es);
-      if ( es.includes('Unable to find block hash') || es.includes('after last accepted block') ) {
+      if ( es.includes('Unable to find block hash') || es.includes('after last accepted block') || es.includes('could not be found') ) {
         debug(dhead, 'ignore');
         toBlock = undefined;
       } else {
