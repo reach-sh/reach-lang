@@ -899,6 +899,10 @@
     "title": "Pay Amounts",
     "path": "/rsh/step/#payAmt"
   },
+  "point-of-sale": {
+    "title": "Point-of-sale",
+    "path": "/tut/pos/#point-of-sale"
+  },
   "qs-installing-docker": {
     "title": "Installing Docker:",
     "path": "/quickstart/#qs-installing-docker"
