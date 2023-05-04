@@ -7,4 +7,4 @@ There are six tutorials:
 1. [Répondez S'il Vous Plaît](##tut-rsvp)
 1. [ERC20](##erc20)
 1. [Ticket Sales](##ticket-sales)
-1. [Point-of-sale](##point-of-sale)
+1. [Point of Sale](##point-of-sale)
