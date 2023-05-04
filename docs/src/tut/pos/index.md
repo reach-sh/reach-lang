@@ -1,10 +1,10 @@
-# {#point-of-sale} Point-of-sale
+# {#point-of-sale} Point of Sale
 
 This tutorial will walk you through creating a business point-of-sale machine, like Toast or Square.
 
 It assumes that you are comfortable with writing simple Reach DApps and have already completed one or two of our [tutorials](##tuts). 
 
-Complete them all to become a Reach rockstar.
+Complete all of the tutorials to become a Reach rockstar.
 
 ## Program Design
 The main function of our DApp will be to process sale transactions. This means we will need to implement functions for purchases and refunds. 
@@ -44,7 +44,7 @@ load: /examples/point-of-sale/index.rsh
 md5:  2d9202924ee606ab47726038fbde05a3
 range: 1-12
 ```
-- Line 4 is a new feature with Reach 0.1.13, read more about `{!rsh} ALGOExitMode`.
+- Line 4 is a new feature with Reach 0.1.13; we need it because we're using boxes, you can read more about it by clicking `{!rsh} ALGOExitMode`.
 - Line 5 declares our 'Admin' `{!rsh} Participant`.
 - Line 6-9 declares data types of contract parameters.
 - Line 11 is our signature `launched` function, to notify the frontend that we are ready to start accepting API calls.
@@ -74,7 +74,7 @@ range: 19-25
 
 The first two steps of our General Flow are now complete.
 
-Now is a good time to get into the frontend `mjs` test suite and get that started.
+Now is a good time to get into the frontend (`.mjs`) test suite and get that started.
 ```
 load: /examples/point-of-sale/index.mjs
 md5:  5229e4cebe07397fe5e73a60dc19f70f
@@ -84,14 +84,14 @@ range: 1-15
 - Line 10 launches our Loyalty Token, depositing the total supply to `accA`.
 - Lines 12-15 is a welcome message that is probably too long.
 
-Now let's automate our `Admin` interaction. Note the jump in line numbers, this code goes at the bottom of your `mjs` file.
+Now let's automate our `Admin` interaction. Please pay attention to the jump in line numbers: this code goes at the bottom of your `mjs` file.
 ```
 load: /examples/point-of-sale/index.mjs
 md5:  5229e4cebe07397fe5e73a60dc19f70f
 range: 45-56
 ```
 - Line 46-49 are various parameter values provided by the Admin.
-- Line 51-53 is our function that will be called when the contract is ready to start accepting `{!rsh} API` calls. Note the `startBuyers()` function that we will implement later.
+- Line 51-53 is our function that will be called when the contract is ready to start accepting `{!rsh} API` calls. We will implement the `startBuyers()` function later.
 - Line 56 is useful to know that our test suite exited normally. It helps boost your moral.
 
 Okay, now we are ready to get back to our General Flow list!
