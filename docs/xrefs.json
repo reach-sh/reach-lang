@@ -900,7 +900,7 @@
     "path": "/rsh/step/#payAmt"
   },
   "point-of-sale": {
-    "title": "Point-of-sale",
+    "title": "Point of Sale",
     "path": "/tut/pos/#point-of-sale"
   },
   "qs-installing-docker": {
