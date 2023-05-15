@@ -116,6 +116,8 @@ jobs:
         (cd docs && make build)
         mkdir -p /tmp/workspace/search
         cp -fr docs/build /tmp/workspace/docs
+        mkdir -p /tmp/workspace/docs/.github/workflows/
+        cp -fr .github/workflows/static.yml /tmp/workspace/docs/.github/workflows/
         cp -f docs/search/index.json /tmp/workspace/search
     - persist_to_workspace:
         root: /tmp/workspace/
@@ -143,6 +145,7 @@ jobs:
         git pull origin gh-pages
         git rm -r .
         cp -r /tmp/workspace/docs/* .
+        cp -r /tmp/workspace/docs/.github .
         [ -f index.html ] || exit 1
         touch .nojekyll
         git add .nojekyll
