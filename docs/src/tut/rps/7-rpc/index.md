@@ -1,4 +1,4 @@
-# {#tut-7-rpc} Rock, Paper, Scissors in Python
+# {#tut-7-rpc} Rock, Paper, Scissors (Python)
 
 The main sequence of the tutorial uses the
 [JavaScript frontend support library](##ref-frontends-js) to implement

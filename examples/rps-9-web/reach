@@ -1,0 +1,254 @@
+#!/bin/sh
+
+if [ "$REACH_DEBUG" = "Y" ] ; then
+  set -x
+fi
+
+if [ ! "$REACH_ALLOW_SU" = '1' ] && [ "$(id -u)" -eq 0 ]; then
+  echo "Reach isn't intended to be run with superuser privileges."
+  echo
+  echo "Please try again while logged into a normal, non-root account, and without using \
+\`sudo\`, \`su\`, or \`doas\` to grant elevated permissions."
+  echo
+  case "$(uname -s)" in
+    Linux)
+      if ! (groups "$(logname)" 2>&1 | grep -q docker 2>/dev/null); then
+        echo "Adding your account to the \`docker\` group should make this possible:"
+        echo "https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user"
+        echo
+        echo "Once you've done this, make sure to log out and back in before retrying."
+        echo
+      else
+        echo "Try logging out and back in if you've recently made yourself a member of the \`docker\` group but are unable to run Reach without \`sudo\`."
+        echo
+      fi
+      ;;
+    *) : ;; # Docker Desktop for macOS doesn't use the `docker` group
+  esac
+  exit 1
+fi
+
+if [ -n "$DOCKER_HOST" ] && ! (echo "$DOCKER_HOST" | grep -q '^unix:'); then
+  echo "Reach only supports connecting to Docker via a local UNIX socket."
+  echo
+  echo "Please follow the directions from the link below to \`unset DOCKER_HOST\` or explicitly override it, e.g.:"
+  echo " $ DOCKER_HOST= $0 $*"
+  echo
+  echo "https://docs.docker.com/engine/install/linux-postinstall/#cannot-connect-to-the-docker-daemon"
+  echo
+  exit 1
+fi
+
+IMG='reachsh/reach-cli:latest'
+TMP=$(mkdir -p /tmp/reach/cli; mktemp -d "/tmp/reach/cli/$(date -u '+%Y-%m-%dT%H-%M-%SZ')-XXXX")
+CNF="${XDG_CONFIG_HOME:-$HOME/.config}/reach"; CNF="$(mkdir -p "$CNF" && cd "$CNF" && pwd)"
+MD5=md5sum; if [ ! "$(command -v $MD5)" ]; then MD5=md5; fi
+RCI=$(head -n1 /dev/urandom | $MD5 | head -c 30 | tr '[:lower:]' '[:upper:]')
+export TMP
+
+if [ ! -e "$CNF/env" ]; then
+  echo "# Automatically generated with \`reach\` script at $(date -u '+%Y-%m-%dT%H:%M:%S.%NZ')" > "$CNF/env"
+  echo "export REACHC_ID=$RCI" >> "$CNF/env"
+elif ! grep REACHC_ID "$CNF/env" > /dev/null 2>&1; then
+  mkdir -p "$CNF/_backup"
+  cp "$CNF/env" "$CNF/_backup/env-$(date -u '+%Y-%m-%dT%H:%M:%S.%NZ')"
+  printf '\nexport REACHC_ID=%s\n' "$RCI" >> "$CNF/env"
+fi
+
+if [ -z "$REACH_ENV_PRS" ] && [ -f "$CNF/env" ]; then
+  e="$(env |grep '^REACH')"
+  # shellcheck disable=SC1090,SC1091
+  . "$CNF/env"
+  for l in $e; do export "${l?}"; done
+  export REACH_ENV_PRS=1 # Prevent recursive sourcing
+fi
+
+run_d () {
+  REACH_HS="$(cd "$(dirname "$0")" && pwd)/hs"
+  export REACH_DIR_EMBED="${REACH_DIR_EMBED:-"$(cd "$(dirname "$0")" && pwd)/hs/app/reach/embed"}"
+  export REACH_STACK_YAML="${REACH_STACK_YAML:-"$(cd "$(dirname "$0")" && pwd)/hs/stack.yaml"}"
+
+  if  [ "$REACH_DOCKER" = "0"  ] \
+   && [ -d "$REACH_DIR_EMBED"  ] \
+   && [ -f "$REACH_STACK_YAML" ] \
+   && which stack >/dev/null 2>&1; then
+    (cd "$REACH_HS" && make -s hs-build 1>&2) \
+      && REACH_EX="$0" "$(stack --stack-yaml "$REACH_STACK_YAML" exec -- which reach 2>/dev/null)" \
+        --dir-embed="$REACH_DIR_EMBED" \
+        --dir-project-container="$(pwd)" \
+        --dir-project-host="$(pwd)" \
+        --dir-tmp-container="$TMP" \
+        --dir-tmp-host="$TMP" \
+        --dir-config-container="$CNF" \
+        --dir-config-host="$CNF" \
+        "$@"
+  else
+    cid="$(docker ps -f "ancestor=$IMG" --format '{{.ID}} {{.Labels}}' \
+      | grep -e "sh.reach.dir-project=$(pwd)\$" \
+             -e "sh.reach.dir-project=$(pwd)," \
+      | awk '{print $1}' \
+      | head -n1)"
+
+    if [ -z "$cid" ]; then
+      cid="$(docker run -d --rm \
+        -v "$(pwd):/app/src" \
+        -v "$(dirname "$(dirname "$TMP")"):/app/tmp" \
+        -v "$CNF:/app/config" \
+        -l "sh.reach.dir-project=$(pwd)" \
+        -u "$(id -ru):$(id -rg)" \
+        --name "reach-cli-$$" \
+        --entrypoint tail \
+        $IMG -f /dev/null)"
+    fi
+
+    docker exec -i \
+      -e "REACH_EX=$0" \
+      -e "REACH_CONNECTOR_MODE" \
+      -e "REACH_DEBUG" \
+      -e "REACH_IDE" \
+      -e "REACH_RPC_KEY" \
+      -e "REACH_RPC_PORT"  \
+      -e "REACH_RPC_SERVER" \
+      -e "REACH_RPC_TLS_CRT" \
+      -e "REACH_RPC_TLS_KEY" \
+      -e "REACH_RPC_TLS_PASSPHRASE" \
+      -e "REACH_RPC_TLS_REJECT_UNVERIFIED" \
+      -e "REACH_VERSION" \
+      -e "CI" \
+      -e "SHELL" \
+      -u "$(id -ru):$(id -rg)" \
+      "$cid" reach \
+        --dir-project-host="$(pwd)" \
+        --dir-tmp-container="/app/tmp$(echo "$TMP" | sed "s|$(dirname "$(dirname "$TMP")")||")" \
+        --dir-tmp-host="$TMP" \
+        --dir-config-host="$CNF" \
+        "$@"
+  fi
+}
+
+run_s () {
+  chmod 700 "$TMP/out.sh"
+  sh -ac "$TMP/out.sh" "$0"
+}
+
+call_home () {
+CALL_HOME_ENCODED="eyJ1c2VySWQiOiJ7e1JFQUNIQ19JRH19\
+Iiwic3RhcnRUaW1lIjoie3tTVEFSVF9USU1FfX0iLCJy\
+ZXN1bHQiOiJ7e1JFU1VMVH19IiwidmVyc2lvbiI6Int7\
+UkVBQ0hfVkVSU0lPTn19IiwiY29ubmVjdG9yTW9kZSI6\
+Int7Q09OTkVDVE9SX01PREV9fSIsInVzaW5nVmlzdWFs\
+U3R1ZGlvRXh0ZW5zaW9uIjoie3tVU0lOR19WU1NUVURJ\
+T19FWFRFTlNJT059fSIsImluaXRpYXRvciI6Int7SU5JVElBVE9SfX0ifQ=="
+
+  CALL_HOME_TEMPLATE_DECODED=$(printf '%s' "$CALL_HOME_ENCODED" | base64 -d)
+  TRANSLATED_TEMPLATE=$(echo "${CALL_HOME_TEMPLATE_DECODED}" | sed -e "s/{{REACHC_ID}}/$REACHC_ID/g" \
+    -e "s/{{START_TIME}}/$(date -u +"%Y-%m-%d")/g" \
+    -e "s/{{RESULT}}/$1/g" \
+    -e "s/{{REACH_VERSION}}/$2/g" \
+    -e "s/{{CONNECTOR_MODE}}/$3/g" \
+    -e "s/{{USING_VSSTUDIO_EXTENSION}}/$4/g" \
+    -e "s/{{INITIATOR}}/$5/g")
+  curl -X POST "https://log.reach.sh/submit" -d "$TRANSLATED_TEMPLATE" || exit 1
+}
+
+package_install () {
+  if ( command -v apt > /dev/null 2>&1 ); then
+    PACKAGE_MANAGER="apt"
+  fi
+
+  if ( command -v yum > /dev/null 2>&1 ); then
+    PACKAGE_MANAGER="yum"
+  fi
+
+  sudo ${PACKAGE_MANAGER} install "${1}"
+}
+
+timeout_validate () {
+  if [ "$2" -eq "$1" ]; then
+    printf "%s" "$3"
+    exit 1
+  fi
+}
+
+install_docker () {
+  OPWD=$(pwd)
+  cd / # Depending on `$PWD`, Windows sometimes struggles with paths
+  if (command -v wsl.exe > /dev/null 2>&1); then
+    if (! command -v winget.exe > /dev/null 2>&1); then
+      printf "Installing Winget Windows Package Manager..."
+      WINGET_VERSION="v1.3.431"
+      WINGET_ARTIFACT_NAME="Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+      WINGET_BUNDLE_URL="https://github.com/microsoft/winget-cli/releases/download/${WINGET_VERSION}/${WINGET_ARTIFACT_NAME}"
+      TEMP_DIR="/mnt/c/tmp"
+      WIN_TEMP_DIR="c:\\tmp"
+      DOCKER_BIN="/mnt/c/Program Files/Docker/Docker/resources/bin/docker"
+      mkdir -p $TEMP_DIR
+      sudo wget $WINGET_BUNDLE_URL -O "${TEMP_DIR}/${WINGET_ARTIFACT_NAME}"; powershell.exe "cd ${WIN_TEMP_DIR}; powershell .\\${WINGET_ARTIFACT_NAME}"
+      STOPPER=0
+      while ( ! command -v winget.exe > /dev/null 2>&1 ); do
+        sleep 1;
+        STOPPER=$((STOPPER + 1))
+        timeout_validate 180 "${STOPPER}" "Winget wasn't installed successfully and timed out!\n"
+      done
+      rm -rf "${TEMP_DIR:?}/${WINGET_ARTIFACT_NAME}"
+    fi
+    printf "\nInstalling Docker through Winget..."
+    powershell.exe 'Start-Process powershell.exe "winget install docker.dockerdesktop --accept-package-agreements --accept-source-agreements" -Verb runAs'
+    STOPPER=0
+    while [ ! -f "${DOCKER_BIN}" ]; do
+      sleep 120;
+      STOPPER=$((STOPPER + 1))
+      timeout_validate 6 "${STOPPER}" "Docker wasn't installed successfully and timed out!\n"
+    done
+    printf "\nThis installation requires a restart for completion; do you want to restart now? [Y,n]: "
+    read -r RESPONSE
+    if [ "${RESPONSE}" = "Y" ]; then
+      call_home "Docker installed by Reach" "0.0.0" "none" "false" "script_deps"
+      powershell.exe 'shutdown -r -t 0'
+    fi
+  else
+    printf "Make sure you have Docker installed following these steps:\n"
+    printf "Ubuntu: https://docs.docker.com/engine/install/ubuntu/\n"
+    printf "Debian: https://docs.docker.com/engine/install/debian/\n"
+    printf "CentOS: https://docs.docker.com/engine/install/centos/\n"
+    printf "Fedora: https://docs.docker.com/engine/install/fedora/\n"
+    printf "RedHat: https://docs.docker.com/engine/install/rhel/\n"
+    printf "  SLES: https://docs.docker.com/engine/install/SLES/\n"
+  fi
+  # shellcheck disable=SC2164
+  cd "${OPWD}"
+}
+
+for DEP in curl make docker docker-compose; do
+  if ! (command -v "${DEP}" >/dev/null 2>&1); then
+    if [ "${DEP}" != "curl" ]; then
+      call_home "$DEP is not installed" "0.0.0" "none" "false" "script_deps"
+    fi
+    printf "Reach relies on an installation of %s; do you want to install it? [Y,n]: " "${DEP}"
+    read -r RESPONSE
+    if [ "${RESPONSE}" = "Y" ]; then
+      case $DEP in
+        "docker") install_docker;;
+               *) package_install $DEP;;
+      esac
+    fi
+  fi
+done
+
+if [ ! "$CIRCLECI" = "true" ] && [ "$(docker image ls -q $IMG)" = '' ]; then
+  if ! docker pull "$IMG"; then exit 1; fi
+fi
+
+run_d "$@"
+case "$?" in
+  42) run_s; case "$?" in
+    60) rm -r "$TMP" && exit 60 ;; # Updates available
+     0) [ -d "$TMP" ] && rm -r "$TMP"; exit 0 ;;
+     *) [ -z "$(ls -A "$TMP")" ] && rm -r "$TMP"; exit 1 ;;
+    esac
+    ;;
+  50) docker pull "$IMG" && curl https://docs.reach.sh/reach -o "$0" && chmod +x "$0" && rm -r "$TMP" && exit 0 ;;
+  60) rm -r "$TMP" && exit 60 ;; # Updates available
+   0) rm -r "$TMP" ;;
+   *) [ -z "$(ls -A "$TMP")" ] && rm -r "$TMP"; exit 1 ;;
+esac
