@@ -1,3 +1,4 @@
+import { decodeUnsignedTransaction } from "algosdk";
 
 export default function ALGO_MakePeraConnect( PeraWalletConnect:any ) {
   return class PeraConnect {
@@ -36,8 +37,18 @@ export default function ALGO_MakePeraConnect( PeraWalletConnect:any ) {
 
     async signTxns(txns:string[]): Promise<string[]> {
       await this.ensureSession();
-      return this.pc.signTransaction(
-        txns.map((txn) => ({txn}))
+      const rawSignedTxns = await this.pc.signTransaction([
+        txns.map((value:string) => {
+          const decodedUnsignedTxn = decodeUnsignedTransaction(
+            Buffer.from(value, "base64")
+          );
+          return {
+            txn: decodedUnsignedTxn,
+          };
+        }),
+      ]);
+      return rawSignedTxns.map(
+        (value:string) => Buffer.from(value).toString("base64")
       );
     }
   }
