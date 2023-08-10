@@ -15,6 +15,19 @@
 (declare-fun UInt_bior (UInt UInt) UInt)
 (declare-fun UInt_bxor (UInt UInt) UInt)
 (declare-fun UInt_sqrt (UInt) UInt)
+(assert
+  (forall ((x UInt))
+    (and 
+      (not (> (* (UInt_sqrt x) (UInt_sqrt x)) x))
+      (forall ((y UInt))
+        (=> 
+          (not (> (* y y) x))
+          (not (< y (UInt_sqrt x)))
+        )
+      )
+    )
+  )
+)
 
 (declare-sort Bytes 0)
 (declare-fun bytes0 () Bytes)
