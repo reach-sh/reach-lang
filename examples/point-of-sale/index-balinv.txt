@@ -1,0 +1,80 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance sufficient for transfer"
+  at ./index-balinv.rsh:48:26:application
+  at /app/index-balinv.rsh:46:35:application call to [unknown function] (defined at: /app/index-balinv.rsh:46:35:function exp)
+
+  // Violation Witness
+
+  const UInt.max = 33037;
+
+  const map0_1/981 = <fresh Map>;
+  //    ^ could = <map: (Some(8026 ))>[<abstract address 0> <- None(null )]
+  //      from: ./index-balinv.rsh:27:45:while
+  const netBalance/679 = <loop variable>;
+  //    ^ could = 8025
+  //      from: ./index-balinv.rsh:27:45:while
+  const this/760 = <an honest join from "Buyer_refund">;
+  //    ^ could = <abstract address 1>
+  //      from: ./index-balinv.rsh:27:45:dot
+
+  // Theorem Formalization
+
+  const v945 = fromSome(map0_1/981[this/760], 0 ) <= netBalance/679;
+  //    ^ would be false
+  assert(v945);
+
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance sufficient for transfer"
+  at ./index-balinv.rsh:54:21:application
+
+  // Violation Witness
+
+  const UInt.max = 1;
+
+  const total/671 = <loop variable>;
+  //    ^ could = 1
+  //      from: ./index-balinv.rsh:27:45:while
+  const netBalance/679 = <loop variable>;
+  //    ^ could = 0
+  //      from: ./index-balinv.rsh:27:45:while
+
+  // Theorem Formalization
+
+  const v957 = total/671 <= netBalance/679;
+  //    ^ would be false
+  assert(v957);
+
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance zero at application exit"
+  at ./index-balinv.rsh:56:7:application
+
+  // Violation Witness
+
+  const UInt.max = 1;
+
+  const total/671 = <loop variable>;
+  //    ^ could = 0
+  //      from: ./index-balinv.rsh:27:45:while
+  const netBalance/679 = <loop variable>;
+  //    ^ could = 1
+  //      from: ./index-balinv.rsh:27:45:while
+
+  // Theorem Formalization
+
+  const v961 = 0 == (netBalance/679 - total/671);
+  //    ^ would be false
+  assert(v961);
+
+  Verifying when NO participants are honest
+Checked 68 theorems; 7 failures (and 4 omitted repeats) :'(
+
+For a guide to understanding verification failures, see: https://docs.reach.sh/rsh/errors/#how-to-read-verification-failures
