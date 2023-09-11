@@ -1,6 +1,7 @@
 *~
 *.swp
 *.swo
+*.tgz
 .DS_Store
 .vscode
 .ethereum
@@ -13,6 +14,7 @@ build
 .reach
 .docker-root
 /test.sh
+mo
 
 # We do NOT include reach-everest so `ag` and `fzf` still search it
 # But we DO include the things that get linked

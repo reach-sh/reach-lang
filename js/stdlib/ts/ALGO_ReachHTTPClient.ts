@@ -1,5 +1,5 @@
 import type { BaseHTTPClient, BaseHTTPClientError, BaseHTTPClientResponse } from "algosdk"
-import type { Query } from "algosdk/dist/types/src/client/baseHTTPClient";
+import type { Query } from "algosdk/dist/types/client/baseHTTPClient"
 
 export type Method = 'get' | 'post' | 'delete';
 export type EventDetails = {
