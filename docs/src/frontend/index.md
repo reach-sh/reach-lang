@@ -617,7 +617,7 @@ You can use `{!js} canFundFromFaucet` to check if `{!js} fundFromFaucet` can be 
 Example:
 
 ```js
-load: /examples/rps-9-web/index.js
+load: /examples/rps-9-comp/index.js
 md5: 5e5c8976731882c06e7f094e05ca43b3
 range: 32 - 34
 ```
@@ -636,7 +636,7 @@ A Promise that resolves to `{!js} true` if `{!js} fundFromFaucet` can be used, `
 Example:
 
 ```js
-load: /examples/rps-9-web/index.js
+load: /examples/rps-9-comp/index.js
 md5: 5e5c8976731882c06e7f094e05ca43b3
 range: 26 - 34
 ```

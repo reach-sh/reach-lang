@@ -1,4 +1,4 @@
-# {#tut} Rock, Paper, Scissors!
+# {#tut} Rock, Paper, Scissors! 
 
 This tutorial walks through the creation of a simple decentralized application.
 It contains everything you need to know to build and test this application and assumes no prior experience with DApp/blockchain development of any kind.
@@ -618,7 +618,7 @@ Before we had this line in the file, when we ran `./reach compile`, it would pri
 ```
 load: /examples/rps-3-bets/index.txt
 md5: 28d95cc29c6b14c1cc26c778d196f184
-range: 3-8
+range: 2-7
 ```
 
 But now, it prints out
@@ -626,7 +626,7 @@ But now, it prints out
 ```
 load: /examples/rps-4-attack/index.txt
 md5: 110e527c76781aa90248cd73afb2d87a
-range: 3-8
+range: 2-7
 ```
 
 + Line 7 is different and shows that more theorems have been proven about our program.
@@ -686,7 +686,7 @@ When we run `./reach compile rps-4-attack/index-bad.rsh`, it gives details about
 ```
 load: /examples/rps-4-attack/index-bad.txt
 md5: f3e303f988d9e814893c783592a61280
-range: 5-32
+range: 4-31
 ```
 
 There's a lot of information in the compiler output that can help an experienced programmer track down the problem. But the most important parts are
@@ -725,7 +725,7 @@ When we run `./reach run`, it reports that this assertion is false:
 ```
 load: /examples/rps-4-attack/index-fails.txt
 md5: 50af6bc7a17c513531f63cb7c8ec7efa
-range: 3-7
+range: 2-6
 ```
 
 It is not enough to correct failures and attacks when you discover them.
@@ -1604,23 +1604,25 @@ We do the second option.
 :::
 
 This code is also supplemented with [index.css](@{REPO}/examples/rps-9-web/index.css)
-and some [views](@{REPO}/examples/rps-9-web/views).
+and some [views](@{REPO}/examples/rps-9-web/views/renderViews).
 These details are not specific to Reach, and are fairly trivial,
 so we will not explain the specifics of those files.
 If you run this locally, you'll want to download those files.
-Your directory should look like:
+We're using [React Hooks](https://reactjs.org/docs/hooks-overview.html) here so your directory should look more or less like this:
 
 ```
 .
 ├── index.css
 ├── index.js
 ├── index.rsh
+└── components
+    ├── App
+    ├── Attacher
+    ├── Deployer
+    └── Player
+└── context
+└── hooks
 └── views
-    ├── AppViews.js
-    ├── AttacherViews.js
-    ├── DeployerViews.js
-    ├── PlayerViews.js
-    └── render.js
 ```
 
 ---
@@ -1630,13 +1632,18 @@ because [`rps-9-web/index.rsh`](@{REPO}/examples/rps-9-web/index.rsh) is the sam
 
 ```
 load: /examples/rps-9-web/index.js
-md5: 5e5c8976731882c06e7f094e05ca43b3
-range: 1-9
+md5: 92c5beadfcc81fb34dad27243d81492d  
+range: 1-33
 ```
 
-On lines 1 thru 6, we import our view code and CSS.
-On line 7, we import the compiled `{!rsh} backend`.
-On lines 8 and 9, we load the `{!rsh} stdlib` as `{!rsh} reach`.
++ Lines 1-5, imports the component/views.
++ Line 6, imports [ReachContextProvider](@{REPO}/examples/rps-9-web/context/ReachContext.js) to pass data between React app components.
++ Line 7, imports css styling.
++ Lines 8-10, loads backend and standard library `{!rsh} stdlib` as `{!rsh} reach`.
++ Lines 12, defines the `views` object and uses the spread operator to add the components/views that were imported in line 1-4.
++ Lines 19-23, creates the `{!js} App` function which returns the [renderViews](@{REPO}/examples/rps-9-web/views/renderViews) function and passes the Views object to it.
++ Lines 27-30, calls the renderDOM function and passes the [ReachContextProvider](/examples/rps-9-web/context/ReachContext.js) and the `{!js} App` function to it. Lines 33, exports the App function.
+
 
 React compiles the Reach standard library in such a way that
 it does not have direct access to the environment variables
@@ -1645,130 +1652,132 @@ This is why you need to pass `{!js} process.env` as an argument
 to achieve the desired effect.
 
 ```
-load: /examples/rps-9-web/index.js
-md5: 5e5c8976731882c06e7f094e05ca43b3
-range: 10-14
+load: /examples/rps-9-web/context/ReachContext.js
+md5: 0a3524441aef83d80937464d02e59040 
+range: 1-11
 ```
 
-On these lines we define a few helpful constants and defaults for later,
-some corresponding to the enumerations we defined in Reach.
++ Lines 1-4, imports react and other standard libraries including MyAlgoConnect.
++ Line 6, sets a `{!rsh} setWalletFallback` to use Algorand network's wallet on TestNet. 
++ Lines 8, 'handToInt' object maps the hands to integers.
++ Line 9, 'inToOutcome' object, maps the integers to outcomes. 
++ Line 10, sets the 'standardUnit' to the Reach. 
++ Line 11, specifies the deadline for the game.
+
 
 ### {#tut-9-App} Application component
 
-We start defining the main application view, `{!js} App`, as a React component,
-and tell it what to do once it mounts, which is the React term for starting.
+We begin by exporting the [ReachContext](/examples/rps-9-web/context/ReachContext.js) object via the Reach component, ReachContextProvider in order 
+to wrap and connect the main application view `{!js} App` and initialize state displays.
+
 
 ```
-load: /examples/rps-9-web/index.js
-md5: 5e5c8976731882c06e7f094e05ca43b3
-range: 15-31
+load: /examples/rps-9-web/context/ReachContext.js
+md5: 0a3524441aef83d80937464d02e59040
+range: 13-37
 ```
 
+Lines 39-47 connects to the user's account and balance.
+
 ```
-load: /examples/rps-9-web/index.js
-md5: 5e5c8976731882c06e7f094e05ca43b3
-range: 39-41
+load: /examples/rps-9-web/context/ReachContext.js
+md5: 0a3524441aef83d80937464d02e59040 
+range: 39-47
 ```
 
-+ On line 19, we initialize the component state to display @{seclink("tut-9-ConnectAccount")}.
-+ On lines 21 thru 31, we hook into [React's `{!js} componentDidMount` lifecycle event](https://reactjs.org/docs/react-component.html#componentdidmount), which is called when the component starts.
-+ On line 22, we use `{!js} getDefaultAccount`, which accesses the default browser account.
-For example, when used with Ethereum, it can discover the currently-selected MetaMask account.
-+ On line 26, we use `{!js} canFundFromFaucet` to see if we can access the Reach developer testing network faucet.
-+ On line 27, if `{!js} canFundFromFaucet` was `{!js} true`, we set the component state to display @{seclink("tut-9-FundAccount")}.
-+ On line 29, if `{!js} canFundFromFaucet` was `{!js} false`, we set the component state to skip to @{seclink("tut-9-DeployerOrAttacher")}.
-+ On line 39, we render the appropriate view from [rps-9-web/views/AppViews.js](@{REPO}/examples/rps-9-web/views/AppViews.js).
++ Line 39, initializes the component state to display Connect Account dialog.
++ Lines 40-43, uses `{!js} getDefaultAccount`, which accesses the default browser account. For example, when used with Ethereum, it can discover the currently-selected MetaMask account.
++ Line 44, uses `{!js} canFundFromFaucet`, to access the Reach testing network faucet.
++ Line 45, if `{!js} canFundFromFaucet` was `{!js} true`, we set the component state to display @{seclink("tut-9-FundAccount")}.
++ On line 47, if `{!js} canFundFromFaucet` was `{!js} false`, we set the component state to skip to @{seclink("tut-9-ConnectAccount")}.
+
 
 ### {#tut-9-ConnectAccount} Connect Account dialog
 
-When we combine the application component with the view ([rps-9-web/views/AppViews.js](@{REPO}/examples/rps-9-web/views/AppViews.js#L19-L28)) it will look like:
-![](./rps-9-web/ConnectAccount.png)
+When we combine the application component with [views](@{REPO}/examples/rps-9-web/views/renderViews.jsx#L12-L21)it will look like:
+![](ConnectAccount.png)
+
 
 ### {#tut-9-FundAccount} Fund Account dialog
 
 Next, we define callbacks on `{!js} App` for what to do when the user clicks certain buttons.
 
 ```
-load: /examples/rps-9-web/index.js
-md5: 5e5c8976731882c06e7f094e05ca43b3
-range: 32-36
+load: /examples/rps-9-web/context/ReachContext.js
+md5: 0a3524441aef83d80937464d02e59040 
+range: 51-57
 ```
 
-+ On lines 32 thru 35, we define what happens when the user clicks the `Fund Account` button.
-+ On line 33, we transfer funds from the faucet to the user's account.
-+ On line 34, we set the component state to display @{seclink("tut-9-DeployerOrAttacher")}.
-+ On line 36, we define what to do when the user clicks the `Skip` button,
-which is to set the component state to display @{seclink("tut-9-DeployerOrAttacher")}.
++ Lines 51-57, defines what happens when the user clicks the `Fund Account` button.
++ Line 52, prompts a transfer of funds from the faucet to the user's account.
++ Line 53, sets the component state to @{seclink("tut-9-DeployerOrAttacher")}.
++ Lines 56 & 57, defines what to do when the user selects a specific button and sets the component state to @{seclink("tut-9-DeployerOrAttacher")}.
 
-When we combine this with the view ([rps-9-web/views/AppViews.js](@{REPO}/examples/rps-9-web/views/AppViews.js#L30-L54)) it will look like:
-![](./rps-9-web/FundAccount.png)
+When we combine this with [views](@{REPO}/examples/rps-9-web/views/renderViews.jsx#L12-L21) it will look like:
+![](./FundAccount.png)
+
 
 ### {#tut-9-DeployerOrAttacher} Choose Role
 
 ```
-load: /examples/rps-9-web/index.js
-md5: 5e5c8976731882c06e7f094e05ca43b3
-range: 37-38
+load: /examples/rps-9-web/context/ReachContext.js
+md5: 0a3524441aef83d80937464d02e59040 
+range: 60-65
 ```
 
-On lines 37 and 38, we set a sub-component
-based on whether the user clicks `Deployer` or `Attacher`.
+Lines 60-65, we set a sub-component based on whether the user clicks `Deployer` or `Attacher`.
 
-When we combine this with the view ([rps-9-web/views/AppViews.js](@{REPO}/examples/rps-9-web/views/AppViews.js#L56-L78)) it will look like:
-![](./rps-9-web/DeployerOrAttacher.png)
+When we combine this with [views](@{REPO}/examples/rps-9-web/views/renderViews.jsx#L12-L21) it will look like:
+![](./rps-9-web/DeployerorAttacher.png)
+
 
 ### {#tut-9-Player} Player component
 
 Next, we will define `{!js} Player` as a React component,
 that will hold all of the behavior of the players and
-which will be extended by the specialized components for Alice and Bob.
+be extended by the specialized components for Alice and Bob.
 
 Our Web frontend needs to implement the participant interact interface for players, which we defined as:
 
 ```
 load: /examples/rps-9-web/index.rsh
-md5: ee287e712cdfe8d91bbb038c383d25d3
+md5: 080f45433ba90a73ca1a5588934354e7
 range: 20-25
 ```
 
 We will provide these callbacks via the React component directly.
 
 ```
-load: /examples/rps-9-web/index.js
-md5: 5e5c8976731882c06e7f094e05ca43b3
-range: 42-55
+load: /examples/rps-9-web/context/ReachContext.js
+md5: 0a3524441aef83d80937464d02e59040 
+range: 68-88
 ```
 
-+ On line 43, we provide the `{!js} random` callback
-+ On lines 44 thru 50, we provide the `{!js} getHand` callback.
-+ On lines 45 thru 47, we set the component state to display @{seclink("tut-9-GetHand")},
-and wait for a `{!js} Promise` which can be resolved via user interaction.
-+ On line 48, which occurs after the `{!js} Promise` is resolved,
-we set the component state to display @{seclink("tut-9-WaitingForResults")}.
-+ On lines 51 and 52, we provide the `{!js} seeOutcome` and `{!js} informTimeout` callbacks,
-which set the component state to display @{seclink("tut-9-Done")} and @{seclink("tut-9-Timeout")}, respectively.
-+ On line 53, we define what happens when the user clicks `Rock`, `Paper`, or `Scissors`:
-The `{!js} Promise` from line 45 is resolved.
++ Line 68, provides the `{!js} getHand` callback.
++ Lines 69-72, we set the component state to @{seclink("tut-9-GetHand")},
+and wait for a `Promise` which can be resolved via user interaction.
++ Lines 79-85, we provide the `seeOutcome` and `informTimeout` callbacks, which set the component state to display `Done` display and `Timeout` display, respectively.
++ Lines 87-88, defines what happens when the user plays its hand: The `Promise` from line 69 is resolved.
+
 
 ### {#tut-9-GetHand} Get Hand dialog
 
-The dialog used to get a hand from the player ([rps-9-web/views/PlayerViews.js](@{REPO}/examples/rps-9-web/views/PlayerViews.js#L8-L32)) looks like:
-![](./rps-9-web/GetHand.png)
+The dialog used to get a hand from the player - see [GetHand](@{REPO}/examples/rps-9-web/context/ReachContext.js#L68-L72).
 
 ### {#tut-9-WaitingForResults} Waiting for results display
 
-The dialog used to get a hand from the player ([rps-9-web/views/PlayerViews.js](@{REPO}/examples/rps-9-web/views/PlayerViews.js#L34-L42)) looks like:
-![](./rps-9-web/WaitingForResults.png)
+The dialog used to get a hand from the player - see [WaitingForResults](@{REPO}examples/rps-9-web/context/ReachContext.jsx#L74-L76).
+
 
 ### {#tut-9-Done} Done display
 
-The display when the player sees the end of the game ([rps-9-web/views/PlayerViews.js](@{REPO}/examples/rps-9-web/views/PlayerViews.js#L44-L54)) looks like:
-![](./rps-9-web/Done.png)
+The dialog used when the player sees the end of the game - see [Done](@{REPO}/examples/rps-9-web/context/ReachContext.js#L79-L82).
+
 
 ### {#tut-9-Timeout} Timeout display
 
-The display when the player sees a timeout ([rps-9-web/views/PlayerViews.js](@{REPO}/examples/rps-9-web/views/PlayerViews.js#L56-L64)) looks like:
-![](./rps-9-web/Timeout.png)
+The display when the player sees a timeout - see [Timeout](@{REPO}/examples/rps-9-web/context/RecahContext.jsx#L84-L85).
+
 
 ### {#tut-9-Deployer} Deployer component
 
@@ -1779,7 +1788,7 @@ Our Web frontend needs to implement the participant interact interface for Alice
 
 ```
 load: /examples/rps-9-web/index.rsh
-md5: ee287e712cdfe8d91bbb038c383d25d3
+md5: 080f45433ba90a73ca1a5588934354e7
 range: 28-32
 ```
 
@@ -1787,44 +1796,56 @@ We will provide the `{!js} wager` and `{!js} deadline` values,
 and define some button handlers in order to trigger the deployment of the contract.
 
 ```
-load: /examples/rps-9-web/index.js
-md5: 5e5c8976731882c06e7f094e05ca43b3
-range: 56-72
+load: /examples/rps-9-web/context/ReachContext.js
+md5: 0a3524441aef83d80937464d02e59040 
+range: 91-100
 ```
 
-+ On line 59, we set the component state to display @{seclink("tut-9-SetWager")}.
-+ On line 61, we define what to do when the user clicks the `Set Wager` button,
-which is to set the component state to display @{seclink("tut-9-Deploy")}.
-+ On lines 62 thru 69, we define what to do when the user clicks the `Deploy` button.
-+ On line 63, we call `{!js} acc.deploy`, which triggers a deploy of the contract.
-+ On line 64, we set the component state to display @{seclink("tut-9-Deploying")}.
-+ On line 65, we set the `{!js} wager` property.
-+ On line 66, we set the `{!js} deadline` property based on which connector is being used.
-+ On line 67, we start running the Reach program as Alice, using the `{!js} this` React component
-as the participant interact interface object.
-+ On lines 68 and 69, we set the component state to display @{seclink("tut-9-WaitingForAttacher")},
-which displays the deployed contract info as JSON.
-+ On line 71, we render the appropriate view from [rps-9-web/views/DeployerViews.js](@{REPO}/examples/rps-9-web/views/DeployerViews.js).
++ Line 59, @{seclink("tut-9-SetWager")} to be deployed, and the outcome which will time out if `Player` takes too long .
+
 
 ### {#tut-9-SetWager} Set Wager dialog
 
-The dialog used to set the wager ([rps-9-web/views/DeployerViews.js](@{REPO}/examples/rps-9-web/views/DeployerViews.js#L20-L38)) looks like:
-![](./rps-9-web/SetWager.png)
+The dialog used to [setWager](@{REPO}/examples/rps-9-web/context/ReachContext.js#L91-L100) looks like:
+![](./rps-9-web/setWager.png)
+
 
 ### {#tut-9-Deploy} Deploy dialog
 
-The dialog used to deploy ([rps-9-web/views/DeployerViews.js](@{REPO}/examples/rps-9-web/views/DeployerViews.js#L40-L53)) looks like:
-![](./rps-9-web/Deploy.png)
+On `Deployer` screen, copy clipboard and duplicate window on another tab.
+
+:::note
+The screen will revert back to connect account screen- refresh screen and follow prompts, select `Attacher`, then return to `Deployer` screen.
+:::
+
+The dialog used to [deploy ](@{REPO}/examples/rps-9-web/context/ReachContext.js#L103-L106) looks like:
+![](./rps-9-web/Deployer.png)
+
 
 ### {#tut-9-Deploying} Deploying display
 
-The display shown while deploying ([rps-9-web/views/DeployerViews.js](@{REPO}/examples/rps-9-web/views/DeployerViews.js#L55-L61)) looks like:
-![](./rps-9-web/Deploying.png)
+The display shown while [deploying](@{REPO}/examples/rps-9-web/context/ReachContext.js#L109-L113) looks like:
+![](./Deploying.png)
+
+
+```
+load: /examples/rps-9-web/context/ReachContext.js
+md5: 0a3524441aef83d80937464d02e59040 
+range: 109-116
+```
+
++ Line 109, provides the deploy callback.
++ Line 110, triggers the deployment of the contract.
++ Line 111, sets the component state to display `Deploying` display.
++ Line 112, prompts the participant's contract as Alice, using the `Deployer` interact interface object.
++ Line 113-115, displays the deployed contract info as JSON.
++ Line 116, sets the component state to display `WaitingForAttacher`.
+
 
 ### {#tut-9-WaitingForAttacher} Waiting for Attacher display
 
-The display shown while waiting for the attacher ([rps-9-web/views/DeployerViews.js](@{REPO}/examples/rps-9-web/views/DeployerViews.js#L63-L90)) looks like:
-![](./rps-9-web/WaitingForAttacher.png)
+The dialog used to deploy - see [WaitingForAttacher](@{REPO}/examples/rps-9-web/context/ReachContext.js#L116).
+
 
 ### {#tut-9-Attacher} Attacher component
 
@@ -1832,7 +1853,7 @@ Our Web frontend needs to implement the participant interact interface for Bob, 
 
 ```
 load: /examples/rps-9-web/index.rsh
-md5: ee287e712cdfe8d91bbb038c383d25d3
+md5: 080f45433ba90a73ca1a5588934354e7
 range: 33-36
 ```
 
@@ -1840,53 +1861,51 @@ We will provide the `{!js} acceptWager` callback,
 and define some button handlers in order to attach to the deployed contract.
 
 ```
-load: /examples/rps-9-web/index.js
-md5: 5e5c8976731882c06e7f094e05ca43b3
-range: 73-95
+load: /examples/rps-9-web/context/ReachContext.js
+md5: 0a3524441aef83d80937464d02e59040 
+range: 119-147
 ```
 
-+ On line 76, we initialize the component state to display @{seclink("tut-9-Attach")}.
-+ On lines 78 thru 82, we define what happens when the user clicks the `Attach` button.
-+ On line 79, we call `{!js} acc.attach`
-+ On line 80, we set the component state to display @{seclink("tut-9-Attaching")}.
-+ On line 81, we start running the Reach program as Bob, using the `{!js} this` React component
-as the participant interact interface object.
-+ On lines 83 thru 88, we define the `{!js} acceptWager` callback.
-+ On lines 85 thru 87, we set the component state to display @{seclink("tut-9-AcceptTerms")},
-and wait for a `{!js} Promise` which can be resolved via user interaction.
-+ On lines 89 thru 92, we define what happens when the user clicks the `Accept Terms and Pay Wager` button:
-the `{!js} Promise` from line 90 is resolved, and we set the component state to display @{seclink("tut-9-WaitingForTurn")}.
-+ On line 93, we render the appropriate view from [rps-9-web/views/AttacherViews.js](@{REPO}/examples/rps-9-web/views/AttacherViews.js)
++ Lines 119 & 120, defines the `{!js} acceptWager` callback in atomic format.
++ Lines 121-124, sets the component state to display `Accept Terms` dialog, and waits for a `Promise` which can be resolved via user interaction.
++ Lines 127-129, uses the commonInteract class to interact with the Attacherinteract object.
++ Lines 132-141,  defines what happens when the user clicks the attach button. 
++ Lines 145-147,  defines what happens when the user clicks the `Accept Terms` and `Pay Wager` button: `Promise` from line 90 is resolved, and we set the component state to display @{seclink("tut-9-WaitingForTurn")}.
+
 
 ### {#tut-9-Attach} Attach dialog
 
-The dialog used to attach ([rps-9-web/views/AttacherViews.js](@{REPO}/examples/rps-9-web/views/AttacherViews.js#L18-L39)) looks like:
-![](./rps-9-web/Attach.png)
+The dialog used to [Attach](@{REPO}/examples/rps-9-web/context/ReachContext.js#L132-L137) looks like:
+![](./rps-9-web/Attacher.png)
+
 
 ### {#tut-9-Attaching} Attaching display
 
-The display when attaching ([rps-9-web/views/AttacherViews.js](@{REPO}/examples/rps-9-web/views/AttacherViews.js#L41-L49)) looks like:
+The display when [Attaching](@{REPO}/examples/rps-9-web/context/ReachContext.js#L138-L141) looks like:
 ![](./rps-9-web/Attaching.png)
+
 
 ### {#tut-9-AcceptTerms} Accept Terms dialog
 
-The dialog used to accept the terms of the wager ([rps-9-web/views/AttacherViews.js](@{REPO}/examples/rps-9-web/views/AttacherViews.js#L51-L70)) looks like:
+The dialog used to accept the terms of the wager [AcceptTerms](@{REPO}/examples/rps-9-web/context/ReachContext.js#L145-L146) looks like:
 ![](./rps-9-web/AcceptTerms.png)
+
 
 ### {#tut-9-WaitingForTurn} Waiting for Turn display
 
-The display when waiting for a turn ([rps-9-web/views/AttacherViews.js](@{REPO}/examples/rps-9-web/views/AttacherViews.js#L72-L81)) looks like:
+The display when [WaitingForTurn](@{REPO}/examples/rps-9-web/context/ReachContext.js#L147) looks like:
 ![](./rps-9-web/WaitingForTurn.png)
+
 
 ### {#tut-9-Final} Putting it all together
 
 ```
-load: /examples/rps-9-web/index.js
-md5: 5e5c8976731882c06e7f094e05ca43b3
-range: 96-96
+load: /examples/rps-9-web/views/renderViews.jsx
+md5: 5a3aeca23b71c64b7b55ecd988cebc2b
+range: 1-21
 ```
 
-Finally, we call a small helper function from [rps-9-web/views/render.js](@{REPO}/examples/rps-9-web/views/render.js)
+Finally, we call a small helper function from [views](@{REPO}/examples/rps-9-web/views/renderViews.jsx)
 to render our App component.
 
 ---
@@ -2019,8 +2038,8 @@ md5: 9f824fcd58e5fdda4f4761b99093cfdc
 And finally, the Web frontend:
 
 ```
-load: /examples/rps-9-web/index.js
-md5: 5e5c8976731882c06e7f094e05ca43b3
+load: /examples/rps-9-web/index.js  
+md5: 92c5beadfcc81fb34dad27243d81492d  
 ```
 
 We wrote about a hundred lines of Reach and two different frontends.
