@@ -1,7 +1,10 @@
 module Reach.Backend.JS (backend_js) where
 
+import Control.Monad
 import Control.Monad.Reader
 import qualified Data.Aeson as AS
+import Data.Base16.Types (extractBase16)
+import qualified Data.ByteString.Base16 as B16
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Foldable as Foldable
 import Data.IORef
@@ -9,21 +12,20 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Scientific as Sci
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as BS
 import qualified Data.Text.Lazy.IO as LTIO
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.EP
 import Reach.Backend
+import Reach.BigOpt
 import Reach.Connector
 import Reach.Counter
+import Reach.OutputUtil
 import Reach.Texty
 import Reach.UnsafeUtil
-import Reach.OutputUtil
 import Reach.Util
 import Reach.Version
-import Reach.BigOpt
-import qualified Data.Text.Encoding as BS
-import qualified Data.ByteString.Base16 as B16
 
 --- JS Helpers
 
@@ -125,6 +127,7 @@ instance Monoid a => Monoid (App a) where
 
 jsTxn :: App Doc
 jsTxn = ("txn" <>) . pretty . ctxt_txn <$> ask
+
 incTxn :: App a -> App a
 incTxn = local (\e -> e {ctxt_txn = (ctxt_txn e) + 1})
 
@@ -225,8 +228,8 @@ jsNum = jsString . show
 jsChkBigNum :: SrcLoc -> UIntTy -> Doc -> App Doc
 jsChkBigNum at uit i = do
   uim <- case uit of
-            UI_Word -> jsArg (DLA_Constant $ DLC_UInt_max)
-            UI_256 -> return $ jsNum $ uint256_Max
+    UI_Word -> jsArg (DLA_Constant $ DLC_UInt_max)
+    UI_256 -> return $ jsNum $ uint256_Max
   return $ jsApply "stdlib.checkedBigNumberify" [jsAt at, uim, i]
 
 jsCon :: AppT DLLiteral
@@ -270,7 +273,7 @@ jsLargeArg = \case
 jsBytes :: B.ByteString -> Doc
 jsBytes b =
   case BS.decodeUtf8' b of
-    Left _ -> jsApply "stdlib.bytesFromHex" [dquotes $ "0x" <> pretty (B16.encodeBase16 b)]
+    Left _ -> jsApply "stdlib.bytesFromHex" [dquotes $ "0x" <> pretty (extractBase16 $ B16.encodeBase16 b)]
     Right _ -> jsString . bunpack $ b
 
 jsContractsAndVals :: [DLArg] -> App [Doc]
@@ -305,8 +308,8 @@ jsPrimApply = \case
   PGE t -> r $ jsApply_ui t "stdlib.ge"
   PGT t -> r $ jsApply_ui t "stdlib.gt"
   SQRT t -> r $ jsApply_ui t "stdlib.sqrt"
-  UCAST dom rng trunc PV_Safe -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy dom, jsUIntTy rng ] <> a <> [ jsBool trunc, "true" ]
-  UCAST dom rng trunc _ -> \a -> return $ jsApply "stdlib.cast" $ [ jsUIntTy dom, jsUIntTy rng ] <> a <> [ jsBool trunc, "false" ]
+  UCAST dom rng trunc PV_Safe -> \a -> return $ jsApply "stdlib.cast" $ [jsUIntTy dom, jsUIntTy rng] <> a <> [jsBool trunc, "true"]
+  UCAST dom rng trunc _ -> \a -> return $ jsApply "stdlib.cast" $ [jsUIntTy dom, jsUIntTy rng] <> a <> [jsBool trunc, "false"]
   LSH -> r $ jsApply "stdlib.lsh"
   RSH -> r $ jsApply "stdlib.rsh"
   MUL_DIV PV_Safe -> r $ jsApply "stdlib.safeMuldiv"
@@ -335,10 +338,11 @@ jsPrimApply = \case
       JM_Simulate
         | isInitial -> return $ jsApply "stdlib.emptyContractInfo" []
       _ -> return $ "await" <+> jsApply "ctc.getContractInfo" []
-  GET_ADDRESS -> const $
-    return $ "await" <+> jsApply "ctc.getContractAddress" []
+  GET_ADDRESS ->
+    const $
+      return $ "await" <+> jsApply "ctc.getContractAddress" []
   GET_COMPANION -> const $ do
-    return $ "await" <+> jsApply "ctc.getContractCompanion" [ ]
+    return $ "await" <+> jsApply "ctc.getContractCompanion" []
   ALGO_BLOCK _ -> const $ return "undefined"
   where
     r f = return . f
@@ -369,16 +373,19 @@ jsRemote at (DLRemote _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv 
   boxes' <- forM ra_boxes $ \a -> do
     t' <- jsContract $ typeOf a
     a' <- jsArg a
-    return $ jsArray [ t', a' ]
-  return $ parens $ jsObject $ M.fromList $
-    [ (("pays"::String), pays')
-    , ("bills", bills')
-    , ("toks", jsArray toks')
-    , ("accs", jsArray accs')
-    , ("boxes", jsArray boxes')
-    , ("apps", jsArray apps')
-    , ("fees", fees')
-    ]
+    return $ jsArray [t', a']
+  return $
+    parens $
+      jsObject $
+        M.fromList $
+          [ (("pays" :: String), pays')
+          , ("bills", bills')
+          , ("toks", jsArray toks')
+          , ("accs", jsArray accs')
+          , ("boxes", jsArray boxes')
+          , ("apps", jsArray apps')
+          , ("fees", fees')
+          ]
 
 jsExpr :: AppT DLExpr
 jsExpr = \case
@@ -386,7 +393,7 @@ jsExpr = \case
     jsArg a
   DLE_LArg _ la ->
     jsLargeArg la
-  DLE_Impossible at _ (Err_Impossible_Case f)-> do
+  DLE_Impossible at _ (Err_Impossible_Case f) -> do
     ai <- jsAssertInfo at [] (Just $ bpack f)
     return $ "Error(" <> ai <> ")"
   DLE_Impossible at _ err ->
@@ -542,11 +549,12 @@ jsExpr = \case
       JM_Simulate -> do
         dr' <- jsRemote at dr
         obj' <- jsArg ro
-        let simTxn = jsSimTxn "remote" $
-              [ ("obj", obj')
-              , ("remote", dr')
-              ]
-        let DLRemoteALGO { .. } = dr_ralgo dr
+        let simTxn =
+              jsSimTxn "remote" $
+                [ ("obj", obj')
+                , ("remote", dr')
+                ]
+        let DLRemoteALGO {..} = dr_ralgo dr
         netRecv' <- jsArg ra_simNetRecv
         tokensRecv' <- jsArg $ case ra_simTokensRecv of
           RA_Tuple t -> t
@@ -558,11 +566,12 @@ jsExpr = \case
               c <- jsContract rng_ty
               return $ c <> ".defaultValue"
         let nnRecv = dwb_tok_billed $ dr_bills dr
-        let mTR = if length nnRecv == 0 then [] else [ tokensRecv' <> " /* simTokensRecv */" ]
-        let arr = jsArray $
-              [ netRecv'    <> " /* simNetRecv */" ]
-              <> mTR
-              <> [ returnVal'  <> " /* simReturnVal */" ]
+        let mTR = if length nnRecv == 0 then [] else [tokensRecv' <> " /* simTokensRecv */"]
+        let arr =
+              jsArray $
+                [netRecv' <> " /* simNetRecv */"]
+                  <> mTR
+                  <> [returnVal' <> " /* simReturnVal */"]
         return $ jsNewScope $ simTxn <> hardline <> jsReturn arr
   DLE_TokenNew _ tns -> do
     (ctxt_mode <$> ask) >>= \case
@@ -616,7 +625,7 @@ jsExpr = \case
     let bal = "await" <+> jsApply "ctc.getBalance" [tok]
     c' <- jsPrimApply (PLE UI_Word) [bal, tb']
     f' <- jsPrimApply (SUB UI_Word PV_Safe) [bal, tb']
-    rhs <- jsPrimApply IF_THEN_ELSE [ c', zero, f' ]
+    rhs <- jsPrimApply IF_THEN_ELSE [c', zero, f']
     ctm <- asks ctxt_mode
     let infoSim = case ctm == JM_Simulate && isJust mtok of
           True -> jsSimTxn "info" [("tok", tok)] <> ","
@@ -641,10 +650,12 @@ jsExpr = \case
         cns' <- forM cns $ \DLContractNew {..} -> do
           c' <- jsJSON dcn_code
           o' <- jsJSON dcn_opts
-          return $ jsObject $ M.fromList
-            [ ("code"::String, c')
-            , ("opts", o')
-            ]
+          return $
+            jsObject $
+              M.fromList
+                [ ("code" :: String, c')
+                , ("opts", o')
+                ]
         return $ jsApply "stdlib.simContractNew" ["sim_r", jsObject cns', dr', "getSimTokCtr()"]
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
@@ -896,9 +907,11 @@ jsETail = \case
                        ["sim_r", jsMapIdx mpv, jsMapVar mpv])
                       <> semi
             dupeMaps <- mapM dupeMap =<< ((M.toAscList . ctxt_maps) <$> ask)
-            let tokCtr = vsep
-                        [ "let sim_txn_ctr = stdlib.UInt_max;"
-                        , "const getSimTokCtr = () => { sim_txn_ctr = sim_txn_ctr.sub(1); return sim_txn_ctr; };" ]
+            let tokCtr =
+                  vsep
+                    [ "let sim_txn_ctr = stdlib.UInt_max;"
+                    , "const getSimTokCtr = () => { sim_txn_ctr = sim_txn_ctr.sub(1); return sim_txn_ctr; };"
+                    ]
             let sim_body =
                   vsep
                     [ "const sim_r = { txns: [], mapRefs: [], maps: [] };"
@@ -1003,27 +1016,31 @@ jsError :: Doc -> Doc
 jsError err = "new Error(" <> err <> ")"
 
 setupPart :: Doc -> [Doc]
-setupPart who = [
-  ctcTopChk who
+setupPart who =
+  [ ctcTopChk who
   , interactChk who
   , "const ctc = ctcTop._initialize();"
-  , "const stdlib = ctc.stdlib;" ]
+  , "const stdlib = ctc.stdlib;"
+  ]
 
 jsApiWrapper :: B.ByteString -> [Int] -> App Doc
 jsApiWrapper p whichs = do
   let who = pretty $ bunpack p
   let aux = jsChkBigNum srcloc_builtin UI_Word
   allowed <- pretty <$> mapM (aux . jsNum . fromIntegral) whichs
-  let jmps = map (\ which -> do
-          let inst = "_" <> who <> pretty which
-          "if" <+> parens ("step" <+> "==" <+> pretty which) <+> braces ("return " <> inst <> parens "ctcTop, interact" <> semi)
-        ) whichs
+  let jmps =
+        map
+          (\which -> do
+             let inst = "_" <> who <> pretty which
+             "if" <+> parens ("step" <+> "==" <+> pretty which) <+> braces ("return " <> inst <> parens "ctcTop, interact" <> semi))
+          whichs
   curStep <- aux "step"
-  let body = vsep $
-        setupPart who
-        <> [ "const step = await ctc.getCurrentStep()" ]
-        <> jmps
-        <> [ "throw stdlib.apiStateMismatchError({ _stateSourceMap }, " <> allowed <> ", " <> curStep <> ")" ]
+  let body =
+        vsep $
+          setupPart who
+            <> ["const step = await ctc.getCurrentStep()"]
+            <> jmps
+            <> ["throw stdlib.apiStateMismatchError({ _stateSourceMap }, " <> allowed <> ", " <> curStep <> ")"]
   return $ "export" <+> jsFunction who ["ctcTop", "interact"] body
 
 iExpect :: Doc -> Doc -> Doc -> Doc
@@ -1058,10 +1075,10 @@ jsPart dli (p, m_api_which) (EPart {..}) = do
     let bodyp' =
           vsep $
             setupPart (pretty who)
-            <> [ ctcs
-            , maps_defn
-            , et'
-            ]
+              <> [ ctcs
+                 , maps_defn
+                 , et'
+                 ]
     return $ "export" <+> jsFunction (pretty who) ["ctcTop", "interact"] bodyp'
 
 jsJSON :: AS.Value -> App Doc
@@ -1176,13 +1193,14 @@ jsViews (DLViewsX cvs vis) = do
             let decode' = jsApply "async " ["i", "svs", "args"] <+> "=>" <+> jsBraces body'
             let name = maybe "" (pretty . bunpack) v <> "_" <> pretty k
             let view_asn = "const " <> name <> " = " <> decode' <> ";"
-            let val = jsObject $
-                        M.fromList $
-                          [ ("dom" :: String, dom')
-                          , ("rng", rng')
-                          , ("decode", name)
-                          ]
-            return $ (,view_asn) $ map (, val) $ k : map bunpack aliases
+            let val =
+                  jsObject $
+                    M.fromList $
+                      [ ("dom" :: String, dom')
+                      , ("rng", rng')
+                      , ("decode", name)
+                      ]
+            return $ (,view_asn) $ map (,val) $ k : map bunpack aliases
       let enInfo k v = do
             (m, view_asn) <- unzip <$> mapM (enInfo' k) (M.toList v)
             return (view_asn, M.fromList . concat $ m)
@@ -1203,14 +1221,14 @@ jsViews (DLViewsX cvs vis) = do
       return $
         vsep $
           maps_defn :
-          view_asns <>
-          [ jsReturn $
-              jsObject $
-                M.fromList $
-                  [ ("views" :: String, views)
-                  , ("infos", infos)
-                  ]
-          ]
+          view_asns
+            <> [ jsReturn $
+                   jsObject $
+                     M.fromList $
+                       [ ("views" :: String, views)
+                       , ("infos", infos)
+                       ]
+               ]
 
 -- XXX copied from ALGO.hs
 mapDataTy :: DLMapInfos -> DLType
@@ -1243,7 +1261,7 @@ jsEPProg cr (EPProg {..}) = do
           ]
   let go_api (p, mw) _ acc =
         case mw of
-          Just w  -> M.insertWith (<>) p [w] acc
+          Just w -> M.insertWith (<>) p [w] acc
           Nothing -> acc
   let api_whichs = M.foldrWithKey go_api mempty epp_m
   api_wrappers <- mapM (uncurry jsApiWrapper) $ M.toAscList api_whichs
@@ -1256,13 +1274,13 @@ jsEPProg cr (EPProg {..}) = do
     local (\e -> e {ctxt_maps = dli_maps}) $
       jsViews epp_views
   mapsp <- jsMaps dli_maps
-  let partMap = M.foldrWithKey (\ (p, _) _ acc -> M.insert p (pretty $ bunpack p) acc) mempty epp_m
+  let partMap = M.foldrWithKey (\(p, _) _ acc -> M.insert p (pretty $ bunpack p) acc) mempty epp_m
   let go_api_map k v acc =
         let f = case k of
-                Just k' -> M.insert (bunpack k') . jsObject
-                Nothing -> M.union in
-        let v' = M.map (pretty . bunpack . fst) v in
-        f v' acc
+              Just k' -> M.insert (bunpack k') . jsObject
+              Nothing -> M.union
+         in let v' = M.map (pretty . bunpack . fst) v
+             in f v' acc
   let apiMap = M.foldrWithKey go_api_map mempty epp_apis
   eventsp <- jsEvents epp_events
   return $ vsep $ [preamble, exportsp, eventsp, viewsp, mapsp] <> partsp <> api_wrappers <> cnpsp <> [jsObjectDef "_stateSourceMap" ssmDoc, jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
@@ -1280,5 +1298,6 @@ backend_js out crs p = do
   d <-
     flip runReaderT (JSCtxt {..}) $
       jsEPProg crs p
-  void $ mustOutput out "mjs" $
-    flip LTIO.writeFile $ render d
+  void $
+    mustOutput out "mjs" $
+      flip LTIO.writeFile $ render d

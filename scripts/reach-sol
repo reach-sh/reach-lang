@@ -1,0 +1,67 @@
+#!/bin/sh
+# reach-sol: compile a Reach program to verified Solidity artifacts.
+#
+# Runs `reachc --sol`, which formally verifies the program and, only on
+# success, emits three artifacts into the output directory:
+#   <src>.<app>.sol         self-contained Solidity source
+#   <src>.<app>.abi.json    contract ABI
+#   <src>.<app>.verify.json machine-readable verification report
+#
+# Requires `reachc`, `z3`, and `solc` on PATH.  Version pins live in the
+# repository DEPS file (SOLC_VERSION, Z3_VERSION).
+
+set -eu
+
+usage() {
+  echo "usage: reach-sol [-o OUTDIR] SRC.rsh [EXPORTS...]" >&2
+  exit 1
+}
+
+OUTDIR=""
+case "${1:-}" in
+  -h|--help) usage ;;
+  -o|--output)
+    [ "$#" -ge 2 ] || usage
+    OUTDIR="$2"
+    shift 2
+    ;;
+esac
+[ "$#" -ge 1 ] || usage
+SRC="$1"
+shift
+
+REACHC="${REACHC:-reachc}"
+
+for tool in "$REACHC" z3 solc; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    echo "reach-sol: required tool not on PATH: $tool" >&2
+    exit 1
+  fi
+done
+
+DEPS="$(dirname "$0")/../DEPS"
+if [ -f "$DEPS" ]; then
+  pinned_solc="$(sed -n 's/^SOLC_VERSION=//p' "$DEPS")"
+  pinned_z3="$(sed -n 's/^Z3_VERSION=//p' "$DEPS")"
+  actual_solc="$(solc --version | sed -n 's/^Version: \([0-9.]*\).*/\1/p')"
+  actual_z3="$(z3 --version | sed -n 's/^Z3 version \([0-9.]*\).*/\1/p')"
+  if [ -n "$pinned_solc" ] && [ "$pinned_solc" != "$actual_solc" ]; then
+    echo "reach-sol: warning: solc $actual_solc on PATH; pinned version is $pinned_solc" >&2
+  fi
+  if [ -n "$pinned_z3" ] && [ "$pinned_z3" != "$actual_z3" ]; then
+    echo "reach-sol: warning: z3 $actual_z3 on PATH; pinned version is $pinned_z3" >&2
+  fi
+fi
+
+if [ -z "$OUTDIR" ]; then
+  OUTDIR="$(dirname "$SRC")/build"
+fi
+
+"$REACHC" --sol --disable-reporting -o "$OUTDIR" "$SRC" "$@"
+
+base="$(basename "$SRC" .rsh)"
+echo "reach-sol: artifacts in $OUTDIR:"
+for f in "$OUTDIR/$base".*.sol "$OUTDIR/$base".*.abi.json "$OUTDIR/$base".*.verify.json; do
+  [ -e "$f" ] && echo "  $f"
+done
+exit 0

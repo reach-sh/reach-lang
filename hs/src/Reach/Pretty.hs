@@ -50,9 +50,11 @@ prettyStop = "exit" <> parens (emptyDoc) <> semi
 
 prettyMap :: (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e) => a -> [b] -> [e] -> c -> d -> Doc
 prettyMap ans xs as i f =
-  "map" <+> pretty ans <+> "=" <+> "for" <+>
-  parens (withCommas as <> pretty i <+> "in" <+> withCommas xs) <+> braces (nest $ hardline <> pretty f)
-    where withCommas vs = L.foldl' (\accum v -> accum <> pretty v <> ",") "" vs
+  "map" <+> pretty ans <+> "=" <+> "for"
+    <+> parens (withCommas as <> pretty i <+> "in" <+> withCommas xs)
+    <+> braces (nest $ hardline <> pretty f)
+  where
+    withCommas vs = L.foldl' (\accum v -> accum <> pretty v <> ",") "" vs
 
 prettyReduce :: (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f, Pretty g) => a -> b -> c -> d -> e -> f -> g -> Doc
 prettyReduce ans x z b a i f =

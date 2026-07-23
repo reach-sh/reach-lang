@@ -9,8 +9,8 @@ import Control.Monad.Reader
 import qualified Data.Aeson as AS
 import qualified Data.Map.Strict as M
 import Data.Maybe
-import Reach.AST.DLBase
 import Reach.AST.CP
+import Reach.AST.DLBase
 
 type SubstEnv = M.Map DLVar DLVar
 

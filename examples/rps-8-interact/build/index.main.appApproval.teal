@@ -54,7 +54,7 @@ callsub l2_LF_timeCheck
 load 19 // wager/305
 callsub l3_LF_checkTxn_False
 // ^ CheckPay
-// at ./index.rsh:49:9:dot
+// at ./examples/rps-8-interact/index.rsh:49:9:dot
 global Round
 load 18 // deadline/306
 +
@@ -136,15 +136,15 @@ assert
 load 19 // wager/305
 callsub l3_LF_checkTxn_False
 // ^ CheckPay
-// at ./index.rsh:56:7:dot
+// at ./examples/rps-8-interact/index.rsh:56:7:dot
 int 1
-store 24 // outcome/326
 global Round
-store 23 // thisConsensusTime/327
 load 19 // wager/305
 dup
 +
 store 14 // netBalance/334
+store 23 // thisConsensusTime/327
+store 24 // outcome/326
 _reachl_3:
 load 24 // outcome/326
 int 1
@@ -182,16 +182,16 @@ load 1 // GV_currentStep :: UInt
 ==
 assert
 callsub l5_LF_svsLoad_1
-load 11 // v658
+load 11 // v655
 btoi
-store 12 // v657
+store 12 // v654
 byte base64(l073Fw==)
-load 12 // v657
+load 12 // v654
 itob
 concat
 log // up to 12 bytes
-// ^ log: "_reach_e2" [v657] "_reach_e2(uint64)"
-load 12 // v657
+// ^ log: "_reach_e2" [v654] "_reach_e2(uint64)"
+load 12 // v654
 callsub l2_LF_timeCheck
 global Round
 load 13 // v317
@@ -220,22 +220,22 @@ load 1 // GV_currentStep :: UInt
 ==
 assert
 callsub l7_LF_svsLoad_5
-load 12 // v661
+load 12 // v658
 int 0
 extract_uint64
-store 13 // v660
-load 12 // v661
+store 13 // v657
+load 12 // v658
 extract 8 32
 store 17 // commitAlice/358
 byte base64(T287RA==)
-load 13 // v660
+load 13 // v657
 itob
 concat
 load 17 // commitAlice/358
 concat
 log // up to 44 bytes
-// ^ log: "_reach_e4" [v660,commitAlice/358] "_reach_e4(uint64,digest)"
-load 13 // v660
+// ^ log: "_reach_e4" [v657,commitAlice/358] "_reach_e4(uint64,digest)"
+load 13 // v657
 callsub l2_LF_timeCheck
 global Round
 load 11 // v349
@@ -246,7 +246,7 @@ txn Sender
 ==
 assert
 // ^ Claim: sender correct
-// at ./index.rsh:69:11:dot
+// at ./examples/rps-8-interact/index.rsh:69:11:dot
 global Round
 load 18 // deadline/306
 +
@@ -281,16 +281,16 @@ load 1 // GV_currentStep :: UInt
 ==
 assert
 callsub l7_LF_svsLoad_5
-load 12 // v664
+load 12 // v661
 btoi
-store 13 // v663
+store 13 // v660
 byte base64(gaqazw==)
-load 13 // v663
+load 13 // v660
 itob
 concat
 log // up to 12 bytes
-// ^ log: "_reach_e5" [v663] "_reach_e5(uint64)"
-load 13 // v663
+// ^ log: "_reach_e5" [v660] "_reach_e5(uint64)"
+load 13 // v660
 callsub l2_LF_timeCheck
 global Round
 load 11 // v349
@@ -306,7 +306,7 @@ txn Sender
 assert
 // ^ Claim: sender correct
 // at reach standard library:197:11:dot
-// at ./index.rsh:70:53:application call to "closeTo" (defined at: reach standard library:195:8:function exp)
+// at ./examples/rps-8-interact/index.rsh:70:53:application call to "closeTo" (defined at: reach standard library:195:8:function exp)
 load 14 // netBalance/334
 // resource: R_Account
 load 15 // Bob/321
@@ -318,24 +318,24 @@ load 1 // GV_currentStep :: UInt
 ==
 assert
 callsub l9_LF_svsLoad_7
-load 11 // v667
+load 11 // v664
 int 0
 extract_uint64
-store 13 // v666
-load 11 // v667
+store 13 // v663
+load 11 // v664
 int 8
 extract_uint64
 store 12 // handBob/374
 byte base64(SiHL/A==)
-load 13 // v666
+load 13 // v663
 itob
 concat
 load 12 // handBob/374
 itob
 concat
 log // up to 20 bytes
-// ^ log: "_reach_e6" [v666,handBob/374] "_reach_e6(uint64,uint64)"
-load 13 // v666
+// ^ log: "_reach_e6" [v663,handBob/374] "_reach_e6(uint64,uint64)"
+load 13 // v663
 callsub l2_LF_timeCheck
 global Round
 load 20 // v368
@@ -346,7 +346,7 @@ txn Sender
 ==
 assert
 // ^ Claim: sender correct
-// at ./index.rsh:77:9:dot
+// at ./examples/rps-8-interact/index.rsh:77:9:dot
 global Round
 load 18 // deadline/306
 +
@@ -381,16 +381,16 @@ load 1 // GV_currentStep :: UInt
 ==
 assert
 callsub l9_LF_svsLoad_7
-load 11 // v670
+load 11 // v667
 btoi
-store 12 // v669
+store 12 // v666
 byte base64(caixow==)
-load 12 // v669
+load 12 // v666
 itob
 concat
 log // up to 12 bytes
-// ^ log: "_reach_e7" [v669] "_reach_e7(uint64)"
-load 12 // v669
+// ^ log: "_reach_e7" [v666] "_reach_e7(uint64)"
+load 12 // v666
 callsub l2_LF_timeCheck
 global Round
 load 20 // v368
@@ -406,7 +406,7 @@ txn Sender
 assert
 // ^ Claim: sender correct
 // at reach standard library:197:11:dot
-// at ./index.rsh:78:53:application call to "closeTo" (defined at: reach standard library:195:8:function exp)
+// at ./examples/rps-8-interact/index.rsh:78:53:application call to "closeTo" (defined at: reach standard library:195:8:function exp)
 load 14 // netBalance/334
 // resource: R_Account
 load 16 // Alice/304
@@ -418,20 +418,20 @@ load 1 // GV_currentStep :: UInt
 ==
 assert
 callsub l11_LF_svsLoad_9
-load 11 // v673
+load 11 // v670
 int 0
 extract_uint64
-store 20 // v672
-load 11 // v673
+store 20 // v669
+load 11 // v670
 int 8
 extract_uint64
 store 22 // saltAlice/389
-load 11 // v673
+load 11 // v670
 int 16
 extract_uint64
 store 21 // handAlice/390
 byte base64(EoZbwA==)
-load 20 // v672
+load 20 // v669
 itob
 concat
 load 22 // saltAlice/389
@@ -441,8 +441,8 @@ load 21 // handAlice/390
 itob
 concat
 log // up to 28 bytes
-// ^ log: "_reach_e8" [v672,saltAlice/389,handAlice/390] "_reach_e8(uint64,uint64,uint64)"
-load 20 // v672
+// ^ log: "_reach_e8" [v669,saltAlice/389,handAlice/390] "_reach_e8(uint64,uint64,uint64)"
+load 20 // v669
 callsub l2_LF_timeCheck
 global Round
 load 13 // v384
@@ -453,7 +453,7 @@ txn Sender
 ==
 assert
 // ^ Claim: sender correct
-// at ./index.rsh:85:11:dot
+// at ./examples/rps-8-interact/index.rsh:85:11:dot
 load 17 // commitAlice/358
 load 22 // saltAlice/389
 itob
@@ -465,7 +465,7 @@ sha256
 assert
 // ^ Claim
 // at reach standard library:69:17:application
-// at ./index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:68:8:function exp)
+// at ./examples/rps-8-interact/index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:68:8:function exp)
 load 21 // handAlice/390
 int 4
 load 12 // handBob/374
@@ -473,9 +473,9 @@ load 12 // handBob/374
 +
 int 3
 %
-store 24 // outcome/326
 global Round
 store 23 // thisConsensusTime/327
+store 24 // outcome/326
 b _reachl_3
 _reachi_9:
 int 9
@@ -483,16 +483,16 @@ load 1 // GV_currentStep :: UInt
 ==
 assert
 callsub l11_LF_svsLoad_9
-load 11 // v679
+load 11 // v673
 btoi
-store 12 // v678
+store 12 // v672
 byte base64(Y1dRXA==)
-load 12 // v678
+load 12 // v672
 itob
 concat
 log // up to 12 bytes
-// ^ log: "_reach_e9" [v678] "_reach_e9(uint64)"
-load 12 // v678
+// ^ log: "_reach_e9" [v672] "_reach_e9(uint64)"
+load 12 // v672
 callsub l2_LF_timeCheck
 global Round
 load 13 // v384
@@ -508,7 +508,7 @@ txn Sender
 assert
 // ^ Claim: sender correct
 // at reach standard library:197:11:dot
-// at ./index.rsh:86:53:application call to "closeTo" (defined at: reach standard library:195:8:function exp)
+// at ./examples/rps-8-interact/index.rsh:86:53:application call to "closeTo" (defined at: reach standard library:195:8:function exp)
 load 14 // netBalance/334
 // resource: R_Account
 load 15 // Bob/321
@@ -532,37 +532,37 @@ b _reachi_1
 _reachp_2:
 callsub l0_LF_wasntMeth
 txna ApplicationArgs 1
-store 11 // v658
+store 11 // v655
 b _reachi_2
 _reachp_4:
 callsub l0_LF_wasntMeth
 txna ApplicationArgs 1
-store 12 // v661
+store 12 // v658
 b _reachi_4
 _reachp_5:
 callsub l0_LF_wasntMeth
 txna ApplicationArgs 1
-store 12 // v664
+store 12 // v661
 b _reachi_5
 _reachp_6:
 callsub l0_LF_wasntMeth
 txna ApplicationArgs 1
-store 11 // v667
+store 11 // v664
 b _reachi_6
 _reachp_7:
 callsub l0_LF_wasntMeth
 txna ApplicationArgs 1
-store 11 // v670
+store 11 // v667
 b _reachi_7
 _reachp_8:
 callsub l0_LF_wasntMeth
 txna ApplicationArgs 1
-store 11 // v673
+store 11 // v670
 b _reachi_8
 _reachp_9:
 callsub l0_LF_wasntMeth
 txna ApplicationArgs 1
-store 11 // v679
+store 11 // v673
 b _reachi_9
 alloc:
 int 0

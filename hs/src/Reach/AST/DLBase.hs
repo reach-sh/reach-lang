@@ -7,6 +7,8 @@ module Reach.AST.DLBase where
 import Control.Monad.Identity
 import Control.Monad.Reader
 import Data.Aeson
+import Data.Bifunctor
+import Data.Bool (bool)
 import qualified Data.ByteString.Char8 as B
 import Data.Functor ((<&>))
 import qualified Data.List as List
@@ -17,15 +19,13 @@ import Data.Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
-import GHC.Stack (HasCallStack)
 import GHC.Generics
+import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.Counter
 import Reach.Pretty
 import Reach.Texty
 import Reach.Util
-import Data.Bifunctor
-import Data.Bool (bool)
 
 type ConnectorName = T.Text
 
@@ -219,9 +219,11 @@ data DLInit = DLInit
   deriving (Eq, Generic)
 
 instance Pretty DLInit where
-  pretty (DLInit {..}) = render_obj $ M.fromList
-    [ ("maps" :: String, render_obj dli_maps)
-    ]
+  pretty (DLInit {..}) =
+    render_obj $
+      M.fromList
+        [ ("maps" :: String, render_obj dli_maps)
+        ]
 
 data DLConstant
   = DLC_UInt_max
@@ -237,7 +239,7 @@ instance FromJSON DLConstant
 
 instance Pretty DLConstant where
   pretty = \case
-    DLC_UInt_max  -> "UInt.max"
+    DLC_UInt_max -> "UInt.max"
     DLC_Token_zero -> "Token.zero"
 
 conTypeOf :: DLConstant -> DLType
@@ -245,7 +247,7 @@ conTypeOf = typeOf
 
 instance TypeOf DLConstant where
   typeOf = \case
-    DLC_UInt_max  -> T_UInt UI_Word
+    DLC_UInt_max -> T_UInt UI_Word
     DLC_Token_zero -> T_Token
 
 data DLLiteral
@@ -751,9 +753,9 @@ instance Pretty PrimOp where
     PGT t -> uitp t <> ">"
     SQRT t -> uitp t <> "sqrt"
     UCAST dom rng trunc pv ->
-      let mTruncMsg = if trunc then ",Truncate" else "" in
-      let mVeriMsg = ", " <> pretty pv in
-      "cast" <> parens (uitp dom <> "," <> uitp rng <> mTruncMsg <> mVeriMsg)
+      let mTruncMsg = if trunc then ",Truncate" else ""
+       in let mVeriMsg = ", " <> pretty pv
+           in "cast" <> parens (uitp dom <> "," <> uitp rng <> mTruncMsg <> mVeriMsg)
     IF_THEN_ELSE -> "ite"
     DIGEST_EQ -> "=="
     ADDRESS_EQ -> "=="
@@ -792,9 +794,9 @@ data DLRemoteALGOOC
   deriving (Eq, Ord)
 
 data DLRemoteALGOSTR -- simTokensRecv in `remote().ALGO({ simTokensRecv: [1, 2, 3] })`
-  = RA_Unset               -- User never gave simTokensRecv
+  = RA_Unset -- User never gave simTokensRecv
   | RA_List SrcLoc [DLArg] -- List of UInts given by user
-  | RA_Tuple DLArg         -- Tuple of UInts compiled from list given by user
+  | RA_Tuple DLArg -- Tuple of UInts compiled from list given by user
   deriving (Eq, Ord, Show)
 
 data DLRemoteALGO = DLRemoteALGO
@@ -867,9 +869,9 @@ instance PrettySubst DLContractNew where
     return $
       render_obj $
         M.fromList
-        [ ("code" :: String, c')
-        , ("mopts", o')
-        ]
+          [ ("code" :: String, c')
+          , ("mopts", o')
+          ]
 
 type DLContractNews = M.Map ConnectorName DLContractNew
 
@@ -926,8 +928,8 @@ data DLExpr
   | DLE_GetUntrackedFunds SrcLoc (Maybe DLArg) DLArg
   | DLE_DataTag SrcLoc DLArg
   | DLE_FromSome SrcLoc DLArg DLArg
-  -- Maybe try to generalize FromSome into a Match
-  | DLE_ContractNew SrcLoc DLContractNews DLRemote
+  | -- Maybe try to generalize FromSome into a Match
+    DLE_ContractNew SrcLoc DLContractNews DLRemote
   | DLE_ContractFromAddress SrcLoc DLArg
   deriving (Eq, Ord, Generic)
 
@@ -962,11 +964,12 @@ instance (Pretty k, PrettySubst a) => PrettySubst (M.Map k a) where
 
 instance PrettySubst DLRemote where
   prettySubst (DLRemote ma amta as wb ra) = do
-      amta' <- prettySubst amta
-      as' <- render_dasM as
-      wb' <- prettySubst wb
-      ra' <- prettySubst ra
-      return $ viaShow ma <> ".pay" <> parens amta'
+    amta' <- prettySubst amta
+    as' <- render_dasM as
+    wb' <- prettySubst wb
+    ra' <- prettySubst ra
+    return $
+      viaShow ma <> ".pay" <> parens amta'
         <> parens as'
         <> ".withBill"
         <> parens wb'
@@ -1124,7 +1127,7 @@ instance IsPure PrimOp where
     DIV _ PV_Safe -> False
     MOD _ PV_Safe -> False
     UCAST _ _ _ PV_Safe -> False
-    MUL_DIV PV_Safe     -> False
+    MUL_DIV PV_Safe -> False
     _ -> True
 
 instance IsPure DLExpr where
@@ -1297,20 +1300,24 @@ instance Pretty DLVarLet where
   pretty (DLVarLet mvc x) = pretty x <> mvc'
     where
       mvc' = case mvc of
-               Nothing -> "#"
-               Just vc -> pretty vc
+        Nothing -> "#"
+        Just vc -> pretty vc
 
 instance TypeOf DLVarLet where
   typeOf = typeOf . varLetVar
 
 varLetVar :: DLVarLet -> DLVar
 varLetVar (DLVarLet _ v) = v
+
 varLetType :: DLVarLet -> DLType
 varLetType = typeOf
+
 v2vl :: DLVar -> DLVarLet
 v2vl = DLVarLet (Just DVC_Many)
+
 vl2v :: DLVarLet -> DLVar
 vl2v (DLVarLet _ v) = v
+
 vl2mdv :: DLVarLet -> Maybe DLVar
 vl2mdv (DLVarLet mvc v) =
   case mvc of
@@ -1362,7 +1369,8 @@ instance IsPure a => IsPure (SwitchCases a) where
 data DLInvariant a = DLInvariant
   { dl_inv :: a
   , dl_inv_lab :: Maybe B.ByteString
-  } deriving (Eq, Show)
+  }
+  deriving (Eq, Show)
 
 instance Pretty a => Pretty (DLInvariant a) where
   pretty (DLInvariant {..}) =
@@ -1405,7 +1413,7 @@ instance Pretty DLStmt where
     DL_ArrayReduce _ ans xs z b as i f -> prettyReduce ans xs z b as i f
     DL_Var _at dv -> "let" <+> pretty dv <> semi
     DL_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
-    DL_LocalDo _at ans k -> "do"  <> parens (pretty ans) <+> braces (pretty k) <> semi
+    DL_LocalDo _at ans k -> "do" <> parens (pretty ans) <+> braces (pretty k) <> semi
     DL_LocalIf _at ans ca t f -> "local" <> parens (pretty ans) <+> prettyIfp ca t f
     DL_LocalSwitch _at ov csm -> "local" <+> pretty (SwitchCasesUse ov csm)
     DL_Only _at who b -> prettyOnly who b
@@ -1457,6 +1465,7 @@ dtList :: SrcLoc -> [DLStmt] -> DLTail
 dtList at = \case
   [] -> DT_Return at
   m : ms -> DT_Com m $ dtList at ms
+
 data DLBlock
   = DLBlock SrcLoc [SLCtxtFrame] DLTail DLArg
   deriving (Eq)
@@ -1624,7 +1633,7 @@ freshenVar (DLVar at s t _) =
 
 type InterfaceLikeMap a = M.Map (Maybe SLPart) (M.Map SLVar a)
 
-flattenInterfaceLikeMap_ :: forall a b . (SLPart -> a -> b) -> InterfaceLikeMap a -> M.Map SLPart b
+flattenInterfaceLikeMap_ :: forall a b. (SLPart -> a -> b) -> InterfaceLikeMap a -> M.Map SLPart b
 flattenInterfaceLikeMap_ f = M.fromList . concatMap go . M.toList
   where
     go :: (Maybe SLPart, (M.Map SLVar a)) -> [(SLPart, b)]
@@ -1634,7 +1643,7 @@ flattenInterfaceLikeMap_ f = M.fromList . concatMap go . M.toList
       where
         p = maybe "" (<> "_") mp
 
-flattenInterfaceLikeMap :: forall a . InterfaceLikeMap a -> M.Map SLPart a
+flattenInterfaceLikeMap :: forall a. InterfaceLikeMap a -> M.Map SLPart a
 flattenInterfaceLikeMap = flattenInterfaceLikeMap_ (flip const)
 
 data DLView = DLView
@@ -1664,10 +1673,12 @@ data DLViewsX = DLViewsX DLViews ViewInfos
   deriving (Eq)
 
 instance Pretty DLViewsX where
-  pretty (DLViewsX vs vis) = render_obj $ M.fromList
-    [ ("vs"::String, pretty vs)
-    , ("vis", pretty vis)
-    ]
+  pretty (DLViewsX vs vis) =
+    render_obj $
+      M.fromList
+        [ ("vs" :: String, pretty vs)
+        , ("vis", pretty vis)
+        ]
 
 type Aliases = M.Map SLVar (Maybe B.ByteString)
 
@@ -1686,7 +1697,8 @@ arraysLength arrays = do
 
 adjustApiName :: Show a => String -> a -> Bool -> String
 adjustApiName who which qualify = prefix <> who <> suffix
-  where (prefix, suffix) = bool ("", "") ("_", show which) qualify
+  where
+    (prefix, suffix) = bool ("", "") ("_", show which) qualify
 
 -- NOTE switch to Maybe DLAssignment and make sure we have a consistent order,
 -- like with M.toAscList

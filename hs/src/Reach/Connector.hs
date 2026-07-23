@@ -26,12 +26,12 @@ import qualified Data.Text.IO as TIO
 import qualified Data.Text.Lazy.IO as LTIO
 import Generics.Deriving hiding (conName)
 import Reach.AST.Base
-import Reach.AST.DLBase
 import Reach.AST.CL
+import Reach.AST.DLBase
 import Reach.InterferenceGraph
+import Reach.OutputUtil
 import Reach.Texty
 import Reach.Util
-import Reach.OutputUtil
 import System.Directory
 
 type ConnectorObject = M.Map ConnectorName Value
@@ -40,6 +40,7 @@ type ConnectorInfo = Value
 
 data ConGenConfig = ConGenConfig
   { cgOutput :: Outputer
+  , cgAbi :: Bool
   }
 
 data Connector = Connector

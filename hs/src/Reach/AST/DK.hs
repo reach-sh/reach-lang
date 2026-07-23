@@ -113,7 +113,7 @@ data DKProg = DKProg
   , dkp_apis :: DLAPIs
   , dkp_aliases :: Aliases
   , dkp_events :: DLEvents
-  , dkp_tail:: DKTail
+  , dkp_tail :: DKTail
   }
 
 instance Pretty DKProg where

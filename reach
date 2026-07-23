@@ -219,7 +219,14 @@ install_docker () {
   cd "${OPWD}"
 }
 
-for DEP in curl make docker docker-compose; do
+# REACH_DOCKER=0 runs the locally-built compiler directly (see run_d), so
+# docker and docker-compose are not dependencies in that mode.
+if [ "$REACH_DOCKER" = "0" ]; then
+  DEPS="curl make"
+else
+  DEPS="curl make docker docker-compose"
+fi
+for DEP in $DEPS; do
   if ! (command -v "${DEP}" >/dev/null 2>&1); then
     if [ "${DEP}" != "curl" ]; then
       call_home "$DEP is not installed" "0.0.0" "none" "false" "script_deps"
@@ -235,7 +242,7 @@ for DEP in curl make docker docker-compose; do
   fi
 done
 
-if [ ! "$CIRCLECI" = "true" ] && [ "$(docker image ls -q $IMG)" = '' ]; then
+if [ ! "$REACH_DOCKER" = "0" ] && [ ! "$CIRCLECI" = "true" ] && [ "$(docker image ls -q $IMG)" = '' ]; then
   if ! docker pull "$IMG"; then exit 1; fi
 fi
 

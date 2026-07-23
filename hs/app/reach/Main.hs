@@ -1,6 +1,6 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE CPP #-}
 
 module Main (main) where
 
@@ -8,7 +8,7 @@ import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Monad.Extra
 import Control.Monad.Reader
-import Data.Aeson (ToJSON, FromJSON, Value(..), toJSON, encode, object, parseJSON, withObject, withText, (.=), (.:))
+import Data.Aeson (FromJSON, ToJSON, Value (..), encode, object, parseJSON, toJSON, withObject, withText, (.:), (.=))
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Key as K
 import qualified Data.Aeson.KeyMap as KM
@@ -43,12 +43,12 @@ import GHC.Generics
 import qualified NeatInterpolation as N
 import Network.HTTP.Simple
 import Options.Applicative
-import Options.Applicative.Help.Pretty (text, (<$$>))
+import Options.Applicative.Help.Pretty (Doc, pretty, (.$.))
 import Reach.CommandLine
+import Reach.EverestUtil
 import Reach.Report
 import Reach.Util
 import Reach.Version
-import Reach.EverestUtil
 import Safe
 import System.Directory.Extra
 import System.Environment
@@ -63,6 +63,11 @@ import Text.Parsec.Language
 import Text.ParserCombinators.Parsec.Combinator (count)
 import Text.ParserCombinators.Parsec.Token
 import Text.Pretty.Simple
+
+-- optparse-applicative >= 0.18 dropped ansi-wl-pprint's monomorphic `text`;
+-- `pretty` alone is ambiguous under OverloadedStrings, so pin the type here.
+text :: String -> Doc
+text = pretty
 
 onlyEverest :: String -> String
 onlyEverest x = x <> me
@@ -80,8 +85,9 @@ uriReachScript :: IsString a => a
 uriReachScript = "https://docs.reach.sh/reach"
 
 esc :: FilePath -> FilePath
-esc x = "'" <> e <> "'" where
-  e = L.foldl' (\a c -> a <> (if c == '\'' then "'\\''" else [c])) "" x
+esc x = "'" <> e <> "'"
+  where
+    e = L.foldl' (\a c -> a <> (if c == '\'' then "'\\''" else [c])) "" x
 
 esc' :: FilePath -> Text
 esc' = pack . esc
@@ -532,17 +538,19 @@ serviceConnector Env {..} (ConnectorMode c m) ports appService' v = do
   fmt <- T.readFile $ e_dirEmbed </> "docker" </> "service-" <> n <> ".yml"
   cns <- do
     let f a = \case A.String x -> [x] <> a; _ -> a
-    cs <- (\(vs :: KM.KeyMap A.Value) -> [x | A.Object x <- KM.elems vs])
-      <$> Y.decodeThrow (T.encodeUtf8 fmt)
+    cs <-
+      (\(vs :: KM.KeyMap A.Value) -> [x | A.Object x <- KM.elems vs])
+        <$> Y.decodeThrow (T.encodeUtf8 fmt)
     pure $ L.foldl' (\a -> maybe a (f a) . KM.lookup "container_name") [] cs
 
   let labels = [N.text| - "sh.reach.devnet-for=$d" |]
-  let y = swap "REACH_VERSION" v
-        . swap "PORTS" ports'
-        . swap "NETWORK" "reach-devnet"
-        . swap "APP_SERVICE" (if appService' == "" then "" else "-" <> appService')
-        . swap "LABELS" labels
-        $ fmt
+  let y =
+        swap "REACH_VERSION" v
+          . swap "PORTS" ports'
+          . swap "NETWORK" "reach-devnet"
+          . swap "APP_SERVICE" (if appService' == "" then "" else "-" <> appService')
+          . swap "LABELS" labels
+          $ fmt
   pure (y, cns)
 
 connectorEnv :: Env -> ConnectorMode -> IO Text
@@ -826,7 +834,9 @@ withCompose DockerMeta {..} wrapped = do
   liftIO $ scaff True (e_dirTmpContainer </> "docker-compose.yml") (notw f)
   scriptWithConnectorMode $ do
     -- https://docs.docker.com/engine/reference/commandline/ps/#filtering
-    forM_ devnetCs $ \dc -> write [N.text|
+    forM_ devnetCs $ \dc ->
+      write
+        [N.text|
       docker ps -aqf 'name=^$dc$$' \
         -f 'status=removing' \
         -f 'status=paused'   \
@@ -872,16 +882,25 @@ switchQuiet =
       <> help "Withhold progress messages"
 
 switchInteractiveAUs :: Parser Bool
-switchInteractiveAUs = switch $ long "interactive" <> help
-  "Report available updates and prompt to synchronize"
+switchInteractiveAUs =
+  switch $
+    long "interactive"
+      <> help
+        "Report available updates and prompt to synchronize"
 
 switchNonInteractiveAUs :: Parser Bool
-switchNonInteractiveAUs = switch $ long "non-interactive" <> help
-  "Report available updates and immediately exit"
+switchNonInteractiveAUs =
+  switch $
+    long "non-interactive"
+      <> help
+        "Report available updates and immediately exit"
 
 switchJSONAUs :: Parser Bool
-switchJSONAUs = switch $ long "json" <> help
-  "Report available updates in JSON format (implies --non-interactive)"
+switchJSONAUs =
+  switch $
+    long "json"
+      <> help
+        "Report available updates in JSON format (implies --non-interactive)"
 
 recursiveDisableReporting :: Bool -> Text
 recursiveDisableReporting d = if d then " --disable-reporting" else ""
@@ -977,14 +996,16 @@ clean = command "clean" . info f $ fullDesc <> desc <> fdoc
     fdoc =
       footerDoc . Just $
         text "MODULE is \"index\" by default"
-          <$$> text "IDENT  is \"main\"  by default"
-          <$$> text ""
-          <$$> text "If:"
-          <$$> text " * MODULE is a directory then `cd $MODULE && rm -f \"build/index.$IDENT.mjs\";"
-          <$$> text " * MODULE is <something-else> then `rm -f \"build/$MODULE.$IDENT.mjs\""
+          .$. text "IDENT  is \"main\"  by default"
+          .$. text ""
+          .$. text "If:"
+          .$. text " * MODULE is a directory then `cd $MODULE && rm -f \"build/index.$IDENT.mjs\";"
+          .$. text " * MODULE is <something-else> then `rm -f \"build/$MODULE.$IDENT.mjs\""
     go m' i = do
       let m = esc' m'
-      script $ write [N.text|
+      script $
+        write
+          [N.text|
         MODULE=$m
 
         if [ ! $m = "index" ] && [ -d $m ]; then
@@ -1000,9 +1021,15 @@ clean = command "clean" . info f $ fullDesc <> desc <> fdoc
         <*> strArgument (metavar "IDENT" <> value "main" <> showDefault)
 
 compile :: Subcommand
-compile = command "compile" $ info f d
+compile = compileVia "compile" "" "Compile an app"
+
+sol :: Subcommand
+sol = compileVia "sol" "--sol " "Compile an app to verified Solidity + ABI + verification report (ETH only)"
+
+compileVia :: String -> Text -> String -> Subcommand
+compileVia cmdName extraArgs desc = command cmdName $ info f d
   where
-    d = progDesc "Compile an app"
+    d = progDesc desc
     f = go <$> compiler
     go CompilerToolArgs {cta_co = CompilerOpts {..}} = do
       liftIO $ do
@@ -1011,7 +1038,7 @@ compile = command "compile" $ info f d
         maybe (pure ()) diePathContainsParentDir co_moutputDir
       Env {e_var = Var {..}, ..} <- ask
       rawArgs <- fmap (\a -> if a == co_source then esc a else a) <$> liftIO getArgs
-      let rawArgs' = dropWhile (/= "compile") rawArgs
+      let rawArgs' = dropWhile (/= cmdName) rawArgs
       let o' (o, a) e = case o of
             True -> (False, a)
             False -> case e == "-o" || e == "--output" of
@@ -1024,18 +1051,19 @@ compile = command "compile" $ info f d
             . L.foldl' o' (False, [])
             . filter (/= "--disable-reporting")
             $ case rawArgs' of
-              "compile" : x -> x
-              _ -> impossible $ "compile args do not start with 'compile': " <> show rawArgs
+              c : x | c == cmdName -> x
+              _ -> impossible $ "compile args do not start with '" <> cmdName <> "': " <> show rawArgs
       args <- do
         md <- liftIO $ case co_moutputDir of
           Nothing -> pure Nothing
           Just od -> do
-            when (isAbsolute od) . die
-              $ "-o|--output must be a relative subdirectory of " <> e_dirPwdHost <> "."
+            when (isAbsolute od) . die $
+              "-o|--output must be a relative subdirectory of " <> e_dirPwdHost <> "."
             pure $ Just od
-        pure $ argsl
-          <> maybe "" (\o -> " -o " <> esc' o) md
-          <> recursiveDisableReporting e_disableReporting
+        pure $
+          extraArgs <> argsl
+            <> maybe "" (\o -> " -o " <> esc' o) md
+            <> recursiveDisableReporting e_disableReporting
 
       let v = versionBy majMinPat version''
       let cn = flip T.map v $ \c -> if isAlphaNum c && isAscii c then c else '-'
@@ -1136,7 +1164,8 @@ devnetDeps nolog = do
   ConnectorMode c' _ <- dieConnectorModeNotSpecified
   let c = packs c'
   l <- if nolog then pure "export REACH_DISABLE_REPORTING=1" else log'' "devnet_create"
-  pure [N.text|
+  pure
+    [N.text|
     NO_DEPS=''
     if [ "$(docker ps -qf label=sh.reach.devnet-for=$c)x" = 'x' ]; then
       :
@@ -1415,7 +1444,7 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse
     fdoc =
       footerDoc . Just $
         text "Example:"
-          <$$> text " $ reach rpc-run python3 -u ./index.py"
+          .$. text " $ reach rpc-run python3 -u ./index.py"
     f =
       go <$> strArgument (metavar "EXECUTABLE")
         <*> manyArgs "EXECUTABLE"
@@ -1499,8 +1528,10 @@ upgrade :: Subcommand
 upgrade = command "upgrade" $ info f d
   where
     d = progDesc "Upgrade Reach"
-    f = pure . liftIO $ putStrLn
-      "`reach upgrade` has been deprecated. Please use `reach info` and `reach update` instead."
+    f =
+      pure . liftIO $
+        putStrLn
+          "`reach upgrade` has been deprecated. Please use `reach info` and `reach update` instead."
 
 info' :: Subcommand
 info' = command "info" $ info f d
@@ -1576,7 +1607,9 @@ hashes :: Subcommand
 hashes = command "hashes" $ info f d
   where
     d = progDesc "Display git hashes used to build each Docker image"
-    h t i = write [N.text|
+    h t i =
+      write
+        [N.text|
       if [ ! "$(docker image ls -q "reachsh/$i:$t")" = '' ]; then
         echo "$i:" "$(docker image inspect -f '{{json .Config.Env}}' reachsh/${i}:$t \
           | sed -E 's/^.*REACH_GIT_HASH=([^"]+).*$/\1/')"
@@ -1644,7 +1677,8 @@ config2 = command "config2" $ info f mempty
       # Automatically generated with `reach config` at $now
       export REACHC_ID=$rcid
       export REACH_CONNECTOR_MODE=$dnet
-    |] <> "\n"
+    |]
+              <> "\n"
 
       liftIO $ do
         createDirectoryIfMissing True dcc
@@ -1660,7 +1694,9 @@ config2 = command "config2" $ info f mempty
 
       let efh' = pack efh
       let shell' = packs shell
-      let sourceMe = write [N.text|
+      let sourceMe =
+            write
+              [N.text|
         if [ -f "$$P" ]; then
           echo "You appear to be using the \`$shell'\` shell, with environment configuration stored in $$P."
         fi
@@ -1686,7 +1722,8 @@ config2 = command "config2" $ info f mempty
         case shell of
           ShellUnknown -> pure ()
           Bash -> do
-            write [N.text|
+            write
+              [N.text|
               if [ -f ~/.bash_profile ]; then
                 P=~/.bash_profile
               elif [ -f ~/.bash_login ]; then
@@ -1697,7 +1734,8 @@ config2 = command "config2" $ info f mempty
             |]
             sourceMe
           Zsh -> do
-            write [N.text|
+            write
+              [N.text|
               P=${ZDOTDIR:-$${HOME}}/.zshenv
               touch "$$P"
             |]
@@ -1840,19 +1878,23 @@ data VersionCompareIDTs = VersionCompareIDTs
   { vc_image :: Image'
   , vc_digest :: Digest
   , vc_tags :: [TagFor]
-  } deriving (Show, Eq, Generic)
+  }
+  deriving (Show, Eq, Generic)
 
 data VersionCompare = VersionCompare
   { vc_synced :: [VersionCompareIDTs]
   , vc_newDigest :: [VersionCompareIDTs]
   , vc_newTag :: [VersionCompareIDTs]
   , vc_newConnector :: [VersionCompareIDTs]
-  } deriving (Show, Eq, Generic)
+  }
+  deriving (Show, Eq, Generic)
 
 instance ToJSON VersionCompareIDTs where toEncoding = toEncoding' 3
+
 instance ToJSON VersionCompare where toEncoding = toEncoding' 3
 
 instance FromJSON VersionCompareIDTs where parseJSON = parseJSON' 3
+
 instance FromJSON VersionCompare where parseJSON = parseJSON' 3
 
 arch' :: String
@@ -1882,14 +1924,16 @@ remoteDockerAssocFor tmpC tmpH img mtag h = go
       guard $ d /= "" && t /= []
       Just $ M.insertWith (<>) d t a
 
-    uDockerHub = parseRequest_
-      $ "https://hub.docker.com/v2/repositories/" <> img' <> "/tags?page_size=100&ordering=last_updated"
-     <> maybe "" ("&name=" <>) mtag
+    uDockerHub =
+      parseRequest_ $
+        "https://hub.docker.com/v2/repositories/" <> img' <> "/tags?page_size=100&ordering=last_updated"
+          <> maybe "" ("&name=" <>) mtag
 
     assoc f = either (pure . Left) $ pure . Right . M.singleton img'' . L.foldl' f mempty
 
-    grh r l = readMay . toString
-      =<< getResponseHeader ("X-" <> l) r `atMay` 0 <|> getResponseHeader l r `atMay` 0
+    grh r l =
+      readMay . toString
+        =<< getResponseHeader ("X-" <> l) r `atMay` 0 <|> getResponseHeader l r `atMay` 0
 
     -- Exponential back-off with `c` rate-limit events + max `t` tries
     --  *OR*  max `t` tries using API's `X-Retry-After` header if available
@@ -1937,8 +1981,8 @@ remoteUpdates psb imgs = do
   let d = threadDelay 2500000 *> putStr "." *> hFlush stdout *> d
   pdots <- liftIO . forkIO . when psb $ putStr "Please stand-by..." *> hFlush stdout *> d
 
-  (sh, ts) <- liftIO . concurrently (httpLBS uriReachScript)
-    $ forConcurrently imgs $ \i ->
+  (sh, ts) <- liftIO . concurrently (httpLBS uriReachScript) $
+    forConcurrently imgs $ \i ->
       remoteDockerAssocFor e_dirTmpContainer e_dirTmpHost i (mtag i) $ imageHost e_var
 
   liftIO $ do
@@ -1952,11 +1996,12 @@ remoteUpdates psb imgs = do
       let x = "reach-script-new-fail.txt"
       T.writeFile (e_dirTmpContainer </> x) . toStrict $ pShowNoColor sh
       putStrLn $ "Received unexpected response while fetching " <> uriReachScript <> "."
-      putStrLn $ "Please open an issue at "
-        <> unpack uriIssues
-        <> " including the contents of "
-        <> e_dirTmpHost </> x
-        <> "."
+      putStrLn $
+        "Please open an issue at "
+          <> unpack uriIssues
+          <> " including the contents of "
+          <> e_dirTmpHost </> x
+          <> "."
       exitWith $ ExitFailure 1
 
   unless (all isRight ts) . liftIO $ do
@@ -2002,7 +2047,8 @@ versionCompare' i' j' u' p' = scriptWithConnectorModeOptional $ do
   let confE = "_docker" </> "ils-" <> now <> ".json"
   let confC = pack $ e_dirConfigContainer </> confE
   let confH = pack $ e_dirConfigHost </> confE
-  write [N.text|
+  write
+    [N.text|
     f () {
       $q
     }
@@ -2015,75 +2061,80 @@ versionCompare' i' j' u' p' = scriptWithConnectorModeOptional $ do
 
     $reachEx version-compare2$i$j$u$p --rm-ils --ils="$confC"
   |]
- where
-  t = mappend ("docker image ls --digests --format "
-    <> "'{ \"Digest\": \"{{.Digest}}\", \"Repository\": \"{{.Repository}}\", \"Tag\": \"{{.Tag}}\" }' ")
+  where
+    t =
+      mappend
+        ("docker image ls --digests --format "
+           <> "'{ \"Digest\": \"{{.Digest}}\", \"Repository\": \"{{.Repository}}\", \"Tag\": \"{{.Tag}}\" }' ")
 
-  q = T.intercalate " && \\\n" $ t . ("reachsh/" <>) <$> imagesAll
+    q = T.intercalate " && \\\n" $ t . ("reachsh/" <>) <$> imagesAll
 
 versionCompare :: Subcommand
 versionCompare = command "version-compare" $ info f mempty
   where
-    f = versionCompare'
-      <$> switchNonInteractiveAUs
-      <*> switchJSONAUs
-      <*> switch (long "update")
-      <*> pure False
+    f =
+      versionCompare'
+        <$> switchNonInteractiveAUs
+        <*> switchJSONAUs
+        <*> switch (long "update")
+        <*> pure False
 
 versionCompare2 :: Subcommand
 versionCompare2 = command "version-compare2" $ info f mempty
   where
-    f = g
-      <$> switchNonInteractiveAUs
-      <*> switchJSONAUs
-      <*> strOption (long "ils")
-      <*> switch (long "rm-ils")
-      <*> strOption (long "stub-remote" <> value "")
-      <*> strOption (long "stub-script" <> value "")
-      <*> switch (long "update")
-      <*> switch (long "print-stand-by")
+    f =
+      g
+        <$> switchNonInteractiveAUs
+        <*> switchJSONAUs
+        <*> strOption (long "ils")
+        <*> switch (long "rm-ils")
+        <*> strOption (long "stub-remote" <> value "")
+        <*> strOption (long "stub-script" <> value "")
+        <*> switch (long "update")
+        <*> switch (long "print-stand-by")
     g ni j l rl mr ms up psb = do
       Env {e_var = Var {..}, ..} <- ask
-      assocL <- liftIO (A.eitherDecodeFileStrict' l) >>= \case
-        Left e -> liftIO $ do
-          u <- liftIO $ BSL.readFile l
-          let x = "docker-digests-parse-fail.txt"
-          T.writeFile (e_dirTmpContainer </> x) . toStrict $
-            "Unparsed input: " <> decodeUtf8 u <> "\n" <> pShowNoColor e
-          putStrLn "Failed to parse local Docker image digests."
-          T.putStrLn $
-            "Please open an issue at " <> uriIssues
-              <> " including the contents of "
-              <> pack (e_dirTmpHost </> x)
-              <> "."
-          exitWith $ ExitFailure 1
-        Right ils' -> pure $ L.foldl' x mempty ils''
-          where
-            x a (r, d, t) =
-              M.insertWith
-                (<>)
-                r
-                (maybe (M.singleton d t) (M.insertWith (<>) d t) $ a !? r)
-                a
+      assocL <-
+        liftIO (A.eitherDecodeFileStrict' l) >>= \case
+          Left e -> liftIO $ do
+            u <- liftIO $ BSL.readFile l
+            let x = "docker-digests-parse-fail.txt"
+            T.writeFile (e_dirTmpContainer </> x) . toStrict $
+              "Unparsed input: " <> decodeUtf8 u <> "\n" <> pShowNoColor e
+            putStrLn "Failed to parse local Docker image digests."
+            T.putStrLn $
+              "Please open an issue at " <> uriIssues
+                <> " including the contents of "
+                <> pack (e_dirTmpHost </> x)
+                <> "."
+            exitWith $ ExitFailure 1
+          Right ils' -> pure $ L.foldl' x mempty ils''
+            where
+              x a (r, d, t) =
+                M.insertWith
+                  (<>)
+                  r
+                  (maybe (M.singleton d t) (M.insertWith (<>) d t) $ a !? r)
+                  a
 
-            t' = either (const []) ((: []) . TFReach) . mkReachVersionOf'
+              t' = either (const []) ((: []) . TFReach) . mkReachVersionOf'
 
-            ils'' = flip mapMaybe ils' $ \DockerILS {..} -> do
-              guard $ dils_Digest /= "<none>"
-              let ir = dils_Repository `elem` (("reachsh/" <>) <$> imagesAll)
-              let dt = case dils_Repository of
-                    "reachsh/reach-cli" | dils_Tag == tagFor TFReachCLI -> const [TFReachCLI]
-                    _ | ir -> t'
-                    i -> error $ "Unrecognized image \"" <> unpack i <> "\""
-              dr <- case dils_Repository of
-                _ | ir -> Just dils_Repository
-                _ -> Nothing
-              Just (dr, dils_Digest, dt dils_Tag)
+              ils'' = flip mapMaybe ils' $ \DockerILS {..} -> do
+                guard $ dils_Digest /= "<none>"
+                let ir = dils_Repository `elem` (("reachsh/" <>) <$> imagesAll)
+                let dt = case dils_Repository of
+                      "reachsh/reach-cli" | dils_Tag == tagFor TFReachCLI -> const [TFReachCLI]
+                      _ | ir -> t'
+                      i -> error $ "Unrecognized image \"" <> unpack i <> "\""
+                dr <- case dils_Repository of
+                  _ | ir -> Just dils_Repository
+                  _ -> Nothing
+                Just (dr, dils_Digest, dt dils_Tag)
 
       when rl . liftIO $ removeFile l
 
       (latestScript, assocR) <- case (ms, mr) of
-        _ | ms /= "" && mr /= "" -> (pack ms, ) . fromMaybe mempty <$> liftIO (A.decodeFileStrict' mr)
+        _ | ms /= "" && mr /= "" -> (pack ms,) . fromMaybe mempty <$> liftIO (A.decodeFileStrict' mr)
         _ -> remoteUpdates psb imagesAll
 
       -- Treat remote tags as unique and authoritative, but local tags might be
@@ -2119,8 +2170,8 @@ versionCompare2 = command "version-compare2" $ info f mempty
                 rts' = filter (`notElem` lts) rts
             (DAQLMissingTag _ _, DAQRMatch i rd rts) -> mDorTs i rd rts
             (DAQLMissingImg li _, DAQRMatch ri rd rts)
-              | li == ri && ri `elem` (pre <$> imagesForAllConnectors)
-              -> mkNca (DAQNewDigestAvailable ri rd rts) ri rd rts
+              | li == ri && ri `elem` (pre <$> imagesForAllConnectors) ->
+                mkNca (DAQNewDigestAvailable ri rd rts) ri rd rts
             (_, DAQRMatch i d rts) -> DAQNewDigestAvailable i d rts
             where
               pre = ("reachsh/" <>)
@@ -2129,10 +2180,11 @@ versionCompare2 = command "version-compare2" $ info f mempty
               mkNca x ri rd rts = case connectorMode of
                 Just (ConnectorMode c m) | m /= Live && ri `elem` (pre <$> imagesFor c) -> x
                 _ -> DAQNewConnectorAvailable ri rd rts
-              mDorTs i rd rts = maybe
-                (DAQNewDigestAvailable i rd rts)
-                (\lts -> DAQNewTags i rd $ filter (`notElem` lts) rts)
-                $ assocL !? i >>= (!? rd)
+              mDorTs i rd rts =
+                maybe
+                  (DAQNewDigestAvailable i rd rts)
+                  (\lts -> DAQNewTags i rd $ filter (`notElem` lts) rts)
+                  $ assocL !? i >>= (!? rd)
 
       -- Avoid "double update" problem when current CLI image doesn't yet know a
       -- new numeric branch has been released, e.g. 0.1.7 -> 0.1.8
@@ -2162,18 +2214,18 @@ versionCompare2 = command "version-compare2" $ info f mempty
       let uImgs = [Image' a | DAQUnknownImg a _ <- images]
       let uTags = [(Image' x, y) | DAQUnknownTag x y <- images]
 
-      let vc@VersionCompare{..} = VersionCompare
-            [VersionCompareIDTs (Image' x) y z | DAQSync x y z <- images]
-            [VersionCompareIDTs (Image' x) y z | DAQNewDigestAvailable x y z <- images]
-            [VersionCompareIDTs (Image' x) y z | DAQNewTags x y z <- images]
-            [VersionCompareIDTs (Image' x) y z | DAQNewConnectorAvailable x y z <- images]
+      let vc@VersionCompare {..} =
+            VersionCompare
+              [VersionCompareIDTs (Image' x) y z | DAQSync x y z <- images]
+              [VersionCompareIDTs (Image' x) y z | DAQNewDigestAvailable x y z <- images]
+              [VersionCompareIDTs (Image' x) y z | DAQNewTags x y z <- images]
+              [VersionCompareIDTs (Image' x) y z | DAQNewConnectorAvailable x y z <- images]
 
       case (length uImgs > 0, length uTags > 0, j, up) of
         (True, _, _, _) -> liftIO $ do
           forM_ uImgs $ \a -> T.putStrLn $ "Unknown image: " <> imgTxt a <> "."
           T.putStrLn $ "Please open an issue at " <> uriIssues <> " including the failures listed above."
           exitWith $ ExitFailure 1
-
         (_, True, _, _) -> liftIO $ do
           forM_ uTags $ \(x, y) -> T.putStrLn $ "Unknown tag: " <> y <> " for image: " <> imgTxt x <> "."
           exitWith $ ExitFailure 1
@@ -2191,7 +2243,8 @@ versionCompare2 = command "version-compare2" $ info f mempty
             createDirectoryIfMissing True $ takeDirectory confF
             BSLC8.writeFile confF $ encode vc
 
-          write [N.text|
+          write
+            [N.text|
             if ! command -v diff >/dev/null; then
               echo '{ "noDiff": true, "script": false, "dockerH": "$confH", "dockerC": "$confC" }'
               exit $ec
@@ -2208,7 +2261,8 @@ versionCompare2 = command "version-compare2" $ info f mempty
         (_, _, _, True) -> scriptWithConnectorModeOptional $ do
           update' False vc
           us <- updateScript
-          write [N.text|
+          write
+            [N.text|
             if ! command -v diff >/dev/null; then
               # This is less polite but perhaps less trouble-prone
               $us
@@ -2219,14 +2273,20 @@ versionCompare2 = command "version-compare2" $ info f mempty
 
         -- plaintext modes
         _ -> scriptWithConnectorModeOptional $ do
-          let prompt' p n y = (liftIO $ putStr ("\n" <> p <> " (Enter 'y' for yes): ")
-                >> hFlush stdout >> getLine) >>= \case
-                  z | L.upper z == "Y" -> y
-                  _ -> n
+          let prompt' p n y =
+                (liftIO $
+                   putStr ("\n" <> p <> " (Enter 'y' for yes): ")
+                     >> hFlush stdout
+                     >> getLine)
+                  >>= \case
+                    z | L.upper z == "Y" -> y
+                    _ -> n
 
           let s = T.take 8 . T.drop 7
-          let m = maybe 0 id . maximumMay $ (\(VersionCompareIDTs x _ _) -> T.length $ imgTxt x)
-                <$> vc_newDigest <> vc_newTag <> vc_newConnector <> vc_synced
+          let m =
+                maybe 0 id . maximumMay $
+                  (\(VersionCompareIDTs x _ _) -> T.length $ imgTxt x)
+                    <$> vc_newDigest <> vc_newTag <> vc_newConnector <> vc_synced
 
           let p x = imgTxt x <> T.replicate (m - T.length (imgTxt x)) " "
           let n a = when (any ((> 0) . length) a) $ putStrLn ""
@@ -2236,10 +2296,11 @@ versionCompare2 = command "version-compare2" $ info f mempty
                   " * " <> p x <> "  " <> s y <> ":  "
                     <> T.intercalate ", " (tagFor <$> L.sort z)
 
-          let ancas (VersionCompareIDTs x' y zs) = "\n" <> a <> "\n" <> T.intercalate "\n" b where
-                x = imgTxt x'
-                a = [N.text| docker pull $x@$y |]
-                b = zs <&> \z' -> let z = tagFor z' in [N.text| docker tag $x@$y $x:$z |]
+          let ancas (VersionCompareIDTs x' y zs) = "\n" <> a <> "\n" <> T.intercalate "\n" b
+                where
+                  x = imgTxt x'
+                  a = [N.text| docker pull $x@$y |]
+                  b = zs <&> \z' -> let z = tagFor z' in [N.text| docker tag $x@$y $x:$z |]
 
           let addNewCAs = T.intercalate "\n" $ ancas <$> vc_newConnector
 
@@ -2248,7 +2309,8 @@ versionCompare2 = command "version-compare2" $ info f mempty
 
           let andTheScript' ec = case ni of
                 True -> [N.text| exit 60 |]
-                False -> [N.text|
+                False ->
+                  [N.text|
                   printf "Type 'y' to update it; anything else aborts: "; read -r x
                   case "$$x" in
                     y|Y) mkdir -p "$dch/_backup"
@@ -2269,7 +2331,9 @@ versionCompare2 = command "version-compare2" $ info f mempty
                   esac
                 |]
 
-          let andTheScript ec = write [N.text|
+          let andTheScript ec =
+                write
+                  [N.text|
             if ! command -v diff >/dev/null; then
               echo
               echo "A newer version of the \`reach\` script may be available."
@@ -2281,7 +2345,9 @@ versionCompare2 = command "version-compare2" $ info f mempty
             fi
 
             exit $ec
-          |] where ats = andTheScript' ec
+          |]
+                where
+                  ats = andTheScript' ec
 
           let prompt ec p' y = prompt' p' (andTheScript ec) y
 
@@ -2294,7 +2360,6 @@ versionCompare2 = command "version-compare2" $ info f mempty
                   putStrLn $ utd <> "."
                   say vc_synced
                 andTheScript "0"
-
               False -> do
                 liftIO $ do
                   putStrLn $ utd <> " but the following (optional) connectors are also available:"
@@ -2306,7 +2371,6 @@ versionCompare2 = command "version-compare2" $ info f mempty
                   False -> prompt "0" wyl $ do
                     write addNewCAs
                     andTheScript "0"
-
             False -> do
               liftIO $ do
                 when (length vc_newDigest > 0) $ do
@@ -2334,7 +2398,8 @@ versionCompare2 = command "version-compare2" $ info f mempty
                   prompt "60" "Would you like to perform an update?" $ do
                     when (length vc_newConnector > 0)
                       . prompt' wyl (pure ())
-                        . write $ "echo\n" <> addNewCAs
+                      . write
+                      $ "echo\n" <> addNewCAs
 
                     when (length vc_newDigest > 0) $ write "echo"
                     forM_ vc_newDigest $ \(VersionCompareIDTs x' y zs) -> do
@@ -2354,10 +2419,11 @@ versionCompare2 = command "version-compare2" $ info f mempty
 
 updateScript :: AppT Text
 updateScript = do
-  Env {e_var = Var{..}, ..} <- ask
+  Env {e_var = Var {..}, ..} <- ask
   now <- pack <$> zulu
   let dch = pack e_dirConfigHost
-  pure [N.text|
+  pure
+    [N.text|
     mkdir -p "$dch/_backup"
     cp $reachEx "$dch/_backup/reach-$now"
     echo
@@ -2387,16 +2453,20 @@ update' s VersionCompare {..} = do
   when s $ updateScript >>= write
 
 updateIDE :: Subcommand
-updateIDE = command "update-ide" $ info f mempty where
-  f = g
-    <$> switch (long "script")
-    <*> switch (long "rm-json") -- Delete input JSON once it's served its purpose
-    <*> strOption (long "json")
-  g s r j = scriptWithConnectorModeOptional $ do
-    v <- liftIO $ A.eitherDecodeFileStrict' j
-      >>= either (\e -> putStrLn e >> exitWith (ExitFailure 1)) pure
-    when r . liftIO $ removeFile j
-    update' s v
+updateIDE = command "update-ide" $ info f mempty
+  where
+    f =
+      g
+        <$> switch (long "script")
+        <*> switch (long "rm-json") -- Delete input JSON once it's served its purpose
+        <*> strOption (long "json")
+    g s r j = scriptWithConnectorModeOptional $ do
+      v <-
+        liftIO $
+          A.eitherDecodeFileStrict' j
+            >>= either (\e -> putStrLn e >> exitWith (ExitFailure 1)) pure
+      when r . liftIO $ removeFile j
+      update' s v
 
 whoami' :: Text
 whoami' = [N.text| ${REACHC_ID:-$(docker info --format '{{.ID}}' 2>/dev/null)} |]
@@ -2407,6 +2477,7 @@ whoami = command "whoami" $ info f fullDesc
     f = pure . script $ write [N.text| echo "$whoami'" |]
 
 newtype GitHubGistResponse = GitHubGistResponse Text
+
 instance FromJSON GitHubGistResponse where
   parseJSON = withObject "GitHubGistResponse" $ \o -> GitHubGistResponse <$> o .: "html_url"
 
@@ -2418,39 +2489,47 @@ support = command "support" $ info h d
     go SupportToolArgs {sta_so = SupportOpts {}} = do
       rawArgs <- liftIO getArgs
       let rawArgs' = dropWhile (/= "support") rawArgs
-      let useArgs xs = upload =<< mapM z xs 
+      let useArgs xs = upload =<< mapM z xs
       case tailMay rawArgs' of
         Nothing -> impossible $ "support args do not start with 'support': " <> show rawArgs
-        Just [] -> liftIO $ useArgs [ "index.rsh", "index.mjs" ]
+        Just [] -> liftIO $ useArgs ["index.rsh", "index.mjs"]
         Just xs -> liftIO $ useArgs xs
-    f i c = i .= object
-      [ "content" .= if T.null (T.strip $ pack c) then "// (Empty source file)" else c
-      , "language" .= ("JavaScript" :: String)
-      , "type" .= ("application/javascript" :: String)
-      ]
-    z i = doesFileExist i >>= \case
-      False -> do
+    f i c =
+      i
+        .= object
+          [ "content" .= if T.null (T.strip $ pack c) then "// (Empty source file)" else c
+          , "language" .= ("JavaScript" :: String)
+          , "type" .= ("application/javascript" :: String)
+          ]
+    z i =
+      doesFileExist i >>= \case
+        False -> do
           putStrLn $ "Couldn't find the following file: " <> i
           putStrLn "\nNothing uploaded"
           exitWith $ ExitFailure 1
-      -- "Contents files can't be in subdirectories or include '/' in the name"
-      True -> (\a -> [f (K.fromText $ T.replace "/" "\\" $ pack i) a]) <$> readFile i
+        -- "Contents files can't be in subdirectories or include '/' in the name"
+        True -> (\a -> [f (K.fromText $ T.replace "/" "\\" $ pack i) a]) <$> readFile i
     clientId = "c4bfe74cc8be5bbaf00e" :: String
     is l = maybe False (== pack l) . headMay
-    by a x = maybe (putStrLn ("Missing field `" <> x <> "`.") >> exitWith (ExitFailure 1)) pure
-      $ (headMay $ filter (is x) a) >>= (`atMay` 1)
-    req u x = fmap (map (T.splitOn "=") . T.splitOn "&" . pack . BSLC8.unpack . getResponseBody)
-        $ setRequestBodyJSON (object x)
-      <$> parseRequest ("POST " <> u)
-      >>= httpLBS
+    by a x =
+      maybe (putStrLn ("Missing field `" <> x <> "`.") >> exitWith (ExitFailure 1)) pure $
+        (headMay $ filter (is x) a) >>= (`atMay` 1)
+    req u x =
+      fmap (map (T.splitOn "=") . T.splitOn "&" . pack . BSLC8.unpack . getResponseBody) $
+        setRequestBodyJSON (object x)
+          <$> parseRequest ("POST " <> u)
+          >>= httpLBS
     upload arrayOfPairs = liftIO $ do
-      a <- req "https://github.com/login/device/code"
-        [ "client_id" .= clientId
-        , "scope" .= ("gist" :: String)
-        ]
+      a <-
+        req
+          "https://github.com/login/device/code"
+          [ "client_id" .= clientId
+          , "scope" .= ("gist" :: String)
+          ]
       deviceCode <- a `by` "device_code"
       userCode <- a `by` "user_code"
-      T.putStrLn [N.text|
+      T.putStrLn
+        [N.text|
         Please enter $userCode at https://github.com/login/device.
 
         Type 'y' after successful authorization to upload your files:
@@ -2458,11 +2537,13 @@ support = command "support" $ info h d
       hFlush stdout >> getChar >>= \c -> unless (toUpper c == 'Y') $ do
         putStrLn "\nNo files were uploaded. Run `reach support` again to retry."
         exitWith $ ExitFailure 1
-      t <- req "https://github.com/login/oauth/access_token"
-        [ "client_id" .= clientId
-        , "device_code" .= deviceCode
-        , "grant_type" .= ("urn:ietf:params:oauth:grant-type:device_code" :: String)
-        ]
+      t <-
+        req
+          "https://github.com/login/oauth/access_token"
+          [ "client_id" .= clientId
+          , "device_code" .= deviceCode
+          , "grant_type" .= ("urn:ietf:params:oauth:grant-type:device_code" :: String)
+          ]
       -- @TODO: Save accessToken; git-credential-store
       -- Warning: Permission errors when doing this^
       when (null $ filter (is "access_token") t) $ do
@@ -2474,12 +2555,15 @@ support = command "support" $ info h d
       -- @TODO: Also add output of reach hashes!
       parseRequest "POST https://api.github.com/gists"
         >>= httpBS
-          . setRequestHeader "User-Agent" [ BSI.packChars "reach" ]
-          . setRequestHeader "Authorization" [ BSI.packChars ("token " <> gat) ]
-          . setRequestHeader "Accept" [ BSI.packChars "application/vnd.github.v3+json" ]
-          . setRequestBodyJSON (object [ "files" .= object (concat arrayOfPairs) ])
+          . setRequestHeader "User-Agent" [BSI.packChars "reach"]
+          . setRequestHeader "Authorization" [BSI.packChars ("token " <> gat)]
+          . setRequestHeader "Accept" [BSI.packChars "application/vnd.github.v3+json"]
+          . setRequestBodyJSON (object ["files" .= object (concat arrayOfPairs)])
         >>= Y.decodeThrow . getResponseBody
-        >>= \(GitHubGistResponse r) -> T.putStrLn $ "\n" <> [N.text|
+        >>= \(GitHubGistResponse r) ->
+          T.putStrLn $
+            "\n"
+              <> [N.text|
               Your gist is viewable at:
               $r
             |]
@@ -2545,6 +2629,7 @@ main = do
           <> rpcServer
           <> run'
           <> scaffold
+          <> sol
           <> support
           <> update
           <> version'
@@ -2571,7 +2656,7 @@ main = do
     >>= \Cli {..} -> do
       cc <- lookupEnv "CIRCLECI"
       rd <- lookupEnv "REACH_DOCKER"
-      let cenv_no = c_env { e_disableReporting = True }
+      let cenv_no = c_env {e_disableReporting = True}
       let cenv =
             case (cc, rd) of
               (Just "true", _) -> cenv_no

@@ -3,10 +3,13 @@ module Reach.OutputUtil
   , wrapOutput
   , mayOutput
   , mustOutput
-  ) where
+  , atomicWriteFile
+  )
+where
 
 import Control.Monad
 import qualified Data.Text as T
+import System.Directory
 
 type Outputer = Bool -> T.Text -> (Bool, FilePath)
 
@@ -21,3 +24,11 @@ mustOutput out lab j = do
   let (_, f) = out True lab
   j f
   return f
+
+-- Write to a temporary sibling and rename into place, so consumers never
+-- observe a partially-written artifact.
+atomicWriteFile :: (FilePath -> a -> IO ()) -> FilePath -> a -> IO ()
+atomicWriteFile wr fp x = do
+  let tmp = fp <> ".tmp"
+  wr tmp x
+  renameFile tmp fp

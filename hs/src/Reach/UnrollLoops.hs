@@ -1,6 +1,8 @@
 module Reach.UnrollLoops (UnrollWrapper (..), unrollLoops) where
 
+import Control.Monad
 import Control.Monad.Reader
+import qualified Data.ByteString as B
 import Data.Foldable
 import Data.IORef
 import Data.List (transpose)
@@ -8,15 +10,14 @@ import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import GHC.Stack (HasCallStack)
 import Reach.AST.Base
+import Reach.AST.CP
 import Reach.AST.DLBase
+import Reach.AST.EP
 import Reach.AST.LL
 import Reach.AST.PL
-import Reach.AST.CP
-import Reach.AST.EP
 import Reach.Counter
 import Reach.Freshen
 import Reach.Util
-import qualified Data.ByteString as B
 
 type App = ReaderT Env IO
 
@@ -122,7 +123,7 @@ instance Unroll DLStmt where
     DL_LocalSwitch at ov csm -> DL_LocalSwitch at ov <$> ul csm
     DL_ArrayMap at ans_lv xs as i fb -> do
       (_, xs') <- unzip <$> mapM (ul_explode at) xs
-      r' <- zipWithM (\xa iv -> fu_ fb $ (zip (map vl2v as) xa) <> [(vl2v i, (DLA_Literal $ DLL_Int at UI_Word iv))]) (transpose xs') [0..]
+      r' <- zipWithM (\xa iv -> fu_ fb $ (zip (map vl2v as) xa) <> [(vl2v i, (DLA_Literal $ DLL_Int at UI_Word iv))]) (transpose xs') [0 ..]
       case ans_lv of
         DLV_Let vc ans -> do
           let r_ty = arrType $ varType ans
@@ -132,7 +133,7 @@ instance Unroll DLStmt where
           return $ DL_LocalDo at Nothing $ dtList at $ map go r'
     DL_ArrayReduce at ans_lv xs z b as i fb -> do
       (_, xs') <- unzip <$> mapM (ul_explode at) xs
-      let xs'i = zip (transpose xs') $ map (DLA_Literal . DLL_Int at UI_Word) [0..]
+      let xs'i = zip (transpose xs') $ map (DLA_Literal . DLL_Int at UI_Word) [0 ..]
       r' <- foldlM (\za (xa, ia) -> fu_ fb ([(vl2v b, za)] <> (zip (map vl2v as) xa) <> [(vl2v i, ia)])) z xs'i
       return $ DL_Let at ans_lv (DLE_Arg at r')
     DL_MapReduce at mri ans x z b k a fb ->

@@ -7,10 +7,10 @@ where
 import qualified Data.Aeson as AS
 import qualified Data.ByteString as B
 import Reach.AST.Base
-import Reach.AST.DLBase
-import Reach.AST.LL
 import Reach.AST.CP
+import Reach.AST.DLBase
 import Reach.AST.EP
+import Reach.AST.LL
 
 class Sanitize a where
   sani :: a -> a
@@ -79,7 +79,7 @@ instance Sanitize DLRemoteALGOSTR where
 
 instance Sanitize DLRemoteALGO where
   sani (DLRemoteALGO {..}) =
-    DLRemoteALGO ( sani ra_fees )( sani ra_accounts )( sani ra_assets )( sani ra_addr2acc )( sani ra_apps )( sani ra_boxes )( sani ra_onCompletion )( sani ra_strictPay )( sani ra_rawCall )( sani ra_simNetRecv )( sani ra_simTokensRecv )( sani ra_simReturnVal )( sani ra_txnOrderForward )
+    DLRemoteALGO (sani ra_fees) (sani ra_accounts) (sani ra_assets) (sani ra_addr2acc) (sani ra_apps) (sani ra_boxes) (sani ra_onCompletion) (sani ra_strictPay) (sani ra_rawCall) (sani ra_simNetRecv) (sani ra_simTokensRecv) (sani ra_simReturnVal) (sani ra_txnOrderForward)
 
 instance Sanitize AS.Value where
   sani = id

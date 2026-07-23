@@ -22,6 +22,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
+import GHC.Generics (Generic)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
@@ -35,11 +36,12 @@ import Reach.OutputUtil
 import Reach.Pretty
 import Reach.Texty
 import Reach.UnrollLoops
-import Reach.UnsafeUtil (unsafeTermSupportsColor, unsafeIsErrorFormatJson)
+import Reach.UnsafeUtil (unsafeIsErrorFormatJson, unsafeTermSupportsColor)
 import Reach.Util
 import Reach.Verify.SMTAst
 import Reach.Verify.SMTParser
 import Reach.Verify.Shared
+import Reach.VerifyReport
 import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver (..))
 import qualified SimpleSMT as SMT
 import qualified System.Console.Pretty as TC
@@ -48,7 +50,6 @@ import System.Exit
 import System.FilePath
 import System.IO
 import Text.Read (readMaybe)
-import GHC.Generics (Generic)
 
 --- SMT Helpers
 
@@ -263,7 +264,7 @@ smtAddress who = "address_" <> bunpack who
 
 smtConstant :: DLConstant -> String
 smtConstant = \case
-  DLC_UInt_max  -> "dlc_UInt_max"
+  DLC_UInt_max -> "dlc_UInt_max"
   DLC_Token_zero -> "dlc_Token_zero"
 
 smt_c :: SrcLoc -> DLConstant -> App SExpr
@@ -336,7 +337,7 @@ smtPrimOp at p dargs =
     DIGEST_XOR -> app "Digest_xor"
     BYTES_XOR -> app "Bytes_xor"
     BTOI_LAST8 False -> app "btoiLast8"
-    BTOI_LAST8 True  -> app "dtoiLast8"
+    BTOI_LAST8 True -> app "dtoiLast8"
     IF_THEN_ELSE -> app "ite"
     DIGEST_EQ -> app "="
     ADDRESS_EQ -> app "="
@@ -609,9 +610,10 @@ parseModel2 pm = M.fromList <$> aux (M.toList pm)
       [] -> return []
       (v, (tyse, vse)) : tl -> do
         -- liftIO $ putStrLn $ show (v, tyse, vse)
-        ty' <- isVarAMap v tyse >>= \case
-                True  -> return $ List [Atom "Map", tyse]
-                False -> return $ tyse
+        ty' <-
+          isVarAMap v tyse >>= \case
+            True -> return $ List [Atom "Map", tyse]
+            False -> return $ tyse
         ty <- parseType ty'
         ve <- parseVal mempty ty vse
         rst <- aux tl
@@ -693,6 +695,17 @@ display_fail tat f tk mmsg mrd mdv timeout = do
       True -> hPutStrLn stderr $ "error: " ++ makeErrorJson tat (SMTError finishedMessage) (topOfStackTrace f)
       False -> do
         putStr finishedMessage
+    forM_ vo_report $ \vrr ->
+      modifyIORef vrr $
+        vraAddFailure $
+          VerifyFailure
+            { vf_mode = T.pack $ show $ pretty mode
+            , vf_theorem = T.pack $ show $ pretty tk
+            , vf_msg = fmap (T.pack . B.unpack) mmsg
+            , vf_at = T.pack $ redactAbsStr cwd $ show tat
+            , vf_timeout = timeout
+            , vf_witness = T.pack finishedMessage
+            }
     when vo_first_fail_quit $
       exitWith $ ExitFailure 1
 
@@ -818,8 +831,8 @@ assertInvariants at_dv t v =
   case t of
     T_UInt ut -> do
       rhs <- case ut of
-               UI_Word -> smt_c at_dv DLC_UInt_max
-               UI_256 -> return $ smt_lt at_dv $ DLL_Int at_dv ut uint256_Max
+        UI_Word -> smt_c at_dv DLC_UInt_max
+        UI_256 -> return $ smt_lt at_dv $ DLL_Int at_dv ut uint256_Max
       smtAssert (smtApply "<=" [Atom v, rhs])
     _ -> return ()
 
@@ -1160,8 +1173,9 @@ smt_e at_dv mdv de = do
         let index = fromInteger index_
         let tupCtor = tupSort ++ "_cons"
         let tupLen = length $ tupleTypes tup_t
-        let copiedFields = map (\n -> smtApply (tupSort <> "_elem" <> show n) [tup_se]) $
-                             filter (/= index) [0..tupLen-1]
+        let copiedFields =
+              map (\n -> smtApply (tupSort <> "_elem" <> show n) [tup_se]) $
+                filter (/= index) [0 .. tupLen -1]
         let (h, t) = splitAt index copiedFields
         let fields = h ++ [val_se] ++ t
         bound at $ smtApply tupCtor fields
@@ -1176,8 +1190,9 @@ smt_e at_dv mdv de = do
         obj_se <- smt_a at obj_a
         val_se <- smt_a at val_a
         let objCtor = objSort ++ "_cons"
-        let copiedFields = map (\f -> smtApply (objSort <> "_" <> f) [obj_se]) $
-                             filter (/= fieldName) $ map fst $ objstrTypes obj_t
+        let copiedFields =
+              map (\f -> smtApply (objSort <> "_" <> f) [obj_se]) $
+                filter (/= fieldName) $ map fst $ objstrTypes obj_t
         let fieldIndex = fromInteger $ objstrFieldIndex obj_t fieldName
         let (h, t) = splitAt fieldIndex copiedFields
         let fields = h ++ [val_se] ++ t
@@ -1383,8 +1398,8 @@ smt_block (DLBlock at _ l da) = do
 smt_invblock :: BlockMode -> DLBlock -> Maybe B.ByteString -> App ()
 smt_invblock bm b@(DLBlock at f _ _) minv_lab = do
   da' <-
-      local (\e -> e {ctxt_inv_mode = bm}) $
-        smt_block b
+    local (\e -> e {ctxt_inv_mode = bm}) $
+      smt_block b
   case bm of
     B_Assume True -> smtAssertCtxt da'
     B_Assume False -> smtAssertCtxt (smtNot da')
@@ -1403,7 +1418,7 @@ smt_while_jump vars_are_primed asn = do
         where
           go (v, a) t_ = DT_Com (DL_Let at (DLV_Let DVC_Many v) (DLE_Arg at a)) t_
           t' = foldr go t $ M.toList m
-  forM_ invs $ \ (DLInvariant inv minv_lab) -> smtNewScope $ do
+  forM_ invs $ \(DLInvariant inv minv_lab) -> smtNewScope $ do
     inv' <-
       case vars_are_primed of
         False -> return $ add_asn_lets asnm inv
@@ -1457,19 +1472,19 @@ smt_n = \case
   LLC_While at asn invs cond body k ->
     mapM_ ctxtNewScope [before_m, loop_m, after_m]
     where
-      with_inv = local (\e -> e {ctxt_while_invariants = invs })
+      with_inv = local (\e -> e {ctxt_while_invariants = invs})
       before_m = with_inv $ smt_while_jump False asn
       loop_m = do
         smtMapRefresh at
         smt_asn_def at asn
-        forM_ invs $ \ (DLInvariant inv minv_lab) -> do
+        forM_ invs $ \(DLInvariant inv minv_lab) -> do
           smt_invblock (B_Assume True) inv minv_lab
         smt_invblock (B_Assume True) cond Nothing
         (with_inv $ smt_n body)
       after_m = do
         smtMapRefresh at
         smt_asn_def at asn
-        forM_ invs $ \ (DLInvariant inv minv_lab) -> do
+        forM_ invs $ \(DLInvariant inv minv_lab) -> do
           smt_invblock (B_Assume True) inv minv_lab
         smt_invblock (B_Assume False) cond Nothing
         smt_n k
@@ -1659,10 +1674,12 @@ _smtDefineTypes smt ts = do
             let variants = map fst $ M.toAscList $ dataTypeMap t
             let variantCtors = map (\v -> n <> "_" <> v) variants
             let variantVs = map (\vCtor -> Atom $ vCtor <> "_pv") variantCtors
-            let variantPs = map (\(vV, vC) -> List [Atom vC, vV])
-                 $ zip variantVs variantCtors
-            let variantCs = map (\(vP, i) -> List [vP, Atom $ show i])
-                 $ zip variantPs ([0 ..] :: [Int])
+            let variantPs =
+                  map (\(vV, vC) -> List [Atom vC, vV]) $
+                    zip variantVs variantCtors
+            let variantCs =
+                  map (\(vP, i) -> List [vP, Atom $ show i]) $
+                    zip variantPs ([0 ..] :: [Int])
             let tagBody = smtApply "match" [Atom tagParam, List variantCs]
             void $ SMT.defineFun smt tag_f [(tagParam, Atom n)] (Atom "UInt") tagBody
 
@@ -1738,8 +1755,14 @@ _verify_smt mc ctxt_vst smt lp = do
         case mc of
           Just c -> smt_lt at_de $ conCons c cn
           Nothing -> Atom $ smtConstant cn
-  let LLProg { llp_at = at, llp_opts = (LLOpts {..}), llp_parts = (SLParts {..}),
-               llp_init = (DLInit {..}), llp_exports = dex, llp_step = s} = lp
+  let LLProg
+        { llp_at = at
+        , llp_opts = (LLOpts {..})
+        , llp_parts = (SLParts {..})
+        , llp_init = (DLInit {..})
+        , llp_exports = dex
+        , llp_step = s
+        } = lp
   let pies_m = sps_ies
   let initMapInfo mi = do
         sm_c <- liftIO $ newCounter 0
@@ -1772,10 +1795,10 @@ _verify_smt mc ctxt_vst smt lp = do
     case mc of
       Just _ -> mempty
       Nothing -> do
-        flip mapM_ allConstants $ \ c -> do
-              let con = smtConstant c
-              let smlet = Just $ SMTCon con Nothing $ SMTProgram $ DLE_Arg at $ DLA_Constant c
-              pathAddUnbound_v con (conTypeOf c) smlet
+        flip mapM_ allConstants $ \c -> do
+          let con = smtConstant c
+          let smlet = Just $ SMTCon con Nothing $ SMTProgram $ DLE_Arg at $ DLA_Constant c
+          pathAddUnbound_v con (conTypeOf c) smlet
     -- FIXME it might make sense to assert that UInt_max is no less than
     -- something reasonable, like 64-bit?
     let defineIE who (v, it) =
@@ -1790,6 +1813,9 @@ _verify_smt mc ctxt_vst smt lp = do
     mapM_ definePIE $ M.toList pies_m
     let smt_s_top mode = do
           liftIO $ putStrLn $ "  Verifying when " <> show (pretty mode)
+          liftIO $
+            forM_ (vo_report $ vst_vo ctxt_vst) $ \vrr ->
+              modifyIORef vrr $ vraAddMode $ mcs <> ": " <> (T.pack $ show $ pretty mode)
           local (\e -> e {ctxt_modem = Just mode}) $ do
             forM_ dex smt_eb
             ctxtNewScope $ freshAddrs $ smt_s s
@@ -1850,17 +1876,18 @@ seqPop = \case
   _ -> impossible $ "empty seq"
 
 type SortRes = (Seq.Seq SExpr, SExpr)
+
 ssSort :: Seq.Seq (Seq.Seq SExpr) -> SortRes
 ssSort raw = (ds, a)
   where
-    a = List [ Atom "assert", ae ]
+    a = List [Atom "assert", ae]
     (ds, ae) = foldr go (mempty, Atom "true") raw
     go :: Seq.Seq SExpr -> SortRes -> SortRes
     go ss r = foldr go' r ss
     go' :: SExpr -> SortRes -> SortRes
     go' s (ds', a') =
       case s of
-        List [ Atom "assert", x ] ->
+        List [Atom "assert", x] ->
           (ds', smtAnd x a')
         _ ->
           ((Seq.<|) s ds', a')

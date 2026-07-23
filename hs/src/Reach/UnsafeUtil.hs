@@ -19,6 +19,7 @@ module Reach.UnsafeUtil
 where
 
 import Control.Monad
+import Data.List (nub)
 import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -28,7 +29,6 @@ import System.Console.Pretty (supportsPretty)
 import System.Directory
 import System.Environment
 import System.IO.Unsafe
-import Data.List (nub)
 
 -- | s/${pwd}/./g
 unsafeRedactAbs :: Text -> Text

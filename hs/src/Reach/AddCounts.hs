@@ -1,24 +1,25 @@
 module Reach.AddCounts (add_counts, add_counts_sim, AC (..), ac_vdef, ac_visit) where
 
 import Control.Monad.Reader
+import qualified Data.ByteString as B
 import Data.IORef
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Reach.AST.Base
-import Reach.AST.DLBase
-import Reach.AST.LL
-import Reach.AST.PL
-import Reach.AST.EP
 import Reach.AST.CL
 import Reach.AST.CP
-import Reach.CollectCounts
+import Reach.AST.DLBase
+import Reach.AST.EP
+import Reach.AST.LL
+import Reach.AST.PL
 import Reach.AnalyzeVars
+import Reach.CollectCounts
 import Reach.Util
-import qualified Data.ByteString as B
 
 data Env = Env
   { e_cs :: IORef Counts
-  , e_sim :: Bool }
+  , e_sim :: Bool
+  }
 
 type App = ReaderT Env IO
 

@@ -1,17 +1,20 @@
 module Reach.Dotty
   ( DotGraph
-  , DotGraph_(..)
+  , DotGraph_ (..)
   , DotEdge
   , dotty
-  ) where
+  )
+where
 
 import qualified Data.Map.Strict as M
 import Reach.Texty
 
 type DotEdge = (String, String, M.Map String String)
+
 type DotGraph = [DotEdge]
 
 newtype DotGraph_ = DotGraph_ DotGraph
+
 instance Pretty DotGraph_ where
   pretty (DotGraph_ es) = dotty es
 
@@ -22,6 +25,6 @@ dotty es = vsep $ [preamble, "digraph {"] <> map go es <> ["}"]
     go (f, t, am) = f' <> viaShow t <> "[" <> a' <> "]"
       where
         f' = case f == "!node" of
-               True -> ""
-               False -> viaShow f <> "->"
+          True -> ""
+          False -> viaShow f <> "->"
         a' = hcat $ punctuate "," $ map (\(k, v) -> pretty k <> "=" <> viaShow v) $ M.toAscList am

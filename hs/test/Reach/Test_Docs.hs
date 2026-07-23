@@ -1,10 +1,10 @@
 module Reach.Test_Docs (spec_errorCodes, spec_baseAndStdlibIdentifiers) where
 
 import Control.Monad
-import qualified Data.Text as T
-import qualified Data.Text.IO as TIO
 import qualified Data.Aeson as A
 import qualified Data.Map as M
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import Generic.Data
 import Reach.APICut (APICutError (..))
 import Reach.AST.Base (ImpossibleError (..), errPrefix)
@@ -82,7 +82,7 @@ spec_baseAndStdlibIdentifiers =
   describe "base and stdlib identifiers" $
     it "have docs" $
       missingDocs allRshDocs baseAndStdlibIdentifiers
-      >>= flip shouldBe []
+        >>= flip shouldBe []
 
 baseAndStdlibIdentifiers :: IO [T.Text]
 baseAndStdlibIdentifiers = do
@@ -90,5 +90,7 @@ baseAndStdlibIdentifiers = do
   let obj = A.decode (lbpack json) :: Maybe (M.Map T.Text A.Value)
   case obj of
     Nothing -> return ["Error getting base and stdlib identifiers for test" :: T.Text]
-    Just o -> return $ map (\x -> "ref(\"rsh\", \"" <> x <> "\")")
-      $ filter (not . T.isInfixOf "_") $ M.keys o
+    Just o ->
+      return $
+        map (\x -> "ref(\"rsh\", \"" <> x <> "\")") $
+          filter (not . T.isInfixOf "_") $ M.keys o

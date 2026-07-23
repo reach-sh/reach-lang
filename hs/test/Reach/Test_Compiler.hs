@@ -8,7 +8,7 @@ where
 
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
-import Data.List (intersperse, isInfixOf)
+import Data.List (intercalate, intersperse, isInfixOf, isPrefixOf, sort)
 import qualified Data.Set as S
 import Reach.Util
 import System.Directory
@@ -45,6 +45,28 @@ filterOutLines prefix bs0 = bs'
     bs2s = intersperse (BS.singleton 10) $ filter p bs1s
     bs' = BS.concat $ bs2s
 
+-- Fixtures named sol_only* are compiled in `--sol` mode and their goldens
+-- additionally record which product artifacts the compile left in build/.
+solOnlyArgs :: FilePath -> [String]
+solOnlyArgs afp =
+  case "sol_only" `isPrefixOf` takeBaseName afp of
+    True -> ["--sol"]
+    False -> []
+
+solOnlyArtifacts :: FilePath -> FilePath -> IO Output
+solOnlyArtifacts dir afp =
+  case solOnlyArgs afp of
+    [] -> return ""
+    _ -> do
+      let bd = dir </> "build"
+      e <- doesDirectoryExist bd
+      fs <- case e of
+        True -> listDirectory bd
+        False -> return []
+      let base = takeBaseName afp <> "."
+      let fs' = sort $ filter (base `isPrefixOf`) fs
+      return $ bpack $ "Artifacts: " <> intercalate " " fs' <> "\n"
+
 testCompileOut :: FilePath -> FilePath -> IO CompileOutput
 testCompileOut cwd afp = do
   cfp <- canonicalizePath $ cwd </> afp
@@ -52,10 +74,11 @@ testCompileOut cwd afp = do
   (ec, outs, errs) <-
     withCurrentDirectory dir $ do
       rfp <- makeRelativeToCurrentDirectory cfp
-      readProcessWithExitCode "reachc" ["--disable-reporting", rfp] ""
+      readProcessWithExitCode "reachc" (["--disable-reporting"] <> solOnlyArgs afp <> [rfp]) ""
+  arts <- solOnlyArtifacts dir afp
   let out = bpack outs
   let err = bpack errs
-  let fmt0 = out <> err
+  let fmt0 = out <> err <> arts
   let fmt1 = stripCallStack fmt0
   let fmt2 = replaceBs (bpack dir) "." fmt1
   let fmt3 = filterOutLines "*Premium*" fmt2
@@ -117,7 +140,9 @@ test_examples = goldenTests "../examples" f
 test_printKeywordInfo :: IO TestTree
 test_printKeywordInfo = do
   cwd <- getCurrentDirectory
-  return $ goldenVsStringDiff "print-keyword-info"
-    (\ref new -> ["diff", "-u", ref, new])
-    (cwd </> "../vsce/data/print-keyword-info.json")
-    $ (readProcess "reachc" ["--print-keyword-info"] "") >>= (return . lbpack)
+  return $
+    goldenVsStringDiff
+      "print-keyword-info"
+      (\ref new -> ["diff", "-u", ref, new])
+      (cwd </> "../vsce/data/print-keyword-info.json")
+      $ (readProcess "reachc" ["--print-keyword-info"] "") >>= (return . lbpack)

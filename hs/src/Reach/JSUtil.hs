@@ -319,7 +319,7 @@ instance RepJSAnnot JSArrayElement where
 instance RepJSAnnot JSObjectPropertyList where
   rjsa a' = \case
     JSCTLComma l _ -> JSCTLComma (rjsa a' l) a'
-    JSCTLNone l  -> JSCTLNone $ rjsa a' l
+    JSCTLNone l -> JSCTLNone $ rjsa a' l
 
 instance HasJSAnnot JSExpression where
   jsa = \case
@@ -385,7 +385,7 @@ instance RepJSAnnot JSExpression where
     JSMemberDot a _ y -> JSMemberDot (f a) a' (f y)
     JSMemberExpression a _ y _ -> JSMemberExpression (f a) a' (f y) a'
     JSMemberNew _ x _ z _ -> JSMemberNew a' (f x) a' (f z) a'
-    JSMemberSquare a _ y _ -> JSMemberSquare (f a) a'  (f y) a'
+    JSMemberSquare a _ y _ -> JSMemberSquare (f a) a' (f y) a'
     JSNewExpression _ x -> JSNewExpression a' (f x)
     JSObjectLiteral _ x _ -> JSObjectLiteral a' (f x) a'
     JSSpreadExpression _ x -> JSSpreadExpression a' (f x)
@@ -539,7 +539,7 @@ instance RepJSAnnot JSVarInitializer where
 
 instance RepJSAnnot JSPropertyName where
   rjsa a' = \case
-    JSPropertyIdent _ s  -> JSPropertyIdent a' s
+    JSPropertyIdent _ s -> JSPropertyIdent a' s
     JSPropertyString _ s -> JSPropertyString a' s
     JSPropertyNumber _ s -> JSPropertyNumber a' s
     JSPropertyComputed _ x _ -> JSPropertyComputed a' (rjsa a' x) a'

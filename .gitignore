@@ -21,3 +21,10 @@ hs/app-closed
 hs/package.closed.yaml
 hs/src/Reach/Closed
 hs/test/Reach/Closed
+.env
+.idea/inspectionProfiles/Project_Default.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/reach-lang.iml
+.idea/vcs.xml
+examples/verified-solidity/foundry-test/scratch

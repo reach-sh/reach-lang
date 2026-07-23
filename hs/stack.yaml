@@ -1,4 +1,4 @@
-resolver: lts-19.7
+resolver: lts-22.44
 
 ghc-options:
   "$everything": -haddock
@@ -6,11 +6,8 @@ ghc-options:
 extra-deps:
   - git: https://github.com/reach-sh/haskell-hexstring.git
     commit: 085c16fb21b9f856a435a3faab980e7e0b319341
-  - tomland-1.3.3.0@sha256:49871fb5c34ca11d73dabd31f4058ec3d2aac270eabd791d1473bb1e0a916527,8597
-  - megaparsec-9.0.1@sha256:2244ab77521a52a0083966c5405b3151f149e1db50b1a5b104cd9b1e56617203,3248
-  - streaming-bytestring-0.1.7@sha256:5b53960c1c5f8352d46a4f1a604d04340a08dcf7ff27ca3ed31253e02c01fd03,2968
-  - validation-selective-0.1.0.1@sha256:9a5aa8b801efc6a4ffb120e1b28e80c5f7d090043be56bba11222cd20c393044,3621
-  - selective-0.4.2@sha256:d223434ba4545a09b02dbdc7a4d63bd41ef40cc3d3d82883ccc6daea9d2b2dd5,3507
+  - tomland-1.3.3.3@sha256:5a1883fbe1a59bc3e70b3058ca2e1d0fa4add0727f1f3154fbb2f69339fd9429,9404
+  - validation-selective-0.2.0.0@sha256:3fb7836ae5c8be1b41a69f31944c3a8dcf1b8d934ceb68b4989bc55aaad39316,3917
   - io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
   - simple-smt-0.9.5@sha256:70e6f694d401d23783b6f5c62774262a01cc7c305a64a13690ab7664a4f98ebf,736
   - git: https://github.com/reach-sh/shell-monad.git
@@ -21,9 +18,6 @@ extra-deps:
   - git: https://github.com/reach-sh/language-javascript.git
     commit: f1b4cd7d4a6502c385c64a5d0c80ce325202a48d
     # ^ from branch "reach-1"
-  - git: https://github.com/google/ormolu.git
-    commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0
-    # ^ from branch "gfork"
   # - github: brendanhay/amazonka
   #   commit: a4356591e151df86519b3bd2ccca1518c22e8b17
   #   # 0ccede621e56fb6f240e4850e205cde82d0e4a4b

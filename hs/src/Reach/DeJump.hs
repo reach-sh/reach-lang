@@ -4,8 +4,8 @@ import Control.Monad.Reader
 import Data.Foldable (foldr')
 import Data.IORef
 import qualified Data.Map.Strict as M
-import Reach.AST.DLBase
 import Reach.AST.CP
+import Reach.AST.DLBase
 import Reach.Counter
 import Reach.Subst
 import Reach.Util
@@ -92,4 +92,4 @@ dejump (CPProg {..}) = do
         let e_idx = getCounter cpp_opts
         flip runReaderT (Env {..}) $ dj h
   hs' <- mapM go hs
-  return $ CPProg { cpp_handlers = (CHandlers hs'), ..}
+  return $ CPProg {cpp_handlers = (CHandlers hs'), ..}

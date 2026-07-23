@@ -15,26 +15,29 @@ data Env = Env
   }
 
 save :: DLStmt -> App ()
-save c = asks eAPI >>= \case
-  Nothing -> impossible $ "no api slot"
-  Just r -> (liftIO $ readIORef r) >>= \case
-    Just _ -> impossible $ "api slot used"
-    Nothing -> liftIO $ writeIORef r $ Just c
+save c =
+  asks eAPI >>= \case
+    Nothing -> impossible $ "no api slot"
+    Just r ->
+      (liftIO $ readIORef r) >>= \case
+        Just _ -> impossible $ "api slot used"
+        Nothing -> liftIO $ writeIORef r $ Just c
 
 catchFloat :: App LLConsensus -> App LLConsensus
 catchFloat m = do
-    r <- liftIO $ newIORef $ Nothing
-    k' <- local (\e -> e { eAPI = Just r }) m
-    f <- (liftIO $ readIORef r) >>= \case
+  r <- liftIO $ newIORef $ Nothing
+  k' <- local (\e -> e {eAPI = Just r}) m
+  f <-
+    (liftIO $ readIORef r) >>= \case
       Nothing -> return $ id
       Just c -> return $ LLC_Com c
-    return $ f k'
+  return $ f k'
 
 cffa :: AppT LLConsensus
 cffa = catchFloat . fa
 
 nf :: App a -> App a
-nf = local (\e -> e { eAPI = Nothing })
+nf = local (\e -> e {eAPI = Nothing})
 
 class FloatAPI a where
   fa :: AppT a

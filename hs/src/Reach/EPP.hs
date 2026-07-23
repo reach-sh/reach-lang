@@ -1,30 +1,31 @@
 module Reach.EPP (epp, EPPError (..)) where
 
+import Control.Monad
 import Control.Monad.Reader
 import Data.Foldable
 import Data.IORef
-import Data.List.Extra (mconcatMap, groupOn)
+import Data.List.Extra (groupOn, mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
-import qualified Data.Set as S
 import qualified Data.Sequence as Seq
+import qualified Data.Set as S
 import Debug.Trace
 import Generics.Deriving (Generic)
 import Reach.AST.Base
+import Reach.AST.CP
 import Reach.AST.DLBase
+import Reach.AST.EP
 import Reach.AST.LL
 import Reach.AST.PL
-import Reach.AST.CP
-import Reach.AST.EP
 import Reach.CollectCounts
+import Reach.CollectSvs
 import Reach.Counter
 import Reach.FixedPoint
 import Reach.Optimize
 import Reach.Texty
 import Reach.Util
 import Safe (headMay)
-import Reach.CollectSvs
 
 shouldTrace :: Bool
 shouldTrace = False
@@ -374,8 +375,10 @@ be_m = \case
         let as = be_api_steps
         let ai' = ApiInfo apiAt tys mc be_which isf ret alias
         liftIO $ modifyIORef as $ M.insertWith (<>) p [(prev, apiAt)]
-        liftIO $ modifyIORef be_api_info $ flip M.alter p $
-          Just . M.insert prev ai' . fromMaybe mempty
+        liftIO $
+          modifyIORef be_api_info $
+            flip M.alter p $
+              Just . M.insert prev ai' . fromMaybe mempty
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
@@ -435,9 +438,10 @@ be_m = \case
   DL_Only at (Left who) l -> do
     ic <- be_inConsensus <$> ask
     l'l <- ee_t l
-    mprev <- isApi who >>= \case
-      False -> return $ Nothing
-      True  -> do
+    mprev <-
+      isApi who >>= \case
+        False -> return $ Nothing
+        True -> do
           case ic of
             True -> do
               which <- asks be_which
@@ -528,13 +532,17 @@ be_c = \case
     vs <- liftIO $ readIORef vr
     let vk = (at, v, f)
     obvr <- case M.lookup vk vs of
-              Nothing -> liftIO $ newIORef False
-              Just o -> return o
+      Nothing -> liftIO $ newIORef False
+      Just o -> return o
     let add_vs1 = M.insert vk obvr
     liftIO $ modifyIORef vr $ add_vs1
-    local (\e -> e { be_views = modv $ be_views e
-                   , be_view_sets = add_vs1 $ be_view_sets e }) $
-      be_c k
+    local
+      (\e ->
+         e
+           { be_views = modv $ be_views e
+           , be_view_sets = add_vs1 $ be_view_sets e
+           })
+      $ be_c k
     where
       modv = mAdjust mempty v modf
       modf = case ma of
@@ -655,7 +663,7 @@ be_c = \case
     return $ (,) cm lm
 
 be_s :: LLStep -> BApp (EApp ETail)
-be_s s = local (\e -> e { be_ms = mempty }) $ be_s_ s
+be_s s = local (\e -> e {be_ms = mempty}) $ be_s_ s
 
 be_s_ :: LLStep -> BApp (EApp ETail)
 be_s_ = \case
@@ -665,9 +673,14 @@ be_s_ = \case
           case c of
             (DL_Let _ _ (DLE_Wait _ ta)) -> interval_add_from int ta
             _ -> int
-    k' <- local (\e -> e
-      { be_interval = int'
-      , be_ms = (be_ms e) Seq.|> c }) $ rec k
+    k' <-
+      local
+        (\e ->
+           e
+             { be_interval = int'
+             , be_ms = (be_ms e) Seq.|> c
+             })
+        $ rec k
     c'e <- withConsensus False $ ee_m c
     return $ mkCom ET_Com <$> c'e <*> k'
   LLS_Stop at -> do
@@ -802,16 +815,16 @@ epp (LLProg {..}) = do
   -- Step 4: Generate the end-points
   as <- readIORef be_api_steps
   -- Ensure an API is called at most once in a given consensus step
-  forM_ (M.toAscList as) $ \ (k, v) -> do
-      forM_ (groupOn fst v) $ \ vs -> do
-        when (length vs /= 1) $ do
-          let apiAt = snd $ fromMaybe (impossible "api empty") $ headMay vs
-          expect_thrown apiAt $ Err_API_Twice k
+  forM_ (M.toAscList as) $ \(k, v) -> do
+    forM_ (groupOn fst v) $ \vs -> do
+      when (length vs /= 1) $ do
+        let apiAt = snd $ fromMaybe (impossible "api empty") $ headMay vs
+        expect_thrown apiAt $ Err_API_Twice k
   -- Make a separate `EPProg` for each `API x Step`,
   -- where step is the one in which `interact.in` gets called.
   let genSepApis k v acc =
         case M.lookup k as of
-          Just ns -> foldr (\ (x,_) acc' -> M.insert (k, Just x) v acc') acc ns
+          Just ns -> foldr (\(x, _) acc' -> M.insert (k, Just x) v acc') acc ns
           _ -> M.insert (k, Nothing) v acc
   let sps_ies' = M.foldrWithKey genSepApis mempty sps_ies
   let mkep (who, step) ep_interactEnv = do

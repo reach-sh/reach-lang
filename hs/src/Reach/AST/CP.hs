@@ -116,13 +116,15 @@ data CPProg = CPProg
 
 instance Pretty CPProg where
   pretty (CPProg {..}) =
-    "CP" <+> render_obj (M.fromList $
-      [ (("init"::String), pretty cpp_init)
-      , ("views", pretty cpp_views)
-      , ("apis", pretty cpp_apis)
-      , ("events", pretty cpp_events)
-      , ("handlers", pretty cpp_handlers)
-      ])
+    "CP"
+      <+> render_obj
+        (M.fromList $
+           [ (("init" :: String), pretty cpp_init)
+           , ("views", pretty cpp_views)
+           , ("apis", pretty cpp_apis)
+           , ("events", pretty cpp_events)
+           , ("handlers", pretty cpp_handlers)
+           ])
 
 instance HasCounter CPProg where
   getCounter = getCounter . cpp_opts

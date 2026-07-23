@@ -10,22 +10,24 @@ import Reach.AST.SL
 
 -- https://hackage.haskell.org/package/aeson-pretty-0.8.9/docs/
 customConfig :: A.Config
-customConfig = A.Config {
-  confIndent = A.Spaces 2,
-  confCompare = compare,
-  confNumFormat = A.Generic,
-  confTrailingNewline = True
-}
+customConfig =
+  A.Config
+    { confIndent = A.Spaces 2
+    , confCompare = compare
+    , confNumFormat = A.Generic
+    , confTrailingNewline = True
+    }
 
 printBaseKeywordInfo :: (M.Map String SLVal) -> IO ()
 printBaseKeywordInfo env = do
   let baseKinds = M.mapMaybe completionKind env
   let filtered = M.filterWithKey (\k _ -> not $ L.isInfixOf "_" k) baseKinds
   B.putStr $
-    A.encodePretty' customConfig $ A.toJSON $
-       M.map
-         (\v -> M.singleton ("CompletionItemKind" :: String) $ show v)
-         filtered
+    A.encodePretty' customConfig $
+      A.toJSON $
+        M.map
+          (\v -> M.singleton ("CompletionItemKind" :: String) $ show v)
+          filtered
 
 data CompletionItemKind
   = CK_Text

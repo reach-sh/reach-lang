@@ -9,16 +9,16 @@ Verification failed:
 
   // Violation Witness
 
-  const UInt.max = 2;
+  const UInt.max = 1;
 
   const sum/188 = <loop variable>;
-  //    ^ could = 1
+  //    ^ could = 0
   //      from: ./pr-671006p.rsh:31:37:while
   const netBalance/192 = <loop variable>;
-  //    ^ could = 1
+  //    ^ could = 0
   //      from: ./pr-671006p.rsh:31:37:while
   const v241 = <map reduction>;
-  //    ^ could = 0
+  //    ^ could = 1
   //      from: reach standard library:147:18:application
 
   // Theorem Formalization

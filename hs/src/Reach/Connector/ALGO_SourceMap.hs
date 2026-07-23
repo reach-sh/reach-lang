@@ -24,6 +24,7 @@ instance AS.FromJSON SourceMapV3 where
     return $ SourceMapV3 {..}
 
 type SourceMap = M.Map Integer Integer
+
 type CodeAndMap = (BS.ByteString, SourceMap)
 
 interpSourceMap :: SourceMapV3 -> IO SourceMap
@@ -31,7 +32,7 @@ interpSourceMap (SourceMapV3 {..}) = do
   let ms = BSL.fromStrict $ B.pack $ T.unpack sm_mappings
   lr <- newIORef 2
   mr <- newIORef mempty
-  forM_ (zip [0..] $ BSL.split (BI.c2w ';') ms) $ \(i, group) -> do
+  forM_ (zip [0 ..] $ BSL.split (BI.c2w ';') ms) $ \(i, group) -> do
     let segs = BSL.split (BI.c2w ',') group
     seg1' <- case segs of
       [] -> return 0

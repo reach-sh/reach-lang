@@ -5,10 +5,11 @@ module Reach.Util where
 import Control.Monad
 import Control.Monad.Extra
 import Control.Monad.Trans.Except
+import qualified Data.Aeson as AE
 import qualified Data.Aeson as AS
-import qualified Data.Aeson.Types as AS
 import qualified Data.Aeson.Key as K
 import qualified Data.Aeson.KeyMap as KM
+import qualified Data.Aeson.Types as AS
 import Data.Bifunctor (Bifunctor (first))
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL
@@ -18,12 +19,11 @@ import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Encoding as TE
+import qualified Data.Text.Lazy as LT
 import GHC.Stack
 import System.Directory.Extra
 import System.Exit
-import qualified Data.Aeson as AE
 
 -- | A simple substitute for Data.ByteString.Char8.pack that handles unicode
 bpack :: String -> ByteString
@@ -151,17 +151,17 @@ makeErrCode errType errIndex =
 arraySet :: Int -> a -> [a] -> [a]
 arraySet n a arr = take n arr <> [a] <> drop (n + 1) arr
 
-allEqual :: Eq a => [a] -> Either (Maybe (a,a)) a
+allEqual :: Eq a => [a] -> Either (Maybe (a, a)) a
 allEqual [] = Left Nothing
 allEqual [x] = Right x
-allEqual (x:xs) = case allEqual xs of
-  Right y -> if x == y then Right y else Left $ Just (x,y)
+allEqual (x : xs) = case allEqual xs of
+  Right y -> if x == y then Right y else Left $ Just (x, y)
   Left diff -> Left diff
 
 maybeAt :: Int -> [a] -> Maybe a
-maybeAt 0 (x:_) = Just x
+maybeAt 0 (x : _) = Just x
 maybeAt _ [] = Nothing
-maybeAt n (_:xs) = maybeAt (n-1) xs
+maybeAt n (_ : xs) = maybeAt (n -1) xs
 
 -- Source https://en.wikipedia.org/wiki/Integer_square_root#Using_only_integer_division
 isqrt :: Integral a => a -> a
@@ -174,10 +174,10 @@ isqrt n = go n2 (iter n2)
     go x0 x1 = if x0 <= x1 then x0 else go x1 (iter x1)
 
 kmToM :: KM.KeyMap a -> M.Map T.Text a
-kmToM = M.fromList . map (\(k,v) -> (K.toText k, v)) . KM.toList
+kmToM = M.fromList . map (\(k, v) -> (K.toText k, v)) . KM.toList
 
 mToKM :: M.Map T.Text a -> KM.KeyMap a
-mToKM = KM.fromList . map (\(k,v) -> (K.fromText k, v)) . M.toList
+mToKM = KM.fromList . map (\(k, v) -> (K.fromText k, v)) . M.toList
 
 aesonObject :: [(T.Text, AS.Value)] -> AS.Value
 aesonObject = AS.object . map (first K.fromText)
@@ -204,7 +204,7 @@ replace i v l = hd <> (v : tail tl)
 
 startsWith :: Eq a => a -> [a] -> Bool
 startsWith x = \case
-  xp:_ | x == xp -> True
+  xp : _ | x == xp -> True
   _ -> False
 
 mapJsonString :: (Text -> Text) -> AE.Value -> AE.Value

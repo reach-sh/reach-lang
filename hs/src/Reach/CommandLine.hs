@@ -6,8 +6,8 @@ module Reach.CommandLine
   , getCompilerArgs
   , getCompilerEnv
   , truthyEnv
-  , SupportToolArgs(..)
-  , SupportOpts(..)
+  , SupportToolArgs (..)
+  , SupportOpts (..)
   , supportFromCommandLineHs
   )
 where
@@ -34,6 +34,8 @@ data CompilerOpts = CompilerOpts
   , co_verifyTimeout :: Integer
   , co_sim :: Bool
   , co_verifyFirstFailQuit :: Bool
+  , co_solOnly :: Bool
+  , co_verifyReport :: Bool
   }
 
 newtype SupportToolArgs = SupportToolArgs {sta_so :: SupportOpts}
@@ -94,7 +96,13 @@ compiler =
                      <> help "Run Simulator"))
            <*> (switch
                   (long "verify-fail-once"
-                     <> help "Quit after a single verification failure")))
+                     <> help "Quit after a single verification failure"))
+           <*> (switch
+                  (long "sol"
+                     <> help "Emit only verified Solidity + ABI + verification report; ETH connector only"))
+           <*> (switch
+                  (long "verify-report"
+                     <> help "Emit a machine-readable verification report (verify.json)")))
 
 getCompilerArgs :: String -> IO CompilerToolArgs
 getCompilerArgs versionCliDisp = do

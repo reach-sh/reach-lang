@@ -13,6 +13,7 @@ module Reach.Parser
   )
 where
 
+import Control.Monad
 import Control.Monad.Reader
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Graph as G
@@ -236,8 +237,8 @@ updatePartialAvoidCycles mfrom def_a get_key ret_key err_key proc_key = do
   let update_bm mcontent = do
         (dm', fm') <- liftIO $ readIORef e_bm
         let fm'' = case mcontent of
-                     Nothing -> fm'
-                     Just content -> M.insert key (Just content) fm'
+              Nothing -> fm'
+              Just content -> M.insert key (Just content) fm'
             add_key ml = Just $ key : (maybe [] id ml)
             dm'' = case mfrom of
               Just from -> (M.alter add_key from dm')

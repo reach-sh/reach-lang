@@ -42,7 +42,7 @@ Verification failed:
   const UInt.max = 20;
 
   const tok/191 = <a publication>;
-  //    ^ could = Token!val!2
+  //    ^ could = Token!val!1
   //      from: ./pr417.rsh:10:5:dot
 
   // Theorem Formalization

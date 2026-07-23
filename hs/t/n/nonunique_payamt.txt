@@ -33,10 +33,10 @@ Verification failed:
   // Violation Witness
 
   const token1/209 = <a publication>;
-  //    ^ could = Token!val!1
+  //    ^ could = Token!val!0
   //      from: ./nonunique_payamt.rsh:17:5:dot
   const token2/210 = <a publication>;
-  //    ^ could = Token!val!3
+  //    ^ could = Token!val!1
   //      from: ./nonunique_payamt.rsh:17:5:dot
   const condish/211 = <a publication>;
   //    ^ could = false

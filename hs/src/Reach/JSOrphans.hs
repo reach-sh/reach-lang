@@ -5,9 +5,9 @@ module Reach.JSOrphans () where
 
 import qualified Data.Text.Lazy as T
 import Language.JavaScript.Parser
+import Language.JavaScript.Parser.AST
 import Language.JavaScript.Parser.Lexer
 import Reach.Texty
-import Language.JavaScript.Parser.AST
 
 instance Ord TokenPosn where
   compare (TokenPn x_a x_l x_c) (TokenPn y_a y_l y_c) =
@@ -117,7 +117,7 @@ instance Pretty JSMethodDefinition where
 
 instance Pretty JSObjectProperty where
   pretty = \case
-    JSPropertyNameandValue jpn _ (je:[]) -> pretty jpn <+> ":" <+> pretty je
+    JSPropertyNameandValue jpn _ (je : []) -> pretty jpn <+> ":" <+> pretty je
     JSPropertyNameandValue jpn _ jes -> pretty jpn <+> ":" <+> pretty jes
     JSPropertyIdentRef _ s -> pretty s
     JSObjectMethod jmd -> pretty jmd
@@ -135,7 +135,7 @@ instance Pretty JSVarInitializer where
 
 instance Pretty JSExpression where
   pretty = \case
-    JSIdentifier _ ('.':s') -> pretty $ "internal_" <> s'
+    JSIdentifier _ ('.' : s') -> pretty $ "internal_" <> s'
     JSIdentifier _ s -> pretty s
     JSDecimal _ s -> pretty s
     JSLiteral _ ".null" -> "secret(null)"
@@ -167,7 +167,7 @@ instance Pretty JSExpression where
 instance Pretty [JSStatement] where
   pretty ss = do
     let ss' = map pretty ss
-    concatWith (\ l r -> l <> hardline <> r) ss'
+    concatWith (\l r -> l <> hardline <> r) ss'
 
 instance Pretty JSSwitchParts where
   pretty = \case
@@ -177,7 +177,7 @@ instance Pretty JSSwitchParts where
 instance Pretty [JSSwitchParts] where
   pretty ss = do
     let ss' = map pretty ss
-    concatWith (\ l r -> l <> hardline <> r) ss'
+    concatWith (\l r -> l <> hardline <> r) ss'
 
 instance Pretty JSTryCatch where
   pretty = \case
@@ -185,23 +185,24 @@ instance Pretty JSTryCatch where
     JSCatchIf {} -> "<catch if>"
 
 instance Pretty JSStatement where
-  pretty = (<> ";") . \case
-    JSStatementBlock _ jss _' _ -> pretty jss
-    JSBreak _ ji _ -> "break" <+> pretty ji
-    JSLet _ jcl _ -> "let" <+> pretty jcl
-    JSConstant _ jcl _ -> "const" <+> pretty jcl
-    JSContinue _ ji _ -> "continue" <+> pretty ji
-    JSFunction _ ji _' jcl _ jb _ -> "function" <+> pretty ji <+> parens (pretty jcl) <+> pretty jb
-    JSIf _ _' je _ t -> "if" <+> pretty je <+> braces (pretty t)
-    JSIfElse _ _' je _ a _ b -> "if" <+> pretty je <+> braces (pretty a) <+> "else" <+> braces (pretty b)
-    JSExpressionStatement je _ -> pretty je
-    JSAssignStatement je jao je' _ -> pretty je <+> pretty jao <+> pretty je'
-    JSMethodCall je _ jcl _' _ -> pretty je <+> parens (pretty jcl)
-    JSReturn _ (Just je) _ -> "return" <+> pretty je
-    JSReturn _ _ _ -> "return"
-    JSSwitch _ _' je _ _ jsps _ _ -> "switch" <+> parens (pretty je) <+> braces (pretty jsps)
-    JSThrow _ je _ -> "throw" <+> pretty je
-    JSTry _ jb jtcs _ -> "try" <+> pretty jb <+> pretty jtcs
-    JSVariable _ jcl _ -> pretty jcl
-    JSWhile _ _' je _ s -> "while" <+> parens (pretty je) <+> pretty s
-    ow -> viaJS $ JSAstStatement ow
+  pretty =
+    (<> ";") . \case
+      JSStatementBlock _ jss _' _ -> pretty jss
+      JSBreak _ ji _ -> "break" <+> pretty ji
+      JSLet _ jcl _ -> "let" <+> pretty jcl
+      JSConstant _ jcl _ -> "const" <+> pretty jcl
+      JSContinue _ ji _ -> "continue" <+> pretty ji
+      JSFunction _ ji _' jcl _ jb _ -> "function" <+> pretty ji <+> parens (pretty jcl) <+> pretty jb
+      JSIf _ _' je _ t -> "if" <+> pretty je <+> braces (pretty t)
+      JSIfElse _ _' je _ a _ b -> "if" <+> pretty je <+> braces (pretty a) <+> "else" <+> braces (pretty b)
+      JSExpressionStatement je _ -> pretty je
+      JSAssignStatement je jao je' _ -> pretty je <+> pretty jao <+> pretty je'
+      JSMethodCall je _ jcl _' _ -> pretty je <+> parens (pretty jcl)
+      JSReturn _ (Just je) _ -> "return" <+> pretty je
+      JSReturn _ _ _ -> "return"
+      JSSwitch _ _' je _ _ jsps _ _ -> "switch" <+> parens (pretty je) <+> braces (pretty jsps)
+      JSThrow _ je _ -> "throw" <+> pretty je
+      JSTry _ jb jtcs _ -> "try" <+> pretty jb <+> pretty jtcs
+      JSVariable _ jcl _ -> pretty jcl
+      JSWhile _ _' je _ s -> "while" <+> parens (pretty je) <+> pretty s
+      ow -> viaJS $ JSAstStatement ow

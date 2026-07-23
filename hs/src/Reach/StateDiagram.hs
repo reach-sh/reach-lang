@@ -1,12 +1,12 @@
 module Reach.StateDiagram (stateDiagram) where
 
 import Data.List (intercalate)
-import qualified Data.Set as S
 import qualified Data.Map.Strict as M
-import Reach.Dotty
+import qualified Data.Set as S
+import Reach.AST.CP
 import Reach.AST.DLBase
 import Reach.AST.PL
-import Reach.AST.CP
+import Reach.Dotty
 import Reach.Texty
 
 ddd :: Int -> String -> String
@@ -19,11 +19,12 @@ ddd l s =
 
 loopl :: Int -> String
 loopl i = "loop" <> show i
+
 statel :: Int -> String
 statel i = "state" <> show i
 
 pointe :: String -> DotGraph
-pointe it = [("!node", it, M.fromList [ ("shape", "point") ])]
+pointe it = [("!node", it, M.fromList [("shape", "point")])]
 
 geT :: String -> String -> CTail -> DotGraph
 geT trans from = \case
@@ -46,7 +47,7 @@ showState :: String -> [DLVarLet] -> DotGraph
 showState it vsl =
   case it of
     "state0" -> pointe it
-    _ -> [("!node", it, M.fromList [ ("shape", "record"), ("label", l) ])]
+    _ -> [("!node", it, M.fromList [("shape", "record"), ("label", l)])]
   where
     l = "{" <> it <> vsl' <> "}"
     vsl' =
@@ -73,7 +74,7 @@ instance HasEdges CHandlers where
 nicev :: DLVarLet -> String
 nicev v =
   case ml of
-    Just (_, s)-> s
+    Just (_, s) -> s
     _ -> "v" <> show i <> ":" <> t
   where
     DLVarLet _ (DLVar _ ml ty i) = v

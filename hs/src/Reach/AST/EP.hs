@@ -152,12 +152,14 @@ data EPProg = EPProg
 
 instance Pretty EPProg where
   pretty (EPProg {..}) =
-    "EP" <+> render_obj (M.fromList $
-      [ (("init"::String), pretty epp_init)
-      , ("exports", pretty epp_exports)
-      , ("apis", pretty epp_apis)
-      , ("m", render_obj epp_m)
-      ])
+    "EP"
+      <+> render_obj
+        (M.fromList $
+           [ (("init" :: String), pretty epp_init)
+           , ("exports", pretty epp_exports)
+           , ("apis", pretty epp_apis)
+           , ("m", render_obj epp_m)
+           ])
 
 instance HasCounter EPProg where
   getCounter = getCounter . epp_opts

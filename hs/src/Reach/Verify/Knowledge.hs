@@ -165,7 +165,7 @@ instance AllPoints DLContractNew where
 instance AllPoints DLPayAmt where
   all_points (DLPayAmt {..}) =
     all_points pa_net
-    <> foldMap (all_points . fst) pa_ks
+      <> foldMap (all_points . fst) pa_ks
 
 instance AllPoints DLRemote where
   all_points (DLRemote _ pamt as _ _) =
@@ -279,13 +279,13 @@ kgq_e ctxt mv = \case
   DLE_TupleSet _ t _ v -> kgq_la ctxt mv (DLLA_Tuple [t, v])
   DLE_ContractFromAddress _ a -> kgq_a_all ctxt a
 
-  -- mapM_ cm1 csm
-  --   where
-  --     oa = DLA_Var ov
-  --     ctxt' = ctxt_add_back ctxt oa
-  --     cm1 (ov', _, l) =
-  --       kgq_a_only ctxt ov' oa
-  --         >> kgq_l ctxt' l
+-- mapM_ cm1 csm
+--   where
+--     oa = DLA_Var ov
+--     ctxt' = ctxt_add_back ctxt oa
+--     cm1 (ov', _, l) =
+--       kgq_a_only ctxt ov' oa
+--         >> kgq_l ctxt' l
 
 instance KGQ a => KGQ (SwitchCasesUse a) where
   kgq ctxt (SwitchCasesUse v m) = kgq ctxt' $ switchUses v m
@@ -413,7 +413,7 @@ kgq_pie ctxt who (InteractEnv m) =
     >> (mapM_ (kgq_pie1 ctxt who) $ M.keys m)
 
 kgq_lp :: Maybe Handle -> VerifySt -> LLProg -> IO ()
-kgq_lp mh vst (LLProg { llp_parts = (SLParts {..}), llp_step }) = do
+kgq_lp mh vst (LLProg {llp_parts = (SLParts {..}), llp_step}) = do
   putStrLn $ "Verifying knowledge assertions"
   let ps = M.keys sps_ies
   llr <- newIORefRef 0

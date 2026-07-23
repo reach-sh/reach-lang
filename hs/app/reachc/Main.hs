@@ -7,8 +7,8 @@ import Data.ByteString.Lazy.Char8 (pack, unpack)
 import Data.Either.Extra
 import Data.List.Extra (replace)
 import Data.Maybe
-import qualified Data.Text as T
 import qualified Data.Set as S
+import qualified Data.Text as T
 import Data.Typeable (cast)
 import Reach.AST.Base
 import Reach.CommandLine
@@ -20,8 +20,8 @@ import System.Directory
 import System.Environment
 import System.Exit
 import System.FilePath
-import System.Process
 import System.IO.Temp
+import System.Process
 
 shouldReport :: CompilerToolArgs -> CompilerToolEnv -> Bool
 shouldReport CompilerToolArgs {..} CompilerToolEnv {..} =
@@ -57,12 +57,13 @@ main = do
       Nothing -> do
         putStrLn "Missing reportable compilation result."
         exitWith $ ExitFailure 1
-      Just e' -> (pure . eitherDecode' $ pack e') >>= \case
-        Right (e'' :: Either CompileErrorException ()) ->
-          pure $ mapLeft SomeException e''
-        Left x -> do
-          print x
-          exitWith $ ExitFailure 1
+      Just e' ->
+        (pure . eitherDecode' $ pack e') >>= \case
+          Right (e'' :: Either CompileErrorException ()) ->
+            pure $ mapLeft SomeException e''
+          Left x -> do
+            print x
+            exitWith $ ExitFailure 1
     exitSuccess
   args@CompilerToolArgs {..} <- getCompilerArgs versionCliDisp
   let CompilerOpts {..} = cta_co
@@ -71,6 +72,8 @@ main = do
   let ccVerifyFirstFailQuit = co_verifyFirstFailQuit
   let ccVerifyTimeout = co_verifyTimeout
   let ccStopAfterEval = co_stopAfterEval
+  let ccSolOnly = co_solOnly
+  let ccVerifyReport = co_verifyReport
   let ccShouldVerify = not cte_REACH_ACCURSED_UNUTTERABLE_DISABLE_VERIFICATION_AND_LOSE_ALL_YOUR_MONEY_AND_YOUR_USERS_MONEY
   ccDotReachDir <- makeAbsolute $ fromMaybe (takeDirectory co_source </> ".reach") co_mdirDotReach
   let outd = fromMaybe (takeDirectory co_source </> "build") co_moutputDir
@@ -97,9 +100,9 @@ main = do
   case e of
     Left exn -> throwIO exn
     Right _ -> return ()
- where
-  report :: Either CompileErrorException () -> IO ()
-  report a = do
-    x <- getExecutablePath
-    let f = replace "'" "'\\''" . unpack . encode
-    void . spawnCommand $ x <> " --error-format-json --report '" <> f a <> "'"
+  where
+    report :: Either CompileErrorException () -> IO ()
+    report a = do
+      x <- getExecutablePath
+      let f = replace "'" "'\\''" . unpack . encode
+      void . spawnCommand $ x <> " --error-format-json --report '" <> f a <> "'"

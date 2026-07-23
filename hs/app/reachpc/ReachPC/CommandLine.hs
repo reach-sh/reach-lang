@@ -1,14 +1,15 @@
 {-# LANGUAGE QuasiQuotes #-}
 
-module ReachPC.CommandLine (CliOptions(..), parseCliOptions, helpMessage) where
+module ReachPC.CommandLine (CliOptions (..), parseCliOptions, helpMessage) where
 
+import Data.List.Extra (splitOn)
 import Data.Text (Text, unpack)
 import NeatInterpolation (text)
-import Data.List.Extra (splitOn)
 import System.Environment (getArgs)
 
 helpMessage :: Text
-helpMessage = [text|
+helpMessage =
+  [text|
 reach - Reach command-line tool
 
 Usage: reach [OPTIONS] COMMAND [ARGS...]
@@ -37,7 +38,8 @@ Special commands:
 |]
 
 shortHelpMessage :: Text
-shortHelpMessage = [text|
+shortHelpMessage =
+  [text|
 No command was specified.
 Run with `reach -h` to see special commands.
 Run with the `reach help` see Reach Cloud/Local commands.
@@ -58,16 +60,16 @@ emptyCliOptions = CliOptions ("", []) Nothing Nothing Nothing Nothing Nothing No
 
 parseCliOptions :: IO CliOptions
 parseCliOptions = flip go emptyCliOptions <$> getArgs
- where
-  go args opts = case args of
-    ("-h":args')            -> go ("--help" : args') opts
-    ("-e":args')            -> go ("--env"  : args') opts
-    ("--help":_)            -> go ["local-help"] opts
-    ("--env":list:args')    -> go args' opts{ cli_forwardEnvVars = Just $ maybe [] (splitOn "," list <>) $ cli_forwardEnvVars opts }
-    ("--cloud":args')       -> go args' opts{ cli_cloudOrLocal = Just True }
-    ("--local":args')       -> go args' opts{ cli_cloudOrLocal = Just False }
-    ("--connector":c:args') -> go args' opts{ cli_connector = Just c }
-    ("--project":p:args')   -> go args' opts{ cli_project = Just p }
-    (arg@('-':_):_)         -> opts{ cli_error = Just $ "Unknown or bad use of argument " <> arg }
-    (cmd:args')             -> opts{ cli_command = (cmd, args') }
-    []                      -> opts{ cli_error = Just $ unpack shortHelpMessage }
+  where
+    go args opts = case args of
+      ("-h" : args') -> go ("--help" : args') opts
+      ("-e" : args') -> go ("--env" : args') opts
+      ("--help" : _) -> go ["local-help"] opts
+      ("--env" : list : args') -> go args' opts {cli_forwardEnvVars = Just $ maybe [] (splitOn "," list <>) $ cli_forwardEnvVars opts}
+      ("--cloud" : args') -> go args' opts {cli_cloudOrLocal = Just True}
+      ("--local" : args') -> go args' opts {cli_cloudOrLocal = Just False}
+      ("--connector" : c : args') -> go args' opts {cli_connector = Just c}
+      ("--project" : p : args') -> go args' opts {cli_project = Just p}
+      (arg@('-' : _) : _) -> opts {cli_error = Just $ "Unknown or bad use of argument " <> arg}
+      (cmd : args') -> opts {cli_command = (cmd, args')}
+      [] -> opts {cli_error = Just $ unpack shortHelpMessage}

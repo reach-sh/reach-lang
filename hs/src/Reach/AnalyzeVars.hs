@@ -1,4 +1,6 @@
-{-# LANGUAGE MagicHash, UnboxedTuples                 #-}
+{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE UnboxedTuples #-}
+
 module Reach.AnalyzeVars
   ( freeVars
   , boundVars
@@ -6,19 +8,18 @@ module Reach.AnalyzeVars
 where
 
 import qualified Data.Aeson as AS
-import qualified Data.Map.Strict as M
-import qualified Data.Set as S
-import Reach.AST.DLBase
-
 -- These functions are unusable because they are exponential because they
 -- repeat so much work. It would be better to do something like storing the
 -- bound variables/etc in a field and then update it.
 
 -- https://reachsh.slack.com/archives/C01769UAGTZ/p1642849017019300
 
-import System.IO.Unsafe
 import Data.IORef
+import qualified Data.Map.Strict as M
+import qualified Data.Set as S
+import Reach.AST.DLBase
 import Reach.Texty
+import System.IO.Unsafe
 
 type MMap a = IORef (M.Map String a)
 
@@ -55,6 +56,7 @@ class BoundVars a where
 
 instance FreeVars DLVar where
   freeVars = S.singleton
+
 instance BoundVars DLVar where
   boundVars = S.singleton
 
@@ -170,6 +172,7 @@ instance FreeVars DLLetVar where
   freeVars = \case
     DLV_Eff -> mempty
     DLV_Let _ v -> freeVars v
+
 instance BoundVars DLLetVar where
   boundVars = \case
     DLV_Eff -> mempty
@@ -177,21 +180,25 @@ instance BoundVars DLLetVar where
 
 instance FreeVars DLVarLet where
   freeVars (DLVarLet _ v) = freeVars v
+
 instance BoundVars DLVarLet where
   boundVars (DLVarLet _ v) = boundVars v
 
 instance FreeVars v => FreeVars [v] where
   freeVars = mconcat . map freeVars
+
 instance BoundVars v => BoundVars [v] where
   boundVars = mconcat . map boundVars
 
 instance FreeVars k => FreeVars (SwitchCase k) where
   freeVars (SwitchCase {..}) = freeVars sc_k
+
 instance BoundVars k => BoundVars (SwitchCase k) where
   boundVars (SwitchCase {..}) = boundVars sc_vl <> boundVars sc_k
 
 instance FreeVars k => FreeVars (SwitchCases k) where
   freeVars (SwitchCases m) = mconcat $ map freeVars $ M.elems m
+
 instance BoundVars k => BoundVars (SwitchCases k) where
   boundVars (SwitchCases m) = mconcat $ map boundVars $ M.elems m
 
@@ -210,6 +217,7 @@ instance BoundVars DLTail where
 
 instance FreeVars DLBlock where
   freeVars (DLBlock _ _ t a) = bindsFor t a
+
 instance BoundVars DLBlock where
   boundVars (DLBlock _ _ t _) = boundVars t
 

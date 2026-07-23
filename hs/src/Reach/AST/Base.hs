@@ -4,9 +4,10 @@
 module Reach.AST.Base where
 
 import Control.Applicative ((<|>))
+import Control.Exception (Exception, throw)
 import Data.Aeson as Aeson
-import Data.Aeson.Key as Aeson.Key
 import Data.Aeson.Encoding (text)
+import Data.Aeson.Key as Aeson.Key
 import qualified Data.ByteString.Char8 as B
 import Data.ByteString.Internal (w2c)
 import qualified Data.ByteString.Lazy as LB
@@ -14,7 +15,7 @@ import qualified Data.List as List
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import GHC.Generics
-import GHC.Stack (callStack, HasCallStack, prettyCallStack)
+import GHC.Stack (HasCallStack, callStack, prettyCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
 import Reach.Texty
@@ -22,7 +23,6 @@ import Reach.UnsafeUtil
 import Reach.Util (makeErrCode)
 import Safe (atMay)
 import qualified System.Console.Pretty as TC
-import Control.Exception (Exception, throw)
 
 --- Source Information
 data ReachSource
@@ -49,12 +49,14 @@ instance ToJSON ReachSource
 
 instance ToJSON SrcLoc where
   toJSON v = toJSON $ show v
+
 instance FromJSON SrcLoc
 
 instance ToJSONKey (Maybe String) where
   toJSONKey = ToJSONKeyText f g
-    where f = Aeson.Key.fromText . T.pack . show
-          g = text . T.pack . show
+    where
+      f = Aeson.Key.fromText . T.pack . show
+      g = text . T.pack . show
 
 -- This is a "defaulting" instance where the left info is preferred,
 -- but can fall back on the right if info is absent from the left.
@@ -165,7 +167,6 @@ getErrorMessage mCtx src isWarning ce = do
       <> hardline
       <> docsUrl
 
-
 data CompilationError = CompilationError
   { ce_suggestions :: [String]
   , ce_errorMessage :: String
@@ -210,9 +211,10 @@ instance ToJSON CompileErrorException where
   toJSON = toJSON . cee_error
 
 instance FromJSON CompileErrorException where
-  parseJSON = withObject "CompileErrorException" $ \v -> CompileErrorException
-    <$> parseJSON (Object v)
-    <*> pure ""
+  parseJSON = withObject "CompileErrorException" $ \v ->
+    CompileErrorException
+      <$> parseJSON (Object v)
+      <*> pure ""
 
 expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src err = throw CompileErrorException {..}
@@ -324,6 +326,7 @@ data UIntTy
   deriving (Eq, Generic, Ord, Show)
 
 instance FromJSON UIntTy
+
 instance ToJSON UIntTy
 
 uint256_Max :: Integer
@@ -334,6 +337,7 @@ data SLCtxtFrame
   deriving (Eq, Ord, Generic)
 
 instance FromJSON SLCtxtFrame
+
 instance ToJSON SLCtxtFrame where
   toJSON v = toJSON $ show v
 

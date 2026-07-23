@@ -118,6 +118,7 @@ library:
   - data-default-class
   - scotty >= 0.12
   - stm
+  - unliftio-core
   - wai-extra
 
 tests:

@@ -2,19 +2,19 @@
 
 module Main (main) where
 
-import ReachPC.CommandLine (CliOptions(..), parseCliOptions, helpMessage)
-import ReachPC.Config (Config(..), getProjectConfig, interactiveCreateReachToml, interactiveCreateGlobalsToml)
-import System.Environment (getEnvironment)
-import System.Exit (die)
+import Control.Monad (forM_)
 import Data.List (isPrefixOf)
 import qualified Data.Text.IO as TIO
-import Control.Monad (forM_)
 import qualified Reach.Version
+import ReachPC.CommandLine (CliOptions (..), helpMessage, parseCliOptions)
+import ReachPC.Config (Config (..), getProjectConfig, interactiveCreateGlobalsToml, interactiveCreateReachToml)
+import System.Environment (getEnvironment)
+import System.Exit (die)
 
 main :: IO ()
 main = do
   -- Parse cli flags and config files
-  cliOptions@CliOptions{..} <- parseCliOptions
+  cliOptions@CliOptions {..} <- parseCliOptions
   forM_ cli_error die
 
   -- Exec command
@@ -33,14 +33,14 @@ main = do
       execRemoteCommand cli_command projectConfig
 
 execRemoteCommand :: (String, [String]) -> Config -> IO ()
-execRemoteCommand (cmd, args) Config{..} = do
+execRemoteCommand (cmd, args) Config {..} = do
   env <- getForwardedEnvVars
   putStrLn "Executed on remote:"
   putStrLn $ cmd <> " " <> show args
   print env
- where
-  shouldForwardEnvVar var = "REACH" `isPrefixOf` var || var `elem` cfg_forwardEnvVars
-  getForwardedEnvVars = filter (shouldForwardEnvVar . fst) <$> getEnvironment
+  where
+    shouldForwardEnvVar var = "REACH" `isPrefixOf` var || var `elem` cfg_forwardEnvVars
+    getForwardedEnvVars = filter (shouldForwardEnvVar . fst) <$> getEnvironment
 
 version :: IO ()
 version = putStrLn $ "reachpc " <> Reach.Version.versionStr

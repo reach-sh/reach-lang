@@ -13,7 +13,7 @@ Verification failed:
   const UInt.max = 2;
 
   const v73 = "A".interact.t;
-  //    ^ could = [2, 1 ]
+  //    ^ could = [2, 2 ]
   //      from: ./uint_map_array.rsh:8:6:property binding
 
   // Theorem Formalization
@@ -21,7 +21,7 @@ Verification failed:
   const map0_1/104 = new Map()[0 <- Some v73[0]];
   //    ^ would be <map: (None(null ))>[0 <- Some(2 )]
   const map0_2/105 = map0_1/104[1 <- Some v73[1]];
-  //    ^ would be <map: (None(null ))>[0 <- Some(2 )][1 <- Some(1 )]
+  //    ^ would be <map: (None(null ))>[0 <- Some(2 )][1 <- Some(2 )]
   const v94 = digest(map0_2/105[v73[0]] ) == digest(<Some v73[1]> );
   //    ^ would be false
   require(v94);

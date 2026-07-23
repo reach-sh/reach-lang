@@ -3,10 +3,10 @@ module Reach.BigOpt (bigopt, bigopt_sim) where
 import qualified Data.Text as T
 import Reach.AST.DLBase
 import Reach.AddCounts
+import Reach.Counter
 import Reach.FixedPoint
 import Reach.Optimize
 import Reach.Util
-import Reach.Counter
 
 i2t :: Integer -> T.Text
 i2t = s2t . show

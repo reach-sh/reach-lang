@@ -10,13 +10,13 @@ Verification failed:
 
   // Violation Witness
 
-  const UInt.max = 1;
+  const UInt.max = 2;
 
   const _x1/39 = protect<UInt>("A".interact.getX());
-  //    ^ could = 0
+  //    ^ could = 1
   //      from: ./assert_more_expr.rsh:8:32:application
   const _x2/40 = protect<UInt>("A".interact.getX());
-  //    ^ could = 1
+  //    ^ could = 0
   //      from: ./assert_more_expr.rsh:9:32:application
 
   // Theorem Formalization

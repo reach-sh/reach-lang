@@ -9,13 +9,14 @@ module Reach.Version
   , minor
   , patch
   , solcVersionStr
-  ) where
+  )
+where
 
 import Data.Version (Version (..), makeVersion, showVersion)
 import Reach.UnsafeUtil
 
 solcVersionStr :: String
-solcVersionStr = "0.8.17"
+solcVersionStr = "0.8.26"
 
 major :: Int
 major = 0

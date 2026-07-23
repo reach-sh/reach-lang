@@ -3,6 +3,7 @@
 module Reach.AST.SL where
 
 import qualified Data.ByteString.Char8 as B
+import Data.IORef
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -16,7 +17,6 @@ import Reach.Connector
 import Reach.JSOrphans ()
 import Reach.Texty
 import Reach.Warning (Deprecation (..))
-import Data.IORef
 
 -- SL types are a superset of DL types.
 -- We copy/paste constructors instead of using `ST_Val DLType`
@@ -58,7 +58,7 @@ instance Show SLType where
   show = \case
     ST_Null -> "Null"
     ST_Bool -> "Bool"
-    ST_UInt UI_Word  -> "UInt"
+    ST_UInt UI_Word -> "UInt"
     ST_UInt UI_256 -> "UInt256"
     ST_Bytes sz -> "Bytes(" <> show sz <> ")"
     ST_BytesDyn -> "BytesDyn"
@@ -194,12 +194,12 @@ instance IsDynamic SLPrimitive where
     SLPrim_committed -> False
     SLPrim_is_type -> False
     SLPrim_type_eq -> False
-    SLPrim_typeOf  -> False
-    SLPrim_Fun     -> False
-    SLPrim_Refine  -> False
-    SLPrim_Bytes   -> False
+    SLPrim_typeOf -> False
+    SLPrim_Fun -> False
+    SLPrim_Refine -> False
+    SLPrim_Bytes -> False
     SLPrim_BytesDynCast -> False
-    SLPrim_Data    -> False
+    SLPrim_Data -> False
     SLPrim_data_match -> False
     SLPrim_Array -> False
     SLPrim_Array_iota -> False
@@ -523,7 +523,6 @@ instance Equiv DLConstant where
     (DLC_Token_zero, DLC_Token_zero) -> True
     _ -> False
 
-
 instance Equiv SLVal where
   equiv a b = case (a, b) of
     ((SLV_Null _ _), (SLV_Null _ _)) -> True
@@ -622,8 +621,8 @@ isSmallLiteralArray :: SLVal -> Bool
 isSmallLiteralArray = \case
   SLV_Array _ _ _l ->
     True
-    -- Why this number!?
-    -- length l <= 2
+  -- Why this number!?
+  -- length l <= 2
   _ -> False
 
 newtype SLInterface = SLInterface (M.Map SLVar (SrcLoc, SLType))

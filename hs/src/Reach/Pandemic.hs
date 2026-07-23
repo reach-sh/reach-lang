@@ -8,6 +8,7 @@ import Reach.AST.DL
 import Reach.AST.DLBase
 
 type App = ReaderT Env IO
+
 type Infections = M.Map Int (SrcLoc, SLVar)
 
 data Env = Env
@@ -52,7 +53,7 @@ instance Pandemic DLRemote where
 instance Pandemic DLExpr where
   pan = \case
     DLE_Arg at a -> DLE_Arg at <$> pan a
-    DLE_LArg at a  -> DLE_LArg at <$> pan a
+    DLE_LArg at a -> DLE_LArg at <$> pan a
     DLE_Impossible at i err -> return $ DLE_Impossible at i err
     DLE_VerifyMuldiv at cxt ct as err -> DLE_VerifyMuldiv at cxt ct <$> pan as <*> pure err
     DLE_PrimOp at primop as -> DLE_PrimOp at primop <$> pan as
@@ -128,7 +129,7 @@ instance Pandemic DLRemoteALGO where
 
 instance Pandemic DLPayAmt where
   pan (DLPayAmt net ks) = do
-    let f (a,b) = (,) <$> pan a <*> pan b
+    let f (a, b) = (,) <$> pan a <*> pan b
     DLPayAmt <$> pan net <*> mapM f ks
 
 instance Pandemic DLTokenNew where
@@ -143,7 +144,7 @@ instance Pandemic DLArg where
     DLA_Interact sl s t -> return $ DLA_Interact sl s t
 
 instance Pandemic b => Pandemic (a, b) where
-  pan (s,a) = (,) s <$> pan a
+  pan (s, a) = (,) s <$> pan a
 
 instance (Pandemic a, Pandemic b, Pandemic c) => Pandemic (a, b, c) where
   pan (x, y, z) = (,,) <$> pan x <*> pan y <*> pan z
@@ -165,7 +166,7 @@ instance Pandemic DLSend where
 
 instance Pandemic DLAssignment where
   pan (DLAssignment mvargs) = do
-    let f (a,b) = (,) <$> pan a <*> pan b
+    let f (a, b) = (,) <$> pan a <*> pan b
     r <- mapM f $ M.toList mvargs
     return $ DLAssignment $ M.fromList r
 
@@ -212,4 +213,3 @@ instance Pandemic DLSStmt where
     DLS_ViewIs at sl1 sl2 expo -> return $ DLS_ViewIs at sl1 sl2 expo
     DLS_TokenMetaGet tm at v a i -> DLS_TokenMetaGet tm at <$> pan v <*> pan a <*> pure i
     DLS_TokenMetaSet tm at a1 a2 i b -> DLS_TokenMetaSet tm at <$> pan a1 <*> pan a2 <*> pure i <*> pure b
-

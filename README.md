@@ -14,7 +14,7 @@ Read the [documentation](https://docs.reach.sh).
 # Development
 
 If you want to work on the Reach compiler, you'll need:
-- stack v2.7.5
+- stack v2.15 or newer (the resolver targets GHC 9.6)
 - `z3`
 - `solc`
 - [`goal`](https://github.com/algorand/go-algorand) OR link [`goal-devnet`](https://github.com/reach-sh/reach-lang/blob/master/scripts/goal-devnet) to `goal` in your `PATH`

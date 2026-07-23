@@ -4,9 +4,11 @@ module Reach.Verify.Shared
   )
 where
 
+import Data.IORef
 import Reach.Connector
 import Reach.Counter
 import Reach.OutputUtil
+import Reach.VerifyReport
 
 data VerifyOpts = VerifyOpts
   { vo_out :: Outputer
@@ -14,6 +16,7 @@ data VerifyOpts = VerifyOpts
   , vo_timeout :: Integer
   , vo_dir :: FilePath
   , vo_first_fail_quit :: Bool
+  , vo_report :: Maybe (IORef VerifyReportAccum)
   }
 
 data VerifySt = VerifySt

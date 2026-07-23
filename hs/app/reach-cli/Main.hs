@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+
 module Main (main) where
 
 import qualified Data.Aeson as A
@@ -10,17 +11,19 @@ import qualified Data.Text as T
 import GHC.Generics
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
-import Network.HTTP.Types.Status
 import Network.HTTP.Simple (setRequestBodyJSON)
 import qualified Network.HTTP.Types as HTTP
+import Network.HTTP.Types.Status
 import System.Environment
 
 data Config = Config
   { cfgApiSite :: String
-  } deriving (Generic, Show)
+  }
+  deriving (Generic, Show)
 
 instance A.FromJSON Config where
-    parseJSON = A.genericParseJSON $
+  parseJSON =
+    A.genericParseJSON $
       A.defaultOptions
         { A.fieldLabelModifier = drop 3
         }
@@ -29,7 +32,8 @@ data ReachPConfig = ReachPConfig
   { rpcVer :: T.Text
   , rpcUid :: T.Text
   , rpcKey :: T.Text
-  } deriving (Show)
+  }
+  deriving (Show)
 
 t2b :: T.Text -> BS.ByteString
 t2b = BC.pack . T.unpack
@@ -40,18 +44,19 @@ data AMeth
 
 reqMod :: Request -> AMeth -> Request
 reqMod req = \case
-  AGet m -> req
-    { method = "GET"
-    , queryString = BS.intercalate "&" $ map go $ M.toList m 
-    }
+  AGet m ->
+    req
+      { method = "GET"
+      , queryString = BS.intercalate "&" $ map go $ M.toList m
+      }
     where
-      go (key, val) = mconcat [ e key, "=", e val ]
+      go (key, val) = mconcat [e key, "=", e val]
       e = HTTP.urlEncode True
-  APost v -> setRequestBodyJSON v $ req { method = "POST" }
+  APost v -> setRequestBodyJSON v $ req {method = "POST"}
 
 apiJson_ :: A.FromJSON a => Manager -> Request -> BS.ByteString -> AMeth -> IO (Either String a)
 apiJson_ m req p meth = do
-  let req' = flip reqMod meth $ req { path = p }
+  let req' = flip reqMod meth $ req {path = p}
   putStrLn $ show req'
   res <- httpLbs req' m
   putStrLn $ show res
@@ -74,9 +79,10 @@ makeAPI (ReachPConfig {..}) = do
   let mver = if rpcVer == "" then "" else ("-" <> rpcVer)
   let curl = (T.unpack $ "https://dev" <> mver <> ".reach.sh")
   creq <- parseRequest curl
-  Config {..} <- apiJson_ m creq "config.json" (AGet mempty) >>= \case
-    Left s -> error $ "Could not get Reach Cloud configuration: " <> show s
-    Right c -> return c
+  Config {..} <-
+    apiJson_ m creq "config.json" (AGet mempty) >>= \case
+      Left s -> error $ "Could not get Reach Cloud configuration: " <> show s
+      Right c -> return c
   let url = cfgApiSite
   areq <- applyBearerAuth (t2b $ rpcUid <> "#" <> rpcKey) <$> parseRequest url
   return $ API m areq
@@ -87,7 +93,8 @@ apiJson (API {..}) p dv = apiJson_ apManager areq p (APost $ A.toJSON dv)
 data ReachInstance = ReachInstance
   { riEndpoint :: String
   , riKey :: String
-  } deriving (Generic, Show)
+  }
+  deriving (Generic, Show)
 
 down1 :: String -> String
 down1 = \case
@@ -95,7 +102,8 @@ down1 = \case
   v -> v
 
 instance A.FromJSON ReachInstance where
-    parseJSON = A.genericParseJSON $
+  parseJSON =
+    A.genericParseJSON $
       A.defaultOptions
         { A.fieldLabelModifier = down1 . drop 2
         }

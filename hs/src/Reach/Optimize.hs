@@ -1,25 +1,26 @@
 module Reach.Optimize (optimize_, optimize, opt_sim, Optimize) where
 
+import Control.Monad
 import Control.Monad.Reader
 import qualified Data.Aeson as AS
+import qualified Data.ByteString as B
 import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Set as S
 import Reach.AST.Base
+import Reach.AST.CP
 import Reach.AST.DLBase
+import Reach.AST.EP
 import Reach.AST.LL
 import Reach.AST.PL
-import Reach.AST.EP
-import Reach.AST.CP
+import Reach.AST.SL
+import Reach.CollectSvs
 import Reach.Counter
 import Reach.Sanitize
 import Reach.UnrollLoops
 import Reach.Util
 import Safe (atMay)
-import qualified Data.ByteString as B
-import Reach.CollectSvs
-import Reach.AST.SL
 
 type App = ReaderT Env IO
 
@@ -79,7 +80,7 @@ data Env = Env
   , eConst :: S.Set DLVar
   , eSimulate :: Bool
   , eSvs :: S.Set DLVar
-  , eVarsSet ::IORef (M.Map DLVar Int)
+  , eVarsSet :: IORef (M.Map DLVar Int)
   , eFusionCases :: IORef FuseEnv
   }
 
@@ -125,9 +126,14 @@ newScope m = do
   eEnvsR' <- liftIO $ dupeIORef eEnvsR
   eVarsSet' <- liftIO $ dupeIORef eVarsSet
   eFusionCases' <- liftIO $ dupeIORef eFusionCases
-  local (\e -> e { eEnvsR = eEnvsR'
-                 , eVarsSet = eVarsSet'
-                 , eFusionCases = eFusionCases' }) m
+  local
+    (\e ->
+       e
+         { eEnvsR = eEnvsR'
+         , eVarsSet = eVarsSet'
+         , eFusionCases = eFusionCases'
+         })
+    m
 
 lookupCommon :: Ord a => (CommonEnv -> M.Map a b) -> a -> App (Maybe b)
 lookupCommon dict obj = do
@@ -180,7 +186,7 @@ recordKnownLargeArg dv v =
 
 remember_ :: Bool -> DLVar -> DLExpr -> App ()
 remember_ always v e =
-  updateLookup (\cenv -> cenv {cePrev = up $ cePrev cenv, ceExpr = M.insert v e $ ceExpr cenv })
+  updateLookup (\cenv -> cenv {cePrev = up $ cePrev cenv, ceExpr = M.insert v e $ ceExpr cenv})
   where
     up prev =
       case always || not (M.member e prev) of
@@ -311,18 +317,18 @@ floatIf mkk at ansDv c tt ft k = do
           -- Track that we successfully lifted this assignment
           let asn v = DL_Let at (DLV_Let DVC_Many v) $ DLE_PrimOp at IF_THEN_ELSE [c, ta, fa]
           t <- case mVal of
-                Just 0 -> return $ mkk (asn ansDv) k
-                Just _ -> do
-                  tmp <- allocVar at (varType ansDv)
-                  let s2 = DL_Set at ansDv (DLA_Var tmp)
-                  return $ mkk (asn tmp) (mkk s2 k)
-                Nothing -> impossible "floatIf: trying to float if that does not set a dlvar"
+            Just 0 -> return $ mkk (asn ansDv) k
+            Just _ -> do
+              tmp <- allocVar at (varType ansDv)
+              let s2 = DL_Set at ansDv (DLA_Var tmp)
+              return $ mkk (asn tmp) (mkk s2 k)
+            Nothing -> impossible "floatIf: trying to float if that does not set a dlvar"
           return $ foldr mkk t $ t_lifts <> f_lifts
         _ -> meh
     False -> meh
   where
     meh = return $ mkk (DL_LocalIf at (Just ansDv) c tt ft) k
-    mSub1 = Just . maybe 0 (\ x -> x - 1)
+    mSub1 = Just . maybe 0 (\x -> x - 1)
 
 float :: IsCom a => (DLStmt -> a -> a) -> a -> App a
 float mk t =
@@ -512,10 +518,12 @@ instance Optimize DLExpr where
           return $ DLE_Arg at $ zero UI_Word
         (MUL_DIV _, [_, DLA_Literal (DLL_Int _ _ 0), _, _]) ->
           return $ DLE_Arg at $ zero UI_Word
-        (IF_THEN_ELSE, [x, (DLA_Literal (DLL_Bool False)), y]) | x == y ->
-          staticB False
-        (IF_THEN_ELSE, [x, y, (DLA_Literal (DLL_Bool True))]) | x == y ->
-          staticB True
+        (IF_THEN_ELSE, [x, (DLA_Literal (DLL_Bool False)), y])
+          | x == y ->
+            staticB False
+        (IF_THEN_ELSE, [x, y, (DLA_Literal (DLL_Bool True))])
+          | x == y ->
+            staticB True
         (IF_THEN_ELSE, [c, (DLA_Literal (DLL_Bool True)), (DLA_Literal (DLL_Bool False))]) ->
           return $ DLE_Arg at $ c
         (IF_THEN_ELSE, [(DLA_Literal (DLL_Bool c)), t, f]) ->
@@ -674,7 +682,6 @@ instance Learn DLExpr where
       -- This rule only applies when lhs & rhs are bools!
       | areBool [lhs, rhs] && lhs `equiv` result && not (rhs `equiv` result) -> [(dv, true)]
       | areBool [lhs, rhs] && rhs `equiv` result && not (lhs `equiv` result) -> [(dv, false)]
-
       -- r = false, x ? true : v3   => [(x, false), (v3, false)]
       | areBool [result, lhs] && (lhs /= result) -> (dv, false) : mAsn result rhs
       | areBool [result, rhs] && (rhs /= result) -> (dv, true) : mAsn result lhs
@@ -688,7 +695,7 @@ instance Learn DLExpr where
     where
       chkOpEqAndResultTrue op = isAnEqual op && result == true
       false = DLA_Literal $ DLL_Bool False
-      true  = DLA_Literal $ DLL_Bool True
+      true = DLA_Literal $ DLL_Bool True
       mAsn v = \case
         DLA_Var dv' -> [(dv', v)]
         _ -> []
@@ -927,7 +934,8 @@ preFuse s = do
     _ | not (isPure s) -> cantFuse
     _ -> return ()
   return oldEnv
-  where cantFuse = liftIO . flip writeIORef mempty =<< asks eFusionCases
+  where
+    cantFuse = liftIO . flip writeIORef mempty =<< asks eFusionCases
 
 fuseSwitch :: (DLStmt -> a -> a) -> SrcLoc -> DLVar -> SwitchCases DLTail -> a -> App a
 fuseSwitch mk at dv (SwitchCases scs) k =
@@ -961,8 +969,8 @@ fuseStmt fuseEnv mk t =
           -- reset the fusionCase env to how it was
           -- before we processed this branch, add the info
           -- for this switch to the env, and drop this stmt
-            liftIO $ writeIORef fusionCasesR $ M.insert dv scs1 fuseEnv
-            return $ mk (DL_Nop at) k1
+          liftIO $ writeIORef fusionCasesR $ M.insert dv scs1 fuseEnv
+          return $ mk (DL_Nop at) k1
         -- If there are no previous switches looking to fuse, keep this stmt and return
         _ -> do
           liftIO $ writeIORef fusionCasesR fuseEnv
@@ -1082,15 +1090,18 @@ instance Optimize DLInit where
   gcs _ = return ()
 
 instance Optimize LLProg where
-  opt (LLProg llp_at llp_opts llp_parts@SLParts{..} llp_init llp_exports llp_views llp_apis llp_aliases llp_events llp_step) = do
+  opt (LLProg llp_at llp_opts llp_parts@SLParts {..} llp_init llp_exports llp_views llp_apis llp_aliases llp_events llp_step) = do
     let psl = M.keys sps_ies
     cs <- asks eConst
     env0 <- liftIO $ mkEnv0 (getCounter llp_opts) (llo_droppedAsserts llp_opts) cs psl False mempty
     local (const env0) $
       focus_ctor $
         LLProg llp_at llp_opts llp_parts <$> opt llp_init <*> opt llp_exports <*> pure llp_views
-               <*> pure llp_apis <*> pure llp_aliases <*> pure llp_events <*> opt llp_step
-  gcs (LLProg { llp_step }) = gcs llp_step
+          <*> pure llp_apis
+          <*> pure llp_aliases
+          <*> pure llp_events
+          <*> opt llp_step
+  gcs (LLProg {llp_step}) = gcs llp_step
 
 -- This is a bit of a hack...
 
@@ -1158,7 +1169,7 @@ instance Optimize CTail where
 instance Optimize CHandler where
   opt ch = do
     let svs = collectSvs ch
-    local (\e -> e { eSvs = svs }) $
+    local (\e -> e {eSvs = svs}) $
       case ch of
         C_Handler {..} ->
           C_Handler ch_at ch_int ch_from ch_last ch_svs ch_msg ch_timev ch_secsv <$> opt ch_body

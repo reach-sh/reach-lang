@@ -10,7 +10,7 @@ import Data.List (intercalate)
 import Data.List.Extra (splitOn)
 import Data.Maybe (fromMaybe)
 import GHC.Generics
-import Reach.AST.Base (ErrorSuggestions (..), ErrorMessageForJson, HasErrorCode (..), makeErrorJson, SrcLoc, getErrorMessage)
+import Reach.AST.Base (ErrorMessageForJson, ErrorSuggestions (..), HasErrorCode (..), SrcLoc, getErrorMessage, makeErrorJson)
 import Reach.UnsafeUtil (unsafeIsErrorFormatJson, unsafeTermSupportsColor)
 import qualified System.Console.Pretty as TC
 import System.IO (hPutStrLn)
@@ -19,7 +19,6 @@ import System.IO.Extra (stderr)
 capitalized :: String -> String
 capitalized [] = []
 capitalized (h : t) = toUpper h : map toLower t
-
 
 snakeToCamelCase :: [Char] -> [Char]
 snakeToCamelCase name = case splitOn "_" name of

@@ -19,10 +19,10 @@ Verification failed:
   //    ^ could = Token!val!1
   //      from: ./dyn_tok_not_found.rsh:6:9:property binding
   const .api39.dom/314 = protect<Tuple(Token)>("B_changeTok".interact.in());
-  //    ^ could = [Token!val!4 ]
+  //    ^ could = [Token!val!3 ]
   //      from: ./dyn_tok_not_found.rsh:1:23:application
-  const data_id/412 = <switch case binding for B_changeTok0_46([Token!val!4 ] )>;
-  //    ^ could = [Token!val!4 ]
+  const data_id/412 = <switch case binding for B_changeTok0_46([Token!val!3 ] )>;
+  //    ^ could = [Token!val!3 ]
   //      from: ./dyn_tok_not_found.rsh:28:19:switch
 
   // Theorem Formalization
@@ -30,7 +30,7 @@ Verification failed:
   const tokens'/292 = Array.set(Array.set(array(Token, [Token.zero, Token.zero ]), 0, tok1/274 ), 1, tok2/275 );
   //    ^ would be array(Token, [Token!val!0, Token!val!1 ] )
   const payTok/422 = data_id/412[0];
-  //    ^ would be Token!val!4
+  //    ^ would be Token!val!3
   const searchIdx/568 = [false, 0 ][1];
   //    ^ would be 0
   const searchIdx/579 = (([false, 0 ][0] ? true : (tokens'/292[0] == payTok/422)) ? [true, searchIdx/568 ] : [false, (searchIdx/568 + 1) ])[1];

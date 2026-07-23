@@ -7,7 +7,8 @@ module Reach.InterferenceGraph
   , colorEasy
   , colorHardLim
   , colorHardNoLim
-  ) where
+  )
+where
 
 import Control.Monad
 import Control.Monad.Extra
@@ -20,8 +21,8 @@ import Data.Maybe
 import Data.Monoid
 import Data.Ord
 import qualified Data.Set as S
-import Reach.AST.DLBase
 import Reach.AST.CL
+import Reach.AST.DLBase
 import Reach.CollectCounts
 import Reach.Dotty
 import Reach.FixedPoint
@@ -29,6 +30,7 @@ import Reach.Texty
 
 -- Types and interface
 type DLVarS = S.Set DLVar
+
 newtype Graph = Graph (M.Map DLVar DLVarS)
 
 instance Semigroup Graph where
@@ -82,11 +84,15 @@ instance Monoid IGg where
   mempty = IGg mempty mempty
 
 instance Pretty IGg where
-  pretty (IGg {..}) = ""
-    <> "// Interference" <> hardline
-    <> pretty igInter <> hardline
-    <> "// Move" <> hardline
-    <> pretty igMove
+  pretty (IGg {..}) =
+    ""
+      <> "// Interference"
+      <> hardline
+      <> pretty igInter
+      <> hardline
+      <> "// Move"
+      <> hardline
+      <> pretty igMove
 
 data IGd a = IGd a IGg
 
@@ -100,11 +106,15 @@ instance (HasCounter a) => HasCounter (IGd a) where
   getCounter (IGd x _) = getCounter x
 
 instance (Pretty a) => Pretty (IGd a) where
-  pretty (IGd x y) = ""
-    <> "// Original" <> hardline
-    <> pretty x <> hardline
-    <> "// Intereference Graph" <> hardline
-    <> pretty y
+  pretty (IGd x y) =
+    ""
+      <> "// Original"
+      <> hardline
+      <> pretty x
+      <> hardline
+      <> "// Intereference Graph"
+      <> hardline
+      <> pretty y
 
 clig :: (HasStateMap a, HasFunVars a, IG a) => a -> IO (IGd a)
 clig x = do
@@ -255,13 +265,13 @@ modIG f = do
   liftIO $ modifyIORef eIG f
 
 addv :: DLVar -> App ()
-addv x = modIG $ \g -> g { igInter = gAdd x (igInter g) }
+addv x = modIG $ \g -> g {igInter = gAdd x (igInter g)}
 
 inter2 :: DLVar -> DLVar -> App ()
-inter2 x y = modIG $ \g -> g { igInter = gIns2 x y (igInter g) }
+inter2 x y = modIG $ \g -> g {igInter = gIns2 x y (igInter g)}
 
 move2 :: DLVar -> DLVar -> App ()
-move2 x y = modIG $ \g -> g { igMove = gIns2 x y (igMove g) }
+move2 x y = modIG $ \g -> g {igMove = gIns2 x y (igMove g)}
 
 type App = ReaderT Env IO
 
@@ -310,21 +320,27 @@ viaCount lsm x = S.union (countsS x) <$> lsm
 closeOnces :: DLVarS -> App DLVarS
 closeOnces xs = do
   o <- asks eOnces
-  xs' <- liftIO $ fixedPoint_ xs $ \_ xs0 -> do
-    let xtra = mconcat $ M.elems $ M.restrictKeys o xs0
-    return $ xs0 <> xtra
+  xs' <- liftIO $
+    fixedPoint_ xs $ \_ xs0 -> do
+      let xtra = mconcat $ M.elems $ M.restrictKeys o xs0
+      return $ xs0 <> xtra
   return $ S.difference xs' $ M.keysSet o
 
 data IGseq a b = IGseq a b
+
 instance (IG a, IG b) => IG (IGseq a b) where
   ig ls (IGseq x y) = ig (ig ls y) x
+
 data IGpar a b = IGpar a b
+
 instance (IG a, IG b) => IG (IGpar a b) where
   ig ls (IGpar x y) = do
     x' <- ig ls x
     y' <- ig ls y
     return $ S.union x' y'
+
 newtype Par a = Par a
+
 newtype Seq a = Seq a
 
 instance IG DLVar where
@@ -344,38 +360,39 @@ instance IGdef DLVarLet where
 instance IGdef DLLetVar where
   igDef lsm uses = \case
     DLV_Eff -> S.union uses <$> lsm
-    DLV_Let vc v -> rm v <$> do
-      Env {..} <- ask
-      uses' <- closeOnces uses
-      let ignored = eSpecials
-      let dbg_ :: String -> [(String, DLVarS)] -> App ()
-          dbg_ lab l = liftIO $ do
-            putStrLn $ "igDef " <> lab <> ": " <> show v
-            forM_ l $ \(x, s) -> do
-              putStrLn $ "  " <> x <> ": " <> show s
-            putStrLn ""
-      let dbg__ :: String -> [(String, DLVarS)] -> App ()
-          dbg__ lab = dbg_ lab . (<>) [("ignored", ignored), ("uses", uses), ("uses'", uses)]
-      let loud = False
-      let dbg = if loud then dbg__ else const $ const $ return ()
-      st <- asks $ isInState v
-      case (vc, st) of
-        (DVC_Once, False) ->
-          local (\e -> e { eOnces = M.insert v uses' eOnces }) $ do
+    DLV_Let vc v ->
+      rm v <$> do
+        Env {..} <- ask
+        uses' <- closeOnces uses
+        let ignored = eSpecials
+        let dbg_ :: String -> [(String, DLVarS)] -> App ()
+            dbg_ lab l = liftIO $ do
+              putStrLn $ "igDef " <> lab <> ": " <> show v
+              forM_ l $ \(x, s) -> do
+                putStrLn $ "  " <> x <> ": " <> show s
+              putStrLn ""
+        let dbg__ :: String -> [(String, DLVarS)] -> App ()
+            dbg__ lab = dbg_ lab . (<>) [("ignored", ignored), ("uses", uses), ("uses'", uses)]
+        let loud = False
+        let dbg = if loud then dbg__ else const $ const $ return ()
+        st <- asks $ isInState v
+        case (vc, st) of
+          (DVC_Once, False) ->
+            local (\e -> e {eOnces = M.insert v uses' eOnces}) $ do
+              ls <- lsm
+              ls' <- closeOnces ls
+              dbg "once" [("ls", ls), ("ls'", ls')]
+              return ls'
+          _ -> do
             ls <- lsm
             ls' <- closeOnces ls
-            dbg "once" [("ls", ls), ("ls'", ls')]
-            return ls'
-        _ -> do
-          ls <- lsm
-          ls' <- closeOnces ls
-          let ls'' = ls' <> uses'
-          unless (S.member v ignored) $ do
-            addv v
-            let int = S.difference ls'' ignored
-            intf v int
-            dbg "many" [("ls", ls), ("ls'", ls'), ("ls''", ls''), ("int", int)]
-          return ls''
+            let ls'' = ls' <> uses'
+            unless (S.member v ignored) $ do
+              addv v
+              let int = S.difference ls'' ignored
+              intf v int
+              dbg "many" [("ls", ls), ("ls'", ls'), ("ls''", ls''), ("int", int)]
+            return ls''
 
 viaDef :: (IGdef a) => App DLVarS -> a -> App DLVarS
 viaDef ls x = igDef ls mempty x
@@ -432,7 +449,7 @@ instance AddSpecial DLLetVar where
   addSpecial = \case
     DLV_Eff -> id
     DLV_Let _ v -> \m ->
-      S.delete v <$> local (\e -> e { eSpecials = S.insert v $ eSpecials e }) m
+      S.delete v <$> local (\e -> e {eSpecials = S.insert v $ eSpecials e}) m
 
 class IsInState a where
   isInState_ :: DLVar -> a -> Bool
@@ -459,16 +476,17 @@ instance IG SvsGet where
 instance IG CLStmt where
   ig ls = \case
     CLDL m -> ig ls m
-    CLBindSpecial _ lv _s -> asks (isInState lv) >>= \case
-      True -> ig ls lv
-      False -> addSpecial lv $ ls
+    CLBindSpecial _ lv _s ->
+      asks (isInState lv) >>= \case
+        True -> ig ls lv
+        False -> addSpecial lv $ ls
     CLTimeCheck _ x -> ig ls x
     CLEmitPublish _ _ vs -> ig ls (Seq vs)
     CLStateBind _ _ vs _ ->
       ig ls (Seq vs)
     CLIntervalCheck _ x y z -> ig ls (IGseq (Seq [x, y]) z)
     CLStateSet _ _ vs -> do
-      mapM_ (\SvsPut{..} -> move svsp_svs svsp_val) vs
+      mapM_ (\SvsPut {..} -> move svsp_svs svsp_val) vs
       ig ls (Seq $ map svsp_val vs)
     CLTokenUntrack _ a -> ig ls a
     CLMemorySet _ _v a -> do
@@ -536,6 +554,7 @@ instance IG CLProg where
 
 -- Coloring
 type Coloring = M.Map DLVar Int
+
 type ColoringR = Either String (Int, Coloring)
 
 -- This function makes the observation that if the number of variables is less
@@ -550,18 +569,19 @@ colorEasy i s maxColor = do
   let act = S.size s
   case act <= maxColor of
     True ->
-      return $ Right $ (,) act $ M.fromList $ zip (S.toAscList s) [0..]
+      return $ Right $ (,) act $ M.fromList $ zip (S.toAscList s) [0 ..]
     False -> do
       colorHardLim i s maxColor
 
 colorHardLim :: IGg -> DLVarS -> Int -> IO ColoringR
 colorHardLim i s maxColor =
-  colorSat i s $ take maxColor [0..]
+  colorSat i s $ take maxColor [0 ..]
 
 colorHardNoLim :: IGg -> DLVarS -> IO ColoringR
-colorHardNoLim i s = colorSat i s [0..]
+colorHardNoLim i s = colorSat i s [0 ..]
 
 type SatS = S.Set Int
+
 colorSat :: IGg -> DLVarS -> [Int] -> IO ColoringR
 colorSat (IGg {..}) s all_cs = do
   maxc <- newIORef 0

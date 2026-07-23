@@ -1,0 +1,18 @@
+# Isolated build environment for the ormolu formatter (google "gfork").
+#
+# The gfork predates modern resolvers (it needs ghc-lib-parser 8.10.x), so it
+# is pinned here at its native GHC 8.10.7 resolver instead of polluting the
+# main hs/stack.yaml extra-deps -- which would downgrade optparse-applicative
+# for the compiler itself and break again on every resolver hop.
+#
+# Used only by `make hs-format`:
+#   stack --stack-yaml ormolu-tool/stack.yaml build ormolu
+resolver: lts-18.28
+
+packages: []
+
+extra-deps:
+  - git: https://github.com/google/ormolu.git
+    commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0
+    # ^ from branch "gfork"
+  - ghc-lib-parser-8.10.7.20220219@sha256:450f94155c92abadc3ce2e347e51309103aedd7b8fc1ca3fb4d97ac1c71e8d5f,8621

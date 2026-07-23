@@ -2,18 +2,20 @@ module Reach.CLike
   ( clike
   , nameMap
   , nameReturn
-  ) where
+  )
+where
 
+import Control.Monad
 import Control.Monad.Reader
 import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe
-import Reach.AddCounts
 import Reach.AST.Base
-import Reach.AST.DLBase
-import Reach.AST.CP
-import Reach.AST.PL
 import Reach.AST.CL
+import Reach.AST.CP
+import Reach.AST.DLBase
+import Reach.AST.PL
+import Reach.AddCounts
 import Reach.BinaryLeafTree
 import Reach.Counter
 import Reach.Sanitize
@@ -37,18 +39,25 @@ instance HasCounter Env where
 
 nameBase :: CLVar -> CLVar -> CLVar
 nameBase pre post = "_reach" <> pre <> "_" <> post
+
 nameInt :: CLVar -> Int -> CLVar
 nameInt pre i = nameBase pre (bpack $ show i)
+
 nameLoop :: Int -> CLVar
 nameLoop = nameInt "l"
+
 nameMeth :: Int -> CLVar
 nameMeth = nameInt "p"
+
 nameMethi :: Int -> CLVar
 nameMethi = nameInt "i"
+
 nameMap :: Int -> CLVar
 nameMap = nameInt "m"
+
 nameApi :: CLVar -> CLVar
 nameApi = nameBase "a"
+
 nameReturn :: CLVar -> CLVar
 nameReturn = nameBase "r"
 
@@ -58,14 +67,15 @@ class HasStateR a where
 recordState :: (HasStateR e) => Int -> [DLVar] -> ReaderT e IO ()
 recordState which svs = do
   sr <- asks getStateR
-  liftIO $ modifyIORef sr $ \m ->
-    case M.lookup which m of
-      Just svs' ->
-        case svs == svs' of
-          True -> m
-          False -> impossible $ "recordState: mismatch " <> show which <> " " <> show svs <> " vs " <> show svs'
-      Nothing ->
-        M.insert which svs m
+  liftIO $
+    modifyIORef sr $ \m ->
+      case M.lookup which m of
+        Just svs' ->
+          case svs == svs' of
+            True -> m
+            False -> impossible $ "recordState: mismatch " <> show which <> " " <> show svs <> " vs " <> show svs'
+        Nothing ->
+          M.insert which svs m
 
 env_insert :: (Show k, Ord k) => k -> v -> M.Map k v -> M.Map k v
 env_insert k v m =
@@ -96,14 +106,14 @@ funw :: CLVar -> [CLVar] -> SrcLoc -> [DLVarLet] -> Bool -> DLType -> CLExtKind 
 funw ni ns at int_dom clf_view cef_rng cef_kind mret intt = do
   let clf_at = at
   let cif_mwhich = case cef_kind of
-                     CE_Publish n -> Just n
-                     _ -> Nothing
-  let cif_fun = CLFun { clf_tail = intt, clf_dom = int_dom, ..}
+        CE_Publish n -> Just n
+        _ -> Nothing
+  let cif_fun = CLFun {clf_tail = intt, clf_dom = int_dom, ..}
   let di = CLIntFun {..}
   ext_dom_vs <- mapM freshenVar $ map varLetVar int_dom
   let extt = CL_Jump at ni (map DLA_Var ext_dom_vs) False (Just mret)
   let ext_dom = map (DLVarLet (Just DVC_Once)) ext_dom_vs
-  let cef_fun = CLFun { clf_tail = extt, clf_dom = ext_dom, ..}
+  let cef_fun = CLFun {clf_tail = extt, clf_dom = ext_dom, ..}
   let de = CLExtFun {..}
   funi ni di
   -- XXX optimize when one ns?
@@ -219,32 +229,32 @@ instance (CLikeF a) => CLikeF (BLT Int a) where
       at <- asks f_at
       noCheck <- asks f_noCheck
       let f = CL_Com (CLDL (DL_Let at DLV_Eff (DLE_Claim at [] CT_Enforce (DLA_Literal $ DLL_Bool False) (Just "Incorrect state: empty blt"))))
-      return
-        $ (if noCheck then id else f)
-        $ CL_Halt at HM_Pure
+      return $
+        (if noCheck then id else f) $
+          CL_Halt at HM_Pure
     Leaf i mc a -> do
       -- XXX ^ make sure blt actually fills in mc
       at <- asks f_at
       noCheck <- asks f_noCheck
-      a' <- local (\e -> e { f_staten = Just i }) $ clf a
+      a' <- local (\e -> e {f_staten = Just i}) $ clf a
       case mc && not noCheck of
         False -> return a'
         True -> do
           cmpv <- allocVar at T_Bool
           statev <- asks f_statev
-          return
-            $ CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once cmpv) (DLE_PrimOp at (PEQ UI_Word) [ DLA_Var statev, DLA_Literal $ DLL_Int at UI_Word $ fromIntegral i ])))
-            $ CL_Com (CLDL (DL_Let at DLV_Eff (DLE_Claim at [] CT_Enforce (DLA_Var cmpv) (Just "Incorrect state: not leaf"))))
-            $ a'
+          return $
+            CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once cmpv) (DLE_PrimOp at (PEQ UI_Word) [DLA_Var statev, DLA_Literal $ DLL_Int at UI_Word $ fromIntegral i]))) $
+              CL_Com (CLDL (DL_Let at DLV_Eff (DLE_Claim at [] CT_Enforce (DLA_Var cmpv) (Just "Incorrect state: not leaf")))) $
+                a'
     Branch i l r -> do
       at <- asks f_at
       l' <- clf l
       r' <- clf r
       cmpv <- allocVar at T_Bool
       statev <- asks f_statev
-      return
-        $ CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once cmpv) (DLE_PrimOp at (PLT UI_Word) [ DLA_Var statev, DLA_Literal $ DLL_Int at UI_Word $ fromIntegral i ])))
-        $ CL_If at (DLA_Var cmpv) l' r'
+      return $
+        CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once cmpv) (DLE_PrimOp at (PLT UI_Word) [DLA_Var statev, DLA_Literal $ DLL_Int at UI_Word $ fromIntegral i]))) $
+          CL_If at (DLA_Var cmpv) l' r'
 
 data FunInfo a = FunInfo
   { fi_at :: SrcLoc
@@ -296,12 +306,13 @@ instance CLikeF ApiInfoY where
     (argv, lets) <- aiy_wrap dom
     timev <- allocVar at $ T_UInt UI_Word
     let go (v, e) = CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once v) e))
-    return
-      $ CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once timev) $ DLE_Arg at $ DLA_Literal $ DLL_Int at UI_Word $ 0))
-      $ flip (foldr go) lets
-      $ CL_Jump at (nameMethi aiy_which) (map DLA_Var [timev, argv]) True Nothing
+    return $
+      CL_Com (CLDL (DL_Let at (DLV_Let DVC_Once timev) $ DLE_Arg at $ DLA_Literal $ DLL_Int at UI_Word $ 0)) $
+        flip (foldr go) lets $
+          CL_Jump at (nameMethi aiy_which) (map DLA_Var [timev, argv]) True Nothing
 
 type ApiInfoX = FunInfo ApiInfoY
+
 type ApiInfosX = M.Map SLPart ApiInfoX
 
 apiReorg :: ApiInfos -> ApiInfosX
@@ -318,14 +329,14 @@ apiReorgX aim = FunInfo {..}
     fi_isView = False
     fi_rng = get ai_ret_ty
     fi_as = case malias of
-              Nothing -> []
-              Just x -> [x]
+      Nothing -> []
+      Just x -> [x]
     malias = get ai_alias
-    get :: forall v . (Sanitize v, Eq v) => (ApiInfo -> v) -> v
+    get :: forall v. (Sanitize v, Eq v) => (ApiInfo -> v) -> v
     get = get' aim
-    get' :: forall k mv v . (Sanitize v, Eq v) => M.Map k mv -> (mv -> v) -> v
+    get' :: forall k mv v. (Sanitize v, Eq v) => M.Map k mv -> (mv -> v) -> v
     get' m f = feq $ sani $ map f $ M.elems m
-    feq :: forall v . (Eq v) => [v] -> v
+    feq :: forall v. (Eq v) => [v] -> v
     feq = \case
       [] -> impossible "No API infos"
       x : xs ->
@@ -358,7 +369,7 @@ apiReorgX aim = FunInfo {..}
           argv <- allocVar ai_at $ T_Data tm
           return $ (argv, lets <> [(argv, DLE_LArg ai_at $ DLLA_Data tm cid $ DLA_Var tuplev)])
 
-funzip :: Functor f => f (a,b) -> (f a, f b)
+funzip :: Functor f => f (a, b) -> (f a, f b)
 funzip xs = (fst <$> xs, snd <$> xs)
 
 for :: [a] -> (a -> b) -> [b]
@@ -424,12 +435,12 @@ instance CLike CHX where
     let msg_vars = map varLetVar eff_dom
     let eff_ty = T_Tuple $ map varType msg_vars
     act_var <- allocVar ch_at eff_ty
-    let clf_dom = [ v2vl act_var ]
+    let clf_dom = [v2vl act_var]
     let act_arg = DLA_Var act_var
     tCounter <- asks getCounter
     tStateR <- asks eStateR
     let addArg (v, i) = CL_Com $ CLDL $ DL_Let ch_at (v2lv v) (DLE_TupleRef ch_at act_arg i)
-    let addArgs = flip (foldr addArg) $ zip msg_vars [0..]
+    let addArgs = flip (foldr addArg) $ zip msg_vars [0 ..]
     body' <- tr_ (TEnv {..}) ch_body
     let isCtor = which == 0
     recordState ch_last $ map varLetVar ch_svs
@@ -439,21 +450,24 @@ instance CLike CHX where
           if isCtor then id else CL_Com (CLStateBind ch_at False ch_svs ch_last)
     let intt =
           -- XXX add extensions to DLE so these can be read directly
-            CL_Com (CLBindSpecial ch_at (v2lv ch_from) CLS_TxnFrom)
-          $ CL_Com (CLBindSpecial ch_at (v2lv ch_timev) CLS_TxnTime)
-          $ CL_Com (CLBindSpecial ch_at (v2lv ch_secsv) CLS_TxnSecs)
-          $ mStateBind
-          $ addArgs
-          -- XXX include this in the program itself?
-          $ CL_Com (CLEmitPublish ch_at which msg_vars)
-          -- XXX put given_timev into DL and does this in Core
-          -- XXX there is implicitly a reference to "current_time"
-          $ CL_Com (CLTimeCheck ch_at given_timev)
-          -- XXX move this back to EPP
-          $ CL_Com (CLIntervalCheck ch_at ch_timev ch_secsv ch_int)
-          $ body'
+          CL_Com (CLBindSpecial ch_at (v2lv ch_from) CLS_TxnFrom) $
+            CL_Com (CLBindSpecial ch_at (v2lv ch_timev) CLS_TxnTime) $
+              CL_Com (CLBindSpecial ch_at (v2lv ch_secsv) CLS_TxnSecs) $
+                mStateBind $
+                  addArgs
+                  -- XXX include this in the program itself?
+                  $
+                    CL_Com (CLEmitPublish ch_at which msg_vars)
+                    -- XXX put given_timev into DL and does this in Core
+                    -- XXX there is implicitly a reference to "current_time"
+                    $
+                      CL_Com (CLTimeCheck ch_at given_timev)
+                      -- XXX move this back to EPP
+                      $
+                        CL_Com (CLIntervalCheck ch_at ch_timev ch_secsv ch_int) $
+                          body'
     let isView = False
-    funw (nameMethi which) [ nameMeth which ] ch_at clf_dom isView T_Null (CE_Publish which) Nothing intt
+    funw (nameMethi which) [nameMeth which] ch_at clf_dom isView T_Null (CE_Publish which) Nothing intt
   cl (CHX (which, (C_Loop {..}))) = do
     let n = nameLoop which
     let clf_dom = cl_svs <> cl_vars

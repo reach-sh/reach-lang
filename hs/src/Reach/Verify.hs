@@ -5,19 +5,21 @@ module Reach.Verify
 where
 
 import Control.Monad
+import Data.IORef
 import GHC.Conc (numCapabilities)
 import Reach.AST.LL
 import Reach.Counter
 import Reach.Verify.Knowledge
 import Reach.Verify.SMT
 import Reach.Verify.Shared
+import Reach.VerifyReport
 import System.Exit
 
 data VerifierName = Boolector | CVC4 | Yices | Z3
   deriving (Read, Show, Eq)
 
 verify :: VerifyOpts -> LLProg -> IO ExitCode
-verify vst_vo lp@(LLProg { llp_opts }) = do
+verify vst_vo lp@(LLProg {llp_opts}) = do
   vst_res_succ <- newCounter 0
   vst_res_fail <- newCounter 0
   vst_res_time <- newCounter 0
@@ -51,6 +53,9 @@ verify vst_vo lp@(LLProg { llp_opts }) = do
   fs <- readCounter vst_res_fail
   ts <- readCounter vst_res_time
   rs <- readCounter vst_res_reps
+  forM_ (vo_report vst_vo) $ \r ->
+    modifyIORef r $ \a ->
+      a {vra_succ = ss, vra_fail = fs, vra_time = ts, vra_reps = rs}
   putStr $ "Checked " ++ (show $ ss + fs) ++ " theorems"
   case fs == 0 && ts == 0 of
     True -> do

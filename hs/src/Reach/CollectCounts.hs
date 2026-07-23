@@ -17,9 +17,9 @@ import qualified Data.Aeson as AS
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Set as S
+import Reach.AST.CP
 import Reach.AST.DLBase
 import Reach.AST.EP
-import Reach.AST.CP
 
 newtype Count = Count (Maybe DLVarCat)
   deriving (Show, Eq)
@@ -261,12 +261,12 @@ instance CountableK DLStmt where
     DL_Let _ lv e -> countsk (counts e <> kcs) lv
     DL_ArrayMap _ ans xs as i f ->
       counts xs
-      <> countsk (counts f) (i : as)
-      <> countsk kcs ans
+        <> countsk (counts f) (i : as)
+        <> countsk kcs ans
     DL_ArrayReduce _ ans xs z b as i f ->
       counts xs <> counts z
-      <> countsk (counts f) (b : i : as)
-      <> countsk kcs ans
+        <> countsk (counts f) (b : i : as)
+        <> countsk kcs ans
     DL_Var _ v -> count_rms [v] kcs
     DL_Set _ v a -> counts v <> counts a <> kcs
     DL_LocalIf _ _ c t f -> counts c <> counts [t, f] <> kcs
@@ -274,8 +274,8 @@ instance CountableK DLStmt where
     DL_Only _ _ t -> countsk kcs t
     DL_MapReduce _ _ ans _ z b k a f ->
       counts z
-      <> countsk (counts f) [b, k, a]
-      <> countsk kcs ans
+        <> countsk (counts f) [b, k, a]
+        <> countsk kcs ans
     DL_LocalDo _ _ t -> countsk kcs t
 
 instance CountableK DLAssignment where

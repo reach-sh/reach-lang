@@ -1,14 +1,17 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
+
 module Reach.Compiler
   ( CompilerConfig (..)
   , compile
   , printKeywordInfo
-  ) where
+  )
+where
 
 -- We allow name shadowing because we want to use `p` for every program AST
 -- to ensure that we don't accidentally use things out of order.
 
 import Control.Monad
+import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Set as S
@@ -17,16 +20,16 @@ import qualified Data.Text.Lazy.IO as LTIO
 import Reach.APICut
 import Reach.AST.Base
 import Reach.AST.DL
-import Reach.AST.SL
 import Reach.AST.PL
+import Reach.AST.SL
 import Reach.Backend.JS
 import Reach.BigOpt
 import Reach.CLike
 import Reach.Connector
 import Reach.Connector.ALGO
 import Reach.Connector.ETH_Solidity
-import Reach.EditorInfo
 import Reach.EPP
+import Reach.EditorInfo
 import Reach.EraseLogic
 import Reach.Eval
 import Reach.FloatAPI
@@ -36,11 +39,14 @@ import Reach.OutputUtil
 import Reach.Parser (gatherDeps_top)
 import Reach.StateDiagram
 import Reach.Texty
-import Reach.Util
 import Reach.UnsafeUtil
+import Reach.Util
 import Reach.Verify
+import Reach.VerifyReport
+import System.Directory
 import System.Exit
 import System.FilePath
+import System.IO
 
 data CompilerConfig = CompilerConfig
   { ccOutput :: Outputer
@@ -52,6 +58,8 @@ data CompilerConfig = CompilerConfig
   , ccStopAfterEval :: Bool
   , ccVerifyTimeout :: Integer
   , ccVerifyFirstFailQuit :: Bool
+  , ccSolOnly :: Bool
+  , ccVerifyReport :: Bool
   }
 
 all_connectors :: Connectors
@@ -78,7 +86,25 @@ mkCompileProg (CompilerConfig {..}) appDescr outputFile dl = do
         interOut l x''
         return x
   p <- showp "dl" dl
-  let DLProg { dlp_opts = DLOpts {..} } = p
+  let DLProg {dlp_opts = DLOpts {..}} = p
+  let solDie msg = do
+        hPutStrLn stderr msg
+        exitWith $ ExitFailure 1
+  when (ccSolOnly && not ccShouldVerify) $
+    solDie "reachc: --sol requires verification; it cannot be combined with disabling verification, because --sol output is verified-or-absent by construction"
+  dlo_connectors' <-
+    case ccSolOnly of
+      False -> return dlo_connectors
+      True ->
+        case M.lookup (conName connect_eth) dlo_connectors of
+          Just c -> return $ M.singleton (conName c) c
+          Nothing ->
+            solDie "reachc: --sol requires the ETH connector, but this application's `connectors` option excludes ETH"
+  when ccSolOnly $
+    forM_ ["sol", "abi.json", "verify.json", "sol.solc.json"] $ \l -> do
+      let (_, fp) = ccOutput' True l
+      e <- doesFileExist fp
+      when e $ removeFile fp
   case ccStopAfterEval of
     True -> return mempty
     False -> do
@@ -226,11 +252,21 @@ mkCompileProg (CompilerConfig {..}) appDescr outputFile dl = do
           putStrLn "!!! This is not safe.       !!!"
         True -> do
           let vo_out = ccOutput'
-          let vo_mvcs = doIf dlo_connectors dlo_verifyPerConnector
+          let vo_mvcs = doIf dlo_connectors' dlo_verifyPerConnector
           let vo_timeout = ccVerifyTimeout
           let vo_dir = ccDotReachDir
           let vo_first_fail_quit = ccVerifyFirstFailQuit
-          verify (VerifyOpts {..}) p >>= maybeDie
+          vo_report <-
+            case ccSolOnly || ccVerifyReport of
+              True -> Just <$> newIORef emptyVerifyReportAccum
+              False -> return Nothing
+          ec <- verify (VerifyOpts {..}) p
+          forM_ vo_report $ \r -> do
+            acc <- readIORef r
+            let (_, vrf) = ccOutput' True "verify.json"
+            writeVerifyReport vrf $
+              mkVerifyReport (T.pack ccSource) (T.pack outputFile) (ec == ExitSuccess) acc
+          maybeDie ec
       -- Once we know that we've passed the verification engine, we can
       -- remove variables that only occur in `assert` and `invariant`
       -- statements. The only hard part of this is noticing that some loop
@@ -348,15 +384,19 @@ mkCompileProg (CompilerConfig {..}) appDescr outputFile dl = do
       --
       -- This only looks at the "C" piece
       let cgOutput = ccOutput'
+      let cgAbi = ccSolOnly
       let cgCfg = ConGenConfig {..}
-      crs <- forM dlo_connectors $ \c -> do
+      crs <- forM dlo_connectors' $ \c -> do
         let n = conName c
         loud $ "running connector " <> show n
         conGen c cgCfg $ plp_cpp p
       -- Those connector info things will be given to the JS code to get
       -- included in the actual backend.
-      loud $ "running backend js"
-      backend_js ccOutput' crs $ plp_epp p
+      case ccSolOnly of
+        True -> loud $ "skipping backend js (--sol)"
+        False -> do
+          loud $ "running backend js"
+          backend_js ccOutput' crs $ plp_epp p
       return crs
 
 printKeywordInfo :: IO ()

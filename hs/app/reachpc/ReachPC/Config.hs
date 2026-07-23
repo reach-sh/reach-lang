@@ -2,49 +2,51 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
 module ReachPC.Config
-  ( Config(..)
+  ( Config (..)
   , getProjectConfig
   , interactiveCreateReachToml
   , interactiveCreateGlobalsToml
-  ) where
+  )
+where
 
-import System.Directory (getXdgDirectory, XdgDirectory(XdgConfig), doesFileExist, getCurrentDirectory)
-import System.FilePath ((</>))
-import Data.List.Split (splitOn, split, onSublist, keepDelimsR)
-import Data.Maybe (fromMaybe, fromJust)
-import qualified Toml as T
-import Control.Monad (forM_)
-import System.Environment (getEnvironment)
-import Data.Char (toLower, toUpper, isSpace)
-import Text.Read (readMaybe)
-import qualified ReachPC.CommandLine as Cli
 import Control.Applicative ((<|>))
-import Data.List (intercalate, dropWhileEnd)
 import Control.Exception (IOException, catch)
-import System.IO (hFlush, stdout)
+import Control.Monad (forM_)
+import Data.Char (isSpace, toLower, toUpper)
 import Data.Functor ((<&>))
+import Data.List (dropWhileEnd, intercalate)
+import Data.List.Split (keepDelimsR, onSublist, split, splitOn)
+import Data.Maybe (fromJust, fromMaybe)
 import qualified Data.Text.IO as TextIO
+import qualified ReachPC.CommandLine as Cli
+import System.Directory (XdgDirectory (XdgConfig), doesFileExist, getCurrentDirectory, getXdgDirectory)
+import System.Environment (getEnvironment)
+import System.FilePath ((</>))
+import System.IO (hFlush, stdout)
+import Text.Read (readMaybe)
+import qualified Toml as T
 
 data CloudOrLocal = Cloud | Local deriving (Show, Read, Enum, Bounded)
+
 data Connector = ALGO | ETH deriving (Show, Read, Enum, Bounded)
 
 -- Utility functions to read the above types
 readCloudOrLocal :: String -> CloudOrLocal
 readCloudOrLocal = readEnum "CloudOrLocal" . capitalFirst
- where
-  capitalFirst (c:s) = toUpper c : map toLower s
-  capitalFirst [] = []
+  where
+    capitalFirst (c : s) = toUpper c : map toLower s
+    capitalFirst [] = []
 
 readConnector :: String -> Connector
 readConnector = readEnum "Connector" . capitalAll
- where
-  capitalAll = map toUpper
+  where
+    capitalAll = map toUpper
 
 readEnum :: forall a. (Show a, Read a, Enum a, Bounded a) => String -> String -> a
 readEnum what s = fromMaybe (error errMsg) $ readMaybe s
- where
-  errMsg = "Invalid " <> what <> ", valid options are: " <> validOpts
-  validOpts = intercalate ", " $ showEnum @a
+  where
+    errMsg = "Invalid " <> what <> ", valid options are: " <> validOpts
+    validOpts = intercalate ", " $ showEnum @a
 
 showEnum :: forall a. (Show a, Enum a, Bounded a) => [String]
 showEnum = map show $ enumFrom (minBound :: a)
@@ -55,7 +57,8 @@ data Config = Config
   , cfg_connector :: Connector
   , cfg_forwardEnvVars :: [String]
   , cfg_project :: String
-  } deriving (Show)
+  }
+  deriving (Show)
 
 -- Represents a project's reach.toml file
 data ReachToml = ReachToml
@@ -63,16 +66,18 @@ data ReachToml = ReachToml
   , rtml_connector :: Maybe Connector
   , rtml_forwardEnvVars :: Maybe [String]
   , rtml_project :: Maybe String -- TODO split into (organization :: String, project_name :: String)
-  } deriving (Show)
+  }
+  deriving (Show)
 
 -- TODO: currently this will translate a bad setting (eg cloud-or-local = "nonsense") into Nothing
 -- instead of throwing an error and printing valid options. This can probably be fixed with T.match
 reachTomlCodec :: T.TomlCodec ReachToml
-reachTomlCodec = ReachToml
-  <$> T.dioptional (T.enumBounded "cloud-or-local") T..= rtml_cloudOrLocal
-  <*> T.dioptional (T.enumBounded "connector") T..= rtml_connector
-  <*> T.dioptional (T.arrayOf T._String "forward-env-vars") T..= rtml_forwardEnvVars
-  <*> T.dioptional (T.string "project") T..= rtml_project
+reachTomlCodec =
+  ReachToml
+    <$> T.dioptional (T.enumBounded "cloud-or-local") T..= rtml_cloudOrLocal
+    <*> T.dioptional (T.enumBounded "connector") T..= rtml_connector
+    <*> T.dioptional (T.arrayOf T._String "forward-env-vars") T..= rtml_forwardEnvVars
+    <*> T.dioptional (T.string "project") T..= rtml_project
 
 -- Represents ~/.config/reach/config.toml
 data GlobalsToml = GlobalsToml
@@ -81,16 +86,17 @@ data GlobalsToml = GlobalsToml
   }
 
 globalsTomlCodec :: T.TomlCodec GlobalsToml
-globalsTomlCodec = GlobalsToml
-  <$> T.dioptional (T.enumBounded "cloud-or-local") T..= gtml_cloudOrLocal
-  <*> T.dioptional (T.enumBounded "connector") T..= gtml_connector
+globalsTomlCodec =
+  GlobalsToml
+    <$> T.dioptional (T.enumBounded "cloud-or-local") T..= gtml_cloudOrLocal
+    <*> T.dioptional (T.enumBounded "connector") T..= gtml_connector
 
 -- Generates a Config by reading various sources. If a project reach.toml isn't found, crash.
 -- If a global reach.toml isn't found,  make one with global entries.
 getProjectConfig :: Cli.CliOptions -> IO Config
 getProjectConfig cliOpts = do
-  (_, ReachToml{..}) <- readOrErrorReachToml
-  GlobalsToml{..} <- readOrEmptyGlobalsToml
+  (_, ReachToml {..}) <- readOrErrorReachToml
+  GlobalsToml {..} <- readOrEmptyGlobalsToml
   envVars <- getEnvironment
   let envVar = flip lookup envVars
   let unwrapConfigOption = fromMaybe . error . (++ "\nCheck <reach.sh/docs/project-config TODO page> for help\n")
@@ -99,15 +105,17 @@ getProjectConfig cliOpts = do
   -- REACH_CLOUD_OR_LOCAL / --cloud or --local / cloud-or-local = "cloud" or "local" in reach.toml or config.toml
   let env_cloudOrLocal = readCloudOrLocal <$> envVar "REACH_CLOUD_OR_LOCAL"
   let cli_cloudOrLocal = (\b -> if b then Cloud else Local) <$> Cli.cli_cloudOrLocal cliOpts
-  let cfg_cloudOrLocal = unwrapConfigOption "Unspecified whether to use Reach Cloud or Reach Local." $
-                         env_cloudOrLocal <|> cli_cloudOrLocal <|> rtml_cloudOrLocal <|> gtml_cloudOrLocal
+  let cfg_cloudOrLocal =
+        unwrapConfigOption "Unspecified whether to use Reach Cloud or Reach Local." $
+          env_cloudOrLocal <|> cli_cloudOrLocal <|> rtml_cloudOrLocal <|> gtml_cloudOrLocal
 
   -- What connector to use (algo/eth/...)
   -- REACH_CONNECTOR_MODE / --connector=... / connector = "algo" or "eth" or ...
   let env_connector = readConnector <$> envVar "REACH_CONNECTOR_MODE"
   let cli_connector = readConnector <$> Cli.cli_connector cliOpts
-  let cfg_connector = unwrapConfigOption "Unspecified what connector to use." $
-                      env_connector <|> cli_connector <|> rtml_connector <|> gtml_connector
+  let cfg_connector =
+        unwrapConfigOption "Unspecified what connector to use." $
+          env_connector <|> cli_connector <|> rtml_connector <|> gtml_connector
 
   -- What env vars to forward to the remote (sources are combined, not prioritized)
   -- REACH_FORWARD_ENV_VARS / --env / forward-env-vars = [...] in reach.toml
@@ -120,7 +128,7 @@ getProjectConfig cliOpts = do
   -- project = "..." in reach.toml
   let cfg_project = unwrapConfigOption "Unspecified project name." rtml_project
 
-  return Config{..}
+  return Config {..}
 
 readOrErrorReachToml :: IO (FilePath, ReachToml)
 readOrErrorReachToml = reachTomlPath >>= maybe notFound (\p -> sequence (p, T.decodeFile reachTomlCodec p))
@@ -137,13 +145,13 @@ readOrEmptyGlobalsToml = do
 -- Up-scan for a file called reach.toml (check ./reach.toml, ../reach.toml, ../../reach.toml etc)
 reachTomlPath :: IO (Maybe FilePath)
 reachTomlPath = go . tomlPaths =<< getCurrentDirectory
- where
-  tomlPaths = map (</> "reach.toml") . reverse . scanl1 (</>) . splitPath
-  splitPath = split . keepDelimsR . onSublist $ "/"
-  go [] = return Nothing
-  go (path:paths) = do
-    exists <- doesFileExist path
-    if exists then return $ Just path else go paths
+  where
+    tomlPaths = map (</> "reach.toml") . reverse . scanl1 (</>) . splitPath
+    splitPath = split . keepDelimsR . onSublist $ "/"
+    go [] = return Nothing
+    go (path : paths) = do
+      exists <- doesFileExist path
+      if exists then return $ Just path else go paths
 
 globalsTomlPath :: IO FilePath
 globalsTomlPath = getXdgDirectory XdgConfig "reach" <&> (</> "config.toml")
@@ -180,12 +188,13 @@ interactiveCreateReachToml alreadyExists = do
   let readVars = map (dropWhileEnd isSpace . dropWhile isSpace) . splitOn ","
   forwardEnvVars <- parseAnswer' rtml_forwardEnvVars readVars <$> askUserString alreadyExists True forwardEnvVarsPrompt "Env vars (comma separated list, e.g. VAR1,VAR2,VAR3): "
 
-  let newReachToml = ReachToml
-        { rtml_project = project
-        , rtml_cloudOrLocal = cloudOrLocal
-        , rtml_connector = connector
-        , rtml_forwardEnvVars = forwardEnvVars
-        }
+  let newReachToml =
+        ReachToml
+          { rtml_project = project
+          , rtml_cloudOrLocal = cloudOrLocal
+          , rtml_connector = connector
+          , rtml_forwardEnvVars = forwardEnvVars
+          }
   path <- if alreadyExists then return oldTomlPath else getCurrentDirectory <&> (</> "reach.toml")
   writeToml path reachTomlCodec newReachToml
 
@@ -201,10 +210,11 @@ interactiveCreateGlobalsToml = do
   let connectorPrompt = ("\nWhat connector do you want to use by default?" <> showOld gtml_connector)
   connector <- parseAnswer' gtml_connector readConnector <$> askUserEnum' False True connectorPrompt (showEnum @Connector)
 
-  let newGlobalsToml = GlobalsToml
-        { gtml_cloudOrLocal = cloudOrLocal
-        , gtml_connector = connector
-        }
+  let newGlobalsToml =
+        GlobalsToml
+          { gtml_cloudOrLocal = cloudOrLocal
+          , gtml_connector = connector
+          }
   path <- globalsTomlPath
   writeToml path globalsTomlCodec newGlobalsToml
 
@@ -233,13 +243,15 @@ askUserEnum' canBeUnchanged canBeUnset prompt answers = do
   let canBe cond val = if cond then (val :) else id
   let answers' = canBe canBeUnchanged "Leave unchanged" $ canBe canBeUnset "Unset" $ answers
   ans <- askUserEnum prompt answers'
-  return $ if | canBeUnchanged && ans == "Leave unchanged" -> Unchanged
-              | canBeUnset     && ans == "Unset" -> Unset
-              | otherwise -> Str ans
+  return $
+    if
+        | canBeUnchanged && ans == "Leave unchanged" -> Unchanged
+        | canBeUnset && ans == "Unset" -> Unset
+        | otherwise -> Str ans
 
 askUserEnum :: String -> [String] -> IO String
 askUserEnum prompt answers = do
-  let (enumAnswers :: [(Int, String)]) = zip [1..] answers
+  let (enumAnswers :: [(Int, String)]) = zip [1 ..] answers
   putStrLn prompt
   forM_ enumAnswers $ \(n, ans) -> putStrLn $ show n <> ") " <> ans
   putStr "> "

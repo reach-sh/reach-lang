@@ -4,11 +4,14 @@ module Reach.Eval
   , prepareDAppCompiles
   , Evald
   , evEnv
-  ) where
+  )
+where
 
 import Control.Monad.Extra
 import Control.Monad.Reader
+import qualified Data.ByteString as B
 import Data.IORef
+import Data.List.Extra (groupSort)
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Language.JavaScript.Parser
@@ -25,11 +28,9 @@ import Reach.Eval.Types
 import Reach.JSUtil
 import Reach.Pandemic
 import Reach.Parser
+import Reach.UnsafeUtil (unsafeNub)
 import Reach.Util
 import Reach.Warning
-import qualified Data.ByteString as B
-import Data.List.Extra (groupSort)
-import Reach.UnsafeUtil (unsafeNub)
 
 compileDApp :: DLStmts -> DLSExports -> CompileProg -> SLVal -> App DLProg
 compileDApp shared_lifts exports compileProg (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_strict) _ _)) = locAt (srcloc_lab "compileDApp" at) $ do
@@ -176,7 +177,7 @@ checkUnusedVars :: App a -> App a
 checkUnusedVars m = do
   vt <- liftIO $ newIORef mempty
   vu <- liftIO $ newIORef mempty
-  a <- local (\e -> e { e_vars_tracked = vt, e_vars_used = vu }) m
+  a <- local (\e -> e {e_vars_tracked = vt, e_vars_used = vu}) m
   tracked <- liftIO $ readIORef vt
   used <- liftIO $ readIORef vu
   let unused = S.difference tracked used
@@ -205,16 +206,17 @@ evalBundle cns (JSBundle mods) addToEnvForEditorInfo = do
   let evalPlus = do
         (shared_lifts, libm) <- captureLifts $ evalLibs cns mods
         let exe_ex = libm M.! exe
-        (,,) shared_lifts libm <$>
-          case addToEnvForEditorInfo of
+        (,,) shared_lifts libm
+          <$> case addToEnvForEditorInfo of
             False -> return exe_ex
             True -> do
               let stdlibEnv = libm M.! ReachStdLib
-              local (\e -> e { e_sco = ((e_sco e) { sco_cenv = stdlibEnv }) }) $ do
+              local (\e -> e {e_sco = ((e_sco e) {sco_cenv = stdlibEnv})}) $ do
                 let envWithBase = M.union exe_ex base_env
-                let innerEnv n v = evalAsEnvM v >>= \case
-                      Nothing -> mempty
-                      Just e -> M.mapKeys (\k -> n <> "." <> k) <$> evalObjEnv e
+                let innerEnv n v =
+                      evalAsEnvM v >>= \case
+                        Nothing -> mempty
+                        Just e -> M.mapKeys (\k -> n <> "." <> k) <$> evalObjEnv e
                 innerEnvs <- mapWithKeyM innerEnv $ M.map sss_sls envWithBase
                 return $ M.union envWithBase $ M.unions innerEnvs
   (evLifts, _, evEnv) <- evRun $ evalPlus
@@ -232,7 +234,7 @@ getCompileName topName appName = case appName of
     -- Compiling a named app
     -- Log: Compiling `child` for `main`
     -- Gen: index.child.mjs
-    | otherwise  -> return $ (backticks name <> " for " <> backticks topName, name)
+    | otherwise -> return $ (backticks name <> " for " <> backticks topName, name)
   Nothing
     -- Compiling a default app
     -- Log: Compiling `default`
@@ -277,8 +279,10 @@ prepareDAppCompiles compileDL (Evald {..}) = do
                               newEnv <- liftIO $ makeEnv cns evIdC evUniC
                               local (const newEnv) m
                             True -> m
-                    dl <- mNewEnv $ checkUnusedVars $
-                            compileDApp evLifts exports (mCompileApp False) sv
+                    dl <-
+                      mNewEnv $
+                        checkUnusedVars $
+                          compileDApp evLifts exports (mCompileApp False) sv
                     -- Run the rest of the compiler on the DLProg
                     (displayMsg, fileOutput) <- getCompileName which mname
                     co <- liftIO $ compileDL displayMsg fileOutput dl
@@ -295,6 +299,6 @@ prepareDAppCompiles compileDL (Evald {..}) = do
     False -> do
       let go which =
             compileApp which $
-              ensure_public =<< sss_sls <$>
-                env_lookup LC_CompilerRequired which evEnv
+              ensure_public =<< sss_sls
+                <$> env_lookup LC_CompilerRequired which evEnv
       return (tops, go)

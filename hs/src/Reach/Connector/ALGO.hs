@@ -6,12 +6,12 @@ import Control.Monad.Extra
 import Control.Monad.Reader
 import Control.Monad.Trans.Except
 import Crypto.Hash
-import Data.Aeson ((.:), (.=), (.:?))
+import Data.Aeson ((.:), (.:?), (.=))
 import qualified Data.Aeson as AS
 import Data.Bits (shiftL, shiftR, (.|.))
 import qualified Data.ByteArray as BA
 import qualified Data.ByteString as BS
-import Data.ByteString.Base64 (encodeBase64', decodeBase64)
+import Data.ByteString.Base64 (decodeBase64, encodeBase64')
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Internal as BI
 import Data.Char
@@ -34,17 +34,18 @@ import qualified Data.Vector as Vector
 import Data.Word
 import Generics.Deriving (Generic)
 import Reach.AST.Base
-import Reach.AST.DLBase
 import Reach.AST.CL
+import Reach.AST.DLBase
 import Reach.Connector
 import Reach.Connector.ALGO_SourceMap
+import qualified Reach.Connector.ALGO_Verify as Verify
 import Reach.Counter
 import Reach.Dotty
 import Reach.FixedPoint
 import Reach.InterferenceGraph
 import Reach.OutputUtil
-import qualified Reach.Texty as T
 import Reach.Texty (pretty)
+import qualified Reach.Texty as T
 import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Warning
@@ -54,7 +55,6 @@ import System.Exit
 import System.FilePath
 import System.Process.ByteString
 import Text.Read
-import qualified Reach.Connector.ALGO_Verify as Verify
 
 -- Errors for ALGO
 
@@ -77,7 +77,9 @@ instance Show AlgoError where
       "Token cannot be paid within the same consensus step it was shared with the contract on Algorand"
 
 type NotifyFm m = LT.Text -> m ()
+
 type NotifyF = LT.Text -> IO ()
+
 type Notify = Bool -> NotifyF
 
 -- General tools that could be elsewhere
@@ -94,17 +96,19 @@ type Notify = Bool -> NotifyF
 -- called (the [a]) and the resources used (the b)
 --
 type LPEdge a b = ([a], b)
+
 --
 -- For each x and y, there may be different edges between them, that's why we
 -- have the LPChildren structure: it maps y to a set of details
 --
 type LPChildren a b = M.Map a (S.Set (LPEdge a b))
+
 --
 -- Then, we have a map from the x to each of the ys
 --
 type LPGraph a b = M.Map a (LPChildren a b)
 
-longestPathBetween :: forall b . LPGraph String b -> String -> String -> (b -> Integer) -> IO Integer
+longestPathBetween :: forall b. LPGraph String b -> String -> String -> (b -> Integer) -> IO Integer
 longestPathBetween g f d getc = do
   a2d <- fixedPoint $ \_ (i :: M.Map String Integer) -> do
     flip mapM g $ \(tom :: (LPChildren String b)) -> do
@@ -151,7 +155,7 @@ budgetAnalyze g s e getc = do
           False ->
             -- We look where g can go...
             froml ("has no node in the CFG" <> show (M.keys g)) from1 l c b $ M.toAscList $ fromMaybe mempty $ M.lookup l g
-      froml :: forall a . String -> (String -> Integer -> Integer -> a -> IO (Bool, Integer, Integer)) -> String -> Integer -> Integer -> [a] -> IO (Bool, Integer, Integer)
+      froml :: forall a. String -> (String -> Integer -> Integer -> a -> IO (Bool, Integer, Integer)) -> String -> Integer -> Integer -> [a] -> IO (Bool, Integer, Integer)
       froml el f l c b = \case
         -- We error if l can't go anywhere... because that's impossible...
         -- there's an invariant that every label can get to BOT
@@ -205,7 +209,7 @@ budgetAnalyze g s e getc = do
 --
 -- The point is to get a piece of the graph so we can figure out how expensive
 -- individual API calls are
-restrictGraph :: forall a b . (Show a, Ord a, Ord b) => LPGraph a b -> a -> IO (LPGraph a b)
+restrictGraph :: forall a b. (Show a, Ord a, Ord b) => LPGraph a b -> a -> IO (LPGraph a b)
 restrictGraph g n = do
   -- The function has two parts...
   loud $ "restrict " <> show n
@@ -215,7 +219,7 @@ restrictGraph g n = do
   -- Second, we construct the subgraph that contains only those nodes
   subgraph g ns
 
-connectedWith :: forall a b . (Show a, Ord a, Ord b) => LPGraph a b -> a -> IO (S.Set a)
+connectedWith :: forall a b. (Show a, Ord a, Ord b) => LPGraph a b -> a -> IO (S.Set a)
 connectedWith g n = do
   -- This function is going to find the set of nodes that come FROM the n and
   -- those that go TO it
@@ -247,8 +251,9 @@ connectedWith g n = do
     let to2 = mconcatMap inclTo $ M.toAscList g
         inclTo :: (a, (LPChildren a b)) -> S.Set a
         inclTo (z, cs) = realIncl
-          -- z gets included if it goes to x which is already in the TO set
           where
+            -- z gets included if it goes to x which is already in the TO set
+
             realIncl = if shouldIncld then incl else mempty
             shouldIncld = not $ S.null nextInToS
             nextInToS = S.intersection (gcNodesAsSet cs) to1
@@ -271,19 +276,19 @@ connectedWith g n = do
     return (from2, to2)
   return $ S.insert n $ S.union from to
 
-gcDestsAsSet :: forall a b . (Ord a, Ord b) => LPChildren a b -> S.Set a
+gcDestsAsSet :: forall a b. (Ord a, Ord b) => LPChildren a b -> S.Set a
 gcDestsAsSet cs = gcNodesAsSet cs <> gcCallsAsSet cs
 
-gcNodesAsSet :: forall a b . LPChildren a b -> S.Set a
+gcNodesAsSet :: forall a b. LPChildren a b -> S.Set a
 gcNodesAsSet = M.keysSet
 
-gcCallsAsSet :: forall a b . (Ord a, Ord b) => LPChildren a b -> S.Set a
+gcCallsAsSet :: forall a b. (Ord a, Ord b) => LPChildren a b -> S.Set a
 gcCallsAsSet = gcEdgeCalls . mconcat . M.elems
 
-gcEdgeCalls :: forall a b . (Ord a) => (S.Set (LPEdge a b)) -> S.Set a
+gcEdgeCalls :: forall a b. (Ord a) => (S.Set (LPEdge a b)) -> S.Set a
 gcEdgeCalls = mconcatMap (S.fromList . fst) . S.toList
 
-subgraph :: forall a b . (Ord a) => LPGraph a b -> S.Set a -> IO (LPGraph a b)
+subgraph :: forall a b. (Ord a) => LPGraph a b -> S.Set a -> IO (LPGraph a b)
 subgraph g ns = do
   -- This removes everything from g that is not in ns
   let inSet = flip S.member ns
@@ -330,9 +335,12 @@ mergeIORef dst f src = do
   modifyIORef dst $ f srca
 
 type ErrorSet = S.Set LT.Text
+
 type ErrorSetRef = IORef ErrorSet
+
 bad_io :: ErrorSetRef -> NotifyF
 bad_io x = modifyIORef x . S.insert
+
 newErrorSetRef :: IO (ErrorSetRef, NotifyF)
 newErrorSetRef = do
   r <- newIORef mempty
@@ -345,7 +353,7 @@ conName' = "ALGO"
 
 conCons' :: DLConstant -> DLLiteral
 conCons' = \case
-  DLC_UInt_max  -> DLL_Int sb UI_Word $ 2 ^ (64 :: Integer) - 1
+  DLC_UInt_max -> DLL_Int sb UI_Word $ 2 ^ (64 :: Integer) - 1
   DLC_Token_zero -> DLL_Int sb UI_Word $ 0
 
 appLocalStateNumUInt :: Integer
@@ -415,8 +423,10 @@ algoBoxByteMinBalance = 400
 
 algoMaxAppTxnForeignAssets :: Integer
 algoMaxAppTxnForeignAssets = 8
+
 algoMaxAppTxnForeignApps :: Integer
 algoMaxAppTxnForeignApps = 8
+
 algoMaxAppTotalTxnReferences :: Integer
 algoMaxAppTotalTxnReferences = 8
 
@@ -465,9 +475,9 @@ data ApplTxnType
 minimumBalance_app :: AppInfo -> ApplTxnType -> Integer
 minimumBalance_app (AppInfo {..}) = \case
   ApplTxn_Create ->
-    100000*(1+ai_ExtraProgramPages) + (25000+3500)*ai_GlobalNumUint + (25000+25000)*ai_GlobalNumByteSlice
+    100000 * (1 + ai_ExtraProgramPages) + (25000 + 3500) * ai_GlobalNumUint + (25000 + 25000) * ai_GlobalNumByteSlice
   ApplTxn_OptIn ->
-    100000 + (25000+3500)*ai_LocalNumUint + (25000+25000)*ai_LocalNumByteSlice
+    100000 + (25000 + 3500) * ai_LocalNumUint + (25000 + 25000) * ai_LocalNumByteSlice
 
 maxTypeSize_ :: M.Map a DLType -> Maybe Integer
 maxTypeSize_ m = do
@@ -667,7 +677,9 @@ optimize ts00 = do
 --
 -- NOTE: Extend this to optimize away callsub-once
 type Blocks = M.Map Label BasicBlock
+
 type CallCounts = M.Map Label Int
+
 data BasicBlock = BasicBlock
   { bb_ts :: TEALs
   , bb_mayInline :: Bool
@@ -701,7 +713,7 @@ opt_cfg ts0 = do
             Nothing -> impossible $ "cfg: non-label without block: " <> show t
             Just (lab, BasicBlock {..}) ->
               case t of
-                TCode "b" [ lab' ] -> do
+                TCode "b" [lab'] -> do
                   save $ Just (lab, BasicBlock bb_ts False (Just lab'))
                   return $ Nothing
                 _ -> do
@@ -776,10 +788,10 @@ opt_bs = \case
       32 -> opt_bs $ (TCode "global" ["ZeroAddress"]) : l
       -- Space is more important than cost?
       len ->
-        let spaceMoreThanCost = True in
-        case spaceMoreThanCost of
-          True -> opt_bs $ (TInt $ fromIntegral len) : (TCode "bzero" []) : l
-          False -> x : opt_bs l
+        let spaceMoreThanCost = True
+         in case spaceMoreThanCost of
+              True -> opt_bs $ (TInt $ fromIntegral len) : (TCode "bzero" []) : l
+              False -> x : opt_bs l
   x : l -> x : opt_bs l
 
 -- Peep-hole optimizer
@@ -866,8 +878,9 @@ opt_peep1 = \case
   (TCode "b==" []) : (TCode "!" []) : l -> (TCode "b!=" []) : l
   (TInt 0) : (TCode "!=" []) : (TCode "assert" []) : l ->
     (TCode "assert" []) : l
-  (TCode "*" []) : (TInt x) : (TCode "/" []) : (TInt y) : l | x == y ->
-    l
+  (TCode "*" []) : (TInt x) : (TCode "/" []) : (TInt y) : l
+    | x == y ->
+      l
   (TExtract x 8) : (TCode "btoi" []) : l ->
     (TInt $ fromIntegral x) : (TCode "extract_uint64" []) : l
   x@(TInt _) : (TInt 8) : (TCode "extract3" []) : (TCode "btoi" []) : l ->
@@ -923,12 +936,14 @@ opt_peep1 = \case
     opt_peep1 $ (TBytes $ sha512_256bs xbs) : l
   (TBytes xbs) : (TSubstring s e) : l ->
     opt_peep1 $ (TBytes $ bsSubstring xbs (fromIntegral s) (fromIntegral e)) : l
-  (TBytes xbs) : (TExtract s len) : l | len /= 0 ->
-    opt_peep1 $ (TBytes $ bsSubstring xbs (fromIntegral s) (fromIntegral $ s + len)) : l
+  (TBytes xbs) : (TExtract s len) : l
+    | len /= 0 ->
+      opt_peep1 $ (TBytes $ bsSubstring xbs (fromIntegral s) (fromIntegral $ s + len)) : l
   x : l -> x : l
 
 sha256bs :: BS.ByteString -> BS.ByteString
 sha256bs = BA.convert . hashWith SHA256
+
 sha512_256bs :: BS.ByteString -> BS.ByteString
 sha512_256bs = BA.convert . hashWith SHA512t_256
 
@@ -956,8 +971,11 @@ roll = foldr unstep 0
     unstep b a = a `shiftL` 8 .|. fromIntegral b
 
 type RestrictCFG = Label -> IO (DotGraph, AnalyzeCFG, BudgetCFG)
+
 type BudgetCFG = IO (Bool, Integer, Integer)
+
 type AnalyzeCFG = Resource -> IO Integer
+
 type ResourceCost = M.Map Resource Integer
 
 buildCFG :: String -> [TEAL] -> IO (DotGraph, RestrictCFG)
@@ -1084,7 +1102,8 @@ buildCFG rlab ts = do
           recCost 1
         _ -> recCost 1
   let renderRc m = intercalate "/" $ map f allResources
-        where f r = show $ fromMaybe 0 $ M.lookup r m
+        where
+          f r = show $ fromMaybe 0 $ M.lookup r m
   let renderCalls = \case
         [] -> ""
         cls -> show cls <> "/"
@@ -1122,11 +1141,14 @@ data LabelRec = LabelRec
   deriving (Show)
 
 type CompanionCalls = M.Map Label Integer
+
 type CompanionInfo = Maybe CompanionCalls
+
 data CompanionAdds
   = CA_AddCompanion
   | CA_IncrementCalls Label
   deriving (Eq, Ord)
+
 data CompanionRec = CompanionRec
   { cr_ro :: DLArg
   , cr_approval :: B.ByteString
@@ -1174,7 +1196,7 @@ checkCost rlab notify disp ls ci ts = do
           let post = if tooMuch then ", but the limit is " <> show algoMax else ""
           unless (c == 0) $
             doReport precise tooMuch $ pre <> post
-    let allResourcesM' = M.withoutKeys allResourcesM $ S.fromList [ R_Cost, R_Budget ]
+    let allResourcesM' = M.withoutKeys allResourcesM $ S.fromList [R_Cost, R_Budget]
     costM <- flip mapWithKeyM allResourcesM' $ \rs _ -> do
       let am = maxOf rs
       c <- analyzeCFG rs
@@ -1192,13 +1214,15 @@ checkCost rlab notify disp ls ci ts = do
       let uses = "uses " <> show cost
       let budget' x = "its budget " <> x <> " " <> show budget
       case over of
-        False -> doReport' False $
-          uses <> " of " <> budget' "of" <> " (" <> show residue <> " is left over)"
+        False ->
+          doReport' False $
+            uses <> " of " <> budget' "of" <> " (" <> show residue <> " is left over)"
         True -> do
-          modifyIORef caR $ S.insert $
-            case ci of
-              Nothing -> CA_AddCompanion
-              Just _ -> CA_IncrementCalls lr_lab
+          modifyIORef caR $
+            S.insert $
+              case ci of
+                Nothing -> CA_AddCompanion
+                Just _ -> CA_IncrementCalls lr_lab
           doReport' True $
             uses <> ", but " <> budget' "is"
     let fees = sums [R_Txn, R_ITxn]
@@ -1209,7 +1233,7 @@ checkCost rlab notify disp ls ci ts = do
   cr <- case cas of
     [] ->
       return $ Left msg
-    [ CA_AddCompanion ] ->
+    [CA_AddCompanion] ->
       return $ Right $ Just mempty
     as ->
       case ci of
@@ -1333,12 +1357,12 @@ libImpl lf impl = do
 libCall :: LibFun -> App () -> App ()
 libCall lf impl = do
   lab <- libImpl lf impl
-  code "callsub" [ lab ]
+  code "callsub" [lab]
 
 libJump :: LibFun -> App () -> App ()
 libJump lf impl = do
   lab <- libImpl lf impl
-  code "b" [ lab ]
+  code "b" [lab]
 
 cUpdateMbr :: App ()
 cUpdateMbr = libCall LF_updateMbr $ do
@@ -1346,12 +1370,12 @@ cUpdateMbr = libCall LF_updateMbr $ do
   gvLoad GV_mbrSub
   op "dup2"
   op ">="
-  code "bz" [ "updateMbr_neg" ]
+  code "bz" ["updateMbr_neg"]
   code "b" ["updateMbr_pos_eq"]
   label "updateMbr_pos_eq"
   op "-"
   op "dup"
-  code "bz" [ "updateMbr_eq" ]
+  code "bz" ["updateMbr_eq"]
   do
     gvStore GV_mbrAdd
     let ct_at = sb
@@ -1448,7 +1472,7 @@ cMapRef = libCall LF_mapRef $ do
   -- [ tagSpot, nothing, raw_data, exists, exists ]
   ctobs $ T_Bool
   -- [ tagSpot, nothing, raw_data, exists, exists_as_bytes ]
-  code "bury" [ "4" ]
+  code "bury" ["4"]
   -- [ tag, nothing, raw_data, exists ]
   op "select"
   -- [ tag, data ]
@@ -1480,9 +1504,9 @@ cMapSet = libCall LF_mapSet $ do
   op "box_len"
   -- [ mbr, data, key, len, exists ]
   after <- freshLabel "boxSet"
-  code "bnz" [ after ]
+  code "bnz" [after]
   -- [ mbr, data, key, len ]
-  code "dig" [ "3" ]
+  code "dig" ["3"]
   -- [ mbr, data, key, len, mbr ]
   mbrAdd
   code "b" [after]
@@ -1531,7 +1555,7 @@ data Resource
   deriving (Eq, Ord, Enum, Bounded, Show)
 
 allResources :: [Resource]
-allResources = enumerate List.\\ [ R_CheckedCompletion ]
+allResources = enumerate List.\\ [R_CheckedCompletion]
 
 allResourcesM :: M.Map Resource ()
 allResourcesM = M.fromList $ map (flip (,) ()) allResources
@@ -1674,7 +1698,7 @@ dupn :: Int -> App ()
 dupn = \case
   0 -> nop
   1 -> op "dup"
-  k -> code "dupn" [ texty k ]
+  k -> code "dupn" [texty k]
 
 assert :: App ()
 assert = op "assert"
@@ -1754,11 +1778,12 @@ lookup_var dv = do
     Nothing -> impossible $ "lookup_var " <> show dv
 
 lookupVarColoring :: String -> DLVar -> App (Maybe ScratchSlot)
-lookupVarColoring lab dv = maybeLoc dv >>= \case
-  Nothing -> do
-    bad $ LT.pack $ "no coloring for " <> show dv <> " for " <> lab
-    return Nothing
-  Just l -> return $ Just l
+lookupVarColoring lab dv =
+  maybeLoc dv >>= \case
+    Nothing -> do
+      bad $ LT.pack $ "no coloring for " <> show dv <> " for " <> lab
+      return Nothing
+    Just l -> return $ Just l
 
 class MaybeLoc a where
   maybeLoc :: a -> App (Maybe ScratchSlot)
@@ -1789,12 +1814,13 @@ cmove_ dst src = do
         _ -> return $ CM_Move (cp src) $ output $ TStore dstl $ texty dst
 
 cmove :: (Show a, MaybeLoc a, Compile a) => DLVar -> a -> App ()
-cmove dst src = cmove_ dst src >>= \case
-  CM_Bad -> return ()
-  CM_Nop -> return ()
-  CM_Move csrc cstore -> do
-    csrc
-    cstore
+cmove dst src =
+  cmove_ dst src >>= \case
+    CM_Bad -> return ()
+    CM_Nop -> return ()
+    CM_Move csrc cstore -> do
+      csrc
+      cstore
 
 cmoveMany :: (Show a, MaybeLoc a, Compile a) => [(DLVar, a)] -> App ()
 cmoveMany dss = do
@@ -1963,7 +1989,7 @@ cAlgoBlock which = \case
         -- [ n ]
         op "dup"
         -- [ n, n ]
-        code "txn" [ "LastValid" ]
+        code "txn" ["LastValid"]
         cint 1002
         op "dup2"
         -- [ n, n, lv, 1002, lv, 1002 ]
@@ -1972,33 +1998,33 @@ cAlgoBlock which = \case
         lNoOverflow <- freshLabel "NoOverflow"
         lFirstAvail <- freshLabel "FirstAvail"
         lBad <- freshLabel "Bad"
-        code "bz" [ lNoOverflow ]
+        code "bz" [lNoOverflow]
         -- [ n, n, lv, 1002 ]
         code "popn" ["2"]
         cint 1
-        code "b" [ lFirstAvail ]
+        code "b" [lFirstAvail]
         label lNoOverflow
         -- [ n, n, lv, 1002 ]
         op "-"
-        code "b" [ lFirstAvail ]
+        code "b" [lFirstAvail]
         label lFirstAvail
         -- [ n, n, firstAvail ]
         op "swap"
         -- [ n, firstAvail, n ]
         op ">"
         -- [ n, bad ]
-        code "bnz" [ lBad ]
-        code "txn" [ "FirstValid" ]
+        code "bnz" [lBad]
+        code "txn" ["FirstValid"]
         -- [ n, fv ]
         op "dup"
         -- [ n, fv, fv ]
-        code "bz" [ lBad ]
+        code "bz" [lBad]
         -- [ n, fv ]
         cint 1
         op "-"
         -- [ n, lastAvail ]
         op ">"
-        code "bnz" [ lBad ]
+        code "bnz" [lBad]
         cp True
         op "retsub"
         label lBad
@@ -2006,7 +2032,7 @@ cAlgoBlock which = \case
         op "retsub"
       -- [ n, okay ]
       lOkay <- freshLabel "Okay"
-      code "bnz" [ lOkay ]
+      code "bnz" [lOkay]
       let bfT = abfType which
       let f a = do
             cp $ mdaToMaybeLA bfT a
@@ -2017,7 +2043,7 @@ cAlgoBlock which = \case
       f Nothing
       label lOkay
       -- [ n ]
-      code "block" [ abfField which ]
+      code "block" [abfField which]
       -- [ fv ]
       fv <- allocVar sb bfT
       store_let fv (op "swap") $
@@ -2129,7 +2155,7 @@ cprim = \case
       op "select"
     _ -> impossible "ite args"
   CTC_ADDR_EQ -> \case
-    [ ctca, aa ] -> do
+    [ctca, aa] -> do
       cContractToAddr ctca
       cp aa
       op "=="
@@ -2342,8 +2368,9 @@ cTupleRef_ optOne tt idx = do
   let ts = tupleTypes tt
   (t, start, sz) <- computeExtract ts idx
   case (ts, idx) of
-    ([_], 0) | optOne ->
-      return ()
+    ([_], 0)
+      | optOne ->
+        return ()
     _ -> do
       cextract start sz
   -- [ ValueBs ]
@@ -2400,7 +2427,7 @@ cSvsLoad :: Int -> App ()
 cSvsLoad which = libCall (LF_svsLoad which) $ do
   vs <- getStateVars which
   let t = T_Tuple $ map typeOf vs
-  forM_ (labelLast $ zip vs [0..]) $ \((v, vi), isLast) -> do
+  forM_ (labelLast $ zip vs [0 ..]) $ \((v, vi), isLast) -> do
     unless isLast $ op "dup"
     cTupleRef_ False t vi
     lookupVarColoring "svsLoad" v >>= \case
@@ -2473,7 +2500,7 @@ cGetBalance _at mmin = \case
     cContractAddr
     incResource R_Asset tok
     cp tok
-    code "asset_holding_get" [ "AssetBalance" ]
+    code "asset_holding_get" ["AssetBalance"]
     op "pop"
 
 cMapKey :: Int -> DLArg -> App (Integer, App ())
@@ -2487,16 +2514,18 @@ cMapKey i a = do
   let ctag = cp i >> (ctobs $ T_UInt UI_Word)
   case canBeRaw of
     True -> do
-      return $ (,) rawLen $ do
-        cbs $ BS.pack $ [ fromIntegral i ]
-        ca
-        op "concat"
+      return $
+        (,) rawLen $ do
+          cbs $ BS.pack $ [fromIntegral i]
+          ca
+          op "concat"
     False -> do
-      return $ (,) 32 $ do
-        ctag
-        ca
-        op "concat"
-        op "sha256"
+      return $
+        (,) 32 $ do
+          ctag
+          ca
+          op "concat"
+          op "sha256"
 
 instance Compile DLExpr where
   cp = \case
@@ -2584,7 +2613,7 @@ instance Compile DLExpr where
       cp tok
       incResource R_Account addr
       incResource R_Asset tok
-      code "asset_holding_get" [ "AssetBalance" ]
+      code "asset_holding_get" ["AssetBalance"]
       op "swap"
       op "pop"
     DLE_CheckPay ct_at fs ct_amt ct_mtok -> do
@@ -2625,11 +2654,13 @@ instance Compile DLExpr where
           cMapSet
     DLE_Remote at fs ro rng_ty (DLRemote rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) malgo) -> do
       let DLRemoteALGO {..} = malgo
-      warn_lab <- asks eWhich >>= \case
-        Just which -> return $ "Step " <> show which
-        Nothing -> return $ "This program"
-      warn $ LT.pack $
-        warn_lab <> " calls a remote object at " <> show at <> ". This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object. Furthermore, the remote object may require special transaction parameters which are not expressed in the Reach API or the Algorand ABI standards."
+      warn_lab <-
+        asks eWhich >>= \case
+          Just which -> return $ "Step " <> show which
+          Nothing -> return $ "This program"
+      warn $
+        LT.pack $
+          warn_lab <> " calls a remote object at " <> show at <> ". This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object. Furthermore, the remote object may require special transaction parameters which are not expressed in the Reach API or the Algorand ABI standards."
       let ts = map argTypeOf as
       let rm = fromMaybe (impossible "XXX") rm'
       sig <- signatureStr ra_addr2acc rm ts (Just rng_ty)
@@ -2654,7 +2685,7 @@ instance Compile DLExpr where
       -- alternative is to track how much exactly it will go down by.
       let mmin = Just $ gvLoad GV_remoteMinB
       let mtoksBill = Nothing : map Just nnRecv
-      let mtoksiAll = zip [0..] mtoksBill
+      let mtoksiAll = zip [0 ..] mtoksBill
       let (mtoksiBill, mtoksiZero) = splitAt (length mtoksBill) mtoksiAll
       let paid = M.fromList $ (Nothing, pay_net) : (map (\(x, y) -> (Just y, x)) pay_ks)
       let balsT = T_Tuple $ map (const $ T_UInt UI_Word) mtoksiAll
@@ -2743,11 +2774,11 @@ instance Compile DLExpr where
       forM_ ra_boxes $ \a -> do
         incResource_ R_Box (-1, a)
         case typeOf a of
-          T_Tuple [ _, bnt ] -> do
+          T_Tuple [_, bnt] -> do
             sz <- typeSizeOf bnt
             when (sz > 64) $ do
               bad $ LT.pack $ "Contains a reference to a box with a name larger than the limit: got " <> show sz <> ", expected <= 64."
-          T_Tuple [ _, _, _ ] ->
+          T_Tuple [_, _, _] ->
             return ()
           _ -> impossible $ "bad boxes value"
       forM_ ra_accounts $ \a -> do
@@ -2782,7 +2813,7 @@ instance Compile DLExpr where
         gvLoad GV_remoteBals
         cTupleRef balsT idx
         asserteq
-      code "gitxn" [ texty appl_idx, "LastLog" ]
+      code "gitxn" [texty appl_idx, "LastLog"]
       output $ TExtract 4 0 -- (0 = to the end)
       op "concat"
     DLE_TokenNew at (DLTokenNew {..}) -> do
@@ -2862,7 +2893,7 @@ instance Compile DLExpr where
           -- [ bal, rsh_bal ]
           op "-"
           -- [ extra ]
-          code "b" [ after_lab ]
+          code "b" [after_lab]
         Just _ -> do
           cb_lab <- freshLabel $ "getUntrackedFunds" <> "_z"
           -- [ bal, rsh_bal ]
@@ -2871,10 +2902,10 @@ instance Compile DLExpr where
           op "<"
           -- [ bal, rsh_bal, {0, 1} ]
           -- Branch IF the bal < rsh_bal
-          code "bnz" [ cb_lab ]
+          code "bnz" [cb_lab]
           -- [ bal, rsh_bal ]
           op "-"
-          code "b" [ after_lab ]
+          code "b" [after_lab]
           -- This happens because of clawback
           label cb_lab
           -- [ bal, rsh_bal ]
@@ -2884,7 +2915,7 @@ instance Compile DLExpr where
           -- [  ]
           cint 0
           -- [ extra ]
-          code "b" [ after_lab ]
+          code "b" [after_lab]
       label after_lab
     DLE_DataTag _ d -> do
       cp d
@@ -3078,7 +3109,7 @@ checkTxn_lib tok = libCall (LF_checkTxn tok) $ do
   -- init <> [ id, id? ]
   when tok $ do
     get1 "XferAsset"
-    code "uncover" [ "2" ]
+    code "uncover" ["2"]
     asserteq
   get1 fAmount
   asserteq
@@ -3184,9 +3215,10 @@ data SwitchX a = SwitchX (a -> App ()) (SwitchCaseUse a)
 instance CompileLabel (SwitchX a) where
   cpl (SwitchX ck (SwitchCaseUse dv vn (SwitchCase {..}))) = do
     l <- freshLabel vn
-    return $ (,) l $ do
-      sallocVarLet sc_vl (cextractDataOf (cp dv) (typeOf sc_vl)) $
-        ck sc_k
+    return $
+      (,) l $ do
+        sallocVarLet sc_vl (cextractDataOf (cp dv) (typeOf sc_vl)) $
+          ck sc_k
 
 cextractDataOf :: App () -> DLType -> App ()
 cextractDataOf cd vt = do
@@ -3317,8 +3349,10 @@ cDeployer = code "global" ["CreatorAddress"]
 
 aDeployer :: DLArg
 aDeployer = DLA_Var $ DLVar sb Nothing T_Address (-1)
+
 vDMbr :: DLVar
 vDMbr = DLVar sb Nothing (T_UInt UI_Word) (-2)
+
 aDMbr :: DLArg
 aDMbr = DLA_Var vDMbr
 
@@ -3375,6 +3409,7 @@ data CompanionCall
   | CompanionDeletePre
   | CompanionGet
   deriving (Eq, Show)
+
 callCompanion :: SrcLoc -> CompanionCall -> App ()
 callCompanion at cc = do
   mcr <- asks eCompanion
@@ -3430,10 +3465,11 @@ callCompanion at cc = do
         let howManyCalls = fromIntegral $ fromMaybe 0 $ M.lookup l cim
         -- XXX bunch into groups of 16, slightly less cost
         comment $ texty cc
-        replicateM_ howManyCalls $ libCall LF_companionCall $ do
-          startCall False False
-          op "itxn_submit"
-          op "retsub"
+        replicateM_ howManyCalls $
+          libCall LF_companionCall $ do
+            startCall False False
+            op "itxn_submit"
+            op "retsub"
         replicateM_ howManyCalls $ do
           credit cr_call
         return ()
@@ -3473,20 +3509,21 @@ compileTEAL_ tealf = do
         Right sm -> return $ Right (bc, sm)
 
 compileTEAL :: String -> IO CodeAndMap
-compileTEAL tealf = compileTEAL_ tealf >>= \case
-  Left stderr -> do
-    let failed = impossible $ "The TEAL compiler failed with the message:\n" <> show stderr
-    let tooBig = bpack tealf <> ": app program size too large: "
-    case BS.isPrefixOf tooBig stderr of
-      True -> do
-        let notSpace = (32 /=)
-        let sz_bs = BS.takeWhile notSpace $ BS.drop (BS.length tooBig) stderr
-        let mlen :: Maybe Int = readMaybe $ bunpack sz_bs
-        case mlen of
-          Nothing -> failed
-          Just sz -> return $ (BS.replicate sz 0, mempty)
-      False -> failed
-  Right x -> return x
+compileTEAL tealf =
+  compileTEAL_ tealf >>= \case
+    Left stderr -> do
+      let failed = impossible $ "The TEAL compiler failed with the message:\n" <> show stderr
+      let tooBig = bpack tealf <> ": app program size too large: "
+      case BS.isPrefixOf tooBig stderr of
+        True -> do
+          let notSpace = (32 /=)
+          let sz_bs = BS.takeWhile notSpace $ BS.drop (BS.length tooBig) stderr
+          let mlen :: Maybe Int = readMaybe $ bunpack sz_bs
+          case mlen of
+            Nothing -> failed
+            Just sz -> return $ (BS.replicate sz 0, mempty)
+        False -> failed
+    Right x -> return x
 
 -- CL Case
 instance CompileK CLStmt where
@@ -3608,7 +3645,7 @@ instance Compile CLTail where
                 Just vl -> output $ TStore vl $ texty v
             _ -> impossible $ "ALGO: CL_Jump w/ isAPI and more than 1 vs"
         False -> cmoveMany $ zip vs args
-      code "b" [ LT.pack $ bunpack f]
+      code "b" [LT.pack $ bunpack f]
     CL_Halt at ht ->
       case ht of
         HM_Pure -> code "b" ["apiReturn_check"]
@@ -3636,7 +3673,9 @@ sigToLab x = \case
           False -> '_'
 
 data CLFX = CLFX LT.Text (Maybe Int) CLFun
+
 data CLEX = CLEX String CLExtFun
+
 data CLIX = CLIX CLVar CLIntFun
 
 instance Compile CLFX where
@@ -3661,10 +3700,16 @@ checkArgSize lab at msg = do
   -- The extra 4 bytes are the selector
   argSize <- (+) 4 <$> (typeSizeOf $ T_Tuple $ map (varType . varLetVar) msg)
   when (argSize > algoMaxAppTotalArgLen) $
-    bad $ LT.pack $
-      lab <> "'s argument length is " <> show argSize
-      <> ", but the limit is " <> show algoMaxAppTotalArgLen
-      <> ". " <> lab <> " starts at " <> show at <> "."
+    bad $
+      LT.pack $
+        lab <> "'s argument length is " <> show argSize
+          <> ", but the limit is "
+          <> show algoMaxAppTotalArgLen
+          <> ". "
+          <> lab
+          <> " starts at "
+          <> show at
+          <> "."
 
 bindFromArgs :: [DLVarLet] -> App a -> App a
 bindFromArgs vs m = do
@@ -3675,9 +3720,11 @@ bindFromArgs vs m = do
       goSingles vs' m
     (vs14, Just vsMore) -> do
       let tupleTy = T_Tuple $ map varLetType vsMore
-      let goTuple (v, i) = sallocVarLet v
-            (code "txna" ["ApplicationArgs", texty (15 :: Integer)]
-             >> cTupleRef tupleTy i)
+      let goTuple (v, i) =
+            sallocVarLet
+              v
+              (code "txna" ["ApplicationArgs", texty (15 :: Integer)]
+                 >> cTupleRef tupleTy i)
       goSingles vs14 (foldl' (flip goTuple) m (zip vsMore [(0 :: Integer) ..]))
 
 instance CompileLabel CLEX where
@@ -3687,18 +3734,19 @@ instance CompileLabel CLEX where
     let lab = sigToLab sig cef_kind
     checkArgSize (show $ pretty cef_kind) at $ clf_dom
     let mwhich = case cef_kind of
-                   CE_Publish n -> Just n
-                   _ -> Nothing
-    return $ (,) lab $ do
-      case cef_kind of
-        CE_Publish n -> do
-          cWasntMeth
-          when (n == 0) $
-            callCompanion at CompanionCreate
-        CE_View {} -> nop
-        CE_API {} -> nop
-      bindFromArgs clf_dom $
-        cp $ CLFX lab mwhich cef_fun
+          CE_Publish n -> Just n
+          _ -> Nothing
+    return $
+      (,) lab $ do
+        case cef_kind of
+          CE_Publish n -> do
+            cWasntMeth
+            when (n == 0) $
+              callCompanion at CompanionCreate
+          CE_View {} -> nop
+          CE_API {} -> nop
+        bindFromArgs clf_dom $
+          cp $ CLFX lab mwhich cef_fun
 
 instance Compile CLProg where
   cp (CLProg {..}) = do
@@ -3754,7 +3802,7 @@ cp_shellColor (IGd x g) = do
         unless (l' <= 255) $ do
           bad $ LT.pack $ "illegal coloring for " <> show v <> " " <> show l
         return $ fromIntegral l'
-      local (\e -> e { eColoring = c' }) $
+      local (\e -> e {eColoring = c'}) $
         cp_shell x
 
 -- General Shell
@@ -3775,7 +3823,7 @@ cp_shell x = do
   -- Load the global state
   cp keyState
   op "app_global_get"
-  forM_ (labelLast $ zip keyState_gvs [0..]) $ \((gv, i), isLast) -> do
+  forM_ (labelLast $ zip keyState_gvs [0 ..]) $ \((gv, i), isLast) -> do
     unless isLast $ op "dup"
     cTupleRef keyState_ty i
     gvStore gv
@@ -3846,7 +3894,7 @@ cp_shell x = do
   label "updateState"
   gvLoad GV_wasntMeth
   code "bnz" ["done"]
-  code "b" [ "apiReturn_noCheck" ]
+  code "b" ["apiReturn_noCheck"]
   label "apiReturn_noCheck"
   -- SHA-512/256("return")[0..4] = 0x151f7c75
   cp $ BS.pack [0x15, 0x1f, 0x7c, 0x75]
@@ -3866,7 +3914,7 @@ cp_shell x = do
   output $ TConst "NoOp"
   asserteq
   output $ TCheckOnCompletion
-  code "b" [ "apiReturn_noCheck" ]
+  code "b" ["apiReturn_noCheck"]
   label "alloc"
   let ctf f v = do
         insertResult (LT.toStrict f) $ AS.Number $ fromIntegral v
@@ -3907,16 +3955,17 @@ compile_algo disp x = do
         modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
         let tc = LT.toStrict $ encodeBase64 tbs
         modifyIORef eRes $ M.insert (T.pack lab) $ AS.String tc
-        modifyIORef eRes $ M.insert (T.pack $ lab <> "Map") $
-          AS.object $ map (\(k, v) -> (fromString (show k), AS.String (T.pack $ show v))) $ M.toAscList sm
+        modifyIORef eRes $
+          M.insert (T.pack $ lab <> "Map") $
+            AS.object $ map (\(k, v) -> (fromString (show k), AS.String (T.pack $ show v))) $ M.toAscList sm
         return tbs
   -- Clear state is never allowed
   cr_clearstate <- addProg "appClear" []
   -- Companion
   let makeCompanionMaker = do
         let ts =
-              [ TCode "txn" [ "Sender" ]
-              , TCode "global" [ "CreatorAddress" ]
+              [ TCode "txn" ["Sender"]
+              , TCode "global" ["CreatorAddress"]
               , TCode "==" []
               ]
         let cr_ctor = fromIntegral $ length ts
@@ -4019,7 +4068,7 @@ compile_algo disp x = do
                   when showCost $ putStr msg
                   modifyIORef eRes $ M.insert "companionInfo" (AS.toJSON ci)
                   return ts'
-    void $ addProg lab =<< rec (0::Integer) False Nothing
+    void $ addProg lab =<< rec (0 :: Integer) False Nothing
   totalLen <- readIORef totalLenR
   when showCost $
     putStrLn $ "The program is " <> show totalLen <> " bytes."
@@ -4033,8 +4082,9 @@ compile_algo disp x = do
   let wss w lab ss = do
         unless (null ss) $
           emitWarning Nothing $ w $ S.toAscList $ S.map LT.unpack ss
-        modifyIORef eRes $ M.insert lab $
-          aarray $ S.toAscList $ S.map (AS.String . LT.toStrict) ss
+        modifyIORef eRes $
+          M.insert lab $
+            aarray $ S.toAscList $ S.map (AS.String . LT.toStrict) ss
   wss W_ALGOConservative "warnings" gWarnings
   wss W_ALGOUnsupported "unsupported" gFailures
   abi <- readIORef eABI
@@ -4056,13 +4106,15 @@ compile_algo disp x = do
 data ALGOConnectorInfo = ALGOConnectorInfo
   { aci_appApproval :: String
   , aci_appClear :: String
-  } deriving (Show)
+  }
+  deriving (Show)
 
 instance AS.ToJSON ALGOConnectorInfo where
-  toJSON (ALGOConnectorInfo {..}) = AS.object $
-    [ "approvalB64" .= aci_appApproval
-    , "clearStateB64" .= aci_appClear
-    ]
+  toJSON (ALGOConnectorInfo {..}) =
+    AS.object $
+      [ "approvalB64" .= aci_appApproval
+      , "clearStateB64" .= aci_appClear
+      ]
 
 instance AS.FromJSON ALGOConnectorInfo where
   parseJSON = AS.withObject "ALGOConnectorInfo" $ \obj -> do
@@ -4077,10 +4129,11 @@ data ALGOCodeIn = ALGOCodeIn
   deriving (Show)
 
 instance AS.ToJSON ALGOCodeIn where
-  toJSON (ALGOCodeIn {..}) = AS.object $
-    [ "approval" .= aci_approval
-    , "clearState" .= aci_clearState
-    ]
+  toJSON (ALGOCodeIn {..}) =
+    AS.object $
+      [ "approval" .= aci_approval
+      , "clearState" .= aci_clearState
+      ]
 
 instance AS.FromJSON ALGOCodeIn where
   parseJSON = AS.withObject "ALGOCodeIn" $ \obj -> do
@@ -4095,10 +4148,11 @@ data ALGOCodeOut = ALGOCodeOut
   deriving (Show)
 
 instance AS.ToJSON ALGOCodeOut where
-  toJSON (ALGOCodeOut {..}) = AS.object $
-    [ "approvalB64" .= toBase64 aco_approval
-    , "clearStateB64" .= toBase64 aco_clearState
-    ]
+  toJSON (ALGOCodeOut {..}) =
+    AS.object $
+      [ "approvalB64" .= toBase64 aco_approval
+      , "clearStateB64" .= toBase64 aco_clearState
+      ]
     where
       toBase64 :: String -> String
       toBase64 = LT.unpack . encodeBase64 . B.pack
@@ -4108,8 +4162,8 @@ instance AS.FromJSON ALGOCodeOut where
     let fromBase64 :: String -> String
         fromBase64 x =
           case decodeBase64 $ B.pack x of
-           Left y -> impossible $ "bad base64: " <> show y
-           Right y -> B.unpack y
+            Left y -> impossible $ "bad base64: " <> show y
+            Right y -> B.unpack y
     aco_approval <- fromBase64 <$> (obj .: "approvalB64")
     aco_clearState <- fromBase64 <$> (obj .: "clearStateB64")
     return $ ALGOCodeOut {..}
@@ -4123,25 +4177,27 @@ data ALGOCodeOpts = ALGOCodeOpts
   deriving (Show)
 
 instance AS.ToJSON ALGOCodeOpts where
-  toJSON (ALGOCodeOpts {..}) = AS.object $
-    [ "globalUints" .= aco_globalUints
-    , "globalBytes" .= aco_globalBytes
-    , "localUints" .= aco_localUints
-    , "localBytes" .= aco_localBytes
-    ]
+  toJSON (ALGOCodeOpts {..}) =
+    AS.object $
+      [ "globalUints" .= aco_globalUints
+      , "globalBytes" .= aco_globalBytes
+      , "localUints" .= aco_localUints
+      , "localBytes" .= aco_localBytes
+      ]
 
 instance AS.FromJSON ALGOCodeOpts where
   parseJSON = AS.withObject "ALGOCodeOpts" $ \obj -> do
-    aco_globalUints <- fromMaybe 0 <$> firstJustM (obj .:?) [ "globalUints", "GlobalNumUint" ]
-    aco_globalBytes <- fromMaybe 0 <$> firstJustM (obj .:?) [ "globalBytes", "GlobalNumByteSlice" ]
-    aco_localUints  <- fromMaybe 0 <$> firstJustM (obj .:?) [ "localUints", "LocalNumUint" ]
-    aco_localBytes  <- fromMaybe 0 <$> firstJustM (obj .:?) [ "localBytes", "LocalNumByteSlice" ]
+    aco_globalUints <- fromMaybe 0 <$> firstJustM (obj .:?) ["globalUints", "GlobalNumUint"]
+    aco_globalBytes <- fromMaybe 0 <$> firstJustM (obj .:?) ["globalBytes", "GlobalNumByteSlice"]
+    aco_localUints <- fromMaybe 0 <$> firstJustM (obj .:?) ["localUints", "LocalNumUint"]
+    aco_localBytes <- fromMaybe 0 <$> firstJustM (obj .:?) ["localBytes", "LocalNumByteSlice"]
     return $ ALGOCodeOpts {..}
 
 ccTEAL :: String -> CCApp BS.ByteString
-ccTEAL tealf = liftIO (compileTEAL_ tealf) >>= \case
-  Right (x, _) -> return x
-  Left x -> throwE $ B.unpack x
+ccTEAL tealf =
+  liftIO (compileTEAL_ tealf) >>= \case
+    Right (x, _) -> return x
+    Left x -> throwE $ B.unpack x
 
 ccTok :: BS.ByteString -> String
 ccTok = B.unpack

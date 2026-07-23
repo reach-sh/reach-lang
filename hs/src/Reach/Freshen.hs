@@ -12,8 +12,8 @@ import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Reach.AST.DLBase
-import Reach.AST.LL
 import Reach.AST.EP
+import Reach.AST.LL
 import Reach.Counter
 import Reach.Util
 
@@ -257,8 +257,9 @@ instance Freshen DLTail where
     DT_Com m k -> DT_Com <$> fu m <*> fu k
 
 instance Freshen DLBlock where
-  fu (DLBlock at fs t a) = newScope $
-    DLBlock at fs <$> fu t <*> fu a
+  fu (DLBlock at fs t a) =
+    newScope $
+      DLBlock at fs <$> fu t <*> fu a
 
 instance Freshen DLAssignment where
   fu (DLAssignment m) =

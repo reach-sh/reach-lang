@@ -1,0 +1,7 @@
+Compiling `main`...
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 6 theorems; No failures!
+Artifacts: sol_only.main.abi.json sol_only.main.sol sol_only.main.verify.json

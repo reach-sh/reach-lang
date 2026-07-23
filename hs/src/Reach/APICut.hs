@@ -4,18 +4,19 @@ module Reach.APICut
   )
 where
 
+import Control.Monad
 import Control.Monad.Reader
-import Data.IORef
-import qualified Data.Sequence as Seq
-import qualified Data.Map.Strict as M
 import Data.Foldable
+import Data.IORef
+import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
+import qualified Data.Sequence as Seq
 import Generics.Deriving (Generic)
 import Reach.AST.Base
 import Reach.AST.DLBase
-import Reach.AST.PL
 import Reach.AST.EP
+import Reach.AST.PL
 import Reach.CollectCounts
 import Reach.Counter
 import Reach.Freshen
@@ -209,7 +210,7 @@ seek = \case
       Just t | isCut t -> return $ Just t
       Just k' -> return $ Just $ ET_FromConsensus x y z k'
   ET_ToConsensus {..} -> do
-    let noMore = local (\e -> e { eBeforeFirstTC = False })
+    let noMore = local (\e -> e {eBeforeFirstTC = False})
     many_ <$> ((:) <$> noMore (seek et_tc_cons) <*> (mapM seek $ fmap snd (maybeToList et_tc_from_mtime)))
   ET_While {..} -> do
     b' <-
@@ -230,7 +231,7 @@ locSeenOut :: App b -> App (Bool, b)
 locSeenOut m = do
   seenOutR <- asks eSeenOutR
   seenOutD <- liftIO $ dupeIORef seenOutR
-  res <- local (\ e -> e { eSeenOutR = seenOutD }) $ m
+  res <- local (\e -> e {eSeenOutR = seenOutD}) $ m
   seenOut <- liftIO $ readIORef seenOutD
   return (seenOut, res)
 
@@ -293,11 +294,12 @@ slurp = \case
           -- We don't expect to see `interact.out` called on
           -- every `case` when we're switching on who won a `race`.
           let shouldSeeOut = case isRace of
-                              True  -> has (is_setApiDetails who) k
-                              False -> True
+                True -> has (is_setApiDetails who) k
+                False -> True
           when shouldSeeOut $ do
-            liftIO $ modifyIORef alwaysSeeOutR $
-              maybe (return so) $ return . (&&) so
+            liftIO $
+              modifyIORef alwaysSeeOutR $
+                maybe (return so) $ return . (&&) so
           case k' of
             Nothing -> return (SwitchCase y stop)
             Just et -> do
@@ -329,7 +331,7 @@ slurp = \case
     asks eWhile >>= \case
       EWhileT Nothing -> impossible "continue not in while"
       EWhileT (Just (ow, cb, b, k)) ->
-        local (\e -> e { eWhile = ow }) $
+        local (\e -> e {eWhile = ow}) $
           doWhile at asn cb b k
   where
     ensureSeen m = do

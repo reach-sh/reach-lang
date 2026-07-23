@@ -2,14 +2,15 @@
 
 module Reach.Simulator.Core where
 
-import Control.Monad.Reader
+import Control.Monad
 import Data.Aeson
 import Data.Bits
 --import qualified Data.ByteString.Char8 as BS
+
+import Data.List (partition)
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe)
 import Data.Set (member)
-import Data.List (partition)
 import qualified Data.Text as T
 import GHC.Generics
 import qualified GHC.Stack as G
@@ -116,6 +117,7 @@ data Global = Global
   deriving (Generic)
 
 instance ToJSONKey DLVal
+
 instance ToJSON Global
 
 data LocalInfo = LocalInfo
@@ -277,7 +279,7 @@ ledgerNewTokenRefs :: Integer -> DLTokenNew -> App Token
 ledgerNewTokenRefs n tk = do
   (e, _) <- getState
   let tokId = e_ntok e
-  void $ mapM (\x -> ledgerNewToken x tk tokId) [-1..n]
+  void $ mapM (\x -> ledgerNewToken x tk tokId) [-1 .. n]
   (e', _) <- getState
   setGlobal $ e' {e_ntok = tokId + 1}
   return tokId
@@ -330,6 +332,7 @@ data DLVal
   deriving (Eq, Ord, Show, Generic)
 
 instance ToJSON DLVal
+
 instance FromJSON DLVal
 
 class AddToStore a where
@@ -388,7 +391,7 @@ incrPhaseId = do
 
 updateLedgers :: Integer -> Token -> (Integer -> Integer) -> App ()
 updateLedgers n tok f = do
-  void $ mapM (\x -> updateLedger x tok f) [-1..n]
+  void $ mapM (\x -> updateLedger x tok f) [-1 .. n]
   return ()
 
 updateLedger :: Account -> Token -> (Integer -> Integer) -> App ()
@@ -422,13 +425,14 @@ consensusLookup dlvar = do
       let st = l_store lst
       case M.lookup dlvar st of
         Nothing ->
-          suspend $ PS_Error Nothing $
-            "consensusLookup"
-              <> show dlvar
-              <> " "
-              <> show st
-              <> " "
-              <> show (l_who lst)
+          suspend $
+            PS_Error Nothing $
+              "consensusLookup"
+                <> show dlvar
+                <> " "
+                <> show st
+                <> " "
+                <> show (l_who lst)
         Just a -> return a
 
 -- ## INTERPRETER ## --
@@ -438,14 +442,14 @@ class Interp a where
 
 interpAs :: (Interp a) => ActorId -> a -> App DLVal
 interpAs aid p = do
-  (g,l) <- getState
+  (g, l) <- getState
   let fAid = l_curr_actor_id l
   let l' = l {l_curr_actor_id = aid}
-  setState (g,l')
+  setState (g, l')
   v <- interp p
-  (g',l'') <- getState
+  (g', l'') <- getState
   let l''' = l'' {l_curr_actor_id = fAid}
-  setState (g',l''')
+  setState (g', l''')
   return v
 
 interpPrim :: SrcLoc -> (PrimOp, [DLVal]) -> App DLVal
@@ -485,7 +489,7 @@ interpPrim at = \case
 
 conCons' :: DLConstant -> DLVal
 conCons' = \case
-  DLC_UInt_max  -> V_UInt $ 2 ^ (64 :: Integer) - 1
+  DLC_UInt_max -> V_UInt $ 2 ^ (64 :: Integer) - 1
   DLC_Token_zero -> V_Token 0
 
 instance Interp DLVar where
@@ -499,13 +503,14 @@ instance Interp DLVar where
         let st = l_store lst
         case M.lookup dlvar st of
           Nothing -> do
-            suspend $ PS_Error Nothing $
-              "Missing local variable definition for: "
-                <> show dlvar
-                <> "\n in store: "
-                <> show st
-                <> "\n for actor: "
-                <> show (l_who lst)
+            suspend $
+              PS_Error Nothing $
+                "Missing local variable definition for: "
+                  <> show dlvar
+                  <> "\n in store: "
+                  <> show st
+                  <> "\n for actor: "
+                  <> show (l_who lst)
           Just a -> return a
 
 instance Interp DLArg where
@@ -594,7 +599,7 @@ instance Interp DLExpr where
       args <- mapM interp dlargs
       g <- getGlobal
       let apiObs = e_apis g
-      let apis = M.fromList $ map (\(a,b) -> (a_name b, a)) $ M.toList apiObs
+      let apis = M.fromList $ map (\(a, b) -> (a_name b, a)) $ M.toList apiObs
       let partName' = bunpack slpart
       case M.lookup partName' apis of
         Just apid -> do
@@ -738,18 +743,18 @@ instance Interp DLStmt where
             zipWithM_ (\a v -> addToStore a v) as avs
             addToStore i $ V_UInt iv
             interp f
-      res <- V_Array <$> zipWithM f' arrs' [0..]
+      res <- V_Array <$> zipWithM f' arrs' [0 ..]
       addToStore ans res
       return V_Null
     DL_ArrayReduce _at ans xs z b as i f -> do
       acc <- interp z
       arrs' <- mapM vArray <$> mapM interp xs
       let f' acc_v (elem_vs, iv) = do
-             zipWithM_ (\a v -> addToStore a v) as elem_vs
-             addToStore b acc_v
-             addToStore i $ V_UInt iv
-             interp f
-      res <- foldM f' acc $ zip arrs' [0..]
+            zipWithM_ (\a v -> addToStore a v) as elem_vs
+            addToStore b acc_v
+            addToStore i $ V_UInt iv
+            interp f
+      res <- foldM f' acc $ zip arrs' [0 ..]
       addToStore ans res
       return V_Null
     DL_Var _at _var -> return V_Null
@@ -777,7 +782,7 @@ instance Interp DLStmt where
                 True -> do
                   g <- getGlobal
                   let apiObs = e_apis g
-                  let apis = M.fromList $ map (\(a,b) -> (a_name b, a)) $ M.toList apiObs
+                  let apis = M.fromList $ map (\(a, b) -> (a_name b, a)) $ M.toList apiObs
                   case M.lookup slname apis of
                     Nothing -> return V_Null
                     Just i -> do
@@ -792,10 +797,10 @@ instance Interp DLStmt where
       let linst = e_linstate g
       let f :: DLVal -> DLVal -> DLVal -> App DLVal
           f k v acc' = do
-           addToStore blv acc'
-           addToStore klv k
-           addToStore alv v
-           interp fb
+            addToStore blv acc'
+            addToStore klv k
+            addToStore alv v
+            interp fb
       let m = saferMaybe "DL_MapReduce" $ M.lookup mv linst
       res <- foldrWithKeyM f acc m
       addToStore ans res
@@ -862,9 +867,9 @@ instance Interp LLConsensus where
           case M.lookup i views of
             Nothing -> possible "LLC_ViewIs2 : view not found"
             Just view -> do
-              let view' = view { v_bl = export }
+              let view' = view {v_bl = export}
               let views' = M.insert i view' views
-              let g' = g { e_views = views' }
+              let g' = g {e_views = views'}
               setGlobal g'
       interp cons
 
@@ -914,7 +919,7 @@ instance Interp LLStep where
                   False -> do
                     accId <- getAccId $ fromIntegral actId'
                     part <- partName <$> whoIs (fromIntegral actId')
-                    let errMsg = ("Participant " <> show part <> " is not in the race/publish." )
+                    let errMsg = ("Participant " <> show part <> " is not in the race/publish.")
                     dls <- maybeError (M.lookup part sends) errMsg
                     case dls of
                       Left err -> do
@@ -937,11 +942,12 @@ instance Interp LLStep where
                   Left err -> suspend $ PS_Error (Just at) err
                   Right m'' -> do
                     let msgs = unfixedMsgs $ m''
-                    let errMsg = ("Message not yet seen from actor ID: "
-                          <> (show actId')
-                          <> ", for Phase "
-                          <> (show phId)
-                          <> ".")
+                    let errMsg =
+                          ("Message not yet seen from actor ID: "
+                             <> (show actId')
+                             <> ", for Phase "
+                             <> (show phId)
+                             <> ".")
                     winningMsg <- maybeError (M.lookup (fromIntegral actId') msgs) errMsg
                     case winningMsg of
                       Left err -> suspend $ PS_Error (Just at) err
@@ -967,7 +973,7 @@ placeMsg (DLSend {..}) (DLRecv {..}) phId actId priors m_api = do
   let m' = NotFixedYet $ M.insert actId m priors
   let m'' = M.insert phId m' (e_messages g)
   g' <- getGlobal
-  setGlobal g' { e_messages = m'' }
+  setGlobal g' {e_messages = m''}
   return m'
 
 poll :: PhaseId -> App (ActorId, APIFlag, Store)
@@ -1039,11 +1045,10 @@ bindConsensusMeta (DLRecv {..}) actorId accId = do
     True -> addToStore dr_didSend $ V_Bool True
     False -> addToStore dr_didSend $ V_Bool False
 
-
 instance Interp LLProg where
   interp LLProg {..} = do
     let apiNames = sps_apis llp_parts
-    let (apiParts,regParts) = partition (\(a,_b) -> member a apiNames) $ M.toAscList $ sps_ies llp_parts
+    let (apiParts, regParts) = partition (\(a, _b) -> member a apiNames) $ M.toAscList $ sps_ies llp_parts
     registerParts regParts
     registerAPIs apiParts
     registerViews $ M.toAscList $ M.map M.toAscList llp_views
@@ -1083,13 +1088,13 @@ isTimeout tc_mtime phId = do
 registerViews :: [(Maybe SLPart, [(SLVar, DLView)])] -> App ()
 registerViews [] = return ()
 registerViews ((_, []) : vs) = registerViews vs
-registerViews ((sl, ((slv,(DLView _ ty aliases)) : vars)) : vs) = do
-  forM_ (slv : map bunpack aliases) $ \ vVar -> do
+registerViews ((sl, ((slv, (DLView _ ty aliases)) : vars)) : vs) = do
+  forM_ (slv : map bunpack aliases) $ \vVar -> do
     s <- getState
-    let (g,l) = registerView s (fmap bunpack sl) vVar ty
+    let (g, l) = registerView s (fmap bunpack sl) vVar ty
     setGlobal g
     setLocal l
-  registerViews [(sl,vars)]
+  registerViews [(sl, vars)]
   registerViews vs
 
 registerView :: State -> Maybe String -> SLVar -> IType -> State
@@ -1114,10 +1119,10 @@ registerParts :: [(SLPart, InteractEnv)] -> App ()
 registerParts [] = return ()
 registerParts ps = do
   g <- getGlobal
-  let g' = g {e_parts = M.fromList $ map (\(a,b)->(bunpack a,b)) ps}
+  let g' = g {e_parts = M.fromList $ map (\(a, b) -> (bunpack a, b)) ps}
   setGlobal g'
 
-registerPart :: State -> String -> InteractEnv -> (State,ActorId)
+registerPart :: State -> String -> InteractEnv -> (State, ActorId)
 registerPart (g, l) s iv = do
   let actorId = e_nactorid g
   let pacts = e_partacts g
@@ -1150,7 +1155,7 @@ registerAPIs :: [(SLPart, InteractEnv)] -> App ()
 registerAPIs [] = return ()
 registerAPIs ((p, iv) : ps) = do
   s <- getState
-  let (g,l) = registerAPI s (bunpack p) iv
+  let (g, l) = registerAPI s (bunpack p) iv
   setGlobal g
   setLocal l
   registerAPIs ps

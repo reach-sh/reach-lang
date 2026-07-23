@@ -11,10 +11,10 @@ Verification failed:
   // Violation Witness
 
   const .api23.dom/92 = protect<Tuple(Token)>("t".interact.in());
-  //    ^ could = [Token!val!3 ]
+  //    ^ could = [Token!val!0 ]
   //      from: ./distinct_toks_api.rsh:13:3:application
   const .api42.dom/111 = protect<Tuple(Token)>("t".interact.in());
-  //    ^ could = [Token!val!3 ]
+  //    ^ could = [Token!val!0 ]
   //      from: ./distinct_toks_api.rsh:18:3:application
 
   // Theorem Formalization

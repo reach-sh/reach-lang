@@ -1,5 +1,6 @@
 module Reach.Eval.Module (evalLibs) where
 
+import Control.Monad
 import Control.Monad.Reader
 import Data.Foldable
 import qualified Data.Map.Strict as M

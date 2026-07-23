@@ -140,9 +140,9 @@ instance Pretty CLExtFun where
 data CLDef
   = CLD_Mem DLType
   | CLD_Map
-    { cldm_kt :: DLType
-    , cldm_ty :: DLType
-    }
+      { cldm_kt :: DLType
+      , cldm_ty :: DLType
+      }
   | CLD_Evt [DLType]
   deriving (Eq)
 
@@ -160,6 +160,7 @@ viewCLD_Mem = \case
 type CLDefs = M.Map CLVar CLDef
 
 type CLFuns = M.Map CLVar CLIntFun
+
 type CLAPI = M.Map CLSym CLExtFun
 
 data CLOpts = CLOpts
@@ -187,15 +188,24 @@ data CLProg = CLProg
   deriving (Eq)
 
 instance Pretty CLProg where
-  pretty (CLProg {..}) = ""
-    <> "// Definitions:" <> hardline
-    <> render_obj clp_defs <> hardline
-    <> "// Functions:" <> hardline
-    <> render_obj clp_funs <> hardline
-    <> "// API:" <> hardline
-    <> render_obj clp_api <> hardline
-    <> "// State:" <> hardline
-    <> render_obj clp_state <> hardline
+  pretty (CLProg {..}) =
+    ""
+      <> "// Definitions:"
+      <> hardline
+      <> render_obj clp_defs
+      <> hardline
+      <> "// Functions:"
+      <> hardline
+      <> render_obj clp_funs
+      <> hardline
+      <> "// API:"
+      <> hardline
+      <> render_obj clp_api
+      <> hardline
+      <> "// State:"
+      <> hardline
+      <> render_obj clp_state
+      <> hardline
 
 instance HasCounter CLProg where
   getCounter = getCounter . clp_opts
